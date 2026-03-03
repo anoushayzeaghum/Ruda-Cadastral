@@ -1,0 +1,54 @@
+.mapview-wrapper {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Inter", sans-serif;
+}
+
+.header {
+  height: 60px;
+  background: #2c2f36;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.filters-bar {
+  height: 60px;
+  background: #f4f5f7;
+  display: flex;
+  gap: 15px;
+  padding: 10px 20px;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.filters-bar select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.map-layout {
+  flex: 1;
+  display: flex;
+}
+
+.map-container {
+  flex: 1;
+}
+
+.side-panel {
+  width: 280px;
+  background: #ffffff;
+  border-left: 1px solid #ddd;
+  padding: 15px;
+}
+
+.accordion-item {
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+  cursor: pointer;
+}
