@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import mapboxgl from "mapbox-gl";
 
-mapboxgl.accessToken = "YOUR_MAPBOX_ACCESpk.eyJ1IjoiYW5vdXNoYXl6ZWFnaHVtIiwiYSI6ImNtYzhvbzRkZjFjNnIyaXNhdGhhdHZ3ZWgifQ.7VC6uTyowkC63sNdfWLe5wS_TOKEN";
-
+mapboxgl.accessToken =
+  "pk.eyJ1IjoiYW5vdXNoYXl6ZWFnaHVtIiwiYSI6ImNtYzhvbzRkZjFjNnIyaXNhdGhhdHZ3ZWgifQ.7VC6uTyowkC63sNdfWLe5w";
 export default function useMapbox(mapRef) {
   useEffect(() => {
     if (!mapRef.current) return;
