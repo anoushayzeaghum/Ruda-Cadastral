@@ -6,6 +6,53 @@ from datetime import datetime
 import uuid
 
 # --------------------------------------------------------
+# Distrcit Administrative Boundary
+# --------------------------------------------------------
+
+class District(models.Model):
+
+    gid = models.AutoField(primary_key=True)
+    objectid = models.FloatField()
+    id = models.FloatField()
+    name = models.CharField(max_length=50)
+    division = models.CharField(max_length=50)
+    division_i = models.FloatField()
+    extent = models.CharField(max_length=100, null=True, blank=True)
+    shape_star = models.FloatField(null=True, blank=True)
+    shape_stle = models.FloatField(null=True, blank=True)
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return f"{self.name} ({self.division})"
+
+    class Meta:
+        managed = False
+        db_table = "district"
+
+# --------------------------------------------------------
+# Tehsil Administrative Boundary
+# --------------------------------------------------------
+
+class Tehsil(models.Model):
+
+    gid = models.AutoField(primary_key=True)
+    objectid = models.FloatField()
+    id = models.FloatField()
+    name = models.CharField(max_length=50)
+    district = models.CharField(max_length=50)
+    district_i = models.FloatField()
+    extent = models.CharField(max_length=100, null=True, blank=True)
+    shape_star = models.FloatField(null=True, blank=True)
+    shape_stle = models.FloatField(null=True, blank=True)
+    geom = gis_models.MultiPolygonField(srid=4326) 
+    def __str__(self):
+        return f"{self.name} ({self.district})"
+
+    class Meta:
+        managed = False
+        db_table = "tehsil"
+
+# --------------------------------------------------------
 # Mouza Administrative Boundary
 # --------------------------------------------------------
 
