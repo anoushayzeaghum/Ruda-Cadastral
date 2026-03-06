@@ -3,6 +3,50 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from .models import *
 
 # --------------------------------------------------------
+# District Serializer
+# --------------------------------------------------------
+
+class DistrictSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = District
+        geo_field = "geom"
+        id_field = "id"
+
+        fields = (
+            "id",
+            "name",
+            "division",
+            "division_i",
+            "extent",
+            "shape_star",
+            "shape_stle",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# Tehsil Serializer
+# --------------------------------------------------------
+
+class TehsilSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Tehsil
+        geo_field = "geom"
+        id_field = "id"
+
+        fields = (
+            "id",
+            "name",
+            "district",
+            "district_i",
+            "extent",
+            "shape_star",
+            "shape_stle",
+            "geom",
+        )
+
+# --------------------------------------------------------
 # Mouza Serializer
 # --------------------------------------------------------
 class MouzaSerializer(GeoFeatureModelSerializer):

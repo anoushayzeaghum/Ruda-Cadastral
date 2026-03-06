@@ -45,6 +45,7 @@ class Tehsil(models.Model):
     shape_star = models.FloatField(null=True, blank=True)
     shape_stle = models.FloatField(null=True, blank=True)
     geom = gis_models.MultiPolygonField(srid=4326) 
+    
     def __str__(self):
         return f"{self.name} ({self.district})"
 
