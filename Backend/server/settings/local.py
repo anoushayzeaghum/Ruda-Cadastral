@@ -8,5 +8,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
-# If you want Postgres later, replace DATABASES here.
-# For now, keep sqlite (works instantly).
+DATABASES = {
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": get_secret("DB_NAME", "ruda_cadastral"),
+        "USER": get_secret("DB_USER", "postgres"),
+        "PASSWORD": get_secret("DB_PASSWORD", "postgres"),
+        "HOST": "localhost",
+        "PORT": "5432",
+    }
+}
+
+GDAL_LIBRARY_PATH = secrets["GDAL_LIBRARY_PATH"]
+GEOS_LIBRARY_PATH = secrets["GEOS_LIBRARY_PATH"]

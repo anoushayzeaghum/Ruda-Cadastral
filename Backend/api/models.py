@@ -21,8 +21,7 @@ class Mouza(models.Model):
     pc_id = models.IntegerField(null=True, blank=True)
     mouza = models.CharField(max_length=100)
     mouza_id = models.IntegerField()
-    geom = models.MultiPolygonField(srid=4326)
-
+    geom = gis_models.MultiPolygonField(srid=4326) 
     def __str__(self):
         return self.mouza
 
@@ -33,9 +32,6 @@ class Mouza(models.Model):
 # --------------------------------------------------------
 # Murabba Administrative Boundary
 # --------------------------------------------------------
-
-from django.contrib.gis.db import models
-
 
 class Murabba(models.Model):
 
@@ -51,8 +47,8 @@ class Murabba(models.Model):
     mouza_id = models.FloatField()
     murabba_no = models.IntegerField(db_column="m")
     sheets = models.CharField(max_length=50)
-    geom = models.MultiPolygonField(srid=4326)
-
+    geom = gis_models.MultiPolygonField(srid=4326) 
+  
     def __str__(self):
         return f"{self.mouza} - Murabba {self.murabba_no}"
 
@@ -60,8 +56,6 @@ class Murabba(models.Model):
         managed = False
         db_table = "murabba"
         
-    from django.contrib.gis.db import models
-
 # --------------------------------------------------------
 # Khasra Administrative Boundary
 # --------------------------------------------------------
@@ -93,8 +87,8 @@ class Khasra(models.Model):
     division = models.CharField(max_length=50)
     khewat_id = models.FloatField()
     divn_id = models.FloatField()
-    geom = models.MultiPolygonField(srid=4326)
-
+    geom = gis_models.MultiPolygonField(srid=4326) 
+    
     def __str__(self):
         return self.label
 
