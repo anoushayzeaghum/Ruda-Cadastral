@@ -1,19 +1,14 @@
-import Header from "./Header";
-import FiltersBar from "./FiltersBar";
-import MapContainer from "./MapContainer";
-import SidePanel from "./SidePanel";
-import "./styles/mapview.css";
+import { useRef } from "react";
+import useMapbox from "../../hooks/useMapbox";
 
 export default function MapView() {
-  return (
-    <div className="mapview-wrapper">
-      <Header />
-      <FiltersBar />
+  const mapRef = useRef(null);
 
-      <div className="map-layout">
-        <MapContainer />
-        <SidePanel />
-      </div>
+  useMapbox(mapRef);
+
+  return (
+    <div className="flex-1">
+      <div ref={mapRef} className="w-full h-full" />
     </div>
   );
 }
