@@ -1,16 +1,21 @@
+import { useState } from "react";
 import Header from "./Header";
 import FilterPanel from "./FilterPanel";
 import MapView from "./MapView";
 
 export default function MapPage() {
+
+  const [selectedMouza, setSelectedMouza] = useState(null);
+
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen w-screen relative">
+
       <Header />
 
-      <div className="flex flex-1 overflow-hidden">
-        <FilterPanel />
-        <MapView />
-      </div>
+      <FilterPanel onMouzaSelect={setSelectedMouza} />
+
+      <MapView mouzaId={selectedMouza} />
+
     </div>
   );
 }
