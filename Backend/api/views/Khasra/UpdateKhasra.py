@@ -1,34 +1,34 @@
 from ..common_imports import *
 
-class UpdateMouzaView(viewsets.ViewSet):
-    queryset = Mouza.objects.all()
-    serializer_class = MouzaSerializer
+class UpdateKhasraView(viewsets.ViewSet):
+    queryset = Khasra.objects.all()
+    serializer_class = KhasraSerializer
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
 
         data = request.data
-        mouza_id = kwargs.get("pk")
+        khasra_id = kwargs.get("pk")
 
         try:
-            mouza = Mouza.objects.get(id=mouza_id)
+            khasra = Khasra.objects.get(id=khasra_id)
 
-        except Mouza.DoesNotExist:
+        except Khasra.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="Mouza not found.",
+                message="Khasra not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            serializer = MouzaSerializer(mouza, data=data, partial=True)
+            serializer = KhasraSerializer(khasra, data=data, partial=True)
 
             if serializer.is_valid():
                 serializer.save()
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Mouza updated successfully.",
+                    message="Khasra updated successfully.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()

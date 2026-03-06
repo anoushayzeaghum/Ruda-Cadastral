@@ -1,8 +1,8 @@
 from ..common_imports import *
 
-class CreateMurabbaView(viewsets.ViewSet):
-    queryset = Murabba.objects.all()
-    serializer_class = MurabbaSerializer
+class CreateKhasraView(viewsets.ViewSet):
+    queryset = Khasra.objects.all()
+    serializer_class = KhasraSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
@@ -10,15 +10,15 @@ class CreateMurabbaView(viewsets.ViewSet):
         data = request.data
 
         try:
-            serializer = MurabbaSerializer(data=data)
+            serializer = KhasraSerializer(data=data)
             serializer.is_valid(raise_exception=True)
 
-            murabba = serializer.save()
+            khasra = serializer.save()
 
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
-                message="Murabba created successfully.",
-                data=MurabbaSerializer(murabba).data,
+                message="Khasra created successfully.",
+                data=KhasraSerializer(khasra).data,
                 http_status=status.HTTP_201_CREATED,
             ).create_response()
 

@@ -1,72 +1,86 @@
 from ..common_imports import *
 
-class ListMurabbaView(viewsets.ViewSet):
-    queryset = Murabba.objects.all()
-    serializer_class = MurabbaSerializer
+class ListKhasraView(viewsets.ViewSet):
+    queryset = Khasra.objects.all()
+    serializer_class = KhasraSerializer
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
 
         try:
-            murabba_id = request.query_params.get("id")
+            khasra_id = request.query_params.get("id")
             mouza = request.query_params.get("mouza")
+            murabba = request.query_params.get("m")
             tehsil = request.query_params.get("tehsil")
 
-            # Single murabba
-            if murabba_id:
-                murabba = Murabba.objects.filter(id=murabba_id).first()
+            # Single khasra
+            if khasra_id:
+                khasra = Khasra.objects.filter(id=khasra_id).first()
 
-                if not murabba:
+                if not khasra:
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
-                        message="Murabba not found.",
+                        message="Khasra not found.",
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
-                serializer = MurabbaSerializer(murabba)
+                serializer = KhasraSerializer(khasra)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Murabba found.",
+                    message="Khasra found.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
             # Filter by Mouza
             elif mouza:
-                queryset = Murabba.objects.filter(mouza=mouza)
+                queryset = Khasra.objects.filter(mouza=mouza)
 
-                serializer = MurabbaSerializer(queryset, many=True)
+                serializer = KhasraSerializer(queryset, many=True)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Murabbas found for Mouza.",
+                    message="Khasras found for Mouza.",
+                    data=serializer.data,
+                    http_status=status.HTTP_200_OK,
+                ).create_response()
+
+            # Filter by Murabba
+            elif murabba:
+                queryset = Khasra.objects.filter(m=murabba)
+
+                serializer = KhasraSerializer(queryset, many=True)
+
+                return ApiResponse(
+                    status=status.HTTP_200_OK,
+                    message="Khasras found for Murabba.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
             # Filter by Tehsil
             elif tehsil:
-                queryset = Murabba.objects.filter(tehsil=tehsil)
+                queryset = Khasra.objects.filter(tehsil=tehsil)
 
-                serializer = MurabbaSerializer(queryset, many=True)
+                serializer = KhasraSerializer(queryset, many=True)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Murabbas found for Tehsil.",
+                    message="Khasras found for Tehsil.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            # All Murabbas
+            # Return all
             else:
-                queryset = Murabba.objects.all()
+                queryset = Khasra.objects.all()
 
-                serializer = MurabbaSerializer(queryset, many=True)
+                serializer = KhasraSerializer(queryset, many=True)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="All Murabbas found.",
+                    message="All Khasras found.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
