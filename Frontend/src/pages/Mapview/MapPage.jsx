@@ -6,15 +6,23 @@ import MapView from "./MapView";
 export default function MapPage() {
 
   const [selectedMouza, setSelectedMouza] = useState(null);
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
 
   return (
-    <div className="h-screen w-screen relative">
+    <div className="map-page">
 
       <Header />
 
-      <FilterPanel onMouzaSelect={setSelectedMouza} />
-
-      <MapView mouzaId={selectedMouza} />
+      <div className="map-page__content">
+        <FilterPanel
+          onMouzaSelect={setSelectedMouza}
+          isCollapsed={panelCollapsed}
+          onToggle={() => setPanelCollapsed((c) => !c)}
+        />
+        <div className="map-page__body">
+          <MapView mouzaId={selectedMouza} />
+        </div>
+      </div>
 
     </div>
   );

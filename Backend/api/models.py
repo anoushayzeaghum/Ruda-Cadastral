@@ -5,8 +5,9 @@ from django.utils import timezone
 from datetime import datetime
 import uuid
 
+
 # --------------------------------------------------------
-# Distrcit Administrative Boundary
+# District Administrative Boundary
 # --------------------------------------------------------
 
 class District(models.Model):
@@ -29,6 +30,7 @@ class District(models.Model):
         managed = False
         db_table = "district"
 
+
 # --------------------------------------------------------
 # Tehsil Administrative Boundary
 # --------------------------------------------------------
@@ -44,14 +46,15 @@ class Tehsil(models.Model):
     extent = models.CharField(max_length=100, null=True, blank=True)
     shape_star = models.FloatField(null=True, blank=True)
     shape_stle = models.FloatField(null=True, blank=True)
-    geom = gis_models.MultiPolygonField(srid=4326) 
-    
+    geom = gis_models.MultiPolygonField(srid=4326)
+
     def __str__(self):
         return f"{self.name} ({self.district})"
 
     class Meta:
         managed = False
         db_table = "tehsil"
+
 
 # --------------------------------------------------------
 # Mouza Administrative Boundary
@@ -69,13 +72,15 @@ class Mouza(models.Model):
     pc_id = models.IntegerField(null=True, blank=True)
     mouza = models.CharField(max_length=100)
     mouza_id = models.IntegerField()
-    geom = gis_models.MultiPolygonField(srid=4326) 
+    geom = gis_models.MultiPolygonField(srid=4326)
+
     def __str__(self):
         return self.mouza
 
     class Meta:
         managed = False
         db_table = "mouza"
+
 
 # --------------------------------------------------------
 # Murabba Administrative Boundary
@@ -95,15 +100,16 @@ class Murabba(models.Model):
     mouza_id = models.FloatField()
     murabba_no = models.IntegerField(db_column="m")
     sheets = models.CharField(max_length=50)
-    geom = gis_models.MultiPolygonField(srid=4326) 
-  
+    geom = gis_models.MultiPolygonField(srid=4326)
+
     def __str__(self):
         return f"{self.mouza} - Murabba {self.murabba_no}"
 
     class Meta:
         managed = False
         db_table = "murabba"
-        
+
+
 # --------------------------------------------------------
 # Khasra Administrative Boundary
 # --------------------------------------------------------
@@ -135,8 +141,8 @@ class Khasra(models.Model):
     division = models.CharField(max_length=50)
     khewat_id = models.FloatField()
     divn_id = models.FloatField()
-    geom = gis_models.MultiPolygonField(srid=4326) 
-    
+    geom = gis_models.MultiPolygonField(srid=4326)
+
     def __str__(self):
         return self.label
 

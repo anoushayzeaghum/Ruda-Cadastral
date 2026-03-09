@@ -10,14 +10,24 @@ export default function MapView({ mouzaId }) {
   const mapInstance = useRef(null);
 
   useEffect(() => {
+    if (!mapRef.current) return;
 
-    mapInstance.current = new mapboxgl.Map({
+    const map = new mapboxgl.Map({
       container: mapRef.current,
       style: "mapbox://styles/mapbox/satellite-v9",
       center: [74.3587, 31.5204], // Lahore Division
       zoom: 8
     });
+    mapInstance.current = map;
 
+    map.on("load", () => {
+      map.resize();
+    });
+
+    return () => {
+      map.remove();
+      mapInstance.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -44,7 +54,7 @@ export default function MapView({ mouzaId }) {
         type: "fill",
         source: "khasra",
         paint: {
-          "fill-color": "#00ff88",
+          "fill-color": "#6FC04F",
           "fill-opacity": 0.4
         }
       });
@@ -54,7 +64,7 @@ export default function MapView({ mouzaId }) {
         type: "line",
         source: "khasra",
         paint: {
-          "line-color": "#00ff88",
+          "line-color": "#6FC04F",
           "line-width": 2
         }
       });
@@ -64,8 +74,8 @@ export default function MapView({ mouzaId }) {
   }, [mouzaId]);
 
   return (
-    <div className="w-screen h-screen">
-      <div ref={mapRef} className="w-full h-full" />
+    <div className="map-view">
+      <div ref={mapRef} className="map-view__container" />
     </div>
   );
 }

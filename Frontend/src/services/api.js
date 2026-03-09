@@ -7,9 +7,10 @@ const API = axios.create({
 
 export const getDivisions = async () => {
   const res = await API.get("/khasra/");
+  const items = res.data?.data ?? [];
   
   const divisions = [
-    ...new Map(res.data.map((item) => [item.division, item])).values(),
+    ...new Map(items.map((item) => [item.division, item])).values(),
   ];
 
   return divisions.map((d) => ({
@@ -21,8 +22,9 @@ export const getDivisions = async () => {
 
 export const getDistricts = async (division) => {
   const res = await API.get("/khasra/");
+  const items = res.data?.data ?? [];
 
-  const filtered = res.data.filter((d) => d.division === division);
+  const filtered = items.filter((d) => d.division === division);
 
   const districts = [
     ...new Map(filtered.map((item) => [item.district, item])).values(),
@@ -37,8 +39,9 @@ export const getDistricts = async (division) => {
 
 export const getTehsils = async (district) => {
   const res = await API.get("/khasra/");
+  const items = res.data?.data ?? [];
 
-  const filtered = res.data.filter((t) => t.district === district);
+  const filtered = items.filter((t) => t.district === district);
 
   const tehsils = [
     ...new Map(filtered.map((item) => [item.tehsil, item])).values(),
@@ -53,8 +56,9 @@ export const getTehsils = async (district) => {
 
 export const getMouzas = async (tehsil) => {
   const res = await API.get("/khasra/");
+  const items = res.data?.data ?? [];
 
-  const filtered = res.data.filter((m) => m.tehsil === tehsil);
+  const filtered = items.filter((m) => m.tehsil === tehsil);
 
   const mouzas = [
     ...new Map(filtered.map((item) => [item.mouza, item])).values(),
@@ -69,8 +73,9 @@ export const getMouzas = async (tehsil) => {
 
 export const getKhasras = async (mouza) => {
   const res = await API.get("/khasra/");
+  const items = res.data?.data ?? [];
 
-  const filtered = res.data.filter((k) => k.mouza === mouza);
+  const filtered = items.filter((k) => k.mouza === mouza);
 
   return {
     type: "FeatureCollection",
