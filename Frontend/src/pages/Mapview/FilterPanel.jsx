@@ -68,8 +68,8 @@ export default function FilterPanel({ onMouzaSelect, isCollapsed, onToggle }) {
       >
         {isCollapsed ? "›" : "‹"}
       </button>
-      <aside className="layer-panel" aria-label="Filter by location">
-        <h2 className="layer-panel__title">Location</h2>
+      <aside className="layer-panel" aria-label="Filter panel">
+        <h2 className="layer-panel__title">Filter Panel</h2>
 
         <div className="layer-panel__field">
         <label className="layer-panel__label" htmlFor="filter-division">Division</label>

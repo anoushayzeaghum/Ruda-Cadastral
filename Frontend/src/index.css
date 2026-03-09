@@ -82,23 +82,97 @@ button:focus-visible {
 /* Header bar: navy blue */
 .app-header {
   flex-shrink: 0;
-  height: 4rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0 1.5rem;
+  padding: 0;
   background-color: var(--color-white);
   color: var(--color-white);
   box-shadow: 0 2px 8px rgba(30, 58, 95, 0.25);
-  border-radius: 0 0 16px 16px;
+  border-radius: 0;
   border-bottom: 1px solid var(--color-primary);
+}
+.app-header__main {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  padding: 0 1.5rem;
+  min-height: 4rem;
+}
+.app-header__logo {
+  height: 56px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+.app-header__spacer {
+  width: 36px;
+  height: 36px;
 }
 .app-header__title {
   margin: 0;
+  padding: 0.9rem 0;
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--color-primary);
   letter-spacing: -0.02em;
+  text-align: center;
+}
+
+/* RSS feed bar (flat, green, white small text) */
+.app-header__rss {
+  width: 100%;
+  background: #ff7c33;
+  color: var(--color-white);
+  border-radius: 0;
+}
+.app-header__rss-viewport {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0;
+}
+.app-header__rss-track {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0.35rem 1rem;
+  white-space: nowrap;
+  will-change: transform;
+  animation: ruda-rss-ticker 40s linear infinite;
+}
+.app-header__rss-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem; /* small text */
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+.app-header__rss-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 0; /* no border radius */
+  background: rgba(30, 58, 95, 0.15);
+  color: var(--color-white);
+}
+.app-header__rss-text {
+  color: var(--color-white);
+}
+
+@keyframes ruda-rss-ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 /* Dropdowns / selects: theme focus */
