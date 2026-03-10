@@ -256,6 +256,10 @@ select:focus {
   opacity: 0;
   pointer-events: none;
 }
+.layer-panel-wrapper--collapsed .layer-panel__toggle {
+  opacity: 1;
+  pointer-events: auto;
+}
 .layer-panel__hero {
   display: flex;
   align-items: center;
@@ -283,7 +287,10 @@ select:focus {
 
 /* Collapse/expand: left edge of right-side panel */
 .layer-panel__toggle {
-  position: relative;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
   width: 32px;
   height: 32px;
   border: 1px solid rgba(30, 58, 95, 0.14);
@@ -304,7 +311,6 @@ select:focus {
 .layer-panel__toggle:hover {
   color: var(--color-primary-hover);
   background: rgba(255, 255, 255, 1);
-  transform: translateX(calc(-50% + 1px));
 }
 .layer-panel__toggle:focus {
   outline: none;
