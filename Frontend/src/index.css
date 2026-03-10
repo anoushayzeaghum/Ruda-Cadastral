@@ -141,7 +141,23 @@ button:focus-visible {
   flex-shrink: 0;
 }
 
-/* Navbar: no background box, icons and labels in primary color */
+/* Centered title in header (navbar hidden for now) */
+.app-header__main {
+  position: relative;
+}
+.app-header__title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+/* Navbar: no background box, icons and labels in primary color (commented out in Header.jsx for now) */
 .app-header__nav {
   flex: 1;
   display: flex;
@@ -397,10 +413,11 @@ select:focus {
   background: var(--color-white);
   overflow-y: auto;
   padding: 1.25rem 1.5rem;
-  padding-top: 3rem;
+  padding-top: 2.5rem;
   transition: opacity 0.2s ease;
   height: 100%;
 }
+
 
 /* Collapse/expand: top-right of side panel */
 .layer-panel__toggle {
@@ -496,7 +513,7 @@ select:focus {
 /* Map legend (overlay, right side) */
 .map-legend {
   position: absolute;
-  top: 16px;
+  top: 400px;
   right: 16px;
   z-index: 2;
   min-width: 180px;

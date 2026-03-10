@@ -123,6 +123,8 @@ export default function Header() {
           alt="RUDA"
           loading="eager"
         />
+        <h1 className="app-header__title">RUDA Cadastral Management System</h1>
+        {/* Navbar commented out for now — do not show in header
         <nav className="app-header__nav" aria-label="Main navigation">
           <ul className="app-header__nav-bar">
             {navItems.map(({ to, label, icon: Icon }) => (
@@ -141,6 +143,7 @@ export default function Header() {
             ))}
           </ul>
         </nav>
+        */}
       </div>
     </div>
   );
