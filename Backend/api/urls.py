@@ -5,6 +5,15 @@ from api.views import *
 
 router = DefaultRouter()
 
+#--------------------------------- Division View ---------------------------------
+router.register(r"division", ListDivisionView, basename="division")
+
+#--------------------------------- District View ---------------------------------
+router.register(r"district", ListDistrictView, basename="district")
+
+#--------------------------------- Mouza View ---------------------------------
+router.register(r"tehsil", ListTehsilView, basename="tehsil")
+
 #--------------------------------- Mouza View ---------------------------------
 router.register(r"mouza", ListMouzaView, basename="mouza")
 router.register(r"mouza/create", CreateMouzaView, basename="create-mouza")
