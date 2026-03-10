@@ -1,11 +1,22 @@
+/* ========== STEP 1: Global theme (logo colors) ==========
+   Navy blue #1e3a5f and Green #6FC04F from RUDA logo.
+*/
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Logo colors */
+  --color-primary: #1e3a5f;        /* navy blue */
+  --color-primary-hover: #172d4a;
+  --color-accent: #6FC04F;         /* logo green */
+  --color-accent-hover: #5aa83e;
+
+  --color-bg: #f5f6f8;
+  --color-text: #1a1a2e;
+  --color-white: #ffffff;
+
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: var(--color-text);
+  background-color: var(--color-bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,24 +26,36 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--color-primary-hover);
 }
 
+/* Full height so map and header can use the whole screen */
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  box-sizing: border-box;
+}
+#root {
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
 }
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 600;
 }
 
 button {
@@ -42,27 +65,500 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-primary);
+  color: white;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: background-color 0.2s;
 }
 button:hover {
-  border-color: #646cff;
+  background-color: var(--color-primary-hover);
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* App layout: header + main content */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+.app-layout__main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.placeholder-page {
+  flex: 1;
+  padding: 2rem;
+  background: var(--color-bg);
+}
+.placeholder-page h1 {
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+.placeholder-page p {
+  color: var(--color-text);
+  opacity: 0.8;
+}
+
+/* Header bar: navy blue */
+.app-header {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background-color: var(--color-white);
+  color: var(--color-white);
+  box-shadow: 0 2px 8px rgba(30, 58, 95, 0.25);
+  border-radius: 0;
+  border-bottom: 1px solid var(--color-primary);
+}
+.app-header__main {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 0 1.5rem;
+  min-height: 4rem;
+}
+.app-header__logo {
+  height: 48px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* Centered title in header (navbar hidden for now) */
+.app-header__main {
+  position: relative;
+}
+.app-header__title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+/* Navbar: no background box, icons and labels in primary color (commented out in Header.jsx for now) */
+.app-header__nav {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.app-header__nav-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  list-style: none;
+ 
+  border: none;
+  box-shadow: none;
+}
+.app-header__nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-primary);
+  text-decoration: none;
+  border-radius: 999px;
+  transition: background-color 0.25s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.app-header__nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  opacity: 1;
+  color: inherit;
+}
+.app-header__nav-label {
+  max-width: 8rem;
+  overflow: hidden;
+  opacity: 1;
+  white-space: nowrap;
+  transition: max-width 0.3s ease, opacity 0.25s ease, margin 0.2s ease;
+  color: inherit;
+  margin-left: 0;
+}
+.app-header__nav-link:hover {
+  background-color: rgba(30, 58, 95, 0.08);
+  color: var(--color-primary-hover);
+}
+.app-header__nav-link--active {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border-radius: 999px;
+}
+.app-header__nav-link--active .app-header__nav-icon,
+.app-header__nav-link--active .app-header__nav-label {
+  opacity: 1;
+  color: inherit;
+}
+.app-header__nav-link--active .app-header__nav-label {
+  margin-left: 0.1rem;
+}
+.app-header__nav-link--active:hover {
+  background-color: var(--color-primary-hover);
+  color: var(--color-white);
+}
+
+/* RSS / news ticker bar — polished out-of-the-box UI */
+.app-header__rss {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #172d4a 50%, #0f2137 100%);
+  color: var(--color-white);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.app-header__rss-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0 1rem 0 1.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  height: 36px;
+}
+.app-header__rss-label-icon {
+  display: inline-flex;
+  opacity: 0.9;
+}
+.app-header__rss-label-icon svg {
+  display: block;
+}
+.app-header__rss-viewport {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+}
+.app-header__rss-track {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 0 1rem;
+  height: 36px;
+  white-space: nowrap;
+  will-change: transform;
+  animation: ruda-rss-ticker 50s linear infinite;
+}
+.app-header__rss:hover .app-header__rss-track {
+  animation-play-state: paused;
+}
+.app-header__rss-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.95);
+}
+.app-header__rss-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  flex-shrink: 0;
+  color: var(--color-white);
+}
+.app-header__rss-badge--infra {
+  background: rgba(59, 130, 246, 0.9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.app-header__rss-badge--update {
+  background: rgba(34, 197, 94, 0.9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.app-header__rss-badge--legal {
+  background: rgba(234, 179, 8, 0.95);
+  color: #1a1a2e;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.app-header__rss-badge--social {
+  background: rgba(168, 85, 247, 0.9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.app-header__rss-text {
+  color: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-header__rss-track {
+    animation: none;
   }
-  a:hover {
-    color: #747bff;
+}
+
+@keyframes ruda-rss-ticker {
+  from {
+    transform: translateX(0);
   }
-  button {
-    background-color: #f9f9f9;
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Dropdowns / selects: theme focus */
+select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.25);
+}
+
+/* Map page: one full screen, map fills space below header (same height as sidebar) */
+.map-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+.map-page__content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  align-items: stretch;
+}
+.map-page__body {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  align-self: stretch;
+}
+
+/* Layer / filter side panel */
+.layer-panel-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 280px;
+  transition: width 0.25s ease;
+  background: var(--color-white);
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.06);
+  border-radius: 0 12px 12px 0;
+  border: 1px solid var(--color-primary);
+  overflow: hidden;
+}
+.layer-panel-wrapper--collapsed {
+  width: 48px;
+}
+.layer-panel-wrapper--collapsed .layer-panel {
+  min-width: 0;
+  width: 0;
+  overflow: hidden;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.layer-panel {
+  min-width: 0;
+  background: var(--color-white);
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+  padding-top: 2.5rem;
+  transition: opacity 0.2s ease;
+  height: 100%;
+}
+
+
+/* Collapse/expand: top-right of side panel */
+.layer-panel__toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: 1.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.2s, background-color 0.2s;
+  z-index: 1;
+}
+.layer-panel__toggle:hover {
+  color: var(--color-accent-hover);
+  background: rgba(111, 192, 79, 0.1);
+}
+.layer-panel__toggle:focus {
+  outline: none;
+}
+.layer-panel__toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.layer-panel__system-title {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.7;
+}
+.layer-panel__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0 0 1.25rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-accent);
+}
+.layer-panel__field {
+  margin-bottom: 1.25rem;
+}
+.layer-panel__label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.4rem;
+}
+.layer-panel select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: #f8fafc;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.layer-panel select:hover {
+  border-color: var(--color-primary);
+  background: var(--color-white);
+}
+.layer-panel select:focus {
+  border-color: var(--color-primary);
+  background: var(--color-white);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.2);
+}
+
+.map-view {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.map-view__container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Map legend (overlay, right side) */
+.map-legend {
+  position: absolute;
+  top: 400px;
+  right: 16px;
+  z-index: 2;
+  min-width: 180px;
+  max-width: 260px;
+  padding: 0.75rem 0.85rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(30, 58, 95, 0.25);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  color: var(--color-text);
+}
+
+.map-legend__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--color-accent);
+}
+
+.map-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.map-legend__swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  flex: 0 0 18px;
+}
+
+.map-legend__swatch--khasra {
+  background: rgba(111, 192, 79, 0.4);
+  border: 2px solid #6fc04f;
+}
+
+@media (max-width: 720px) {
+  .map-legend {
+    right: 10px;
+    top: 10px;
+    min-width: 160px;
   }
 }
