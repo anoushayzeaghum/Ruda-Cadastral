@@ -3,6 +3,28 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from .models import *
 
 # --------------------------------------------------------
+# Division Serializer
+# --------------------------------------------------------
+
+from rest_framework_gis.serializers import GeoFeatureModelSerializer
+from .models import Division
+
+
+class DivisionSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Division
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "division",
+            "division_i",
+            "geom",
+        )
+        
+# --------------------------------------------------------
 # District Serializer
 # --------------------------------------------------------
 

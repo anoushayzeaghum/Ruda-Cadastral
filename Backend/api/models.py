@@ -6,6 +6,28 @@ from datetime import datetime
 import uuid
 
 # --------------------------------------------------------
+# Division Administrative Boundary
+# --------------------------------------------------------
+
+from django.db import models
+from django.contrib.gis.db import models as gis_models
+
+
+class Division(models.Model):
+
+    gid = models.AutoField(primary_key=True)
+    division = models.CharField(max_length=50)
+    division_i = models.FloatField()
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return self.division
+
+    class Meta:
+        managed = False
+        db_table = "division"
+
+# --------------------------------------------------------
 # Distrcit Administrative Boundary
 # --------------------------------------------------------
 

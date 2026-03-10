@@ -1,0 +1,1 @@
+from .ListTehsil import*
