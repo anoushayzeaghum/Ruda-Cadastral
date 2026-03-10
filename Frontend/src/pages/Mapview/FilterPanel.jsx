@@ -24,93 +24,139 @@ export default function FilterPanel({ onMouzaSelect, isCollapsed, onToggle }) {
 
   const handleDivision = (e) => {
     const id = e.target.value;
+
     setSelectedDivision(id);
+    setSelectedDistrict("");
+    setSelectedTehsil("");
+    setSelectedMouza("");
+
     setDistricts([]);
     setTehsils([]);
     setMouzas([]);
-    getDistricts(id).then(setDistricts);
+
+    if (id) getDistricts(id).then(setDistricts);
   };
 
   const handleDistrict = (e) => {
     const id = e.target.value;
+
     setSelectedDistrict(id);
+    setSelectedTehsil("");
+    setSelectedMouza("");
+
     setTehsils([]);
     setMouzas([]);
-    getTehsils(id).then(setTehsils);
+
+    if (id) getTehsils(id).then(setTehsils);
   };
 
   const handleTehsil = (e) => {
     const id = e.target.value;
+
     setSelectedTehsil(id);
+    setSelectedMouza("");
+
     setMouzas([]);
-    getMouzas(id).then(setMouzas);
+
+    if (id) getMouzas(id).then(setMouzas);
   };
 
   const handleMouza = (e) => {
     const id = e.target.value;
+
     setSelectedMouza(id);
 
-    // trigger map update
+    // update map
     onMouzaSelect(id);
   };
 
   return (
     <div
       className={`layer-panel-wrapper ${isCollapsed ? "layer-panel-wrapper--collapsed" : ""}`}
-      aria-label="Location panel"
     >
       <button
         type="button"
         className="layer-panel__toggle"
         onClick={onToggle}
-        aria-label={isCollapsed ? "Expand panel" : "Collapse panel"}
-        title={isCollapsed ? "Expand panel" : "Collapse panel"}
       >
         {isCollapsed ? "›" : "‹"}
       </button>
-      <aside className="layer-panel" aria-label="Filter panel">
-        <p className="layer-panel__system-title">RUDA Cadastral Management System</p>
+
+      <aside className="layer-panel">
+
+        <p className="layer-panel__system-title">
+          RUDA Cadastral Management System
+        </p>
+
         <h2 className="layer-panel__title">Filter Panel</h2>
 
+        {/* Division */}
+
         <div className="layer-panel__field">
-        <label className="layer-panel__label" htmlFor="filter-division">Division</label>
-        <select id="filter-division" onChange={handleDivision} value={selectedDivision}>
-          <option value="">-- Division --</option>
-          {divisions.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </select>
-      </div>
+          <label>Division</label>
 
-      <div className="layer-panel__field">
-        <label className="layer-panel__label" htmlFor="filter-district">District</label>
-        <select id="filter-district" onChange={handleDistrict} value={selectedDistrict}>
-          <option value="">-- District --</option>
-          {districts.map((d) => (
-            <option key={d.id} value={d.id}>{d.name}</option>
-          ))}
-        </select>
-      </div>
+          <select value={selectedDivision} onChange={handleDivision}>
+            <option value="">-- Division --</option>
 
-      <div className="layer-panel__field">
-        <label className="layer-panel__label" htmlFor="filter-tehsil">Tehsil</label>
-        <select id="filter-tehsil" onChange={handleTehsil} value={selectedTehsil}>
-          <option value="">-- Tehsil --</option>
-          {tehsils.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
-        </select>
-      </div>
+            {divisions.map((d) => (
+              <option key={d.gid} value={d.division_i}>
+                {d.division}
+              </option>
+            ))}
 
-      <div className="layer-panel__field">
-        <label className="layer-panel__label" htmlFor="filter-mauza">Mauza</label>
-        <select id="filter-mauza" onChange={handleMouza} value={selectedMouza}>
-          <option value="">-- Mauza --</option>
-          {mouzas.map((m) => (
-            <option key={m.id} value={m.id}>{m.name}</option>
-          ))}
-        </select>
-      </div>
+          </select>
+        </div>
+
+        {/* District */}
+
+        <div className="layer-panel__field">
+          <label>District</label>
+
+          <select value={selectedDistrict} onChange={handleDistrict}>
+            <option value="">-- District --</option>
+
+            {districts.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+
+          </select>
+        </div>
+
+        {/* Tehsil */}
+
+        <div className="layer-panel__field">
+          <label>Tehsil</label>
+
+          <select value={selectedTehsil} onChange={handleTehsil}>
+            <option value="">-- Tehsil --</option>
+
+            {tehsils.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+
+          </select>
+        </div>
+
+        {/* Mouza */}
+
+        <div className="layer-panel__field">
+          <label>Mouza</label>
+
+          <select value={selectedMouza} onChange={handleMouza}>
+            <option value="">-- Mouza --</option>
+
+            {mouzas.map((m) => (
+              <option key={m.mouza_id} value={m.mouza_id}>
+                {m.mouza}
+              </option>
+            ))}
+
+          </select>
+        </div>
 
       </aside>
     </div>

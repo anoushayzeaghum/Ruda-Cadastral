@@ -1,90 +1,40 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api"
+  baseURL: "http://127.0.0.1:8000/api",
 });
 
+// ---------------- DIVISIONS ----------------
 
 export const getDivisions = async () => {
-  const res = await API.get("/khasra/");
-  const items = res.data?.data ?? [];
-  
-  const divisions = [
-    ...new Map(items.map((item) => [item.division, item])).values(),
-  ];
-
-  return divisions.map((d) => ({
-    id: d.division,
-    name: d.division,
-  }));
+  const res = await API.get("/division/");
+  return res.data?.data ?? [];
 };
 
+// ---------------- DISTRICTS ----------------
 
-export const getDistricts = async (division) => {
-  const res = await API.get("/khasra/");
-  const items = res.data?.data ?? [];
-
-  const filtered = items.filter((d) => d.division === division);
-
-  const districts = [
-    ...new Map(filtered.map((item) => [item.district, item])).values(),
-  ];
-
-  return districts.map((d) => ({
-    id: d.district,
-    name: d.district,
-  }));
+export const getDistricts = async (division_i) => {
+  const res = await API.get(`/district/?division_i=${division_i}`);
+  return res.data?.data ?? [];
 };
 
+// ---------------- TEHSILS ----------------
 
-export const getTehsils = async (district) => {
-  const res = await API.get("/khasra/");
-  const items = res.data?.data ?? [];
-
-  const filtered = items.filter((t) => t.district === district);
-
-  const tehsils = [
-    ...new Map(filtered.map((item) => [item.tehsil, item])).values(),
-  ];
-
-  return tehsils.map((t) => ({
-    id: t.tehsil,
-    name: t.tehsil,
-  }));
+export const getTehsils = async (district_i) => {
+  const res = await API.get(`/tehsil/?district_i=${district_i}`);
+  return res.data?.data ?? [];
 };
 
+// ---------------- MOUZAS ----------------
 
-export const getMouzas = async (tehsil) => {
-  const res = await API.get("/khasra/");
-  const items = res.data?.data ?? [];
-
-  const filtered = items.filter((m) => m.tehsil === tehsil);
-
-  const mouzas = [
-    ...new Map(filtered.map((item) => [item.mouza, item])).values(),
-  ];
-
-  return mouzas.map((m) => ({
-    id: m.mouza,
-    name: m.mouza,
-  }));
+export const getMouzas = async (tehsil_id) => {
+  const res = await API.get(`/mouza/?tehsil_id=${tehsil_id}`);
+  return res.data?.data ?? [];
 };
 
+// ---------------- KHASRAS ----------------
 
-export const getKhasras = async (mouza) => {
-  const res = await API.get("/khasra/");
-  const items = res.data?.data ?? [];
-
-  const filtered = items.filter((k) => k.mouza === mouza);
-
-  return {
-    type: "FeatureCollection",
-    features: filtered.map((k) => ({
-      type: "Feature",
-      geometry: k.geom,
-      properties: {
-        label: k.label,
-      },
-    })),
-  };
+export const getKhasras = async (mouza_id) => {
+  const res = await API.get(`/khasra/?mouza_id=${mouza_id}`);
+  return res.data?.data;
 };

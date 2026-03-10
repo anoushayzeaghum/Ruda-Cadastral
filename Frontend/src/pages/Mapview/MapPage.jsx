@@ -9,15 +9,15 @@ export default function MapPage() {
 
   return (
     <div className="map-page">
-      <div className="map-page__content">
-        <FilterPanel
-          onMouzaSelect={setSelectedMouza}
-          isCollapsed={panelCollapsed}
-          onToggle={() => setPanelCollapsed((c) => !c)}
-        />
-        <div className="map-page__body">
-          <MapView mouzaId={selectedMouza} />
-        </div>
+
+      <FilterPanel
+        onMouzaSelect={setSelectedMouza}
+        isCollapsed={panelCollapsed}
+        onToggle={() => setPanelCollapsed(!panelCollapsed)}
+      />
+
+      <div className="map-page__body">
+        <MapView mouzaId={selectedMouza} />
       </div>
 
     </div>
