@@ -69,6 +69,7 @@ export default function FilterPanel({ onMouzaSelect, isCollapsed, onToggle }) {
         {isCollapsed ? "›" : "‹"}
       </button>
       <aside className="layer-panel" aria-label="Filter panel">
+        <p className="layer-panel__system-title">RUDA Cadastral Management System</p>
         <h2 className="layer-panel__title">Filter Panel</h2>
 
         <div className="layer-panel__field">

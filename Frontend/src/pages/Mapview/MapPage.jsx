@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Header from "./Header";
 import FilterPanel from "./FilterPanel";
 import MapView from "./MapView";
 
@@ -10,9 +9,6 @@ export default function MapPage() {
 
   return (
     <div className="map-page">
-
-      <Header />
-
       <div className="map-page__content">
         <FilterPanel
           onMouzaSelect={setSelectedMouza}
