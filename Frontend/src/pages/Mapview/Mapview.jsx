@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { getKhasras } from "../../Services/api";
+import { getKhasras } from "../../services/api";
 import Legend from "./Legend";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -106,7 +106,7 @@ export default function MapView({ selectedMouza }) {
       zoom: DEFAULT_ZOOM,
     });
 
-    map.addControl(new mapboxgl.NavigationControl(), "top-right");
+    map.addControl(new mapboxgl.NavigationControl(), "top-left");
     map.on("load", handleMapLoad);
 
     mapInstance.current = map;
@@ -193,7 +193,7 @@ export default function MapView({ selectedMouza }) {
         <p className="map-view__status-text">
           {selectedMouza
             ? `Showing khasra boundaries for ${selectedMouza.name}${selectedMouza.tehsil ? `, ${selectedMouza.tehsil}` : ""}${selectedMouza.district ? `, ${selectedMouza.district}` : ""}.`
-            : "Use the administrative filters on the left to load district, tehsil, mouza, and khasra data from the API."}
+            : "Use the administrative filters in the header to load district, tehsil, mouza, and khasra data from the API."}
         </p>
 
         <div className="map-view__badge-row">

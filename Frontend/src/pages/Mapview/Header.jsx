@@ -1,83 +1,119 @@
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 
-export default function Header() {
-  const rssItems = [
-    {
-      type: "INFRA",
-      text: "RUDA CEO confirms 7km flood embankments constructed, protecting Sapphire Bay villages — Jan 2026",
-    },
-    {
-      type: "UPDATE",
-      text: "RUDA board approves Rs88 billion 2025 plan for net-zero Ravi City with Ring Road bridge — Jan 2025",
-    },
-    {
-      type: "UPDATE",
-      text: "Mehmood Booti dumpsite rehabilitation 83% complete; to be converted into solar park & urban forest — 2026",
-    },
-    {
-      type: "LEGAL",
-      text: "Lahore High Court suspends Punjab Protection of Ownership of Immovable Property Act — Dec 2025",
-    },
-    {
-      type: "SOCIAL",
-      text: "RUDA establishes Vocational Training Centre to empower Maskan-e-Ravi residents — 2026",
-    },
-  ];
-
-  const tickerItems = [...rssItems, ...rssItems];
-
+export default function Header({ filters }) {
   return (
     <div className="app-header">
-      <div className="app-header__rss" aria-label="RUDA project updates">
-        <div className="app-header__rss-label">
-          <span className="app-header__rss-label-icon" aria-hidden="true">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M4 22h16" />
-              <path d="M5 2v4" />
-              <path d="M19 2v4" />
-              <path d="M5 10h14" />
-              <path d="M5 14h14" />
-              <path d="M5 18h14" />
-            </svg>
-          </span>
-          <span>Updates</span>
-        </div>
-        <div className="app-header__rss-viewport">
-          <div className="app-header__rss-track">
-            {tickerItems.map((item, idx) => (
-              <span
-                className="app-header__rss-item"
-                key={`${item.type}-${idx}`}
-              >
-                <span
-                  className={`app-header__rss-badge app-header__rss-badge--${item.type.toLowerCase()}`}
-                  aria-hidden="true"
-                >
-                  {item.type}
-                </span>
-                <span className="app-header__rss-text">{item.text}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
       <div className="app-header__main">
-        <img
-          className="app-header__logo"
-          src={rudaFirmLogo}
-          alt="RUDA"
-          loading="eager"
-        />
-        <h1 className="app-header__title">RUDA Cadastral Management System</h1>
+        <div className="app-header__brand">
+          <img
+            className="app-header__logo"
+            src={rudaFirmLogo}
+            alt="RUDA"
+            loading="eager"
+          />
+          <h1 className="app-header__title">RCMS</h1>
+        </div>
+
+        {filters ? (
+          <div
+            className="app-header__filters"
+            aria-label="Administrative filters"
+          >
+            <div className="app-header__filter-field">
+              <label
+                className="app-header__filter-label"
+                htmlFor="header-division"
+              >
+                Division
+              </label>
+              <select
+                id="header-division"
+                className="app-header__filter-select"
+                value={filters.selectedDivision}
+                onChange={filters.handleDivisionChange}
+                disabled={filters.loading.divisions}
+              >
+                <option value="">-- Division --</option>
+                {filters.divisions.map((division) => (
+                  <option key={division.division_i} value={division.division_i}>
+                    {division.division}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="app-header__filter-field">
+              <label
+                className="app-header__filter-label"
+                htmlFor="header-district"
+              >
+                District
+              </label>
+              <select
+                id="header-district"
+                className="app-header__filter-select"
+                value={filters.selectedDistrict}
+                onChange={filters.handleDistrictChange}
+                disabled={
+                  !filters.selectedDivision || filters.loading.districts
+                }
+              >
+                <option value="">-- District --</option>
+                {filters.districts.map((district) => (
+                  <option key={district.id} value={district.id}>
+                    {district.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="app-header__filter-field">
+              <label
+                className="app-header__filter-label"
+                htmlFor="header-tehsil"
+              >
+                Tehsil
+              </label>
+              <select
+                id="header-tehsil"
+                className="app-header__filter-select"
+                value={filters.selectedTehsil}
+                onChange={filters.handleTehsilChange}
+                disabled={!filters.selectedDistrict || filters.loading.tehsils}
+              >
+                <option value="">-- Tehsil --</option>
+                {filters.tehsils.map((tehsil) => (
+                  <option key={tehsil.id} value={tehsil.id}>
+                    {tehsil.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="app-header__filter-field">
+              <label
+                className="app-header__filter-label"
+                htmlFor="header-mouza"
+              >
+                Mouza
+              </label>
+              <select
+                id="header-mouza"
+                className="app-header__filter-select"
+                value={filters.selectedMouza}
+                onChange={filters.handleMouzaChange}
+                disabled={!filters.selectedTehsil || filters.loading.mouzas}
+              >
+                <option value="">-- Mouza --</option>
+                {filters.mouzas.map((mouza) => (
+                  <option key={mouza.mouza_id} value={mouza.mouza_id}>
+                    {mouza.mouza}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
