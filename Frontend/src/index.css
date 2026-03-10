@@ -210,49 +210,115 @@ button:focus-visible {
   color: var(--color-white);
 }
 
-/* RSS feed bar (flat, green, white small text) */
+/* RSS / news ticker bar — polished out-of-the-box UI */
 .app-header__rss {
+  display: flex;
+  align-items: center;
   width: 100%;
-  background: #ff7c33;
+  min-height: 36px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #172d4a 50%, #0f2137 100%);
   color: var(--color-white);
-  border-radius: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.app-header__rss-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0 1rem 0 1.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  height: 36px;
+}
+.app-header__rss-label-icon {
+  display: inline-flex;
+  opacity: 0.9;
+}
+.app-header__rss-label-icon svg {
+  display: block;
 }
 .app-header__rss-viewport {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
-  border-radius: 0;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
 }
 .app-header__rss-track {
   display: flex;
   align-items: center;
-  gap: 2rem;
-  padding: 0.35rem 1rem;
+  gap: 2.5rem;
+  padding: 0 1rem;
+  height: 36px;
   white-space: nowrap;
   will-change: transform;
-  animation: ruda-rss-ticker 40s linear infinite;
+  animation: ruda-rss-ticker 50s linear infinite;
+}
+.app-header__rss:hover .app-header__rss-track {
+  animation-play-state: paused;
 }
 .app-header__rss-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem; /* small text */
-  line-height: 1.2;
+  gap: 0.6rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
   letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.95);
 }
 .app-header__rss-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.15rem 0.45rem;
-  font-size: 0.7rem;
-  font-weight: 800;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  border-radius: 0; /* no border radius */
-  background: rgba(30, 58, 95, 0.15);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  flex-shrink: 0;
   color: var(--color-white);
 }
+.app-header__rss-badge--infra {
+  background: rgba(59, 130, 246, 0.9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.app-header__rss-badge--update {
+  background: rgba(34, 197, 94, 0.9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.app-header__rss-badge--legal {
+  background: rgba(234, 179, 8, 0.95);
+  color: #1a1a2e;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.app-header__rss-badge--social {
+  background: rgba(168, 85, 247, 0.9);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
 .app-header__rss-text {
-  color: var(--color-white);
+  color: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-header__rss-track {
+    animation: none;
+  }
 }
 
 @keyframes ruda-rss-ticker {

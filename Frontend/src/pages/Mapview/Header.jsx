@@ -87,11 +87,27 @@ export default function Header() {
   return (
     <div className="app-header">
       <div className="app-header__rss" aria-label="RUDA project updates">
+        <div className="app-header__rss-label">
+          <span className="app-header__rss-label-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 22h16" />
+              <path d="M5 2v4" />
+              <path d="M19 2v4" />
+              <path d="M5 10h14" />
+              <path d="M5 14h14" />
+              <path d="M5 18h14" />
+            </svg>
+          </span>
+          <span>Updates</span>
+        </div>
         <div className="app-header__rss-viewport">
           <div className="app-header__rss-track">
             {tickerItems.map((item, idx) => (
               <span className="app-header__rss-item" key={`${item.type}-${idx}`}>
-                <span className="app-header__rss-badge" aria-hidden="true">
+                <span
+                  className={`app-header__rss-badge app-header__rss-badge--${item.type.toLowerCase()}`}
+                  aria-hidden="true"
+                >
                   {item.type}
                 </span>
                 <span className="app-header__rss-text">{item.text}</span>
