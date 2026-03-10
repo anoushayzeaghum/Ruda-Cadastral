@@ -19,25 +19,20 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
     <div
       className={`layer-panel-wrapper ${isCollapsed ? "layer-panel-wrapper--collapsed" : ""}`}
     >
-      <button
-        type="button"
-        className="layer-panel__toggle"
-        onClick={onToggle}
-        aria-label={
-          isCollapsed ? "Expand filter panel" : "Collapse filter panel"
-        }
-      >
-        {isCollapsed ? "‹" : "›"}
-      </button>
-
       <aside className="layer-panel">
         <div className="layer-panel__hero">
           <p className="layer-panel__eyebrow">Filter Panel</p>
-          <h2 className="layer-panel__title">Selection Overview</h2>
-          <p className="layer-panel__description">
-            Use the header dropdowns to choose the administrative boundary, then
-            review the current selection here without leaving the map.
-          </p>
+
+          <button
+            type="button"
+            className="layer-panel__toggle"
+            onClick={onToggle}
+            aria-label={
+              isCollapsed ? "Expand filter panel" : "Collapse filter panel"
+            }
+          >
+            {isCollapsed ? "‹" : "›"}
+          </button>
         </div>
 
         <div className="layer-panel__stats" aria-label="Loaded filter counts">
@@ -70,11 +65,6 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
             {errorMessage}
           </p>
         ) : null}
-
-        <p className="layer-panel__hint">
-          The administrative dropdowns now live in the header so they stay
-          visible while the map remains fully open.
-        </p>
 
         <div className="layer-panel__actions">
           <button
