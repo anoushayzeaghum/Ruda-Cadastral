@@ -8,13 +8,25 @@ class ListMouzaView(viewsets.ViewSet):
     def list(self, request, *args, **kwargs):
 
         try:
-            mouza_id = request.query_params.get("id")
-            district = request.query_params.get("district")
-            tehsil = request.query_params.get("tehsil")
+            mouza_id = request.query_params.get("id") or request.query_params.get("mouza_id")
+
+            # Support both district name or id (dist_id / district_id)
+            district = (
+                request.query_params.get("district")
+                or request.query_params.get("district_id")
+                or request.query_params.get("dist_id")
+            )
+
+            # Support both tehsil name or id (tehsil_id)
+            tehsil = (
+                request.query_params.get("tehsil")
+                or request.query_params.get("tehsil_id")
+            )
 
             # Single Mouza
             if mouza_id:
-                mouza = Mouza.objects.filter(id=mouza_id).first()
+                # Mouza model uses `mouza_id` as identifier in DB
+                mouza = Mouza.objects.filter(mouza_id=mouza_id).first()
 
                 if not mouza:
                     return ApiResponse(
@@ -34,7 +46,13 @@ class ListMouzaView(viewsets.ViewSet):
 
             # Filter by district
             elif district:
-                queryset = Mouza.objects.filter(district=district)
+                # district can be name or numeric id
+                try:
+                    # numeric id
+                    district_int = int(district)
+                    queryset = Mouza.objects.filter(dist_id=district_int)
+                except Exception:
+                    queryset = Mouza.objects.filter(district=district)
 
                 serializer = MouzaSerializer(queryset, many=True)
 
@@ -47,7 +65,12 @@ class ListMouzaView(viewsets.ViewSet):
 
             # Filter by tehsil
             elif tehsil:
-                queryset = Mouza.objects.filter(tehsil=tehsil)
+                # tehsil can be name or numeric id
+                try:
+                    tehsil_int = int(tehsil)
+                    queryset = Mouza.objects.filter(tehsil_id=tehsil_int)
+                except Exception:
+                    queryset = Mouza.objects.filter(tehsil=tehsil)
 
                 serializer = MouzaSerializer(queryset, many=True)
 

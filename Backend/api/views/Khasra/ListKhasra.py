@@ -9,9 +9,14 @@ class ListKhasraView(viewsets.ViewSet):
 
         try:
             khasra_id = request.query_params.get("id")
-            mouza = request.query_params.get("mouza")
+
+            # Support both mouza name or id (mouza_id)
+            mouza = request.query_params.get("mouza") or request.query_params.get("mouza_id")
+
             murabba = request.query_params.get("m")
-            tehsil = request.query_params.get("tehsil")
+
+            # Support both tehsil name or id (tehsil_id)
+            tehsil = request.query_params.get("tehsil") or request.query_params.get("tehsil_id")
 
             # Single khasra
             if khasra_id:
@@ -35,7 +40,12 @@ class ListKhasraView(viewsets.ViewSet):
 
             # Filter by Mouza
             elif mouza:
-                queryset = Khasra.objects.filter(mouza=mouza)
+                # mouza can be name or numeric id
+                try:
+                    mouza_int = int(mouza)
+                    queryset = Khasra.objects.filter(mouza_id=mouza_int)
+                except Exception:
+                    queryset = Khasra.objects.filter(mouza=mouza)
 
                 serializer = KhasraSerializer(queryset, many=True)
 
