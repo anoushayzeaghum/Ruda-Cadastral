@@ -12,14 +12,14 @@ export default function MapPanel() {
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: [74.3587, 31.5204], // Lahore
-      zoom: 8,
+      style: "mapbox://styles/mapbox/streets-v12", // streets basemap
+      center: [74.3587, 31.5204], // Lahore coordinates
+      zoom: 12, // closer zoom on Lahore
     });
   }, []);
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 hover:shadow-xl transition-shadow duration-300">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
       <div ref={mapContainer} className="h-[500px] w-full rounded-lg" />
     </div>
   );
