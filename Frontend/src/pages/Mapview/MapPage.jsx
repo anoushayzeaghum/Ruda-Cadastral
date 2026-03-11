@@ -4,25 +4,26 @@ import FilterPanel from "./FilterPanel";
 import MapView from "./MapView";
 
 export default function MapPage() {
-  const { filters } = useOutletContext() ?? {};
+  const outletContext = useOutletContext() ?? {};
+  const filters = outletContext.filters;
   const [panelCollapsed, setPanelCollapsed] = useState(false);
 
   return (
     <div className="flex flex-col w-full h-full relative bg-gradient-to-b from-blue-50 to-white">
-
       <MapView
-        selectedMouza={filters?.selectedMouzaDetails}
-        selectedDistrict={filters?.selectedDistrictOption}
-        selectedTehsil={filters?.selectedTehsilOption}
-        selectedDivision={filters?.selectedDivisionOption}
+        selectedMouza={filters?.selectedMouzaDetails || null}
+        selectedDistrict={filters?.selectedDistrictOption || null}
+        selectedTehsil={filters?.selectedTehsilOption || null}
+        selectedDivision={filters?.selectedDivisionOption || null}
       />
 
-      <FilterPanel
-        filters={filters}
-        isCollapsed={panelCollapsed}
-        onToggle={() => setPanelCollapsed(!panelCollapsed)}
-      />
-
+      {filters && (
+        <FilterPanel
+          filters={filters}
+          isCollapsed={panelCollapsed}
+          onToggle={() => setPanelCollapsed(!panelCollapsed)}
+        />
+      )}
     </div>
   );
 }

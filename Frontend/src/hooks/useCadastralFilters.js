@@ -4,7 +4,7 @@ import {
   getDistricts,
   getTehsils,
   getMouzas,
-} from "../Services/api";
+} from "../services/api";
 
 const sortByLabel = (items, key) =>
   [...items].sort((a, b) => {
@@ -80,7 +80,9 @@ export default function useCadastralFilters() {
       } catch {
         if (!ignore) {
           setDistricts([]);
-          setErrorMessage("Unable to load districts for the selected division.");
+          setErrorMessage(
+            "Unable to load districts for the selected division.",
+          );
         }
       } finally {
         if (!ignore) {

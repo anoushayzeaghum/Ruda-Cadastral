@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api",
+  baseURL: "http://localhost:8000/api",
 });
 
 const extractPayload = (res) => res?.data?.data ?? res?.data ?? [];
@@ -13,7 +13,6 @@ const extractCollection = (payload) => {
   return [];
 };
 
-// Normalize GeoJSON/ApiResponse → plain objects while preserving ids.
 const normalizeData = (res) => {
   const rawItems = extractCollection(extractPayload(res));
 
@@ -31,13 +30,20 @@ const normalizeData = (res) => {
 const normalizeGeoJson = (res) => {
   const payload = extractPayload(res);
 
-  if (
-    payload?.type === "FeatureCollection" &&
-    Array.isArray(payload.features)
-  ) {
+  // Handle FeatureCollection
+  if (payload?.type === "FeatureCollection") {
     return payload;
   }
 
+  // Handle single Feature
+  if (payload?.type === "Feature") {
+    return {
+      type: "FeatureCollection",
+      features: [payload],
+    };
+  }
+
+  // Handle array of features
   if (Array.isArray(payload)) {
     return {
       type: "FeatureCollection",
@@ -45,20 +51,21 @@ const normalizeGeoJson = (res) => {
     };
   }
 
+  // Fallback: empty collection
   return {
     type: "FeatureCollection",
     features: [],
   };
 };
 
-// ---------------- DIVISIONS ----------------
+///////////////////////////////////////////////////////
+//////////////// ADMIN FILTER APIs ////////////////////
+///////////////////////////////////////////////////////
 
 export const getDivisions = async () => {
   const res = await API.get("/division/");
   return normalizeData(res);
 };
-
-// ---------------- DISTRICTS ----------------
 
 export const getDistricts = async (division_i) => {
   const res = await API.get("/district/", {
@@ -67,16 +74,12 @@ export const getDistricts = async (division_i) => {
   return normalizeData(res);
 };
 
-// ---------------- TEHSILS ----------------
-
 export const getTehsils = async (district_i) => {
   const res = await API.get("/tehsil/", {
     params: { district_i },
   });
   return normalizeData(res);
 };
-
-// ---------------- MOUZAS ----------------
 
 export const getMouzas = async (tehsil_id) => {
   const res = await API.get("/mouza/", {
@@ -85,7 +88,33 @@ export const getMouzas = async (tehsil_id) => {
   return normalizeData(res);
 };
 
-// ---------------- KHASRAS ----------------
+///////////////////////////////////////////////////////
+//////////////// BOUNDARY APIs ////////////////////////
+///////////////////////////////////////////////////////
+
+export const getDivisionBoundary = async (id) => {
+  const res = await API.get(`/division/${id}/geojson`);
+  return normalizeGeoJson(res);
+};
+
+export const getDistrictBoundary = async (id) => {
+  const res = await API.get(`/district/${id}/geojson`);
+  return normalizeGeoJson(res);
+};
+
+export const getTehsilBoundary = async (id) => {
+  const res = await API.get(`/tehsil/${id}/geojson`);
+  return normalizeGeoJson(res);
+};
+
+export const getMouzaBoundary = async (id) => {
+  const res = await API.get(`/mouza/${id}/geojson`);
+  return normalizeGeoJson(res);
+};
+
+///////////////////////////////////////////////////////
+//////////////// KHASRA ///////////////////////////////
+///////////////////////////////////////////////////////
 
 export const getKhasras = async (mouza_id) => {
   const res = await API.get("/khasra/", {

@@ -1,4 +1,6 @@
 from ..common_imports import *
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 class ListMouzaView(viewsets.ViewSet):
     queryset = Mouza.objects.all()
@@ -93,6 +95,36 @@ class ListMouzaView(viewsets.ViewSet):
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
+
+        except Exception as e:
+            return ApiResponse(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message="Server error.",
+                data=str(e),
+                http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ).create_response()
+
+    @action(detail=True, methods=['get'], url_path='geojson', url_name='geojson')
+    def geojson(self, request, pk=None):
+        """Return Mouza boundary as GeoJSON"""
+        try:
+            mouza = Mouza.objects.filter(mouza_id=pk).first()
+
+            if not mouza:
+                return ApiResponse(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message="Mouza not found.",
+                    http_status=status.HTTP_404_NOT_FOUND,
+                ).create_response()
+
+            serializer = MouzaSerializer(mouza)
+
+            return ApiResponse(
+                status=status.HTTP_200_OK,
+                message="Mouza GeoJSON found.",
+                data=serializer.data,
+                http_status=status.HTTP_200_OK,
+            ).create_response()
 
         except Exception as e:
             return ApiResponse(
