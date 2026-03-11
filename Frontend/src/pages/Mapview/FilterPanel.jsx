@@ -55,23 +55,28 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
           <button
             onClick={resetFilters}
             disabled={!hasSelection}
-            className="w-full bg-green-700 text-white py-2 rounded-lg mb-5 disabled:opacity-50"
+            className="w-full bg-red-600 text-white py-2 rounded-lg mb-5 disabled:opacity-50"
           >
             Reset Filters
           </button>
 
           {/* Current Selection */}
-          <div className="bg-green-700 text-white rounded-xl p-4">
-            <h3 className="font-bold mb-3">Current Selection</h3>
+          {hasSelection && (
+            <div className="bg-green-700 text-white rounded-xl p-4">
+              <h3 className="font-bold mb-3">Current Selection</h3>
 
-            <ul className="space-y-2 text-sm">
-              <Row label="Division" value={selectedDivisionOption?.division} />
-              <Row label="District" value={selectedDistrictOption?.name} />
-              <Row label="Tehsil" value={selectedTehsilOption?.name} />
-              <Row label="Mouza" value={selectedMouzaOption?.mouza} />
-              <Row label="Mouza ID" value={selectedMouzaOption?.mouza_id} />
-            </ul>
-          </div>
+              <ul className="space-y-2 text-sm">
+                <Row
+                  label="Division"
+                  value={selectedDivisionOption?.division}
+                />
+                <Row label="District" value={selectedDistrictOption?.name} />
+                <Row label="Tehsil" value={selectedTehsilOption?.name} />
+                <Row label="Mouza" value={selectedMouzaOption?.mouza} />
+                <Row label="Mouza ID" value={selectedMouzaOption?.mouza_id} />
+              </ul>
+            </div>
+          )}
         </aside>
       )}
 
@@ -81,7 +86,6 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
           onClick={onToggle}
           className="flex items-center gap-2 bg-white border border-green-600 rounded-full px-3 py-2 shadow-lg hover:bg-green-50"
         >
-          
           <span className="w-9 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-lg hover:bg-green-700">
             ‹
           </span>{" "}

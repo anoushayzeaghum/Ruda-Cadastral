@@ -10,12 +10,11 @@ export default function Header({ filters }) {
         {/* Brand */}
         <button
           onClick={() => navigate("/dashboard")}
-          className="flex items-center gap-3 cursor-pointer bg-transparent focus:outline-none"
+          className="flex items-center gap-3 px-3 py-2 bg-white rounded-lg shadow-sm border cursor-pointer focus:outline-none hover:bg-slate-50"
         >
           <img src={rudaFirmLogo} alt="RUDA" className="h-12 object-contain" />
 
-          <h1 className="text-3xl font-medium tracking-widest uppercase text-[#1e3a5f]">
-            RCMS
+<h1 className="text-3xl font-medium tracking-widest uppercase text-green-700">            RCMS
           </h1>
         </button>
 
