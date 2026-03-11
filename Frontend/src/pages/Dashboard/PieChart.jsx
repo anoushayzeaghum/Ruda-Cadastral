@@ -10,15 +10,29 @@ export default function PieChart() {
       {
         data: [40, 30, 30],
         backgroundColor: ["#3b82f6", "#10b981", "#f59e0b"],
+        borderColor: ["#1e40af", "#047857", "#d97706"],
+        borderWidth: 2,
       },
     ],
   };
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm border p-4">
-      <h3 className="font-semibold mb-4">Land Use</h3>
+  const options = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: {
+        labels: {
+          font: { size: 12, weight: "500" },
+          padding: 15,
+        },
+      },
+    },
+  };
 
-      <Pie data={data} />
+  return (
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
+      <h3 className="font-bold text-lg text-gray-800 mb-4">Land Use</h3>
+      <Pie data={data} options={options} />
     </div>
   );
 }

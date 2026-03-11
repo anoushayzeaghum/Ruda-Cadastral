@@ -1,16 +1,22 @@
 import rudaFirmLogo from "../../assets/Rudafirm.png";
+import { useNavigate } from "react-router-dom";
 
 export default function Header({ filters }) {
+  const navigate = useNavigate();
+
   return (
     <div className="w-full px-4 py-2 bg-white/90 backdrop-blur-md shadow-md border-b border-slate-200">
       <div className="flex items-center justify-between gap-4 w-full">
         {/* Brand */}
-        <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+        >
           <img src={rudaFirmLogo} alt="RUDA" className="h-12 object-contain" />
           <h1 className="text-3xl font-medium tracking-widest text-[#1e3a5f] uppercase">
             RCMS
           </h1>
-        </div>
+        </button>
 
         {filters && (
           <div className="grid grid-cols-4 gap-3 w-[960px] max-w-full">

@@ -1,6 +1,6 @@
 export default function Legend({ featureCount, selectedMouzaName, isLoading }) {
   return (
-    <aside className="absolute bottom-5 right-5 z-20 bg-white/95 backdrop-blur-md border rounded-xl shadow-lg p-4 min-w-[180px]">
+    <aside className="absolute bottom-5 left-5 z-20 bg-white/95 backdrop-blur-md border rounded-xl shadow-lg p-4 min-w-[180px]">
 
       <div className="font-bold text-[#1e3a5f] border-b border-green-500 pb-1 mb-3">
         Layer Details

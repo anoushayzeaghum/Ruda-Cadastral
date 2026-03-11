@@ -19,7 +19,8 @@ export default function MapPanel() {
   }, []);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-3">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 hover:shadow-xl transition-shadow duration-300">
+      <h3 className="font-bold text-lg text-gray-800 mb-4">Live Map Preview</h3>
       <div ref={mapContainer} className="h-[500px] w-full rounded-lg" />
     </div>
   );

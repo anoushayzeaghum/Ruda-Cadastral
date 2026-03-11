@@ -16,21 +16,22 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
   } = filters;
 
   return (
-    <div className={`absolute top-5 right-5 z-30 transition-all ${isCollapsed ? "w-14" : "w-[340px]"}`}>
-
-      <button
-        onClick={onToggle}
-        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white border flex items-center justify-center text-lg"
-      >
-        {isCollapsed ? "‹" : "›"}
-      </button>
+    <div className={`absolute top-5 left-5 z-30 transition-all ${isCollapsed ? "w-14" : "w-[340px]"}`}>
 
       {!isCollapsed && (
         <aside className="bg-white/95 backdrop-blur-md border rounded-2xl shadow-xl p-6 max-h-[540px] overflow-y-auto">
 
-          <p className="text-lg font-semibold text-green-700 uppercase mb-4">
-            Filter Panel
-          </p>
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-lg font-semibold text-green-700 uppercase">
+              Filter Panel
+            </p>
+            <button
+              onClick={onToggle}
+              className="w-8 h-8 rounded-full bg-white border flex items-center justify-center text-lg hover:bg-gray-100"
+            >
+              ›
+            </button>
+          </div>
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 mb-5">
@@ -67,6 +68,15 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
           </div>
 
         </aside>
+      )}
+
+      {isCollapsed && (
+        <button
+          onClick={onToggle}
+          className="w-12 h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center text-2xl hover:bg-gray-100 shadow-lg"
+        >
+          ‹
+        </button>
       )}
     </div>
   );
