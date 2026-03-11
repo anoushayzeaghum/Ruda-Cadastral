@@ -1,5 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { LogOut, LayoutDashboard, Map, Settings, FileText, Clipboard } from "lucide-react";
+import {
+  LogOut,
+  LayoutDashboard,
+  Map,
+  Settings,
+  FileText,
+  Clipboard,
+} from "lucide-react";
 
 export default function Sidebar() {
   const navigate = useNavigate();

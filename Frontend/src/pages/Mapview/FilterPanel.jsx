@@ -16,11 +16,11 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
   } = filters;
 
   return (
-    <div className={`absolute top-5 left-5 z-30 transition-all ${isCollapsed ? "w-14" : "w-[340px]"}`}>
-
+    <div
+      className={`absolute top-5 left-5 z-30 transition-all ${isCollapsed ? "w-14" : "w-[340px]"}`}
+    >
       {!isCollapsed && (
         <aside className="bg-white/95 backdrop-blur-md border rounded-2xl shadow-xl p-6 max-h-[540px] overflow-y-auto">
-
           <div className="flex justify-between items-center mb-4">
             <p className="text-lg font-semibold text-green-700 uppercase">
               Filter Panel
@@ -66,7 +66,6 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
               <Row label="Mouza ID" value={selectedMouzaOption?.mouza_id} />
             </ul>
           </div>
-
         </aside>
       )}
 

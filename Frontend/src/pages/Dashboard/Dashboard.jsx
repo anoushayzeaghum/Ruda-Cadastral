@@ -10,12 +10,14 @@ export default function Dashboard() {
 
       <div className="flex-1 p-8 overflow-auto">
         {/* Header */}
-        <div className="mb-8">
+        {/* <div className="mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
             Dashboard
           </h1>
-          <p className="text-slate-500 mt-2">Cadastral Management System Overview</p>
-        </div>
+          <p className="text-slate-500 mt-2">
+            Cadastral Management System Overview
+          </p>
+        </div> */}
 
         {/* KPI Section */}
         <KPISection />

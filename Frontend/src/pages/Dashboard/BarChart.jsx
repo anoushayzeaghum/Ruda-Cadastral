@@ -23,12 +23,7 @@ export default function BarChart() {
           "rgba(245, 158, 11, 0.8)",
           "rgba(239, 68, 68, 0.8)",
         ],
-        borderColor: [
-          "#1e40af",
-          "#047857",
-          "#d97706",
-          "#dc2626",
-        ],
+        borderColor: ["#1e40af", "#047857", "#d97706", "#dc2626"],
         borderWidth: 2,
         borderRadius: 5,
       },
@@ -63,7 +58,9 @@ export default function BarChart() {
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
-      <h3 className="font-bold text-lg text-gray-800 mb-4">Survey Statistics</h3>
+      <h3 className="font-bold text-lg text-gray-800 mb-4">
+        Survey Statistics
+      </h3>
       <Bar data={data} options={options} />
     </div>
   );

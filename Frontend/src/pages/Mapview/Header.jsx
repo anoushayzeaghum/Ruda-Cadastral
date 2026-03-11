@@ -5,15 +5,16 @@ export default function Header({ filters }) {
   const navigate = useNavigate();
 
   return (
-    <div className="w-full px-4 py-2 bg-white/90 backdrop-blur-md shadow-md border-b border-slate-200">
+    <div className="w-full px-2 py-0 bg-white/90 backdrop-blur-md shadow-md border-b border-slate-200">
       <div className="flex items-center justify-between gap-4 w-full">
         {/* Brand */}
         <button
           onClick={() => navigate("/dashboard")}
-          className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+          className="flex items-center gap-3 cursor-pointer bg-transparent focus:outline-none"
         >
           <img src={rudaFirmLogo} alt="RUDA" className="h-12 object-contain" />
-          <h1 className="text-3xl font-medium tracking-widest text-[#1e3a5f] uppercase">
+
+          <h1 className="text-3xl font-medium tracking-widest uppercase text-[#1e3a5f]">
             RCMS
           </h1>
         </button>
