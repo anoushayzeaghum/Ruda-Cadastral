@@ -11,6 +11,10 @@ const DEFAULT_ZOOM = 8;
 const KHASRA_SOURCE_ID = "khasra";
 const KHASRA_FILL_ID = "khasra-fill";
 const KHASRA_OUTLINE_ID = "khasra-outline";
+const DEFAULT_BOUNDS = [
+  [73.8, 31.2], // southwest
+  [75.1, 32.1], // northeast
+];
 
 const extendBounds = (coordinates, bounds, markPointFound) => {
   if (!Array.isArray(coordinates)) return;
@@ -106,6 +110,10 @@ export default function MapView({ selectedMouza }) {
       zoom: DEFAULT_ZOOM,
     });
 
+    map.fitBounds(DEFAULT_BOUNDS, {
+      padding: 40,
+    });
+
     map.addControl(new mapboxgl.NavigationControl(), "top-left");
     map.on("load", handleMapLoad);
 
@@ -182,7 +190,7 @@ export default function MapView({ selectedMouza }) {
     <div className="map-view">
       <div ref={mapRef} className="map-view__container" />
 
-      <section
+      {/* <section
         className="map-view__status"
         aria-label="Current map layer status"
       >
@@ -214,7 +222,7 @@ export default function MapView({ selectedMouza }) {
             {loadError}
           </p>
         ) : null}
-      </section>
+      </section> */}
 
       <Legend
         featureCount={featureCount}

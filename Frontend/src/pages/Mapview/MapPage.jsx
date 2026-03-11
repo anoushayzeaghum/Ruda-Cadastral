@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import FilterPanel from "./FilterPanel";
-import MapView from "./Mapview";
+import MapView from "./MapView";
 
 export default function MapPage() {
   const { filters } = useOutletContext() ?? {};
@@ -12,7 +12,13 @@ export default function MapPage() {
   return (
     <div className="map-page">
       <div className="map-page__body">
-        <MapView selectedMouza={selectedMouza} />
+        <MapView
+          selectedMouza={filters?.selectedMouzaDetails}
+          selectedDistrict={filters?.selectedDistrictOption}
+          selectedTehsil={filters?.selectedTehsilOption}
+          selectedDivision={filters?.selectedDivisionOption}
+        />
+
         <FilterPanel
           filters={filters}
           isCollapsed={panelCollapsed}
