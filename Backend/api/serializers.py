@@ -76,10 +76,9 @@ class MouzaSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Mouza
         geo_field = "geom"
-        id_field = "id"
 
         fields = (
-            "id",
+            "gid",
             "district",
             "dist_id",
             "tehsil",

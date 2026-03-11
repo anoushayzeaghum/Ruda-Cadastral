@@ -24,6 +24,60 @@ const KHASRA_SOURCE = "khasra-source";
 const KHASRA_FILL = "khasra-fill";
 const KHASRA_LINE = "khasra-line";
 
+/* ---------------------------
+BASEMAP STYLES
+--------------------------- */
+
+const BASEMAP_STYLES = {
+  Satellite: "mapbox://styles/mapbox/satellite-streets-v12",
+  Streets: "mapbox://styles/mapbox/streets-v12",
+  Light: "mapbox://styles/mapbox/light-v11",
+  Dark: "mapbox://styles/mapbox/dark-v11",
+  Outdoors: "mapbox://styles/mapbox/outdoors-v12",
+};
+
+/* ---------------------------
+BASEMAP CONTROL
+--------------------------- */
+
+class BasemapControl {
+  onAdd(map) {
+    this.map = map;
+
+    const container = document.createElement("div");
+    container.className =
+      "mapboxgl-ctrl mapboxgl-ctrl-group bg-white rounded shadow";
+
+    const select = document.createElement("select");
+    select.style.padding = "4px";
+    select.style.fontSize = "12px";
+    select.style.border = "none";
+    select.style.outline = "none";
+    select.style.cursor = "pointer";
+
+    Object.keys(BASEMAP_STYLES).forEach((name) => {
+      const option = document.createElement("option");
+      option.value = BASEMAP_STYLES[name];
+      option.textContent = name;
+      select.appendChild(option);
+    });
+
+    select.onchange = (e) => {
+      map.setStyle(e.target.value);
+    };
+
+    container.appendChild(select);
+    this.container = container;
+
+    return container;
+  }
+
+  onRemove() {
+    this.container.parentNode.removeChild(this.container);
+    this.map = undefined;
+  }
+}
+
 export default function MapView({
   selectedDivision,
   selectedDistrict,
@@ -38,21 +92,27 @@ export default function MapView({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ---------------------------
-  // MAP INITIALIZATION
-  // ---------------------------
+  /* ---------------------------
+  MAP INITIALIZATION
+  --------------------------- */
+
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
     try {
       const map = new mapboxgl.Map({
         container: mapRef.current,
-        style: "mapbox://styles/mapbox/satellite-streets-v12",
+        style: BASEMAP_STYLES.Outdoors,
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
       });
 
       map.setProjection("globe");
+
+      /* Add Basemap selector */
+      map.addControl(new BasemapControl(), "top-left");
+
+      /* Add zoom buttons */
       map.addControl(new mapboxgl.NavigationControl(), "top-left");
 
       map.on("load", () => {
@@ -78,43 +138,36 @@ export default function MapView({
     }
   }, []);
 
-  // ---------------------------
-  // DRAW BOUNDARY
-  // ---------------------------
+  /* ---------------------------
+  DRAW BOUNDARY
+  --------------------------- */
+
   const drawBoundary = (geojson) => {
     const map = mapInstance.current;
     if (!map) return;
 
     try {
-      // Remove existing layers
       if (map.getLayer(BOUNDARY_FILL)) map.removeLayer(BOUNDARY_FILL);
       if (map.getLayer(BOUNDARY_LINE)) map.removeLayer(BOUNDARY_LINE);
       if (map.getSource(BOUNDARY_SOURCE)) map.removeSource(BOUNDARY_SOURCE);
 
-      // Validate GeoJSON
-      if (!geojson?.features || !Array.isArray(geojson.features)) {
-        console.warn("Invalid GeoJSON format:", geojson);
-        return;
-      }
+      if (!geojson?.features || !Array.isArray(geojson.features)) return;
 
-      // Add source
       map.addSource(BOUNDARY_SOURCE, {
         type: "geojson",
         data: geojson,
       });
 
-      // Add fill layer
       map.addLayer({
         id: BOUNDARY_FILL,
         type: "fill",
         source: BOUNDARY_SOURCE,
         paint: {
-          "fill-color": "#1e3a5f",
+          "fill-color": "#158033",
           "fill-opacity": 0.2,
         },
       });
 
-      // Add line layer
       map.addLayer({
         id: BOUNDARY_LINE,
         type: "line",
@@ -125,43 +178,36 @@ export default function MapView({
         },
       });
 
-      // Zoom to boundary
-      if (geojson.features.length > 0) {
-        zoomToGeoJSON(geojson);
-      }
+      if (geojson.features.length > 0) zoomToGeoJSON(geojson);
     } catch (e) {
-      console.error("Error drawing boundary:", e);
+      console.error("Boundary drawing error:", e);
       setError("Failed to display boundary");
     }
   };
 
-  // ---------------------------
-  // DRAW KHASRAS
-  // ---------------------------
+  /* ---------------------------
+  DRAW KHASRAS
+  --------------------------- */
+
   const drawKhasras = (geojson) => {
     const map = mapInstance.current;
     if (!map) return;
 
     try {
-      // Remove existing layers
       if (map.getLayer(KHASRA_FILL)) map.removeLayer(KHASRA_FILL);
       if (map.getLayer(KHASRA_LINE)) map.removeLayer(KHASRA_LINE);
       if (map.getSource(KHASRA_SOURCE)) map.removeSource(KHASRA_SOURCE);
 
-      // Validate GeoJSON
       if (!geojson?.features || !Array.isArray(geojson.features)) {
-        console.warn("Invalid GeoJSON format for Khasras:", geojson);
         setFeatureCount(0);
         return;
       }
 
-      // Add source
       map.addSource(KHASRA_SOURCE, {
         type: "geojson",
         data: geojson,
       });
 
-      // Add fill layer
       map.addLayer({
         id: KHASRA_FILL,
         type: "fill",
@@ -172,7 +218,6 @@ export default function MapView({
         },
       });
 
-      // Add line layer
       map.addLayer({
         id: KHASRA_LINE,
         type: "line",
@@ -185,52 +230,42 @@ export default function MapView({
 
       setFeatureCount(geojson.features.length);
     } catch (e) {
-      console.error("Error drawing Khasras:", e);
+      console.error("Khasra drawing error:", e);
       setError("Failed to display Khasras");
     }
   };
 
-  // ---------------------------
-  // ZOOM FUNCTION
-  // ---------------------------
+  /* ---------------------------
+  ZOOM FUNCTION
+  --------------------------- */
+
   const zoomToGeoJSON = (geojson) => {
     const map = mapInstance.current;
     if (!map || !geojson?.features?.length) return;
 
-    try {
-      const bounds = new mapboxgl.LngLatBounds();
+    const bounds = new mapboxgl.LngLatBounds();
 
-      geojson.features.forEach((feature) => {
-        const coords = feature.geometry?.coordinates;
-        if (!coords) return;
+    geojson.features.forEach((feature) => {
+      const coords = feature.geometry?.coordinates;
+      if (!coords) return;
 
-        const traverse = (c) => {
-          if (typeof c[0] === "number" && typeof c[1] === "number") {
-            bounds.extend(c);
-          } else if (Array.isArray(c)) {
-            c.forEach(traverse);
-          }
-        };
+      const traverse = (c) => {
+        if (typeof c[0] === "number") bounds.extend(c);
+        else c.forEach(traverse);
+      };
 
-        traverse(coords);
-      });
+      traverse(coords);
+    });
 
-      if (bounds.isEmpty()) {
-        console.warn("Bounds are empty");
-        return;
-      }
-
-      map.fitBounds(bounds, { padding: 50, duration: 800 });
-    } catch (e) {
-      console.error("Error zooming to GeoJSON:", e);
-    }
+    if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 50 });
   };
 
-  // ---------------------------
-  // LOAD BOUNDARY WHEN FILTER CHANGES
-  // ---------------------------
+  /* ---------------------------
+  LOAD BOUNDARY
+  --------------------------- */
+
   useEffect(() => {
-    if (!isMapReady || !mapInstance.current) return;
+    if (!isMapReady) return;
 
     const loadBoundary = async () => {
       let geojson = null;
@@ -239,31 +274,19 @@ export default function MapView({
         setIsLoading(true);
         setError("");
 
-        // Check filters in priority order: Mouza > Tehsil > District > Division
-        if (selectedMouza) {
-          console.log("Loading Mouza boundary:", selectedMouza.mouza_id);
+        if (selectedMouza)
           geojson = await getMouzaBoundary(selectedMouza.mouza_id);
-        } else if (selectedTehsil) {
-          console.log("Loading Tehsil boundary:", selectedTehsil.id);
+        else if (selectedTehsil)
           geojson = await getTehsilBoundary(selectedTehsil.id);
-        } else if (selectedDistrict) {
-          console.log("Loading District boundary:", selectedDistrict.id);
+        else if (selectedDistrict)
           geojson = await getDistrictBoundary(selectedDistrict.id);
-        } else if (selectedDivision) {
-          console.log(
-            "Loading Division boundary:",
-            selectedDivision.division_i,
-          );
+        else if (selectedDivision)
           geojson = await getDivisionBoundary(selectedDivision.division_i);
-        }
 
-        if (geojson?.features?.length > 0) {
-          drawBoundary(geojson);
-          setError("");
-        }
+        if (geojson?.features?.length) drawBoundary(geojson);
       } catch (e) {
         console.error("Boundary load error:", e);
-        setError("Failed to load boundary data");
+        setError("Failed to load boundary");
       } finally {
         setIsLoading(false);
       }
@@ -271,31 +294,30 @@ export default function MapView({
 
     loadBoundary();
   }, [
-    selectedMouza,
-    selectedTehsil,
-    selectedDistrict,
     selectedDivision,
+    selectedDistrict,
+    selectedTehsil,
+    selectedMouza,
     isMapReady,
   ]);
 
-  // ---------------------------
-  // LOAD KHASRAS WHEN MOUZA SELECTED
-  // ---------------------------
+  /* ---------------------------
+  LOAD KHASRAS
+  --------------------------- */
+
   useEffect(() => {
-    if (!selectedMouza || !isMapReady || !mapInstance.current) return;
+    if (!selectedMouza || !isMapReady) return;
 
     const loadKhasras = async () => {
       try {
         setIsLoading(true);
-        console.log("Loading Khasras for Mouza:", selectedMouza.mouza_id);
 
         const geojson = await getKhasras(selectedMouza.mouza_id);
-        if (geojson?.features?.length > 0) {
-          drawKhasras(geojson);
-        }
+
+        if (geojson?.features?.length) drawKhasras(geojson);
       } catch (e) {
         console.error("Khasra load error:", e);
-        setError("Failed to load Khasra data");
+        setError("Failed to load Khasras");
       } finally {
         setIsLoading(false);
       }
@@ -306,11 +328,7 @@ export default function MapView({
 
   return (
     <div className="absolute inset-0 w-full h-full">
-      <div
-        ref={mapRef}
-        className="absolute inset-0 w-full h-full"
-        style={{ background: "#f0f0f0" }}
-      />
+      <div ref={mapRef} className="absolute inset-0 w-full h-full" />
 
       {error && (
         <div className="absolute top-5 left-5 bg-red-500 text-white px-4 py-2 rounded shadow">

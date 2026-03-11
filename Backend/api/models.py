@@ -83,6 +83,7 @@ class Tehsil(models.Model):
 
 class Mouza(models.Model):
 
+    gid = models.AutoField(primary_key=True)
     district = models.CharField(max_length=100)
     dist_id = models.IntegerField()
     tehsil = models.CharField(max_length=100)
