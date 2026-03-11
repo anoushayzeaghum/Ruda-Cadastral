@@ -187,8 +187,8 @@ export default function MapView({ selectedMouza }) {
   }, [isMapReady, mouzaId]);
 
   return (
-    <div className="map-view">
-      <div ref={mapRef} className="map-view__container" />
+    <div className="absolute inset-0 w-full h-full">
+      <div ref={mapRef} className="absolute inset-0 w-full h-full" />
 
       {/* <section
         className="map-view__status"

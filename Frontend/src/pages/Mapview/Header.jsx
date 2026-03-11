@@ -2,36 +2,29 @@ import rudaFirmLogo from "../../assets/Rudafirm.png";
 
 export default function Header({ filters }) {
   return (
-    <div className="app-header">
-      <div className="app-header__main">
-        <div className="app-header__brand">
-          <img
-            className="app-header__logo"
-            src={rudaFirmLogo}
-            alt="RUDA"
-            loading="eager"
-          />
-          <h1 className="app-header__title">RCMS</h1>
+    <div className="w-full px-4 py-2 bg-white/90 backdrop-blur-md shadow-md border-b border-slate-200">
+      <div className="flex items-center justify-between gap-4 w-full">
+        {/* Brand */}
+        <div className="flex items-center gap-3">
+          <img src={rudaFirmLogo} alt="RUDA" className="h-12 object-contain" />
+          <h1 className="text-3xl font-medium tracking-widest text-[#1e3a5f] uppercase">
+            RCMS
+          </h1>
         </div>
 
-        {filters ? (
-          <div
-            className="app-header__filters"
-            aria-label="Administrative filters"
-          >
-            <div className="app-header__filter-field">
-              <label
-                className="app-header__filter-label"
-                htmlFor="header-division"
-              >
+        {filters && (
+          <div className="grid grid-cols-4 gap-3 w-[960px] max-w-full">
+            {/* Division */}
+            <div className="flex flex-col">
+              <label className="text-[10px] uppercase text-slate-500">
                 Division
               </label>
+
               <select
-                id="header-division"
-                className="app-header__filter-select"
                 value={filters.selectedDivision}
                 onChange={filters.handleDivisionChange}
                 disabled={filters.loading.divisions}
+                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
               >
                 <option value="">-- Division --</option>
                 {filters.divisions.map((division) => (
@@ -42,21 +35,19 @@ export default function Header({ filters }) {
               </select>
             </div>
 
-            <div className="app-header__filter-field">
-              <label
-                className="app-header__filter-label"
-                htmlFor="header-district"
-              >
+            {/* District */}
+            <div className="flex flex-col">
+              <label className="text-[10px] uppercase text-slate-500">
                 District
               </label>
+
               <select
-                id="header-district"
-                className="app-header__filter-select"
                 value={filters.selectedDistrict}
                 onChange={filters.handleDistrictChange}
                 disabled={
                   !filters.selectedDivision || filters.loading.districts
                 }
+                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
               >
                 <option value="">-- District --</option>
                 {filters.districts.map((district) => (
@@ -67,19 +58,17 @@ export default function Header({ filters }) {
               </select>
             </div>
 
-            <div className="app-header__filter-field">
-              <label
-                className="app-header__filter-label"
-                htmlFor="header-tehsil"
-              >
+            {/* Tehsil */}
+            <div className="flex flex-col">
+              <label className="text-[10px] uppercase text-slate-500">
                 Tehsil
               </label>
+
               <select
-                id="header-tehsil"
-                className="app-header__filter-select"
                 value={filters.selectedTehsil}
                 onChange={filters.handleTehsilChange}
                 disabled={!filters.selectedDistrict || filters.loading.tehsils}
+                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
               >
                 <option value="">-- Tehsil --</option>
                 {filters.tehsils.map((tehsil) => (
@@ -90,19 +79,17 @@ export default function Header({ filters }) {
               </select>
             </div>
 
-            <div className="app-header__filter-field">
-              <label
-                className="app-header__filter-label"
-                htmlFor="header-mouza"
-              >
+            {/* Mouza */}
+            <div className="flex flex-col">
+              <label className="text-[10px] uppercase text-slate-500">
                 Mouza
               </label>
+
               <select
-                id="header-mouza"
-                className="app-header__filter-select"
                 value={filters.selectedMouza}
                 onChange={filters.handleMouzaChange}
                 disabled={!filters.selectedTehsil || filters.loading.mouzas}
+                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
               >
                 <option value="">-- Mouza --</option>
                 {filters.mouzas.map((mouza) => (
@@ -113,7 +100,7 @@ export default function Header({ filters }) {
               </select>
             </div>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

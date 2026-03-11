@@ -16,99 +16,76 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
   } = filters;
 
   return (
-    <div
-      className={`layer-panel-wrapper ${isCollapsed ? "layer-panel-wrapper--collapsed" : ""}`}
-    >
-      <aside className="layer-panel">
-        <div className="layer-panel__hero">
-          <p className="layer-panel__eyebrow">Filter Panel</p>
+    <div className={`absolute top-5 right-5 z-30 transition-all ${isCollapsed ? "w-14" : "w-[340px]"}`}>
 
-          <button
-            type="button"
-            className="layer-panel__toggle"
-            onClick={onToggle}
-            aria-label={
-              isCollapsed ? "Expand filter panel" : "Collapse filter panel"
-            }
-          >
-            {isCollapsed ? "‹" : "›"}
-          </button>
-        </div>
+      <button
+        onClick={onToggle}
+        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white border flex items-center justify-center text-lg"
+      >
+        {isCollapsed ? "‹" : "›"}
+      </button>
 
-        <div className="layer-panel__stats" aria-label="Loaded filter counts">
-          <div className="layer-panel__stat">
-            <span className="layer-panel__stat-label">Divisions</span>
-            <strong className="layer-panel__stat-value">
-              {divisions.length}
-            </strong>
-          </div>
-          <div className="layer-panel__stat">
-            <span className="layer-panel__stat-label">Districts</span>
-            <strong className="layer-panel__stat-value">
-              {districts.length}
-            </strong>
-          </div>
-          <div className="layer-panel__stat">
-            <span className="layer-panel__stat-label">Tehsils</span>
-            <strong className="layer-panel__stat-value">
-              {tehsils.length}
-            </strong>
-          </div>
-          <div className="layer-panel__stat">
-            <span className="layer-panel__stat-label">Mouzas</span>
-            <strong className="layer-panel__stat-value">{mouzas.length}</strong>
-          </div>
-        </div>
+      {!isCollapsed && (
+        <aside className="bg-white/95 backdrop-blur-md border rounded-2xl shadow-xl p-6 max-h-[540px] overflow-y-auto">
 
-        {errorMessage ? (
-          <p className="layer-panel__error" role="alert">
-            {errorMessage}
+          <p className="text-lg font-semibold text-green-700 uppercase mb-4">
+            Filter Panel
           </p>
-        ) : null}
 
-        <div className="layer-panel__actions">
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <Stat label="Divisions" value={divisions.length} />
+            <Stat label="Districts" value={districts.length} />
+            <Stat label="Tehsils" value={tehsils.length} />
+            <Stat label="Mouzas" value={mouzas.length} />
+          </div>
+
+          {errorMessage && (
+            <p className="bg-red-100 text-red-700 p-2 rounded mb-3">
+              {errorMessage}
+            </p>
+          )}
+
           <button
-            type="button"
-            className="layer-panel__reset"
             onClick={resetFilters}
             disabled={!hasSelection}
+            className="w-full bg-[#1e3a5f] text-white py-2 rounded-lg mb-5 disabled:opacity-50"
           >
-            Reset filters
+            Reset Filters
           </button>
-        </div>
 
-        <section
-          className="layer-panel__summary"
-          aria-label="Current map selection"
-        >
-          <h3 className="layer-panel__summary-title">Current Selection</h3>
+          <div className="bg-[#1e3a5f] text-white rounded-xl p-4">
+            <h3 className="font-bold mb-3">Current Selection</h3>
 
-          <ul className="layer-panel__summary-list">
-            <li className="layer-panel__summary-item">
-              <span>Division</span>
-              <strong>
-                {selectedDivisionOption?.division ?? "Not selected"}
-              </strong>
-            </li>
-            <li className="layer-panel__summary-item">
-              <span>District</span>
-              <strong>{selectedDistrictOption?.name ?? "Not selected"}</strong>
-            </li>
-            <li className="layer-panel__summary-item">
-              <span>Tehsil</span>
-              <strong>{selectedTehsilOption?.name ?? "Not selected"}</strong>
-            </li>
-            <li className="layer-panel__summary-item">
-              <span>Mouza</span>
-              <strong>{selectedMouzaOption?.mouza ?? "Not selected"}</strong>
-            </li>
-            <li className="layer-panel__summary-item">
-              <span>Mouza ID</span>
-              <strong>{selectedMouzaOption?.mouza_id ?? "—"}</strong>
-            </li>
-          </ul>
-        </section>
-      </aside>
+            <ul className="space-y-2 text-sm">
+              <Row label="Division" value={selectedDivisionOption?.division} />
+              <Row label="District" value={selectedDistrictOption?.name} />
+              <Row label="Tehsil" value={selectedTehsilOption?.name} />
+              <Row label="Mouza" value={selectedMouzaOption?.mouza} />
+              <Row label="Mouza ID" value={selectedMouzaOption?.mouza_id} />
+            </ul>
+          </div>
+
+        </aside>
+      )}
     </div>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <div className="bg-white rounded-lg border p-3 text-center shadow-sm">
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className="text-lg font-bold text-[#1e3a5f]">{value}</p>
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <li className="flex justify-between">
+      <span className="opacity-70">{label}</span>
+      <strong>{value ?? "Not selected"}</strong>
+    </li>
   );
 }

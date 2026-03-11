@@ -1,34 +1,35 @@
 export default function Legend({ featureCount, selectedMouzaName, isLoading }) {
   return (
-    <aside className="map-legend" aria-label="Map legend">
-      <div className="map-legend__title">Layer Details</div>
+    <aside className="absolute bottom-5 right-5 z-20 bg-white/95 backdrop-blur-md border rounded-xl shadow-lg p-4 min-w-[180px]">
 
-      <div className="map-legend__item">
-        <span
-          className="map-legend__swatch map-legend__swatch--khasra"
-          aria-hidden="true"
-        />
-        <span className="map-legend__label">Khasra boundary</span>
+      <div className="font-bold text-[#1e3a5f] border-b border-green-500 pb-1 mb-3">
+        Layer Details
       </div>
 
-      <div className="map-legend__meta">
-        <span className="map-legend__meta-label">Selected Mouza</span>
-        <strong className="map-legend__meta-value">
+      <div className="flex items-center gap-2 mb-3 text-sm">
+        <span className="w-4 h-4 bg-green-400 border-2 border-green-600 rounded"></span>
+        <span>Khasra boundary</span>
+      </div>
+
+      <div className="text-xs mt-3 border-t pt-2">
+        <p className="text-slate-500 uppercase">Selected Mouza</p>
+        <p className="text-[#1e3a5f] font-semibold">
           {selectedMouzaName ?? "None"}
-        </strong>
+        </p>
       </div>
 
-      <div className="map-legend__meta">
-        <span className="map-legend__meta-label">Loaded Features</span>
-        <strong className="map-legend__meta-value">{featureCount}</strong>
+      <div className="text-xs mt-3">
+        <p className="text-slate-500 uppercase">Loaded Features</p>
+        <p className="text-[#1e3a5f] font-semibold">{featureCount}</p>
       </div>
 
-      <div className="map-legend__meta">
-        <span className="map-legend__meta-label">Status</span>
-        <strong className="map-legend__meta-value">
+      <div className="text-xs mt-3">
+        <p className="text-slate-500 uppercase">Status</p>
+        <p className="text-[#1e3a5f] font-semibold">
           {isLoading ? "Loading" : "Ready"}
-        </strong>
+        </p>
       </div>
+
     </aside>
   );
 }
