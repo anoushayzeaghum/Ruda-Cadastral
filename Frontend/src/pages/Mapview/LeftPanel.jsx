@@ -1,8 +1,22 @@
 import { useState } from "react";
+import {
+  Layers,
+  ChevronDown,
+  Wrench,
+  MapPin,
+  Lock,
+  Package,
+  Satellite,
+  Ruler,
+  User,
+  Star,
+  Plus,
+} from "lucide-react";
 
 export default function LeftPanel() {
   const [layersExpanded, setLayersExpanded] = useState(true);
   const [toolboxExpanded, setToolboxExpanded] = useState(true);
+
   const [layers, setLayers] = useState({
     rudaBoundary: true,
     districtBoundaries: true,
@@ -24,72 +38,84 @@ export default function LeftPanel() {
   };
 
   return (
-    <div className="absolute left-5 top-32 w-72 z-20 bg-white/95 backdrop-blur-md border border-slate-200 rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-200px)]">
-      {/* Layer Manager Section */}
+    <div className="h-full w-full bg-white border-r border-slate-200 flex flex-col">
+
+      {/* Layer Manager */}
       <div className="border-b border-slate-200">
         <button
           onClick={() => setLayersExpanded(!layersExpanded)}
-          className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 font-semibold text-green-700 data-[expanded=false]:bg-slate-50"
+          className="w-full px-4 py-3 flex items-center justify-between font-semibold text-slate-800 hover:bg-slate-50"
         >
-          <span className="flex items-center gap-2">
-            <span className="text-lg">📊</span>
+          <span className="flex items-center gap-2 text-sm">
+            <Layers size={18} />
             Layer Manager
           </span>
-          <span
-            className={`text-xs transition-transform ${!layersExpanded ? "rotate-0" : ""}`}
-          >
-            ▼
-          </span>
+
+          <ChevronDown
+            size={16}
+            className={`transition-transform ${
+              layersExpanded ? "rotate-180" : ""
+            }`}
+          />
         </button>
 
         {layersExpanded && (
-          <div className="px-4 py-3 space-y-2 max-h-64 overflow-y-auto border-b border-slate-100">
+          <div className="px-3 pb-3 space-y-1 max-h-72 overflow-y-auto">
             <LayerCheckbox
               label="RUDA Boundary"
               checked={layers.rudaBoundary}
               onChange={() => toggleLayer("rudaBoundary")}
             />
+
             <LayerCheckbox
               label="District Boundaries"
               checked={layers.districtBoundaries}
               onChange={() => toggleLayer("districtBoundaries")}
             />
+
             <LayerCheckbox
               label="Tehsil Boundaries"
               checked={layers.tehsilBoundaries}
               onChange={() => toggleLayer("tehsilBoundaries")}
             />
+
             <LayerCheckbox
               label="Mouza Boundaries"
               checked={layers.mouzaBoundaries}
               onChange={() => toggleLayer("mouzaBoundaries")}
             />
+
             <LayerCheckbox
               label="Khasra Parcels"
               checked={layers.khasraParcels}
               onChange={() => toggleLayer("khasraParcels")}
               highlight
             />
+
             <LayerCheckbox
               label="Land Ownership"
               checked={layers.landOwnership}
               onChange={() => toggleLayer("landOwnership")}
             />
+
             <LayerCheckbox
               label="Land Acquisition"
               checked={layers.landAcquisition}
               onChange={() => toggleLayer("landAcquisition")}
             />
+
             <LayerCheckbox
               label="Road Network"
               checked={layers.roadNetwork}
               onChange={() => toggleLayer("roadNetwork")}
             />
+
             <LayerCheckbox
               label="Canal / River"
               checked={layers.canalRiver}
               onChange={() => toggleLayer("canalRiver")}
             />
+
             <LayerCheckbox
               label="Satellite Imagery"
               checked={layers.satelliteImagery}
@@ -99,87 +125,97 @@ export default function LeftPanel() {
         )}
       </div>
 
-      {/* Toolbox Section */}
+      {/* Toolbox */}
       <div className="border-b border-slate-200">
         <button
           onClick={() => setToolboxExpanded(!toolboxExpanded)}
-          className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 font-semibold text-green-700"
+          className="w-full px-4 py-3 flex items-center justify-between font-semibold text-slate-800 hover:bg-slate-50"
         >
-          <span className="flex items-center gap-2">
-            <span className="text-lg">🔧</span>
+          <span className="flex items-center gap-2 text-sm">
+            <Wrench size={18} />
             Toolbox
           </span>
-          <span
-            className={`text-xs transition-transform ${!toolboxExpanded ? "rotate-0" : ""}`}
-          >
-            ▼
-          </span>
+
+          <ChevronDown
+            size={16}
+            className={`transition-transform ${
+              toolboxExpanded ? "rotate-180" : ""
+            }`}
+          />
         </button>
 
         {toolboxExpanded && (
-          <div className="px-3 py-3 grid grid-cols-3 gap-2 border-b border-slate-100">
-            <ToolboxButton icon="📍" label="Ownership" />
-            <ToolboxButton icon="🔒" label="Parcel" />
-            <ToolboxButton icon="📦" label="Mouza" />
-            <ToolboxButton icon="🛰️" label="Satellite" />
-            <ToolboxButton icon="📐" label="Demarcation" />
-            <ToolboxButton icon="👤" label="Demyaki" />
+          <div className="grid grid-cols-3 gap-2 px-3 pb-3">
+            <ToolboxButton icon={<MapPin size={18} />} label="Connect" />
+            <ToolboxButton icon={<Lock size={18} />} label="Parcel" />
+            <ToolboxButton icon={<Package size={18} />} label="Mouza" />
+
+            <ToolboxButton icon={<Satellite size={18} />} label="Satellite" />
+            <ToolboxButton icon={<Ruler size={18} />} label="Demarcate" />
+            <ToolboxButton icon={<User size={18} />} label="Default" />
           </div>
         )}
       </div>
 
-      {/* Satellite Imagery Preview */}
+      {/* Satellite Preview */}
       <div className="px-4 py-3 border-b border-slate-200">
-        <div className="bg-gradient-to-br from-slate-300 to-slate-400 rounded h-24 flex items-center justify-center text-xs text-slate-600 font-medium">
-          Satellite preview
+        <div className="bg-slate-200 rounded-lg h-24 flex items-center justify-center text-xs text-slate-600 font-medium">
+          Satellite Preview
         </div>
       </div>
 
       {/* Favorites */}
-      <div className="px-4 py-3 flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-800">
-          ⏱️ Favorites
+      <div className="px-4 py-3 flex items-center justify-between border-b border-slate-200">
+        <span className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+          <Star size={16} />
+          Favorites
         </span>
-        <button className="text-xl text-slate-600 hover:text-slate-900">
-          +
+
+        <button className="text-slate-500 hover:text-slate-800">
+          <Plus size={18} />
         </button>
       </div>
 
-      {/* Favorites List - Scrollable */}
-      <div className="px-4 pb-3 flex-1 overflow-y-auto">
+      <div className="px-4 py-3">
         <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded border border-slate-200 font-medium">
-          <span className="text-lg">⏱️</span>
-          <span>M Favorites</span>
+          <Star size={16} />
+          M Favorites
         </button>
       </div>
     </div>
   );
 }
 
+/* Layer Checkbox */
 function LayerCheckbox({ label, checked, onChange, highlight = false }) {
   return (
     <label
-      className={`flex items-center gap-3 cursor-pointer p-2 rounded transition-colors ${
-        highlight ? "bg-yellow-100 hover:bg-yellow-150" : "hover:bg-slate-50"
+      className={`flex items-center justify-between cursor-pointer px-2 py-2 rounded-md text-sm ${
+        highlight ? "bg-yellow-100 hover:bg-yellow-200" : "hover:bg-slate-50"
       }`}
     >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="w-4 h-4 cursor-pointer accent-green-600"
-      />
-      <span className="text-sm content-start text-slate-700 font-medium">
-        {label}
-      </span>
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onChange}
+          className="accent-green-600 w-4 h-4"
+        />
+
+        <span className="text-slate-700">{label}</span>
+      </div>
+
+      {checked && <span className="text-green-600 text-sm">✓</span>}
     </label>
   );
 }
 
+/* Toolbox Button */
 function ToolboxButton({ icon, label }) {
   return (
-    <button className="flex flex-col items-center justify-center gap-1 p-3 rounded border border-slate-200 hover:bg-green-50 hover:border-green-400 transition-colors">
-      <span className="text-xl">{icon}</span>
+    <button className="flex flex-col items-center justify-center gap-1 p-2 bg-white border border-slate-200 rounded-md hover:bg-green-50 hover:border-green-400 transition-colors">
+      {icon}
+
       <span className="text-[10px] text-slate-700 text-center font-medium leading-tight">
         {label}
       </span>

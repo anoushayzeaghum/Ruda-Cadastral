@@ -13,27 +13,37 @@ export default function MapPage() {
 
   return (
     <div className="w-full h-screen flex flex-col bg-white">
+
       {/* Header */}
       <Header />
 
-      {/* SubHeader with Filters and Stats */}
+      {/* SubHeader */}
       {filters && <SubHeader filters={filters} />}
 
-      {/* Map Area */}
-      <div className="flex-1 relative bg-gradient-to-b from-blue-50 to-white overflow-hidden">
-        <MapView
-          selectedMouza={filters?.selectedMouzaDetails}
-          selectedDistrict={filters?.selectedDistrictOption}
-          selectedTehsil={filters?.selectedTehsilOption}
-          selectedDivision={filters?.selectedDivisionOption}
-          viewBy={filters?.viewBy}
-        />
+      {/* Main Layout */}
+      <div className="flex flex-1 overflow-hidden">
 
         {/* Left Panel */}
-        <LeftPanel />
+        <div className="w-72 border-r border-slate-200 bg-white z-10">
+          <LeftPanel />
+        </div>
 
-        {/* Right Panel */}
-        <ParcelPanel />
+        {/* Map Section */}
+        <div className="flex-1 relative bg-gradient-to-b from-blue-50 to-white">
+
+          <MapView
+            selectedMouza={filters?.selectedMouzaDetails}
+            selectedDistrict={filters?.selectedDistrictOption}
+            selectedTehsil={filters?.selectedTehsilOption}
+            selectedDivision={filters?.selectedDivisionOption}
+            viewBy={filters?.viewBy}
+          />
+
+          {/* Right Panel on Map */}
+          <ParcelPanel />
+
+        </div>
+
       </div>
     </div>
   );

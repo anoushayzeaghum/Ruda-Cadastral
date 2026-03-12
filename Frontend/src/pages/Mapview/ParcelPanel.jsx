@@ -1,4 +1,18 @@
 import { useState } from "react";
+import {
+  MapPin,
+  User,
+  Grid2X2,
+  FileText,
+  HelpCircle,
+  ChevronDown,
+  Landmark,
+  Ruler,
+  CheckCircle,
+  Download,
+  MessageSquare,
+  List,
+} from "lucide-react";
 
 export default function ParcelPanel() {
   const [activeTab, setActiveTab] = useState("parcelInfo");
@@ -14,123 +28,145 @@ export default function ParcelPanel() {
 
   const timelineData = [
     { year: "2018", label: "Personal Ownership" },
-    { year: "2020", label: "Beaurocqtion Notice" },
+    { year: "2020", label: "Bequisition Notice" },
     { year: "2023", label: "Acquisition Notice" },
-    { year: "2023", label: "RUDA Planning Zone" },
+    { year: "2023", label: "RUDA Owned & Planning Zone" },
   ];
 
   return (
-    <div className="absolute right-5 top-32 w-96 z-20 bg-white/95 backdrop-blur-md border border-slate-200 rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-200px)]">
-      {/* Header */}
-      <div className="flex items-center justify-between bg-green-700 text-white px-4 py-3 font-semibold">
-        <h2 className="flex items-center gap-2">
-          <span className="text-lg">📍</span>
-          Parcel Info
-        </h2>
-        <button className="text-white text-xl font-bold hover:bg-green-600 rounded-full w-6 h-6 flex items-center justify-center transition-colors">
-          ×
-        </button>
-      </div>
+    <div className="absolute right-3 top-3 w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-200px)]">
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 bg-slate-50">
-        <TabButton
-          label="Parcel Info"
-          value="parcelInfo"
-          active={activeTab}
-          onChange={setActiveTab}
-        />
-        <TabButton
-          label="Ownership"
-          value="ownership"
-          active={activeTab}
-          onChange={setActiveTab}
-        />
-        <TabButton
-          label="Land Use"
-          value="landUse"
-          active={activeTab}
-          onChange={setActiveTab}
-        />
-        <TabButton
-          label="Documents"
-          value="documents"
-          active={activeTab}
-          onChange={setActiveTab}
-        />
+      {/* Header */}
+      <div className="px-4 pt-4 border-b border-slate-200">
+
+        <div className="flex items-center gap-2 text-slate-800 font-semibold text-lg">
+          <MapPin className="text-green-700" size={20} />
+          Parcel Information
+          <div className="flex gap-5 py-2 px-3 text-slate-400">
+          <User size={18}/>
+          <Grid2X2 size={18}/>
+          <FileText size={18}/>
+          <HelpCircle size={18}/>
+        </div>
+        </div>
+
+        {/* Icon Toolbar */}
+        
+
+        {/* Tabs */}
+        <div className="flex gap-2 mt-3 pb-3">
+          <TabButton label="Parcel Info" value="parcelInfo" active={activeTab} onChange={setActiveTab}/>
+          <TabButton label="Ownership" value="ownership" active={activeTab} onChange={setActiveTab}/>
+          <TabButton label="Land Use" value="landUse" active={activeTab} onChange={setActiveTab}/>
+          <TabButton label="Documents" value="documents" active={activeTab} onChange={setActiveTab}/>
+        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
         {activeTab === "parcelInfo" && (
-          <div className="space-y-4">
-            <DetailRow
-              label="Khasra No"
-              value={parcelData.khasraNo}
-              highlight
-            />
-            <DetailRow label="Mouza" value={parcelData.mouza} />
-            <DetailRow label="Area" value={parcelData.area} />
-            <DetailRow
-              label="Land Type"
-              value={parcelData.landType}
-              withBadge
-            />
-            <DetailRow label="Parcel ID" value={parcelData.parcelId} />
-            <DetailRow label="Rth Iff" value={parcelData.rthIff} />
+          <>
+            {/* Parcel Card */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+
+              <div className="flex justify-between items-center">
+                <span className="text-slate-700 text-sm">
+                  Khasra No: <strong className="text-slate-900">{parcelData.khasraNo}</strong>
+                </span>
+
+                <ChevronDown size={16} className="text-slate-400"/>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-4">
+
+                <div>
+                  <p className="text-xs text-slate-500">Mouza</p>
+                  <p className="font-semibold text-slate-900">{parcelData.mouza}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-slate-500 flex items-center gap-1">
+                    <Ruler size={12}/> Area
+                  </p>
+                  <p className="font-semibold text-slate-900">{parcelData.area}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-slate-500">Land Type</p>
+                  <span className="bg-green-700 text-white text-xs px-3 py-1 rounded-md inline-flex items-center gap-1">
+                    <ChevronDown size={12}/>
+                    {parcelData.landType}
+                  </span>
+                </div>
+
+                <div>
+                  <p className="text-xs text-slate-500 flex items-center gap-1">
+                    <Landmark size={12}/> Agriculture
+                  </p>
+                  <p className="flex items-center gap-1 text-green-700 font-semibold">
+                    <CheckCircle size={14}/> 25,800 Acres
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-slate-200">
+                <div>
+                  <p className="text-xs text-slate-500">Parcel ID</p>
+                  <p className="font-semibold text-slate-900">{parcelData.parcelId}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-slate-500">Rth: Iff</p>
+                  <p className="font-semibold text-slate-900">{parcelData.rthIff}</p>
+                </div>
+              </div>
+
+            </div>
 
             {/* Timeline */}
-            <div className="mt-6 pt-4 border-t border-slate-200">
-              <h3 className="text-sm font-semibold text-slate-800 mb-3">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+
+              <h3 className="text-sm font-semibold text-slate-700 mb-3">
                 Past Status Timeline
               </h3>
-              <div className="space-y-2">
+
+              <div className="flex items-center justify-between text-xs text-slate-600">
+
                 {timelineData.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <div className="text-xs font-semibold text-slate-600 min-w-10">
+                  <div key={index} className="flex flex-col items-center flex-1">
+
+                    <span className="font-semibold text-slate-700">
                       {item.year}
-                    </div>
-                    <div className="flex-1">
-                      <div className="w-2 h-2 bg-green-600 rounded-full" />
-                    </div>
-                    <div className="text-xs text-slate-700 font-medium flex-1">
+                    </span>
+
+                    <div className="w-3 h-3 bg-green-600 rounded-full mt-2 mb-2"/>
+
+                    <span className="text-center text-[11px] text-slate-600">
                       {item.label}
-                    </div>
+                    </span>
+
                   </div>
                 ))}
+
               </div>
+
             </div>
-          </div>
-        )}
-
-        {activeTab === "ownership" && (
-          <div className="space-y-4">
-            <DetailRow label="Owner Name" value="Owner Name" />
-            <DetailRow label="Owner Type" value="Individual" />
-            <DetailRow label="Contact" value="+92 300 1234567" />
-            <DetailRow label="Email" value="owner@example.com" />
-            <DetailRow label="CNIC" value="12345-1234567-1" />
-          </div>
-        )}
-
-        {activeTab === "landUse" && (
-          <div className="space-y-4">
-            <DetailRow label="Land Type" value="Agricultural" withBadge />
-            <DetailRow label="Usage" value="Cultivated" />
-            <DetailRow label="Classification" value="Class A" />
-            <DetailRow label="Zone" value="RUDA Planning Zone" />
-            <DetailRow label="Sub Zone" value="Development" />
-          </div>
+          </>
         )}
 
         {activeTab === "documents" && (
-          <div className="space-y-3">
-            <DocumentLink icon="📄" name="Fard Document" />
-            <DocumentLink icon="📋" name="Mutation Record" />
-            <DocumentLink icon="📊" name="Survey Sheet" />
-            <DocumentLink icon="📃" name="Acquisition Notice" />
+          <div className="bg-slate-50 border border-slate-200 rounded-xl divide-y">
+
+            <DocumentLink name="Fard Document"/>
+            <DocumentLink name="Mutation Record"/>
+            <DocumentLink name="Survey Sheet"/>
+            <DocumentLink name="Acquisition Notice"/>
+
           </div>
         )}
+
       </div>
     </div>
   );
@@ -138,13 +174,14 @@ export default function ParcelPanel() {
 
 function TabButton({ label, value, active, onChange }) {
   const isActive = active === value;
+
   return (
     <button
       onClick={() => onChange(value)}
-      className={`flex-1 px-3 py-2 text-xs font-medium border-b-2 transition-all text-center ${
+      className={`text-xs px-3 py-1.5 rounded-md font-medium transition ${
         isActive
-          ? "border-green-700 text-green-700 bg-white"
-          : "border-transparent text-slate-600 hover:text-slate-900"
+          ? "bg-green-700 text-white"
+          : "bg-slate-200 text-slate-700 hover:bg-slate-300"
       }`}
     >
       {label}
@@ -152,35 +189,17 @@ function TabButton({ label, value, active, onChange }) {
   );
 }
 
-function DetailRow({ label, value, highlight = false, withBadge = false }) {
+function DocumentLink({ name }) {
   return (
-    <div
-      className={`pb-3 border-b border-slate-200 ${highlight ? "bg-yellow-50 -mx-4 px-4 py-2" : ""}`}
-    >
-      <p className="text-xs font-semibold text-slate-600 uppercase mb-1">
-        {label}
-      </p>
-      {withBadge ? (
-        <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
-          {value}
-        </span>
-      ) : (
-        <p className="text-sm font-semibold text-slate-900">{value}</p>
-      )}
-    </div>
-  );
-}
+    <div className="flex items-center justify-between px-4 py-3 hover:bg-slate-100 text-sm">
 
-function DocumentLink({ icon, name }) {
-  return (
-    <button className="w-full flex items-center justify-between p-3 rounded border border-slate-200 hover:bg-slate-50 group transition-colors">
       <div className="flex items-center gap-3">
-        <span className="text-lg">{icon}</span>
-        <span className="text-sm text-slate-700 font-medium">{name}</span>
+        <FileText size={16} className="text-slate-500"/>
+        <span className="text-slate-700">{name}</span>
       </div>
-      <span className="text-slate-400 group-hover:text-slate-600 text-lg">
-        ↓
-      </span>
-    </button>
+
+      <Download size={16} className="text-slate-400"/>
+
+    </div>
   );
 }
