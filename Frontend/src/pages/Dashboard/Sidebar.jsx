@@ -69,7 +69,7 @@ export default function Sidebar() {
         {/* Area Management */}
         <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-[#374151] hover:text-white">
           <Clipboard size={18} />
-          Area Management
+          Area
         </button>
 
         {/* Survey */}
