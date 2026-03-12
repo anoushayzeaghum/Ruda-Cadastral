@@ -1,4 +1,6 @@
 from ..common_imports import *
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 class ListMurabbaView(viewsets.ViewSet):
     queryset = Murabba.objects.all()
@@ -75,6 +77,36 @@ class ListMurabbaView(viewsets.ViewSet):
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
+
+        except Exception as e:
+            return ApiResponse(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                message="Server error.",
+                data=str(e),
+                http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            ).create_response()
+
+    @action(detail=True, methods=['get'], url_path='geojson', url_name='geojson')
+    def geojson(self, request, pk=None):
+        """Return Murabba boundary as GeoJSON"""
+        try:
+            murabba = Murabba.objects.filter(gid=pk).first()
+
+            if not murabba:
+                return ApiResponse(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message="Murabba not found.",
+                    http_status=status.HTTP_404_NOT_FOUND,
+                ).create_response()
+
+            serializer = MurabbaSerializer(murabba)
+
+            return ApiResponse(
+                status=status.HTTP_200_OK,
+                message="Murabba GeoJSON found.",
+                data=serializer.data,
+                http_status=status.HTTP_200_OK,
+            ).create_response()
 
         except Exception as e:
             return ApiResponse(

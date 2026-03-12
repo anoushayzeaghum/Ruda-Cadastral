@@ -88,6 +88,20 @@ export const getMouzas = async (tehsil_id) => {
   return normalizeData(res);
 };
 
+export const getKhasras = async (mouza_id) => {
+  const res = await API.get("/khasra/", {
+    params: { mouza_id },
+  });
+  return normalizeGeoJson(res);
+};
+
+export const getMurabbas = async (mouza_id) => {
+  const res = await API.get("/murabba/", {
+    params: { mouza_id },
+  });
+  return normalizeGeoJson(res);
+};
+
 ///////////////////////////////////////////////////////
 //////////////// BOUNDARY APIs ////////////////////////
 ///////////////////////////////////////////////////////
@@ -112,24 +126,12 @@ export const getMouzaBoundary = async (id) => {
   return normalizeGeoJson(res);
 };
 
-///////////////////////////////////////////////////////
-//////////////// KHASRA ///////////////////////////////
-///////////////////////////////////////////////////////
-
-export const getKhasras = async (mouza_id) => {
-  const res = await API.get("/khasra/", {
-    params: { mouza_id },
-  });
+export const getKhasraBoundary = async (id) => {
+  const res = await API.get(`/khasra/${id}/geojson`);
   return normalizeGeoJson(res);
 };
 
-///////////////////////////////////////////////////////
-//////////////// MURABBA /////////////////////////////
-///////////////////////////////////////////////////////
-
-export const getMurabbas = async (mouza_id) => {
-  const res = await API.get("/murabba/", {
-    params: { mouza_id },
-  });
+export const getMurabbaBoundary = async (id) => {
+  const res = await API.get(`/murabba/${id}/geojson`);
   return normalizeGeoJson(res);
 };

@@ -182,14 +182,17 @@ export default function useCadastralFilters() {
     if (!selectedMouzaOption) return null;
 
     return {
+      // include both legacy `id/name` and the `mouza`/`mouza_id` keys
       id: selectedMouzaOption.mouza_id,
+      mouza_id: selectedMouzaOption.mouza_id,
       name: selectedMouzaOption.mouza,
+      mouza: selectedMouzaOption.mouza,
       tehsil: selectedTehsilOption?.name ?? selectedMouzaOption.tehsil,
-      tehsilId: selectedMouzaOption.tehsil_id,
+      tehsil_id: selectedMouzaOption.tehsil_id,
       district: selectedDistrictOption?.name ?? selectedMouzaOption.district,
-      districtId: selectedMouzaOption.dist_id,
+      dist_id: selectedMouzaOption.dist_id,
       division: selectedDivisionOption?.division ?? "",
-      divisionId: selectedDivisionOption?.division_i ?? "",
+      division_id: selectedDivisionOption?.division_i ?? "",
     };
   }, [
     selectedDivisionOption,
