@@ -122,3 +122,14 @@ export const getKhasras = async (mouza_id) => {
   });
   return normalizeGeoJson(res);
 };
+
+///////////////////////////////////////////////////////
+//////////////// MURABBA /////////////////////////////
+///////////////////////////////////////////////////////
+
+export const getMurabbas = async (mouza_id) => {
+  const res = await API.get("/murabba/", {
+    params: { mouza_id },
+  });
+  return normalizeGeoJson(res);
+};

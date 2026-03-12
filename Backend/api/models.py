@@ -110,6 +110,7 @@ class Mouza(models.Model):
 
 class Murabba(models.Model):
 
+    gid = models.AutoField(primary_key=True)
     district = models.CharField(max_length=50)
     dist_id = models.FloatField()
     tehsil = models.CharField(max_length=50)
@@ -138,6 +139,7 @@ class Murabba(models.Model):
 
 class Khasra(models.Model):
 
+    gid = models.AutoField(primary_key=True)
     district = models.CharField(max_length=50)
     dist_id = models.FloatField()
     tehsil = models.CharField(max_length=50)

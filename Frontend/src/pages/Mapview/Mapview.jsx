@@ -9,6 +9,7 @@ import {
   getTehsilBoundary,
   getMouzaBoundary,
   getKhasras,
+  getMurabbas,
 } from "../../services/api";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -23,6 +24,10 @@ const BOUNDARY_LINE = "boundary-line";
 const KHASRA_SOURCE = "khasra-source";
 const KHASRA_FILL = "khasra-fill";
 const KHASRA_LINE = "khasra-line";
+
+const MURABBA_SOURCE = "murabba-source";
+const MURABBA_FILL = "murabba-fill";
+const MURABBA_LINE = "murabba-line";
 
 /* ---------------------------
 BASEMAP STYLES
@@ -83,6 +88,7 @@ export default function MapView({
   selectedDistrict,
   selectedTehsil,
   selectedMouza,
+  viewBy,
 }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -236,6 +242,56 @@ export default function MapView({
   };
 
   /* ---------------------------
+  DRAW MURABBAS
+  --------------------------- */
+
+  const drawMurabbas = (geojson) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    try {
+      if (map.getLayer(MURABBA_FILL)) map.removeLayer(MURABBA_FILL);
+      if (map.getLayer(MURABBA_LINE)) map.removeLayer(MURABBA_LINE);
+      if (map.getSource(MURABBA_SOURCE)) map.removeSource(MURABBA_SOURCE);
+
+      if (!geojson?.features || !Array.isArray(geojson.features)) {
+        setFeatureCount(0);
+        return;
+      }
+
+      map.addSource(MURABBA_SOURCE, {
+        type: "geojson",
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: MURABBA_FILL,
+        type: "fill",
+        source: MURABBA_SOURCE,
+        paint: {
+          "fill-color": "#FF6B35",
+          "fill-opacity": 0.35,
+        },
+      });
+
+      map.addLayer({
+        id: MURABBA_LINE,
+        type: "line",
+        source: MURABBA_SOURCE,
+        paint: {
+          "line-color": "#FF8C5A",
+          "line-width": 2,
+        },
+      });
+
+      setFeatureCount(geojson.features.length);
+    } catch (e) {
+      console.error("Murabba drawing error:", e);
+      setError("Failed to display Murabbas");
+    }
+  };
+
+  /* ---------------------------
   ZOOM FUNCTION
   --------------------------- */
 
@@ -306,7 +362,7 @@ export default function MapView({
   --------------------------- */
 
   useEffect(() => {
-    if (!selectedMouza || !isMapReady) return;
+    if (!selectedMouza || !isMapReady || viewBy !== "khasra") return;
 
     const loadKhasras = async () => {
       try {
@@ -324,7 +380,32 @@ export default function MapView({
     };
 
     loadKhasras();
-  }, [selectedMouza, isMapReady]);
+  }, [selectedMouza, isMapReady, viewBy]);
+
+  /* ---------------------------
+  LOAD MURABBAS
+  --------------------------- */
+
+  useEffect(() => {
+    if (!selectedMouza || !isMapReady || viewBy !== "murabba") return;
+
+    const loadMurabbas = async () => {
+      try {
+        setIsLoading(true);
+
+        const geojson = await getMurabbas(selectedMouza.mouza_id);
+
+        if (geojson?.features?.length) drawMurabbas(geojson);
+      } catch (e) {
+        console.error("Murabba load error:", e);
+        setError("Failed to load Murabbas");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMurabbas();
+  }, [selectedMouza, isMapReady, viewBy]);
 
   return (
     <div className="absolute inset-0 w-full h-full">

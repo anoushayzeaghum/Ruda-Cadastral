@@ -23,6 +23,7 @@ export default function useCadastralFilters() {
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedTehsil, setSelectedTehsil] = useState("");
   const [selectedMouza, setSelectedMouza] = useState("");
+  const [viewBy, setViewBy] = useState(""); // For Khasra/Murabba selection
 
   const [loading, setLoading] = useState({
     divisions: false,
@@ -202,6 +203,7 @@ export default function useCadastralFilters() {
     setSelectedDistrict("");
     setSelectedTehsil("");
     setSelectedMouza("");
+    setViewBy("");
     setDistricts([]);
     setTehsils([]);
     setMouzas([]);
@@ -243,6 +245,11 @@ export default function useCadastralFilters() {
 
   const handleMouzaChange = (e) => {
     setSelectedMouza(e.target.value);
+    setViewBy(""); // Reset view by when mouza changes
+  };
+
+  const handleViewByChange = (e) => {
+    setViewBy(e.target.value);
   };
 
   return {
@@ -254,6 +261,7 @@ export default function useCadastralFilters() {
     selectedDistrict,
     selectedTehsil,
     selectedMouza,
+    viewBy,
     selectedDivisionOption,
     selectedDistrictOption,
     selectedTehsilOption,
@@ -268,6 +276,7 @@ export default function useCadastralFilters() {
     handleDistrictChange,
     handleTehsilChange,
     handleMouzaChange,
+    handleViewByChange,
     resetFilters,
   };
 }

@@ -15,6 +15,7 @@ export default function MapPage() {
         selectedDistrict={filters?.selectedDistrictOption || null}
         selectedTehsil={filters?.selectedTehsilOption || null}
         selectedDivision={filters?.selectedDivisionOption || null}
+        viewBy={filters?.viewBy || ""}
       />
 
       {filters && (

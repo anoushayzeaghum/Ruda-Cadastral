@@ -76,6 +76,7 @@ class MouzaSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Mouza
         geo_field = "geom"
+        id_field = "mouza_id"
 
         fields = (
             "gid",
@@ -100,10 +101,10 @@ class MurabbaSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Murabba
         geo_field = "geom"
-        id_field = "id"
+        id_field = "gid"
 
         fields = (
-            "id",
+            "gid",
             "district",
             "dist_id",
             "tehsil",
@@ -126,10 +127,10 @@ class KhasraSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Khasra
         geo_field = "geom"
-        id_field = "id"
+        id_field = "gid"
 
         fields = (
-            "id",
+            "gid",
             "join_shp",
             "district",
             "dist_id",

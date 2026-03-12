@@ -9,7 +9,7 @@ class ListMurabbaView(viewsets.ViewSet):
 
         try:
             murabba_id = request.query_params.get("id")
-            mouza = request.query_params.get("mouza")
+            mouza = request.query_params.get("mouza") or request.query_params.get("mouza_id")
             tehsil = request.query_params.get("tehsil")
 
             # Single murabba
@@ -34,7 +34,12 @@ class ListMurabbaView(viewsets.ViewSet):
 
             # Filter by Mouza
             elif mouza:
-                queryset = Murabba.objects.filter(mouza=mouza)
+                # mouza can be name or numeric id
+                try:
+                    mouza_int = int(mouza)
+                    queryset = Murabba.objects.filter(mouza_id=mouza_int)
+                except Exception:
+                    queryset = Murabba.objects.filter(mouza=mouza)
 
                 serializer = MurabbaSerializer(queryset, many=True)
 

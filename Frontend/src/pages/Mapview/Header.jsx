@@ -14,12 +14,14 @@ export default function Header({ filters }) {
         >
           <img src={rudaFirmLogo} alt="RUDA" className="h-12 object-contain" />
 
-<h1 className="text-3xl font-medium tracking-widest uppercase text-green-700">            RCMS
+          <h1 className="text-3xl font-medium tracking-widest uppercase text-green-700">
+            {" "}
+            RCMS
           </h1>
         </button>
 
         {filters && (
-          <div className="grid grid-cols-4 gap-3 w-[960px] max-w-full">
+          <div className="grid grid-cols-5 gap-3 w-full max-w-6xl px-2">
             {/* Division */}
             <div className="flex flex-col">
               <label className="text-[10px] uppercase text-slate-500">
@@ -103,6 +105,24 @@ export default function Header({ filters }) {
                     {mouza.mouza}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            {/* View By */}
+            <div className="flex flex-col">
+              <label className="text-[10px] uppercase text-slate-500">
+                View By
+              </label>
+
+              <select
+                value={filters.viewBy}
+                onChange={filters.handleViewByChange}
+                disabled={!filters.selectedMouza}
+                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
+              >
+                <option value="">-- Select View --</option>
+                <option value="khasra">Khasra</option>
+                <option value="murabba">Murabba</option>
               </select>
             </div>
           </div>
