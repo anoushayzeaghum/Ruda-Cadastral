@@ -4,64 +4,114 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   Tooltip,
   Legend,
 } from "chart.js";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Tooltip,
+  Legend
+);
 
 export default function BarChart() {
+
   const data = {
-    labels: ["Lahore", "Sheikhupura", "Kasur", "Nankana"],
+    labels: ["100", "200", "300", "400", "500", "600", "700", "800"],
     datasets: [
       {
-        label: "Surveyed Areas",
-        data: [120, 90, 70, 50],
+        type: "bar",
+        label: "Surveyed",
+        data: [20, 65, 55, 50, 30, 25, 50, 70],
         backgroundColor: [
-          "rgba(59, 130, 246, 0.8)",
-          "rgba(16, 185, 129, 0.8)",
-          "rgba(245, 158, 11, 0.8)",
-          "rgba(239, 68, 68, 0.8)",
+          "rgba(34,211,238,0.9)",
+          "rgba(59,130,246,0.9)",
+          "rgba(139,92,246,0.9)",
+          "rgba(168,85,247,0.9)",
+          "rgba(99,102,241,0.9)",
+          "rgba(147,51,234,0.9)",
+          "rgba(59,130,246,0.9)",
+          "rgba(34,211,238,0.9)"
         ],
-        borderColor: ["#1e40af", "#047857", "#d97706", "#dc2626"],
-        borderWidth: 2,
-        borderRadius: 5,
+        borderRadius: 10,
+        barThickness: 18,
+      },
+      {
+        type: "line",
+        label: "Trend",
+        data: [25, 45, 42, 40, 18, 22, 28, 45],
+        borderColor: "#facc15",
+        backgroundColor: "#facc15",
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#facc15",
       },
     ],
   };
 
   const options = {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        labels: {
-          font: { size: 12, weight: "500" },
-          padding: 15,
-        },
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "#111",
+        padding: 10,
       },
     },
     scales: {
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: "rgba(0, 0, 0, 0.05)",
-        },
-      },
       x: {
         grid: {
-          display: false,
+          color: "rgba(255,255,255,0.05)",
+        },
+        ticks: {
+          color: "#9ca3af",
+        },
+      },
+      y: {
+        grid: {
+          color: "rgba(255,255,255,0.05)",
+        },
+        ticks: {
+          color: "#9ca3af",
         },
       },
     },
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
-      <h3 className="font-bold text-lg text-gray-800 mb-4">
-        Survey Statistics
-      </h3>
-      <Bar data={data} options={options} />
+    <div className="bg-[#1f2937] rounded-2xl shadow-xl p-6 w-full max-w-3xl">
+
+      {/* Top Stats */}
+      <div className="flex justify-between mb-6">
+
+        <div>
+          <p className="text-gray-400 text-sm">Total Area Surveyed</p>
+          <h2 className="text-xl font-bold text-white">8,097 Kanal</h2>
+          <p className="text-green-400 text-sm">↑ 19.6% increase</p>
+        </div>
+
+        <div>
+          <p className="text-gray-400 text-sm">Total Area Remaining</p>
+          <h2 className="text-xl font-bold text-white">312,134 Kanal</h2>
+          <p className="text-green-400 text-sm">↑ 2.5% change</p>
+        </div>
+
+      </div>
+
+      {/* Chart */}
+      <div className="h-64">
+        <Bar data={data} options={options} />
+      </div>
+
     </div>
   );
 }
