@@ -1,142 +1,33 @@
 import rudaFirmLogo from "../../assets/Rudafirm.png";
-import { useNavigate } from "react-router-dom";
 
-export default function Header({ filters }) {
-  const navigate = useNavigate();
-
+export default function Header() {
   return (
-    <div className="w-full px-2 py-0 bg-white/90 backdrop-blur-md shadow-md border-b border-slate-200">
-      <div className="flex items-center justify-between gap-4 w-full">
-        {/* Brand */}
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="flex items-center gap-3 px-3 py-2 bg-white rounded-lg shadow-sm border cursor-pointer focus:outline-none hover:bg-slate-50"
-        >
-          <img src={rudaFirmLogo} alt="RUDA" className="h-12 object-contain" />
-
-          <h1 className="text-3xl font-medium tracking-widest uppercase text-green-700">
-            {" "}
-            RCMS
-          </h1>
-        </button>
-
-        {filters && (
-          <div className="grid grid-cols-5 gap-3 w-full max-w-6xl px-2">
-            {/* Division */}
-            <div className="flex flex-col">
-              <label className="text-[10px] uppercase text-slate-500">
-                Division
-              </label>
-
-              <select
-                value={filters.selectedDivision}
-                onChange={filters.handleDivisionChange}
-                disabled={filters.loading.divisions}
-                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
-              >
-                <option value="">-- Division --</option>
-                {Array.isArray(filters.divisions) &&
-                  filters.divisions.map((division) => (
-                    <option
-                      key={division.division_i}
-                      value={division.division_i}
-                    >
-                      {division.division}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* District */}
-            <div className="flex flex-col">
-              <label className="text-[10px] uppercase text-slate-500">
-                District
-              </label>
-
-              <select
-                value={filters.selectedDistrict}
-                onChange={filters.handleDistrictChange}
-                disabled={
-                  !filters.selectedDivision || filters.loading.districts
-                }
-                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
-              >
-                <option value="">-- District --</option>
-                {Array.isArray(filters.districts) &&
-                  filters.districts.map((district) => (
-                    <option key={district.id} value={district.id}>
-                      {district.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* Tehsil */}
-            <div className="flex flex-col">
-              <label className="text-[10px] uppercase text-slate-500">
-                Tehsil
-              </label>
-
-              <select
-                value={filters.selectedTehsil}
-                onChange={filters.handleTehsilChange}
-                disabled={!filters.selectedDistrict || filters.loading.tehsils}
-                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
-              >
-                <option value="">-- Tehsil --</option>
-                {Array.isArray(filters.tehsils) &&
-                  filters.tehsils.map((tehsil) => (
-                    <option key={tehsil.id} value={tehsil.id}>
-                      {tehsil.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* Mouza */}
-            <div className="flex flex-col">
-              <label className="text-[10px] uppercase text-slate-500">
-                Mouza
-              </label>
-
-              <select
-                value={filters.selectedMouza}
-                onChange={filters.handleMouzaChange}
-                disabled={!filters.selectedTehsil || filters.loading.mouzas}
-                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
-              >
-                <option value="">-- Mouza --</option>
-                {Array.isArray(filters.mouzas) &&
-                  filters.mouzas.map((mouza, index) => (
-                    <option
-                      key={mouza.mouza_id ?? index}
-                      value={mouza.mouza_id}
-                    >
-                      {mouza.mouza}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* View By */}
-            <div className="flex flex-col">
-              <label className="text-[10px] uppercase text-slate-500">
-                View By
-              </label>
-
-              <select
-                value={filters.viewBy}
-                onChange={filters.handleViewByChange}
-                disabled={!filters.selectedMouza}
-                className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
-              >
-                <option value="">-- Select View --</option>
-                <option value="khasra">Khasra</option>
-                <option value="murabba">Murabba</option>
-              </select>
-            </div>
+    <div className="w-full bg-gradient-to-r from-green-800 via-green-700 to-green-600 text-white px-6 py-3 shadow-md">
+      <div className="flex items-center justify-between gap-4">
+        {/* Left Logo */}
+        <div className="flex items-center gap-2">
+          <img src={rudaFirmLogo} className="h-12 object-contain" />
+          <div>
+            <h1 className="text-sm font-bold tracking-wide">RLIMS</h1>
+            <p className="text-xs font-light">
+              RUDA Land Information Management System
+            </p>
           </div>
-        )}
+        </div>
+
+        {/* Center Search Bar */}
+        <div className="flex-1 mx-6">
+          <input
+            type="text"
+            placeholder="Parcel ID / Khasra No., Owner Name, Land Type"
+            className="w-full px-4 py-2 rounded text-sm text-gray-700 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 bg-white/90"
+          />
+        </div>
+
+        {/* Right Export Button */}
+        <button className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm font-semibold text-white whitespace-nowrap">
+          Export Report
+        </button>
       </div>
     </div>
   );

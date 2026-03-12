@@ -1,30 +1,40 @@
-import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import FilterPanel from "./FilterPanel";
-import MapView from "./MapView";
+
+import Header from "./Header";
+import SubHeader from "./SubHeader";
+import LeftPanel from "./LeftPanel";
+import ParcelPanel from "./ParcelPanel";
+
+import MapView from "./Mapview";
 
 export default function MapPage() {
   const outletContext = useOutletContext() ?? {};
   const filters = outletContext.filters;
-  const [panelCollapsed, setPanelCollapsed] = useState(false);
 
   return (
-    <div className="flex flex-col w-full h-full relative bg-gradient-to-b from-blue-50 to-white">
-      <MapView
-        selectedMouza={filters?.selectedMouzaDetails || null}
-        selectedDistrict={filters?.selectedDistrictOption || null}
-        selectedTehsil={filters?.selectedTehsilOption || null}
-        selectedDivision={filters?.selectedDivisionOption || null}
-        viewBy={filters?.viewBy || ""}
-      />
+    <div className="w-full h-screen flex flex-col bg-white">
+      {/* Header */}
+      <Header />
 
-      {filters && (
-        <FilterPanel
-          filters={filters}
-          isCollapsed={panelCollapsed}
-          onToggle={() => setPanelCollapsed(!panelCollapsed)}
+      {/* SubHeader with Filters and Stats */}
+      {filters && <SubHeader filters={filters} />}
+
+      {/* Map Area */}
+      <div className="flex-1 relative bg-gradient-to-b from-blue-50 to-white overflow-hidden">
+        <MapView
+          selectedMouza={filters?.selectedMouzaDetails}
+          selectedDistrict={filters?.selectedDistrictOption}
+          selectedTehsil={filters?.selectedTehsilOption}
+          selectedDivision={filters?.selectedDivisionOption}
+          viewBy={filters?.viewBy}
         />
-      )}
+
+        {/* Left Panel */}
+        <LeftPanel />
+
+        {/* Right Panel */}
+        <ParcelPanel />
+      </div>
     </div>
   );
 }

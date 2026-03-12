@@ -1,5 +1,4 @@
 import { Outlet, useLocation } from "react-router-dom";
-import Header from "../pages/Mapview/Header";
 import useCadastralFilters from "../hooks/useCadastralFilters";
 
 export default function MainLayout() {
@@ -9,7 +8,6 @@ export default function MainLayout() {
 
   return (
     <div className="app-layout">
-      {isMapRoute && <Header filters={filters} />}
       <main className="app-layout__main">
         <Outlet context={isMapRoute ? { filters } : {}} />
       </main>
