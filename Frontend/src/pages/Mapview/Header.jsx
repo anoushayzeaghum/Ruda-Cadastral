@@ -35,14 +35,17 @@ export default function Header({ filters }) {
                 className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
               >
                 <option value="">-- Division --</option>
-                {filters.divisions.map((division) => (
-                  <option key={division.division_i} value={division.division_i}>
-                    {division.division}
-                  </option>
-                ))}
+                {Array.isArray(filters.divisions) &&
+                  filters.divisions.map((division) => (
+                    <option
+                      key={division.division_i}
+                      value={division.division_i}
+                    >
+                      {division.division}
+                    </option>
+                  ))}
               </select>
             </div>
-            
 
             {/* District */}
             <div className="flex flex-col">
@@ -59,11 +62,12 @@ export default function Header({ filters }) {
                 className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
               >
                 <option value="">-- District --</option>
-                {filters.districts.map((district) => (
-                  <option key={district.id} value={district.id}>
-                    {district.name}
-                  </option>
-                ))}
+                {Array.isArray(filters.districts) &&
+                  filters.districts.map((district) => (
+                    <option key={district.id} value={district.id}>
+                      {district.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -80,11 +84,12 @@ export default function Header({ filters }) {
                 className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
               >
                 <option value="">-- Tehsil --</option>
-                {filters.tehsils.map((tehsil) => (
-                  <option key={tehsil.id} value={tehsil.id}>
-                    {tehsil.name}
-                  </option>
-                ))}
+                {Array.isArray(filters.tehsils) &&
+                  filters.tehsils.map((tehsil) => (
+                    <option key={tehsil.id} value={tehsil.id}>
+                      {tehsil.name}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -101,11 +106,15 @@ export default function Header({ filters }) {
                 className="border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-[#1e3a5f]"
               >
                 <option value="">-- Mouza --</option>
-                {filters.mouzas.map((mouza) => (
-                  <option key={mouza.mouza_id} value={mouza.mouza_id}>
-                    {mouza.mouza}
-                  </option>
-                ))}
+                {Array.isArray(filters.mouzas) &&
+                  filters.mouzas.map((mouza, index) => (
+                    <option
+                      key={mouza.mouza_id ?? index}
+                      value={mouza.mouza_id}
+                    >
+                      {mouza.mouza}
+                    </option>
+                  ))}
               </select>
             </div>
 
