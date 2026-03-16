@@ -5,31 +5,32 @@ import ChartsPanel from "./ChartsPanel";
 
 export default function Dashboard() {
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+    <div className="flex h-screen bg-[#0b0f14] text-white overflow-hidden">
+
       <Sidebar />
 
-      <div className="flex-1 p-8 overflow-auto">
-        {/* Header */}
-        {/* <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-slate-500 mt-2">
-            Cadastral Management System Overview
-          </p>
-        </div> */}
+      <div className="flex-1 flex flex-col">
 
-        {/* KPI Section */}
-        <KPISection />
+        {/* KPI SECTION */}
+        <div className="px-6 pt-6">
+          <KPISection />
+        </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-3 gap-6 mt-8">
-          <div className="col-span-2">
+        {/* MAP + CHARTS */}
+        <div className="flex-1 grid grid-cols-4 gap-6 p-6 pt-4">
+
+          {/* MAP */}
+          <div className="col-span-3 h-full">
             <MapPanel />
           </div>
 
-          <ChartsPanel />
+          {/* RIGHT SIDE PANELS */}
+          <div className="col-span-1 h-full">
+            <ChartsPanel />
+          </div>
+
         </div>
+
       </div>
     </div>
   );
