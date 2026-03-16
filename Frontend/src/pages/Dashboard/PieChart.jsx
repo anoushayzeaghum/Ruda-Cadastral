@@ -86,7 +86,7 @@ export default function PieChart() {
       border border-gray-600 shadow-lg"
     >
       {/* TITLE */}
-      <h3 className="text-white text-lg font-semibold mb-4">
+      <h3 className="text-white text-lg font-semibold">
         Land Use Classification
       </h3>
 

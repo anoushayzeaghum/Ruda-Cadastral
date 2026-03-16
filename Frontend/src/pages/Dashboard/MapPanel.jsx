@@ -12,7 +12,7 @@ export default function MapPanel() {
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/streets-v12", // streets basemap
+      style: "mapbox://styles/mapbox/dark-v11", // streets basemap
       center: [74.3587, 31.5204], // Lahore coordinates
       zoom: 12, // closer zoom on Lahore
     });

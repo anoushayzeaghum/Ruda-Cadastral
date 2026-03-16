@@ -17,7 +17,7 @@ export default function Dashboard() {
         </div>
 
         {/* MAP + CHARTS */}
-        <div className="flex-1 grid grid-cols-4 gap-6 p-6 pt-4">
+        <div className="flex-1 grid grid-cols-4 gap-3 p-6 pt-4">
 
           {/* MAP */}
           <div className="col-span-3 h-full">
