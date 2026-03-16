@@ -20,9 +20,9 @@ export default function Sidebar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="w-64 min-h-screen bg-[#1f2937] text-gray-300 flex flex-col shadow-xl">
+    <div className="w-64 min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-gray-300 flex flex-col shadow-xl border-r border-green-700/30">
       {/* Header */}
-      <div className="px-5 py-6 border-b border-slate-700 flex items-center gap-3">
+      <div className="px-5 py-6 border-b border-green-700/30 flex items-center gap-3 bg-gradient-to-r from-green-900/40 to-slate-800">
         {/* Logo */}
         <img
           src={rudaFirmLogo}
@@ -31,9 +31,7 @@ export default function Sidebar() {
         />
 
         {/* Title */}
-        <h1 className="text-3xl font-normal tracking-wider text-white-400">
-          RCMS
-        </h1>
+        <h1 className="text-3xl font-normal tracking-wider text-white">RCMS</h1>
       </div>
 
       {/* Navigation */}
@@ -44,8 +42,8 @@ export default function Sidebar() {
           className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all
           ${
             isActive("/dashboard")
-              ? "bg-[#111827] text-white shadow-inner"
-              : "hover:bg-[#374151] hover:text-white"
+              ? "bg-green-700 text-white shadow-lg shadow-green-700/30"
+              : "hover:bg-slate-700 hover:text-white"
           }`}
         >
           <LayoutDashboard size={18} />
@@ -58,8 +56,8 @@ export default function Sidebar() {
           className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all
           ${
             isActive("/mapview")
-              ? "bg-[#111827] text-white shadow-inner"
-              : "hover:bg-[#374151] hover:text-white"
+              ? "bg-green-700 text-white shadow-lg shadow-green-700/30"
+              : "hover:bg-slate-700 hover:text-white"
           }`}
         >
           <Map size={18} />
@@ -67,29 +65,29 @@ export default function Sidebar() {
         </button>
 
         {/* Area Management */}
-        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-[#374151] hover:text-white">
+        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-slate-700 hover:text-white">
           <Clipboard size={18} />
           Area
         </button>
 
         {/* Survey */}
-        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-[#374151] hover:text-white">
+        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-slate-700 hover:text-white">
           <Settings size={18} />
           Survey
         </button>
 
         {/* Reports */}
-        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-[#374151] hover:text-white">
+        <button className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all hover:bg-slate-700 hover:text-white">
           <FileText size={18} />
           Reports
         </button>
       </nav>
 
       {/* Logout */}
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t border-green-700/30">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 transition text-white text-sm font-medium"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-green-700 hover:bg-green-600 transition text-white text-sm font-medium shadow-lg shadow-green-700/30"
         >
           <LogOut size={18} />
           Logout
