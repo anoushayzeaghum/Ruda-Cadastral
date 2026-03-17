@@ -38,7 +38,7 @@ export default function Sidebar() {
               className={`flex w-full items-center gap-3 px-4 py-3 rounded-lg text-sm transition
                 ${
                   isActive(item.path)
-                    ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                    ? "bg-green-500/20 text-black border border-green-500/30"
                     : "hover:bg-white/5 text-gray-400"
                 }
               `}
