@@ -353,7 +353,10 @@ export default function MapView({
         setIsLoading(true);
         setError("");
 
-        if (selectedMouza) geojson = await getMouzaBoundary(selectedMouza);
+        if (selectedMouza)
+          geojson = await getMouzaBoundary(
+            selectedMouza.mouza_id || selectedMouza.id,
+          );
         else if (selectedTehsil)
           geojson = await getTehsilBoundary(selectedTehsil.id);
         else if (selectedDistrict)
@@ -393,7 +396,8 @@ export default function MapView({
       try {
         setIsLoading(true);
 
-        const geojson = await getKhasras(selectedMouza);
+        const mouza_id = selectedMouza.mouza_id || selectedMouza.id;
+        const geojson = await getKhasras(mouza_id);
         if (geojson?.features?.length) drawKhasras(geojson);
       } catch (e) {
         console.error("Khasra load error:", e);
@@ -420,7 +424,8 @@ export default function MapView({
       try {
         setIsLoading(true);
 
-        const geojson = await getMurabbas(selectedMouza);
+        const mouza_id = selectedMouza.mouza_id || selectedMouza.id;
+        const geojson = await getMurabbas(mouza_id);
         if (geojson?.features?.length) drawMurabbas(geojson);
       } catch (e) {
         console.error("Murabba load error:", e);

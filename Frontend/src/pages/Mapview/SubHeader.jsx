@@ -9,10 +9,8 @@ export default function SubHeader({ filters }) {
 
   return (
     <div className="w-full bg-gray-100 border-b border-gray-300 shadow-sm">
-
       {/* FILTER BAR */}
       <div className="flex items-center gap-3 px-4 py-2">
-
         {/* Search Button */}
         <button className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white text-sm rounded-md hover:bg-green-800 whitespace-nowrap">
           <Database size={16} />
@@ -22,12 +20,11 @@ export default function SubHeader({ filters }) {
 
         {/* Filters */}
         <div className="flex items-center gap-2 flex-1">
-
           <FilterCard
             label="Division"
             value={
               filters.divisions.find(
-                (d) => d.division_i === filters.selectedDivision
+                (d) => d.division_i === filters.selectedDivision,
               )?.division || "Select"
             }
           >
@@ -49,9 +46,8 @@ export default function SubHeader({ filters }) {
           <FilterCard
             label="District"
             value={
-              filters.districts.find(
-                (d) => d.id === filters.selectedDistrict
-              )?.name || "Select"
+              filters.districts.find((d) => d.id === filters.selectedDistrict)
+                ?.name || "Select"
             }
           >
             <select
@@ -74,8 +70,7 @@ export default function SubHeader({ filters }) {
             value={
               filters.tehsils.find((t) => t.id === filters.selectedTehsil)
                 ?.name || "Select"
-            }
-          >
+            }          >
             <select
               value={filters.selectedTehsil}
               onChange={filters.handleTehsilChange}
@@ -94,9 +89,8 @@ export default function SubHeader({ filters }) {
           <FilterCard
             label="Mouza"
             value={
-              filters.mouzas.find(
-                (m) => m.mouza_id === filters.selectedMouza
-              )?.mouza || "Select"
+              filters.mouzas.find((m) => m.mouza_id === filters.selectedMouza)
+                ?.mouza || "Select"
             }
           >
             <select
@@ -145,12 +139,10 @@ export default function SubHeader({ filters }) {
 
       {/* STATISTICS BAR */}
       <div className="flex items-center gap-8 px-4 py-2 bg-gray-50 border-t border-gray-200 text-sm">
-
         <StatItem label="Total Mouzas" value={mouzaCount} />
         <StatItem label="Total Parcels" value="82,400" />
         <StatItem label="Total Area" value="102,500 Acres" />
         <StatItem label="Acquired Land" value="25,800 Acres" />
-
       </div>
     </div>
   );

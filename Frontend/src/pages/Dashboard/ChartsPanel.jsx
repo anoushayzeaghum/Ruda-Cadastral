@@ -2,15 +2,14 @@ import PieChart from "./PieChart";
 import BarChart from "./BarChart";
 
 export default function ChartsPanel() {
-
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="flex flex-col gap-3 h-full overflow-hidden">
 
-      <div className="h-[30%]">
+      <div className="flex-1 min-h-0">
         <PieChart />
       </div>
 
-      <div className="h-[50%]">
+      <div className="flex-1 min-h-0">
         <BarChart />
       </div>
 

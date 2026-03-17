@@ -1,11 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Map,
-  FileText,
-  Settings,
-  LogOut,
-} from "lucide-react";
+import { LayoutDashboard, Map, FileText, Settings } from "lucide-react";
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -22,12 +16,8 @@ export default function Sidebar() {
 
   return (
     <div className="w-64 bg-white dark:bg-[#0f1720] border-r border-green-900/40 flex flex-col">
-
-   
-
       {/* Menu */}
       <div className="flex-1 px-4 py-6 space-y-2">
-
         {menu.map((item) => {
           const Icon = item.icon;
 
@@ -49,15 +39,6 @@ export default function Sidebar() {
           );
         })}
       </div>
-
-      {/* Logout */}
-      <div className="p-4 border-t border-green-900/40">
-        <button className="flex w-full items-center justify-center gap-2 bg-green-600 hover:bg-green-500 rounded-lg py-3 text-sm">
-          <LogOut size={16} />
-          Logout
-        </button>
-      </div>
-
     </div>
   );
 }

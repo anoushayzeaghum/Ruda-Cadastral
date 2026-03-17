@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { LogOut } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 
 export default function Header({ darkMode, setDarkMode }) {
@@ -34,10 +34,12 @@ export default function Header({ darkMode, setDarkMode }) {
 
       {/* RIGHT */}
       <div className="flex items-center gap-3">
-        {/* 🔥 TOGGLE */}
+        {/* TOGGLE */}
         <button
           onClick={() => setDarkMode(!darkMode)}
-          className="w-12 h-6 flex items-center bg-gray-300 dark:bg-green-600 rounded-full p-1 transition"
+          className={`w-12 h-6 flex items-center rounded-full p-1 transition ${
+            darkMode ? "bg-green-600" : "bg-gray-300"
+          }`}
         >
           <div
             className={`w-4 h-4 bg-white rounded-full transition-transform ${
@@ -46,25 +48,11 @@ export default function Header({ darkMode, setDarkMode }) {
           />
         </button>
 
-        {/* SEARCH */}
-        <div className="relative w-[280px]">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            size={16}
-          />
-
-          <input
-            type="text"
-            placeholder="Global Search"
-            className="
-              w-full pl-9 pr-4 py-2 rounded-lg
-              bg-gray-100 dark:bg-[#111827]
-              border border-gray-300 dark:border-slate-700
-              text-gray-700 dark:text-gray-300
-              focus:outline-none focus:ring-1 focus:ring-green-500
-            "
-          />
-        </div>
+        {/* LOGOUT BUTTON */}
+        <button className="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-md font-medium flex items-center gap-2 transition">
+          <LogOut size={16} />
+          Logout
+        </button>
       </div>
     </div>
   );
