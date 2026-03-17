@@ -3,23 +3,30 @@ import rudaFirmLogo from "../../assets/Rudafirm.png";
 
 export default function Header({ darkMode, setDarkMode }) {
   return (
-    <div className="
+    <div
+      className="
       w-full h-[60px] px-6 flex items-center justify-between
-      bg-white dark:bg-[#0b1218]
+      bg-gradient-to-r from-green-900 via-green-800 to-green-900 dark:bg-[#0b1218]
       border-b border-gray-200 dark:border-slate-800
       shadow-md dark:shadow-[0_4px_20px_rgba(0,0,0,0.6)]
-    ">
-
+    "
+    >
       {/* LEFT */}
       <div className="flex items-center gap-4">
-        <img src={rudaFirmLogo} className="h-10 w-10 bg-white rounded-full p-1" />
-
+        {/* Circular Logo */}
+        <div className="bg-white rounded-full p-1 flex items-center justify-center">
+          <img
+            src={rudaFirmLogo}
+            alt="RLIMS"
+            className="h-10 w-10 object-contain"
+          />
+        </div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
+          <h1 className="text-3xl font-normal text-white dark:text-white">
             RCMS
           </h1>
           <span className="text-gray-400">|</span>
-          <span className="text-gray-600 dark:text-gray-400">
+          <span className="text-lg font-normal text-white dark:text-gray-400">
             RUDA Cadastral Management System
           </span>
         </div>
@@ -27,7 +34,6 @@ export default function Header({ darkMode, setDarkMode }) {
 
       {/* RIGHT */}
       <div className="flex items-center gap-3">
-
         {/* 🔥 TOGGLE */}
         <button
           onClick={() => setDarkMode(!darkMode)}
@@ -42,7 +48,10 @@ export default function Header({ darkMode, setDarkMode }) {
 
         {/* SEARCH */}
         <div className="relative w-[280px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            size={16}
+          />
 
           <input
             type="text"
