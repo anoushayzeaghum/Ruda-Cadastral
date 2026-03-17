@@ -102,10 +102,10 @@ export default function BarChart() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-xl border border-gray-700/50 p-6 w-full h-full">
+    <div className="bg-white dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-xl shadow-xl border border-gray-700/50 p-6 w-full h-full">
       {/* Title */}
       <div className="mb-6">
-        <h3 className="text-lg font-bold text-white">
+        <h3 className="text-lg font-bold text-gray-800 dark:text-white">
           Verification Timeline & Status
         </h3>
         <p className="text-xs text-gray-400 mt-1">

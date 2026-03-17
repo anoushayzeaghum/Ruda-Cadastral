@@ -21,17 +21,9 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-64 bg-[#0f1720] border-r border-green-900/40 flex flex-col">
+    <div className="w-64 bg-white dark:bg-[#0f1720] border-r border-green-900/40 flex flex-col">
 
-      {/* Header */}
-      <div className="px-6 py-6 border-b border-green-900/40">
-        <h1 className="text-xl font-semibold tracking-wide">
-          RCMS
-        </h1>
-        <p className="text-xs text-gray-400">
-          RUDA Cadastral Management System
-        </p>
-      </div>
+   
 
       {/* Menu */}
       <div className="flex-1 px-4 py-6 space-y-2">

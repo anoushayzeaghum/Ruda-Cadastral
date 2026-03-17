@@ -82,11 +82,11 @@ export default function PieChart() {
   return (
     <div
       className="rounded-xl p-5 w-full h-full
-      bg-gradient-to-br from-gray-800 to-gray-900
+      bg-white dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900
       border border-gray-600 shadow-lg"
     >
       {/* TITLE */}
-      <h3 className="text-white text-lg font-semibold">
+      <h3 className="text-gray-800 dark:text-gray-300 dark:text-white text-lg font-semibold">
         Land Use Classification
       </h3>
 
