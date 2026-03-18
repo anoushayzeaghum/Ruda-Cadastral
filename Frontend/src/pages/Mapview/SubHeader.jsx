@@ -23,11 +23,12 @@ export default function SubHeader({ filters }) {
         {/* Filters */}
         <div className="flex items-center gap-2 flex-1">
 
+          {/* Division */}
           <FilterCard
             label="Division"
             value={
               filters.divisions.find(
-                (d) => d.division_i === filters.selectedDivision
+                (d) => String(d.division_i) === String(filters.selectedDivision)
               )?.division || "Select"
             }
           >
@@ -35,22 +36,23 @@ export default function SubHeader({ filters }) {
               value={filters.selectedDivision}
               onChange={filters.handleDivisionChange}
               disabled={filters.loading?.divisions}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-50"
             >
               <option value="">-- Division --</option>
               {filters.divisions.map((d) => (
-                <option key={d.division_i} value={d.division_i}>
+                <option key={d.division_i} value={String(d.division_i)}>
                   {d.division}
                 </option>
               ))}
             </select>
           </FilterCard>
 
+          {/* District */}
           <FilterCard
             label="District"
             value={
               filters.districts.find(
-                (d) => d.id === filters.selectedDistrict
+                (d) => String(d.id) === String(filters.selectedDistrict)
               )?.name || "Select"
             }
           >
@@ -58,44 +60,47 @@ export default function SubHeader({ filters }) {
               value={filters.selectedDistrict}
               onChange={filters.handleDistrictChange}
               disabled={!filters.selectedDivision || filters.loading?.districts}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-50"
             >
               <option value="">-- District --</option>
               {filters.districts.map((d) => (
-                <option key={d.id} value={d.id}>
+                <option key={d.id} value={String(d.id)}>
                   {d.name}
                 </option>
               ))}
             </select>
           </FilterCard>
 
+          {/* Tehsil */}
           <FilterCard
             label="Tehsil"
             value={
-              filters.tehsils.find((t) => t.id === filters.selectedTehsil)
-                ?.name || "Select"
+              filters.tehsils.find(
+                (t) => String(t.id) === String(filters.selectedTehsil)
+              )?.name || "Select"
             }
           >
             <select
               value={filters.selectedTehsil}
               onChange={filters.handleTehsilChange}
               disabled={!filters.selectedDistrict || filters.loading?.tehsils}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-50"
             >
               <option value="">-- Tehsil --</option>
               {filters.tehsils.map((t) => (
-                <option key={t.id} value={t.id}>
+                <option key={t.id} value={String(t.id)}>
                   {t.name}
                 </option>
               ))}
             </select>
           </FilterCard>
 
+          {/* Mouza */}
           <FilterCard
             label="Mouza"
             value={
               filters.mouzas.find(
-                (m) => m.mouza_id === filters.selectedMouza
+                (m) => String(m.mouza_id) === String(filters.selectedMouza)
               )?.mouza || "Select"
             }
           >
@@ -103,11 +108,11 @@ export default function SubHeader({ filters }) {
               value={filters.selectedMouza}
               onChange={filters.handleMouzaChange}
               disabled={!filters.selectedTehsil || filters.loading?.mouzas}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-50"
             >
               <option value="">-- Mouza --</option>
               {filters.mouzas.map((m) => (
-                <option key={m.mouza_id} value={m.mouza_id}>
+                <option key={m.mouza_id} value={String(m.mouza_id)}>
                   {m.mouza}
                 </option>
               ))}
@@ -120,7 +125,7 @@ export default function SubHeader({ filters }) {
               value={filters.viewBy}
               onChange={filters.handleViewByChange}
               disabled={!filters.selectedMouza}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-50"
             >
               <option value="">-- Select View --</option>
               <option value="khasra">Khasra</option>

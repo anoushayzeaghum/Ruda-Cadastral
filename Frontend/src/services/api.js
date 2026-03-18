@@ -81,9 +81,14 @@ export const getTehsils = async (district_i) => {
   return normalizeData(res);
 };
 
-export const getMouzas = async (tehsil_id) => {
+export const getMouzas = async (tehsil) => {
+  const params = {};
+  if (tehsil !== undefined && tehsil !== null && tehsil !== "") {
+    params.tehsil = tehsil;
+  }
+
   const res = await API.get("/mouza/", {
-    params: { tehsil_id },
+    params,
   });
   return normalizeData(res);
 };
