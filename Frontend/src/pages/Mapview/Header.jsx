@@ -1,15 +1,15 @@
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, LayoutDashboard } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
+import { useNavigate } from "react-router-dom";
 
 export default function Header() {
+  const navigate = useNavigate();
+
   return (
     <div className="w-full bg-gradient-to-r from-green-900 via-green-800 to-green-900 text-white px-6 py-2 shadow-md">
-      
       <div className="flex items-center justify-between">
-
         {/* LEFT SECTION */}
         <div className="flex items-center gap-4">
-
           {/* Circular Logo */}
           <div className="bg-white rounded-full p-1 flex items-center justify-center">
             <img
@@ -33,10 +33,8 @@ export default function Header() {
 
         {/* RIGHT SECTION */}
         <div className="flex items-center gap-3">
-
           {/* Search */}
           <div className="flex items-center bg-white/95 rounded-md border border-white/30 px-3 py-1 w-[420px]">
-
             <Search className="text-gray-500 mr-2" size={16} />
 
             <input
@@ -48,11 +46,19 @@ export default function Header() {
             <ChevronDown className="text-gray-500 ml-2" size={16} />
           </div>
 
+          {/* Dashboard Button */}
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium flex items-center gap-2 transition"
+          >
+            <LayoutDashboard size={16} />
+            Dashboard
+          </button>
+
           {/* Export Button */}
           <button className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium">
             Export Report
           </button>
-
         </div>
       </div>
     </div>

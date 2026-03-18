@@ -9,10 +9,8 @@ export default function SubHeader({ filters }) {
 
   return (
     <div className="w-full bg-gray-100 border-b border-gray-300 shadow-sm">
-
       {/* FILTER BAR */}
       <div className="flex items-center gap-3 px-4 py-2">
-
         {/* Search Button */}
         <button className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white text-sm rounded-md hover:bg-green-800 whitespace-nowrap">
           <Database size={16} />
@@ -150,12 +148,10 @@ export default function SubHeader({ filters }) {
 
       {/* STATISTICS BAR */}
       <div className="flex items-center gap-8 px-4 py-2 bg-gray-50 border-t border-gray-200 text-sm">
-
         <StatItem label="Total Mouzas" value={mouzaCount} />
         <StatItem label="Total Parcels" value="82,400" />
         <StatItem label="Total Area" value="102,500 Acres" />
         <StatItem label="Acquired Land" value="25,800 Acres" />
-
       </div>
     </div>
   );
