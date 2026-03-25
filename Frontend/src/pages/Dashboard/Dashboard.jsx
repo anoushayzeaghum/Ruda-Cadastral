@@ -27,7 +27,7 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen bg-white dark:bg-[#0b0f14] text-gray-800 dark:text-white flex flex-col">
-      <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+      <Header darkMode={darkMode} />
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
