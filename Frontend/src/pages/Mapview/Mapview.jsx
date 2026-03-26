@@ -269,6 +269,9 @@ export default function MapView({
         map.getCanvas().style.cursor = "";
       });
 
+      // Fit map to the loaded khasra features
+      zoomToGeoJSON(geojson);
+
       setFeatureCount(geojson.features.length);
     } catch (e) {
       console.error("Khasra drawing error:", e);
@@ -318,6 +321,9 @@ export default function MapView({
           "line-width": 2,
         },
       });
+
+      // Fit map to the loaded murabba features
+      zoomToGeoJSON(geojson);
 
       setFeatureCount(geojson.features.length);
     } catch (e) {

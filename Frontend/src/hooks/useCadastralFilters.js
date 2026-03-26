@@ -308,8 +308,11 @@ setMouzas(sortByLabel(unique, "mouza"));
   };
 
   const handleMouzaChange = (e) => {
-    setSelectedMouza(e.target.value);
-    setViewBy(""); // Reset view by when mouza changes
+    const value = String(e.target.value ?? "");
+    setSelectedMouza(value);
+    // Automatically switch to 'khasra' view when a mouza is selected,
+    // clear view when mouza is cleared.
+    setViewBy(value ? "khasra" : "");
   };
 
   const handleViewByChange = (e) => {
