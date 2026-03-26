@@ -1,5 +1,6 @@
 import React from "react";
 
+
 const topCards = [
   {
     title: "RUDA Owned Land",
@@ -274,12 +275,12 @@ function StatCard({ card }) {
     <div
       className={[
         "relative overflow-hidden rounded-[20px] border border-[#d8ddd5] shadow-[0_4px_12px_rgba(38,65,47,0.08)]",
-        "px-4 pt-3.5 pb-3 min-h-[102px]",
+        "px-4 py-4 min-h-0",
         tone.box,
         tone.overlay,
       ].join(" ")}
     >
-      <div className="relative z-10 flex h-full flex-col justify-between">
+      <div className="relative z-10 flex-col justify-start gap-1">
         <div className="flex items-center gap-2.5">
           <div className={`${tone.icon} shrink-0`}>
             <Icon type={card.icon} className="h-5 w-5" />
@@ -289,7 +290,7 @@ function StatCard({ card }) {
           </h3>
         </div>
 
-        <div className="mt-2 flex items-end gap-1.5 leading-none">
+        <div className="mt-3 flex items-end gap-1.5 leading-none">
           <span className={`text-[20px] md:text-[24px] font-semibold tracking-[-1px] ${tone.value}`}>
             {card.value}
           </span>
@@ -449,7 +450,7 @@ export default function Statistics() {
           <Panel className="px-4 py-3.5">
             <SectionTitle>Mouzas by Division</SectionTitle>
 
-            <div className="mt-3">
+            <div className="mt-2">
               {divisions.map((item, index) => (
                 <RowItem
                   key={item.name}
@@ -476,22 +477,22 @@ export default function Statistics() {
                   </div>
                 </div>
 
-                <div className="mt-4 space-y-4">
+                <div className="mt-2 space-y-1">
                   <div className="grid grid-cols-[1.05fr_auto_1.25fr] items-center gap-3">
-                    <span className="text-[14px] text-[#334038]">Total Khasras</span>
-                    <span className="text-[18px] font-semibold text-[#1e5e37]">82,400</span>
+                    <span className="text-[12px] text-[#334038]">Total Khasras</span>
+                    <span className="text-[16px] font-semibold text-[#1e5e37]">82,400</span>
                     <ProgressBar value={72} color="bg-[#2e9456]" />
                   </div>
 
                   <div className="grid grid-cols-[1.05fr_auto_1.25fr] items-center gap-3">
-                    <span className="text-[14px] text-[#334038]">Surveyed</span>
-                    <span className="text-[18px] font-semibold text-[#1e5e37]">32,200</span>
+                    <span className="text-[12px] text-[#334038]">Surveyed</span>
+                    <span className="text-[16px] font-semibold text-[#1e5e37]">32,200</span>
                     <ProgressBar value={58} color="bg-[#4aa86f]" />
                   </div>
 
                   <div className="grid grid-cols-[1.05fr_auto_1.25fr] items-center gap-3">
-                    <span className="text-[14px] text-[#334038]">Pending</span>
-                    <span className="text-[18px] font-semibold text-[#1e5e37]">17,200</span>
+                    <span className="text-[12px] text-[#334038]">Pending</span>
+                    <span className="text-[16px] font-semibold text-[#1e5e37]">17,200</span>
                     <ProgressBar value={22} color="bg-[#2a7e49]" />
                   </div>
                 </div>
@@ -528,21 +529,21 @@ export default function Statistics() {
               Digitization Status
             </SectionTitle>
 
-            <div className="mt-4 space-y-4">
+            <div className="mt-2 space-y-1">
               <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3">
-                <span className="text-[14px] text-[#334038]">Fard Records</span>
+                <span className="text-[12px] text-[#334038]">Fard Records</span>
                 <SegmentedBar value={80} />
                 <span className="text-[16px] font-semibold text-[#1e5e37]">80%</span>
               </div>
 
               <div className="grid grid-cols-[1fr_95px_auto] items-center gap-3">
-                <span className="text-[14px] text-[#334038]">Jamabandi</span>
+                <span className="text-[12px] text-[#334038]">Jamabandi</span>
                 <ProgressBar value={72} color="bg-[#2e9456]" />
                 <span className="text-[16px] font-semibold text-[#1e5e37]">72%</span>
               </div>
 
               <div className="grid grid-cols-[1fr_95px_auto] items-center gap-3">
-                <span className="text-[14px] text-[#334038]">Mutation Registers</span>
+                <span className="text-[12px] text-[#334038]">Mutation Registers</span>
                 <ProgressBar value={63} color="bg-[#2f8650]" />
                 <span className="text-[16px] font-semibold text-[#1e5e37]">63%</span>
               </div>

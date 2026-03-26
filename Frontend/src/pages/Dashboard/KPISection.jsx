@@ -216,7 +216,7 @@ export default function KPISection() {
                     })}
                   </div>
                 ) : card.value2 ? (
-                  <div className="mt-3">
+                  <div className="mt-1">
                     <div className="flex items-end gap-2 flex-wrap">
                       <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
                         {card.value}
@@ -229,12 +229,12 @@ export default function KPISection() {
                       <span className={`pb-0.5 text-[11px] ${tone.sub}`}>{card.unit2}</span>
                     </div>
 
-                    <div className="mt-3">
+                    <div className="mt-1">
                       <ProgressBar value={card.progress} />
                     </div>
                   </div>
                 ) : card.ring ? (
-                  <div className="mt-3 flex items-center justify-between gap-3">
+                  <div className="mt-1 flex items-center justify-between gap-3">
                     <div className="flex items-end gap-1.5">
                       <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
                         {card.value}
@@ -244,7 +244,7 @@ export default function KPISection() {
                     <RingProgress value={card.ring} />
                   </div>
                 ) : (
-                  <div className="mt-3">
+                  <div className="mt-1">
                     <div className="flex items-end gap-1.5">
                       <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
                         {card.value}
