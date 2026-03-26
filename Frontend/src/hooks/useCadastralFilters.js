@@ -168,10 +168,29 @@ export default function useCadastralFilters() {
       setErrorMessage("");
 
       try {
+        console.log(selectedTehsil);
         const responses = await Promise.all(
-          selectedTehsil.map((tehsilId) => getMouzas(tehsilId)),
-        );
-        const data = dedupeBy(responses.flat(), "mouza_id");
+  selectedTehsil.map((tehsil) => getMouzas(tehsil))
+);
+
+console.log("Responses from API:", responses);
+
+// Extract features correctly
+const allFeatures = responses.flatMap((fc) => fc.features);
+
+// Convert GeoJSON → flat object
+const data = allFeatures.map((f) => ({
+  id: f.id,
+  mouza_id: f.id, // or f.properties.mouza_id if exists
+  geometry: f.geometry,
+  ...f.properties,
+}));
+
+const unique = dedupeBy(data, "mouza_id");
+
+console.log("Flattened mouza data:", unique);
+
+setMouzas(sortByLabel(unique, "mouza"));
         if (!ignore) {
           setMouzas(sortByLabel(data, "mouza"));
         }
