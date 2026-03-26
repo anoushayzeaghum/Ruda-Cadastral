@@ -6,7 +6,6 @@ const topCards = [
     value: "25,800",
     unit: "Acres",
     tone: "green",
-    featured: true,
     icon: "building",
   },
   {
@@ -35,11 +34,10 @@ const topCards = [
     value: "8,500",
     unit: "Acres",
     tone: "blueGreen",
-    featured: true,
     icon: "state",
   },
   {
-    title: "Pirvte Land",
+    title: "Private Land",
     value: "68,200",
     unit: "Acres",
     tone: "whiteGreen",
@@ -275,27 +273,27 @@ function StatCard({ card }) {
   return (
     <div
       className={[
-        "relative overflow-hidden rounded-[22px] border border-[#d8ddd5] shadow-[0_4px_14px_rgba(38,65,47,0.08)]",
-        "px-6 pt-5 pb-4 min-h-[132px]",
+        "relative overflow-hidden rounded-[20px] border border-[#d8ddd5] shadow-[0_4px_12px_rgba(38,65,47,0.08)]",
+        "px-4 pt-3.5 pb-3 min-h-[102px]",
         tone.box,
         tone.overlay,
       ].join(" ")}
     >
       <div className="relative z-10 flex h-full flex-col justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <div className={`${tone.icon} shrink-0`}>
-            <Icon type={card.icon} className="h-6 w-6" />
+            <Icon type={card.icon} className="h-5 w-5" />
           </div>
-          <h3 className={`text-[16px] md:text-[18px] font-medium tracking-[0.1px] ${tone.title}`}>
+          <h3 className={`text-[13px] md:text-[14px] font-medium tracking-[0.1px] ${tone.title}`}>
             {card.title}
           </h3>
         </div>
 
-        <div className="mt-3 flex items-end gap-2 leading-none">
-          <span className={`text-[44px] md:text-[54px] font-semibold tracking-[-1.8px] ${tone.value}`}>
+        <div className="mt-2 flex items-end gap-1.5 leading-none">
+          <span className={`text-[20px] md:text-[24px] font-semibold tracking-[-1px] ${tone.value}`}>
             {card.value}
           </span>
-          <span className={`pb-[8px] text-[18px] md:text-[20px] font-medium ${tone.unit}`}>
+          <span className={`pb-[4px] text-[13px] md:text-[14px] font-medium ${tone.unit}`}>
             {card.unit}
           </span>
         </div>
@@ -308,8 +306,8 @@ function Panel({ className = "", children }) {
   return (
     <div
       className={[
-        "rounded-[22px] border border-[#d8ddd5] bg-[#fbfbf8]",
-        "shadow-[0_4px_14px_rgba(38,65,47,0.08)]",
+        "rounded-[20px] border border-[#d8ddd5] bg-[#fbfbf8]",
+        "shadow-[0_4px_12px_rgba(38,65,47,0.08)]",
         className,
       ].join(" ")}
     >
@@ -320,13 +318,13 @@ function Panel({ className = "", children }) {
 
 function SectionTitle({ icon, children, green = false }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2.5">
       {icon ? (
         <span className={green ? "text-[#1d6f45]" : "text-[#415348]"}>
           {icon}
         </span>
       ) : null}
-      <h3 className={`text-[18px] md:text-[22px] font-medium ${green ? "text-[#1d6f45]" : "text-[#223128]"}`}>
+      <h3 className={`text-[15px] md:text-[17px] font-medium ${green ? "text-[#1d6f45]" : "text-[#223128]"}`}>
         {children}
       </h3>
     </div>
@@ -335,9 +333,9 @@ function SectionTitle({ icon, children, green = false }) {
 
 function RowItem({ label, value, last = false }) {
   return (
-    <div className={`flex items-center justify-between py-3 ${last ? "" : "border-b border-[#e8ece4]"}`}>
-      <span className="text-[17px] md:text-[18px] text-[#2d342f]">{label}</span>
-      <span className="text-[22px] md:text-[24px] font-medium text-[#223128]">{value}</span>
+    <div className={`flex items-center justify-between py-1  ${last ? "" : "border-b border-[#e8ece4]"}`}>
+      <span className="text-[12px] md:text-[13px] text-[#2d342f]">{label}</span>
+      <span className="text-[15px] md:text-[16px] font-medium text-[#223128]">{value}</span>
     </div>
   );
 }
@@ -346,7 +344,7 @@ function ProgressBar({ value, total = 100, color = "bg-[#2f9a59]" }) {
   const width = `${Math.max(0, Math.min(100, (value / total) * 100))}%`;
 
   return (
-    <div className="h-[12px] w-full overflow-hidden rounded-full bg-[#d7dfdb]">
+    <div className="h-[9px] w-full overflow-hidden rounded-full bg-[#d7dfdb]">
       <div className={`h-full rounded-full ${color}`} style={{ width }} />
     </div>
   );
@@ -360,7 +358,7 @@ function SegmentedBar({ value, segments = 4 }) {
       {Array.from({ length: segments }).map((_, i) => (
         <div
           key={i}
-          className={`h-[22px] w-[22px] rounded-[2px] border border-[#b5c6b8] ${
+          className={`h-[16px] w-[16px] rounded-[2px] border border-[#b5c6b8] ${
             i < filled ? "bg-[#2d8a4f]" : "bg-[#c9d4cf]"
           }`}
         />
@@ -371,16 +369,9 @@ function SegmentedBar({ value, segments = 4 }) {
 
 function CircularChart() {
   return (
-    <div className="relative h-[130px] w-[130px] shrink-0">
+    <div className="relative h-[92px] w-[92px] shrink-0">
       <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-        <circle
-          cx="60"
-          cy="60"
-          r="42"
-          fill="none"
-          stroke="#dce6dd"
-          strokeWidth="12"
-        />
+        <circle cx="60" cy="60" r="42" fill="none" stroke="#dce6dd" strokeWidth="12" />
         <circle
           cx="60"
           cy="60"
@@ -404,7 +395,7 @@ function CircularChart() {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[22px] md:text-[24px] font-semibold text-[#1f5f35]">79%</span>
+        <span className="text-[18px] font-semibold text-[#1f5f35]">79%</span>
       </div>
     </div>
   );
@@ -412,22 +403,20 @@ function CircularChart() {
 
 function MiniMetric({ icon, value }) {
   return (
-    <div className="flex items-center gap-3 text-[#253128]">
+    <div className="flex items-center gap-2.5 text-[#253128]">
       <span className="text-[#536154]">{icon}</span>
-      <span className="text-[18px] md:text-[20px] font-medium">{value}</span>
+      <span className="text-[12px] md:text-[13px] font-medium">{value}</span>
     </div>
   );
 }
 
 function MapMock() {
   return (
-    <div className="relative h-[180px] w-full overflow-hidden rounded-[16px] border border-[#e0e6dd] bg-[#e8ede6]">
+    <div className="relative h-[132px] w-full overflow-hidden rounded-[14px] border border-[#e0e6dd] bg-[#e8ede6]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.6),transparent_25%),radial-gradient(circle_at_80%_40%,rgba(255,255,255,0.35),transparent_22%),linear-gradient(135deg,#e9ede8_0%,#dfe6de_100%)]" />
 
       <svg viewBox="0 0 500 220" className="absolute inset-0 h-full w-full opacity-80">
         <path d="M0 55H500M0 105H500M0 155H500M70 0V220M150 0V220M240 0V220M330 0V220M430 0V220" stroke="#d7ded8" strokeWidth="1" />
-        <path d="M0 28C72 48 145 38 220 52C290 65 355 35 430 42C464 45 482 48 500 58" stroke="#d4dad5" strokeWidth="2" fill="none" />
-        <path d="M0 128C70 110 132 124 210 112C278 102 330 124 410 116C450 112 478 115 500 123" stroke="#d4dad5" strokeWidth="2" fill="none" />
       </svg>
 
       <svg viewBox="0 0 500 220" className="absolute inset-0 h-full w-full">
@@ -438,33 +427,10 @@ function MapMock() {
           strokeWidth="3"
           opacity="0.95"
         />
-        <path
-          d="M118 140L145 145L172 157L188 175L169 185L145 184L124 171L112 157Z"
-          fill="#d6b06a"
-          opacity="0.95"
-        />
-        <path
-          d="M169 70L205 61L235 78L232 110L210 122L177 112L160 89Z"
-          fill="#f0df98"
-          opacity="0.95"
-        />
-        <path
-          d="M239 68L277 62L310 78L303 110L271 126L240 106Z"
-          fill="#dfe9bf"
-          opacity="0.98"
-        />
-        <path
-          d="M77 86L107 77L118 140L102 145L82 128L72 106Z"
-          fill="#3f88b8"
-          opacity="0.95"
-        />
-        <path
-          d="M333 74L356 84L347 106L363 132L347 164L321 155L313 128L320 96Z"
-          fill="#a9c6b9"
-          opacity="0.95"
-        />
-        <circle cx="222" cy="98" r="16" fill="#628f7c" opacity="0.9" />
-        <circle cx="222" cy="98" r="8" fill="#efe0a2" opacity="0.95" />
+        <path d="M118 140L145 145L172 157L188 175L169 185L145 184L124 171L112 157Z" fill="#d6b06a" opacity="0.95" />
+        <path d="M169 70L205 61L235 78L232 110L210 122L177 112L160 89Z" fill="#f0df98" opacity="0.95" />
+        <path d="M239 68L277 62L310 78L303 110L271 126L240 106Z" fill="#dfe9bf" opacity="0.98" />
+        <path d="M77 86L107 77L118 140L102 145L82 128L72 106Z" fill="#3f88b8" opacity="0.95" />
       </svg>
     </div>
   );
@@ -472,21 +438,18 @@ function MapMock() {
 
 export default function Statistics() {
   return (
-    <section className="w-full rounded-[26px] border border-[#cdd7cd] bg-[linear-gradient(180deg,#d9e6dc_0%,#cfddd2_100%)] p-5 md:p-7 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.35)]">
-      <div className="space-y-5">
-        {/* TOP 8 CARDS */}
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+<section className="w-full  ">      <div className="space-y-3.5">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-4">
           {topCards.map((card) => (
             <StatCard key={`${card.title}-${card.value}-${card.tone}`} card={card} />
           ))}
         </div>
 
-        {/* MIDDLE PANELS */}
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_2.6fr_1.35fr]">
-          <Panel className="px-5 py-4">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.02fr_2.4fr_1.2fr]">
+          <Panel className="px-4 py-3.5">
             <SectionTitle>Mouzas by Division</SectionTitle>
 
-            <div className="mt-4">
+            <div className="mt-3">
               {divisions.map((item, index) => (
                 <RowItem
                   key={item.name}
@@ -498,37 +461,37 @@ export default function Statistics() {
             </div>
           </Panel>
 
-          <Panel className="px-6 py-4">
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.35fr_1px_1fr] xl:gap-6">
+          <Panel className="px-4 py-3.5">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_1px_0.95fr] xl:gap-4">
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <SectionTitle green>Survey Progress</SectionTitle>
 
-                  <div className="flex items-center gap-2 text-[18px] font-medium text-[#3a4c3e]">
+                  <div className="flex items-center gap-1.5 text-[13px] font-medium text-[#3a4c3e]">
                     <span>Total</span>
-                    <Icon type="doc" className="h-5 w-5 text-[#627766]" />
+                    <Icon type="doc" className="h-4 w-4 text-[#627766]" />
                     <span>1200</span>
                     <span className="text-[#2c7444]">$</span>
-                    <span className="text-[22px] font-semibold text-[#205f37]">82,400</span>
+                    <span className="text-[18px] font-semibold text-[#205f37]">82,400</span>
                   </div>
                 </div>
 
-                <div className="mt-5 space-y-5">
-                  <div className="grid grid-cols-[1.1fr_auto_1.4fr] items-center gap-4">
-                    <span className="text-[18px] text-[#334038]">Total Khasras</span>
-                    <span className="text-[24px] font-semibold text-[#1e5e37]">82,400</span>
+                <div className="mt-4 space-y-4">
+                  <div className="grid grid-cols-[1.05fr_auto_1.25fr] items-center gap-3">
+                    <span className="text-[14px] text-[#334038]">Total Khasras</span>
+                    <span className="text-[18px] font-semibold text-[#1e5e37]">82,400</span>
                     <ProgressBar value={72} color="bg-[#2e9456]" />
                   </div>
 
-                  <div className="grid grid-cols-[1.1fr_auto_1.4fr] items-center gap-4">
-                    <span className="text-[18px] text-[#334038]">Surveyed</span>
-                    <span className="text-[24px] font-semibold text-[#1e5e37]">32,200</span>
+                  <div className="grid grid-cols-[1.05fr_auto_1.25fr] items-center gap-3">
+                    <span className="text-[14px] text-[#334038]">Surveyed</span>
+                    <span className="text-[18px] font-semibold text-[#1e5e37]">32,200</span>
                     <ProgressBar value={58} color="bg-[#4aa86f]" />
                   </div>
 
-                  <div className="grid grid-cols-[1.1fr_auto_1.4fr] items-center gap-4">
-                    <span className="text-[18px] text-[#334038]">Pending</span>
-                    <span className="text-[24px] font-semibold text-[#1e5e37]">17,200</span>
+                  <div className="grid grid-cols-[1.05fr_auto_1.25fr] items-center gap-3">
+                    <span className="text-[14px] text-[#334038]">Pending</span>
+                    <span className="text-[18px] font-semibold text-[#1e5e37]">17,200</span>
                     <ProgressBar value={22} color="bg-[#2a7e49]" />
                   </div>
                 </div>
@@ -538,81 +501,80 @@ export default function Statistics() {
 
               <div>
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[18px] md:text-[20px] font-medium text-[#2d342f]">
+                  <h4 className="text-[15px] md:text-[16px] font-medium text-[#2d342f]">
                     Land Disputes
                   </h4>
-                  <div className="flex items-center gap-1 text-[16px] md:text-[18px] font-medium">
+                  <div className="flex items-center gap-1 text-[13px] font-medium">
                     <span className="text-[#76a170]">$</span>
-                    <span className="text-[22px] font-semibold text-[#1f5f35]">3,500</span>
+                    <span className="text-[18px] font-semibold text-[#1f5f35]">3,500</span>
                   </div>
                 </div>
 
-                <div className="mt-3 flex items-center gap-5">
+                <div className="mt-3 flex items-center gap-4">
                   <CircularChart />
 
-                  <div className="space-y-3">
-                    <MiniMetric icon={<Icon type="private" className="h-5 w-5" />} value="600%" />
-                    <MiniMetric icon={<Icon type="state" className="h-5 w-5" />} value="92%" />
-                    <MiniMetric icon={<Icon type="doc" className="h-5 w-5" />} value="25%" />
+                  <div className="space-y-2.5">
+                    <MiniMetric icon={<Icon type="private" className="h-4 w-4" />} value="600%" />
+                    <MiniMetric icon={<Icon type="state" className="h-4 w-4" />} value="92%" />
+                    <MiniMetric icon={<Icon type="doc" className="h-4 w-4" />} value="25%" />
                   </div>
                 </div>
               </div>
             </div>
           </Panel>
 
-          <Panel className="px-6 py-4">
-            <SectionTitle icon={<Icon type="clipboard" className="h-6 w-6" />}>
+          <Panel className="px-4 py-3.5">
+            <SectionTitle icon={<Icon type="clipboard" className="h-5 w-5" />}>
               Digitization Status
             </SectionTitle>
 
-            <div className="mt-5 space-y-5">
-              <div className="grid grid-cols-[1fr_auto_auto] items-center gap-4">
-                <span className="text-[18px] text-[#334038]">Fard Records</span>
+            <div className="mt-4 space-y-4">
+              <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3">
+                <span className="text-[14px] text-[#334038]">Fard Records</span>
                 <SegmentedBar value={80} />
-                <span className="text-[20px] font-semibold text-[#1e5e37]">80%</span>
+                <span className="text-[16px] font-semibold text-[#1e5e37]">80%</span>
               </div>
 
-              <div className="grid grid-cols-[1fr_110px_auto] items-center gap-4">
-                <span className="text-[18px] text-[#334038]">Jamabandi</span>
+              <div className="grid grid-cols-[1fr_95px_auto] items-center gap-3">
+                <span className="text-[14px] text-[#334038]">Jamabandi</span>
                 <ProgressBar value={72} color="bg-[#2e9456]" />
-                <span className="text-[20px] font-semibold text-[#1e5e37]">72%</span>
+                <span className="text-[16px] font-semibold text-[#1e5e37]">72%</span>
               </div>
 
-              <div className="grid grid-cols-[1fr_110px_auto] items-center gap-4">
-                <span className="text-[18px] text-[#334038]">Mutation Registers</span>
+              <div className="grid grid-cols-[1fr_95px_auto] items-center gap-3">
+                <span className="text-[14px] text-[#334038]">Mutation Registers</span>
                 <ProgressBar value={63} color="bg-[#2f8650]" />
-                <span className="text-[20px] font-semibold text-[#1e5e37]">63%</span>
+                <span className="text-[16px] font-semibold text-[#1e5e37]">63%</span>
               </div>
             </div>
           </Panel>
         </div>
 
-        {/* BOTTOM PANELS */}
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1.35fr_1.1fr_1.3fr]">
-          <Panel className="p-4">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1.2fr_1fr_1.12fr]">
+          <Panel className="p-3.5">
             <MapMock />
 
-            <div className="mt-3 flex flex-wrap items-center gap-6 rounded-[12px] border border-[#e5e9e2] bg-white/55 px-4 py-3">
+            <div className="mt-2.5 flex flex-wrap items-center gap-4 rounded-[12px] border border-[#e5e9e2] bg-white/55 px-3 py-2">
               <div className="flex items-center gap-2">
-                <span className="h-5 w-7 rounded-[4px] bg-[#4d8f69]" />
-                <span className="text-[15px] md:text-[16px] text-[#2c352f]">Phase 1</span>
+                <span className="h-4 w-6 rounded-[4px] bg-[#4d8f69]" />
+                <span className="text-[13px] text-[#2c352f]">Phase 1</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="h-5 w-7 rounded-[4px] bg-[#4283b8]" />
-                <span className="text-[15px] md:text-[16px] text-[#2c352f]">Phase 2</span>
+                <span className="h-4 w-6 rounded-[4px] bg-[#4283b8]" />
+                <span className="text-[13px] text-[#2c352f]">Phase 2</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="h-5 w-7 rounded-[4px] bg-[#d4ac58]" />
-                <span className="text-[15px] md:text-[16px] text-[#2c352f]">Phase 3</span>
+                <span className="h-4 w-6 rounded-[4px] bg-[#d4ac58]" />
+                <span className="text-[13px] text-[#2c352f]">Phase 3</span>
               </div>
-              <span className="ml-auto text-[18px] text-[#58655d]">...</span>
+              <span className="ml-auto text-[15px] text-[#58655d]">...</span>
             </div>
           </Panel>
 
-          <Panel className="px-5 py-4">
+          <Panel className="px-4 py-3.5">
             <SectionTitle>Mouzas by Division</SectionTitle>
 
-            <div className="mt-4">
+            <div className="mt-3">
               {divisions.map((item, index) => (
                 <RowItem
                   key={`bottom-${item.name}`}
@@ -624,12 +586,12 @@ export default function Statistics() {
             </div>
           </Panel>
 
-          <Panel className="px-5 py-4">
-            <SectionTitle icon={<Icon type="user" className="h-6 w-6" />}>
+          <Panel className="px-4 py-3.5">
+            <SectionTitle icon={<Icon type="user" className="h-5 w-5" />}>
               Survey Progress
             </SectionTitle>
 
-            <div className="mt-4 space-y-4">
+            <div className="mt-3 space-y-1">
               <RowItem label="Total Khasras" value="82,400" />
               <RowItem label="Surveyed" value="65,200" />
               <RowItem label="Pending Mutations" value="13,400" />
@@ -637,17 +599,17 @@ export default function Statistics() {
             </div>
           </Panel>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             {actions.map((action) => (
               <button
                 key={action}
-                className="flex h-[56px] items-center justify-between rounded-[14px] border border-[#2f6f4e] bg-[#1f6f49] px-6 text-left text-white shadow-[0_3px_10px_rgba(28,88,58,0.18)] transition hover:bg-[#1b6542]"
+                className="flex h-[48px] items-center justify-between rounded-[14px] border border-[#2f6f4e] bg-[#1f6f49] px-4 text-left text-white shadow-[0_3px_10px_rgba(28,88,58,0.18)] transition hover:bg-[#1b6542]"
               >
-                <span className="flex items-center gap-3 text-[17px] md:text-[18px] font-medium">
-                  <Icon type="plus" className="h-5 w-5" />
+                <span className="flex items-center gap-2.5 text-[14px] font-medium">
+                  <Icon type="plus" className="h-4 w-4" />
                   {action}
                 </span>
-                <Icon type="arrowRight" className="h-5 w-5" />
+                <Icon type="arrowRight" className="h-4 w-4" />
               </button>
             ))}
           </div>
