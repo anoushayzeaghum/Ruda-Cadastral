@@ -90,7 +90,8 @@ export const getMouzas = async (tehsil) => {
   const res = await API.get("/mouza/", {
     params,
   });
-  return normalizeData(res);
+  console.log("Raw response for getMouzas:", res);
+  return normalizeGeoJson(res);
 };
 
 export const getKhasras = async (mouza_id) => {
