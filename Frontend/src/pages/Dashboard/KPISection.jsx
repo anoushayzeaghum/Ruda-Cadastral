@@ -28,13 +28,7 @@ const kpiCards = [
         text: "text-emerald-700 dark:text-emerald-400",
         icon: CheckCircle2,
       },
-      // {
-      //   label: "Pending",
-      //   value: "75,000",
-      //   color: "bg-amber-400",
-      //   text: "text-amber-700 dark:text-amber-400",
-      //   icon: Clock3,
-      // },
+  
       {
         label: "Not Verified",
         value: "25,000",
@@ -222,7 +216,7 @@ export default function KPISection() {
                     })}
                   </div>
                 ) : card.value2 ? (
-                  <div className="mt-3">
+                  <div className="mt-1">
                     <div className="flex items-end gap-2 flex-wrap">
                       <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
                         {card.value}
@@ -240,7 +234,7 @@ export default function KPISection() {
                     </div>
                   </div>
                 ) : card.ring ? (
-                  <div className="mt-3 flex items-center justify-between gap-3">
+                  <div className="mt-1 flex items-center justify-between gap-3">
                     <div className="flex items-end gap-1.5">
                       <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
                         {card.value}
@@ -250,7 +244,7 @@ export default function KPISection() {
                     <RingProgress value={card.ring} />
                   </div>
                 ) : (
-                  <div className="mt-3">
+                  <div className="mt-1">
                     <div className="flex items-end gap-1.5">
                       <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
                         {card.value}

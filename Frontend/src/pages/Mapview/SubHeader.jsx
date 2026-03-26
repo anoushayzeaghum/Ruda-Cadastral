@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Database, BarChart3 } from "lucide-react";
 
 export default function SubHeader({ filters }) {
@@ -23,81 +22,81 @@ export default function SubHeader({ filters }) {
         <div className="flex items-center gap-2 flex-1">
           <FilterCard
             label="Division"
-            value={getMultiValueDisplay({
-              options: filters.divisions,
-              selected: filters.selectedDivision,
-              idKey: "division_i",
-              labelKey: "division",
-            })}
+            value={
+              filters.divisions.find(
+                (d) => d.division_i === filters.selectedDivision,
+              )?.division || "Select"
+            }
           >
-            <MultiSelectDropdown
-              options={filters.divisions.map((d) => ({
-                value: String(d.division_i),
-                label: d.division,
-              }))}
-              selectedValues={filters.selectedDivision}
-              onToggle={filters.handleDivisionChange}
+            <select
+              value={filters.selectedDivision}
+              onChange={filters.handleDivisionChange}
               disabled={filters.loading?.divisions}
-            />
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            >
+              <option value="">-- Division --</option>
+              {filters.divisions.map((d) => (
+                <option key={d.division_i} value={d.division_i}>
+                  {d.division}
+                </option>
+              ))}
+            </select>
           </FilterCard>
 
           <FilterCard
             label="District"
-            value={getMultiValueDisplay({
-              options: filters.districts,
-              selected: filters.selectedDistrict,
-              idKey: "id",
-              labelKey: "name",
-            })}
+            value={
+              filters.districts.find((d) => d.id === filters.selectedDistrict)
+                ?.name || "Select"
+            }
           >
-            <MultiSelectDropdown
-              options={filters.districts.map((d) => ({
-                value: String(d.id),
-                label: d.name,
-              }))}
-              selectedValues={filters.selectedDistrict}
-              onToggle={filters.handleDistrictChange}
-              disabled={
-                !filters.selectedDivision.length || filters.loading?.districts
-              }
-            />
+            <select
+              value={filters.selectedDistrict}
+              onChange={filters.handleDistrictChange}
+              disabled={!filters.selectedDivision || filters.loading?.districts}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            >
+              <option value="">-- District --</option>
+              {filters.districts.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
           </FilterCard>
 
           <FilterCard
             label="Tehsil"
-            value={getMultiValueDisplay({
-              options: filters.tehsils,
-              selected: filters.selectedTehsil,
-              idKey: "id",
-              labelKey: "name",
-            })}
-          >
-            <MultiSelectDropdown
-              options={filters.tehsils.map((t) => ({
-                value: String(t.id),
-                label: t.name,
-              }))}
-              selectedValues={filters.selectedTehsil}
-              onToggle={filters.handleTehsilChange}
-              disabled={
-                !filters.selectedDistrict.length || filters.loading?.tehsils
-              }
-            />
+            value={
+              filters.tehsils.find((t) => t.id === filters.selectedTehsil)
+                ?.name || "Select"
+            }          >
+            <select
+              value={filters.selectedTehsil}
+              onChange={filters.handleTehsilChange}
+              disabled={!filters.selectedDistrict || filters.loading?.tehsils}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            >
+              <option value="">-- Tehsil --</option>
+              {filters.tehsils.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
           </FilterCard>
 
           <FilterCard
             label="Mouza"
             value={
-              filters.mouzas.find(
-                (m) => String(m.mouza_id) === String(filters.selectedMouza),
-              )
+              filters.mouzas.find((m) => m.mouza_id === filters.selectedMouza)
                 ?.mouza || "Select"
             }
           >
             <select
               value={filters.selectedMouza}
               onChange={filters.handleMouzaChange}
-              disabled={!filters.selectedTehsil.length || filters.loading?.mouzas}
+              disabled={!filters.selectedTehsil || filters.loading?.mouzas}
               className="absolute inset-0 opacity-0 cursor-pointer"
             >
               <option value="">-- Mouza --</option>
@@ -159,71 +158,6 @@ function FilterCard({ label, value, children }) {
         <ChevronDown size={14} className="text-gray-400 ml-2" />
       </div>
       {children}
-    </div>
-  );
-}
-
-function getMultiValueDisplay({ options, selected, idKey, labelKey }) {
-  if (!selected?.length) return "Select";
-  const labels = options
-    .filter((item) => selected.includes(String(item[idKey])))
-    .map((item) => item[labelKey])
-    .filter(Boolean);
-  return labels.join(", ") || "Select";
-}
-
-function MultiSelectDropdown({ options, selectedValues, onToggle, disabled }) {
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    const handleOutside = (event) => {
-      if (!containerRef.current?.contains(event.target)) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, []);
-
-  const safeSelectedValues = Array.isArray(selectedValues) ? selectedValues : [];
-
-  return (
-    <div ref={containerRef} className="absolute inset-0">
-      <button
-        type="button"
-        onClick={() => !disabled && setOpen((prev) => !prev)}
-        className="h-full w-full cursor-pointer bg-transparent"
-        disabled={disabled}
-        aria-label="Open multi-select filter"
-      />
-
-      {open && !disabled && (
-        <div className="absolute left-0 top-full z-30 mt-1 max-h-64 w-full overflow-auto rounded-md border border-gray-200 bg-white p-2 shadow-lg">
-          {options.length ? (
-            options.map((option) => {
-              const checked = safeSelectedValues.includes(String(option.value));
-              return (
-                <label
-                  key={option.value}
-                  className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-gray-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => onToggle(option.value)}
-                    className="h-4 w-4 rounded border-gray-300 text-green-700 focus:ring-green-500"
-                  />
-                  <span className="truncate text-gray-700">{option.label}</span>
-                </label>
-              );
-            })
-          ) : (
-            <div className="px-2 py-1.5 text-sm text-gray-500">No options</div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

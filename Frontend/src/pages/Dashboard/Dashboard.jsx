@@ -1,20 +1,17 @@
 import Sidebar from "./Sidebar";
 import KPISection from "./KPISection";
-import MapPanel from "./MapPanel";
-import ChartsPanel from "./ChartsPanel";
+import Statistics from "./Statistics";
 import Header from "./Header";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
   const [darkMode, setDarkMode] = useState(true);
 
-  // ✅ Load saved theme
   useEffect(() => {
     const saved = localStorage.getItem("theme");
     if (saved === "light") setDarkMode(false);
   }, []);
 
-  // ✅ Apply theme
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -26,26 +23,21 @@ export default function Dashboard() {
   }, [darkMode]);
 
   return (
-    <div className="h-screen bg-white dark:bg-[#0b0f14] text-gray-800 dark:text-white flex flex-col">
-      <Header darkMode={darkMode} />
+    <div className="h-screen overflow-hidden bg-white text-gray-800 dark:bg-[#0b0f14] dark:text-white">
+      <div className="flex h-full flex-col">
+        <Header darkMode={darkMode} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          <Sidebar />
 
-        <div className="flex-1 flex flex-col">
-          <div className="px-6 pt-6">
-            <KPISection />
-          </div>
-
-          <div className="flex-1 grid grid-cols-4 gap-3 p-6 pt-4">
-            <div className="col-span-2 h-full">
-              <MapPanel darkMode={darkMode} />
+          <main className="min-h-0 flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto px-4 pt-4 pb-4 xl:px-5 xl:pt-4 xl:pb-4">
+              <div className="space-y-4">
+                <KPISection />
+                <Statistics />
+              </div>
             </div>
-
-            <div className="col-span-2 h-full">
-              <ChartsPanel />
-            </div>
-          </div>
+          </main>
         </div>
       </div>
     </div>
