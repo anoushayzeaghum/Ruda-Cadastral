@@ -101,17 +101,16 @@ export default function MapView({
   selectedTehsil,
   selectedMouza,
   viewBy,
+  onParcelSelect,
 }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
-  const popupRef = useRef(null);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedKhasra, setSelectedKhasra] = useState(null);
-  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+  // MapView delegates parcel clicks to parent via onParcelSelect
 
   /* ---------------------------
   MAP INITIALIZATION
@@ -199,7 +198,16 @@ export default function MapView({
         },
       });
 
-      if (geojson.features.length > 0) zoomToGeoJSON(geojson);
+      // Only zoom to the boundary when the user has NOT requested
+      // parcel-level overlay (khasra/murabba). When viewBy is set to
+      // 'khasra' or 'murabba' the parcel overlay will control zoom.
+      if (
+        geojson.features.length > 0 &&
+        viewBy !== "khasra" &&
+        viewBy !== "murabba"
+      ) {
+        zoomToGeoJSON(geojson);
+      }
     } catch (e) {
       console.error("Boundary drawing error:", e);
       setError("Failed to display boundary");
@@ -249,15 +257,11 @@ export default function MapView({
         },
       });
 
-      // Add click event listener for khasras
+      // Add click event listener for khasras: delegate to parent
       map.on("click", KHASRA_FILL, (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
-          setSelectedKhasra(feature);
-          setPopupPosition({
-            x: e.originalEvent.clientX,
-            y: e.originalEvent.clientY,
-          });
+          if (typeof onParcelSelect === "function") onParcelSelect(feature);
         }
       });
 
@@ -322,9 +326,6 @@ export default function MapView({
         },
       });
 
-      // Fit map to the loaded murabba features
-      zoomToGeoJSON(geojson);
-
       setFeatureCount(geojson.features.length);
     } catch (e) {
       console.error("Murabba drawing error:", e);
@@ -357,6 +358,30 @@ export default function MapView({
     if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 50 });
   };
 
+  const clearKhasraLayers = () => {
+    const map = mapInstance.current;
+    if (!map) return;
+    try {
+      if (map.getLayer(KHASRA_FILL)) map.removeLayer(KHASRA_FILL);
+      if (map.getLayer(KHASRA_LINE)) map.removeLayer(KHASRA_LINE);
+      if (map.getSource(KHASRA_SOURCE)) map.removeSource(KHASRA_SOURCE);
+    } catch (e) {
+      console.warn("Error clearing khasra layers", e);
+    }
+  };
+
+  const clearMurabbaLayers = () => {
+    const map = mapInstance.current;
+    if (!map) return;
+    try {
+      if (map.getLayer(MURABBA_FILL)) map.removeLayer(MURABBA_FILL);
+      if (map.getLayer(MURABBA_LINE)) map.removeLayer(MURABBA_LINE);
+      if (map.getSource(MURABBA_SOURCE)) map.removeSource(MURABBA_SOURCE);
+    } catch (e) {
+      console.warn("Error clearing murabba layers", e);
+    }
+  };
+
   /* ---------------------------
   LOAD BOUNDARY
   --------------------------- */
@@ -382,7 +407,9 @@ export default function MapView({
           geojson = mergeFeatureCollections(responses);
         } else if (selectedDistrict?.length) {
           const responses = await Promise.all(
-            selectedDistrict.map((district) => getDistrictBoundary(district.id)),
+            selectedDistrict.map((district) =>
+              getDistrictBoundary(district.id),
+            ),
           );
           geojson = mergeFeatureCollections(responses);
         } else if (selectedDivision?.length) {
@@ -418,7 +445,8 @@ export default function MapView({
 
   useEffect(() => {
     if (!selectedMouza || !isMapReady || viewBy !== "khasra") {
-      setSelectedKhasra(null);
+      // clear any existing khasra layers when not viewing khasras
+      clearKhasraLayers();
       return;
     }
 
@@ -428,7 +456,11 @@ export default function MapView({
 
         const mouza_id = selectedMouza.mouza_id || selectedMouza.id;
         const geojson = await getKhasras(mouza_id);
-        if (geojson?.features?.length) drawKhasras(geojson);
+        if (geojson?.features?.length) {
+          drawKhasras(geojson);
+          // zoom to parcels after they are drawn
+          zoomToGeoJSON(geojson);
+        }
       } catch (e) {
         console.error("Khasra load error:", e);
         setError("Failed to load Khasras");
@@ -446,7 +478,8 @@ export default function MapView({
 
   useEffect(() => {
     if (!selectedMouza || !isMapReady || viewBy !== "murabba") {
-      setSelectedKhasra(null);
+      // clear murabba layers when not active
+      clearMurabbaLayers();
       return;
     }
 
@@ -456,7 +489,11 @@ export default function MapView({
 
         const mouza_id = selectedMouza.mouza_id || selectedMouza.id;
         const geojson = await getMurabbas(mouza_id);
-        if (geojson?.features?.length) drawMurabbas(geojson);
+        if (geojson?.features?.length) {
+          drawMurabbas(geojson);
+          // zoom to murabba features
+          zoomToGeoJSON(geojson);
+        }
       } catch (e) {
         console.error("Murabba load error:", e);
         setError("Failed to load Murabbas");
@@ -477,7 +514,6 @@ export default function MapView({
           {error}
         </div>
       )}
-
       {isLoading && (
         <div className="absolute top-5 right-5 bg-blue-500 text-white px-4 py-2 rounded shadow">
           Loading...
@@ -489,97 +525,6 @@ export default function MapView({
         selectedMouzaName={selectedMouza?.mouza}
         isLoading={isLoading}
       />
-
-      {selectedKhasra && (
-        <KhasraPopup
-          feature={selectedKhasra}
-          position={popupPosition}
-          onClose={() => setSelectedKhasra(null)}
-        />
-      )}
     </div>
   );
-}
-
-/* ---------------------------
-KHASRA POPUP COMPONENT
---------------------------- */
-
-function KhasraPopup({ feature, position, onClose }) {
-  const idFields = new Set([
-    "gid",
-    "id",
-    "mouza_id",
-    "tehsil_id",
-    "dist_id",
-    "qh_id",
-    "pc_id",
-    "khasra_id",
-    "khewat_id",
-    "divn_id",
-  ]);
-
-  const properties = feature.properties || {};
-
-  const filteredProperties = Object.entries(properties)
-    .filter(([key]) => !idFields.has(key))
-    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
-
-  return (
-    <>
-      {/* Overlay */}
-      <div className="fixed inset-0 z-40" onClick={onClose} />
-
-      {/* Popup */}
-      <div
-        className="absolute z-50 bg-white rounded-lg shadow-2xl border-2 border-green-600 max-w-sm max-h-96 overflow-y-auto"
-        style={{
-          left: `${position.x}px`,
-          top: `${position.y}px`,
-          transform: "translate(-50%, -50%)",
-        }}
-      >
-        <div className="bg-green-600 text-white p-4 flex justify-between items-center">
-          <h3 className="font-bold text-lg">Khasra Details</h3>
-          <button
-            onClick={onClose}
-            className="text-white text-xl font-bold hover:bg-green-700 rounded-full w-8 h-8 flex items-center justify-center"
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="p-4 space-y-3">
-          {filteredProperties.length > 0 ? (
-            filteredProperties.map(([key, value]) => (
-              <div key={key} className="border-b border-slate-200 pb-2">
-                <p className="text-xs font-semibold text-slate-600 uppercase">
-                  {formatLabel(key)}
-                </p>
-                <p className="text-sm text-slate-900 mt-1">
-                  {formatValue(value)}
-                </p>
-              </div>
-            ))
-          ) : (
-            <p className="text-slate-500">No information available</p>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function formatLabel(key) {
-  return key
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function formatValue(value) {
-  if (value === null || value === undefined) return "N/A";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
 }

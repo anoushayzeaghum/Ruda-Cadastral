@@ -24,7 +24,11 @@ const dedupeBy = (items, key) => {
 };
 
 const toId = (valueOrEvent) => {
-  if (valueOrEvent && typeof valueOrEvent === "object" && "target" in valueOrEvent) {
+  if (
+    valueOrEvent &&
+    typeof valueOrEvent === "object" &&
+    "target" in valueOrEvent
+  ) {
     return String(valueOrEvent.target.value ?? "");
   }
   return String(valueOrEvent ?? "");
@@ -170,27 +174,27 @@ export default function useCadastralFilters() {
       try {
         console.log(selectedTehsil);
         const responses = await Promise.all(
-  selectedTehsil.map((tehsil) => getMouzas(tehsil))
-);
+          selectedTehsil.map((tehsil) => getMouzas(tehsil)),
+        );
 
-console.log("Responses from API:", responses);
+        console.log("Responses from API:", responses);
 
-// Extract features correctly
-const allFeatures = responses.flatMap((fc) => fc.features);
+        // Extract features correctly
+        const allFeatures = responses.flatMap((fc) => fc.features);
 
-// Convert GeoJSON → flat object
-const data = allFeatures.map((f) => ({
-  id: f.id,
-  mouza_id: f.id, // or f.properties.mouza_id if exists
-  geometry: f.geometry,
-  ...f.properties,
-}));
+        // Convert GeoJSON → flat object
+        const data = allFeatures.map((f) => ({
+          id: f.id,
+          mouza_id: f.id, // or f.properties.mouza_id if exists
+          geometry: f.geometry,
+          ...f.properties,
+        }));
 
-const unique = dedupeBy(data, "mouza_id");
+        const unique = dedupeBy(data, "mouza_id");
 
-console.log("Flattened mouza data:", unique);
+        console.log("Flattened mouza data:", unique);
 
-setMouzas(sortByLabel(unique, "mouza"));
+        setMouzas(sortByLabel(unique, "mouza"));
         if (!ignore) {
           setMouzas(sortByLabel(data, "mouza"));
         }
@@ -281,6 +285,7 @@ setMouzas(sortByLabel(unique, "mouza"));
     setSelectedDistrict([]);
     setSelectedTehsil([]);
     setSelectedMouza("");
+    setViewBy("");
     setDistricts([]);
     setTehsils([]);
     setMouzas([]);
@@ -293,6 +298,7 @@ setMouzas(sortByLabel(unique, "mouza"));
     setSelectedDistrict((prev) => toggleId(prev, id));
     setSelectedTehsil([]);
     setSelectedMouza("");
+    setViewBy("");
     setTehsils([]);
     setMouzas([]);
     setErrorMessage("");
@@ -303,6 +309,7 @@ setMouzas(sortByLabel(unique, "mouza"));
     if (!id) return;
     setSelectedTehsil((prev) => toggleId(prev, id));
     setSelectedMouza("");
+    setViewBy("");
     setMouzas([]);
     setErrorMessage("");
   };
@@ -341,9 +348,9 @@ setMouzas(sortByLabel(unique, "mouza"));
     errorMessage,
     hasSelection: Boolean(
       selectedDivision.length ||
-        selectedDistrict.length ||
-        selectedTehsil.length ||
-        selectedMouza,
+      selectedDistrict.length ||
+      selectedTehsil.length ||
+      selectedMouza,
     ),
     handleDivisionChange,
     handleDistrictChange,
