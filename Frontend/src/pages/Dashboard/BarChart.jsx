@@ -70,11 +70,11 @@ export default function BarChart() {
 
   return (
     <div className="h-full flex flex-col p-5 rounded-xl
-    bg-white dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900
-    border border-gray-700 shadow-lg overflow-hidden">
+    bg-white dark:bg-gradient-to-br dark:from-gray-700 dark:to-gray-900
+    border border-gray-300 shadow-lg overflow-hidden">
 
       {/* TITLE */}
-      <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">
+      <h3 className="text-g font-bold text-gray-500 dark:text-white mb-2">
         Verification Timeline & Status
       </h3>
 

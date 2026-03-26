@@ -229,7 +229,7 @@ export default function KPISection() {
                       <span className={`pb-0.5 text-[11px] ${tone.sub}`}>{card.unit2}</span>
                     </div>
 
-                    <div className="mt-1">
+                    <div className="mt-3">
                       <ProgressBar value={card.progress} />
                     </div>
                   </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import MapPanel from "./MapPanel";
+import BarChart from "./BarChart";
 
 const topCards = [
   {
@@ -671,14 +672,25 @@ export default function Statistics() {
   return (
     <section className="w-full  ">
       {" "}
+      
       <div className="space-y-3.5">
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-4">
-          {topCards.map((card) => (
-            <StatCard
-              key={`${card.title}-${card.value}-${card.tone}`}
-              card={card}
-            />
-          ))}
+        
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_2.8fr]">
+          
+           <Panel className="p-2 bg-white border-none shadow-none">
+            <div className="h-full min-h-[220px] overflow-hidden rounded-[18px]">
+              <MapPanel darkMode={false} />
+            </div>
+          </Panel><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {topCards.map((card) => (
+              <StatCard
+                key={`${card.title}-${card.value}-${card.tone}`}
+                card={card}
+              />
+            ))}
+          </div>
+
+         
         </div>
 
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.02fr_2.4fr_1.2fr]">
@@ -816,10 +828,10 @@ export default function Statistics() {
         </div>
 
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1.2fr_1fr_1.12fr]">
-          <Panel className="p-2">
-            <MapPanel darkMode={false} />
-
-          
+          <Panel className="px-3 py-3 bg-white border-none shadow-none">
+            <div className="h-full min-h-[220px]">
+              <BarChart />
+            </div>
           </Panel>
 
           <Panel className="px-4 py-3.5">
