@@ -39,7 +39,6 @@ export default function LeftPanel() {
 
   return (
     <div className="h-full w-full bg-white border-r border-slate-200 flex flex-col">
-
       {/* Layer Manager */}
       <div className="border-b border-slate-200">
         <button
@@ -90,36 +89,6 @@ export default function LeftPanel() {
               checked={layers.khasraParcels}
               onChange={() => toggleLayer("khasraParcels")}
               highlight
-            />
-
-            <LayerCheckbox
-              label="Land Ownership"
-              checked={layers.landOwnership}
-              onChange={() => toggleLayer("landOwnership")}
-            />
-
-            <LayerCheckbox
-              label="Land Acquisition"
-              checked={layers.landAcquisition}
-              onChange={() => toggleLayer("landAcquisition")}
-            />
-
-            <LayerCheckbox
-              label="Road Network"
-              checked={layers.roadNetwork}
-              onChange={() => toggleLayer("roadNetwork")}
-            />
-
-            <LayerCheckbox
-              label="Canal / River"
-              checked={layers.canalRiver}
-              onChange={() => toggleLayer("canalRiver")}
-            />
-
-            <LayerCheckbox
-              label="Satellite Imagery"
-              checked={layers.satelliteImagery}
-              onChange={() => toggleLayer("satelliteImagery")}
             />
           </div>
         )}
@@ -178,8 +147,7 @@ export default function LeftPanel() {
 
       <div className="px-4 py-3">
         <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded border border-slate-200 font-medium">
-          <Star size={16} />
-          M Favorites
+          <Star size={16} />M Favorites
         </button>
       </div>
     </div>

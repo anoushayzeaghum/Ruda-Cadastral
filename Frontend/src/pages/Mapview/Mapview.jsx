@@ -29,6 +29,17 @@ const MURABBA_SOURCE = "murabba-source";
 const MURABBA_FILL = "murabba-fill";
 const MURABBA_LINE = "murabba-line";
 
+/* ---------------------------
+SHARED MAP COLORS
+Use same theme for boundaries, khasra and murabba
+--------------------------- */
+const MAP_THEME = {
+  fillColor: "#158033", // same green as boundaries
+  fillOpacity: 0.2,
+  lineColor: "#1e3a5f", // same dark/navy boundary line
+  lineWidth: 2,
+};
+
 const emptyFeatureCollection = () => ({
   type: "FeatureCollection",
   features: [],
@@ -44,7 +55,6 @@ const mergeFeatureCollections = (collections) => ({
 /* ---------------------------
 BASEMAP STYLES
 --------------------------- */
-
 const BASEMAP_STYLES = {
   Satellite: "mapbox://styles/mapbox/satellite-streets-v12",
   Streets: "mapbox://styles/mapbox/streets-v12",
@@ -56,7 +66,6 @@ const BASEMAP_STYLES = {
 /* ---------------------------
 BASEMAP CONTROL
 --------------------------- */
-
 class BasemapControl {
   onAdd(map) {
     this.map = map;
@@ -90,7 +99,9 @@ class BasemapControl {
   }
 
   onRemove() {
-    this.container.parentNode.removeChild(this.container);
+    if (this.container?.parentNode) {
+      this.container.parentNode.removeChild(this.container);
+    }
     this.map = undefined;
   }
 }
@@ -110,12 +121,10 @@ export default function MapView({
   const [featureCount, setFeatureCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  // MapView delegates parcel clicks to parent via onParcelSelect
 
   /* ---------------------------
   MAP INITIALIZATION
   --------------------------- */
-
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
@@ -129,10 +138,7 @@ export default function MapView({
 
       map.setProjection("globe");
 
-      /* Add Basemap selector */
       map.addControl(new BasemapControl(), "top-left");
-
-      /* Add zoom buttons */
       map.addControl(new mapboxgl.NavigationControl(), "top-left");
 
       map.on("load", () => {
@@ -159,184 +165,8 @@ export default function MapView({
   }, []);
 
   /* ---------------------------
-  DRAW BOUNDARY
-  --------------------------- */
-
-  const drawBoundary = (geojson) => {
-    const map = mapInstance.current;
-    if (!map) return;
-
-    try {
-      if (map.getLayer(BOUNDARY_FILL)) map.removeLayer(BOUNDARY_FILL);
-      if (map.getLayer(BOUNDARY_LINE)) map.removeLayer(BOUNDARY_LINE);
-      if (map.getSource(BOUNDARY_SOURCE)) map.removeSource(BOUNDARY_SOURCE);
-
-      if (!geojson?.features || !Array.isArray(geojson.features)) return;
-
-      map.addSource(BOUNDARY_SOURCE, {
-        type: "geojson",
-        data: geojson,
-      });
-
-      map.addLayer({
-        id: BOUNDARY_FILL,
-        type: "fill",
-        source: BOUNDARY_SOURCE,
-        paint: {
-          "fill-color": "#158033",
-          "fill-opacity": 0.2,
-        },
-      });
-
-      map.addLayer({
-        id: BOUNDARY_LINE,
-        type: "line",
-        source: BOUNDARY_SOURCE,
-        paint: {
-          "line-color": "#1e3a5f",
-          "line-width": 3,
-        },
-      });
-
-      // Only zoom to the boundary when the user has NOT requested
-      // parcel-level overlay (khasra/murabba). When viewBy is set to
-      // 'khasra' or 'murabba' the parcel overlay will control zoom.
-      if (
-        geojson.features.length > 0 &&
-        viewBy !== "khasra" &&
-        viewBy !== "murabba"
-      ) {
-        zoomToGeoJSON(geojson);
-      }
-    } catch (e) {
-      console.error("Boundary drawing error:", e);
-      setError("Failed to display boundary");
-    }
-  };
-
-  /* ---------------------------
-  DRAW KHASRAS
-  --------------------------- */
-
-  const drawKhasras = (geojson) => {
-    const map = mapInstance.current;
-    if (!map) return;
-
-    try {
-      if (map.getLayer(KHASRA_FILL)) map.removeLayer(KHASRA_FILL);
-      if (map.getLayer(KHASRA_LINE)) map.removeLayer(KHASRA_LINE);
-      if (map.getSource(KHASRA_SOURCE)) map.removeSource(KHASRA_SOURCE);
-
-      if (!geojson?.features || !Array.isArray(geojson.features)) {
-        setFeatureCount(0);
-        return;
-      }
-
-      map.addSource(KHASRA_SOURCE, {
-        type: "geojson",
-        data: geojson,
-      });
-
-      map.addLayer({
-        id: KHASRA_FILL,
-        type: "fill",
-        source: KHASRA_SOURCE,
-        paint: {
-          "fill-color": "#6FC04F",
-          "fill-opacity": 0.35,
-        },
-      });
-
-      map.addLayer({
-        id: KHASRA_LINE,
-        type: "line",
-        source: KHASRA_SOURCE,
-        paint: {
-          "line-color": "#D9FFCB",
-          "line-width": 1.5,
-        },
-      });
-
-      // Add click event listener for khasras: delegate to parent
-      map.on("click", KHASRA_FILL, (e) => {
-        if (e.features && e.features.length > 0) {
-          const feature = e.features[0];
-          if (typeof onParcelSelect === "function") onParcelSelect(feature);
-        }
-      });
-
-      // Change cursor on hover
-      map.on("mouseenter", KHASRA_FILL, () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", KHASRA_FILL, () => {
-        map.getCanvas().style.cursor = "";
-      });
-
-      // Fit map to the loaded khasra features
-      zoomToGeoJSON(geojson);
-
-      setFeatureCount(geojson.features.length);
-    } catch (e) {
-      console.error("Khasra drawing error:", e);
-      setError("Failed to display Khasras");
-    }
-  };
-
-  /* ---------------------------
-  DRAW MURABBAS
-  --------------------------- */
-
-  const drawMurabbas = (geojson) => {
-    const map = mapInstance.current;
-    if (!map) return;
-
-    try {
-      if (map.getLayer(MURABBA_FILL)) map.removeLayer(MURABBA_FILL);
-      if (map.getLayer(MURABBA_LINE)) map.removeLayer(MURABBA_LINE);
-      if (map.getSource(MURABBA_SOURCE)) map.removeSource(MURABBA_SOURCE);
-
-      if (!geojson?.features || !Array.isArray(geojson.features)) {
-        setFeatureCount(0);
-        return;
-      }
-
-      map.addSource(MURABBA_SOURCE, {
-        type: "geojson",
-        data: geojson,
-      });
-
-      map.addLayer({
-        id: MURABBA_FILL,
-        type: "fill",
-        source: MURABBA_SOURCE,
-        paint: {
-          "fill-color": "#FF6B35",
-          "fill-opacity": 0.35,
-        },
-      });
-
-      map.addLayer({
-        id: MURABBA_LINE,
-        type: "line",
-        source: MURABBA_SOURCE,
-        paint: {
-          "line-color": "#FF8C5A",
-          "line-width": 2,
-        },
-      });
-
-      setFeatureCount(geojson.features.length);
-    } catch (e) {
-      console.error("Murabba drawing error:", e);
-      setError("Failed to display Murabbas");
-    }
-  };
-
-  /* ---------------------------
   ZOOM FUNCTION
   --------------------------- */
-
   const zoomToGeoJSON = (geojson) => {
     const map = mapInstance.current;
     if (!map || !geojson?.features?.length) return;
@@ -355,37 +185,196 @@ export default function MapView({
       traverse(coords);
     });
 
-    if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 50 });
-  };
-
-  const clearKhasraLayers = () => {
-    const map = mapInstance.current;
-    if (!map) return;
-    try {
-      if (map.getLayer(KHASRA_FILL)) map.removeLayer(KHASRA_FILL);
-      if (map.getLayer(KHASRA_LINE)) map.removeLayer(KHASRA_LINE);
-      if (map.getSource(KHASRA_SOURCE)) map.removeSource(KHASRA_SOURCE);
-    } catch (e) {
-      console.warn("Error clearing khasra layers", e);
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, { padding: 50 });
     }
   };
 
-  const clearMurabbaLayers = () => {
+  const clearLayerAndSource = (fillId, lineId, sourceId) => {
     const map = mapInstance.current;
     if (!map) return;
+
     try {
-      if (map.getLayer(MURABBA_FILL)) map.removeLayer(MURABBA_FILL);
-      if (map.getLayer(MURABBA_LINE)) map.removeLayer(MURABBA_LINE);
-      if (map.getSource(MURABBA_SOURCE)) map.removeSource(MURABBA_SOURCE);
+      if (map.getLayer(fillId)) map.removeLayer(fillId);
+      if (map.getLayer(lineId)) map.removeLayer(lineId);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
     } catch (e) {
-      console.warn("Error clearing murabba layers", e);
+      console.warn(`Error clearing ${sourceId}`, e);
+    }
+  };
+
+  const clearKhasraLayers = () => {
+    clearLayerAndSource(KHASRA_FILL, KHASRA_LINE, KHASRA_SOURCE);
+  };
+
+  const clearMurabbaLayers = () => {
+    clearLayerAndSource(MURABBA_FILL, MURABBA_LINE, MURABBA_SOURCE);
+  };
+
+  /* ---------------------------
+  DRAW BOUNDARY
+  --------------------------- */
+  const drawBoundary = (geojson) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    try {
+      clearLayerAndSource(BOUNDARY_FILL, BOUNDARY_LINE, BOUNDARY_SOURCE);
+
+      if (!geojson?.features || !Array.isArray(geojson.features)) return;
+
+      map.addSource(BOUNDARY_SOURCE, {
+        type: "geojson",
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: BOUNDARY_FILL,
+        type: "fill",
+        source: BOUNDARY_SOURCE,
+        paint: {
+          "fill-color": MAP_THEME.fillColor,
+          "fill-opacity": MAP_THEME.fillOpacity,
+        },
+      });
+
+      map.addLayer({
+        id: BOUNDARY_LINE,
+        type: "line",
+        source: BOUNDARY_SOURCE,
+        paint: {
+          "line-color": MAP_THEME.lineColor,
+          "line-width": MAP_THEME.lineWidth,
+        },
+      });
+
+      if (
+        geojson.features.length > 0 &&
+        viewBy !== "khasra" &&
+        viewBy !== "murabba"
+      ) {
+        zoomToGeoJSON(geojson);
+      }
+    } catch (e) {
+      console.error("Boundary drawing error:", e);
+      setError("Failed to display boundary");
+    }
+  };
+
+  /* ---------------------------
+  DRAW KHASRAS
+  --------------------------- */
+  const drawKhasras = (geojson) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    try {
+      clearKhasraLayers();
+
+      if (!geojson?.features || !Array.isArray(geojson.features)) {
+        setFeatureCount(0);
+        return;
+      }
+
+      map.addSource(KHASRA_SOURCE, {
+        type: "geojson",
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: KHASRA_FILL,
+        type: "fill",
+        source: KHASRA_SOURCE,
+        paint: {
+          "fill-color": MAP_THEME.fillColor,
+          "fill-opacity": MAP_THEME.fillOpacity,
+        },
+      });
+
+      map.addLayer({
+        id: KHASRA_LINE,
+        type: "line",
+        source: KHASRA_SOURCE,
+        paint: {
+          "line-color": MAP_THEME.lineColor,
+          "line-width": MAP_THEME.lineWidth,
+        },
+      });
+
+      map.on("click", KHASRA_FILL, (e) => {
+        if (e.features && e.features.length > 0) {
+          const feature = e.features[0];
+          if (typeof onParcelSelect === "function") onParcelSelect(feature);
+        }
+      });
+
+      map.on("mouseenter", KHASRA_FILL, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+
+      map.on("mouseleave", KHASRA_FILL, () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      zoomToGeoJSON(geojson);
+      setFeatureCount(geojson.features.length);
+    } catch (e) {
+      console.error("Khasra drawing error:", e);
+      setError("Failed to display Khasras");
+    }
+  };
+
+  /* ---------------------------
+  DRAW MURABBAS
+  --------------------------- */
+  const drawMurabbas = (geojson) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    try {
+      clearMurabbaLayers();
+
+      if (!geojson?.features || !Array.isArray(geojson.features)) {
+        setFeatureCount(0);
+        return;
+      }
+
+      map.addSource(MURABBA_SOURCE, {
+        type: "geojson",
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: MURABBA_FILL,
+        type: "fill",
+        source: MURABBA_SOURCE,
+        paint: {
+          "fill-color": MAP_THEME.fillColor,
+          "fill-opacity": MAP_THEME.fillOpacity,
+        },
+      });
+
+      map.addLayer({
+        id: MURABBA_LINE,
+        type: "line",
+        source: MURABBA_SOURCE,
+        paint: {
+          "line-color": MAP_THEME.lineColor,
+          "line-width": MAP_THEME.lineWidth,
+        },
+      });
+
+      zoomToGeoJSON(geojson);
+      setFeatureCount(geojson.features.length);
+    } catch (e) {
+      console.error("Murabba drawing error:", e);
+      setError("Failed to display Murabbas");
     }
   };
 
   /* ---------------------------
   LOAD BOUNDARY
   --------------------------- */
-
   useEffect(() => {
     if (!isMapReady) return;
 
@@ -396,26 +385,28 @@ export default function MapView({
         setIsLoading(true);
         setError("");
 
-        if (selectedMouza)
+        if (selectedMouza) {
           geojson = await getMouzaBoundary(
-            selectedMouza.mouza_id || selectedMouza.id,
+            selectedMouza.mouza_id || selectedMouza.id || selectedMouza,
           );
-        else if (selectedTehsil?.length) {
+        } else if (selectedTehsil?.length) {
           const responses = await Promise.all(
-            selectedTehsil.map((tehsil) => getTehsilBoundary(tehsil.id)),
+            selectedTehsil.map((tehsil) =>
+              getTehsilBoundary(tehsil.id || tehsil),
+            ),
           );
           geojson = mergeFeatureCollections(responses);
         } else if (selectedDistrict?.length) {
           const responses = await Promise.all(
             selectedDistrict.map((district) =>
-              getDistrictBoundary(district.id),
+              getDistrictBoundary(district.id || district),
             ),
           );
           geojson = mergeFeatureCollections(responses);
         } else if (selectedDivision?.length) {
           const responses = await Promise.all(
             selectedDivision.map((division) =>
-              getDivisionBoundary(division.division_i),
+              getDivisionBoundary(division.division_i || division),
             ),
           );
           geojson = mergeFeatureCollections(responses);
@@ -437,15 +428,14 @@ export default function MapView({
     selectedTehsil,
     selectedMouza,
     isMapReady,
+    viewBy,
   ]);
 
   /* ---------------------------
   LOAD KHASRAS
   --------------------------- */
-
   useEffect(() => {
     if (!selectedMouza || !isMapReady || viewBy !== "khasra") {
-      // clear any existing khasra layers when not viewing khasras
       clearKhasraLayers();
       return;
     }
@@ -453,13 +443,18 @@ export default function MapView({
     const loadKhasras = async () => {
       try {
         setIsLoading(true);
+        setError("");
 
-        const mouza_id = selectedMouza.mouza_id || selectedMouza.id;
+        const mouza_id =
+          selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
+
         const geojson = await getKhasras(mouza_id);
+
         if (geojson?.features?.length) {
           drawKhasras(geojson);
-          // zoom to parcels after they are drawn
-          zoomToGeoJSON(geojson);
+        } else {
+          clearKhasraLayers();
+          setFeatureCount(0);
         }
       } catch (e) {
         console.error("Khasra load error:", e);
@@ -475,10 +470,8 @@ export default function MapView({
   /* ---------------------------
   LOAD MURABBAS
   --------------------------- */
-
   useEffect(() => {
     if (!selectedMouza || !isMapReady || viewBy !== "murabba") {
-      // clear murabba layers when not active
       clearMurabbaLayers();
       return;
     }
@@ -486,13 +479,18 @@ export default function MapView({
     const loadMurabbas = async () => {
       try {
         setIsLoading(true);
+        setError("");
 
-        const mouza_id = selectedMouza.mouza_id || selectedMouza.id;
+        const mouza_id =
+          selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
+
         const geojson = await getMurabbas(mouza_id);
+
         if (geojson?.features?.length) {
           drawMurabbas(geojson);
-          // zoom to murabba features
-          zoomToGeoJSON(geojson);
+        } else {
+          clearMurabbaLayers();
+          setFeatureCount(0);
         }
       } catch (e) {
         console.error("Murabba load error:", e);
@@ -514,6 +512,7 @@ export default function MapView({
           {error}
         </div>
       )}
+
       {isLoading && (
         <div className="absolute top-5 right-5 bg-blue-500 text-white px-4 py-2 rounded shadow">
           Loading...
