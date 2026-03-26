@@ -10,11 +10,11 @@ import {
   Ruler,
   CheckCircle,
   Download,
-  X,
+  MessageSquare,
+  List,
 } from "lucide-react";
 
 export default function ParcelPanel() {
-  const [isOpen, setIsOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("parcelInfo");
 
   const parcelData = {
@@ -33,47 +33,25 @@ export default function ParcelPanel() {
     { year: "2023", label: "RUDA Owned & Planning Zone" },
   ];
 
-  if (!isOpen) {
-    return (
-      <div className="absolute right-3 top-3 z-20">
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 shadow-lg transition hover:border-green-600 hover:bg-green-50 hover:text-green-800"
-        >
-          <MapPin className="text-green-700" size={18} />
-          Parcel Information
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="absolute right-3 top-3 z-20 w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-200px)]">
+    <div className="absolute right-3 top-3 w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-200px)]">
 
       {/* Header */}
       <div className="px-4 pt-4 border-b border-slate-200">
 
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-slate-800 font-semibold text-lg min-w-0">
-            <MapPin className="text-green-700 shrink-0" size={20} />
-            <span className="truncate">Parcel Information</span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0 text-slate-400">
-            <User size={18} className="cursor-default" />
-            <Grid2X2 size={18} className="cursor-default" />
-            <FileText size={18} className="cursor-default" />
-            <HelpCircle size={18} className="cursor-default" />
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="ml-1 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-              aria-label="Close parcel panel"
-            >
-              <X size={20} />
-            </button>
-          </div>
+        <div className="flex items-center gap-2 text-slate-800 font-semibold text-lg">
+          <MapPin className="text-green-700" size={20} />
+          Parcel Information
+          <div className="flex gap-5 py-2 px-3 text-slate-400">
+          <User size={18}/>
+          <Grid2X2 size={18}/>
+          <FileText size={18}/>
+          <HelpCircle size={18}/>
         </div>
+        </div>
+
+        {/* Icon Toolbar */}
+        
 
         {/* Tabs */}
         <div className="flex gap-2 mt-3 pb-3">

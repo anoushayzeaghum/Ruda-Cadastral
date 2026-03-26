@@ -33,9 +33,9 @@ export default function MapPage() {
 
           <MapView
             selectedMouza={filters?.selectedMouzaDetails}
-            selectedDistrict={filters?.selectedDistrictOptions}
-            selectedTehsil={filters?.selectedTehsilOptions}
-            selectedDivision={filters?.selectedDivisionOptions}
+            selectedDistrict={filters?.selectedDistrictOption}
+            selectedTehsil={filters?.selectedTehsilOption}
+            selectedDivision={filters?.selectedDivisionOption}
             viewBy={filters?.viewBy}
           />
 

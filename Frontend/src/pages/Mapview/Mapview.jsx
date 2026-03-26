@@ -29,18 +29,6 @@ const MURABBA_SOURCE = "murabba-source";
 const MURABBA_FILL = "murabba-fill";
 const MURABBA_LINE = "murabba-line";
 
-const emptyFeatureCollection = () => ({
-  type: "FeatureCollection",
-  features: [],
-});
-
-const mergeFeatureCollections = (collections) => ({
-  type: "FeatureCollection",
-  features: collections.flatMap((collection) =>
-    Array.isArray(collection?.features) ? collection.features : [],
-  ),
-});
-
 /* ---------------------------
 BASEMAP STYLES
 --------------------------- */
@@ -359,7 +347,7 @@ export default function MapView({
     if (!isMapReady) return;
 
     const loadBoundary = async () => {
-      let geojson = emptyFeatureCollection();
+      let geojson = null;
 
       try {
         setIsLoading(true);
@@ -369,26 +357,14 @@ export default function MapView({
           geojson = await getMouzaBoundary(
             selectedMouza.mouza_id || selectedMouza.id,
           );
-        else if (selectedTehsil?.length) {
-          const responses = await Promise.all(
-            selectedTehsil.map((tehsil) => getTehsilBoundary(tehsil.id)),
-          );
-          geojson = mergeFeatureCollections(responses);
-        } else if (selectedDistrict?.length) {
-          const responses = await Promise.all(
-            selectedDistrict.map((district) => getDistrictBoundary(district.id)),
-          );
-          geojson = mergeFeatureCollections(responses);
-        } else if (selectedDivision?.length) {
-          const responses = await Promise.all(
-            selectedDivision.map((division) =>
-              getDivisionBoundary(division.division_i),
-            ),
-          );
-          geojson = mergeFeatureCollections(responses);
-        }
+        else if (selectedTehsil)
+          geojson = await getTehsilBoundary(selectedTehsil.id);
+        else if (selectedDistrict)
+          geojson = await getDistrictBoundary(selectedDistrict.id);
+        else if (selectedDivision)
+          geojson = await getDivisionBoundary(selectedDivision.division_i);
 
-        drawBoundary(geojson);
+        if (geojson?.features?.length) drawBoundary(geojson);
       } catch (e) {
         console.error("Boundary load error:", e);
         setError("Failed to load boundary");
