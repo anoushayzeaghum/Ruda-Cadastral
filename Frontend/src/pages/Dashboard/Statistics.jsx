@@ -502,8 +502,8 @@ function Panel({ className = "", children }) {
   return (
     <div
       className={[
-        "rounded-[20px] border border-[#d8ddd5] bg-[#fbfbf8]",
-        "shadow-[0_4px_12px_rgba(38,65,47,0.08)]",
+        "rounded-[20px] bg-[#fbfbf8]",
+        "ring-1 ring-emerald-300/25 shadow-[0_10px_24px_rgba(34,197,94,0.06)]",
         className,
       ].join(" ")}
     >
@@ -672,16 +672,14 @@ export default function Statistics() {
   return (
     <section className="w-full  ">
       {" "}
-      
       <div className="space-y-3.5">
-        
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_2.8fr]">
-          
-           <Panel className="p-2 bg-white border-none shadow-none">
+          <Panel className="p-2 bg-white border-none shadow-none">
             <div className="h-full min-h-[220px] overflow-hidden rounded-[18px]">
               <MapPanel darkMode={false} />
             </div>
-          </Panel><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          </Panel>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {topCards.map((card) => (
               <StatCard
                 key={`${card.title}-${card.value}-${card.tone}`}
@@ -689,8 +687,6 @@ export default function Statistics() {
               />
             ))}
           </div>
-
-         
         </div>
 
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.02fr_2.4fr_1.2fr]">

@@ -50,7 +50,7 @@ export default function Dashboard() {
           <Sidebar sidebarOpen={sidebarOpen} />
 
           <main className="min-h-0 flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto px-4 pt-4 pb-4 xl:px-5 xl:pt-4 xl:pb-4">
+            <div className="h-full overflow-y-auto px-3 pt-3 pb-3 xl:px-4 xl:pt-3 xl:pb-3">
               <div className="space-y-4">
                 <KPISection />
                 <Statistics />

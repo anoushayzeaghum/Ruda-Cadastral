@@ -43,6 +43,33 @@ export default function MapPanel() {
     };
   }, []);
 
+  // Ensure map resizes when its container size changes (sidebar toggle, window resize)
+  useEffect(() => {
+    const map = mapRef.current;
+    const container = mapContainer.current;
+    if (!map || !container || typeof ResizeObserver === "undefined") return;
+
+    const ro = new ResizeObserver(() => {
+      try {
+        map.resize();
+      } catch (e) {
+        // ignore
+      }
+    });
+
+    ro.observe(container);
+
+    const onWin = () => map.resize();
+    window.addEventListener("resize", onWin);
+
+    return () => {
+      try {
+        ro.disconnect();
+      } catch (e) {}
+      window.removeEventListener("resize", onWin);
+    };
+  }, []);
+
   const loadLayers = async () => {
     const map = mapRef.current;
     if (!map) return;
@@ -216,7 +243,7 @@ export default function MapPanel() {
   };
 
   return (
-    <div className="h-full w-full overflow-hidden rounded-xl bg-white">
+    <div className="h-full w-full overflow-hidden">
       <div ref={mapContainer} className="h-full w-full" />
     </div>
   );

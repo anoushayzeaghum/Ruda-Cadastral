@@ -28,7 +28,7 @@ const kpiCards = [
         text: "text-emerald-700 dark:text-emerald-400",
         icon: CheckCircle2,
       },
-  
+
       {
         label: "Not Verified",
         value: "25,000",
@@ -172,15 +172,28 @@ export default function KPISection() {
               key={card.title}
               className={[
                 card.span,
-                "relative overflow-hidden rounded-[20px] border px-4 py-3",
-                "shadow-[0_4px_12px_rgba(38,65,47,0.08)]",
+                "relative overflow-hidden rounded-[20px] px-4 py-3",
+
+                // 🌿 subtle dark green border
+                "ring-1 ring-emerald-600/80",
+
+                // 🌿 soft minimal glow
+                "shadow-[0_0_96px_rgba(16,185,129,0.15)]",
+
+                // smooth hover (slightly enhanced, not aggressive)
+                "transition-all duration-300",
+                "hover:shadow-[0_0_40px_rgba(16,185,129,0.25)]",
+                "hover:ring-emerald-600/60",
+
                 tone.card,
               ].join(" ")}
             >
               <div className="relative z-10 flex h-full flex-col justify-between">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className={`text-[11px] font-medium leading-4 ${tone.title}`}>
+                    <p
+                      className={`text-[11px] font-medium leading-4 ${tone.title}`}
+                    >
                       {card.title}
                     </p>
                   </div>
@@ -202,13 +215,17 @@ export default function KPISection() {
                           className="flex items-center justify-between py-1"
                         >
                           <div className="flex items-center gap-2">
-                            <span className={`h-2 w-2 rounded-full ${item.color}`} />
+                            <span
+                              className={`h-2 w-2 rounded-full ${item.color}`}
+                            />
                             <StatusIcon size={14} className={item.text} />
                             <span className="text-[11px] text-slate-600 dark:text-slate-300">
                               {item.label}
                             </span>
                           </div>
-                          <span className={`text-[13px] font-semibold ${item.text}`}>
+                          <span
+                            className={`text-[13px] font-semibold ${item.text}`}
+                          >
                             {item.value}
                           </span>
                         </div>
@@ -218,15 +235,25 @@ export default function KPISection() {
                 ) : card.value2 ? (
                   <div className="mt-1">
                     <div className="flex items-end gap-2 flex-wrap">
-                      <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
+                      <span
+                        className={`text-[24px] font-semibold leading-none ${tone.value}`}
+                      >
                         {card.value}
                       </span>
-                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>{card.unit1}</span>
-                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>/</span>
-                      <span className={`text-[22px] font-semibold leading-none ${tone.value}`}>
+                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>
+                        {card.unit1}
+                      </span>
+                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>
+                        /
+                      </span>
+                      <span
+                        className={`text-[22px] font-semibold leading-none ${tone.value}`}
+                      >
                         {card.value2}
                       </span>
-                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>{card.unit2}</span>
+                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>
+                        {card.unit2}
+                      </span>
                     </div>
 
                     <div className="mt-3">
@@ -236,17 +263,23 @@ export default function KPISection() {
                 ) : card.ring ? (
                   <div className="mt-1 flex items-center justify-between gap-3">
                     <div className="flex items-end gap-1.5">
-                      <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
+                      <span
+                        className={`text-[24px] font-semibold leading-none ${tone.value}`}
+                      >
                         {card.value}
                       </span>
-                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>{card.unit}</span>
+                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>
+                        {card.unit}
+                      </span>
                     </div>
                     <RingProgress value={card.ring} />
                   </div>
                 ) : (
                   <div className="mt-1">
                     <div className="flex items-end gap-1.5">
-                      <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
+                      <span
+                        className={`text-[24px] font-semibold leading-none ${tone.value}`}
+                      >
                         {card.value}
                       </span>
                       {card.unit ? (
@@ -257,11 +290,15 @@ export default function KPISection() {
                     </div>
 
                     {card.subtitle ? (
-                      <p className={`mt-1 text-[11px] ${tone.sub}`}>{card.subtitle}</p>
+                      <p className={`mt-1 text-[11px] ${tone.sub}`}>
+                        {card.subtitle}
+                      </p>
                     ) : null}
 
                     {card.subValue ? (
-                      <p className={`mt-1 text-[11px] ${tone.sub}`}>{card.subValue}</p>
+                      <p className={`mt-1 text-[11px] ${tone.sub}`}>
+                        {card.subValue}
+                      </p>
                     ) : null}
                   </div>
                 )}
