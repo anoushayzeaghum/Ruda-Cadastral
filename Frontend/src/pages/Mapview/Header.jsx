@@ -2,12 +2,25 @@ import { Search, ChevronDown, LayoutDashboard } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 import { useNavigate } from "react-router-dom";
 
+const headerBackgroundStyle = {
+  backgroundImage: [
+    "linear-gradient(90deg, rgba(20, 83, 45, 0.94) 0%, rgba(22, 101, 52, 0.82) 38%, rgba(21, 128, 61, 0.72) 65%, rgba(20, 83, 45, 0.78) 100%)",
+    "url('/ruda_bg.png')",
+  ].join(", "),
+  backgroundSize: "cover",
+  backgroundPosition: "center center",
+  backgroundRepeat: "no-repeat",
+};
+
 export default function Header() {
   const navigate = useNavigate();
 
   return (
-    <div className="w-full bg-gradient-to-r from-green-900 via-green-800 to-green-900 text-white px-6 py-2 shadow-md">
-      <div className="flex items-center justify-between">
+    <div
+      className="relative w-full text-white px-6 py-2 shadow-md"
+      style={headerBackgroundStyle}
+    >
+      <div className="relative z-10 flex items-center justify-between">
         {/* LEFT SECTION */}
         <div className="flex items-center gap-4">
           {/* Circular Logo */}
