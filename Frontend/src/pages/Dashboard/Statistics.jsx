@@ -49,14 +49,14 @@ const topCards = [
     title: "Under Acquisition",
     value: "12,400",
     unit: "Acres",
-    tone: "softOlive",
+    tone: "softDanger",
     icon: "acquisition",
   },
   {
     title: "Encroached Land",
     value: "1,150",
     unit: "Acres",
-    tone: "softDanger",
+    tone: "green",
     icon: "encroach",
   },
 ];
@@ -463,8 +463,21 @@ function StatCard({ card }) {
   return (
     <div
       className={[
-        "relative overflow-hidden rounded-[20px] border border-[#d8ddd5] shadow-[0_4px_12px_rgba(38,65,47,0.08)]",
+        "relative overflow-hidden rounded-[20px]",
+
+        // ✅ SAME GREEN BORDER STYLE AS KPI
+        "ring-1 ring-emerald-600/40",
+
+        // ✅ SOFT GLOW (controlled)
+        "shadow-[0_0_6px_rgba(16,185,129,0.15)]",
+
+        // hover effect (subtle)
+        "transition-all duration-300",
+        "hover:shadow-[0_0_10px_rgba(16,185,129,0.25)]",
+        "hover:ring-emerald-600/60",
+
         "px-4 py-4 min-h-0",
+
         tone.box,
         tone.overlay,
       ].join(" ")}
@@ -503,7 +516,18 @@ function Panel({ className = "", children }) {
     <div
       className={[
         "rounded-[20px] bg-[#fbfbf8]",
-        "ring-1 ring-emerald-300/25 shadow-[0_10px_24px_rgba(34,197,94,0.06)]",
+
+        // ✅ SAME BORDER STYLE
+        "ring-1 ring-emerald-600/40",
+
+        // ✅ SAME GLOW
+        "shadow-[0_0_6px_rgba(16,185,129,0.15)]",
+
+        // hover
+        "transition-all duration-300",
+        "hover:shadow-[0_0_10px_rgba(16,185,129,0.25)]",
+        "hover:ring-emerald-600/60",
+
         className,
       ].join(" ")}
     >
@@ -674,7 +698,7 @@ export default function Statistics() {
       {" "}
       <div className="space-y-3.5">
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_2.8fr]">
-          <Panel className="p-2 bg-white border-none shadow-none">
+          <Panel className="p-0 bg-white border-none shadow-none">
             <div className="h-full min-h-[220px] overflow-hidden rounded-[18px]">
               <MapPanel darkMode={false} />
             </div>
@@ -824,7 +848,7 @@ export default function Statistics() {
         </div>
 
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1.2fr_1fr_1.12fr]">
-          <Panel className="px-3 py-3 bg-white border-none shadow-none">
+          <Panel className="p-0 bg-white border-none shadow-none">
             <div className="h-full min-h-[220px]">
               <BarChart />
             </div>
