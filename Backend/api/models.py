@@ -173,3 +173,30 @@ class Khasra(models.Model):
     class Meta:
         managed = False
         db_table = "khasra"
+
+# --------------------------------------------------------
+# Khasra Administrative Boundary
+# --------------------------------------------------------
+        
+class RudaBoundary(models.Model):
+    gid = models.AutoField(primary_key=True)
+    oid = models.FloatField(db_column='oid_')
+    name = models.CharField(max_length=254, null=True, blank=True)
+    folderpath = models.CharField(max_length=254, null=True, blank=True)
+    symbolid = models.FloatField(null=True, blank=True)
+    altmode = models.IntegerField(null=True, blank=True)
+    base = models.FloatField(null=True, blank=True)
+    clamped = models.IntegerField(null=True, blank=True)
+    extruded = models.IntegerField(null=True, blank=True)
+    snippet = models.TextField(null=True, blank=True)
+    popupinfo = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_area = models.FloatField(null=True, blank=True)
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return self.name if self.name else f"RudaBoundary {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "ruda_boundary"

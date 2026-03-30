@@ -32,6 +32,12 @@ router.register(r"khasra/create", CreateKhasraView, basename="create-khasra")
 router.register(r"khasra/update", UpdateKhasraView, basename="update-khasra")
 router.register(r"khasra/delete", DeleteKhasraView, basename="delete-khasra")
 
+#------------------------------ Ruda Boundary View ------------------------------
+router.register(r"ruda", ListRudaBoundaryView, basename="ruda")
+router.register(r"ruda/create", CreateRudaBoundaryView, basename="create-ruda")
+router.register(r"ruda/update", UpdateRudaBoundaryView, basename="update-ruda")
+router.register(r"ruda/delete", DeleteRudaBoundaryView, basename="delete-ruda")
+
 urlpatterns = [
     path('', include(router.urls)),
 ]
