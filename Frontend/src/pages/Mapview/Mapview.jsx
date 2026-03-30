@@ -281,8 +281,10 @@ export default function MapView({
         type: "fill",
         source: ids.source,
         paint: {
-          "fill-color": MAP_THEME.fillColor,
-          "fill-opacity": MAP_THEME.fillOpacity,
+          "fill-color": level.startsWith("ruda")
+            ? "#3d7cc4" // RUDA → green
+            : "#0b6a2e", // others → light blue
+          "fill-opacity": level.startsWith("ruda") ? 0.5 : 0.2,
         },
       });
 
@@ -291,8 +293,9 @@ export default function MapView({
         type: "line",
         source: ids.source,
         paint: {
-          "line-color": MAP_THEME.lineColor,
-          "line-width": MAP_THEME.lineWidth,
+          "line-color": level.startsWith("ruda")
+            ? "#14532d" // dark green border
+            : "#194c8e", // navy for others          "line-width": MAP_THEME.lineWidth,
         },
       });
       // persist geojson so we can restore after style change

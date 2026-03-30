@@ -180,7 +180,7 @@ class Khasra(models.Model):
         
 class RudaBoundary(models.Model):
     gid = models.AutoField(primary_key=True)
-    oid = models.FloatField(db_column='oid_')
+    oid = models.FloatField(db_column='oid')
     name = models.CharField(max_length=254, null=True, blank=True)
     folderpath = models.CharField(max_length=254, null=True, blank=True)
     symbolid = models.FloatField(null=True, blank=True)

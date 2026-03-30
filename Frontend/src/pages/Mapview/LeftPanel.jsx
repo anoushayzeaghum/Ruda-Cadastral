@@ -226,7 +226,9 @@ export default function LeftPanel({
       <div className="px-4 py-3 border-b border-slate-200">
         <div
           className={`rounded-lg h-24 overflow-hidden border ${
-            basemap === "Satellite" ? "ring-2 ring-green-500" : "border-slate-200"
+            basemap === "Satellite"
+              ? "ring-2 ring-green-500"
+              : "border-slate-200"
           }`}
         >
           <img

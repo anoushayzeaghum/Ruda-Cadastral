@@ -148,8 +148,7 @@ export const getMurabbaBoundary = async (id) => {
 
 export const getRudaList = async () => {
   const res = await API.get(`/ruda/`);
-  const payload = res?.data?.data ?? [];
-  return Array.isArray(payload) ? payload : [];
+  return normalizeData(res);
 };
 
 export const getRudaGeoJSON = async (gid) => {
