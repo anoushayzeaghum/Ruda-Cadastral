@@ -10,6 +10,7 @@ import {
   getMouzaBoundary,
   getKhasras,
   getMurabbas,
+  getRudaGeoJSON,
 } from "../../services/api";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -160,9 +161,13 @@ export default function MapView({
   selectedMouza,
   viewBy,
   onParcelSelect,
+  layers = {},
+  selectedRudaPhaseIds = [],
+  basemap = "Outdoors",
 }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
+  const currentGeojson = useRef({});
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
@@ -234,6 +239,68 @@ export default function MapView({
 
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds, { padding: 50 });
+    }
+  };
+
+  const getLayerIdsFor = (level) => ({
+    source: `${level}-boundary-source`,
+    fill: `${level}-boundary-fill`,
+    line: `${level}-boundary-line`,
+  });
+
+  const clearBoundaryLevel = (level) => {
+    const map = mapInstance.current;
+    if (!map) return;
+    const ids = getLayerIdsFor(level);
+
+    try {
+      if (map.getLayer(ids.fill)) map.removeLayer(ids.fill);
+      if (map.getLayer(ids.line)) map.removeLayer(ids.line);
+      if (map.getSource(ids.source)) map.removeSource(ids.source);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const drawBoundaryLevel = (level, geojson) => {
+    const map = mapInstance.current;
+    if (!map) return;
+    const ids = getLayerIdsFor(level);
+
+    // remove existing
+    clearBoundaryLevel(level);
+
+    try {
+      map.addSource(ids.source, {
+        type: "geojson",
+        data: geojson || emptyFeatureCollection(),
+      });
+
+      map.addLayer({
+        id: ids.fill,
+        type: "fill",
+        source: ids.source,
+        paint: {
+          "fill-color": MAP_THEME.fillColor,
+          "fill-opacity": MAP_THEME.fillOpacity,
+        },
+      });
+
+      map.addLayer({
+        id: ids.line,
+        type: "line",
+        source: ids.source,
+        paint: {
+          "line-color": MAP_THEME.lineColor,
+          "line-width": MAP_THEME.lineWidth,
+        },
+      });
+      // persist geojson so we can restore after style change
+      try {
+        currentGeojson.current[level] = geojson;
+      } catch (e) {}
+    } catch (e) {
+      console.error("drawBoundaryLevel error", e);
     }
   };
 
@@ -355,6 +422,10 @@ export default function MapView({
           "line-width": MAP_THEME.lineWidth,
         },
       });
+
+      try {
+        currentGeojson.current.khasra = geojson;
+      } catch (e) {}
 
       // ensure selected feature source + highlight layers exist
       if (!map.getSource(SELECTED_SOURCE)) {
@@ -479,6 +550,10 @@ export default function MapView({
         },
       });
 
+      try {
+        currentGeojson.current.murabba = geojson;
+      } catch (e) {}
+
       // ensure selected highlight layers exist (may already exist from khasra)
       if (!map.getSource(SELECTED_SOURCE)) {
         map.addSource(SELECTED_SOURCE, {
@@ -549,42 +624,110 @@ export default function MapView({
   --------------------------- */
   useEffect(() => {
     if (!isMapReady) return;
-
     const loadBoundary = async () => {
-      let geojson = emptyFeatureCollection();
-
       try {
         setIsLoading(true);
         setError("");
 
-        if (selectedMouza) {
-          geojson = await getMouzaBoundary(
-            selectedMouza.mouza_id || selectedMouza.id || selectedMouza,
+        // Clear levels that will be redrawn or disabled
+        ["division", "district", "tehsil", "mouza"].forEach((lvl) => {
+          if (!layers || !layers[`${lvl}Boundaries`]) {
+            clearBoundaryLevel(lvl);
+          }
+        });
+
+        // Collect geojsons to draw
+        const drawPromises = [];
+
+        // Mouza - highest priority when selected
+        if (layers?.mouzaBoundaries && selectedMouza) {
+          drawPromises.push(
+            getMouzaBoundary(
+              selectedMouza.mouza_id || selectedMouza.id || selectedMouza,
+            )
+              .then((g) => ({ level: "mouza", geojson: g }))
+              .catch((e) => {
+                console.error("mouza boundary error", e);
+                return null;
+              }),
           );
-        } else if (selectedTehsil?.length) {
-          const responses = await Promise.all(
-            selectedTehsil.map((tehsil) =>
-              getTehsilBoundary(tehsil.id || tehsil),
-            ),
-          );
-          geojson = mergeFeatureCollections(responses);
-        } else if (selectedDistrict?.length) {
-          const responses = await Promise.all(
-            selectedDistrict.map((district) =>
-              getDistrictBoundary(district.id || district),
-            ),
-          );
-          geojson = mergeFeatureCollections(responses);
-        } else if (selectedDivision?.length) {
-          const responses = await Promise.all(
-            selectedDivision.map((division) =>
-              getDivisionBoundary(division.division_i || division),
-            ),
-          );
-          geojson = mergeFeatureCollections(responses);
         }
 
-        drawBoundary(geojson);
+        // Tehsil
+        if (layers?.tehsilBoundaries && selectedTehsil?.length) {
+          const p = Promise.all(
+            selectedTehsil.map((t) => getTehsilBoundary(t.id || t)),
+          )
+            .then((resps) => ({
+              level: "tehsil",
+              geojson: mergeFeatureCollections(resps),
+            }))
+            .catch((e) => {
+              console.error("tehsil boundary error", e);
+              return null;
+            });
+
+          drawPromises.push(p);
+        }
+
+        // District
+        if (layers?.districtBoundaries && selectedDistrict?.length) {
+          const p = Promise.all(
+            selectedDistrict.map((d) => getDistrictBoundary(d.id || d)),
+          )
+            .then((resps) => ({
+              level: "district",
+              geojson: mergeFeatureCollections(resps),
+            }))
+            .catch((e) => {
+              console.error("district boundary error", e);
+              return null;
+            });
+
+          drawPromises.push(p);
+        }
+
+        // Division
+        if (layers?.divisionBoundaries && selectedDivision?.length) {
+          const p = Promise.all(
+            selectedDivision.map((div) =>
+              getDivisionBoundary(div.division_i || div),
+            ),
+          )
+            .then((resps) => ({
+              level: "division",
+              geojson: mergeFeatureCollections(resps),
+            }))
+            .catch((e) => {
+              console.error("division boundary error", e);
+              return null;
+            });
+
+          drawPromises.push(p);
+        }
+
+        const results = await Promise.all(drawPromises);
+
+        const valid = results.filter(Boolean);
+        if (valid.length === 0) {
+          // nothing to draw, ensure previous boundary layers cleared
+          ["division", "district", "tehsil", "mouza"].forEach((lvl) =>
+            clearBoundaryLevel(lvl),
+          );
+          setFeatureCount(0);
+          return;
+        }
+
+        // Draw each level independently so multiple can show
+        valid.forEach((item) => {
+          if (item && item.geojson) {
+            drawBoundaryLevel(item.level, item.geojson);
+          }
+        });
+
+        // zoom to combined extent (merge features)
+        const merged = mergeFeatureCollections(valid.map((v) => v.geojson));
+        if (merged.features.length) zoomToGeoJSON(merged);
       } catch (e) {
         console.error("Boundary load error:", e);
         setError("Failed to load boundary");
@@ -601,7 +744,98 @@ export default function MapView({
     selectedMouza,
     isMapReady,
     viewBy,
+    layers,
   ]);
+
+  /* ---------------------------
+  RESTORE LAYERS AFTER BASEMAP CHANGE
+  --------------------------- */
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    // If basemap is a named key, map to style URL
+    const styleUrl = BASEMAP_STYLES[basemap] || basemap;
+    if (!styleUrl) return;
+
+    // if style already equals desired, do nothing
+    if (map.getStyle && map.getStyle().sprite === styleUrl) return;
+
+    try {
+      map.setStyle(styleUrl);
+
+      map.once("style.load", () => {
+        // redraw persisted geojsons
+        try {
+          Object.keys(currentGeojson.current || {}).forEach((key) => {
+            const g = currentGeojson.current[key];
+            if (!g) return;
+            if (key === "khasra") {
+              drawKhasras(g);
+            } else if (key === "murabba") {
+              drawMurabbas(g);
+            } else {
+              // boundary levels and ruda-* keys
+              drawBoundaryLevel(key, g);
+            }
+          });
+        } catch (e) {
+          console.warn("Error restoring layers after style change", e);
+        }
+      });
+    } catch (e) {
+      console.error("Failed to change basemap style", e);
+    }
+  }, [basemap, isMapReady]);
+
+  /* ---------------------------
+  RUDA PHASES
+  --------------------------- */
+  useEffect(() => {
+    if (!isMapReady) return;
+
+    const loadRuda = async () => {
+      const map = mapInstance.current;
+      if (!layers?.rudaBoundary) {
+        // clear any ruda-* layers
+        try {
+          // we don't know exact ids, but selectedRudaPhaseIds may have ids
+          (selectedRudaPhaseIds || []).forEach((id) => {
+            const lvl = `ruda-${id}`;
+            clearBoundaryLevel(lvl);
+          });
+        } catch (e) {}
+        return;
+      }
+
+      if (!selectedRudaPhaseIds?.length) return;
+
+      try {
+        setIsLoading(true);
+        const promises = selectedRudaPhaseIds.map((gid) =>
+          getRudaGeoJSON(gid)
+            .then((g) => ({ gid, geojson: g }))
+            .catch((e) => {
+              console.error("ruda geojson error", e);
+              return null;
+            }),
+        );
+
+        const results = await Promise.all(promises);
+
+        results.filter(Boolean).forEach((r) => {
+          drawBoundaryLevel(`ruda-${r.gid}`, r.geojson);
+          try {
+            currentGeojson.current[`ruda-${r.gid}`] = r.geojson;
+          } catch (e) {}
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRuda();
+  }, [isMapReady, layers?.rudaBoundary, selectedRudaPhaseIds]);
 
   /* ---------------------------
   LOAD KHASRAS

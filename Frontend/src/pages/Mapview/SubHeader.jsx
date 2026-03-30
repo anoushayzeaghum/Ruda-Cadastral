@@ -90,14 +90,15 @@ export default function SubHeader({ filters }) {
             value={
               filters.mouzas.find(
                 (m) => String(m.mouza_id) === String(filters.selectedMouza),
-              )
-                ?.mouza || "Select"
+              )?.mouza || "Select"
             }
           >
             <select
               value={filters.selectedMouza}
               onChange={filters.handleMouzaChange}
-              disabled={!filters.selectedTehsil.length || filters.loading?.mouzas}
+              disabled={
+                !filters.selectedTehsil.length || filters.loading?.mouzas
+              }
               className="absolute inset-0 opacity-0 cursor-pointer"
             >
               <option value="">-- Mouza --</option>
@@ -187,7 +188,9 @@ function MultiSelectDropdown({ options, selectedValues, onToggle, disabled }) {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  const safeSelectedValues = Array.isArray(selectedValues) ? selectedValues : [];
+  const safeSelectedValues = Array.isArray(selectedValues)
+    ? selectedValues
+    : [];
 
   return (
     <div ref={containerRef} className="absolute inset-0">

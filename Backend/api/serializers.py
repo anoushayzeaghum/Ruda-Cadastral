@@ -168,6 +168,7 @@ class RudaBoundarySerializer(GeoFeatureModelSerializer):
     class Meta:
         model = RudaBoundary
         geo_field = "geom"
+        id_field = "gid"
         fields = (
             "gid",
             "oid",
@@ -182,4 +183,5 @@ class RudaBoundarySerializer(GeoFeatureModelSerializer):
             "popupinfo",
             "shape_leng",
             "shape_area",
+            "geom",
         )

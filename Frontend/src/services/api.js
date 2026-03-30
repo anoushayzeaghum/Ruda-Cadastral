@@ -141,3 +141,18 @@ export const getMurabbaBoundary = async (id) => {
   const res = await API.get(`/murabba/${id}/geojson`);
   return normalizeGeoJson(res);
 };
+
+///////////////////////////////////////////////////////
+///////////////////// RUDA APIs ///////////////////////
+///////////////////////////////////////////////////////
+
+export const getRudaList = async () => {
+  const res = await API.get(`/ruda/`);
+  const payload = res?.data?.data ?? [];
+  return Array.isArray(payload) ? payload : [];
+};
+
+export const getRudaGeoJSON = async (gid) => {
+  const res = await API.get(`/ruda/${gid}/geojson`);
+  return normalizeGeoJson(res);
+};

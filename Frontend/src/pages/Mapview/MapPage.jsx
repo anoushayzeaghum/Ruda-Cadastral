@@ -13,6 +13,25 @@ export default function MapPage() {
   const filters = outletContext.filters;
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [parcelPanelOpen, setParcelPanelOpen] = useState(false);
+  // Layer controls lifted to parent so LeftPanel and MapView can share
+  const [layers, setLayers] = useState({
+    rudaBoundary: true,
+    divisionBoundaries: true,
+    districtBoundaries: true,
+    tehsilBoundaries: true,
+    mouzaBoundaries: true,
+    khasraParcels: true,
+    landOwnership: false,
+    landAcquisition: false,
+    roadNetwork: false,
+    canalRiver: false,
+    satelliteImagery: true,
+  });
+
+  // RUDA phases data & selected phase ids
+  const [rudaPhases, setRudaPhases] = useState([]);
+  const [selectedRudaPhaseIds, setSelectedRudaPhaseIds] = useState([]);
+  const [basemap, setBasemap] = useState("Outdoors");
 
   return (
     <div className="w-full h-screen flex flex-col bg-white">
@@ -26,7 +45,16 @@ export default function MapPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel */}
         <div className="w-72 border-r border-slate-200 bg-white z-10">
-          <LeftPanel />
+          <LeftPanel
+            layers={layers}
+            setLayers={setLayers}
+            rudaPhases={rudaPhases}
+            setRudaPhases={setRudaPhases}
+            selectedRudaPhaseIds={selectedRudaPhaseIds}
+            setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
+            basemap={basemap}
+            setBasemap={setBasemap}
+          />
         </div>
 
         {/* Map Section */}
@@ -37,6 +65,9 @@ export default function MapPage() {
             selectedTehsil={filters?.selectedTehsilOptions}
             selectedDivision={filters?.selectedDivisionOptions}
             viewBy={filters?.viewBy}
+            layers={layers}
+            selectedRudaPhaseIds={selectedRudaPhaseIds}
+            basemap={basemap}
             onParcelSelect={(feature) => {
               setSelectedParcel(feature);
               setParcelPanelOpen(true);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Layers,
   ChevronDown,
@@ -13,22 +13,19 @@ import {
   Plus,
 } from "lucide-react";
 
-export default function LeftPanel() {
+export default function LeftPanel({
+  layers,
+  setLayers,
+  rudaPhases,
+  setRudaPhases,
+  selectedRudaPhaseIds,
+  setSelectedRudaPhaseIds,
+  basemap,
+  setBasemap,
+}) {
   const [layersExpanded, setLayersExpanded] = useState(true);
   const [toolboxExpanded, setToolboxExpanded] = useState(true);
-
-  const [layers, setLayers] = useState({
-    rudaBoundary: true,
-    districtBoundaries: true,
-    tehsilBoundaries: true,
-    mouzaBoundaries: true,
-    khasraParcels: true,
-    landOwnership: false,
-    landAcquisition: false,
-    roadNetwork: false,
-    canalRiver: false,
-    satelliteImagery: true,
-  });
+  const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
 
   const toggleLayer = (layer) => {
     setLayers((prev) => ({
@@ -36,6 +33,31 @@ export default function LeftPanel() {
       [layer]: !prev[layer],
     }));
   };
+
+  // fetch RUDA phases when component mounts if not provided
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      if (rudaPhases?.length) return;
+      try {
+        const { getRudaList } = await import("../../services/api");
+        const list = await getRudaList();
+        if (!mounted) return;
+        setRudaPhases(list || []);
+        // default select all phases
+        const ids = (list || []).map((p) => p.gid ?? p.id ?? p.oid);
+        setSelectedRudaPhaseIds(ids);
+      } catch (e) {
+        console.error("Failed to load RUDA phases", e);
+      }
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, [rudaPhases, setRudaPhases, setSelectedRudaPhaseIds]);
 
   return (
     <div className="h-full w-full bg-white border-r border-slate-200 flex flex-col">
@@ -60,10 +82,84 @@ export default function LeftPanel() {
 
         {layersExpanded && (
           <div className="px-3 pb-3 space-y-1 max-h-72 overflow-y-auto">
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer px-2 py-2 rounded-md text-sm hover:bg-slate-50">
+                <input
+                  type="checkbox"
+                  checked={layers.rudaBoundary}
+                  onChange={() => toggleLayer("rudaBoundary")}
+                  className="accent-green-600 w-4 h-4"
+                />
+                <span className="text-slate-700">RUDA Boundary</span>
+                <button
+                  onClick={() => setRudaDropdownOpen((s) => !s)}
+                  className="ml-2 text-xs text-slate-500 px-2 py-1 rounded border"
+                >
+                  Phases
+                </button>
+              </label>
+
+              {rudaDropdownOpen && (
+                <div className="mt-2 ml-4 bg-white border rounded p-2 max-h-48 overflow-y-auto">
+                  <label className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={
+                        Array.isArray(rudaPhases) &&
+                        selectedRudaPhaseIds?.length === rudaPhases.length
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const ids = rudaPhases.map(
+                            (p) => p.gid ?? p.id ?? p.oid,
+                          );
+                          setSelectedRudaPhaseIds(ids);
+                        } else {
+                          setSelectedRudaPhaseIds([]);
+                        }
+                      }}
+                    />
+                    <strong className="text-sm">Select All</strong>
+                  </label>
+
+                  {(rudaPhases || []).map((phase) => {
+                    const id = phase.gid ?? phase.id ?? phase.oid;
+                    const name =
+                      phase.name ?? phase.folderpath ?? `Phase ${id}`;
+                    const checked = selectedRudaPhaseIds?.includes(id);
+                    return (
+                      <label
+                        key={id}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!checked}
+                          onChange={() => {
+                            if (checked) {
+                              setSelectedRudaPhaseIds((prev) =>
+                                prev.filter((x) => x !== id),
+                              );
+                            } else {
+                              setSelectedRudaPhaseIds((prev) => [
+                                ...(prev || []),
+                                id,
+                              ]);
+                            }
+                          }}
+                        />
+                        <span className="text-slate-700">{name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <LayerCheckbox
-              label="RUDA Boundary"
-              checked={layers.rudaBoundary}
-              onChange={() => toggleLayer("rudaBoundary")}
+              label="Division Boundaries"
+              checked={layers.divisionBoundaries}
+              onChange={() => toggleLayer("divisionBoundaries")}
             />
 
             <LayerCheckbox
@@ -128,8 +224,17 @@ export default function LeftPanel() {
 
       {/* Satellite Preview */}
       <div className="px-4 py-3 border-b border-slate-200">
-        <div className="bg-slate-200 rounded-lg h-24 flex items-center justify-center text-xs text-slate-600 font-medium">
-          Satellite Preview
+        <div
+          className={`rounded-lg h-24 overflow-hidden border ${
+            basemap === "Satellite" ? "ring-2 ring-green-500" : "border-slate-200"
+          }`}
+        >
+          <img
+            src={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/74.3587,31.5204,8/300x150?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`}
+            alt="Satellite preview"
+            className="w-full h-full object-cover cursor-pointer"
+            onClick={() => setBasemap && setBasemap("Satellite")}
+          />
         </div>
       </div>
 
