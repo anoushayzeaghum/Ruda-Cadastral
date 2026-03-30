@@ -28,7 +28,11 @@ export default function ParcelPanel({
       parcel?.id ??
       "N/A",
     mouza: parcel?.properties?.mouza ?? parcel?.properties?.mouza_name ?? "N/A",
-    area: parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A",
+    // prefer computed area (in acres) provided by MapView
+    area:
+      parcel?.properties?._area_acres
+        ? `${parcel.properties._area_acres.toFixed(2)} Acres`
+        : parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A",
     landType: parcel?.properties?.type ?? "N/A",
     parcelId: parcel?.id ?? parcel?.properties?.gid ?? "N/A",
     rthIff: parcel?.properties?.rthIff ?? "N/A",
@@ -105,9 +109,13 @@ export default function ParcelPanel({
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
               <div className="flex justify-between items-center">
                 <span className="text-slate-700 text-sm">
-                  Khasra No:{" "}
+                  {parcel?.properties?._layerType === "murabba"
+                    ? "Murabba No:"
+                    : "Khasra No:"}{" "}
                   <strong className="text-slate-900">
-                    {parcelData.parcelId}
+                    {parcel?.properties?._layerType === "murabba"
+                      ? parcel?.properties?.murabba_no ?? parcelData.parcelId
+                      : parcelData.parcelId}
                   </strong>
                 </span>
 
@@ -151,9 +159,15 @@ export default function ParcelPanel({
 
               <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-slate-200">
                 <div>
-                  <p className="text-xs text-slate-500">Parcel ID</p>
+                  <p className="text-xs text-slate-500">
+                    {parcel?.properties?._layerType === "murabba"
+                      ? "Sheet"
+                      : "Parcel ID"}
+                  </p>
                   <p className="font-semibold text-slate-900">
-                    {parcelData.parcelId}
+                    {parcel?.properties?._layerType === "murabba"
+                      ? parcel?.properties?.sheets ?? parcelData.parcelId
+                      : parcelData.parcelId}
                   </p>
                 </div>
 

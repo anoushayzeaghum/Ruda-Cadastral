@@ -29,6 +29,10 @@ const MURABBA_SOURCE = "murabba-source";
 const MURABBA_FILL = "murabba-fill";
 const MURABBA_LINE = "murabba-line";
 
+const SELECTED_SOURCE = "selected-source";
+const SELECTED_FILL = "selected-fill";
+const SELECTED_LINE = "selected-line";
+
 /* ---------------------------
 SHARED MAP COLORS
 Use same theme for boundaries, khasra and murabba
@@ -51,6 +55,49 @@ const mergeFeatureCollections = (collections) => ({
     Array.isArray(collection?.features) ? collection.features : [],
   ),
 });
+
+/* ---------------------------
+AREA CALCULATION (geodesic)
+Returns area in square meters
+--------------------------- */
+function ringArea(coords) {
+  let area = 0;
+  if (!coords || coords.length === 0) return 0;
+  for (let i = 0, len = coords.length; i < len; i++) {
+    const p1 = coords[i];
+    const p2 = coords[(i + 1) % len];
+    const lon1 = (p1[0] * Math.PI) / 180;
+    const lat1 = (p1[1] * Math.PI) / 180;
+    const lon2 = (p2[0] * Math.PI) / 180;
+    const lat2 = (p2[1] * Math.PI) / 180;
+    area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
+  }
+
+  // Radius of Earth in meters (WGS84)
+  return (Math.abs(area) * 6378137 * 6378137) / 2.0;
+}
+
+function computeArea(feature) {
+  if (!feature || !feature.geometry) return 0;
+  const geom = feature.geometry;
+  let total = 0;
+
+  if (geom.type === "Polygon") {
+    // geom.coordinates -> [ [ring0], [ring1], ... ]
+    geom.coordinates.forEach((ring, idx) => {
+      total += ringArea(ring);
+    });
+  } else if (geom.type === "MultiPolygon") {
+    // geom.coordinates -> [ [ [ring], ... ], ... ]
+    geom.coordinates.forEach((poly) => {
+      poly.forEach((ring) => {
+        total += ringArea(ring);
+      });
+    });
+  }
+
+  return Math.abs(total); // square meters
+}
 
 /* ---------------------------
 BASEMAP STYLES
@@ -271,6 +318,14 @@ export default function MapView({
     try {
       clearKhasraLayers();
 
+      // clear any selected highlight when re-drawing
+      try {
+        const sel = map.getSource(SELECTED_SOURCE);
+        if (sel) sel.setData(emptyFeatureCollection());
+      } catch (err) {
+        // ignore
+      }
+
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
         return;
@@ -301,10 +356,62 @@ export default function MapView({
         },
       });
 
+      // ensure selected feature source + highlight layers exist
+      if (!map.getSource(SELECTED_SOURCE)) {
+        map.addSource(SELECTED_SOURCE, {
+          type: "geojson",
+          data: emptyFeatureCollection(),
+        });
+
+        map.addLayer({
+          id: SELECTED_FILL,
+          type: "fill",
+          source: SELECTED_SOURCE,
+          paint: {
+            "fill-color": "#FFD54F",
+            "fill-opacity": 0.7,
+          },
+        });
+
+        map.addLayer({
+          id: SELECTED_LINE,
+          type: "line",
+          source: SELECTED_SOURCE,
+          paint: {
+            "line-color": "#b38f00",
+            "line-width": 2,
+          },
+        });
+      }
+
       map.on("click", KHASRA_FILL, (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
-          if (typeof onParcelSelect === "function") onParcelSelect(feature);
+
+          // compute area and set highlight
+          const area_m2 = computeArea(feature);
+          const area_acres = area_m2 / 4046.8564224;
+
+          // set selected feature to highlight source
+          const selectedGeo = {
+            type: "FeatureCollection",
+            features: [feature],
+          };
+          try {
+            const src = map.getSource(SELECTED_SOURCE);
+            if (src) src.setData(selectedGeo);
+          } catch (err) {
+            console.warn("Could not set selected feature", err);
+          }
+
+          if (typeof onParcelSelect === "function") {
+            const cloned = JSON.parse(JSON.stringify(feature));
+            cloned.properties = cloned.properties || {};
+            cloned.properties._area_m2 = area_m2;
+            cloned.properties._area_acres = area_acres;
+            cloned.properties._layerType = "khasra";
+            onParcelSelect(cloned);
+          }
         }
       });
 
@@ -334,6 +441,14 @@ export default function MapView({
     try {
       clearMurabbaLayers();
 
+      // clear any selected highlight when re-drawing
+      try {
+        const sel = map.getSource(SELECTED_SOURCE);
+        if (sel) sel.setData(emptyFeatureCollection());
+      } catch (err) {
+        // ignore
+      }
+
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
         return;
@@ -362,6 +477,63 @@ export default function MapView({
           "line-color": MAP_THEME.lineColor,
           "line-width": MAP_THEME.lineWidth,
         },
+      });
+
+      // ensure selected highlight layers exist (may already exist from khasra)
+      if (!map.getSource(SELECTED_SOURCE)) {
+        map.addSource(SELECTED_SOURCE, {
+          type: "geojson",
+          data: emptyFeatureCollection(),
+        });
+
+        map.addLayer({
+          id: SELECTED_FILL,
+          type: "fill",
+          source: SELECTED_SOURCE,
+          paint: {
+            "fill-color": "#FFD54F",
+            "fill-opacity": 0.7,
+          },
+        });
+
+        map.addLayer({
+          id: SELECTED_LINE,
+          type: "line",
+          source: SELECTED_SOURCE,
+          paint: {
+            "line-color": "#b38f00",
+            "line-width": 2,
+          },
+        });
+      }
+
+      map.on("click", MURABBA_FILL, (e) => {
+        if (e.features && e.features.length > 0) {
+          const feature = e.features[0];
+
+          const area_m2 = computeArea(feature);
+          const area_acres = area_m2 / 4046.8564224;
+
+          const selectedGeo = {
+            type: "FeatureCollection",
+            features: [feature],
+          };
+          try {
+            const src = map.getSource(SELECTED_SOURCE);
+            if (src) src.setData(selectedGeo);
+          } catch (err) {
+            console.warn("Could not set selected feature", err);
+          }
+
+          if (typeof onParcelSelect === "function") {
+            const cloned = JSON.parse(JSON.stringify(feature));
+            cloned.properties = cloned.properties || {};
+            cloned.properties._area_m2 = area_m2;
+            cloned.properties._area_acres = area_acres;
+            cloned.properties._layerType = "murabba";
+            onParcelSelect(cloned);
+          }
+        }
       });
 
       zoomToGeoJSON(geojson);
