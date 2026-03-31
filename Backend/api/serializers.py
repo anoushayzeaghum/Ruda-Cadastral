@@ -158,3 +158,30 @@ class KhasraSerializer(GeoFeatureModelSerializer):
             "divn_id",
             "geom",
         )
+        
+# --------------------------------------------------------
+# Ruda Phases Boundary Serializer
+# --------------------------------------------------------
+
+class RudaBoundarySerializer(GeoFeatureModelSerializer):
+   
+    class Meta:
+        model = RudaBoundary
+        geo_field = "geom"
+        id_field = "gid"
+        fields = (
+            "gid",
+            "oid",
+            "name",
+            "folderpath",
+            "symbolid",
+            "altmode",
+            "base",
+            "clamped",
+            "extruded",
+            "snippet",
+            "popupinfo",
+            "shape_leng",
+            "shape_area",
+            "geom",
+        )

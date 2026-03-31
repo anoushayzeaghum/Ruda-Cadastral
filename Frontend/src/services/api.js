@@ -90,7 +90,8 @@ export const getMouzas = async (tehsil) => {
   const res = await API.get("/mouza/", {
     params,
   });
-  return normalizeData(res);
+  console.log("Raw response for getMouzas:", res);
+  return normalizeGeoJson(res);
 };
 
 export const getKhasras = async (mouza_id) => {
@@ -138,5 +139,19 @@ export const getKhasraBoundary = async (id) => {
 
 export const getMurabbaBoundary = async (id) => {
   const res = await API.get(`/murabba/${id}/geojson`);
+  return normalizeGeoJson(res);
+};
+
+///////////////////////////////////////////////////////
+///////////////////// RUDA APIs ///////////////////////
+///////////////////////////////////////////////////////
+
+export const getRudaList = async () => {
+  const res = await API.get(`/ruda/`);
+  return normalizeData(res);
+};
+
+export const getRudaGeoJSON = async (gid) => {
+  const res = await API.get(`/ruda/${gid}/geojson`);
   return normalizeGeoJson(res);
 };

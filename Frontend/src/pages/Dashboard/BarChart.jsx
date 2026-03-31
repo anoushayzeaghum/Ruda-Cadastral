@@ -69,20 +69,16 @@ export default function BarChart() {
   };
 
   return (
-    <div className="h-full flex flex-col p-5 rounded-xl
-    bg-white dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900
-    border border-gray-700 shadow-lg overflow-hidden">
-
+    <div className="h-full flex flex-col p-0 rounded-xl bg-white dark:bg-gradient-to-br dark:from-gray-700 dark:to-gray-900 overflow-hidden ring-1 ring-emerald-300/30 shadow-[0_10px_24px_rgba(34,197,94,0.06)]">
       {/* TITLE */}
-      <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">
+      <h3 className="text-g font-bold text-gray-500 dark:text-white mb-1 px-3 pt-3">
         Verification Timeline & Status
       </h3>
 
       {/* CHART */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 p-0">
         <Bar data={data} options={options} />
       </div>
     </div>
   );
-
 }
