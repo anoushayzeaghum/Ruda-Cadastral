@@ -155,3 +155,18 @@ export const getRudaGeoJSON = async (gid) => {
   const res = await API.get(`/ruda/${gid}/geojson`);
   return normalizeGeoJson(res);
 };
+
+///////////////////////////////////////////////////////
+///////////////////// TRIJUNCTION APIs ///////////////////////
+///////////////////////////////////////////////////////
+
+export const getTrijunctionPoints = async ({ mouza, type }) => {
+  const params = { type };
+
+  if (mouza) {
+    params.mouza = mouza;
+  }
+
+  const res = await API.get("/trijunction/", { params });
+  return normalizeGeoJson(res);
+};

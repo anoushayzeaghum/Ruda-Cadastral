@@ -215,7 +215,6 @@ class Trijunction(models.Model):
     m2_id = models.FloatField(null=True, blank=True)
     m3 = models.CharField(max_length=50, null=True, blank=True)
     m3_id = models.FloatField(null=True, blank=True)
-    id = models.FloatField(null=True, blank=True)
     layer = models.CharField(max_length=254, null=True, blank=True)
     path = models.CharField(max_length=254, null=True, blank=True)
     geom = gis_models.GeometryField(srid=4326)

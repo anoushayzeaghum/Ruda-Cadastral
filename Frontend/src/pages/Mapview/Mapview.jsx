@@ -11,16 +11,13 @@ import {
   getKhasras,
   getMurabbas,
   getRudaGeoJSON,
+  getTrijunctionPoints,
 } from "../../services/api";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const DEFAULT_CENTER = [74.3587, 31.5204];
 const DEFAULT_ZOOM = 8;
-
-const BOUNDARY_SOURCE = "boundary-source";
-const BOUNDARY_FILL = "boundary-fill";
-const BOUNDARY_LINE = "boundary-line";
 
 const KHASRA_SOURCE = "khasra-source";
 const KHASRA_FILL = "khasra-fill";
@@ -34,14 +31,16 @@ const SELECTED_SOURCE = "selected-source";
 const SELECTED_FILL = "selected-fill";
 const SELECTED_LINE = "selected-line";
 
-/* ---------------------------
-SHARED MAP COLORS
-Use same theme for boundaries, khasra and murabba
---------------------------- */
+const CONTROL_POINTS_SOURCE = "control-points-source";
+const CONTROL_POINTS_LAYER = "control-points-layer";
+
+const TRI_JUNCTION_POINTS_SOURCE = "tri-junction-points-source";
+const TRI_JUNCTION_POINTS_LAYER = "tri-junction-points-layer";
+
 const MAP_THEME = {
-  fillColor: "#158033", // same green as boundaries
+  fillColor: "#158033",
   fillOpacity: 0.2,
-  lineColor: "#1e3a5f", // same dark/navy boundary line
+  lineColor: "#1e3a5f",
   lineWidth: 2,
 };
 
@@ -57,13 +56,10 @@ const mergeFeatureCollections = (collections) => ({
   ),
 });
 
-/* ---------------------------
-AREA CALCULATION (geodesic)
-Returns area in square meters
---------------------------- */
 function ringArea(coords) {
   let area = 0;
   if (!coords || coords.length === 0) return 0;
+
   for (let i = 0, len = coords.length; i < len; i++) {
     const p1 = coords[i];
     const p2 = coords[(i + 1) % len];
@@ -74,22 +70,20 @@ function ringArea(coords) {
     area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
   }
 
-  // Radius of Earth in meters (WGS84)
   return (Math.abs(area) * 6378137 * 6378137) / 2.0;
 }
 
 function computeArea(feature) {
   if (!feature || !feature.geometry) return 0;
+
   const geom = feature.geometry;
   let total = 0;
 
   if (geom.type === "Polygon") {
-    // geom.coordinates -> [ [ring0], [ring1], ... ]
-    geom.coordinates.forEach((ring, idx) => {
+    geom.coordinates.forEach((ring) => {
       total += ringArea(ring);
     });
   } else if (geom.type === "MultiPolygon") {
-    // geom.coordinates -> [ [ [ring], ... ], ... ]
     geom.coordinates.forEach((poly) => {
       poly.forEach((ring) => {
         total += ringArea(ring);
@@ -97,12 +91,9 @@ function computeArea(feature) {
     });
   }
 
-  return Math.abs(total); // square meters
+  return Math.abs(total);
 }
 
-/* ---------------------------
-BASEMAP STYLES
---------------------------- */
 const BASEMAP_STYLES = {
   Satellite: "mapbox://styles/mapbox/satellite-streets-v12",
   Streets: "mapbox://styles/mapbox/streets-v12",
@@ -111,9 +102,6 @@ const BASEMAP_STYLES = {
   Outdoors: "mapbox://styles/mapbox/outdoors-v12",
 };
 
-/* ---------------------------
-BASEMAP CONTROL
---------------------------- */
 class BasemapControl {
   onAdd(map) {
     this.map = map;
@@ -174,9 +162,6 @@ export default function MapView({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /* ---------------------------
-  MAP INITIALIZATION
-  --------------------------- */
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
@@ -189,7 +174,6 @@ export default function MapView({
       });
 
       map.setProjection("globe");
-
       map.addControl(new BasemapControl(), "top-left");
       map.addControl(new mapboxgl.NavigationControl(), "top-left");
 
@@ -216,9 +200,6 @@ export default function MapView({
     }
   }, []);
 
-  /* ---------------------------
-  ZOOM FUNCTION
-  --------------------------- */
   const zoomToGeoJSON = (geojson) => {
     const map = mapInstance.current;
     if (!map || !geojson?.features?.length) return;
@@ -230,8 +211,11 @@ export default function MapView({
       if (!coords) return;
 
       const traverse = (c) => {
-        if (typeof c[0] === "number") bounds.extend(c);
-        else c.forEach(traverse);
+        if (typeof c[0] === "number") {
+          bounds.extend(c);
+        } else {
+          c.forEach(traverse);
+        }
       };
 
       traverse(coords);
@@ -242,7 +226,7 @@ export default function MapView({
     }
   };
 
-  const getLayerIdsFor = (level) => ({
+  const getBoundaryIds = (level) => ({
     source: `${level}-boundary-source`,
     fill: `${level}-boundary-fill`,
     line: `${level}-boundary-line`,
@@ -251,23 +235,23 @@ export default function MapView({
   const clearBoundaryLevel = (level) => {
     const map = mapInstance.current;
     if (!map) return;
-    const ids = getLayerIdsFor(level);
+
+    const ids = getBoundaryIds(level);
 
     try {
       if (map.getLayer(ids.fill)) map.removeLayer(ids.fill);
       if (map.getLayer(ids.line)) map.removeLayer(ids.line);
       if (map.getSource(ids.source)) map.removeSource(ids.source);
     } catch (e) {
-      // ignore
+      console.warn(`Error clearing boundary level ${level}`, e);
     }
   };
 
   const drawBoundaryLevel = (level, geojson) => {
     const map = mapInstance.current;
     if (!map) return;
-    const ids = getLayerIdsFor(level);
 
-    // remove existing
+    const ids = getBoundaryIds(level);
     clearBoundaryLevel(level);
 
     try {
@@ -281,9 +265,7 @@ export default function MapView({
         type: "fill",
         source: ids.source,
         paint: {
-          "fill-color": level.startsWith("ruda")
-            ? "#3d7cc4" // RUDA → green
-            : "#0b6a2e", // others → light blue
+          "fill-color": level.startsWith("ruda") ? "#3d7cc4" : "#0b6a2e",
           "fill-opacity": level.startsWith("ruda") ? 0.5 : 0.2,
         },
       });
@@ -293,15 +275,12 @@ export default function MapView({
         type: "line",
         source: ids.source,
         paint: {
-          "line-color": level.startsWith("ruda")
-            ? "#14532d" // dark green border
-            : "#194c8e", // navy for others          "line-width": MAP_THEME.lineWidth,
+          "line-color": level.startsWith("ruda") ? "#14532d" : "#194c8e",
+          "line-width": MAP_THEME.lineWidth,
         },
       });
-      // persist geojson so we can restore after style change
-      try {
-        currentGeojson.current[level] = geojson;
-      } catch (e) {}
+
+      currentGeojson.current[level] = geojson;
     } catch (e) {
       console.error("drawBoundaryLevel error", e);
     }
@@ -312,11 +291,23 @@ export default function MapView({
     if (!map) return;
 
     try {
-      if (map.getLayer(fillId)) map.removeLayer(fillId);
-      if (map.getLayer(lineId)) map.removeLayer(lineId);
-      if (map.getSource(sourceId)) map.removeSource(sourceId);
+      if (fillId && map.getLayer(fillId)) map.removeLayer(fillId);
+      if (lineId && map.getLayer(lineId)) map.removeLayer(lineId);
+      if (sourceId && map.getSource(sourceId)) map.removeSource(sourceId);
     } catch (e) {
       console.warn(`Error clearing ${sourceId}`, e);
+    }
+  };
+
+  const clearPointLayer = (sourceId, layerId) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    try {
+      if (map.getLayer(layerId)) map.removeLayer(layerId);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+    } catch (e) {
+      console.warn(`Error clearing point layer ${layerId}`, e);
     }
   };
 
@@ -328,59 +319,75 @@ export default function MapView({
     clearLayerAndSource(MURABBA_FILL, MURABBA_LINE, MURABBA_SOURCE);
   };
 
-  /* ---------------------------
-  DRAW BOUNDARY
-  --------------------------- */
-  const drawBoundary = (geojson) => {
+  const drawPointLayer = ({
+    sourceId,
+    layerId,
+    geojson,
+    color,
+    strokeColor,
+    radius,
+    popupTitle,
+  }) => {
     const map = mapInstance.current;
     if (!map) return;
 
+    clearPointLayer(sourceId, layerId);
+
+    if (!geojson?.features || !Array.isArray(geojson.features)) return;
+
     try {
-      clearLayerAndSource(BOUNDARY_FILL, BOUNDARY_LINE, BOUNDARY_SOURCE);
-
-      if (!geojson?.features || !Array.isArray(geojson.features)) return;
-
-      map.addSource(BOUNDARY_SOURCE, {
+      map.addSource(sourceId, {
         type: "geojson",
         data: geojson,
       });
 
       map.addLayer({
-        id: BOUNDARY_FILL,
-        type: "fill",
-        source: BOUNDARY_SOURCE,
+        id: layerId,
+        type: "circle",
+        source: sourceId,
         paint: {
-          "fill-color": MAP_THEME.fillColor,
-          "fill-opacity": MAP_THEME.fillOpacity,
+          "circle-radius": radius,
+          "circle-color": color,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": strokeColor,
+          "circle-opacity": 0.95,
         },
       });
 
-      map.addLayer({
-        id: BOUNDARY_LINE,
-        type: "line",
-        source: BOUNDARY_SOURCE,
-        paint: {
-          "line-color": MAP_THEME.lineColor,
-          "line-width": MAP_THEME.lineWidth,
-        },
+      map.on("mouseenter", layerId, () => {
+        map.getCanvas().style.cursor = "pointer";
       });
 
-      if (
-        geojson.features.length > 0 &&
-        viewBy !== "khasra" &&
-        viewBy !== "murabba"
-      ) {
-        zoomToGeoJSON(geojson);
-      }
+      map.on("mouseleave", layerId, () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      map.on("click", layerId, (e) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+
+        const props = feature.properties || {};
+        const html = `
+          <div style="min-width:180px">
+            <strong>${popupTitle}</strong><br/>
+            <strong>Type:</strong> ${props.type ?? "-"}<br/>
+            <strong>M1:</strong> ${props.m1 ?? "-"}<br/>
+            <strong>M2:</strong> ${props.m2 ?? "-"}<br/>
+            <strong>M3:</strong> ${props.m3 ?? "-"}<br/>
+            <strong>ID:</strong> ${props.id ?? "-"}
+          </div>
+        `;
+
+        new mapboxgl.Popup({ offset: 12 })
+          .setLngLat(e.lngLat)
+          .setHTML(html)
+          .addTo(map);
+      });
     } catch (e) {
-      console.error("Boundary drawing error:", e);
-      setError("Failed to display boundary");
+      console.error(`Failed to draw ${layerId}`, e);
     }
   };
 
-  /* ---------------------------
-  DRAW KHASRAS
-  --------------------------- */
   const drawKhasras = (geojson) => {
     const map = mapInstance.current;
     if (!map) return;
@@ -388,13 +395,10 @@ export default function MapView({
     try {
       clearKhasraLayers();
 
-      // clear any selected highlight when re-drawing
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) {
-        // ignore
-      }
+      } catch (err) {}
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -426,11 +430,8 @@ export default function MapView({
         },
       });
 
-      try {
-        currentGeojson.current.khasra = geojson;
-      } catch (e) {}
+      currentGeojson.current.khasra = geojson;
 
-      // ensure selected feature source + highlight layers exist
       if (!map.getSource(SELECTED_SOURCE)) {
         map.addSource(SELECTED_SOURCE, {
           type: "geojson",
@@ -461,16 +462,14 @@ export default function MapView({
       map.on("click", KHASRA_FILL, (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
-
-          // compute area and set highlight
           const area_m2 = computeArea(feature);
           const area_acres = area_m2 / 4046.8564224;
 
-          // set selected feature to highlight source
           const selectedGeo = {
             type: "FeatureCollection",
             features: [feature],
           };
+
           try {
             const src = map.getSource(SELECTED_SOURCE);
             if (src) src.setData(selectedGeo);
@@ -505,9 +504,6 @@ export default function MapView({
     }
   };
 
-  /* ---------------------------
-  DRAW MURABBAS
-  --------------------------- */
   const drawMurabbas = (geojson) => {
     const map = mapInstance.current;
     if (!map) return;
@@ -515,13 +511,10 @@ export default function MapView({
     try {
       clearMurabbaLayers();
 
-      // clear any selected highlight when re-drawing
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) {
-        // ignore
-      }
+      } catch (err) {}
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -553,11 +546,8 @@ export default function MapView({
         },
       });
 
-      try {
-        currentGeojson.current.murabba = geojson;
-      } catch (e) {}
+      currentGeojson.current.murabba = geojson;
 
-      // ensure selected highlight layers exist (may already exist from khasra)
       if (!map.getSource(SELECTED_SOURCE)) {
         map.addSource(SELECTED_SOURCE, {
           type: "geojson",
@@ -588,7 +578,6 @@ export default function MapView({
       map.on("click", MURABBA_FILL, (e) => {
         if (e.features && e.features.length > 0) {
           const feature = e.features[0];
-
           const area_m2 = computeArea(feature);
           const area_acres = area_m2 / 4046.8564224;
 
@@ -596,6 +585,7 @@ export default function MapView({
             type: "FeatureCollection",
             features: [feature],
           };
+
           try {
             const src = map.getSource(SELECTED_SOURCE);
             if (src) src.setData(selectedGeo);
@@ -622,10 +612,6 @@ export default function MapView({
     }
   };
 
-  /* ---------------------------
-LOAD BOUNDARY
-Show only the most specific selected boundary
---------------------------- */
   useEffect(() => {
     if (!isMapReady) return;
 
@@ -636,20 +622,13 @@ Show only the most specific selected boundary
         setIsLoading(true);
         setError("");
 
-        console.log("LOAD BOUNDARY fired", {
-          selectedDivision,
-          selectedDistrict,
-          selectedTehsil,
-          selectedMouza,
-        });
-
         ["division", "district", "tehsil", "mouza"].forEach((lvl) =>
           clearBoundaryLevel(lvl),
         );
 
         setFeatureCount(0);
 
-        if (selectedMouza && layers?.mouzaBoundaries) {
+        if (selectedMouza) {
           const mouzaId =
             selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
 
@@ -664,7 +643,7 @@ Show only the most specific selected boundary
           return;
         }
 
-        if (selectedTehsil?.length && layers?.tehsilBoundaries) {
+        if (selectedTehsil?.length) {
           const geojsons = await Promise.all(
             selectedTehsil.map((t) => getTehsilBoundary(t.id || t)),
           );
@@ -679,7 +658,7 @@ Show only the most specific selected boundary
           return;
         }
 
-        if (selectedDistrict?.length && layers?.districtBoundaries) {
+        if (selectedDistrict?.length) {
           const geojsons = await Promise.all(
             selectedDistrict.map((d) => getDistrictBoundary(d.id || d)),
           );
@@ -694,7 +673,7 @@ Show only the most specific selected boundary
           return;
         }
 
-        if (selectedDivision?.length && layers?.divisionBoundaries) {
+        if (selectedDivision?.length) {
           const geojsons = await Promise.all(
             selectedDivision.map((div) =>
               getDivisionBoundary(div.division_i || div),
@@ -708,7 +687,6 @@ Show only the most specific selected boundary
             zoomToGeoJSON(merged);
             setFeatureCount(merged.features.length);
           }
-          return;
         }
       } catch (e) {
         if (!cancelled) {
@@ -733,38 +711,49 @@ Show only the most specific selected boundary
     selectedTehsil,
     selectedMouza,
     isMapReady,
-    layers,
   ]);
 
-  /* ---------------------------
-  RESTORE LAYERS AFTER BASEMAP CHANGE
-  --------------------------- */
   useEffect(() => {
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    // If basemap is a named key, map to style URL
     const styleUrl = BASEMAP_STYLES[basemap] || basemap;
     if (!styleUrl) return;
-
-    // if style already equals desired, do nothing
-    if (map.getStyle && map.getStyle().sprite === styleUrl) return;
 
     try {
       map.setStyle(styleUrl);
 
       map.once("style.load", () => {
-        // redraw persisted geojsons
         try {
           Object.keys(currentGeojson.current || {}).forEach((key) => {
             const g = currentGeojson.current[key];
             if (!g) return;
+
             if (key === "khasra") {
               drawKhasras(g);
             } else if (key === "murabba") {
               drawMurabbas(g);
+            } else if (key === "control-points") {
+              drawPointLayer({
+                sourceId: CONTROL_POINTS_SOURCE,
+                layerId: CONTROL_POINTS_LAYER,
+                geojson: g,
+                color: "#0b2ef5",
+                strokeColor: "#78350f",
+                radius: 5,
+                popupTitle: "Control Point",
+              });
+            } else if (key === "tri-junction-points") {
+              drawPointLayer({
+                sourceId: TRI_JUNCTION_POINTS_SOURCE,
+                layerId: TRI_JUNCTION_POINTS_LAYER,
+                geojson: g,
+                color: "#ef4444",
+                strokeColor: "#890b0b",
+                radius: 6,
+                popupTitle: "Tri-junction Point",
+              });
             } else {
-              // boundary levels and ruda-* keys
               drawBoundaryLevel(key, g);
             }
           });
@@ -777,21 +766,16 @@ Show only the most specific selected boundary
     }
   }, [basemap, isMapReady]);
 
-  /* ---------------------------
-  RUDA PHASES
-  --------------------------- */
   useEffect(() => {
     if (!isMapReady) return;
 
     const loadRuda = async () => {
-      const map = mapInstance.current;
       if (!layers?.rudaBoundary) {
-        // clear any ruda-* layers
         try {
-          // we don't know exact ids, but selectedRudaPhaseIds may have ids
           (selectedRudaPhaseIds || []).forEach((id) => {
             const lvl = `ruda-${id}`;
             clearBoundaryLevel(lvl);
+            delete currentGeojson.current[lvl];
           });
         } catch (e) {}
         return;
@@ -801,22 +785,21 @@ Show only the most specific selected boundary
 
       try {
         setIsLoading(true);
-        const promises = selectedRudaPhaseIds.map((gid) =>
-          getRudaGeoJSON(gid)
-            .then((g) => ({ gid, geojson: g }))
-            .catch((e) => {
-              console.error("ruda geojson error", e);
-              return null;
-            }),
+
+        const results = await Promise.all(
+          selectedRudaPhaseIds.map((gid) =>
+            getRudaGeoJSON(gid)
+              .then((geojson) => ({ gid, geojson }))
+              .catch((e) => {
+                console.error("RUDA geojson error", e);
+                return null;
+              }),
+          ),
         );
 
-        const results = await Promise.all(promises);
-
-        results.filter(Boolean).forEach((r) => {
-          drawBoundaryLevel(`ruda-${r.gid}`, r.geojson);
-          try {
-            currentGeojson.current[`ruda-${r.gid}`] = r.geojson;
-          } catch (e) {}
+        results.filter(Boolean).forEach((item) => {
+          drawBoundaryLevel(`ruda-${item.gid}`, item.geojson);
+          currentGeojson.current[`ruda-${item.gid}`] = item.geojson;
         });
       } finally {
         setIsLoading(false);
@@ -826,12 +809,10 @@ Show only the most specific selected boundary
     loadRuda();
   }, [isMapReady, layers?.rudaBoundary, selectedRudaPhaseIds]);
 
-  /* ---------------------------
-  LOAD KHASRAS
-  --------------------------- */
   useEffect(() => {
     if (!selectedMouza || !isMapReady || viewBy !== "khasra") {
       clearKhasraLayers();
+      delete currentGeojson.current.khasra;
       return;
     }
 
@@ -840,15 +821,16 @@ Show only the most specific selected boundary
         setIsLoading(true);
         setError("");
 
-        const mouza_id =
+        const mouzaId =
           selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
 
-        const geojson = await getKhasras(mouza_id);
+        const geojson = await getKhasras(mouzaId);
 
         if (geojson?.features?.length) {
           drawKhasras(geojson);
         } else {
           clearKhasraLayers();
+          delete currentGeojson.current.khasra;
           setFeatureCount(0);
         }
       } catch (e) {
@@ -862,12 +844,10 @@ Show only the most specific selected boundary
     loadKhasras();
   }, [selectedMouza, isMapReady, viewBy]);
 
-  /* ---------------------------
-  LOAD MURABBAS
-  --------------------------- */
   useEffect(() => {
     if (!selectedMouza || !isMapReady || viewBy !== "murabba") {
       clearMurabbaLayers();
+      delete currentGeojson.current.murabba;
       return;
     }
 
@@ -876,15 +856,16 @@ Show only the most specific selected boundary
         setIsLoading(true);
         setError("");
 
-        const mouza_id =
+        const mouzaId =
           selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
 
-        const geojson = await getMurabbas(mouza_id);
+        const geojson = await getMurabbas(mouzaId);
 
         if (geojson?.features?.length) {
           drawMurabbas(geojson);
         } else {
           clearMurabbaLayers();
+          delete currentGeojson.current.murabba;
           setFeatureCount(0);
         }
       } catch (e) {
@@ -897,6 +878,90 @@ Show only the most specific selected boundary
 
     loadMurabbas();
   }, [selectedMouza, isMapReady, viewBy]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+
+    const mouzaName =
+      typeof selectedMouza === "object"
+        ? selectedMouza?.mouza?.trim?.() || ""
+        : "";
+
+    const loadPoints = async () => {
+      try {
+        // CONTROL POINTS (type = B)
+        // show whenever checkbox is on
+        if (layers?.controlPoints) {
+          const controlGeojson = await getTrijunctionPoints({
+            type: "B",
+          });
+
+          if (controlGeojson?.features?.length) {
+            drawPointLayer({
+              sourceId: CONTROL_POINTS_SOURCE,
+              layerId: CONTROL_POINTS_LAYER,
+              geojson: controlGeojson,
+              color: "#f59e0b",
+              strokeColor: "#78350f",
+              radius: 5,
+              popupTitle: "Control Point",
+            });
+            currentGeojson.current["control-points"] = controlGeojson;
+          } else {
+            clearPointLayer(CONTROL_POINTS_SOURCE, CONTROL_POINTS_LAYER);
+            delete currentGeojson.current["control-points"];
+          }
+        } else {
+          clearPointLayer(CONTROL_POINTS_SOURCE, CONTROL_POINTS_LAYER);
+          delete currentGeojson.current["control-points"];
+        }
+
+        // TRI-JUNCTION POINTS (type = TJ)
+        // use m3 = mouza name
+        if (layers?.triJunctionPoints && mouzaName) {
+          const trijunctionGeojson = await getTrijunctionPoints({
+            mouza: mouzaName,
+            type: "TJ",
+          });
+
+          if (trijunctionGeojson?.features?.length) {
+            drawPointLayer({
+              sourceId: TRI_JUNCTION_POINTS_SOURCE,
+              layerId: TRI_JUNCTION_POINTS_LAYER,
+              geojson: trijunctionGeojson,
+              color: "#ef4444",
+              strokeColor: "#890b0b",
+              radius: 6,
+              popupTitle: "Tri-junction Point",
+            });
+            currentGeojson.current["tri-junction-points"] = trijunctionGeojson;
+          } else {
+            clearPointLayer(
+              TRI_JUNCTION_POINTS_SOURCE,
+              TRI_JUNCTION_POINTS_LAYER,
+            );
+            delete currentGeojson.current["tri-junction-points"];
+          }
+        } else {
+          clearPointLayer(
+            TRI_JUNCTION_POINTS_SOURCE,
+            TRI_JUNCTION_POINTS_LAYER,
+          );
+          delete currentGeojson.current["tri-junction-points"];
+        }
+      } catch (e) {
+        console.error("Failed to load trijunction points:", e);
+        setError("Failed to load control / tri-junction points");
+      }
+    };
+
+    loadPoints();
+  }, [
+    isMapReady,
+    selectedMouza,
+    layers?.controlPoints,
+    layers?.triJunctionPoints,
+  ]);
 
   return (
     <div className="absolute inset-0 w-full h-full">

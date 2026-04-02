@@ -206,7 +206,6 @@ class TrijunctionSerializer(GeoFeatureModelSerializer):
             "m2_id",
             "m3",
             "m3_id",
-            "id",
             "layer",
             "path",
             "geom",

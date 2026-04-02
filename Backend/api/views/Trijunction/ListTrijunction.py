@@ -1,5 +1,5 @@
-from ..common_imports import *
 from rest_framework.decorators import action
+from ..common_imports import *
 
 
 class ListTrijunctionView(viewsets.ViewSet):
@@ -10,10 +10,10 @@ class ListTrijunctionView(viewsets.ViewSet):
     def list(self, request, *args, **kwargs):
         try:
             gid = request.query_params.get("gid")
-            trijunction_id = request.query_params.get("id")
             m1 = request.query_params.get("m1")
             m2 = request.query_params.get("m2")
             m3 = request.query_params.get("m3")
+            mouza = request.query_params.get("mouza")
             junction_type = request.query_params.get("type")
 
             if gid:
@@ -35,71 +35,35 @@ class ListTrijunctionView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            elif trijunction_id:
-                queryset = Trijunction.objects.filter(id=trijunction_id)
-                serializer = TrijunctionSerializer(queryset, many=True)
+            queryset = Trijunction.objects.all()
 
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Trijunctions found for id.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
+            if m1:
+                queryset = queryset.filter(m1__iexact=m1)
 
-            elif m1:
-                queryset = Trijunction.objects.filter(m1__iexact=m1)
-                serializer = TrijunctionSerializer(queryset, many=True)
+            if m2:
+                queryset = queryset.filter(m2__iexact=m2)
 
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Trijunctions found for m1.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
+            if m3:
+                queryset = queryset.filter(m3__iexact=m3)
 
-            elif m2:
-                queryset = Trijunction.objects.filter(m2__iexact=m2)
-                serializer = TrijunctionSerializer(queryset, many=True)
+            if junction_type:
+                queryset = queryset.filter(type__iexact=junction_type)
 
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Trijunctions found for m2.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
+            # TJ points -> use ONLY m3 as mouza name
+            if junction_type and junction_type.upper() == "TJ" and mouza:
+                queryset = queryset.filter(m3__iexact=mouza)
 
-            elif m3:
-                queryset = Trijunction.objects.filter(m3__iexact=m3)
-                serializer = TrijunctionSerializer(queryset, many=True)
+            # B points -> no mouza filter, show all control points
+            # so do nothing extra here
 
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Trijunctions found for m3.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
+            serializer = TrijunctionSerializer(queryset, many=True)
 
-            elif junction_type:
-                queryset = Trijunction.objects.filter(type__iexact=junction_type)
-                serializer = TrijunctionSerializer(queryset, many=True)
-
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Trijunctions found for type.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
-
-            else:
-                queryset = Trijunction.objects.all()
-                serializer = TrijunctionSerializer(queryset, many=True)
-
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="All Trijunctions found.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
+            return ApiResponse(
+                status=status.HTTP_200_OK,
+                message="Trijunctions found.",
+                data=serializer.data,
+                http_status=status.HTTP_200_OK,
+            ).create_response()
 
         except Exception as e:
             return ApiResponse(
