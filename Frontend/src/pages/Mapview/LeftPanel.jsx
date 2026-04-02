@@ -27,10 +27,23 @@ export default function LeftPanel({
   const [toolboxExpanded, setToolboxExpanded] = useState(true);
   const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
 
+  // Local-only checkbox state for boundary items
+  // These are intentionally NOT connected to actual map boundary rendering.
+  const [boundaryCheckboxes, setBoundaryCheckboxes] = useState({
+    khasraParcels: !!layers?.khasraParcels,
+  });
+
   const toggleLayer = (layer) => {
     setLayers((prev) => ({
       ...prev,
       [layer]: !prev[layer],
+    }));
+  };
+
+  const toggleBoundaryCheckbox = (key) => {
+    setBoundaryCheckboxes((prev) => ({
+      ...prev,
+      [key]: !prev[key],
     }));
   };
 
@@ -157,33 +170,9 @@ export default function LeftPanel({
             </div>
 
             <LayerCheckbox
-              label="Division Boundaries"
-              checked={layers.divisionBoundaries}
-              onChange={() => toggleLayer("divisionBoundaries")}
-            />
-
-            <LayerCheckbox
-              label="District Boundaries"
-              checked={layers.districtBoundaries}
-              onChange={() => toggleLayer("districtBoundaries")}
-            />
-
-            <LayerCheckbox
-              label="Tehsil Boundaries"
-              checked={layers.tehsilBoundaries}
-              onChange={() => toggleLayer("tehsilBoundaries")}
-            />
-
-            <LayerCheckbox
-              label="Mouza Boundaries"
-              checked={layers.mouzaBoundaries}
-              onChange={() => toggleLayer("mouzaBoundaries")}
-            />
-
-            <LayerCheckbox
               label="Khasra Parcels"
-              checked={layers.khasraParcels}
-              onChange={() => toggleLayer("khasraParcels")}
+              checked={boundaryCheckboxes.khasraParcels}
+              onChange={() => toggleBoundaryCheckbox("khasraParcels")}
               highlight
             />
           </div>

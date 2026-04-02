@@ -623,130 +623,116 @@ export default function MapView({
   };
 
   /* ---------------------------
-  LOAD BOUNDARY
-  --------------------------- */
+LOAD BOUNDARY
+Show only the most specific selected boundary
+--------------------------- */
   useEffect(() => {
     if (!isMapReady) return;
+
+    let cancelled = false;
+
     const loadBoundary = async () => {
       try {
         setIsLoading(true);
         setError("");
 
-        // Clear levels that will be redrawn or disabled
-        ["division", "district", "tehsil", "mouza"].forEach((lvl) => {
-          if (!layers || !layers[`${lvl}Boundaries`]) {
-            clearBoundaryLevel(lvl);
-          }
+        console.log("LOAD BOUNDARY fired", {
+          selectedDivision,
+          selectedDistrict,
+          selectedTehsil,
+          selectedMouza,
         });
 
-        // Collect geojsons to draw
-        const drawPromises = [];
+        ["division", "district", "tehsil", "mouza"].forEach((lvl) =>
+          clearBoundaryLevel(lvl),
+        );
 
-        // Mouza - highest priority when selected
-        if (layers?.mouzaBoundaries && selectedMouza) {
-          drawPromises.push(
-            getMouzaBoundary(
-              selectedMouza.mouza_id || selectedMouza.id || selectedMouza,
-            )
-              .then((g) => ({ level: "mouza", geojson: g }))
-              .catch((e) => {
-                console.error("mouza boundary error", e);
-                return null;
-              }),
-          );
-        }
+        setFeatureCount(0);
 
-        // Tehsil
-        if (layers?.tehsilBoundaries && selectedTehsil?.length) {
-          const p = Promise.all(
-            selectedTehsil.map((t) => getTehsilBoundary(t.id || t)),
-          )
-            .then((resps) => ({
-              level: "tehsil",
-              geojson: mergeFeatureCollections(resps),
-            }))
-            .catch((e) => {
-              console.error("tehsil boundary error", e);
-              return null;
-            });
+        if (selectedMouza && layers?.mouzaBoundaries) {
+          const mouzaId =
+            selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
 
-          drawPromises.push(p);
-        }
+          const geojson = await getMouzaBoundary(mouzaId);
+          if (cancelled) return;
 
-        // District
-        if (layers?.districtBoundaries && selectedDistrict?.length) {
-          const p = Promise.all(
-            selectedDistrict.map((d) => getDistrictBoundary(d.id || d)),
-          )
-            .then((resps) => ({
-              level: "district",
-              geojson: mergeFeatureCollections(resps),
-            }))
-            .catch((e) => {
-              console.error("district boundary error", e);
-              return null;
-            });
-
-          drawPromises.push(p);
-        }
-
-        // Division
-        if (layers?.divisionBoundaries && selectedDivision?.length) {
-          const p = Promise.all(
-            selectedDivision.map((div) =>
-              getDivisionBoundary(div.division_i || div),
-            ),
-          )
-            .then((resps) => ({
-              level: "division",
-              geojson: mergeFeatureCollections(resps),
-            }))
-            .catch((e) => {
-              console.error("division boundary error", e);
-              return null;
-            });
-
-          drawPromises.push(p);
-        }
-
-        const results = await Promise.all(drawPromises);
-
-        const valid = results.filter(Boolean);
-        if (valid.length === 0) {
-          // nothing to draw, ensure previous boundary layers cleared
-          ["division", "district", "tehsil", "mouza"].forEach((lvl) =>
-            clearBoundaryLevel(lvl),
-          );
-          setFeatureCount(0);
+          if (geojson?.features?.length) {
+            drawBoundaryLevel("mouza", geojson);
+            zoomToGeoJSON(geojson);
+            setFeatureCount(geojson.features.length);
+          }
           return;
         }
 
-        // Draw each level independently so multiple can show
-        valid.forEach((item) => {
-          if (item && item.geojson) {
-            drawBoundaryLevel(item.level, item.geojson);
-          }
-        });
+        if (selectedTehsil?.length && layers?.tehsilBoundaries) {
+          const geojsons = await Promise.all(
+            selectedTehsil.map((t) => getTehsilBoundary(t.id || t)),
+          );
+          if (cancelled) return;
 
-        // zoom to combined extent (merge features)
-        const merged = mergeFeatureCollections(valid.map((v) => v.geojson));
-        if (merged.features.length) zoomToGeoJSON(merged);
+          const merged = mergeFeatureCollections(geojsons);
+          if (merged?.features?.length) {
+            drawBoundaryLevel("tehsil", merged);
+            zoomToGeoJSON(merged);
+            setFeatureCount(merged.features.length);
+          }
+          return;
+        }
+
+        if (selectedDistrict?.length && layers?.districtBoundaries) {
+          const geojsons = await Promise.all(
+            selectedDistrict.map((d) => getDistrictBoundary(d.id || d)),
+          );
+          if (cancelled) return;
+
+          const merged = mergeFeatureCollections(geojsons);
+          if (merged?.features?.length) {
+            drawBoundaryLevel("district", merged);
+            zoomToGeoJSON(merged);
+            setFeatureCount(merged.features.length);
+          }
+          return;
+        }
+
+        if (selectedDivision?.length && layers?.divisionBoundaries) {
+          const geojsons = await Promise.all(
+            selectedDivision.map((div) =>
+              getDivisionBoundary(div.division_i || div),
+            ),
+          );
+          if (cancelled) return;
+
+          const merged = mergeFeatureCollections(geojsons);
+          if (merged?.features?.length) {
+            drawBoundaryLevel("division", merged);
+            zoomToGeoJSON(merged);
+            setFeatureCount(merged.features.length);
+          }
+          return;
+        }
       } catch (e) {
-        console.error("Boundary load error:", e);
-        setError("Failed to load boundary");
+        if (!cancelled) {
+          console.error("Boundary load error:", e);
+          setError("Failed to load boundary");
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadBoundary();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     selectedDivision,
     selectedDistrict,
     selectedTehsil,
     selectedMouza,
     isMapReady,
-    viewBy,
     layers,
   ]);
 
