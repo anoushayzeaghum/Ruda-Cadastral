@@ -1,5 +1,13 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Map, FileText, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Map,
+  FileText,
+  Settings,
+  Folder,
+  ChevronDown,
+} from "lucide-react";
+import { useState } from "react";
 
 export default function Sidebar({ sidebarOpen }) {
   const navigate = useNavigate();
@@ -13,6 +21,16 @@ export default function Sidebar({ sidebarOpen }) {
     { icon: FileText, label: "Reports", path: "/reports" },
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
+
+  const areaItems = [
+    { label: "Division", path: "/area/division" },
+    { label: "District", path: "/area/district" },
+    { label: "Tehsil", path: "/area/tehsil" },
+    { label: "Mouza", path: "/area/mouza" },
+    { label: "Khasra", path: "/area/khasra" },
+  ];
+
+  const [areaOpen, setAreaOpen] = useState(true);
 
   return (
     <aside
@@ -48,6 +66,43 @@ export default function Sidebar({ sidebarOpen }) {
             </button>
           );
         })}
+
+        {/* Area Management group */}
+        <div className="mt-2">
+          <button
+            onClick={() => setAreaOpen((s) => !s)}
+            className={`flex w-full items-center gap-3 px-4 py-3 rounded-lg text-sm transition
+                ${
+                  isActive("/area") || areaOpen
+                    ? "bg-green-500/20 text-black dark:text-white border border-green-500/30"
+                    : "hover:bg-black/5 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400"
+                }
+              `}
+          >
+            <Folder size={18} />
+            <span className="flex-1 text-left">Area Management</span>
+            <ChevronDown
+              size={16}
+              className={`${areaOpen ? "rotate-180" : ""} transition-transform`}
+            />
+          </button>
+
+          <div
+            className={`mt-2 space-y-1 pl-8 pr-2 transition-all ${areaOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}
+          >
+            {areaItems.map((it) => (
+              <button
+                key={it.label}
+                onClick={() => navigate(it.path)}
+                className={`flex w-full items-center gap-3 px-2 py-2 rounded-lg text-sm transition text-left
+                  ${isActive(it.path) ? "bg-black/5 dark:bg-white/5 text-black dark:text-white" : "hover:bg-black/3 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400"}
+                `}
+              >
+                <span className="text-[13px]">{it.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </aside>
   );
