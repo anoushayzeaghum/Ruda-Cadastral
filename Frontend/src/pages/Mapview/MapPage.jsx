@@ -23,7 +23,7 @@ export default function MapPage() {
 
   const [rudaPhases, setRudaPhases] = useState([]);
   const [selectedRudaPhaseIds, setSelectedRudaPhaseIds] = useState([]);
-  const [basemap, setBasemap] = useState("Outdoors");
+  const [basemap, setBasemap] = useState("Streets");
   const [selectedParcelNumber, setSelectedParcelNumber] = useState("");
   const [loadedParcelsGeojson, setLoadedParcelsGeojson] = useState(null);
 

@@ -1,33 +1,35 @@
 import React, { useEffect, useState } from "react";
-import { getMouzas, getTehsils } from "../../services/api";
+import { getMurabbas, getMouzas } from "../../services/api";
 import ImportModal from "../../components/ImportModal";
 
-export default function Mouza() {
+export default function Murabba() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [tehsils, setTehsils] = useState([]);
+  const [mouzas, setMouzas] = useState([]);
   const [showImport, setShowImport] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
       try {
         setLoading(true);
-        const res = await getMouzas();
+        const res = await getMurabbas();
         const features = res?.features ?? [];
         const props = features.map((f) => f.properties || {});
         setItems(props);
       } catch (err) {
-        console.error("Failed to load mouzas:", err);
+        console.error("Failed to load murabbas:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetch();
+
     (async () => {
       try {
-        const t = await getTehsils();
-        setTehsils(t || []);
+        const m = await getMouzas();
+        const features = m?.features ?? [];
+        setMouzas(features.map((f) => f.properties || {}));
       } catch (e) {
         console.error(e);
       }
@@ -37,19 +39,19 @@ export default function Mouza() {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border p-6 bg-white dark:bg-[#07111a]">
-        <h2 className="text-xl font-semibold">Mouza — Add / Edit</h2>
+        <h2 className="text-xl font-semibold">Murabba — Add / Edit</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Import a new mouza or edit an existing one.
+          Import a new murabba or edit an existing one.
         </p>
 
         <div className="mt-6 grid grid-cols-12 gap-4 items-center">
           <div className="col-span-4">
-            <label className="block text-xs text-gray-500 mb-1">TEHSIL</label>
+            <label className="block text-xs text-gray-500 mb-1">MOUZA</label>
             <select className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]">
-              <option value="">Select tehsil</option>
-              {tehsils.map((t) => (
-                <option key={t.id ?? t.gid} value={t.id ?? t.gid}>
-                  {t.name ?? t.tehsil}
+              <option value="">Select mouza</option>
+              {mouzas.map((m) => (
+                <option key={m.mouza_id ?? m.gid} value={m.mouza_id ?? m.gid}>
+                  {m.mouza}
                 </option>
               ))}
             </select>
@@ -57,17 +59,17 @@ export default function Mouza() {
 
           <div className="col-span-5">
             <label className="block text-xs text-gray-500 mb-1">
-              MOUZA NAME
+              MURABBA NO
             </label>
             <input
               className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
-              placeholder="Enter mouza name"
+              placeholder="Enter murabba no"
             />
           </div>
 
           <div className="col-span-3 flex gap-3 justify-end">
             <ImportModal
-              title="Import Mouza"
+              title="Import Murabba"
               open={showImport}
               onClose={() => setShowImport(false)}
             />
@@ -75,7 +77,7 @@ export default function Mouza() {
               onClick={() => setShowImport(true)}
               className="bg-red-600 text-white px-4 py-2 rounded-md"
             >
-              Import Mouza
+              Import Murabba
             </button>
             <button className="border px-4 py-2 rounded-md">Clear</button>
           </div>
@@ -84,7 +86,7 @@ export default function Mouza() {
 
       <div className="rounded-lg border p-6 bg-white dark:bg-[#07111a]">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Mouza List</h3>
+          <h3 className="font-semibold">Murabba List</h3>
           <input
             placeholder="Search by name .."
             className="border rounded-md px-3 py-2 text-sm w-64"
@@ -95,7 +97,7 @@ export default function Mouza() {
           {loading ? (
             <div className="py-6 text-center">Loading...</div>
           ) : items.length === 0 ? (
-            <div className="py-6 text-center">No mouzas found</div>
+            <div className="py-6 text-center">No murabbas found</div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
@@ -121,7 +123,7 @@ export default function Mouza() {
               </thead>
               <tbody>
                 {items.map((d, idx) => (
-                  <tr key={d.mouza_id ?? d.gid ?? idx} className="border-t">
+                  <tr key={d.gid ?? d.id ?? idx} className="border-t">
                     <td className="py-3 w-12">{idx + 1}</td>
                     {Object.keys(items[0])
                       .filter(

@@ -151,7 +151,7 @@ export default function MapView({
   onParcelSelect,
   layers = {},
   selectedRudaPhaseIds = [],
-  basemap = "Outdoors",
+  basemap = "Streets",
   selectedFeatureNumber,
   onFeaturesLoaded,
 }) {
@@ -184,7 +184,7 @@ export default function MapView({
     try {
       const map = new mapboxgl.Map({
         container: mapRef.current,
-        style: BASEMAP_STYLES.Outdoors,
+        style: BASEMAP_STYLES.Streets,
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
       });
