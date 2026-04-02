@@ -200,3 +200,31 @@ class RudaBoundary(models.Model):
     class Meta:
         managed = False
         db_table = "ruda_boundary"
+        
+# --------------------------------------------------------
+# Trijunction Boundary
+# --------------------------------------------------------
+
+class Trijunction(models.Model):
+
+    gid = models.AutoField(primary_key=True)
+    type = models.CharField(max_length=20, null=True, blank=True)
+    m1 = models.CharField(max_length=50, null=True, blank=True)
+    m1_id = models.FloatField(null=True, blank=True)
+    m2 = models.CharField(max_length=50, null=True, blank=True)
+    m2_id = models.FloatField(null=True, blank=True)
+    m3 = models.CharField(max_length=50, null=True, blank=True)
+    m3_id = models.FloatField(null=True, blank=True)
+    id = models.FloatField(null=True, blank=True)
+    layer = models.CharField(max_length=254, null=True, blank=True)
+    path = models.CharField(max_length=254, null=True, blank=True)
+    geom = gis_models.GeometryField(srid=4326)
+
+    def __str__(self):
+        names = [self.m1, self.m2, self.m3]
+        names = [n for n in names if n]
+        return " - ".join(names) if names else f"Trijunction {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "trijunction"

@@ -185,3 +185,29 @@ class RudaBoundarySerializer(GeoFeatureModelSerializer):
             "shape_area",
             "geom",
         )
+        
+# --------------------------------------------------------
+# Trijunction Serializer
+# --------------------------------------------------------
+
+class TrijunctionSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Trijunction
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "type",
+            "m1",
+            "m1_id",
+            "m2",
+            "m2_id",
+            "m3",
+            "m3_id",
+            "id",
+            "layer",
+            "path",
+            "geom",
+        )

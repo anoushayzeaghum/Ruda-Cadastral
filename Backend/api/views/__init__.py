@@ -4,4 +4,5 @@ from .Tehsils import *
 from .Mouza import *
 from .Murabba import *
 from .Khasra import *
+from .Trijunction import *
 from .RudaBoundary import *

@@ -38,6 +38,12 @@ router.register(r"ruda/create", CreateRudaBoundaryView, basename="create-ruda")
 router.register(r"ruda/update", UpdateRudaBoundaryView, basename="update-ruda")
 router.register(r"ruda/delete", DeleteRudaBoundaryView, basename="delete-ruda")
 
+#------------------------------ Ruda Boundary View ------------------------------
+router.register(r"trijunction", ListTrijunctionView, basename="trijunction")
+router.register(r"trijunction/create", CreateTrijunctionView, basename="create-trijunction")
+router.register(r"trijunction/update", UpdateTrijunctionView, basename="update-trijunction")
+router.register(r"trijunction/delete", DeleteTrijunctionView, basename="delete-trijunction")
+
 urlpatterns = [
     path('', include(router.urls)),
 ]
