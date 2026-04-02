@@ -156,11 +156,25 @@ export default function MapView({
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const currentGeojson = useRef({});
+  const activePopupRef = useRef(null);
+  const popupTimeoutRef = useRef(null);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const closeActivePopup = () => {
+    if (popupTimeoutRef.current) {
+      clearTimeout(popupTimeoutRef.current);
+      popupTimeoutRef.current = null;
+    }
+
+    if (activePopupRef.current) {
+      activePopupRef.current.remove();
+      activePopupRef.current = null;
+    }
+  };
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
@@ -189,6 +203,8 @@ export default function MapView({
       mapInstance.current = map;
 
       return () => {
+        closeActivePopup();
+
         if (mapInstance.current) {
           mapInstance.current.remove();
           mapInstance.current = null;
@@ -304,7 +320,15 @@ export default function MapView({
     if (!map) return;
 
     try {
-      if (map.getLayer(layerId)) map.removeLayer(layerId);
+      closeActivePopup();
+
+      if (map.getLayer(layerId)) {
+        map.off("click", layerId, handlePointClick);
+        map.off("mouseenter", layerId, handlePointMouseEnter);
+        map.off("mouseleave", layerId, handlePointMouseLeave);
+        map.removeLayer(layerId);
+      }
+
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     } catch (e) {
       console.warn(`Error clearing point layer ${layerId}`, e);
@@ -319,6 +343,101 @@ export default function MapView({
     clearLayerAndSource(MURABBA_FILL, MURABBA_LINE, MURABBA_SOURCE);
   };
 
+  const buildMinimalPopupHtml = (props = {}) => {
+    const isControlPoint = props.type === "B";
+    const isTriJunction = props.type === "TJ";
+
+    if (isControlPoint) {
+      return `
+        <div style="min-width: 160px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.45; color: #1f2937;">
+          <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
+            Control Point
+          </div>
+          <div>
+            <span style="font-weight: 600;">Type:</span> Burji
+          </div>
+        </div>
+      `;
+    }
+
+    if (isTriJunction) {
+      return `
+        <div style="min-width: 200px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #1f2937;">
+          <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
+            Tri-junction Point
+          </div>
+          <div><span style="font-weight: 600;">Mouza 1:</span> ${props.m1 ?? "-"}</div>
+          <div><span style="font-weight: 600;">Mouza 2:</span> ${props.m2 ?? "-"}</div>
+          <div><span style="font-weight: 600;">Mouza 3:</span> ${props.m3 ?? "-"}</div>
+        </div>
+      `;
+    }
+
+    return `
+      <div style="min-width: 140px; font-family: Arial, sans-serif; font-size: 12px; color: #1f2937;">
+        <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
+          Point
+        </div>
+        <div>No details available</div>
+      </div>
+    `;
+  };
+
+  function handlePointMouseEnter() {
+    const map = mapInstance.current;
+    if (!map) return;
+    map.getCanvas().style.cursor = "pointer";
+  }
+
+  function handlePointMouseLeave() {
+    const map = mapInstance.current;
+    if (!map) return;
+    map.getCanvas().style.cursor = "";
+  }
+
+  function handlePointClick(e) {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const feature = e.features?.[0];
+    if (!feature) return;
+
+    const props = feature.properties || {};
+    const html = buildMinimalPopupHtml(props);
+
+    closeActivePopup();
+
+    const popup = new mapboxgl.Popup({
+      offset: 10,
+      maxWidth: "240px",
+      closeButton: false,
+      closeOnClick: false,
+    })
+      .setLngLat(e.lngLat)
+      .setHTML(html)
+      .addTo(map);
+
+    activePopupRef.current = popup;
+
+    popupTimeoutRef.current = setTimeout(() => {
+      if (activePopupRef.current === popup) {
+        popup.remove();
+        activePopupRef.current = null;
+      }
+      popupTimeoutRef.current = null;
+    }, 3000);
+
+    popup.on("close", () => {
+      if (activePopupRef.current === popup) {
+        activePopupRef.current = null;
+      }
+      if (popupTimeoutRef.current) {
+        clearTimeout(popupTimeoutRef.current);
+        popupTimeoutRef.current = null;
+      }
+    });
+  }
+
   const drawPointLayer = ({
     sourceId,
     layerId,
@@ -326,7 +445,6 @@ export default function MapView({
     color,
     strokeColor,
     radius,
-    popupTitle,
   }) => {
     const map = mapInstance.current;
     if (!map) return;
@@ -354,35 +472,9 @@ export default function MapView({
         },
       });
 
-      map.on("mouseenter", layerId, () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-
-      map.on("mouseleave", layerId, () => {
-        map.getCanvas().style.cursor = "";
-      });
-
-      map.on("click", layerId, (e) => {
-        const feature = e.features?.[0];
-        if (!feature) return;
-
-        const props = feature.properties || {};
-        const html = `
-          <div style="min-width:180px">
-            <strong>${popupTitle}</strong><br/>
-            <strong>Type:</strong> ${props.type ?? "-"}<br/>
-            <strong>M1:</strong> ${props.m1 ?? "-"}<br/>
-            <strong>M2:</strong> ${props.m2 ?? "-"}<br/>
-            <strong>M3:</strong> ${props.m3 ?? "-"}<br/>
-            <strong>ID:</strong> ${props.id ?? "-"}
-          </div>
-        `;
-
-        new mapboxgl.Popup({ offset: 12 })
-          .setLngLat(e.lngLat)
-          .setHTML(html)
-          .addTo(map);
-      });
+      map.on("mouseenter", layerId, handlePointMouseEnter);
+      map.on("mouseleave", layerId, handlePointMouseLeave);
+      map.on("click", layerId, handlePointClick);
     } catch (e) {
       console.error(`Failed to draw ${layerId}`, e);
     }
@@ -458,6 +550,10 @@ export default function MapView({
           },
         });
       }
+
+      map.off("click", KHASRA_FILL);
+      map.off("mouseenter", KHASRA_FILL);
+      map.off("mouseleave", KHASRA_FILL);
 
       map.on("click", KHASRA_FILL, (e) => {
         if (e.features && e.features.length > 0) {
@@ -574,6 +670,8 @@ export default function MapView({
           },
         });
       }
+
+      map.off("click", MURABBA_FILL);
 
       map.on("click", MURABBA_FILL, (e) => {
         if (e.features && e.features.length > 0) {
@@ -738,10 +836,9 @@ export default function MapView({
                 sourceId: CONTROL_POINTS_SOURCE,
                 layerId: CONTROL_POINTS_LAYER,
                 geojson: g,
-                color: "#0b2ef5",
+                color: "#f59e0b",
                 strokeColor: "#78350f",
                 radius: 5,
-                popupTitle: "Control Point",
               });
             } else if (key === "tri-junction-points") {
               drawPointLayer({
@@ -751,7 +848,6 @@ export default function MapView({
                 color: "#ef4444",
                 strokeColor: "#890b0b",
                 radius: 6,
-                popupTitle: "Tri-junction Point",
               });
             } else {
               drawBoundaryLevel(key, g);
@@ -889,24 +985,36 @@ export default function MapView({
 
     const loadPoints = async () => {
       try {
+        const normalizedMouza = (mouzaName || "").trim().toLowerCase();
+
         // CONTROL POINTS (type = B)
-        // show whenever checkbox is on
-        if (layers?.controlPoints) {
+        // force filter by M3 on frontend as well
+        if (layers?.controlPoints && normalizedMouza) {
           const controlGeojson = await getTrijunctionPoints({
+            mouza: mouzaName,
             type: "B",
           });
 
-          if (controlGeojson?.features?.length) {
+          const filteredControlGeojson = {
+            type: "FeatureCollection",
+            features: (controlGeojson?.features || []).filter((feature) => {
+              const m3Value = String(feature?.properties?.m3 || "")
+                .trim()
+                .toLowerCase();
+              return m3Value === normalizedMouza;
+            }),
+          };
+
+          if (filteredControlGeojson.features.length) {
             drawPointLayer({
               sourceId: CONTROL_POINTS_SOURCE,
               layerId: CONTROL_POINTS_LAYER,
-              geojson: controlGeojson,
+              geojson: filteredControlGeojson,
               color: "#f59e0b",
               strokeColor: "#78350f",
               radius: 5,
-              popupTitle: "Control Point",
             });
-            currentGeojson.current["control-points"] = controlGeojson;
+            currentGeojson.current["control-points"] = filteredControlGeojson;
           } else {
             clearPointLayer(CONTROL_POINTS_SOURCE, CONTROL_POINTS_LAYER);
             delete currentGeojson.current["control-points"];
@@ -917,24 +1025,34 @@ export default function MapView({
         }
 
         // TRI-JUNCTION POINTS (type = TJ)
-        // use m3 = mouza name
-        if (layers?.triJunctionPoints && mouzaName) {
+        // filtered by m3 = selected mouza name
+        if (layers?.triJunctionPoints && normalizedMouza) {
           const trijunctionGeojson = await getTrijunctionPoints({
             mouza: mouzaName,
             type: "TJ",
           });
 
-          if (trijunctionGeojson?.features?.length) {
+          const filteredTriJunctionGeojson = {
+            type: "FeatureCollection",
+            features: (trijunctionGeojson?.features || []).filter((feature) => {
+              const m3Value = String(feature?.properties?.m3 || "")
+                .trim()
+                .toLowerCase();
+              return m3Value === normalizedMouza;
+            }),
+          };
+
+          if (filteredTriJunctionGeojson.features.length) {
             drawPointLayer({
               sourceId: TRI_JUNCTION_POINTS_SOURCE,
               layerId: TRI_JUNCTION_POINTS_LAYER,
-              geojson: trijunctionGeojson,
+              geojson: filteredTriJunctionGeojson,
               color: "#ef4444",
               strokeColor: "#890b0b",
               radius: 6,
-              popupTitle: "Tri-junction Point",
             });
-            currentGeojson.current["tri-junction-points"] = trijunctionGeojson;
+            currentGeojson.current["tri-junction-points"] =
+              filteredTriJunctionGeojson;
           } else {
             clearPointLayer(
               TRI_JUNCTION_POINTS_SOURCE,
