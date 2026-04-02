@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Database, BarChart3 } from "lucide-react";
 
-export default function SubHeader({ filters }) {
+export default function SubHeader({
+  filters,
+  parcelOptions = [],
+  selectedParcelNumber = "",
+  onParcelNumberChange = () => {},
+}) {
   if (!filters) return null;
 
   const mouzaCount = Array.isArray(filters.mouzas)
@@ -123,14 +128,36 @@ export default function SubHeader({ filters }) {
               <option value="murabba">Murabba</option>
             </select>
           </FilterCard>
+
+          {/* Dependent parcel number dropdown: appears only when mouza + viewBy set */}
+          {filters.selectedMouza && filters.viewBy && (
+            <FilterCard
+              label={filters.viewBy === "khasra" ? "Khasra No" : "Murabba No"}
+              value={selectedParcelNumber || "Select"}
+            >
+              <select
+                value={selectedParcelNumber}
+                onChange={(e) => onParcelNumberChange(e.target.value)}
+                disabled={!parcelOptions || parcelOptions.length === 0}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              >
+                <option value="">-- Select --</option>
+                {parcelOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </FilterCard>
+          )}
         </div>
 
         {/* Right Stats */}
         <div className="flex items-center gap-6 text-sm border-l border-gray-300 pl-4">
-          <div>
+          {/* <div>
             <p className="text-xs text-gray-500">Parcel ID / JID</p>
             <p className="font-semibold text-green-700">25,800 Acres</p>
-          </div>
+          </div> */}
 
           <div>
             <p className="text-xs text-gray-500">Remaining Land</p>

@@ -152,6 +152,8 @@ export default function MapView({
   layers = {},
   selectedRudaPhaseIds = [],
   basemap = "Outdoors",
+  selectedFeatureNumber,
+  onFeaturesLoaded,
 }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -239,6 +241,15 @@ export default function MapView({
 
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds, { padding: 50 });
+    }
+  };
+
+  // report loaded features to parent so the UI dropdown can be built
+  const reportLoadedFeatures = (geojson) => {
+    try {
+      if (typeof onFeaturesLoaded === "function") onFeaturesLoaded(geojson);
+    } catch (e) {
+      // ignore
     }
   };
 
@@ -594,6 +605,8 @@ export default function MapView({
 
       zoomToGeoJSON(geojson);
       setFeatureCount(geojson.features.length);
+      // notify parent about loaded features for dropdown building
+      reportLoadedFeatures(geojson);
     } catch (e) {
       console.error("Khasra drawing error:", e);
       setError("Failed to display Khasras");
@@ -704,6 +717,8 @@ export default function MapView({
 
       zoomToGeoJSON(geojson);
       setFeatureCount(geojson.features.length);
+      // notify parent about loaded features for dropdown building
+      reportLoadedFeatures(geojson);
     } catch (e) {
       console.error("Murabba drawing error:", e);
       setError("Failed to display Murabbas");
@@ -861,6 +876,70 @@ export default function MapView({
       console.error("Failed to change basemap style", e);
     }
   }, [basemap, isMapReady]);
+
+  // Sync dropdown selection -> map: highlight & zoom to selected parcel number
+  useEffect(() => {
+    if (!isMapReady || !selectedFeatureNumber) return;
+
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const current =
+      viewBy === "khasra"
+        ? currentGeojson.current.khasra
+        : viewBy === "murabba"
+          ? currentGeojson.current.murabba
+          : currentGeojson.current.khasra ||
+            currentGeojson.current.murabba ||
+            {};
+    const features = Array.isArray(current?.features) ? current.features : [];
+
+    const matched = features.find((feat) => {
+      const p = feat?.properties || {};
+
+      const cand =
+        viewBy === "khasra"
+          ? (p.k ?? p.khasra ?? p.khasra_no ?? p.khasra_id)
+          : viewBy === "murabba"
+            ? (p.murabba ?? p.mn ?? p.murabba_no ?? p.murabba_id ?? p.m)
+            : feat?.id;
+
+      return String(cand) === String(selectedFeatureNumber);
+    });
+
+    if (matched) {
+      const selectedGeo = { type: "FeatureCollection", features: [matched] };
+      try {
+        if (map.getSource && map.getSource(SELECTED_SOURCE)) {
+          map.getSource(SELECTED_SOURCE).setData(selectedGeo);
+        } else {
+          map.addSource(SELECTED_SOURCE, {
+            type: "geojson",
+            data: selectedGeo,
+          });
+          if (!map.getLayer(SELECTED_FILL)) {
+            map.addLayer({
+              id: SELECTED_FILL,
+              type: "fill",
+              source: SELECTED_SOURCE,
+              paint: { "fill-color": "#FFD54F", "fill-opacity": 0.7 },
+            });
+          }
+          if (!map.getLayer(SELECTED_LINE)) {
+            map.addLayer({
+              id: SELECTED_LINE,
+              type: "line",
+              source: SELECTED_SOURCE,
+              paint: { "line-color": "#b38f00", "line-width": 2 },
+            });
+          }
+        }
+        zoomToGeoJSON(selectedGeo);
+      } catch (e) {
+        console.warn("Could not highlight selected parcel", e);
+      }
+    }
+  }, [selectedFeatureNumber, viewBy, isMapReady]);
 
   useEffect(() => {
     if (!isMapReady) return;
