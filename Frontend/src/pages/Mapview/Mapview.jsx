@@ -142,6 +142,28 @@ class BasemapControl {
   }
 }
 
+const getKhasraNumber = (props = {}) => {
+  return (
+    props.k ??
+    props.K ??
+    props.khasra ??
+    props.khasra_no ??
+    props.khasra_id ??
+    null
+  );
+};
+
+const getMurabbaNumber = (props = {}) => {
+  return (
+    props.m ??
+    props.mn ??
+    props.murabba ??
+    props.murabba_no ??
+    props.murabba_id ??
+    null
+  );
+};
+
 export default function MapView({
   selectedDivision,
   selectedDistrict,
@@ -354,42 +376,98 @@ export default function MapView({
     clearLayerAndSource(MURABBA_FILL, MURABBA_LINE, MURABBA_SOURCE);
   };
 
-  const buildMinimalPopupHtml = (props = {}) => {
+  const getFeatureLatLng = (feature, clickLngLat) => {
+    const lngFromClick = clickLngLat?.lng;
+    const latFromClick = clickLngLat?.lat;
+
+    if (
+      lngFromClick !== undefined &&
+      lngFromClick !== null &&
+      latFromClick !== undefined &&
+      latFromClick !== null &&
+      !Number.isNaN(Number(lngFromClick)) &&
+      !Number.isNaN(Number(latFromClick))
+    ) {
+      return {
+        lat: Number(latFromClick),
+        lng: Number(lngFromClick),
+      };
+    }
+
+    const geometry = feature?.geometry;
+    const coords = geometry?.coordinates;
+
+    if (
+      geometry?.type === "Point" &&
+      Array.isArray(coords) &&
+      coords.length >= 2 &&
+      !Number.isNaN(Number(coords[0])) &&
+      !Number.isNaN(Number(coords[1]))
+    ) {
+      return {
+        lat: Number(coords[1]),
+        lng: Number(coords[0]),
+      };
+    }
+
+    return { lat: null, lng: null };
+  };
+
+  const formatCoordinate = (value) => {
+    const num = Number(value);
+    if (value === null || value === undefined || Number.isNaN(num)) return "-";
+    return num.toFixed(6);
+  };
+
+  const buildMinimalPopupHtml = (
+    props = {},
+    coordinates = { lat: null, lng: null },
+  ) => {
     const isControlPoint = props.type === "B";
     const isTriJunction = props.type === "TJ";
 
+    const coordinatesHtml = `
+      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #d1d5db;">
+        <div><span style="font-weight: 600;">Latitude:</span> ${formatCoordinate(coordinates.lat)}</div>
+        <div><span style="font-weight: 600;">Longitude:</span> ${formatCoordinate(coordinates.lng)}</div>
+      </div>
+    `;
+
     if (isControlPoint) {
       return `
-        <div style="min-width: 160px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.45; color: #1f2937;">
+        <div style="min-width: 180px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.45; color: #1f2937;">
           <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
             Control Point
           </div>
           <div>
             <span style="font-weight: 600;">Type:</span> Burji
           </div>
+          ${coordinatesHtml}
         </div>
       `;
     }
 
     if (isTriJunction) {
       return `
-        <div style="min-width: 200px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #1f2937;">
+        <div style="min-width: 220px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #1f2937;">
           <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
             Tri-junction Point
           </div>
           <div><span style="font-weight: 600;">Mouza 1:</span> ${props.m1 ?? "-"}</div>
           <div><span style="font-weight: 600;">Mouza 2:</span> ${props.m2 ?? "-"}</div>
           <div><span style="font-weight: 600;">Mouza 3:</span> ${props.m3 ?? "-"}</div>
+          ${coordinatesHtml}
         </div>
       `;
     }
 
     return `
-      <div style="min-width: 140px; font-family: Arial, sans-serif; font-size: 12px; color: #1f2937;">
+      <div style="min-width: 160px; font-family: Arial, sans-serif; font-size: 12px; color: #1f2937;">
         <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
           Point
         </div>
         <div>No details available</div>
+        ${coordinatesHtml}
       </div>
     `;
   };
@@ -414,17 +492,28 @@ export default function MapView({
     if (!feature) return;
 
     const props = feature.properties || {};
-    const html = buildMinimalPopupHtml(props);
+    const coordinates = getFeatureLatLng(feature, e.lngLat);
+
+    console.log("Point click event lngLat:", e.lngLat);
+    console.log("Point feature geometry:", feature.geometry);
+    console.log("Resolved popup coordinates:", coordinates);
+
+    const html = buildMinimalPopupHtml(props, coordinates);
 
     closeActivePopup();
 
     const popup = new mapboxgl.Popup({
       offset: 10,
-      maxWidth: "240px",
+      maxWidth: "260px",
       closeButton: false,
       closeOnClick: false,
     })
-      .setLngLat(e.lngLat)
+      .setLngLat(
+        e.lngLat ||
+          (coordinates.lng != null && coordinates.lat != null
+            ? [coordinates.lng, coordinates.lat]
+            : [DEFAULT_CENTER[0], DEFAULT_CENTER[1]]),
+      )
       .setHTML(html)
       .addTo(map);
 
@@ -899,9 +988,9 @@ export default function MapView({
 
       const cand =
         viewBy === "khasra"
-          ? (p.k ?? p.khasra ?? p.khasra_no ?? p.khasra_id)
+          ? getKhasraNumber(p)
           : viewBy === "murabba"
-            ? (p.murabba ?? p.mn ?? p.murabba_no ?? p.murabba_id ?? p.m)
+            ? getMurabbaNumber(p)
             : feat?.id;
 
       return String(cand) === String(selectedFeatureNumber);
@@ -922,7 +1011,7 @@ export default function MapView({
               id: SELECTED_FILL,
               type: "fill",
               source: SELECTED_SOURCE,
-              paint: { "fill-color": "#FFD54F", "fill-opacity": 0.7 },
+              paint: { "fill-color": "#ffcf2f", "fill-opacity": 0.7 },
             });
           }
           if (!map.getLayer(SELECTED_LINE)) {
@@ -930,7 +1019,7 @@ export default function MapView({
               id: SELECTED_LINE,
               type: "line",
               source: SELECTED_SOURCE,
-              paint: { "line-color": "#b38f00", "line-width": 2 },
+              paint: { "line-color": "#ffcf2f", "line-width": 2 },
             });
           }
         }
@@ -1000,6 +1089,10 @@ export default function MapView({
           selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
 
         const geojson = await getKhasras(mouzaId);
+        console.log(
+          "Khasra geojson sample:",
+          geojson?.features?.[0]?.properties,
+        );
 
         if (geojson?.features?.length) {
           drawKhasras(geojson);

@@ -22,17 +22,19 @@ export default function ParcelPanel({
 
   const parcelData = {
     khasraNo:
-      parcel?.properties?.khasra_id ??
       parcel?.properties?.k ??
+      parcel?.properties?.K ??
+      parcel?.properties?.khasra ??
+      parcel?.properties?.khasra_no ??
+      parcel?.properties?.khasra_id ??
       parcel?.properties?.m ??
       parcel?.id ??
       "N/A",
     mouza: parcel?.properties?.mouza ?? parcel?.properties?.mouza_name ?? "N/A",
     // prefer computed area (in acres) provided by MapView
-    area:
-      parcel?.properties?._area_acres
-        ? `${parcel.properties._area_acres.toFixed(2)} Acres`
-        : parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A",
+    area: parcel?.properties?._area_acres
+      ? `${parcel.properties._area_acres.toFixed(2)} Acres`
+      : (parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A"),
     landType: parcel?.properties?.type ?? "N/A",
     parcelId: parcel?.id ?? parcel?.properties?.gid ?? "N/A",
     rthIff: parcel?.properties?.rthIff ?? "N/A",
@@ -114,7 +116,7 @@ export default function ParcelPanel({
                     : "Khasra No:"}{" "}
                   <strong className="text-slate-900">
                     {parcel?.properties?._layerType === "murabba"
-                      ? parcel?.properties?.murabba_no ?? parcelData.parcelId
+                      ? (parcel?.properties?.murabba_no ?? parcelData.parcelId)
                       : parcelData.parcelId}
                   </strong>
                 </span>
@@ -166,7 +168,7 @@ export default function ParcelPanel({
                   </p>
                   <p className="font-semibold text-slate-900">
                     {parcel?.properties?._layerType === "murabba"
-                      ? parcel?.properties?.sheets ?? parcelData.parcelId
+                      ? (parcel?.properties?.sheets ?? parcelData.parcelId)
                       : parcelData.parcelId}
                   </p>
                 </div>

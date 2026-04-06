@@ -167,7 +167,7 @@ export default function LeftPanel({
             </div>
 
             <LayerCheckbox
-              label="Control Points"
+              label="Mouza Vertices"
               checked={!!layers.controlPoints}
               onChange={() => toggleLayer("controlPoints")}
             />
@@ -244,8 +244,7 @@ export default function LeftPanel({
 
       <div className="px-4 py-3">
         <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded border border-slate-200 font-medium">
-          <Star size={16} />
-          M Favorites
+          <Star size={16} />M Favorites
         </button>
       </div>
     </div>

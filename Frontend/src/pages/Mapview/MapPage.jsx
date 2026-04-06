@@ -8,6 +8,28 @@ import ParcelPanel from "./ParcelPanel";
 
 import MapView from "./Mapview";
 
+const getKhasraNumber = (props = {}) => {
+  return (
+    props.k ??
+    props.K ??
+    props.khasra ??
+    props.khasra_no ??
+    props.khasra_id ??
+    null
+  );
+};
+
+const getMurabbaNumber = (props = {}) => {
+  return (
+    props.m ??
+    props.mn ??
+    props.murabba ??
+    props.murabba_no ??
+    props.murabba_id ??
+    null
+  );
+};
+
 export default function MapPage() {
   const outletContext = useOutletContext() ?? {};
   const filters = outletContext.filters;
@@ -42,11 +64,11 @@ export default function MapPage() {
       const p = feat?.properties || {};
 
       if (viewBy === "khasra") {
-        return p.k ?? p.khasra ?? p.khasra_no ?? p.khasra_id ?? null;
+        return getKhasraNumber(p);
       }
 
       if (viewBy === "murabba") {
-        return p.murabba ?? p.mn ?? p.murabba_no ?? p.murabba_id ?? p.m ?? null;
+        return getMurabbaNumber(p);
       }
 
       return feat?.id ?? null;
@@ -118,17 +140,8 @@ export default function MapPage() {
               const props = feature?.properties || {};
               const num =
                 filters?.viewBy === "khasra"
-                  ? (props.k ??
-                    props.khasra ??
-                    props.khasra_no ??
-                    props.khasra_id ??
-                    "")
-                  : (props.murabba ??
-                    props.mn ??
-                    props.murabba_no ??
-                    props.murabba_id ??
-                    props.m ??
-                    "");
+                  ? getKhasraNumber(props)
+                  : getMurabbaNumber(props);
               setSelectedParcelNumber(num ? String(num) : "");
               setParcelPanelOpen(true);
             }}

@@ -116,7 +116,16 @@ export default function SubHeader({
           </FilterCard>
 
           {/* View By */}
-          <FilterCard label="View By" value={filters.viewBy || "Select"}>
+          <FilterCard
+            label="View By"
+            value={
+              filters.viewBy
+                ? filters.viewBy.charAt(0).toUpperCase() +
+                  filters.viewBy.slice(1)
+                : "Select"
+            }
+          >
+            {" "}
             <select
               value={filters.viewBy}
               onChange={filters.handleViewByChange}
@@ -135,19 +144,17 @@ export default function SubHeader({
               label={filters.viewBy === "khasra" ? "Khasra No" : "Murabba No"}
               value={selectedParcelNumber || "Select"}
             >
-              <select
-                value={selectedParcelNumber}
-                onChange={(e) => onParcelNumberChange(e.target.value)}
+              <SearchableSingleSelect
+                options={parcelOptions}
+                selectedValue={selectedParcelNumber}
+                onChange={onParcelNumberChange}
                 disabled={!parcelOptions || parcelOptions.length === 0}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-              >
-                <option value="">-- Select --</option>
-                {parcelOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                placeholder={
+                  filters.viewBy === "khasra"
+                    ? "Search Khasra No..."
+                    : "Search Murabba No..."
+                }
+              />
             </FilterCard>
           )}
         </div>
@@ -252,6 +259,110 @@ function MultiSelectDropdown({ options, selectedValues, onToggle, disabled }) {
           ) : (
             <div className="px-2 py-1.5 text-sm text-gray-500">No options</div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SearchableSingleSelect({
+  options = [],
+  selectedValue = "",
+  onChange,
+  disabled = false,
+  placeholder = "Search...",
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutside = (event) => {
+      if (!containerRef.current?.contains(event.target)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, []);
+
+  const filteredOptions = options.filter((opt) =>
+    String(opt.label).toLowerCase().includes(query.toLowerCase()),
+  );
+
+  const selectedLabel =
+    options.find((opt) => String(opt.value) === String(selectedValue))?.label ||
+    "";
+
+  return (
+    <div ref={containerRef} className="absolute inset-0">
+      <button
+        type="button"
+        onClick={() => !disabled && setOpen((prev) => !prev)}
+        className="h-full w-full cursor-pointer bg-transparent"
+        disabled={disabled}
+        aria-label="Open parcel number selector"
+      />
+
+      {open && !disabled && (
+        <div className="absolute left-0 top-full z-30 mt-1 w-full rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={placeholder}
+            className="mb-2 w-full rounded border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-green-600"
+            autoFocus
+          />
+
+          <div className="max-h-64 overflow-auto">
+            <button
+              type="button"
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+                setQuery("");
+              }}
+              className={`block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-gray-50 ${
+                !selectedValue
+                  ? "bg-green-50 text-green-700 font-medium"
+                  : "text-gray-700"
+              }`}
+            >
+              -- Select --
+            </button>
+
+            {filteredOptions.length ? (
+              filteredOptions.map((opt) => {
+                const isSelected = String(opt.value) === String(selectedValue);
+
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(String(opt.value));
+                      setOpen(false);
+                      setQuery("");
+                    }}
+                    className={`block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-gray-50 ${
+                      isSelected
+                        ? "bg-green-50 text-green-700 font-medium"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })
+            ) : (
+              <div className="px-2 py-1.5 text-sm text-gray-500">
+                No matching options
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
