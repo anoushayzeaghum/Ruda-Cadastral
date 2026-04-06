@@ -20,6 +20,7 @@ export default function Sidebar({ sidebarOpen }) {
     { icon: Map, label: "Map View", path: "/mapview" },
     { icon: FileText, label: "Reports", path: "/reports" },
     { icon: Settings, label: "Settings", path: "/settings" },
+    { icon: Settings, label: "Demarcation", path: "/demarcation" },
   ];
 
   const areaItems = [

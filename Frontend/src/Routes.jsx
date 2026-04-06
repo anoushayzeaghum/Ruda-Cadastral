@@ -10,6 +10,7 @@ import Tehsil from "./pages/Area Management/Tehsil";
 import Mouza from "./pages/Area Management/Mouza";
 import Khasra from "./pages/Area Management/Khasra";
 import AreaLayout from "./layouts/AreaLayout";
+import Demarcation from "./pages/Demarcation/Demarcation";
 
 const AppRoutes = () => {
   return (
@@ -19,6 +20,7 @@ const AppRoutes = () => {
       <Route element={<MainLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/demarcation" element={<Demarcation />} />
         <Route path="/mapview" element={<MapPage />} />
         {/* Area Management pages - use AreaLayout so pages render beside sidebar */}
         <Route path="/area" element={<AreaLayout />}>
