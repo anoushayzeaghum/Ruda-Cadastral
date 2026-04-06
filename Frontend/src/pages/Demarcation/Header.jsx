@@ -1,6 +1,6 @@
-import React from "react";
-import { LogOut, Menu } from "lucide-react";
+import { Search, ChevronDown, LayoutDashboard } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
+import { useNavigate } from "react-router-dom";
 
 const headerBackgroundStyle = {
   backgroundImage: [
@@ -12,64 +12,55 @@ const headerBackgroundStyle = {
   backgroundRepeat: "no-repeat",
 };
 
-export default function Header({
-  darkMode,
-  setDarkMode,
-  sidebarOpen,
-  toggleSidebar,
-}) {
+export default function Header() {
+  const navigate = useNavigate();
+
   return (
     <div
-      className="w-full h-[60px] px-4 md:px-6 flex items-center justify-between"
+      className="relative w-full text-white px-6 py-2 shadow-md"
       style={headerBackgroundStyle}
     >
-      <div className="flex items-center gap-3 md:gap-4 min-w-0">
-        <button
-          onClick={toggleSidebar}
-          className="text-white hover:bg-white/10 p-2 rounded-md transition"
-          aria-label="Toggle sidebar"
-          title="Toggle sidebar"
-        >
-          <Menu size={22} />
-        </button>
+      <div className="relative z-10 flex items-center justify-between">
+        {/* LEFT SECTION */}
+        <div className="flex items-center gap-4">
+          {/* Circular Logo */}
+          <div className="bg-white rounded-full p-1 flex items-center justify-center">
+            <img
+              src={rudaFirmLogo}
+              alt="RLIMS"
+              className="h-10 w-10 object-contain"
+            />
+          </div>
 
-        <div className="bg-white rounded-full p-1 flex items-center justify-center shrink-0">
-          <img
-            src={rudaFirmLogo}
-            alt="RLIMS"
-            className="h-10 w-10 object-contain"
-          />
+          {/* Title */}
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-normal tracking-wide">RCMS</h1>
+
+            <span className="text-white/60 text-xl">|</span>
+
+            <p className="text-lg font-normal text-white/90">
+              RUDA Cadastral Management System
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 min-w-0">
-          <h1 className="text-2xl md:text-3xl font-normal text-white whitespace-nowrap">
-            RCMS
-          </h1>
-          <span className="text-gray-300 hidden sm:inline">|</span>
-          <span className="text-sm md:text-lg font-normal text-white/90 dark:text-gray-300 truncate hidden sm:inline">
-            RUDA Cadastral Management System
-          </span>
+        {/* RIGHT SECTION */}
+        <div className="flex items-center gap-3">
+
+          {/* Dashboard Button */}
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium flex items-center gap-2 transition"
+          >
+            <LayoutDashboard size={16} />
+            Dashboard
+          </button>
+
+          {/* Export Button */}
+          <button className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium">
+            Export Report
+          </button>
         </div>
-      </div>
-
-      <div className="flex items-center gap-3 shrink-0">
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className={`w-12 h-6 flex items-center rounded-full p-1 transition ${
-            darkMode ? "bg-green-600" : "bg-gray-300"
-          }`}
-        >
-          <div
-            className={`w-4 h-4 bg-white rounded-full transition-transform ${
-              darkMode ? "translate-x-6" : "translate-x-0"
-            }`}
-          />
-        </button>
-
-        <button className="bg-green-600 hover:bg-green-800 text-white text-sm px-4 py-2 rounded-md font-medium flex items-center gap-2 transition">
-          <LogOut size={16} />
-          <span className="hidden sm:inline">Logout</span>
-        </button>
       </div>
     </div>
   );

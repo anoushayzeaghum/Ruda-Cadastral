@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function Legend() {
+export default function Legend({ selectedParcelNumber = null }) {
   const legendItems = [
     { name: "Residential", count: 1407, color: "bg-sky-400" },
     { name: "Illegal", count: 20, color: "bg-red-500" },
@@ -13,9 +13,10 @@ export default function Legend() {
   return (
     <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] h-[295px]">
       <div className="h-[56px] border-b border-[#d4dbe2] px-4 flex items-center">
-        <h2 className="text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
-          Legend
-        </h2>
+        <div className="flex items-center justify-between w-full">
+          <h2 className="text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">Legend</h2>
+          <div className="text-sm text-[#4d4d4d]">Selected: {selectedParcelNumber || "None"}</div>
+        </div>
       </div>
 
       <div className="p-4 h-[calc(100%-56px)]">
