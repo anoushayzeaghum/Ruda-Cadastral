@@ -713,8 +713,16 @@ export default function MapView({
             // remove existing corner layer/source
             if (map.getLayer && map.getLayer(SELECTED_CORNER_LAYER)) {
               map.off("click", SELECTED_CORNER_LAYER, () => {});
-              map.off("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-              map.off("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
+              map.off(
+                "mouseenter",
+                SELECTED_CORNER_LAYER,
+                handlePointMouseEnter,
+              );
+              map.off(
+                "mouseleave",
+                SELECTED_CORNER_LAYER,
+                handlePointMouseLeave,
+              );
               map.removeLayer(SELECTED_CORNER_LAYER);
             }
             if (map.getSource && map.getSource(SELECTED_CORNER_SOURCE)) {
@@ -724,7 +732,8 @@ export default function MapView({
             const geom = feature.geometry;
             let coords = [];
             if (geom.type === "Polygon") coords = geom.coordinates?.[0] || [];
-            else if (geom.type === "MultiPolygon") coords = geom.coordinates?.[0]?.[0] || [];
+            else if (geom.type === "MultiPolygon")
+              coords = geom.coordinates?.[0]?.[0] || [];
 
             const cornerFeatures = (coords || []).map((c, idx) => ({
               type: "Feature",
@@ -732,21 +741,36 @@ export default function MapView({
               properties: { idx },
             }));
 
-            const cornerFc = { type: "FeatureCollection", features: cornerFeatures };
+            const cornerFc = {
+              type: "FeatureCollection",
+              features: cornerFeatures,
+            };
 
-            map.addSource(SELECTED_CORNER_SOURCE, { type: "geojson", data: cornerFc });
+            map.addSource(SELECTED_CORNER_SOURCE, {
+              type: "geojson",
+              data: cornerFc,
+            });
             map.addLayer({
               id: SELECTED_CORNER_LAYER,
               type: "circle",
               source: SELECTED_CORNER_SOURCE,
-              paint: { "circle-radius": 6, "circle-color": "#111827", "circle-stroke-width": 1, "circle-stroke-color": "#fff" },
+              paint: {
+                "circle-radius": 6,
+                "circle-color": "#111827",
+                "circle-stroke-width": 1,
+                "circle-stroke-color": "#fff",
+              },
             });
 
             function cornerClickHandler(e) {
               const lngLat = e.lngLat;
               closeActivePopup();
               const html = `<div style="font-family: Arial, sans-serif; font-size:12px;"><div style=\"font-weight:600\">Corner</div><div>Lat: ${formatCoordinate(lngLat.lat)}</div><div>Lng: ${formatCoordinate(lngLat.lng)}</div></div>`;
-              const popup = new mapboxgl.Popup({ offset: 8, closeButton: false, closeOnClick: false })
+              const popup = new mapboxgl.Popup({
+                offset: 8,
+                closeButton: false,
+                closeOnClick: false,
+              })
                 .setLngLat([lngLat.lng, lngLat.lat])
                 .setHTML(html)
                 .addTo(map);
@@ -759,7 +783,8 @@ export default function MapView({
                 popupTimeoutRef.current = null;
               }, 3000);
               popup.on("close", () => {
-                if (activePopupRef.current === popup) activePopupRef.current = null;
+                if (activePopupRef.current === popup)
+                  activePopupRef.current = null;
                 if (popupTimeoutRef.current) {
                   clearTimeout(popupTimeoutRef.current);
                   popupTimeoutRef.current = null;
@@ -898,8 +923,16 @@ export default function MapView({
           try {
             if (map.getLayer && map.getLayer(SELECTED_CORNER_LAYER)) {
               map.off("click", SELECTED_CORNER_LAYER, () => {});
-              map.off("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-              map.off("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
+              map.off(
+                "mouseenter",
+                SELECTED_CORNER_LAYER,
+                handlePointMouseEnter,
+              );
+              map.off(
+                "mouseleave",
+                SELECTED_CORNER_LAYER,
+                handlePointMouseLeave,
+              );
               map.removeLayer(SELECTED_CORNER_LAYER);
             }
             if (map.getSource && map.getSource(SELECTED_CORNER_SOURCE)) {
@@ -909,7 +942,8 @@ export default function MapView({
             const geom = feature.geometry;
             let coords = [];
             if (geom.type === "Polygon") coords = geom.coordinates?.[0] || [];
-            else if (geom.type === "MultiPolygon") coords = geom.coordinates?.[0]?.[0] || [];
+            else if (geom.type === "MultiPolygon")
+              coords = geom.coordinates?.[0]?.[0] || [];
 
             const cornerFeatures = (coords || []).map((c, idx) => ({
               type: "Feature",
@@ -917,21 +951,36 @@ export default function MapView({
               properties: { idx },
             }));
 
-            const cornerFc = { type: "FeatureCollection", features: cornerFeatures };
+            const cornerFc = {
+              type: "FeatureCollection",
+              features: cornerFeatures,
+            };
 
-            map.addSource(SELECTED_CORNER_SOURCE, { type: "geojson", data: cornerFc });
+            map.addSource(SELECTED_CORNER_SOURCE, {
+              type: "geojson",
+              data: cornerFc,
+            });
             map.addLayer({
               id: SELECTED_CORNER_LAYER,
               type: "circle",
               source: SELECTED_CORNER_SOURCE,
-              paint: { "circle-radius": 6, "circle-color": "#111827", "circle-stroke-width": 1, "circle-stroke-color": "#fff" },
+              paint: {
+                "circle-radius": 6,
+                "circle-color": "#111827",
+                "circle-stroke-width": 1,
+                "circle-stroke-color": "#fff",
+              },
             });
 
             function cornerClickHandler(e) {
               const lngLat = e.lngLat;
               closeActivePopup();
               const html = `<div style="font-family: Arial, sans-serif; font-size:12px;"><div style=\"font-weight:600\">Corner</div><div>Lat: ${formatCoordinate(lngLat.lat)}</div><div>Lng: ${formatCoordinate(lngLat.lng)}</div></div>`;
-              const popup = new mapboxgl.Popup({ offset: 8, closeButton: false, closeOnClick: false })
+              const popup = new mapboxgl.Popup({
+                offset: 8,
+                closeButton: false,
+                closeOnClick: false,
+              })
                 .setLngLat([lngLat.lng, lngLat.lat])
                 .setHTML(html)
                 .addTo(map);
@@ -944,7 +993,8 @@ export default function MapView({
                 popupTimeoutRef.current = null;
               }, 3000);
               popup.on("close", () => {
-                if (activePopupRef.current === popup) activePopupRef.current = null;
+                if (activePopupRef.current === popup)
+                  activePopupRef.current = null;
                 if (popupTimeoutRef.current) {
                   clearTimeout(popupTimeoutRef.current);
                   popupTimeoutRef.current = null;
@@ -1198,17 +1248,28 @@ export default function MapView({
           const geom = matched.geometry;
           let coords = [];
           if (geom.type === "Polygon") coords = geom.coordinates?.[0] || [];
-          else if (geom.type === "MultiPolygon") coords = geom.coordinates?.[0]?.[0] || [];
+          else if (geom.type === "MultiPolygon")
+            coords = geom.coordinates?.[0]?.[0] || [];
 
           coords.forEach((c, idx) => {
             if (!Array.isArray(c) || c.length < 2) return;
-            cornerFeatures.push({ type: "Feature", geometry: { type: "Point", coordinates: [c[0], c[1]] }, properties: { idx } });
+            cornerFeatures.push({
+              type: "Feature",
+              geometry: { type: "Point", coordinates: [c[0], c[1]] },
+              properties: { idx },
+            });
           });
 
-          const cornerFc = { type: "FeatureCollection", features: cornerFeatures };
+          const cornerFc = {
+            type: "FeatureCollection",
+            features: cornerFeatures,
+          };
 
           if (!map.getSource(SELECTED_CORNER_SOURCE)) {
-            map.addSource(SELECTED_CORNER_SOURCE, { type: "geojson", data: cornerFc });
+            map.addSource(SELECTED_CORNER_SOURCE, {
+              type: "geojson",
+              data: cornerFc,
+            });
           } else {
             map.getSource(SELECTED_CORNER_SOURCE).setData(cornerFc);
           }
@@ -1241,7 +1302,11 @@ export default function MapView({
               </div>
             `;
 
-            const popup = new mapboxgl.Popup({ offset: 8, closeButton: false, closeOnClick: false })
+            const popup = new mapboxgl.Popup({
+              offset: 8,
+              closeButton: false,
+              closeOnClick: false,
+            })
               .setLngLat([lngLat.lng, lngLat.lat])
               .setHTML(html)
               .addTo(map);
@@ -1256,7 +1321,8 @@ export default function MapView({
             }, 3000);
 
             popup.on("close", () => {
-              if (activePopupRef.current === popup) activePopupRef.current = null;
+              if (activePopupRef.current === popup)
+                activePopupRef.current = null;
               if (popupTimeoutRef.current) {
                 clearTimeout(popupTimeoutRef.current);
                 popupTimeoutRef.current = null;

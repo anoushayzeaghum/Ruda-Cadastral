@@ -47,10 +47,23 @@ export default function Demarcation() {
               const props = feature?.properties || {};
               const num =
                 filters?.viewBy === "khasra"
-                  ? props.k ?? props.K ?? props.khasra ?? props.khasra_no ?? props.khasra_id ?? null
-                  : props.m ?? props.mn ?? props.murabba ?? props.murabba_no ?? props.murabba_id ?? null;
+                  ? (props.k ??
+                    props.K ??
+                    props.khasra ??
+                    props.khasra_no ??
+                    props.khasra_id ??
+                    null)
+                  : (props.m ??
+                    props.mn ??
+                    props.murabba ??
+                    props.murabba_no ??
+                    props.murabba_id ??
+                    null);
 
-              setFilters((f) => ({ ...f, selectedParcelNumber: num ? String(num) : "" }));
+              setFilters((f) => ({
+                ...f,
+                selectedParcelNumber: num ? String(num) : "",
+              }));
             }}
             onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
           />
@@ -64,7 +77,9 @@ export default function Demarcation() {
           <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3">
             <SpatialQuery
               filters={filters}
-              onFiltersChange={(partial) => setFilters((prev) => ({ ...prev, ...partial }))}
+              onFiltersChange={(partial) =>
+                setFilters((prev) => ({ ...prev, ...partial }))
+              }
               parcelOptions={(() => {
                 if (!loadedParcelsGeojson?.features) return [];
                 const seen = new Set();
@@ -73,8 +88,18 @@ export default function Demarcation() {
                   const p = f?.properties || {};
                   const val =
                     filters?.viewBy === "khasra"
-                      ? p.k ?? p.K ?? p.khasra ?? p.khasra_no ?? p.khasra_id ?? f.id
-                      : p.m ?? p.mn ?? p.murabba ?? p.murabba_no ?? p.murabba_id ?? f.id;
+                      ? (p.k ??
+                        p.K ??
+                        p.khasra ??
+                        p.khasra_no ??
+                        p.khasra_id ??
+                        f.id)
+                      : (p.m ??
+                        p.mn ??
+                        p.murabba ??
+                        p.murabba_no ??
+                        p.murabba_id ??
+                        f.id);
                   if (val == null) return;
                   const s = String(val);
                   if (!seen.has(s)) {

@@ -6,7 +6,11 @@ import {
   getMouzas,
 } from "../../services/api";
 
-export default function SpatialQuery({ filters = {}, onFiltersChange = () => {}, parcelOptions = [] }) {
+export default function SpatialQuery({
+  filters = {},
+  onFiltersChange = () => {},
+  parcelOptions = [],
+}) {
   const [divisions, setDivisions] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [tehsils, setTehsils] = useState([]);
@@ -19,7 +23,13 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
         setDivisions(
           d.map((it) => {
             const label =
-              it.division_name || it.name || it.title || it.division || it.display_name || it.label || String(it.id ?? it.pk ?? it.division_i ?? it.i);
+              it.division_name ||
+              it.name ||
+              it.title ||
+              it.division ||
+              it.display_name ||
+              it.label ||
+              String(it.id ?? it.pk ?? it.division_i ?? it.i);
             const value = it.id ?? it.pk ?? it.division_i ?? it.i ?? label;
             return { value, label };
           }),
@@ -41,7 +51,10 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
       try {
         const res = await getDistricts(id);
         setDistricts(
-          res.map((it) => ({ value: it.id ?? it.pk ?? it.district_i ?? it.i, label: it.name ?? it.district_name ?? it.title ?? String(it.id) })),
+          res.map((it) => ({
+            value: it.id ?? it.pk ?? it.district_i ?? it.i,
+            label: it.name ?? it.district_name ?? it.title ?? String(it.id),
+          })),
         );
       } catch (e) {
         setDistricts([]);
@@ -60,7 +73,10 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
       try {
         const res = await getTehsils(id);
         setTehsils(
-          res.map((it) => ({ value: it.id ?? it.pk ?? it.tehsil_i ?? it.i, label: it.name ?? it.tehsil_name ?? it.title ?? String(it.id) })),
+          res.map((it) => ({
+            value: it.id ?? it.pk ?? it.tehsil_i ?? it.i,
+            label: it.name ?? it.tehsil_name ?? it.title ?? String(it.id),
+          })),
         );
       } catch (e) {
         setTehsils([]);
@@ -80,7 +96,10 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
         const fc = await getMouzas(id);
         const list = (fc?.features || []).map((f) => ({
           value: f.properties?.id ?? f.id ?? f.properties?.gid,
-          label: f.properties?.mouza_name ?? f.properties?.name ?? String(f.properties?.id ?? f.id),
+          label:
+            f.properties?.mouza_name ??
+            f.properties?.name ??
+            String(f.properties?.id ?? f.id),
           raw: f,
         }));
         setMouzas(list);
@@ -121,7 +140,8 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
             value={filters?.selectedDivisionOptions?.value ?? ""}
             onChange={(e) => {
               const v = e.target.value;
-              const opt = divisions.find((d) => String(d.value) === String(v)) ?? null;
+              const opt =
+                divisions.find((d) => String(d.value) === String(v)) ?? null;
               handleChange("selectedDivisionOptions", opt);
               // clear downstream
               handleChange("selectedDistrictOptions", null);
@@ -142,7 +162,8 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
             value={filters?.selectedDistrictOptions?.value ?? ""}
             onChange={(e) => {
               const v = e.target.value;
-              const opt = districts.find((d) => String(d.value) === String(v)) ?? null;
+              const opt =
+                districts.find((d) => String(d.value) === String(v)) ?? null;
               handleChange("selectedDistrictOptions", opt);
               handleChange("selectedTehsilOptions", null);
               handleChange("selectedMouzaDetails", null);
@@ -162,7 +183,8 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
             value={filters?.selectedTehsilOptions?.value ?? ""}
             onChange={(e) => {
               const v = e.target.value;
-              const opt = tehsils.find((d) => String(d.value) === String(v)) ?? null;
+              const opt =
+                tehsils.find((d) => String(d.value) === String(v)) ?? null;
               handleChange("selectedTehsilOptions", opt);
               handleChange("selectedMouzaDetails", null);
             }}
@@ -181,10 +203,16 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
             value={filters?.selectedMouzaDetails?.value ?? ""}
             onChange={(e) => {
               const v = e.target.value;
-              const opt = mouzas.find((d) => String(d.value) === String(v)) ?? null;
+              const opt =
+                mouzas.find((d) => String(d.value) === String(v)) ?? null;
               // normalize selected mouza object for MapView expectations
               const normalized = opt
-                ? { id: opt.value, mouza: opt.label, mouza_id: opt.value, raw: opt.raw }
+                ? {
+                    id: opt.value,
+                    mouza: opt.label,
+                    mouza_id: opt.value,
+                    raw: opt.raw,
+                  }
                 : null;
               handleChange("selectedMouzaDetails", normalized);
             }}
@@ -217,11 +245,15 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
               className="inputStyle"
               placeholder="Search khasra / murabba"
               value={filters?.selectedParcelNumber ?? ""}
-              onChange={(e) => handleChange("selectedParcelNumber", e.target.value)}
+              onChange={(e) =>
+                handleChange("selectedParcelNumber", e.target.value)
+              }
             />
             <datalist id="parcel-suggestions">
               {parcelOptions.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
               ))}
             </datalist>
           </div>
@@ -229,7 +261,9 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {},
           <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               type="button"
-              onClick={() => { /* selections are live; parent map should react */ }}
+              onClick={() => {
+                /* selections are live; parent map should react */
+              }}
               className="h-9 rounded bg-[#0d3f82] text-white font-semibold shadow-sm hover:bg-[#0b3670]"
             >
               Show
