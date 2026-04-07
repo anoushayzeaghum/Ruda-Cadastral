@@ -122,6 +122,8 @@ class MyUser(AbstractBaseUser,PermissionsMixin):
         }
 
 User = get_user_model()
+
+
 class Division(models.Model):
 
     gid = models.AutoField(primary_key=True)

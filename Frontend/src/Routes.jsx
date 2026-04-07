@@ -4,6 +4,7 @@ import MainLayout from "./layouts/MainLayout";
 import MapPage from "./pages/Mapview/MapPage";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Auth/Login";
+import Register from "./pages/Auth/Register";
 import Division from "./pages/Area Management/Division";
 import District from "./pages/Area Management/District";
 import Tehsil from "./pages/Area Management/Tehsil";
@@ -16,6 +17,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
       <Route element={<MainLayout />}>
         <Route path="/" element={<Dashboard />} />
