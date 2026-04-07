@@ -5,6 +5,11 @@ from api.views import *
 
 router = DefaultRouter()
 
+#--------------------------------- User View ---------------------------------
+router.register(r'create-user', UserCreateView, basename='create-user')
+router.register(r'login-user', UserLoginDashboardCreateView, basename='login-user')
+router.register(r'get-user', GetUserView, basename='get-user')
+router.register(r'update-user', UserUpdateView, basename='update-user')
 #--------------------------------- Division View ---------------------------------
 router.register(r"division", ListDivisionView, basename="division")
 
