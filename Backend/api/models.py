@@ -1,10 +1,17 @@
 from django.db import models
 from django.contrib.gis.db import models as gis_models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.base_user import AbstractBaseUser,BaseUserManager
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 from datetime import datetime
 import uuid
 
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin
+)
 # --------------------------------------------------------
 # Division Administrative Boundary
 # --------------------------------------------------------
@@ -12,7 +19,109 @@ import uuid
 from django.db import models
 from django.contrib.gis.db import models as gis_models
 
+# --------------------------------------------------------
+# User Manager
+# --------------------------------------------------------
 
+class MyUserManager(BaseUserManager):
+
+    def create_user(self, email, company_name, password=None, **extra_fields):
+        if not email:
+            raise ValueError("Users must have an email address")
+
+        email = self.normalize_email(email)
+
+        user = self.model(
+            email=email,
+            company_name=company_name,
+            **extra_fields
+        )
+
+        user.set_password(password)
+        user.is_active = True
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, company_name, password=None, **extra_fields):
+
+        extra_fields.setdefault('role', 'super_admin')
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_verified', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self.create_user(
+            email,
+            company_name,
+            password,
+            **extra_fields
+        )
+
+
+# --------------------------------------------------------
+# Custom User Model
+# --------------------------------------------------------
+
+class MyUser(AbstractBaseUser,PermissionsMixin):
+
+    ROLE_CHOICES = (
+        ('super_admin', 'Super Admin'),
+        ('admin', 'Admin'),
+    )
+
+    email = models.EmailField(max_length=255, unique=True)
+
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    company_name = models.CharField(max_length=255)
+
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='super_admin'
+    )
+
+
+    country = models.CharField(max_length=200, null=True, blank=True)
+    address = models.CharField(max_length=400, null=True, blank=True)
+    city = models.CharField(max_length=200, null=True, blank=True)
+    zipcode = models.CharField(max_length=200, null=True, blank=True)
+    contact = models.CharField(max_length=20, blank=True, null=True)
+
+    # 🔐 Required Django Permission Fields
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    is_verified = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = MyUserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['company_name']
+
+    def __str__(self):
+        return self.email
+
+    def get_full_name(self):
+        return f"{self.first_name} {self.last_name}".strip()
+
+    def get_short_name(self):
+        return self.first_name
+
+    def tokens(self):
+        refresh = RefreshToken.for_user(self)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
+        }
+
+User = get_user_model()
 class Division(models.Model):
 
     gid = models.AutoField(primary_key=True)

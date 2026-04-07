@@ -10,6 +10,63 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from .models import Division
 
 
+# --------------------------------------------------------
+# MyUser Serializer
+# --------------------------------------------------------
+class MyUserSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MyUser
+        fields = [
+            "id",
+            "email",
+            "full_name",
+            "first_name",
+            "last_name",
+            "role",             # Added role
+            "is_active",
+            "password",
+        ]
+        extra_kwargs = {
+            "password": {"write_only": True},
+        }
+
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
+
+    def create(self, validated_data):
+        password = validated_data.pop("password", None)
+        user = MyUser(**validated_data)
+
+        # Set password properly
+        if password:
+            user.set_password(password)
+
+        # Super admin automatically sets is_staff=True for admin or themselves
+        if validated_data.get("role") in ["admin", "super_admin"]:
+            user.is_staff = True
+
+        user.save()
+        return user
+
+
+class MyUserLoginDashboardSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+    class Meta:
+        model = MyUser
+        fields = [
+            "id",
+            "email",
+            "password",
+            "full_name",
+            "is_active",
+        ]
+        extra_kwargs = {
+            "password": {"write_only": True},
+        }
+    
 class DivisionSerializer(GeoFeatureModelSerializer):
 
     class Meta:
