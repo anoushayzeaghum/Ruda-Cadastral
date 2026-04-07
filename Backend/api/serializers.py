@@ -3,18 +3,10 @@ from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from .models import *
 
 # --------------------------------------------------------
-# Division Serializer
-# --------------------------------------------------------
-
-from rest_framework_gis.serializers import GeoFeatureModelSerializer
-from .models import Division
-
-
-# --------------------------------------------------------
 # MyUser Serializer
 # --------------------------------------------------------
 class MyUserSerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = MyUser
@@ -24,33 +16,48 @@ class MyUserSerializer(serializers.ModelSerializer):
             "full_name",
             "first_name",
             "last_name",
-            "role",             # Added role
+            "company_name",
+            "role",
+            "address",
+            "contact",
             "is_active",
             "password",
         ]
         extra_kwargs = {
-            "password": {"write_only": True},
+            "password": {"write_only": True, "required": True},
+            "first_name": {"required": True},
+            "last_name": {"required": True},
+            "company_name": {"required": True},
+            "email": {"required": True},
+            "role": {"required": False},
+            "address": {"required": False, "allow_blank": True},
+            "contact": {"required": False, "allow_blank": True},
+            "is_active": {"read_only": True},
         }
 
     def get_full_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}"
+        return f"{obj.first_name} {obj.last_name}".strip()
 
     def create(self, validated_data):
         password = validated_data.pop("password", None)
+
+        # avoid None issues on optional fields
+        validated_data["address"] = validated_data.get("address", "") or ""
+        validated_data["contact"] = validated_data.get("contact", "") or ""
+        validated_data["role"] = validated_data.get("role", "admin")
+
         user = MyUser(**validated_data)
 
-        # Set password properly
         if password:
             user.set_password(password)
 
-        # Super admin automatically sets is_staff=True for admin or themselves
         if validated_data.get("role") in ["admin", "super_admin"]:
             user.is_staff = True
 
+        user.is_active = True
         user.save()
         return user
-
-
+    
 class MyUserLoginDashboardSerializer(serializers.ModelSerializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
@@ -66,7 +73,11 @@ class MyUserLoginDashboardSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "password": {"write_only": True},
         }
-    
+
+# --------------------------------------------------------
+# Division Serializer
+# --------------------------------------------------------
+
 class DivisionSerializer(GeoFeatureModelSerializer):
 
     class Meta:

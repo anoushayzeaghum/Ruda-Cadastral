@@ -1,4 +1,5 @@
-import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 
 const headerBackgroundStyle = {
@@ -17,15 +18,22 @@ export default function Header({
   sidebarOpen,
   toggleSidebar,
 }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
+
   return (
     <div
-      className="
-        w-full h-[60px] px-4 md:px-6 flex items-center justify-between"
+      className="w-full h-[60px] px-4 md:px-6 flex items-center justify-between"
       style={headerBackgroundStyle}
     >
       {/* LEFT */}
       <div className="flex items-center gap-3 md:gap-4 min-w-0">
-        {/* SIDEBAR TOGGLE */}
         <button
           onClick={toggleSidebar}
           className="text-white hover:bg-white/10 p-2 rounded-md transition"
@@ -35,7 +43,6 @@ export default function Header({
           <Menu size={22} />
         </button>
 
-        {/* Circular Logo */}
         <div className="bg-white rounded-full p-1 flex items-center justify-center shrink-0">
           <img
             src={rudaFirmLogo}
@@ -57,7 +64,6 @@ export default function Header({
 
       {/* RIGHT */}
       <div className="flex items-center gap-3 shrink-0">
-        {/* THEME TOGGLE */}
         <button
           onClick={() => setDarkMode(!darkMode)}
           className={`w-12 h-6 flex items-center rounded-full p-1 transition ${
@@ -71,8 +77,10 @@ export default function Header({
           />
         </button>
 
-        {/* LOGOUT BUTTON */}
-        <button className="bg-green-600 hover:bg-green-800 text-white text-sm px-4 py-2 rounded-md font-medium flex items-center gap-2 transition">
+        <button
+          onClick={handleLogout}
+          className="bg-green-600 hover:bg-green-800 text-white text-sm px-4 py-2 rounded-md font-medium flex items-center gap-2 transition"
+        >
           <LogOut size={16} />
           <span className="hidden sm:inline">Logout</span>
         </button>

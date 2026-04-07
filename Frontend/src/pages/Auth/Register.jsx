@@ -47,7 +47,7 @@ export default function Register() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirm_password) {
@@ -55,12 +55,53 @@ export default function Register() {
       return;
     }
 
-    setIsLoading(true);
+    try {
+      setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
+      const payload = {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        company_name: formData.company_name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        role: formData.role || "admin",
+        address: formData.address?.trim() || "",
+        contact: formData.contact?.trim() || "",
+        password: formData.password,
+      };
+
+      const response = await fetch("http://127.0.0.1:8000/api/create-user/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log("Register response:", data);
+
+      if (!response.ok) {
+        const errorMessage = data?.data
+          ? Object.entries(data.data)
+              .map(([key, value]) => {
+                const text = Array.isArray(value) ? value.join(", ") : value;
+                return `${key}: ${text}`;
+              })
+              .join("\n")
+          : data?.message || "Registration failed.";
+
+        alert(errorMessage);
+        return;
+      }
+
+      alert("Account created successfully.");
       navigate("/login");
-    }, 1200);
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("Something went wrong while creating account.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const inputBaseClass =

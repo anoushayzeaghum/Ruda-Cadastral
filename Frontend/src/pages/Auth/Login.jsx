@@ -16,14 +16,53 @@ export default function Login() {
     return () => clearTimeout(t);
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      setIsLoading(true);
+
+      const response = await fetch("http://127.0.0.1:8000/api/login-user/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data?.message || "Invalid credentials");
+        return;
+      }
+
+      const auth = data?.data || {};
+
+      localStorage.setItem("accessToken", auth.access || auth.token || "");
+      localStorage.setItem("refreshToken", auth.refresh || "");
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: auth.id,
+          email: auth.email,
+          first_name: auth.first_name,
+          last_name: auth.last_name,
+          role: auth.role,
+          is_active: auth.is_active,
+        }),
+      );
+
       navigate("/dashboard");
-    }, 1200);
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Something went wrong while logging in.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -109,7 +148,8 @@ export default function Login() {
 
               <p className="mx-auto max-w-xl text-sm leading-6 text-white/80 sm:text-base">
                 Secure access to cadastral parcels, spatial records, and land
-                management tools—designed to match the RCMS dashboard experience.
+                management tools—designed to match the RCMS dashboard
+                experience.
               </p>
 
               <div className="mt-6 grid gap-3 text-sm text-white/85 sm:grid-cols-2">
@@ -164,96 +204,100 @@ export default function Login() {
                   </div>
 
                   <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Email address
-                  </label>
-                  <div className="relative mt-2">
-                    <div className="absolute left-3 top-2.5 grid h-8 w-8 place-items-center rounded-lg bg-slate-50 text-slate-500">
-                      <Mail size={16} />
+                    <div>
+                      <label
+                        htmlFor="email"
+                        className="text-sm font-medium text-slate-700"
+                      >
+                        Email address
+                      </label>
+                      <div className="relative mt-2">
+                        <div className="absolute left-3 top-2.5 grid h-8 w-8 place-items-center rounded-lg bg-slate-50 text-slate-500">
+                          <Mail size={16} />
+                        </div>
+                        <input
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-14 pr-4 text-slate-900 outline-none transition hover:border-slate-300 focus:border-sky-300 focus:ring-4 focus:ring-sky-200/50"
+                          placeholder="name@ruda.gov.pk"
+                          required
+                          autoComplete="email"
+                        />
+                      </div>
                     </div>
-                    <input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-14 pr-4 text-slate-900 outline-none transition hover:border-slate-300 focus:border-sky-300 focus:ring-4 focus:ring-sky-200/50"
-                      placeholder="name@ruda.gov.pk"
-                      required
-                      autoComplete="email"
-                    />
-                  </div>
-                </div>
 
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="text-sm font-medium text-slate-700"
-                  >
-                    Password
-                  </label>
-                  <div className="relative mt-2">
-                    <div className="absolute left-3 top-2.5 grid h-8 w-8 place-items-center rounded-lg bg-slate-50 text-slate-500">
-                      <Lock size={16} />
+                    <div>
+                      <label
+                        htmlFor="password"
+                        className="text-sm font-medium text-slate-700"
+                      >
+                        Password
+                      </label>
+                      <div className="relative mt-2">
+                        <div className="absolute left-3 top-2.5 grid h-8 w-8 place-items-center rounded-lg bg-slate-50 text-slate-500">
+                          <Lock size={16} />
+                        </div>
+                        <input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-14 pr-12 text-slate-900 outline-none transition hover:border-slate-300 focus:border-sky-300 focus:ring-4 focus:ring-sky-200/50"
+                          placeholder="••••••••"
+                          required
+                          autoComplete="current-password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-3 rounded-md p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                          aria-label={
+                            showPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                    <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-14 pr-12 text-slate-900 outline-none transition hover:border-slate-300 focus:border-sky-300 focus:ring-4 focus:ring-sky-200/50"
-                      placeholder="••••••••"
-                      required
-                      autoComplete="current-password"
-                    />
+
+                    <div className="flex items-center justify-between gap-4 text-sm">
+                      <label className="flex items-center gap-2 text-slate-700">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-sky-200/60"
+                        />
+                        Remember me
+                      </label>
+
+                      <button
+                        type="button"
+                        className="font-medium text-green-800 hover:text-green-700 hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+
                     <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3 rounded-md p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
+                      type="submit"
+                      disabled={isLoading}
+                      className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-green-900 via-green-800 to-emerald-700 py-3 font-semibold text-white shadow-sm transition hover:from-green-800 hover:via-green-700 hover:to-emerald-600 focus:outline-none focus:ring-4 focus:ring-sky-200/60 disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      <span className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100">
+                        <span className="absolute -left-20 top-0 h-full w-28 skew-x-[-20deg] bg-white/20 blur-sm animate-pulse" />
+                      </span>
+                      {isLoading ? "Signing in..." : "Sign in"}
                     </button>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between gap-4 text-sm">
-                  <label className="flex items-center gap-2 text-slate-700">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-sky-200/60"
-                    />
-                    Remember me
-                  </label>
-
-                  <button
-                    type="button"
-                    className="font-medium text-green-800 hover:text-green-700 hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-green-900 via-green-800 to-emerald-700 py-3 font-semibold text-white shadow-sm transition hover:from-green-800 hover:via-green-700 hover:to-emerald-600 focus:outline-none focus:ring-4 focus:ring-sky-200/60 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  <span className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100">
-                    <span className="absolute -left-20 top-0 h-full w-28 skew-x-[-20deg] bg-white/20 blur-sm animate-pulse" />
-                  </span>
-                  {isLoading ? "Signing in..." : "Sign in"}
-                </button>
-
-                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
-                  No registration required. If you don’t have access, contact the
-                  system administrator.
-                </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                      No registration required. If you don’t have access,
+                      contact the system administrator.
+                    </div>
                   </form>
                 </div>
               </div>
