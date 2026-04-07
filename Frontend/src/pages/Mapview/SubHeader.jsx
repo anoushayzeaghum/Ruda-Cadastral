@@ -6,41 +6,68 @@ export default function SubHeader({
   parcelOptions = [],
   selectedParcelNumber = "",
   onParcelNumberChange = () => {},
+  isMurabbaBasedKhasra = false,
+  murabbaOptions = [],
+  selectedMurabbaNumber = "",
+  onMurabbaNumberChange = () => {},
+  khasraOptions = [],
 }) {
   if (!filters) return null;
 
-  const mouzaCount = Array.isArray(filters.mouzas)
-    ? filters.mouzas.length
-    : 128;
+  const divisions = Array.isArray(filters.divisions) ? filters.divisions : [];
+  const districts = Array.isArray(filters.districts) ? filters.districts : [];
+  const tehsils = Array.isArray(filters.tehsils) ? filters.tehsils : [];
+  const mouzas = Array.isArray(filters.mouzas) ? filters.mouzas : [];
+
+  const selectedDivision = Array.isArray(filters.selectedDivision)
+    ? filters.selectedDivision
+    : [];
+  const selectedDistrict = Array.isArray(filters.selectedDistrict)
+    ? filters.selectedDistrict
+    : [];
+  const selectedTehsil = Array.isArray(filters.selectedTehsil)
+    ? filters.selectedTehsil
+    : [];
+
+  const selectedMouza = filters.selectedMouza ?? "";
+  const viewBy = filters.viewBy ?? "";
+
+  const mouzaCount = mouzas.length;
+
+  const showStandardParcelDropdown =
+    selectedMouza && viewBy && !(viewBy === "khasra" && isMurabbaBasedKhasra);
+
+  const showMurabbaKhasraDropdowns =
+    selectedMouza && viewBy === "khasra" && isMurabbaBasedKhasra;
 
   return (
-    <div className="w-full bg-gray-100 border-b border-gray-300 shadow-sm">
-      {/* FILTER BAR */}
-      <div className="flex items-center gap-3 px-4 py-2">
-        {/* Search Button */}
-        <button className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white text-sm rounded-md hover:bg-green-800 whitespace-nowrap">
+    <div className="w-full bg-gray-100 border-b border-gray-300 shadow-sm relative z-20 overflow-visible">
+      <div className="flex items-center gap-3 px-4 py-2 flex-wrap overflow-visible">
+        <button
+          type="button"
+          className="flex items-center gap-2 px-4 py-2 bg-green-700 text-white text-sm rounded-md hover:bg-green-800 whitespace-nowrap shrink-0"
+        >
           <Database size={16} />
           Search Data
           <ChevronDown size={14} />
         </button>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2 flex-1">
+        <div className="flex items-center gap-2 flex-1 flex-wrap overflow-visible">
           <FilterCard
             label="Division"
             value={getMultiValueDisplay({
-              options: filters.divisions,
-              selected: filters.selectedDivision,
+              options: divisions,
+              selected: selectedDivision,
               idKey: "division_i",
               labelKey: "division",
             })}
           >
             <MultiSelectDropdown
-              options={filters.divisions.map((d) => ({
+              options={divisions.map((d) => ({
                 value: String(d.division_i),
                 label: d.division,
               }))}
-              selectedValues={filters.selectedDivision}
+              selectedValues={selectedDivision}
               onToggle={filters.handleDivisionChange}
               disabled={filters.loading?.divisions}
             />
@@ -49,152 +76,168 @@ export default function SubHeader({
           <FilterCard
             label="District"
             value={getMultiValueDisplay({
-              options: filters.districts,
-              selected: filters.selectedDistrict,
+              options: districts,
+              selected: selectedDistrict,
               idKey: "id",
               labelKey: "name",
             })}
           >
             <MultiSelectDropdown
-              options={filters.districts.map((d) => ({
+              options={districts.map((d) => ({
                 value: String(d.id),
                 label: d.name,
               }))}
-              selectedValues={filters.selectedDistrict}
+              selectedValues={selectedDistrict}
               onToggle={filters.handleDistrictChange}
-              disabled={
-                !filters.selectedDivision.length || filters.loading?.districts
-              }
+              disabled={!selectedDivision.length || filters.loading?.districts}
             />
           </FilterCard>
 
           <FilterCard
             label="Tehsil"
             value={getMultiValueDisplay({
-              options: filters.tehsils,
-              selected: filters.selectedTehsil,
+              options: tehsils,
+              selected: selectedTehsil,
               idKey: "id",
               labelKey: "name",
             })}
           >
             <MultiSelectDropdown
-              options={filters.tehsils.map((t) => ({
+              options={tehsils.map((t) => ({
                 value: String(t.id),
                 label: t.name,
               }))}
-              selectedValues={filters.selectedTehsil}
+              selectedValues={selectedTehsil}
               onToggle={filters.handleTehsilChange}
-              disabled={
-                !filters.selectedDistrict.length || filters.loading?.tehsils
-              }
+              disabled={!selectedDistrict.length || filters.loading?.tehsils}
             />
           </FilterCard>
 
           <FilterCard
             label="Mouza"
             value={
-              filters.mouzas.find(
-                (m) => String(m.mouza_id) === String(filters.selectedMouza),
-              )?.mouza || "Select"
+              mouzas.find((m) => String(m.mouza_id) === String(selectedMouza))
+                ?.mouza || "Select"
             }
           >
-            <select
-              value={filters.selectedMouza}
+            <NativeSelectOverlay
+              value={selectedMouza}
               onChange={filters.handleMouzaChange}
-              disabled={
-                !filters.selectedTehsil.length || filters.loading?.mouzas
-              }
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              disabled={!selectedTehsil.length || filters.loading?.mouzas}
             >
               <option value="">-- Mouza --</option>
-              {filters.mouzas.map((m) => (
+              {mouzas.map((m) => (
                 <option key={m.mouza_id} value={m.mouza_id}>
                   {m.mouza}
                 </option>
               ))}
-            </select>
+            </NativeSelectOverlay>
           </FilterCard>
 
-          {/* View By */}
           <FilterCard
             label="View By"
             value={
-              filters.viewBy
-                ? filters.viewBy.charAt(0).toUpperCase() +
-                  filters.viewBy.slice(1)
+              viewBy
+                ? viewBy.charAt(0).toUpperCase() + viewBy.slice(1)
                 : "Select"
             }
           >
-            {" "}
-            <select
-              value={filters.viewBy}
+            <NativeSelectOverlay
+              value={viewBy}
               onChange={filters.handleViewByChange}
-              disabled={!filters.selectedMouza}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              disabled={!selectedMouza}
             >
               <option value="">-- Select View --</option>
               <option value="khasra">Khasra</option>
               <option value="murabba">Murabba</option>
-            </select>
+            </NativeSelectOverlay>
           </FilterCard>
 
-          {/* Dependent parcel number dropdown: appears only when mouza + viewBy set */}
-          {filters.selectedMouza && filters.viewBy && (
+          {showStandardParcelDropdown && (
             <FilterCard
-              label={filters.viewBy === "khasra" ? "Khasra No" : "Murabba No"}
+              label={viewBy === "khasra" ? "Khasra No" : "Murabba No"}
               value={selectedParcelNumber || "Select"}
             >
               <SearchableSingleSelect
                 options={parcelOptions}
                 selectedValue={selectedParcelNumber}
                 onChange={onParcelNumberChange}
-                disabled={!parcelOptions || parcelOptions.length === 0}
+                disabled={!parcelOptions?.length}
                 placeholder={
-                  filters.viewBy === "khasra"
+                  viewBy === "khasra"
                     ? "Search Khasra No..."
                     : "Search Murabba No..."
                 }
               />
             </FilterCard>
           )}
-        </div>
 
-        {/* Right Stats */}
-        <div className="flex items-center gap-6 text-sm border-l border-gray-300 pl-4">
-          {/* <div>
-            <p className="text-xs text-gray-500">Parcel ID / JID</p>
-            <p className="font-semibold text-green-700">25,800 Acres</p>
-          </div> */}
+          {showMurabbaKhasraDropdowns && (
+            <>
+              <FilterCard
+                label="Murabba No"
+                value={selectedMurabbaNumber || "Select"}
+              >
+                <SearchableSingleSelect
+                  options={murabbaOptions}
+                  selectedValue={selectedMurabbaNumber}
+                  onChange={onMurabbaNumberChange}
+                  disabled={!murabbaOptions?.length}
+                  placeholder="Search Murabba No..."
+                />
+              </FilterCard>
 
-          <div>
-            <p className="text-xs text-gray-500">Remaining Land</p>
-            <p className="font-semibold text-green-700">76,700 Acres</p>
-          </div>
+              <FilterCard
+                label="Khasra No"
+                value={selectedParcelNumber || "Select"}
+              >
+                <SearchableSingleSelect
+                  options={khasraOptions}
+                  selectedValue={selectedParcelNumber}
+                  onChange={onParcelNumberChange}
+                  disabled={!selectedMurabbaNumber || !khasraOptions?.length}
+                  placeholder="Search Khasra No..."
+                />
+              </FilterCard>
+            </>
+          )}
         </div>
       </div>
 
-      {/* STATISTICS BAR */}
-      <div className="flex items-center gap-8 px-4 py-2 bg-gray-50 border-t border-gray-200 text-sm">
+      <div className="flex items-center gap-8 px-4 py-2 bg-gray-50 border-t border-gray-200 text-sm overflow-x-auto">
         <StatItem label="Total Mouzas" value={mouzaCount} />
         <StatItem label="Total Parcels" value="82,400" />
         <StatItem label="Total Area" value="102,500 Acres" />
         <StatItem label="Acquired Land" value="25,800 Acres" />
+        <StatItem label="Remaining Land" value="76,700 Acres" />
       </div>
     </div>
   );
 }
 
-/* Filter Card UI */
 function FilterCard({ label, value, children }) {
   return (
-    <div className="relative bg-white border border-gray-200 rounded-md px-3 py-2 min-w-[180px] hover:border-green-600 cursor-pointer">
+    <div className="relative bg-white border border-gray-200 rounded-md px-3 py-2 min-w-[180px] hover:border-green-600 overflow-visible">
       <p className="text-[10px] text-gray-500">{label}</p>
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-gray-800 truncate">{value}</p>
-        <ChevronDown size={14} className="text-gray-400 ml-2" />
+        <ChevronDown size={14} className="text-gray-400 ml-2 shrink-0" />
       </div>
       {children}
     </div>
+  );
+}
+
+function NativeSelectOverlay({ value, onChange, disabled, children }) {
+  return (
+    <select
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      className="absolute inset-0 opacity-0 cursor-pointer"
+    >
+      {children}
+    </select>
   );
 }
 
@@ -231,13 +274,13 @@ function MultiSelectDropdown({ options, selectedValues, onToggle, disabled }) {
       <button
         type="button"
         onClick={() => !disabled && setOpen((prev) => !prev)}
-        className="h-full w-full cursor-pointer bg-transparent"
+        className="absolute inset-0 bg-transparent cursor-pointer"
         disabled={disabled}
         aria-label="Open multi-select filter"
       />
 
       {open && !disabled && (
-        <div className="absolute left-0 top-full z-30 mt-1 max-h-64 w-full overflow-auto rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+        <div className="absolute left-0 top-full mt-1 z-[999] max-h-64 w-full overflow-auto rounded-md border border-gray-200 bg-white p-2 shadow-xl">
           {options.length ? (
             options.map((option) => {
               const checked = safeSelectedValues.includes(String(option.value));
@@ -292,22 +335,18 @@ function SearchableSingleSelect({
     String(opt.label).toLowerCase().includes(query.toLowerCase()),
   );
 
-  const selectedLabel =
-    options.find((opt) => String(opt.value) === String(selectedValue))?.label ||
-    "";
-
   return (
     <div ref={containerRef} className="absolute inset-0">
       <button
         type="button"
         onClick={() => !disabled && setOpen((prev) => !prev)}
-        className="h-full w-full cursor-pointer bg-transparent"
+        className="absolute inset-0 bg-transparent cursor-pointer"
         disabled={disabled}
-        aria-label="Open parcel number selector"
+        aria-label="Open selector"
       />
 
       {open && !disabled && (
-        <div className="absolute left-0 top-full z-30 mt-1 w-full rounded-md border border-gray-200 bg-white p-2 shadow-lg">
+        <div className="absolute left-0 top-full mt-1 z-[999] w-full rounded-md border border-gray-200 bg-white p-2 shadow-xl">
           <input
             type="text"
             value={query}
@@ -369,10 +408,9 @@ function SearchableSingleSelect({
   );
 }
 
-/* Stats */
 function StatItem({ label, value }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 shrink-0">
       <BarChart3 size={16} className="text-green-700" />
       <p className="text-gray-600">{label}:</p>
       <span className="font-semibold text-green-700">{value}</span>

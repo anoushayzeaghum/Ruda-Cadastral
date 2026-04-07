@@ -1,5 +1,5 @@
 import { useOutletContext } from "react-router-dom";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 
 import Header from "./Header";
 import SubHeader from "./SubHeader";
@@ -30,6 +30,10 @@ const getMurabbaNumber = (props = {}) => {
   );
 };
 
+const getLandType = (props = {}) => {
+  return props.type ?? props.land_type ?? null;
+};
+
 export default function MapPage() {
   const outletContext = useOutletContext() ?? {};
   const filters = outletContext.filters;
@@ -46,45 +50,47 @@ export default function MapPage() {
   const [rudaPhases, setRudaPhases] = useState([]);
   const [selectedRudaPhaseIds, setSelectedRudaPhaseIds] = useState([]);
   const [basemap, setBasemap] = useState("Streets");
+
   const [selectedParcelNumber, setSelectedParcelNumber] = useState("");
+  const [selectedMurabbaNumber, setSelectedMurabbaNumber] = useState("");
   const [loadedParcelsGeojson, setLoadedParcelsGeojson] = useState(null);
 
-  // build parcel options from loaded geojson when available
-  const parcelOptions = useMemo(() => {
-    if (
-      !loadedParcelsGeojson?.features ||
-      !Array.isArray(loadedParcelsGeojson.features)
-    )
-      return [];
+  const isMurabbaBasedKhasra = useMemo(() => {
+    if (filters?.viewBy !== "khasra") return false;
+    const features = loadedParcelsGeojson?.features;
+    if (!Array.isArray(features) || !features.length) return false;
+
+    return features.some(
+      (f) => String(getLandType(f?.properties || {})) === "MU",
+    );
+  }, [loadedParcelsGeojson, filters?.viewBy]);
+
+  useEffect(() => {
+    setSelectedParcelNumber("");
+    setSelectedMurabbaNumber("");
+    setSelectedParcel(null);
+    setParcelPanelOpen(false);
+  }, [filters?.selectedMouza, filters?.viewBy]);
+
+  const murabbaOptions = useMemo(() => {
+    if (!isMurabbaBasedKhasra) return [];
+    const features = loadedParcelsGeojson?.features;
+    if (!Array.isArray(features)) return [];
+
     const seen = new Set();
     const list = [];
-    const viewBy = filters?.viewBy;
 
-    const extract = (feat) => {
-      const p = feat?.properties || {};
+    features.forEach((f) => {
+      const murabba = getMurabbaNumber(f?.properties || {});
+      if (murabba == null || murabba === "") return;
 
-      if (viewBy === "khasra") {
-        return getKhasraNumber(p);
-      }
-
-      if (viewBy === "murabba") {
-        return getMurabbaNumber(p);
-      }
-
-      return feat?.id ?? null;
-    };
-
-    loadedParcelsGeojson.features.forEach((f) => {
-      const v = extract(f);
-      if (v == null) return;
-      const s = String(v);
-      if (!seen.has(s)) {
-        seen.add(s);
-        list.push({ value: s, label: s });
+      const value = String(murabba);
+      if (!seen.has(value)) {
+        seen.add(value);
+        list.push({ value, label: value });
       }
     });
 
-    // sort numerically when possible
     list.sort((a, b) => {
       const na = Number(a.value);
       const nb = Number(b.value);
@@ -93,7 +99,116 @@ export default function MapPage() {
     });
 
     return list;
-  }, [loadedParcelsGeojson, filters?.viewBy]);
+  }, [loadedParcelsGeojson, isMurabbaBasedKhasra]);
+
+  const khasraOptions = useMemo(() => {
+    const features = loadedParcelsGeojson?.features;
+    if (!Array.isArray(features)) return [];
+
+    const seen = new Set();
+    const list = [];
+
+    if (filters?.viewBy === "khasra" && isMurabbaBasedKhasra) {
+      if (!selectedMurabbaNumber) return [];
+
+      features.forEach((f) => {
+        const props = f?.properties || {};
+        const murabba = getMurabbaNumber(props);
+        if (String(murabba) !== String(selectedMurabbaNumber)) return;
+
+        const khasra = getKhasraNumber(props);
+        if (khasra == null || khasra === "") return;
+
+        const value = String(khasra);
+        if (!seen.has(value)) {
+          seen.add(value);
+          list.push({ value, label: value });
+        }
+      });
+    } else {
+      features.forEach((f) => {
+        const props = f?.properties || {};
+        const valueRaw =
+          filters?.viewBy === "khasra"
+            ? getKhasraNumber(props)
+            : filters?.viewBy === "murabba"
+              ? getMurabbaNumber(props)
+              : f?.id;
+
+        if (valueRaw == null || valueRaw === "") return;
+
+        const value = String(valueRaw);
+        if (!seen.has(value)) {
+          seen.add(value);
+          list.push({ value, label: value });
+        }
+      });
+    }
+
+    list.sort((a, b) => {
+      const na = Number(a.value);
+      const nb = Number(b.value);
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+      return a.value.localeCompare(b.value);
+    });
+
+    return list;
+  }, [
+    loadedParcelsGeojson,
+    filters?.viewBy,
+    isMurabbaBasedKhasra,
+    selectedMurabbaNumber,
+  ]);
+
+  const standardParcelOptions = useMemo(() => {
+    if (filters?.viewBy === "khasra" && isMurabbaBasedKhasra) return [];
+    return khasraOptions;
+  }, [filters?.viewBy, isMurabbaBasedKhasra, khasraOptions]);
+
+  const selectedFeatureNumber = useMemo(() => {
+    if (filters?.viewBy === "khasra" && isMurabbaBasedKhasra) {
+      if (!selectedMurabbaNumber || !selectedParcelNumber) return "";
+      return {
+        murabbaNo: String(selectedMurabbaNumber),
+        khasraNo: String(selectedParcelNumber),
+      };
+    }
+    return selectedParcelNumber;
+  }, [
+    filters?.viewBy,
+    isMurabbaBasedKhasra,
+    selectedMurabbaNumber,
+    selectedParcelNumber,
+  ]);
+
+  const handleParcelSelect = useCallback(
+    (feature) => {
+      setSelectedParcel(feature);
+
+      const props = feature?.properties || {};
+      const khasraNo = getKhasraNumber(props);
+      const murabbaNo = getMurabbaNumber(props);
+
+      if (filters?.viewBy === "khasra" && isMurabbaBasedKhasra) {
+        setSelectedMurabbaNumber(
+          murabbaNo !== null && murabbaNo !== undefined
+            ? String(murabbaNo)
+            : "",
+        );
+        setSelectedParcelNumber(
+          khasraNo !== null && khasraNo !== undefined ? String(khasraNo) : "",
+        );
+      } else {
+        const num = filters?.viewBy === "khasra" ? khasraNo : murabbaNo;
+        setSelectedParcelNumber(
+          num !== null && num !== undefined ? String(num) : "",
+        );
+      }
+
+      setParcelPanelOpen(true);
+    },
+    [filters?.viewBy, isMurabbaBasedKhasra],
+  );
 
   return (
     <div className="w-full h-screen flex flex-col bg-white">
@@ -102,9 +217,17 @@ export default function MapPage() {
       {filters && (
         <SubHeader
           filters={filters}
-          parcelOptions={parcelOptions}
+          parcelOptions={standardParcelOptions}
           selectedParcelNumber={selectedParcelNumber}
           onParcelNumberChange={(val) => setSelectedParcelNumber(val)}
+          isMurabbaBasedKhasra={isMurabbaBasedKhasra}
+          murabbaOptions={murabbaOptions}
+          selectedMurabbaNumber={selectedMurabbaNumber}
+          onMurabbaNumberChange={(val) => {
+            setSelectedMurabbaNumber(val);
+            setSelectedParcelNumber("");
+          }}
+          khasraOptions={khasraOptions}
         />
       )}
 
@@ -132,19 +255,9 @@ export default function MapPage() {
             layers={layers}
             selectedRudaPhaseIds={selectedRudaPhaseIds}
             basemap={basemap}
-            selectedFeatureNumber={selectedParcelNumber}
+            selectedFeatureNumber={selectedFeatureNumber}
             onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
-            onParcelSelect={(feature) => {
-              setSelectedParcel(feature);
-              // sync dropdown: try common property names
-              const props = feature?.properties || {};
-              const num =
-                filters?.viewBy === "khasra"
-                  ? getKhasraNumber(props)
-                  : getMurabbaNumber(props);
-              setSelectedParcelNumber(num ? String(num) : "");
-              setParcelPanelOpen(true);
-            }}
+            onParcelSelect={handleParcelSelect}
           />
 
           <ParcelPanel

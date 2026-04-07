@@ -184,6 +184,7 @@ export default function MapView({
   const currentGeojson = useRef({});
   const activePopupRef = useRef(null);
   const popupTimeoutRef = useRef(null);
+  const lastSyncedSelectionRef = useRef("");
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
@@ -213,7 +214,6 @@ export default function MapView({
         zoom: DEFAULT_ZOOM,
       });
 
-      map.setProjection("globe");
       map.addControl(new BasemapControl(), "top-left");
       map.addControl(new mapboxgl.NavigationControl(), "top-left");
 
@@ -242,7 +242,7 @@ export default function MapView({
     }
   }, []);
 
-  const zoomToGeoJSON = (geojson) => {
+  const zoomToGeoJSON = (geojson, options = {}) => {
     const map = mapInstance.current;
     if (!map || !geojson?.features?.length) return;
 
@@ -264,16 +264,19 @@ export default function MapView({
     });
 
     if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, { padding: 50 });
+      map.fitBounds(bounds, {
+        padding: options.padding ?? 40,
+        duration: options.duration ?? 350,
+        essential: true,
+      });
     }
   };
 
-  // report loaded features to parent so the UI dropdown can be built
   const reportLoadedFeatures = (geojson) => {
     try {
       if (typeof onFeaturesLoaded === "function") onFeaturesLoaded(geojson);
     } catch (e) {
-      // ignore
+      console.warn("onFeaturesLoaded callback failed", e);
     }
   };
 
@@ -370,36 +373,33 @@ export default function MapView({
     }
   };
 
-  const clearKhasraLayers = () => {
-    clearLayerAndSource(KHASRA_FILL, KHASRA_LINE, KHASRA_SOURCE);
+  const clearCornerMarkers = () => {
     const map = mapInstance.current;
+    if (!map) return;
+
     try {
-      if (map && map.getLayer && map.getLayer(SELECTED_CORNER_LAYER)) {
-        map.off("click", SELECTED_CORNER_LAYER, () => {});
+      if (map.getLayer(SELECTED_CORNER_LAYER)) {
         map.off("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
         map.off("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
         map.removeLayer(SELECTED_CORNER_LAYER);
       }
-      if (map && map.getSource && map.getSource(SELECTED_CORNER_SOURCE)) {
+
+      if (map.getSource(SELECTED_CORNER_SOURCE)) {
         map.removeSource(SELECTED_CORNER_SOURCE);
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn("Failed to clear corner markers", e);
+    }
+  };
+
+  const clearKhasraLayers = () => {
+    clearLayerAndSource(KHASRA_FILL, KHASRA_LINE, KHASRA_SOURCE);
+    clearCornerMarkers();
   };
 
   const clearMurabbaLayers = () => {
     clearLayerAndSource(MURABBA_FILL, MURABBA_LINE, MURABBA_SOURCE);
-    const map = mapInstance.current;
-    try {
-      if (map && map.getLayer && map.getLayer(SELECTED_CORNER_LAYER)) {
-        map.off("click", SELECTED_CORNER_LAYER, () => {});
-        map.off("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-        map.off("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
-        map.removeLayer(SELECTED_CORNER_LAYER);
-      }
-      if (map && map.getSource && map.getSource(SELECTED_CORNER_SOURCE)) {
-        map.removeSource(SELECTED_CORNER_SOURCE);
-      }
-    } catch (e) {}
+    clearCornerMarkers();
   };
 
   const getFeatureLatLng = (feature, clickLngLat) => {
@@ -520,10 +520,6 @@ export default function MapView({
     const props = feature.properties || {};
     const coordinates = getFeatureLatLng(feature, e.lngLat);
 
-    console.log("Point click event lngLat:", e.lngLat);
-    console.log("Point feature geometry:", feature.geometry);
-    console.log("Resolved popup coordinates:", coordinates);
-
     const html = buildMinimalPopupHtml(props, coordinates);
 
     closeActivePopup();
@@ -606,6 +602,119 @@ export default function MapView({
     }
   };
 
+  const addCornerMarkers = (map, feature) => {
+    try {
+      clearCornerMarkers();
+
+      const geom = feature.geometry;
+      let coords = [];
+      if (geom.type === "Polygon") coords = geom.coordinates?.[0] || [];
+      else if (geom.type === "MultiPolygon")
+        coords = geom.coordinates?.[0]?.[0] || [];
+
+      const cornerFeatures = (coords || []).map((c, idx) => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [c[0], c[1]] },
+        properties: { idx },
+      }));
+
+      const cornerFc = {
+        type: "FeatureCollection",
+        features: cornerFeatures,
+      };
+
+      map.addSource(SELECTED_CORNER_SOURCE, {
+        type: "geojson",
+        data: cornerFc,
+      });
+
+      map.addLayer({
+        id: SELECTED_CORNER_LAYER,
+        type: "circle",
+        source: SELECTED_CORNER_SOURCE,
+        paint: {
+          "circle-radius": 6,
+          "circle-color": "#111827",
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "#fff",
+        },
+      });
+
+      function cornerClickHandler(e) {
+        const lngLat = e.lngLat;
+        closeActivePopup();
+
+        const html = `<div style="font-family: Arial, sans-serif; font-size:12px;"><div style="font-weight:600">Corner</div><div>Lat: ${formatCoordinate(lngLat.lat)}</div><div>Lng: ${formatCoordinate(lngLat.lng)}</div></div>`;
+
+        const popup = new mapboxgl.Popup({
+          offset: 8,
+          closeButton: false,
+          closeOnClick: false,
+        })
+          .setLngLat([lngLat.lng, lngLat.lat])
+          .setHTML(html)
+          .addTo(map);
+
+        activePopupRef.current = popup;
+
+        popupTimeoutRef.current = setTimeout(() => {
+          if (activePopupRef.current === popup) {
+            popup.remove();
+            activePopupRef.current = null;
+          }
+          popupTimeoutRef.current = null;
+        }, 3000);
+
+        popup.on("close", () => {
+          if (activePopupRef.current === popup) activePopupRef.current = null;
+          if (popupTimeoutRef.current) {
+            clearTimeout(popupTimeoutRef.current);
+            popupTimeoutRef.current = null;
+          }
+        });
+      }
+
+      map.on("click", SELECTED_CORNER_LAYER, cornerClickHandler);
+      map.on("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
+      map.on("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
+    } catch (e) {
+      console.warn("Failed to add corner markers", e);
+    }
+  };
+
+  const ensureSelectedLayers = (map) => {
+    if (!map.getSource(SELECTED_SOURCE)) {
+      map.addSource(SELECTED_SOURCE, {
+        type: "geojson",
+        data: emptyFeatureCollection(),
+      });
+    }
+
+    if (!map.getLayer(SELECTED_FILL)) {
+      map.addLayer({
+        id: SELECTED_FILL,
+        type: "fill",
+        source: SELECTED_SOURCE,
+        paint: {
+          "fill-color": "#FFD54F",
+          "fill-opacity": 0.7,
+        },
+      });
+    }
+
+    if (!map.getLayer(SELECTED_LINE)) {
+      map.addLayer({
+        id: SELECTED_LINE,
+        type: "line",
+        source: SELECTED_SOURCE,
+        paint: {
+          "line-color": "#b38f00",
+          "line-width": 2,
+        },
+      });
+    }
+  };
+
   const drawKhasras = (geojson) => {
     const map = mapInstance.current;
     if (!map) return;
@@ -650,32 +759,7 @@ export default function MapView({
 
       currentGeojson.current.khasra = geojson;
 
-      if (!map.getSource(SELECTED_SOURCE)) {
-        map.addSource(SELECTED_SOURCE, {
-          type: "geojson",
-          data: emptyFeatureCollection(),
-        });
-
-        map.addLayer({
-          id: SELECTED_FILL,
-          type: "fill",
-          source: SELECTED_SOURCE,
-          paint: {
-            "fill-color": "#FFD54F",
-            "fill-opacity": 0.7,
-          },
-        });
-
-        map.addLayer({
-          id: SELECTED_LINE,
-          type: "line",
-          source: SELECTED_SOURCE,
-          paint: {
-            "line-color": "#b38f00",
-            "line-width": 2,
-          },
-        });
-      }
+      ensureSelectedLayers(map);
 
       map.off("click", KHASRA_FILL);
       map.off("mouseenter", KHASRA_FILL);
@@ -708,96 +792,7 @@ export default function MapView({
             onParcelSelect(cloned);
           }
 
-          // also add corner markers for this selected feature
-          try {
-            // remove existing corner layer/source
-            if (map.getLayer && map.getLayer(SELECTED_CORNER_LAYER)) {
-              map.off("click", SELECTED_CORNER_LAYER, () => {});
-              map.off(
-                "mouseenter",
-                SELECTED_CORNER_LAYER,
-                handlePointMouseEnter,
-              );
-              map.off(
-                "mouseleave",
-                SELECTED_CORNER_LAYER,
-                handlePointMouseLeave,
-              );
-              map.removeLayer(SELECTED_CORNER_LAYER);
-            }
-            if (map.getSource && map.getSource(SELECTED_CORNER_SOURCE)) {
-              map.removeSource(SELECTED_CORNER_SOURCE);
-            }
-
-            const geom = feature.geometry;
-            let coords = [];
-            if (geom.type === "Polygon") coords = geom.coordinates?.[0] || [];
-            else if (geom.type === "MultiPolygon")
-              coords = geom.coordinates?.[0]?.[0] || [];
-
-            const cornerFeatures = (coords || []).map((c, idx) => ({
-              type: "Feature",
-              geometry: { type: "Point", coordinates: [c[0], c[1]] },
-              properties: { idx },
-            }));
-
-            const cornerFc = {
-              type: "FeatureCollection",
-              features: cornerFeatures,
-            };
-
-            map.addSource(SELECTED_CORNER_SOURCE, {
-              type: "geojson",
-              data: cornerFc,
-            });
-            map.addLayer({
-              id: SELECTED_CORNER_LAYER,
-              type: "circle",
-              source: SELECTED_CORNER_SOURCE,
-              paint: {
-                "circle-radius": 6,
-                "circle-color": "#111827",
-                "circle-stroke-width": 1,
-                "circle-stroke-color": "#fff",
-              },
-            });
-
-            function cornerClickHandler(e) {
-              const lngLat = e.lngLat;
-              closeActivePopup();
-              const html = `<div style="font-family: Arial, sans-serif; font-size:12px;"><div style=\"font-weight:600\">Corner</div><div>Lat: ${formatCoordinate(lngLat.lat)}</div><div>Lng: ${formatCoordinate(lngLat.lng)}</div></div>`;
-              const popup = new mapboxgl.Popup({
-                offset: 8,
-                closeButton: false,
-                closeOnClick: false,
-              })
-                .setLngLat([lngLat.lng, lngLat.lat])
-                .setHTML(html)
-                .addTo(map);
-              activePopupRef.current = popup;
-              popupTimeoutRef.current = setTimeout(() => {
-                if (activePopupRef.current === popup) {
-                  popup.remove();
-                  activePopupRef.current = null;
-                }
-                popupTimeoutRef.current = null;
-              }, 3000);
-              popup.on("close", () => {
-                if (activePopupRef.current === popup)
-                  activePopupRef.current = null;
-                if (popupTimeoutRef.current) {
-                  clearTimeout(popupTimeoutRef.current);
-                  popupTimeoutRef.current = null;
-                }
-              });
-            }
-
-            map.on("click", SELECTED_CORNER_LAYER, cornerClickHandler);
-            map.on("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-            map.on("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
-          } catch (e) {
-            console.warn("Failed to add corner markers on click", e);
-          }
+          addCornerMarkers(map, feature);
         }
       });
 
@@ -811,7 +806,6 @@ export default function MapView({
 
       zoomToGeoJSON(geojson);
       setFeatureCount(geojson.features.length);
-      // notify parent about loaded features for dropdown building
       reportLoadedFeatures(geojson);
     } catch (e) {
       console.error("Khasra drawing error:", e);
@@ -863,34 +857,11 @@ export default function MapView({
 
       currentGeojson.current.murabba = geojson;
 
-      if (!map.getSource(SELECTED_SOURCE)) {
-        map.addSource(SELECTED_SOURCE, {
-          type: "geojson",
-          data: emptyFeatureCollection(),
-        });
-
-        map.addLayer({
-          id: SELECTED_FILL,
-          type: "fill",
-          source: SELECTED_SOURCE,
-          paint: {
-            "fill-color": "#FFD54F",
-            "fill-opacity": 0.7,
-          },
-        });
-
-        map.addLayer({
-          id: SELECTED_LINE,
-          type: "line",
-          source: SELECTED_SOURCE,
-          paint: {
-            "line-color": "#b38f00",
-            "line-width": 2,
-          },
-        });
-      }
+      ensureSelectedLayers(map);
 
       map.off("click", MURABBA_FILL);
+      map.off("mouseenter", MURABBA_FILL);
+      map.off("mouseleave", MURABBA_FILL);
 
       map.on("click", MURABBA_FILL, (e) => {
         if (e.features && e.features.length > 0) {
@@ -919,101 +890,20 @@ export default function MapView({
             onParcelSelect(cloned);
           }
 
-          // add corner markers for selected murabba
-          try {
-            if (map.getLayer && map.getLayer(SELECTED_CORNER_LAYER)) {
-              map.off("click", SELECTED_CORNER_LAYER, () => {});
-              map.off(
-                "mouseenter",
-                SELECTED_CORNER_LAYER,
-                handlePointMouseEnter,
-              );
-              map.off(
-                "mouseleave",
-                SELECTED_CORNER_LAYER,
-                handlePointMouseLeave,
-              );
-              map.removeLayer(SELECTED_CORNER_LAYER);
-            }
-            if (map.getSource && map.getSource(SELECTED_CORNER_SOURCE)) {
-              map.removeSource(SELECTED_CORNER_SOURCE);
-            }
-
-            const geom = feature.geometry;
-            let coords = [];
-            if (geom.type === "Polygon") coords = geom.coordinates?.[0] || [];
-            else if (geom.type === "MultiPolygon")
-              coords = geom.coordinates?.[0]?.[0] || [];
-
-            const cornerFeatures = (coords || []).map((c, idx) => ({
-              type: "Feature",
-              geometry: { type: "Point", coordinates: [c[0], c[1]] },
-              properties: { idx },
-            }));
-
-            const cornerFc = {
-              type: "FeatureCollection",
-              features: cornerFeatures,
-            };
-
-            map.addSource(SELECTED_CORNER_SOURCE, {
-              type: "geojson",
-              data: cornerFc,
-            });
-            map.addLayer({
-              id: SELECTED_CORNER_LAYER,
-              type: "circle",
-              source: SELECTED_CORNER_SOURCE,
-              paint: {
-                "circle-radius": 6,
-                "circle-color": "#111827",
-                "circle-stroke-width": 1,
-                "circle-stroke-color": "#fff",
-              },
-            });
-
-            function cornerClickHandler(e) {
-              const lngLat = e.lngLat;
-              closeActivePopup();
-              const html = `<div style="font-family: Arial, sans-serif; font-size:12px;"><div style=\"font-weight:600\">Corner</div><div>Lat: ${formatCoordinate(lngLat.lat)}</div><div>Lng: ${formatCoordinate(lngLat.lng)}</div></div>`;
-              const popup = new mapboxgl.Popup({
-                offset: 8,
-                closeButton: false,
-                closeOnClick: false,
-              })
-                .setLngLat([lngLat.lng, lngLat.lat])
-                .setHTML(html)
-                .addTo(map);
-              activePopupRef.current = popup;
-              popupTimeoutRef.current = setTimeout(() => {
-                if (activePopupRef.current === popup) {
-                  popup.remove();
-                  activePopupRef.current = null;
-                }
-                popupTimeoutRef.current = null;
-              }, 3000);
-              popup.on("close", () => {
-                if (activePopupRef.current === popup)
-                  activePopupRef.current = null;
-                if (popupTimeoutRef.current) {
-                  clearTimeout(popupTimeoutRef.current);
-                  popupTimeoutRef.current = null;
-                }
-              });
-            }
-
-            map.on("click", SELECTED_CORNER_LAYER, cornerClickHandler);
-            map.on("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-            map.on("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
-          } catch (e) {
-            console.warn("Failed to add corner markers on murabba click", e);
-          }
+          addCornerMarkers(map, feature);
         }
+      });
+
+      map.on("mouseenter", MURABBA_FILL, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+
+      map.on("mouseleave", MURABBA_FILL, () => {
+        map.getCanvas().style.cursor = "";
       });
 
       zoomToGeoJSON(geojson);
       setFeatureCount(geojson.features.length);
-      // notify parent about loaded features for dropdown building
       reportLoadedFeatures(geojson);
     } catch (e) {
       console.error("Murabba drawing error:", e);
@@ -1173,12 +1063,22 @@ export default function MapView({
     }
   }, [basemap, isMapReady]);
 
-  // Sync dropdown selection -> map: highlight & zoom to selected parcel number
+  useEffect(() => {
+    lastSyncedSelectionRef.current = "";
+  }, [selectedMouza, viewBy]);
+
   useEffect(() => {
     if (!isMapReady || !selectedFeatureNumber) return;
 
     const map = mapInstance.current;
     if (!map) return;
+
+    const selectionKey =
+      typeof selectedFeatureNumber === "object"
+        ? JSON.stringify(selectedFeatureNumber)
+        : String(selectedFeatureNumber);
+
+    if (lastSyncedSelectionRef.current === selectionKey) return;
 
     const current =
       viewBy === "khasra"
@@ -1188,10 +1088,25 @@ export default function MapView({
           : currentGeojson.current.khasra ||
             currentGeojson.current.murabba ||
             {};
+
     const features = Array.isArray(current?.features) ? current.features : [];
 
     const matched = features.find((feat) => {
       const p = feat?.properties || {};
+
+      if (
+        viewBy === "khasra" &&
+        typeof selectedFeatureNumber === "object" &&
+        selectedFeatureNumber !== null
+      ) {
+        const murabba = getMurabbaNumber(p);
+        const khasra = getKhasraNumber(p);
+
+        return (
+          String(murabba) === String(selectedFeatureNumber.murabbaNo) &&
+          String(khasra) === String(selectedFeatureNumber.khasraNo)
+        );
+      }
 
       const cand =
         viewBy === "khasra"
@@ -1205,137 +1120,13 @@ export default function MapView({
 
     if (matched) {
       const selectedGeo = { type: "FeatureCollection", features: [matched] };
+
       try {
-        if (map.getSource && map.getSource(SELECTED_SOURCE)) {
-          map.getSource(SELECTED_SOURCE).setData(selectedGeo);
-        } else {
-          map.addSource(SELECTED_SOURCE, {
-            type: "geojson",
-            data: selectedGeo,
-          });
-          if (!map.getLayer(SELECTED_FILL)) {
-            map.addLayer({
-              id: SELECTED_FILL,
-              type: "fill",
-              source: SELECTED_SOURCE,
-              paint: { "fill-color": "#ffcf2f", "fill-opacity": 0.7 },
-            });
-          }
-          if (!map.getLayer(SELECTED_LINE)) {
-            map.addLayer({
-              id: SELECTED_LINE,
-              type: "line",
-              source: SELECTED_SOURCE,
-              paint: { "line-color": "#ffcf2f", "line-width": 2 },
-            });
-          }
-        }
-        zoomToGeoJSON(selectedGeo);
-        // add corner markers for selected feature
-        try {
-          // clear previous corners
-          if (map.getLayer && map.getLayer(SELECTED_CORNER_LAYER)) {
-            map.off("click", SELECTED_CORNER_LAYER, cornerClickHandler);
-            map.off("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-            map.off("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
-            map.removeLayer(SELECTED_CORNER_LAYER);
-          }
-          if (map.getSource && map.getSource(SELECTED_CORNER_SOURCE)) {
-            map.removeSource(SELECTED_CORNER_SOURCE);
-          }
-
-          const cornerFeatures = [];
-          const geom = matched.geometry;
-          let coords = [];
-          if (geom.type === "Polygon") coords = geom.coordinates?.[0] || [];
-          else if (geom.type === "MultiPolygon")
-            coords = geom.coordinates?.[0]?.[0] || [];
-
-          coords.forEach((c, idx) => {
-            if (!Array.isArray(c) || c.length < 2) return;
-            cornerFeatures.push({
-              type: "Feature",
-              geometry: { type: "Point", coordinates: [c[0], c[1]] },
-              properties: { idx },
-            });
-          });
-
-          const cornerFc = {
-            type: "FeatureCollection",
-            features: cornerFeatures,
-          };
-
-          if (!map.getSource(SELECTED_CORNER_SOURCE)) {
-            map.addSource(SELECTED_CORNER_SOURCE, {
-              type: "geojson",
-              data: cornerFc,
-            });
-          } else {
-            map.getSource(SELECTED_CORNER_SOURCE).setData(cornerFc);
-          }
-
-          map.addLayer({
-            id: SELECTED_CORNER_LAYER,
-            type: "circle",
-            source: SELECTED_CORNER_SOURCE,
-            paint: {
-              "circle-radius": 6,
-              "circle-color": "#111827",
-              "circle-stroke-width": 1,
-              "circle-stroke-color": "#ffffff",
-            },
-          });
-
-          // click handler for corners
-          function cornerClickHandler(e) {
-            const feat = e.features?.[0];
-            if (!feat) return;
-            const lngLat = e.lngLat;
-
-            closeActivePopup();
-
-            const html = `
-              <div style="font-family: Arial, sans-serif; font-size:12px;">
-                <div style="font-weight:600">Corner</div>
-                <div>Lat: ${formatCoordinate(lngLat.lat)}</div>
-                <div>Lng: ${formatCoordinate(lngLat.lng)}</div>
-              </div>
-            `;
-
-            const popup = new mapboxgl.Popup({
-              offset: 8,
-              closeButton: false,
-              closeOnClick: false,
-            })
-              .setLngLat([lngLat.lng, lngLat.lat])
-              .setHTML(html)
-              .addTo(map);
-
-            activePopupRef.current = popup;
-            popupTimeoutRef.current = setTimeout(() => {
-              if (activePopupRef.current === popup) {
-                popup.remove();
-                activePopupRef.current = null;
-              }
-              popupTimeoutRef.current = null;
-            }, 3000);
-
-            popup.on("close", () => {
-              if (activePopupRef.current === popup)
-                activePopupRef.current = null;
-              if (popupTimeoutRef.current) {
-                clearTimeout(popupTimeoutRef.current);
-                popupTimeoutRef.current = null;
-              }
-            });
-          }
-
-          map.on("click", SELECTED_CORNER_LAYER, cornerClickHandler);
-          map.on("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-          map.on("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
-        } catch (e) {
-          console.warn("Could not add corner markers", e);
-        }
+        ensureSelectedLayers(map);
+        map.getSource(SELECTED_SOURCE).setData(selectedGeo);
+        zoomToGeoJSON(selectedGeo, { padding: 80, duration: 450 });
+        addCornerMarkers(map, matched);
+        lastSyncedSelectionRef.current = selectionKey;
       } catch (e) {
         console.warn("Could not highlight selected parcel", e);
       }
@@ -1401,10 +1192,6 @@ export default function MapView({
           selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
 
         const geojson = await getKhasras(mouzaId);
-        console.log(
-          "Khasra geojson sample:",
-          geojson?.features?.[0]?.properties,
-        );
 
         if (geojson?.features?.length) {
           drawKhasras(geojson);
@@ -1471,8 +1258,6 @@ export default function MapView({
       try {
         const normalizedMouza = (mouzaName || "").trim().toLowerCase();
 
-        // CONTROL POINTS (type = B)
-        // force filter by M3 on frontend as well
         if (layers?.controlPoints && normalizedMouza) {
           const controlGeojson = await getTrijunctionPoints({
             mouza: mouzaName,
@@ -1508,8 +1293,6 @@ export default function MapView({
           delete currentGeojson.current["control-points"];
         }
 
-        // TRI-JUNCTION POINTS (type = TJ)
-        // filtered by m3 = selected mouza name
         if (layers?.triJunctionPoints && normalizedMouza) {
           const trijunctionGeojson = await getTrijunctionPoints({
             mouza: mouzaName,
@@ -1567,7 +1350,11 @@ export default function MapView({
 
   return (
     <div className="absolute inset-0 w-full h-full">
-      <div ref={mapRef} className="absolute inset-0 w-full h-full" />
+      <div
+        ref={mapRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ pointerEvents: "auto" }}
+      />
 
       {error && (
         <div className="absolute top-5 left-5 bg-red-500 text-white px-4 py-2 rounded shadow">
