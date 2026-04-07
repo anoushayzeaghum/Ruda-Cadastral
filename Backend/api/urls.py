@@ -45,5 +45,8 @@ router.register(r"trijunction/update", UpdateTrijunctionView, basename="update-t
 router.register(r"trijunction/delete", DeleteTrijunctionView, basename="delete-trijunction")
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/', include(router.urls)),
+    
     path('', include(router.urls)),
 ]
