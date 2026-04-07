@@ -20,6 +20,23 @@ export default function ParcelPanel({
 }) {
   const [activeTab, setActiveTab] = useState("parcelInfo");
 
+  const areaAcres =
+    typeof parcel?.properties?._area_acres === "number"
+      ? parcel.properties._area_acres
+      : null;
+
+  const areaKanal = areaAcres !== null ? (areaAcres * 8).toFixed(2) : null;
+
+  const areaMarla = areaAcres !== null ? (areaAcres * 160).toFixed(2) : null;
+
+  const rawLandType = parcel?.properties?.type ?? "N/A";
+
+  const formatLandType = (type) => {
+    if (type === "MU") return "Murabba Bandi";
+    if (type === "QB") return "Qilla Bandi";
+    return type || "N/A";
+  };
+
   const parcelData = {
     khasraNo:
       parcel?.properties?.k ??
@@ -27,15 +44,27 @@ export default function ParcelPanel({
       parcel?.properties?.khasra ??
       parcel?.properties?.khasra_no ??
       parcel?.properties?.khasra_id ??
+      "N/A",
+
+    murabbaNo:
       parcel?.properties?.m ??
+      parcel?.properties?.M ??
+      parcel?.properties?.murabba_no ??
+      parcel?.properties?.murabba ??
       parcel?.id ??
       "N/A",
+
     mouza: parcel?.properties?.mouza ?? parcel?.properties?.mouza_name ?? "N/A",
-    // prefer computed area (in acres) provided by MapView
-    area: parcel?.properties?._area_acres
-      ? `${parcel.properties._area_acres.toFixed(2)} Acres`
-      : (parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A"),
-    landType: parcel?.properties?.type ?? "N/A",
+
+    area:
+      areaKanal !== null
+        ? `${areaKanal} Kanal`
+        : (parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A"),
+
+    agricultureArea: areaMarla !== null ? `${areaMarla} Marla` : "N/A",
+
+    landType: formatLandType(rawLandType),
+
     parcelId: parcel?.id ?? parcel?.properties?.gid ?? "N/A",
     rthIff: parcel?.properties?.rthIff ?? "N/A",
   };
@@ -116,8 +145,8 @@ export default function ParcelPanel({
                     : "Khasra No:"}{" "}
                   <strong className="text-slate-900">
                     {parcel?.properties?._layerType === "murabba"
-                      ? (parcel?.properties?.murabba_no ?? parcelData.parcelId)
-                      : parcelData.parcelId}
+                      ? parcelData.murabbaNo
+                      : parcelData.khasraNo}
                   </strong>
                 </span>
 
@@ -143,8 +172,7 @@ export default function ParcelPanel({
 
                 <div>
                   <p className="text-xs text-slate-500">Land Type</p>
-                  <span className="bg-green-700 text-white text-xs px-3 py-1 rounded-md inline-flex items-center gap-1">
-                    <ChevronDown size={12} />
+                  <span className="bg-green-700 text-white text-xs px-3 py-1 rounded-md inline-flex items-center">
                     {parcelData.landType}
                   </span>
                 </div>
@@ -154,7 +182,7 @@ export default function ParcelPanel({
                     <Landmark size={12} /> Agriculture
                   </p>
                   <p className="flex items-center gap-1 text-green-700 font-semibold">
-                    <CheckCircle size={14} /> 25,800 Acres
+                    <CheckCircle size={14} /> {parcelData.agricultureArea}
                   </p>
                 </div>
               </div>
@@ -174,7 +202,7 @@ export default function ParcelPanel({
                 </div>
 
                 <div>
-                  <p className="text-xs text-slate-500">Rth: Iff</p>
+                  <p className="text-xs text-slate-500">Assessment Circle</p>
                   <p className="font-semibold text-slate-900">
                     {parcelData.rthIff}
                   </p>
