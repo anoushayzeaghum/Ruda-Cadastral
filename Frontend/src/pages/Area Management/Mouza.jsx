@@ -7,6 +7,7 @@ export default function Mouza() {
   const [loading, setLoading] = useState(false);
   const [tehsils, setTehsils] = useState([]);
   const [showImport, setShowImport] = useState(false);
+  const [showFields, setShowFields] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -85,10 +86,50 @@ export default function Mouza() {
       <div className="rounded-lg border p-6 bg-white dark:bg-[#07111a]">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Mouza List</h3>
-          <input
-            placeholder="Search by name .."
-            className="border rounded-md px-3 py-2 text-sm w-64"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              placeholder="Search by name .."
+              className="border rounded-md px-3 py-2 text-sm w-64"
+            />
+            <button
+              title="Show fields"
+              onClick={() => setShowFields(true)}
+              className="p-2 border rounded-md"
+            >
+              <svg
+                width="18"
+                height="14"
+                viewBox="0 0 18 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect
+                  x="1"
+                  y="1"
+                  width="16"
+                  height="2"
+                  rx="1"
+                  fill="currentColor"
+                />
+                <rect
+                  x="1"
+                  y="6"
+                  width="16"
+                  height="2"
+                  rx="1"
+                  fill="currentColor"
+                />
+                <rect
+                  x="1"
+                  y="11"
+                  width="16"
+                  height="2"
+                  rx="1"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 overflow-x-auto">
@@ -101,21 +142,12 @@ export default function Mouza() {
               <thead>
                 <tr className="text-sm text-gray-500">
                   <th className="py-3">#</th>
-                  {Object.keys(items[0])
-                    .filter(
-                      (k) =>
-                        ![
-                          "geom",
-                          "geometry",
-                          "properties",
-                          "features",
-                        ].includes(k),
-                    )
-                    .map((col) => (
-                      <th key={col} className="py-3">
-                        {col}
-                      </th>
-                    ))}
+                  <th className="py-3">District</th>
+                  <th className="py-3">District DC</th>
+                  <th className="py-3">Tehsil</th>
+                  <th className="py-3">Tehsil DC</th>
+                  <th className="py-3">Moza</th>
+                  <th className="py-3">Moza TM</th>
                   <th className="py-3 text-right">Action</th>
                 </tr>
               </thead>
@@ -123,23 +155,18 @@ export default function Mouza() {
                 {items.map((d, idx) => (
                   <tr key={d.mouza_id ?? d.gid ?? idx} className="border-t">
                     <td className="py-3 w-12">{idx + 1}</td>
-                    {Object.keys(items[0])
-                      .filter(
-                        (k) =>
-                          ![
-                            "geom",
-                            "geometry",
-                            "properties",
-                            "features",
-                          ].includes(k),
-                      )
-                      .map((col) => (
-                        <td key={col} className="py-3">
-                          {typeof d[col] === "object"
-                            ? JSON.stringify(d[col])
-                            : d[col]}
-                        </td>
-                      ))}
+                    <td className="py-3">{d.district}</td>
+                    <td className="py-3">
+                      {String(d.dist_id ?? "").toUpperCase()}
+                    </td>
+                    <td className="py-3">{d.tehsil}</td>
+                    <td className="py-3">
+                      {String(d.tehsil_id ?? "").toUpperCase()}
+                    </td>
+                    <td className="py-3">{d.mouza}</td>
+                    <td className="py-3">
+                      {String(d.mouza_id ?? "").toUpperCase()}
+                    </td>
                     <td className="py-3 text-right">
                       <button className="text-sm px-3 py-1 mr-2 border rounded">
                         Edit
@@ -155,6 +182,40 @@ export default function Mouza() {
           )}
         </div>
       </div>
+      {showFields && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-2xl rounded-lg bg-white dark:bg-[#07111a] p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Available Fields</h3>
+              <button
+                onClick={() => setShowFields(false)}
+                className="text-gray-500"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-4 overflow-auto max-h-96">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-sm text-gray-500">
+                    <th className="py-2">Field</th>
+                    <th className="py-2">Type</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(items[0] ? Object.keys(items[0]) : []).map((k) => (
+                    <tr key={k} className="border-t">
+                      <td className="py-2">{k}</td>
+                      <td className="py-2">{typeof items[0][k]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

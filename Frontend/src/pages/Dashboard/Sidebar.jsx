@@ -18,8 +18,6 @@ export default function Sidebar({ sidebarOpen }) {
   const menu = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Map, label: "Map View", path: "/mapview" },
-    { icon: FileText, label: "Reports", path: "/reports" },
-    { icon: Settings, label: "Settings", path: "/settings" },
     { icon: Settings, label: "Demarcation", path: "/demarcation" },
   ];
 

@@ -19,6 +19,7 @@ router.register(r"mouza", ListMouzaView, basename="mouza")
 router.register(r"mouza/create", CreateMouzaView, basename="create-mouza")
 router.register(r"mouza/update", UpdateMouzaView, basename="update-mouza")
 router.register(r"mouza/delete", DeleteMouzaView, basename="delete-mouza")
+router.register(r"mouza/import", ImportMouzaView, basename="import-mouza")
 
 #--------------------------------- Murabba View ---------------------------------
 router.register(r"murabba", ListMurabbaView, basename="murabba")

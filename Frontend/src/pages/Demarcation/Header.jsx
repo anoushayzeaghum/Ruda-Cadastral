@@ -46,7 +46,6 @@ export default function Header() {
 
         {/* RIGHT SECTION */}
         <div className="flex items-center gap-3">
-
           {/* Dashboard Button */}
           <button
             onClick={() => navigate("/dashboard")}
@@ -54,11 +53,6 @@ export default function Header() {
           >
             <LayoutDashboard size={16} />
             Dashboard
-          </button>
-
-          {/* Export Button */}
-          <button className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium">
-            Export Report
           </button>
         </div>
       </div>
