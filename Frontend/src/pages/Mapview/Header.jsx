@@ -1,4 +1,4 @@
-import { Search, ChevronDown, LayoutDashboard } from "lucide-react";
+import { Search, ChevronDown, LayoutDashboard, LogOut } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +15,13 @@ const headerBackgroundStyle = {
 export default function Header() {
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
+
   return (
     <div
       className="relative w-full text-white px-6 py-2 shadow-md"
@@ -23,7 +30,7 @@ export default function Header() {
       <div className="relative z-10 flex items-center justify-between">
         {/* LEFT SECTION */}
         <div className="flex items-center gap-4">
-          {/* Circular Logo */}
+          {/* Logo */}
           <div className="bg-white rounded-full p-1 flex items-center justify-center">
             <img
               src={rudaFirmLogo}
@@ -35,9 +42,7 @@ export default function Header() {
           {/* Title */}
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-normal tracking-wide">RCMS</h1>
-
             <span className="text-white/60 text-xl">|</span>
-
             <p className="text-lg font-normal text-white/90">
               RUDA Cadastral Management System
             </p>
@@ -49,13 +54,11 @@ export default function Header() {
           {/* Search */}
           <div className="flex items-center bg-white/95 rounded-md border border-white/30 px-3 py-1 w-[420px]">
             <Search className="text-gray-500 mr-2" size={16} />
-
             <input
               type="text"
               placeholder="Parcel ID / Khasra No., Owner Name,"
               className="flex-1 text-sm text-gray-700 bg-transparent focus:outline-none"
             />
-
             <ChevronDown className="text-gray-500 ml-2" size={16} />
           </div>
 
@@ -69,8 +72,17 @@ export default function Header() {
           </button>
 
           {/* Export Button */}
-          <button className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium">
+          {/* <button className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium">
             Export Report
+          </button> */}
+
+          {/* ✅ Logout Button (RIGHT MOST) */}
+          <button
+            onClick={handleLogout}
+            className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium flex items-center gap-2 transition"
+          >
+            <LogOut size={16} />
+            Logout
           </button>
         </div>
       </div>

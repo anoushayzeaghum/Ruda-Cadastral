@@ -527,7 +527,7 @@ export default function MapView({
     const popup = new mapboxgl.Popup({
       offset: 10,
       maxWidth: "260px",
-      closeButton: false,
+      closeButton: true, // ✅ X button enable
       closeOnClick: false,
     })
       .setLngLat(
@@ -547,7 +547,7 @@ export default function MapView({
         activePopupRef.current = null;
       }
       popupTimeoutRef.current = null;
-    }, 3000);
+    }, 6000);
 
     popup.on("close", () => {
       if (activePopupRef.current === popup) {

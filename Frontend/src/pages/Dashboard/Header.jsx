@@ -79,7 +79,7 @@ export default function Header({
 
         <button
           onClick={handleLogout}
-          className="bg-green-600 hover:bg-green-800 text-white text-sm px-4 py-2 rounded-md font-medium flex items-center gap-2 transition"
+          className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium flex items-center gap-2 transition"
         >
           <LogOut size={16} />
           <span className="hidden sm:inline">Logout</span>
