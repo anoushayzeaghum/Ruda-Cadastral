@@ -114,7 +114,7 @@ export default function SubHeader({
           </FilterCard>
 
           <FilterCard
-            label="Mouza"
+            label="Mauza"
             value={
               mouzas.find((m) => String(m.mouza_id) === String(selectedMouza))
                 ?.mouza || "Select"

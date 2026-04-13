@@ -22,6 +22,7 @@ const getKhasraNumber = (props = {}) => {
 const getMurabbaNumber = (props = {}) => {
   return (
     props.m ??
+    props.M ??
     props.mn ??
     props.murabba ??
     props.murabba_no ??

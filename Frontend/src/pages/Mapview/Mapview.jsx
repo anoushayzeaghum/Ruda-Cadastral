@@ -158,14 +158,15 @@ const getKhasraNumber = (props = {}) => {
 const getMurabbaNumber = (props = {}) => {
   return (
     props.m ??
+    props.M ??
     props.mn ??
     props.murabba ??
     props.murabba_no ??
     props.murabba_id ??
     null
   );
-};
-
+};                                         
+                                                                              
 export default function MapView({
   selectedDivision,
   selectedDistrict,

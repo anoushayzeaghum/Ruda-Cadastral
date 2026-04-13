@@ -69,6 +69,10 @@ export default function ParcelPanel({
     rthIff: parcel?.properties?.rthIff ?? "N/A",
   };
 
+  const isMurabbaType = rawLandType === "MU";
+  const isViewByKhasra = parcel?.properties?._layerType !== "murabba";
+  const showMurabbaWithKhasra = isMurabbaType && isViewByKhasra;
+
   const timelineData = [
     { year: "2018", label: "Personal Ownership" },
     { year: "2020", label: "Bequisition Notice" },
@@ -138,19 +142,46 @@ export default function ParcelPanel({
           <>
             {/* Parcel Card */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-700 text-sm">
-                  {parcel?.properties?._layerType === "murabba"
-                    ? "Murabba No:"
-                    : "Khasra No:"}{" "}
-                  <strong className="text-slate-900">
-                    {parcel?.properties?._layerType === "murabba"
-                      ? parcelData.murabbaNo
-                      : parcelData.khasraNo}
-                  </strong>
-                </span>
+              <div className="flex justify-between items-center gap-4">
+                {parcel?.properties?._layerType === "murabba" ? (
+                  <>
+                    <span className="text-slate-700 text-sm">
+                      Murabba No:{" "}
+                      <strong className="text-slate-900">
+                        {parcelData.murabbaNo}
+                      </strong>
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      className="text-slate-400 shrink-0"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-6 flex-wrap min-w-0">
+                      <span className="text-slate-700 text-sm whitespace-nowrap">
+                        Khasra No:{" "}
+                        <strong className="text-slate-900">
+                          {parcelData.khasraNo}
+                        </strong>
+                      </span>
 
-                <ChevronDown size={16} className="text-slate-400" />
+                      {showMurabbaWithKhasra && (
+                        <span className="ml-14 text-slate-700 text-sm whitespace-nowrap">
+                          Murabba No:{" "}
+                          <strong className="text-slate-900">
+                            {parcelData.murabbaNo}
+                          </strong>
+                        </span>
+                      )}
+                    </div>
+
+                    <ChevronDown
+                      size={16}
+                      className="text-slate-400 shrink-0"
+                    />
+                  </>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-4">
