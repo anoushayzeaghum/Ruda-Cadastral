@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { getMurabbas, getMouzas } from "../../services/api";
 import ImportModal from "../../components/ImportModal";
 
@@ -7,6 +7,10 @@ export default function Murabba() {
   const [loading, setLoading] = useState(false);
   const [mouzas, setMouzas] = useState([]);
   const [showImport, setShowImport] = useState(false);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetch = async () => {
@@ -14,7 +18,10 @@ export default function Murabba() {
         setLoading(true);
         const res = await getMurabbas();
         const features = res?.features ?? [];
-        const props = features.map((f) => f.properties || {});
+        const props = features.map((f) => ({
+          ...(f.properties || {}),
+          gid: f.id ?? f.properties?.gid,
+        }));
         setItems(props);
       } catch (err) {
         console.error("Failed to load murabbas:", err);
@@ -29,12 +36,60 @@ export default function Murabba() {
       try {
         const m = await getMouzas();
         const features = m?.features ?? [];
-        setMouzas(features.map((f) => f.properties || {}));
+        setMouzas(
+          features.map((f) => ({
+            ...(f.properties || {}),
+            mouza_id: f.properties?.mouza_id ?? f.id,
+          })),
+        );
       } catch (e) {
         console.error(e);
       }
     })();
   }, []);
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+
+    return items.filter((item) => {
+      return (
+        String(item.murabba_no ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.mouza ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.tehsil ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(item.district ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        "lahore".includes(q)
+      );
+    });
+  }, [items, search]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredItems.length / itemsPerPage),
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage]);
 
   return (
     <div className="space-y-6">
@@ -85,75 +140,107 @@ export default function Murabba() {
       </div>
 
       <div className="rounded-lg border p-6 bg-white dark:bg-[#07111a]">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Murabba List</h3>
+        <div className="flex items-center justify-between gap-4">
+          <h3 className="font-semibold whitespace-nowrap">Murabba List</h3>
           <input
-            placeholder="Search by name .."
-            className="border rounded-md px-3 py-2 text-sm w-64"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by murabba, mouza, tehsil .."
+            className="border rounded-md px-3 py-2 text-sm w-72 bg-white dark:bg-[#0b1419]"
           />
         </div>
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 overflow-x-auto" dir="rtl">
           {loading ? (
-            <div className="py-6 text-center">Loading...</div>
-          ) : items.length === 0 ? (
-            <div className="py-6 text-center">No murabbas found</div>
+            <div className="py-6 text-center" dir="ltr">
+              Loading...
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="py-6 text-center" dir="ltr">
+              No murabbas found
+            </div>
           ) : (
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="text-sm text-gray-500">
-                  <th className="py-3">#</th>
-                  {Object.keys(items[0])
-                    .filter(
-                      (k) =>
-                        ![
-                          "geom",
-                          "geometry",
-                          "properties",
-                          "features",
-                        ].includes(k),
-                    )
-                    .map((col) => (
-                      <th key={col} className="py-3">
-                        {col}
-                      </th>
-                    ))}
-                  <th className="py-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((d, idx) => (
-                  <tr key={d.gid ?? d.id ?? idx} className="border-t">
-                    <td className="py-3 w-12">{idx + 1}</td>
-                    {Object.keys(items[0])
-                      .filter(
-                        (k) =>
-                          ![
-                            "geom",
-                            "geometry",
-                            "properties",
-                            "features",
-                          ].includes(k),
-                      )
-                      .map((col) => (
-                        <td key={col} className="py-3">
-                          {typeof d[col] === "object"
-                            ? JSON.stringify(d[col])
-                            : d[col]}
-                        </td>
-                      ))}
-                    <td className="py-3 text-right">
-                      <button className="text-sm px-3 py-1 mr-2 border rounded">
-                        Edit
-                      </button>
-                      <button className="text-sm px-3 py-1 bg-red-50 text-red-600 border rounded">
-                        Delete
-                      </button>
-                    </td>
+            <div dir="ltr" className="min-w-[1100px]">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-sm text-gray-500">
+                    <th className="py-2 px-2 whitespace-nowrap">Sr. No</th>
+                    <th className="py-2 px-2 whitespace-nowrap">Murabba</th>
+                    <th className="py-2 px-2 whitespace-nowrap">Mouza</th>
+                    <th className="py-2 px-2 whitespace-nowrap">Tehsil</th>
+                    <th className="py-2 px-2 whitespace-nowrap">District</th>
+                    <th className="py-2 px-2 whitespace-nowrap">Division</th>
+                    <th className="py-2 px-2 text-right whitespace-nowrap">
+                      Action
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedItems.map((d, idx) => (
+                    <tr key={d.gid ?? idx} className="border-t">
+                      <td className="py-2 px-2 whitespace-nowrap">
+                        {(currentPage - 1) * itemsPerPage + idx + 1}
+                      </td>
+                      <td className="py-2 px-2 whitespace-nowrap">
+                        {d.murabba_no ?? "-"}
+                      </td>
+                      <td className="py-2 px-2 whitespace-nowrap">
+                        {d.mouza ?? "-"}
+                      </td>
+                      <td className="py-2 px-2 whitespace-nowrap">
+                        {d.tehsil ?? "-"}
+                      </td>
+                      <td className="py-2 px-2 whitespace-nowrap">
+                        {d.district ?? "-"}
+                      </td>
+                      <td className="py-2 px-2 whitespace-nowrap">Lahore</td>
+                      <td className="py-2 px-2 text-right whitespace-nowrap">
+                        <button className="text-sm px-3 py-1 mr-2 border rounded">
+                          Edit
+                        </button>
+                        <button className="text-sm px-3 py-1 bg-red-50 text-red-600 border rounded">
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-sm text-gray-500">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, filteredItems.length)}{" "}
+                  of {filteredItems.length}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ←
+                  </button>
+
+                  <span className="text-sm">
+                    Page {currentPage} of {totalPages}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

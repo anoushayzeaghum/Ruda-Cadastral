@@ -2,18 +2,23 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Map,
-  FileText,
   Settings,
   Folder,
   ChevronDown,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function Sidebar({ sidebarOpen }) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
+
+  const isAreaPath = location.pathname.startsWith("/area/");
+  const isMouzaGroupPath =
+    location.pathname === "/area/mouza" ||
+    location.pathname === "/area/khasra" ||
+    location.pathname === "/area/murabba";
 
   const menu = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -26,10 +31,38 @@ export default function Sidebar({ sidebarOpen }) {
     { label: "District", path: "/area/district" },
     { label: "Tehsil", path: "/area/tehsil" },
     { label: "Mouza", path: "/area/mouza" },
-    { label: "Khasra", path: "/area/khasra" },
   ];
 
-  const [areaOpen, setAreaOpen] = useState(true);
+  const mouzaItems = [
+    { label: "Khasra", path: "/area/khasra" },
+    { label: "Murabba", path: "/area/murabba" },
+  ];
+
+  const [areaOpen, setAreaOpen] = useState(false);
+  const [mouzaOpen, setMouzaOpen] = useState(isMouzaGroupPath);
+
+  useMemo(() => {
+    if (!isMouzaGroupPath) {
+      setMouzaOpen(false);
+    }
+  }, [isMouzaGroupPath]);
+
+  const handleAreaToggle = () => {
+    setAreaOpen((prev) => !prev);
+  };
+
+  const handleAreaItemClick = (path) => {
+    navigate(path);
+
+    if (path === "/area/mouza") {
+      setAreaOpen(true);
+      setMouzaOpen(true);
+    }
+  };
+
+  const handleMouzaToggle = () => {
+    setMouzaOpen((prev) => !prev);
+  };
 
   return (
     <aside
@@ -66,17 +99,16 @@ export default function Sidebar({ sidebarOpen }) {
           );
         })}
 
-        {/* Area Management group */}
         <div className="mt-2">
           <button
-            onClick={() => setAreaOpen((s) => !s)}
+            onClick={handleAreaToggle}
             className={`flex w-full items-center gap-3 px-4 py-3 rounded-lg text-sm transition
-                ${
-                  isActive("/area") || areaOpen
-                    ? "bg-green-500/20 text-black dark:text-white border border-green-500/30"
-                    : "hover:bg-black/5 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400"
-                }
-              `}
+              ${
+                isAreaPath || areaOpen
+                  ? "bg-green-500/20 text-black dark:text-white border border-green-500/30"
+                  : "hover:bg-black/5 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400"
+              }
+            `}
           >
             <Folder size={18} />
             <span className="flex-1 text-left">Area Management</span>
@@ -87,19 +119,72 @@ export default function Sidebar({ sidebarOpen }) {
           </button>
 
           <div
-            className={`mt-2 space-y-1 pl-8 pr-2 transition-all ${areaOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}
+            className={`mt-2 space-y-1 pl-8 pr-2 transition-all overflow-hidden ${
+              areaOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+            }`}
           >
-            {areaItems.map((it) => (
-              <button
-                key={it.label}
-                onClick={() => navigate(it.path)}
-                className={`flex w-full items-center gap-3 px-2 py-2 rounded-lg text-sm transition text-left
-                  ${isActive(it.path) ? "bg-black/5 dark:bg-white/5 text-black dark:text-white" : "hover:bg-black/3 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400"}
-                `}
-              >
-                <span className="text-[13px]">{it.label}</span>
-              </button>
-            ))}
+            {areaItems.map((it) => {
+              const mouzaIsSelected =
+                it.path === "/area/mouza" && isMouzaGroupPath;
+
+              return (
+                <div key={it.label}>
+                  <button
+                    onClick={() => handleAreaItemClick(it.path)}
+                    className={`flex w-full items-center gap-3 px-2 py-2 rounded-lg text-sm transition text-left
+                      ${
+                        isActive(it.path) || mouzaIsSelected
+                          ? "bg-black/5 dark:bg-white/5 text-black dark:text-white"
+                          : "hover:bg-black/3 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400"
+                      }
+                    `}
+                  >
+                    <span className="flex-1 text-[13px]">{it.label}</span>
+
+                    {it.path === "/area/mouza" && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMouzaToggle();
+                        }}
+                        className="inline-flex items-center justify-center p-1"
+                      >
+                        <ChevronDown
+                          size={14}
+                          className={`${
+                            mouzaOpen ? "rotate-180" : ""
+                          } transition-transform`}
+                        />
+                      </span>
+                    )}
+                  </button>
+
+                  {it.path === "/area/mouza" && (
+                    <div
+                      className={`mt-1 space-y-1 pl-5 overflow-hidden transition-all ${
+                        mouzaOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                      }`}
+                    >
+                      {mouzaItems.map((sub) => (
+                        <button
+                          key={sub.label}
+                          onClick={() => navigate(sub.path)}
+                          className={`flex w-full items-center gap-3 px-2 py-2 rounded-lg text-sm transition text-left
+                            ${
+                              isActive(sub.path)
+                                ? "bg-black/5 dark:bg-white/5 text-black dark:text-white"
+                                : "hover:bg-black/3 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400"
+                            }
+                          `}
+                        >
+                          <span className="text-[13px]">{sub.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

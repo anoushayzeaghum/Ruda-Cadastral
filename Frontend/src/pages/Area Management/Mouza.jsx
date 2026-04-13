@@ -15,7 +15,10 @@ export default function Mouza() {
         setLoading(true);
         const res = await getMouzas();
         const features = res?.features ?? [];
-        const props = features.map((f) => f.properties || {});
+        const props = features.map((f) => ({
+          ...(f.properties || {}),
+          mouza_id: f.properties?.mouza_id ?? f.id, // 🔥 fallback from id_field
+        }));
         setItems(props);
       } catch (err) {
         console.error("Failed to load mouzas:", err);
@@ -141,13 +144,13 @@ export default function Mouza() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-sm text-gray-500">
-                  <th className="py-3">#</th>
-                  <th className="py-3">District</th>
-                  <th className="py-3">District DC</th>
+                  <th className="py-3">Sr. No</th>
+                  <th className="py-3">Mauza</th>
+                  <th className="py-3">Mauza ID</th>
                   <th className="py-3">Tehsil</th>
-                  <th className="py-3">Tehsil DC</th>
-                  <th className="py-3">Moza</th>
-                  <th className="py-3">Moza TM</th>
+                  <th className="py-3">District</th>
+                  <th className="py-3">Division</th>
+
                   <th className="py-3 text-right">Action</th>
                 </tr>
               </thead>
@@ -155,18 +158,11 @@ export default function Mouza() {
                 {items.map((d, idx) => (
                   <tr key={d.mouza_id ?? d.gid ?? idx} className="border-t">
                     <td className="py-3 w-12">{idx + 1}</td>
-                    <td className="py-3">{d.district}</td>
-                    <td className="py-3">
-                      {String(d.dist_id ?? "").toUpperCase()}
-                    </td>
-                    <td className="py-3">{d.tehsil}</td>
-                    <td className="py-3">
-                      {String(d.tehsil_id ?? "").toUpperCase()}
-                    </td>
                     <td className="py-3">{d.mouza}</td>
-                    <td className="py-3">
-                      {String(d.mouza_id ?? "").toUpperCase()}
-                    </td>
+                    <td className="py-3">{d.mouza_id}</td>
+                    <td className="py-3">{d.tehsil}</td>
+                    <td className="py-3">{d.district}</td>
+                    <td className="py-3">{"Lahore"}</td>
                     <td className="py-3 text-right">
                       <button className="text-sm px-3 py-1 mr-2 border rounded">
                         Edit
