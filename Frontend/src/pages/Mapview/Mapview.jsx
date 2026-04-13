@@ -244,6 +244,7 @@ export default function MapView({
         style: BASEMAP_STYLES.Streets,
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
+        preserveDrawingBuffer: true,
       });
 
       map.addControl(new BasemapControl(), "top-left");
