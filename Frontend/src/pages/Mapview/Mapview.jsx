@@ -38,6 +38,7 @@ const CONTROL_POINTS_LAYER = "control-points-layer";
 
 const TRI_JUNCTION_POINTS_SOURCE = "tri-junction-points-source";
 const TRI_JUNCTION_POINTS_LAYER = "tri-junction-points-layer";
+const TRI_JUNCTION_TRIANGLE_IMAGE = "tri-junction-triangle-marker";
 
 const MAP_THEME = {
   fillColor: "#158033",
@@ -165,8 +166,38 @@ const getMurabbaNumber = (props = {}) => {
     props.murabba_id ??
     null
   );
-};                                         
-                                                                              
+};
+
+const ensureTriangleIcon = (map) => {
+  if (!map || map.hasImage(TRI_JUNCTION_TRIANGLE_IMAGE)) return;
+
+  const size = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext("2d");
+
+  // Triangle points
+  ctx.beginPath();
+  ctx.moveTo(size / 2, 6); // top
+  ctx.lineTo(size - 8, size - 8); // bottom right
+  ctx.lineTo(8, size - 8); // bottom left
+  ctx.closePath();
+
+  // Fill
+  ctx.fillStyle = "#ef4444";
+  ctx.fill();
+
+  // Border
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "#890b0b";
+  ctx.stroke();
+
+  const imageData = ctx.getImageData(0, 0, size, size);
+  map.addImage(TRI_JUNCTION_TRIANGLE_IMAGE, imageData);
+};
+
 export default function MapView({
   selectedDivision,
   selectedDistrict,
@@ -594,6 +625,58 @@ export default function MapView({
           "circle-opacity": 0.95,
         },
       });
+
+      map.on("mouseenter", layerId, handlePointMouseEnter);
+      map.on("mouseleave", layerId, handlePointMouseLeave);
+      map.on("click", layerId, handlePointClick);
+    } catch (e) {
+      console.error(`Failed to draw ${layerId}`, e);
+    }
+  };
+
+  const bringTriJunctionToTop = () => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    try {
+      if (map.getLayer(TRI_JUNCTION_POINTS_LAYER)) {
+        map.moveLayer(TRI_JUNCTION_POINTS_LAYER);
+      }
+    } catch (e) {
+      console.warn("Could not move tri-junction layer to top", e);
+    }
+  };
+
+  const drawTriJunctionLayer = ({ sourceId, layerId, geojson }) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    clearPointLayer(sourceId, layerId);
+
+    if (!geojson?.features || !Array.isArray(geojson.features)) return;
+
+    try {
+      ensureTriangleIcon(map);
+
+      map.addSource(sourceId, {
+        type: "geojson",
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: layerId,
+        type: "symbol",
+        source: sourceId,
+        layout: {
+          "icon-image": TRI_JUNCTION_TRIANGLE_IMAGE,
+          "icon-size": 0.55, // make triangle larger/smaller here
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+        },
+      });
+
+      // move it to very top
+      map.moveLayer(layerId);
 
       map.on("mouseenter", layerId, handlePointMouseEnter);
       map.on("mouseleave", layerId, handlePointMouseLeave);
@@ -1043,13 +1126,10 @@ export default function MapView({
                 radius: 5,
               });
             } else if (key === "tri-junction-points") {
-              drawPointLayer({
+              drawTriJunctionLayer({
                 sourceId: TRI_JUNCTION_POINTS_SOURCE,
                 layerId: TRI_JUNCTION_POINTS_LAYER,
                 geojson: g,
-                color: "#ef4444",
-                strokeColor: "#890b0b",
-                radius: 6,
               });
             } else {
               drawBoundaryLevel(key, g);
@@ -1311,13 +1391,10 @@ export default function MapView({
           };
 
           if (filteredTriJunctionGeojson.features.length) {
-            drawPointLayer({
+            drawTriJunctionLayer({
               sourceId: TRI_JUNCTION_POINTS_SOURCE,
               layerId: TRI_JUNCTION_POINTS_LAYER,
               geojson: filteredTriJunctionGeojson,
-              color: "#ef4444",
-              strokeColor: "#890b0b",
-              radius: 6,
             });
             currentGeojson.current["tri-junction-points"] =
               filteredTriJunctionGeojson;
