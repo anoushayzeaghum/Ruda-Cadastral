@@ -55,7 +55,7 @@ export default function PlotDetails({ parcel = null }) {
   ];
 
   return (
-    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] flex-1 min-h-[300px] flex flex-col">
+    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] flex flex-col min-h-0 max-h-[260px]">
       <div className="h-[56px] border-b border-[#d4dbe2] px-4 flex items-center">
         <h2 className="text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
           Plot Details
