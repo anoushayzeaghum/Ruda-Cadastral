@@ -11,7 +11,7 @@ export default function Legend({ selectedParcelNumber = null }) {
   ];
 
   return (
-    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] h-[295px]">
+    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] flex flex-col min-h-0 max-h-[300px]">
       <div className="h-[56px] border-b border-[#d4dbe2] px-4 flex items-center">
         <div className="flex items-center justify-between w-full">
           <h2 className="text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
@@ -23,7 +23,7 @@ export default function Legend({ selectedParcelNumber = null }) {
         </div>
       </div>
 
-      <div className="p-4 h-[calc(100%-56px)]">
+      <div className="p-4 flex-1 overflow-auto">
         <div className="space-y-3 pt-1">
           {legendItems.map((item) => (
             <div
