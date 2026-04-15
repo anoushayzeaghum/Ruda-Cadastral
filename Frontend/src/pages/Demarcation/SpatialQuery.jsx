@@ -97,8 +97,9 @@ export default function SpatialQuery({
         const list = (fc?.features || []).map((f) => ({
           value: f.properties?.id ?? f.id ?? f.properties?.gid,
           label:
-            f.properties?.mouza_name ??
-            f.properties?.name ??
+            f.properties?.mouza ||
+            f.properties?.mouza_name ||
+            f.properties?.name ||
             String(f.properties?.id ?? f.id),
           raw: f,
         }));
@@ -111,7 +112,6 @@ export default function SpatialQuery({
   }, [filters?.selectedTehsilOptions]);
 
   function handleChange(key, value) {
-    // value is option object or raw string
     onFiltersChange({ [key]: value });
   }
 
@@ -143,7 +143,6 @@ export default function SpatialQuery({
               const opt =
                 divisions.find((d) => String(d.value) === String(v)) ?? null;
               handleChange("selectedDivisionOptions", opt);
-              // clear downstream
               handleChange("selectedDistrictOptions", null);
               handleChange("selectedTehsilOptions", null);
               handleChange("selectedMouzaDetails", null);
@@ -205,15 +204,18 @@ export default function SpatialQuery({
               const v = e.target.value;
               const opt =
                 mouzas.find((d) => String(d.value) === String(v)) ?? null;
-              // normalize selected mouza object for MapView expectations
+
               const normalized = opt
                 ? {
+                    value: opt.value, // fixed
+                    label: opt.label, // fixed
                     id: opt.value,
                     mouza: opt.label,
                     mouza_id: opt.value,
                     raw: opt.raw,
                   }
                 : null;
+
               handleChange("selectedMouzaDetails", normalized);
             }}
             disabled={!mouzas.length}
@@ -261,17 +263,15 @@ export default function SpatialQuery({
           <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               type="button"
-              onClick={() => {
-                /* selections are live; parent map should react */
-              }}
-              className="h-9 rounded bg-[#0d3f82] text-white font-semibold shadow-sm hover:bg-[#0b3670]"
+              className="h-9 rounded bg-green-700 text-white text-sm font-medium shadow-sm hover:bg-green-800"
             >
               Show
             </button>
+
             <button
               type="button"
               onClick={clearAll}
-              className="h-9 rounded bg-[#0d3f82] text-white font-semibold shadow-sm hover:bg-[#0b3670]"
+              className="h-9 rounded bg-green-700 text-white text-sm font-medium shadow-sm hover:bg-green-800"
             >
               Clear
             </button>
@@ -292,8 +292,8 @@ export default function SpatialQuery({
           outline: none;
         }
         .inputStyle:focus {
-          border-color: #0d3f82;
-          box-shadow: 0 0 0 1px #0d3f82;
+          border-color: #0c6d30;
+          box-shadow: 0 0 0 1px #0a5a27;
         }
       `}</style>
     </div>

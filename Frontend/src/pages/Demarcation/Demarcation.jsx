@@ -71,7 +71,7 @@ export default function Demarcation() {
           <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3 min-h-0">
             <LandUseBreakdown />
             <PlotDetails parcel={selectedParcel} />
-            <SelectedPlots />
+            {/* <SelectedPlots /> */}
           </div>
 
           <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3 min-h-0">
