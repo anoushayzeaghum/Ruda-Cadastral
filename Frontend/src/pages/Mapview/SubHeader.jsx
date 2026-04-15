@@ -54,7 +54,7 @@ export default function SubHeader({
 
         <div className="flex items-center gap-2 flex-1 flex-wrap overflow-visible">
           <FilterCard
-            label="Division"
+            label="Division — ڈویژن"
             value={getMultiValueDisplay({
               options: divisions,
               selected: selectedDivision,
@@ -74,7 +74,7 @@ export default function SubHeader({
           </FilterCard>
 
           <FilterCard
-            label="District"
+            label="District — ضلع"
             value={getMultiValueDisplay({
               options: districts,
               selected: selectedDistrict,
@@ -94,7 +94,7 @@ export default function SubHeader({
           </FilterCard>
 
           <FilterCard
-            label="Tehsil"
+            label="Tehsil — تحصیل"
             value={getMultiValueDisplay({
               options: tehsils,
               selected: selectedTehsil,
@@ -114,7 +114,7 @@ export default function SubHeader({
           </FilterCard>
 
           <FilterCard
-            label="Mauza"
+            label="Mauza — موضع"
             value={
               mouzas.find((m) => String(m.mouza_id) === String(selectedMouza))
                 ?.mouza || "Select"
@@ -135,7 +135,7 @@ export default function SubHeader({
           </FilterCard>
 
           <FilterCard
-            label="View By"
+            label="View By — انتخاب کریں"
             value={
               viewBy
                 ? viewBy.charAt(0).toUpperCase() + viewBy.slice(1)

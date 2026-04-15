@@ -9,6 +9,7 @@ export default function Khasra() {
   const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [revenueStateType, setRevenueStateType] = useState("");
 
   const itemsPerPage = 10;
 
@@ -108,8 +109,8 @@ export default function Khasra() {
           Import a new khasra or edit an existing one.
         </p>
 
-        <div className="mt-6 grid grid-cols-12 gap-4 items-center">
-          <div className="col-span-4">
+        <div className="mt-6 grid grid-cols-12 gap-4 items-end">
+          <div className="col-span-3">
             <label className="block text-xs text-gray-500 mb-1">MOUZA</label>
             <select className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]">
               <option value="">Select mouza</option>
@@ -121,7 +122,7 @@ export default function Khasra() {
             </select>
           </div>
 
-          <div className="col-span-5">
+          <div className="col-span-3">
             <label className="block text-xs text-gray-500 mb-1">
               KHASRA LABEL
             </label>
@@ -129,6 +130,21 @@ export default function Khasra() {
               className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
               placeholder="Enter khasra label"
             />
+          </div>
+
+          <div className="col-span-3">
+            <label className="block text-xs text-gray-500 mb-1">
+              REVENUE STATE TYPE
+            </label>
+            <select
+              value={revenueStateType}
+              onChange={(e) => setRevenueStateType(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
+            >
+              <option value="">Select revenue state type</option>
+              <option value="MU">MU</option>
+              <option value="QB">QB</option>
+            </select>
           </div>
 
           <div className="col-span-3 flex gap-3 justify-end">
@@ -144,6 +160,14 @@ export default function Khasra() {
               Import Khasra
             </button>
             <button className="border px-4 py-2 rounded-md">Clear</button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-12 gap-4">
+          <div className="col-span-4">
+            <p className="mt-2 text-sm text-gray-500 text-red-600 leading-relaxed ">
+              *MU stands for Murabba Bandi and QB stands for Qilla Bandi.
+            </p>
           </div>
         </div>
       </div>

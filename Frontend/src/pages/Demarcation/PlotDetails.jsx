@@ -34,7 +34,7 @@ export default function PlotDetails({ parcel = null }) {
     },
     { label: "Type", value: p.type || p.landuse || p.land_type || "-" },
     {
-      label: "K",
+      label: "Khasra",
       value:
         p.k ??
         p.K ??

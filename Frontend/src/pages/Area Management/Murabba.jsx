@@ -9,6 +9,7 @@ export default function Murabba() {
   const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [revenueStateType, setRevenueStateType] = useState("");
 
   const itemsPerPage = 10;
 
@@ -99,8 +100,8 @@ export default function Murabba() {
           Import a new murabba or edit an existing one.
         </p>
 
-        <div className="mt-6 grid grid-cols-12 gap-4 items-center">
-          <div className="col-span-4">
+        <div className="mt-6 grid grid-cols-12 gap-4 items-end">
+          <div className="col-span-3">
             <label className="block text-xs text-gray-500 mb-1">MOUZA</label>
             <select className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]">
               <option value="">Select mouza</option>
@@ -112,7 +113,7 @@ export default function Murabba() {
             </select>
           </div>
 
-          <div className="col-span-5">
+          <div className="col-span-3">
             <label className="block text-xs text-gray-500 mb-1">
               MURABBA NO
             </label>
@@ -120,6 +121,21 @@ export default function Murabba() {
               className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
               placeholder="Enter murabba no"
             />
+          </div>
+
+          <div className="col-span-3">
+            <label className="block text-xs text-gray-500 mb-1">
+              REVENUE STATE TYPE
+            </label>
+            <select
+              value={revenueStateType}
+              onChange={(e) => setRevenueStateType(e.target.value)}
+              className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
+            >
+              <option value="">Select revenue state type</option>
+              <option value="MU">MU</option>
+              <option value="QB">QB</option>
+            </select>
           </div>
 
           <div className="col-span-3 flex gap-3 justify-end">
@@ -135,6 +151,14 @@ export default function Murabba() {
               Import Murabba
             </button>
             <button className="border px-4 py-2 rounded-md">Clear</button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-12 gap-4">
+          <div className="col-span-4">
+            <p className="mt-2 text-sm text-red-600 leading-relaxed">
+              *MU stands for Murabba Bandi and QB stands for Qilla Bandi.
+            </p>
           </div>
         </div>
       </div>
