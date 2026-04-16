@@ -16,6 +16,7 @@ export default function DemarcationMap({
           selectedTehsil={filters?.selectedTehsilOptions}
           selectedDivision={filters?.selectedDivisionOptions}
           viewBy={filters?.viewBy}
+          demarcationMode={true}
           selectedFeatureNumber={filters?.selectedParcelNumber}
           onParcelSelect={onParcelSelect}
           onFeaturesLoaded={onFeaturesLoaded}

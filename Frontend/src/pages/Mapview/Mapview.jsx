@@ -204,6 +204,7 @@ export default function MapView({
   selectedTehsil,
   selectedMouza,
   viewBy,
+  demarcationMode = false,
   onParcelSelect,
   layers = {},
   selectedRudaPhaseIds = [],
@@ -411,6 +412,24 @@ export default function MapView({
     if (!map) return;
 
     try {
+      if (map.getLayer("selected-corner-text-layer")) {
+        map.off(
+          "mouseenter",
+          "selected-corner-text-layer",
+          handlePointMouseEnter,
+        );
+        map.off(
+          "mouseleave",
+          "selected-corner-text-layer",
+          handlePointMouseLeave,
+        );
+        map.removeLayer("selected-corner-text-layer");
+      }
+
+      if (map.getLayer("selected-corner-box-layer")) {
+        map.removeLayer("selected-corner-box-layer");
+      }
+
       if (map.getLayer(SELECTED_CORNER_LAYER)) {
         map.off("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
         map.off("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
@@ -700,7 +719,7 @@ export default function MapView({
       const cornerFeatures = (coords || []).map((c, idx) => ({
         type: "Feature",
         geometry: { type: "Point", coordinates: [c[0], c[1]] },
-        properties: { idx },
+        properties: { idx, label: String.fromCharCode(65 + idx) },
       }));
 
       const cornerFc = {
@@ -713,17 +732,47 @@ export default function MapView({
         data: cornerFc,
       });
 
-      map.addLayer({
-        id: SELECTED_CORNER_LAYER,
-        type: "circle",
-        source: SELECTED_CORNER_SOURCE,
-        paint: {
-          "circle-radius": 6,
-          "circle-color": "#111827",
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "#fff",
-        },
-      });
+      if (demarcationMode) {
+        map.addLayer({
+          id: "selected-corner-box-layer",
+          type: "circle",
+          source: SELECTED_CORNER_SOURCE,
+          paint: {
+            "circle-radius": 9,
+            "circle-color": "#000000",
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "#000000",
+          },
+        });
+
+        map.addLayer({
+          id: "selected-corner-text-layer",
+          type: "symbol",
+          source: SELECTED_CORNER_SOURCE,
+          layout: {
+            "text-field": ["get", "label"],
+            "text-size": 10,
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-allow-overlap": true,
+            "text-ignore-placement": true,
+          },
+          paint: {
+            "text-color": "#ffffff",
+          },
+        });
+      } else {
+        map.addLayer({
+          id: SELECTED_CORNER_LAYER,
+          type: "circle",
+          source: SELECTED_CORNER_SOURCE,
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "#111827",
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "#fff",
+          },
+        });
+      }
 
       function cornerClickHandler(e) {
         const lngLat = e.lngLat;
@@ -759,9 +808,13 @@ export default function MapView({
         });
       }
 
-      map.on("click", SELECTED_CORNER_LAYER, cornerClickHandler);
-      map.on("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-      map.on("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
+      const activeCornerLayer = demarcationMode
+        ? "selected-corner-text-layer"
+        : SELECTED_CORNER_LAYER;
+
+      map.on("click", activeCornerLayer, cornerClickHandler);
+      map.on("mouseenter", activeCornerLayer, handlePointMouseEnter);
+      map.on("mouseleave", activeCornerLayer, handlePointMouseLeave);
     } catch (e) {
       console.warn("Failed to add corner markers", e);
     }
