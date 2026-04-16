@@ -32,6 +32,8 @@ const SELECTED_FILL = "selected-fill";
 const SELECTED_LINE = "selected-line";
 const SELECTED_CORNER_SOURCE = "selected-corner-source";
 const SELECTED_CORNER_LAYER = "selected-corner-layer";
+const SELECTED_CORNER_BOX_LAYER = "selected-corner-box-layer";
+const SELECTED_CORNER_TEXT_LAYER = "selected-corner-text-layer";
 
 const CONTROL_POINTS_SOURCE = "control-points-source";
 const CONTROL_POINTS_LAYER = "control-points-layer";
@@ -178,18 +180,15 @@ const ensureTriangleIcon = (map) => {
 
   const ctx = canvas.getContext("2d");
 
-  // Triangle points
   ctx.beginPath();
-  ctx.moveTo(size / 2, 6); // top
-  ctx.lineTo(size - 8, size - 8); // bottom right
-  ctx.lineTo(8, size - 8); // bottom left
+  ctx.moveTo(size / 2, 6);
+  ctx.lineTo(size - 8, size - 8);
+  ctx.lineTo(8, size - 8);
   ctx.closePath();
 
-  // Fill
   ctx.fillStyle = "#ef4444";
   ctx.fill();
 
-  // Border
   ctx.lineWidth = 4;
   ctx.strokeStyle = "#890b0b";
   ctx.stroke();
@@ -412,25 +411,27 @@ export default function MapView({
     if (!map) return;
 
     try {
-      if (map.getLayer("selected-corner-text-layer")) {
+      if (map.getLayer(SELECTED_CORNER_TEXT_LAYER)) {
+        map.off("click", SELECTED_CORNER_TEXT_LAYER, handlePointClick);
         map.off(
           "mouseenter",
-          "selected-corner-text-layer",
+          SELECTED_CORNER_TEXT_LAYER,
           handlePointMouseEnter,
         );
         map.off(
           "mouseleave",
-          "selected-corner-text-layer",
+          SELECTED_CORNER_TEXT_LAYER,
           handlePointMouseLeave,
         );
-        map.removeLayer("selected-corner-text-layer");
+        map.removeLayer(SELECTED_CORNER_TEXT_LAYER);
       }
 
-      if (map.getLayer("selected-corner-box-layer")) {
-        map.removeLayer("selected-corner-box-layer");
+      if (map.getLayer(SELECTED_CORNER_BOX_LAYER)) {
+        map.removeLayer(SELECTED_CORNER_BOX_LAYER);
       }
 
       if (map.getLayer(SELECTED_CORNER_LAYER)) {
+        map.off("click", SELECTED_CORNER_LAYER, handlePointClick);
         map.off("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
         map.off("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
         map.removeLayer(SELECTED_CORNER_LAYER);
@@ -579,7 +580,7 @@ export default function MapView({
     const popup = new mapboxgl.Popup({
       offset: 10,
       maxWidth: "260px",
-      closeButton: true, // ✅ X button enable
+      closeButton: true,
       closeOnClick: false,
     })
       .setLngLat(
@@ -689,13 +690,12 @@ export default function MapView({
         source: sourceId,
         layout: {
           "icon-image": TRI_JUNCTION_TRIANGLE_IMAGE,
-          "icon-size": 0.55, // make triangle larger/smaller here
+          "icon-size": 0.55,
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
         },
       });
 
-      // move it to very top
       map.moveLayer(layerId);
 
       map.on("mouseenter", layerId, handlePointMouseEnter);
@@ -712,11 +712,22 @@ export default function MapView({
 
       const geom = feature.geometry;
       let coords = [];
-      if (geom.type === "Polygon") coords = geom.coordinates?.[0] || [];
-      else if (geom.type === "MultiPolygon")
-        coords = geom.coordinates?.[0]?.[0] || [];
 
-      const cornerFeatures = (coords || []).map((c, idx) => ({
+      if (geom.type === "Polygon") {
+        coords = geom.coordinates?.[0] || [];
+      } else if (geom.type === "MultiPolygon") {
+        coords = geom.coordinates?.[0]?.[0] || [];
+      }
+
+      if (coords.length > 1) {
+        const first = coords[0];
+        const last = coords[coords.length - 1];
+        if (first[0] === last[0] && first[1] === last[1]) {
+          coords = coords.slice(0, coords.length - 1);
+        }
+      }
+
+      const cornerFeatures = coords.slice(0, 4).map((c, idx) => ({
         type: "Feature",
         geometry: { type: "Point", coordinates: [c[0], c[1]] },
         properties: { idx, label: String.fromCharCode(65 + idx) },
@@ -734,24 +745,28 @@ export default function MapView({
 
       if (demarcationMode) {
         map.addLayer({
-          id: "selected-corner-box-layer",
-          type: "circle",
+          id: SELECTED_CORNER_BOX_LAYER,
+          type: "symbol",
           source: SELECTED_CORNER_SOURCE,
+          layout: {
+            "text-field": "■",
+            "text-size": 45,
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-allow-overlap": true,
+            "text-ignore-placement": true,
+          },
           paint: {
-            "circle-radius": 9,
-            "circle-color": "#000000",
-            "circle-stroke-width": 1,
-            "circle-stroke-color": "#000000",
+            "text-color": "#000000",
           },
         });
 
         map.addLayer({
-          id: "selected-corner-text-layer",
+          id: SELECTED_CORNER_TEXT_LAYER,
           type: "symbol",
           source: SELECTED_CORNER_SOURCE,
           layout: {
             "text-field": ["get", "label"],
-            "text-size": 10,
+            "text-size": 18,
             "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
             "text-allow-overlap": true,
             "text-ignore-placement": true,
@@ -809,7 +824,7 @@ export default function MapView({
       }
 
       const activeCornerLayer = demarcationMode
-        ? "selected-corner-text-layer"
+        ? SELECTED_CORNER_TEXT_LAYER
         : SELECTED_CORNER_LAYER;
 
       map.on("click", activeCornerLayer, cornerClickHandler);
