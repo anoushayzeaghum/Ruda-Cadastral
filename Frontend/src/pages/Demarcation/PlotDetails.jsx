@@ -13,7 +13,7 @@ export default function PlotDetails({ parcel = null }) {
         p.division ||
         p.division_name_en ||
         p.division_i ||
-        "-",
+        "Lahore",
     },
     {
       label: "District",
@@ -22,17 +22,25 @@ export default function PlotDetails({ parcel = null }) {
         p.district ||
         p.district_name_en ||
         p.district_i ||
-        "-",
+        "Sheikhupura",
     },
     {
       label: "Tehsil",
-      value: p.tehsil_name || p.tehsil || p.tehsil_name_en || p.tehsil_i || "-",
+      value:
+        p.tehsil_name ||
+        p.tehsil ||
+        p.tehsil_name_en ||
+        p.tehsil_i ||
+        "Ferozwala",
     },
     {
       label: "Mouza",
       value: p.mouza_name || p.mouza || p.mouza_name_en || p.mouza_id || "-",
     },
-    { label: "Type", value: p.type || p.landuse || p.land_type || "-" },
+    {
+      label: "Type",
+      value: p.type || p.landuse || p.land_type || "MU",
+    },
     {
       label: "Khasra",
       value:
@@ -72,90 +80,98 @@ export default function PlotDetails({ parcel = null }) {
     return "-";
   };
 
-  const reportDetails = [
-    {
-      label: "Town",
-      value: safeValue(
-        p.town,
-        p.town_name,
-        p.scheme,
-        p.scheme_name,
-        p.society,
-        p.society_name,
-      ),
-    },
-    {
-      label: "Block",
-      value: safeValue(p.block, p.block_name, p.sector, p.phase),
-    },
-    {
-      label: "Plot No",
-      value: safeValue(
-        p.plotno,
-        p.plot_no,
-        p.plot_number,
-        p.khasra,
-        p.khasra_no,
-        p.khasra_id,
-        p.murabba,
-        p.murabba_no,
-        p.murabba_id,
-        parcel?.id,
-      ),
-    },
-    {
-      label: "Division",
-      value: safeValue(
-        p.division_name,
-        p.division,
-        p.division_name_en,
-        p.division_i,
-      ),
-    },
-    {
-      label: "District",
-      value: safeValue(
-        p.district_name,
-        p.district,
-        p.district_name_en,
-        p.district_i,
-      ),
-    },
-    {
-      label: "Tehsil",
-      value: safeValue(p.tehsil_name, p.tehsil, p.tehsil_name_en, p.tehsil_i),
-    },
-    {
-      label: "Landuse",
-      value: safeValue(p.landuse, p.type, p.land_type),
-    },
-    {
-      label: "Society Type",
-      value: safeValue(p.society_type, p.societytyp, p.society_name, p.society),
-    },
-  ];
+  const reportDetails = {
+    town: safeValue(
+      p.town,
+      p.town_name,
+      p.scheme,
+      p.scheme_name,
+      p.society,
+      p.society_name,
+      "RUDA Zone",
+    ),
+    block: safeValue(p.block, p.block_name, p.sector, p.phase, "-"),
+    plotNo: safeValue(
+      p.plotno,
+      p.plot_no,
+      p.plot_number,
+      p.khasra,
+      p.khasra_no,
+      p.khasra_id,
+      p.murabba,
+      p.murabba_no,
+      p.murabba_id,
+      parcel?.id,
+      "0",
+    ),
+    division: safeValue(
+      p.division_name,
+      p.division,
+      p.division_name_en,
+      p.division_i,
+      "Lahore",
+    ),
+    district: safeValue(
+      p.district_name,
+      p.district,
+      p.district_name_en,
+      p.district_i,
+      "Sheikhupura",
+    ),
+    tehsil: safeValue(
+      p.tehsil_name,
+      p.tehsil,
+      p.tehsil_name_en,
+      p.tehsil_i,
+      "Ferozwala",
+    ),
+    landuse: safeValue(p.landuse, p.type, p.land_type, "MU"),
+    societyType: safeValue(
+      p.society_type,
+      p.societytyp,
+      p.society_name,
+      p.society,
+      "Residential / Planned Development",
+    ),
+    mouza: safeValue(p.mouza_name, p.mouza, p.mouza_name_en, p.mouza_id, "-"),
+    area: safeValue(
+      p._area_acres ? `${p._area_acres.toFixed(2)} Acres` : null,
+      p._area_m2 ? `${p._area_m2} m²` : null,
+      p.area,
+      "-",
+    ),
+  };
 
-  const legendItems = [
-    { label: "Residential", color: "#19a9e5" },
-    { label: "Commercial", color: "#000000" },
-    { label: "Parking", color: "#ffc107" },
-    { label: "Recreational Facility", color: "#283593" },
-    { label: "Illegal", color: "#e53935" },
-    { label: "Public Building", color: "#ff5722" },
-    { label: "Park", color: "#8bc34a" },
-    { label: "Religious Building", color: "#9575cd" },
-    { label: "Village", color: "#ff9800" },
-    { label: "Educational", color: "#0b2948" },
-    { label: "Graveyard", color: "#9c27b0" },
-    { label: "Open Space", color: "#cddc39" },
-    { label: "Health Facility", color: "#0f5b12" },
-    { label: "Religious", color: "#673ab7" },
-    { label: "Encroachment", color: "#795548" },
-    { label: "Nullah", color: "#18b6c9" },
-    { label: "Road", color: "#9e9e9e" },
-    { label: "Others", color: "#607d8b" },
-    { label: "Unclassified", color: "#bdbdbd" },
-  ];
+  const applicantInfo = {
+    applicantName: safeValue(
+      p.owner_name,
+      p.applicant_name,
+      p.applicant,
+      p.client_name,
+      "Applicant",
+    ),
+    mobileNo: safeValue(
+      p.mobile,
+      p.phone,
+      p.contact_no,
+      p.contact,
+      "0300-3425163", // dummy number
+    ),
+    date: new Date().toLocaleDateString("en-GB"),
+    applicantId: safeValue(
+      p.applicant_id,
+      p.owner_id,
+      p.cnic,
+      p.reference_no,
+      safeValue(parcel?.id, "N/A"),
+    ),
+    email: safeValue(
+      p.email,
+      p.owner_email,
+      p.applicant_email,
+      "applicant@gmail.com", // dummy email
+    ),
+  };
 
   const getCornerCoordinates = (geometry) => {
     if (!geometry) return [];
@@ -195,6 +211,14 @@ export default function PlotDetails({ parcel = null }) {
       img.onerror = () => resolve(null);
       img.src = src;
     });
+
+  const loadFirstAvailableImage = async (sources = []) => {
+    for (const src of sources) {
+      const img = await loadImage(src);
+      if (img) return img;
+    }
+    return null;
+  };
 
   const handlePrintReport = async () => {
     if (!parcel) return;
@@ -243,8 +267,13 @@ export default function PlotDetails({ parcel = null }) {
       }
 
       const [gopLogo, rudaLogo] = await Promise.all([
-        loadImage(`${window.location.origin}/gop_logo.png`),
-        loadImage(`${window.location.origin}/Ruda_logo.jpg`),
+        loadFirstAvailableImage([`${window.location.origin}/gop_logo.png`]),
+        loadFirstAvailableImage([
+          `${window.location.origin}/Ruda_logo.jpg`,
+          `${window.location.origin}/Ruda_logo.jpg`,
+          `${window.location.origin}/ruda_logo.jpg`,
+          `${window.location.origin}/ruda_logo.jpg`,
+        ]),
       ]);
 
       const cornerCoords = getCornerCoordinates(parcel.geometry);
@@ -259,75 +288,85 @@ export default function PlotDetails({ parcel = null }) {
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
-      const margin = 5;
-      const contentX = margin;
-      const contentY = 5;
-      const contentWidth = pageWidth - margin * 2;
-      const contentHeight = pageHeight - margin * 2;
+      const marginX = 8;
+      const marginY = 8;
+      const contentX = marginX;
+      const contentY = marginY;
+      const contentWidth = pageWidth - marginX * 2;
+      const contentHeight = pageHeight - marginY * 2;
 
-      const sectionHeaderFill = [225, 225, 240];
-      const borderColor = [70, 70, 70];
+      const borderColor = [120, 120, 120];
+      const sectionHeaderFill = [176, 196, 222];
+      const sectionHeaderText = [0, 0, 0];
+      const titleBlue = [0, 70, 140];
+
+      doc.setDrawColor(...borderColor);
+      doc.setLineWidth(0.25);
 
       const drawSectionHeader = (x, y, w, h, title) => {
         doc.setFillColor(...sectionHeaderFill);
         doc.rect(x, y, w, h, "F");
-        doc.setDrawColor(...borderColor);
         doc.rect(x, y, w, h);
         doc.setFont("times", "normal");
-        doc.setFontSize(10.5);
-        doc.setTextColor(0, 0, 0);
-        doc.text(title, x + 2, y + h - 2.1);
+        doc.setFontSize(9.5);
+        doc.setTextColor(...sectionHeaderText);
+        doc.text(String(title).toUpperCase(), x + 2, y + h - 2.2);
       };
 
-      doc.setDrawColor(...borderColor);
-      doc.setLineWidth(0.3);
+      const drawCell = (x, y, w, h, label, value, options = {}) => {
+        const labelW = options.labelW ?? Math.min(28, w * 0.28);
+        const valueW = w - labelW;
+
+        doc.rect(x, y, labelW, h);
+        doc.rect(x + labelW, y, valueW, h);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(35, 35, 35);
+
+        const labelLines = doc.splitTextToSize(
+          String(label || ""),
+          labelW - 2.5,
+        );
+        const valueLines = doc.splitTextToSize(
+          String(value || "-"),
+          valueW - 2.5,
+        );
+
+        doc.text(labelLines, x + 1.5, y + 4.2);
+        doc.text(valueLines, x + labelW + 1.5, y + 4.2);
+      };
+
+      const drawSimpleCell = (x, y, w, h, text, align = "left") => {
+        doc.rect(x, y, w, h);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(35, 35, 35);
+
+        const lines = doc.splitTextToSize(String(text || "-"), w - 3);
+        if (align === "center") {
+          doc.text(lines, x + w / 2, y + 4.2, { align: "center" });
+        } else {
+          doc.text(lines, x + 1.5, y + 4.2);
+        }
+      };
 
       let y = contentY;
 
-      const headerHeight = 32;
-      const sectionTitleHeight = 6.5;
-      const snapshotHeight = 120;
-      const detailsHeaderHeight = 6.5;
-      const detailsBodyHeight = 47;
-      const legendHeaderHeight = 6.5;
-      const legendBodyHeight = 38;
-
-      // const totalUsedHeight =
-      //   headerHeight +
-      //   sectionTitleHeight +
-      //   snapshotHeight +
-      //   detailsHeaderHeight +
-      //   detailsBodyHeight +
-      //   legendHeaderHeight +
-      //   legendBodyHeight;
-
-      // const extraVertical = contentHeight - totalUsedHeight;
-      // if (extraVertical > 0) {
-      //   y += extraVertical / 2;
-      // }
-
-      const headerY = y;
-      const leftBoxW = 26;
-      const rightBoxW = 26;
-      const centerBoxX = contentX + leftBoxW;
-      const centerBoxW = contentWidth - leftBoxW - rightBoxW;
-
-      const logoTop = headerY + 1.5;
-      const gopW = 24;
-      const gopH = 22;
-      const rudaW = 22;
-      const rudaH = 22;
+      // HEADER
+      const headerHeight = 30;
+      const titleY1 = y + 14;
+      const titleY2 = y + 24;
 
       if (gopLogo) {
         try {
-          const gopX = contentX + 2;
           doc.addImage(
             gopLogo,
             "PNG",
-            gopX,
-            logoTop,
-            gopW,
-            gopH,
+            contentX + 2,
+            y + 1,
+            28,
+            26,
             undefined,
             "FAST",
           );
@@ -338,27 +377,25 @@ export default function PlotDetails({ parcel = null }) {
 
       if (rudaLogo) {
         try {
-          const rudaX = contentX + contentWidth - rudaW - 2;
           doc.addImage(
             rudaLogo,
             "WEBP",
-            rudaX,
-            logoTop,
-            rudaW,
-            rudaH,
+            contentX + contentWidth - 28 - 2,
+            y + 1,
+            26,
+            26,
             undefined,
             "FAST",
           );
         } catch (e) {
           try {
-            const rudaX = contentX + contentWidth - rudaW - 2;
             doc.addImage(
               rudaLogo,
               "PNG",
-              rudaX,
-              logoTop,
-              rudaW,
-              rudaH,
+              contentX + contentWidth - 28 - 2,
+              y + 1,
+              28,
+              14,
               undefined,
               "FAST",
             );
@@ -368,144 +405,376 @@ export default function PlotDetails({ parcel = null }) {
         }
       }
 
-      doc.setFont("times", "normal");
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...titleBlue);
       doc.setFontSize(24);
-      doc.setTextColor(0, 0, 0);
       doc.text(
         "PLOT DEMARCATION REPORT",
-        centerBoxX + centerBoxW / 2,
-        headerY + 16,
+        contentX + contentWidth / 2,
+        titleY1,
         {
           align: "center",
-          maxWidth: centerBoxW - 6,
+        },
+      );
+      doc.setFontSize(18);
+      doc.text(
+        "Ravi Urban Development Authority",
+        contentX + contentWidth / 2,
+        titleY2,
+        {
+          align: "center",
         },
       );
 
-      y += headerHeight;
+      y += headerHeight + 8;
 
+      // APPLICANT INFO
+      const sectionH = 8;
       drawSectionHeader(
         contentX,
         y,
         contentWidth,
-        sectionTitleHeight,
-        "Selected Plot Snapshot",
+        sectionH,
+        "Applicant Information",
       );
-      y += sectionTitleHeight;
+      y += sectionH;
 
-      doc.rect(contentX, y, contentWidth, snapshotHeight);
-      if (imageData) {
-        doc.addImage(
-          imageData,
-          "PNG",
-          contentX + 0.8,
-          y + 0.8,
-          contentWidth - 1.6,
-          snapshotHeight - 1.6,
-          undefined,
-          "FAST",
-        );
-      }
-      y += snapshotHeight;
+      const applicantRowH = 8;
+      const appCols = [
+        27,
+        75,
+        22,
+        30,
+        20,
+        contentWidth - (27 + 75 + 22 + 30 + 20),
+      ];
 
-      const leftW = contentWidth / 2;
-      const rightW = contentWidth / 2;
+      let x = contentX;
+      drawSimpleCell(x, y, appCols[0], applicantRowH, "Name");
+      x += appCols[0];
+      drawSimpleCell(
+        x,
+        y,
+        appCols[1],
+        applicantRowH,
+        applicantInfo.applicantName,
+      );
+      x += appCols[1];
+      drawSimpleCell(x, y, appCols[2], applicantRowH, "Mobile No.");
+      x += appCols[2];
+      drawSimpleCell(x, y, appCols[3], applicantRowH, applicantInfo.mobileNo);
+      x += appCols[3];
+      drawSimpleCell(x, y, appCols[4], applicantRowH, "Date");
+      x += appCols[4];
+      drawSimpleCell(x, y, appCols[5], applicantRowH, applicantInfo.date);
+      y += applicantRowH;
+
+      x = contentX;
+      drawSimpleCell(x, y, appCols[0], applicantRowH, "Applicant ID");
+      x += appCols[0];
+      drawSimpleCell(
+        x,
+        y,
+        appCols[1],
+        applicantRowH,
+        applicantInfo.applicantId,
+      );
+      x += appCols[1];
+      drawSimpleCell(x, y, appCols[2], applicantRowH, "Email");
+      x += appCols[2];
+      drawSimpleCell(
+        x,
+        y,
+        contentWidth - (appCols[0] + appCols[1] + appCols[2]),
+        applicantRowH,
+        applicantInfo.email,
+      );
+      y += applicantRowH;
+
+      // PROJECT DETAILS
+      drawSectionHeader(contentX, y, contentWidth, sectionH, "Project Details");
+      y += sectionH;
+
+      const rowH = 8;
+      const colWidths = [
+        27,
+        75,
+        22,
+        30,
+        20,
+        contentWidth - (27 + 75 + 22 + 30 + 20),
+      ];
+
+      // Row 1
+      x = contentX;
+      drawSimpleCell(x, y, colWidths[0], rowH, "Town");
+      x += colWidths[0];
+      drawSimpleCell(x, y, colWidths[1], rowH, reportDetails.town);
+      x += colWidths[1];
+      drawSimpleCell(x, y, colWidths[2], rowH, "Block");
+      x += colWidths[2];
+      drawSimpleCell(x, y, colWidths[3], rowH, reportDetails.block);
+      x += colWidths[3];
+      drawSimpleCell(x, y, colWidths[4], rowH, "Plot No.");
+      x += colWidths[4];
+      drawSimpleCell(x, y, colWidths[5], rowH, reportDetails.plotNo);
+      y += rowH;
+
+      // Row 2
+      x = contentX;
+      drawSimpleCell(x, y, colWidths[0], rowH, "Division");
+      x += colWidths[0];
+      drawSimpleCell(x, y, colWidths[1], rowH, reportDetails.division);
+      x += colWidths[1];
+      drawSimpleCell(x, y, colWidths[2], rowH, "District");
+      x += colWidths[2];
+      drawSimpleCell(x, y, colWidths[3], rowH, reportDetails.district);
+      x += colWidths[3];
+      drawSimpleCell(x, y, colWidths[4], rowH, "Tehsil");
+      x += colWidths[4];
+      drawSimpleCell(x, y, colWidths[5], rowH, reportDetails.tehsil);
+      y += rowH;
+
+      // Row 3
+      x = contentX;
+      drawSimpleCell(x, y, colWidths[0], rowH, "Landuse");
+      x += colWidths[0];
+      drawSimpleCell(x, y, colWidths[1], rowH, reportDetails.landuse);
+      x += colWidths[1];
+      drawSimpleCell(x, y, colWidths[2], rowH, "Mouza");
+      x += colWidths[2];
+      drawSimpleCell(x, y, colWidths[3], rowH, reportDetails.mouza);
+      x += colWidths[3];
+      drawSimpleCell(x, y, colWidths[4], rowH, "Area");
+      x += colWidths[4];
+      drawSimpleCell(x, y, colWidths[5], rowH, reportDetails.area);
+      y += rowH;
+
+      // Row 4
+      drawCell(
+        contentX,
+        y,
+        contentWidth,
+        rowH,
+        "Society Type",
+        reportDetails.societyType,
+        { labelW: 27 },
+      );
+      y += rowH + 4;
+
+      // LOWER HALF: MAP LEFT / COORDINATES RIGHT
+      const gap = 0;
+      const leftW = (contentWidth - gap) * 0.53;
+      const rightW = contentWidth - leftW - gap;
+      const lowerHeaderH = 8;
+      const lowerBodyH = Math.min(92, contentHeight - (y - contentY) - 6);
 
       drawSectionHeader(
         contentX,
         y,
         leftW,
-        detailsHeaderHeight,
-        "Plot Details",
+        lowerHeaderH,
+        "Selected Plot Snapshot",
       );
       drawSectionHeader(
-        contentX + leftW,
+        contentX + leftW + gap,
         y,
         rightW,
-        detailsHeaderHeight,
+        lowerHeaderH,
         "Demarcation Coordinates",
       );
-      y += detailsHeaderHeight;
+      y += lowerHeaderH;
 
-      doc.rect(contentX, y, leftW, detailsBodyHeight);
-      doc.rect(contentX + leftW, y, rightW, detailsBodyHeight);
+      doc.rect(contentX, y, leftW, lowerBodyH);
+      doc.rect(contentX + leftW + gap, y, rightW, lowerBodyH);
 
-      doc.setFont("times", "normal");
-      doc.setFontSize(9.5);
-      doc.setTextColor(0, 0, 0);
-
-      let leftTextY = y + 5.5;
-      reportDetails.forEach((item) => {
-        const line = `${item.label}: ${item.value}`;
-        const wrapped = doc.splitTextToSize(line, leftW - 4);
-        doc.text(wrapped, contentX + 2, leftTextY);
-        leftTextY += wrapped.length * 4.2;
-      });
-
-      let rightTextY = y + 5.5;
-      cornerCoords.forEach((item) => {
-        const lat =
-          typeof item.lat === "number" && Number.isFinite(item.lat)
-            ? item.lat.toFixed(6)
-            : "-";
-        const lng =
-          typeof item.lng === "number" && Number.isFinite(item.lng)
-            ? item.lng.toFixed(6)
-            : "-";
-
-        doc.text(
-          `${item.label}: Lat ${lat}, Lng ${lng}`,
-          contentX + leftW + 2,
-          rightTextY,
-        );
-        rightTextY += 5;
-      });
-
-      if (cornerCoords.length === 0) {
-        doc.text(
-          "No demarcation coordinates available.",
-          contentX + leftW + 2,
-          rightTextY,
+      if (imageData) {
+        doc.addImage(
+          imageData,
+          "PNG",
+          contentX + 1.2,
+          y + 1.2,
+          leftW - 2.4,
+          lowerBodyH - 2.4,
+          undefined,
+          "FAST",
         );
       }
 
-      y += detailsBodyHeight;
+      const coordX = contentX + leftW + gap;
+      let cy = y;
+      const coordRowH = 8;
+      const coordCols = [16, 34, rightW - 16 - 34];
+
+      const drawCoordRow = (rowY, point, lat, lng) => {
+        let cx = coordX;
+        drawSimpleCell(cx, rowY, coordCols[0], coordRowH, point, "center");
+        cx += coordCols[0];
+        drawSimpleCell(cx, rowY, coordCols[1], coordRowH, lat);
+        cx += coordCols[1];
+        drawSimpleCell(cx, rowY, coordCols[2], coordRowH, lng);
+      };
+
+      drawCoordRow(cy, "Point", "Latitude", "Longitude");
+      cy += coordRowH;
+
+      if (cornerCoords.length > 0) {
+        cornerCoords.forEach((item) => {
+          const lat =
+            typeof item.lat === "number" && Number.isFinite(item.lat)
+              ? item.lat.toFixed(6)
+              : "-";
+          const lng =
+            typeof item.lng === "number" && Number.isFinite(item.lng)
+              ? item.lng.toFixed(6)
+              : "-";
+          drawCoordRow(cy, item.label, lat, lng);
+          cy += coordRowH;
+        });
+      } else {
+        drawSimpleCell(
+          coordX,
+          cy,
+          rightW,
+          coordRowH,
+          "No demarcation coordinates available.",
+        );
+        cy += coordRowH;
+      }
+
+      // EXTRA INFO (instead of empty rows)
+      const extraRows = [
+        ["Coordinate System", "WGS 84 (EPSG:4326)"],
+        ["Units", "Decimal Degrees"],
+        ["Area", String(reportDetails.area || "-")],
+        ["Mouza", String(reportDetails.mouza || "-")],
+        ["Landuse", String(reportDetails.landuse || "-")],
+        ["Note", "Subject to field verification"],
+      ];
+
+      const infoRowH = 8;
+      const infoCol1 = 34;
+      const infoCol2 = rightW - infoCol1;
+
+      cy += 2;
+
+      extraRows.forEach(([label, value]) => {
+        if (cy + infoRowH <= y + lowerBodyH) {
+          drawSimpleCell(coordX, cy, infoCol1, infoRowH, label);
+          drawSimpleCell(coordX + infoCol1, cy, infoCol2, infoRowH, value);
+          cy += infoRowH;
+        }
+      });
+
+      y += lowerBodyH + 4;
+
+      // DISCLAIMER AND SIGNATURE
+      const disclaimerHeaderH = 8;
+      const disclaimerBodyH = 32;
+      const signatureRowH = 12;
 
       drawSectionHeader(
         contentX,
         y,
         contentWidth,
-        legendHeaderHeight,
-        "Landuse Legend",
+        disclaimerHeaderH,
+        "Disclaimer",
       );
-      y += legendHeaderHeight;
+      y += disclaimerHeaderH;
 
-      doc.rect(contentX, y, contentWidth, legendBodyHeight);
+      // Main disclaimer box
+      doc.rect(contentX, y, contentWidth, disclaimerBodyH);
 
-      const legendCols = 4;
-      const colWidth = contentWidth / legendCols;
-      const rowHeight = 7;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.3);
+      doc.setTextColor(35, 35, 35);
 
-      doc.setFont("times", "normal");
-      doc.setFontSize(8.8);
+      const disclaimerLines = [
+        "1. We hereby acknowledge that absence of surveyor and contractor/consultant at site during the agreed/scheduled site inspection will be subject to imposing relevant penalties in compliance with RUDA inspection procedures.",
+        "2. We hereby confirm that all information and documents provided in this application comply with applicable rules, regulations and standards.",
+        "3. If any delay occurs due to incorrect information provided by us in the submitted application, we hold ourselves solely responsible for the delay.",
+        "4. We are liable for any legal obligations which may occur due to invalid / tampered documents being submitted along with this application.",
+      ];
 
-      legendItems.forEach((item, index) => {
-        const col = index % legendCols;
-        const row = Math.floor(index / legendCols);
+      let disclaimerTextY = y + 5;
+      disclaimerLines.forEach((line) => {
+        const wrapped = doc.splitTextToSize(line, contentWidth - 4);
+        doc.text(wrapped, contentX + 2, disclaimerTextY);
+        disclaimerTextY += wrapped.length * 4.2;
+      });
 
-        const cellX = contentX + col * colWidth;
-        const cellY = y + 4 + row * rowHeight;
+      y += disclaimerBodyH;
 
-        const hex = item.color.replace("#", "");
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
+      // Signature row
+      doc.rect(contentX, y, contentWidth / 2, signatureRowH);
+      doc.rect(contentX + contentWidth / 2, y, contentWidth / 2, signatureRowH);
 
-        doc.setFillColor(r, g, b);
-        doc.rect(cellX + 3, cellY - 1.5, 4, 4, "F");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text("Signature", contentX + 2, y + 8);
+      doc.text("Date", contentX + contentWidth / 2 + 2, y + 8);
 
-        doc.setTextColor(0, 0, 0);
-        const wrapped = doc.splitTextToSize(item.label, colWidth - 11);
-        doc.text(wrapped, cellX + 9, cellY + 1.5);
+      y += signatureRowH;
+
+      // FOOTER INFO BLOCK
+      const footerTopGap = 6;
+      y += footerTopGap;
+
+      const footerHeight = 18;
+      const footerY = y;
+
+      const footerCol1 = 64;
+      const footerCol2 = 50;
+      const footerCol3 = 42;
+      const footerCol4 = contentWidth - (footerCol1 + footerCol2 + footerCol3);
+
+      const footerX1 = contentX;
+      const footerX2 = footerX1 + footerCol1;
+      const footerX3 = footerX2 + footerCol2;
+      const footerX4 = footerX3 + footerCol3;
+
+      // vertical separators only
+      doc.setDrawColor(...borderColor);
+      doc.setLineWidth(0.25);
+      doc.line(footerX2, footerY, footerX2, footerY + footerHeight);
+      doc.line(footerX3, footerY, footerX3, footerY + footerHeight);
+      doc.line(footerX4, footerY, footerX4, footerY + footerHeight);
+
+      // left block
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(110, 110, 110);
+
+      doc.setFontSize(7.3);
+      doc.text("Ravi Urban Development Authority", footerX1 + 1.5, footerY + 8);
+      doc.text(
+        "151 - Abu Bakar Block, Garden Town, Lahore",
+        footerX1 + 1.5,
+        footerY + 12,
+      );
+      doc.text("Punjab, Pakistan", footerX1 + 1.5, footerY + 16);
+
+      // middle-left block
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.3);
+      doc.setTextColor(90, 90, 90);
+      doc.text("T. +92 (42) 99333531-6", footerX2 + 1.5, footerY + 8);
+      doc.text("CS. 042-111-11 (RUDA) 7832", footerX2 + 1.5, footerY + 12);
+      doc.text("E. info@ruda.gov.pk", footerX2 + 1.5, footerY + 16);
+
+      // middle-right block
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.3);
+      doc.setTextColor(90, 90, 90);
+      doc.text("Customer Service", footerX3 + 1.5, footerY + 8);
+      doc.text("customerservices@ruda.gov.pk", footerX3 + 1.5, footerY + 12);
+      doc.text("www.ruda.gov.pk", footerX3 + 1.5, footerY + 16);
+
+      // right block
+      doc.setFont("times", "bold");
+      doc.setFontSize(28);
+      doc.setTextColor(95, 95, 95);
+      doc.text("RUDA", footerX4 + footerCol4 / 2, footerY + 13, {
+        align: "center",
       });
 
       const reportId = safeValue(
@@ -542,7 +811,7 @@ export default function PlotDetails({ parcel = null }) {
         {parcel && (
           <button
             onClick={handlePrintReport}
-            className="text-[12px] font-semibold  tracking-wider text-white bg-green-700 px-2 py-2 rounded hover:bg-[#162544] transition"
+            className="text-[12px] font-semibold tracking-wider text-white bg-green-700 px-2 py-2 rounded hover:bg-[#165c2d] transition"
             type="button"
           >
             Print Report
