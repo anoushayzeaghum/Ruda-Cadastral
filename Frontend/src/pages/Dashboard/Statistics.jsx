@@ -5,42 +5,42 @@ import BarChart from "./BarChart";
 const topCards = [
   {
     title: "RUDA Owned Land",
-    value: "25,800",
+    value: "18,600",
     unit: "Acres",
     tone: "green",
     icon: "building",
   },
   {
     title: "State Land",
-    value: "8,500",
+    value: "6,400",
     unit: "Acres",
     tone: "whiteGreen",
     icon: "state",
   },
   {
     title: "Private Land",
-    value: "68,200",
+    value: "61,800",
     unit: "Acres",
     tone: "lightGreen",
     icon: "private",
   },
   {
     title: "Disputed Land",
-    value: "3,200",
+    value: "2,900",
     unit: "Acres",
     tone: "danger",
     icon: "warning",
   },
   {
     title: "State Land",
-    value: "8,500",
+    value: "6,400",
     unit: "Acres",
     tone: "blueGreen",
     icon: "state",
   },
   {
     title: "Private Land",
-    value: "68,200",
+    value: "61,800",
     unit: "Acres",
     tone: "whiteGreen",
     icon: "private",
@@ -54,7 +54,7 @@ const topCards = [
   },
   {
     title: "Encroached Land",
-    value: "1,150",
+    value: "980",
     unit: "Acres",
     tone: "green",
     icon: "encroach",
@@ -62,8 +62,8 @@ const topCards = [
 ];
 
 const divisions = [
-  { name: "Lahore Division", count: 78 },
-  { name: "Sheikhupura Division", count: 32 },
+  { name: "Lahore Division", count: 96 },
+  { name: "Sheikhupura Division", count: 54 },
   { name: "Nankana Sahib", count: 18 },
 ];
 
@@ -464,20 +464,12 @@ function StatCard({ card }) {
     <div
       className={[
         "relative overflow-hidden rounded-[20px]",
-
-        // ✅ SAME GREEN BORDER STYLE AS KPI
         "ring-1 ring-emerald-600/40",
-
-        // ✅ SOFT GLOW (controlled)
         "shadow-[0_0_6px_rgba(16,185,129,0.15)]",
-
-        // hover effect (subtle)
         "transition-all duration-300",
         "hover:shadow-[0_0_10px_rgba(16,185,129,0.25)]",
         "hover:ring-emerald-600/60",
-
         "px-4 py-4 min-h-0",
-
         tone.box,
         tone.overlay,
       ].join(" ")}
@@ -516,18 +508,11 @@ function Panel({ className = "", children }) {
     <div
       className={[
         "rounded-[20px] bg-[#fbfbf8]",
-
-        // ✅ SAME BORDER STYLE
         "ring-1 ring-emerald-600/40",
-
-        // ✅ SAME GLOW
         "shadow-[0_0_6px_rgba(16,185,129,0.15)]",
-
-        // hover
         "transition-all duration-300",
         "hover:shadow-[0_0_10px_rgba(16,185,129,0.25)]",
         "hover:ring-emerald-600/60",
-
         className,
       ].join(" ")}
     >
@@ -738,10 +723,10 @@ export default function Statistics() {
                   <div className="flex items-center gap-1.5 text-[13px] font-medium text-[#3a4c3e]">
                     <span>Total</span>
                     <Icon type="doc" className="h-4 w-4 text-[#627766]" />
-                    <span>1200</span>
+                    <span>780</span>
                     <span className="text-[#2c7444]">$</span>
                     <span className="text-[18px] font-semibold text-[#205f37]">
-                      82,400
+                      52,000
                     </span>
                   </div>
                 </div>
@@ -752,25 +737,25 @@ export default function Statistics() {
                       Total Khasras
                     </span>
                     <span className="text-[16px] font-semibold text-[#1e5e37]">
-                      82,400
+                      52,000
                     </span>
-                    <ProgressBar value={72} color="bg-[#2e9456]" />
+                    <ProgressBar value={100} color="bg-[#2e9456]" />
                   </div>
 
                   <div className="grid grid-cols-[1.05fr_auto_1.25fr] items-center gap-3">
                     <span className="text-[12px] text-[#334038]">Surveyed</span>
                     <span className="text-[16px] font-semibold text-[#1e5e37]">
-                      32,200
+                      31,200
                     </span>
-                    <ProgressBar value={58} color="bg-[#4aa86f]" />
+                    <ProgressBar value={60} color="bg-[#4aa86f]" />
                   </div>
 
                   <div className="grid grid-cols-[1.05fr_auto_1.25fr] items-center gap-3">
                     <span className="text-[12px] text-[#334038]">Pending</span>
                     <span className="text-[16px] font-semibold text-[#1e5e37]">
-                      17,200
+                      20,800
                     </span>
-                    <ProgressBar value={22} color="bg-[#2a7e49]" />
+                    <ProgressBar value={40} color="bg-[#2a7e49]" />
                   </div>
                 </div>
               </div>
@@ -785,7 +770,7 @@ export default function Statistics() {
                   <div className="flex items-center gap-1 text-[13px] font-medium">
                     <span className="text-[#76a170]">$</span>
                     <span className="text-[18px] font-semibold text-[#1f5f35]">
-                      3,500
+                      2,900
                     </span>
                   </div>
                 </div>
@@ -796,15 +781,15 @@ export default function Statistics() {
                   <div className="space-y-2.5">
                     <MiniMetric
                       icon={<Icon type="private" className="h-4 w-4" />}
-                      value="600%"
+                      value="1,850 Cases"
                     />
                     <MiniMetric
                       icon={<Icon type="state" className="h-4 w-4" />}
-                      value="92%"
+                      value="740 Cases"
                     />
                     <MiniMetric
                       icon={<Icon type="doc" className="h-4 w-4" />}
-                      value="25%"
+                      value="310 Pending"
                     />
                   </div>
                 </div>
@@ -820,17 +805,17 @@ export default function Statistics() {
             <div className="mt-2 space-y-1">
               <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3">
                 <span className="text-[12px] text-[#334038]">Fard Records</span>
-                <SegmentedBar value={80} />
+                <SegmentedBar value={76} />
                 <span className="text-[16px] font-semibold text-[#1e5e37]">
-                  80%
+                  76%
                 </span>
               </div>
 
               <div className="grid grid-cols-[1fr_95px_auto] items-center gap-3">
                 <span className="text-[12px] text-[#334038]">Jamabandi</span>
-                <ProgressBar value={72} color="bg-[#2e9456]" />
+                <ProgressBar value={68} color="bg-[#2e9456]" />
                 <span className="text-[16px] font-semibold text-[#1e5e37]">
-                  72%
+                  68%
                 </span>
               </div>
 
@@ -838,9 +823,9 @@ export default function Statistics() {
                 <span className="text-[12px] text-[#334038]">
                   Mutation Registers
                 </span>
-                <ProgressBar value={63} color="bg-[#2f8650]" />
+                <ProgressBar value={59} color="bg-[#2f8650]" />
                 <span className="text-[16px] font-semibold text-[#1e5e37]">
-                  63%
+                  59%
                 </span>
               </div>
             </div>
@@ -875,10 +860,10 @@ export default function Statistics() {
             </SectionTitle>
 
             <div className="mt-3 space-y-1">
-              <RowItem label="Total Khasras" value="82,400" />
-              <RowItem label="Surveyed" value="65,200" />
-              <RowItem label="Pending Mutations" value="13,400" />
-              <RowItem label="Digitized Records" value="78%" last />
+              <RowItem label="Total Khasras" value="52,000" />
+              <RowItem label="Surveyed" value="31,200" />
+              <RowItem label="Pending Mutations" value="8,600" />
+              <RowItem label="Digitized Records" value="71%" last />
             </div>
           </Panel>
 
