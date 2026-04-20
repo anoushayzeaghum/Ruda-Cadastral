@@ -16,8 +16,9 @@ import {
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-const DEFAULT_CENTER = [74.3587, 31.5204];
-const DEFAULT_ZOOM = 8;
+// Start zoomed out so the globe/world is visible on initial load
+const DEFAULT_CENTER = [0, 20];
+const DEFAULT_ZOOM = 1;
 
 const KHASRA_SOURCE = "khasra-source";
 const KHASRA_FILL = "khasra-fill";
@@ -252,6 +253,43 @@ export default function MapView({
 
       map.on("load", () => {
         setIsMapReady(true);
+      });
+
+      // Whenever a style is (re)loaded — whether via the UI control or
+      // programmatic `setStyle` — restore any application layers/sources
+      // that we keep in `currentGeojson.current`.
+      map.on("style.load", () => {
+        try {
+          Object.keys(currentGeojson.current || {}).forEach((key) => {
+            const g = currentGeojson.current[key];
+            if (!g) return;
+
+            if (key === "khasra") {
+              drawKhasras(g);
+            } else if (key === "murabba") {
+              drawMurabbas(g);
+            } else if (key === "control-points") {
+              drawPointLayer({
+                sourceId: CONTROL_POINTS_SOURCE,
+                layerId: CONTROL_POINTS_LAYER,
+                geojson: g,
+                color: "#f59e0b",
+                strokeColor: "#78350f",
+                radius: 5,
+              });
+            } else if (key === "tri-junction-points") {
+              drawTriJunctionLayer({
+                sourceId: TRI_JUNCTION_POINTS_SOURCE,
+                layerId: TRI_JUNCTION_POINTS_LAYER,
+                geojson: g,
+              });
+            } else {
+              drawBoundaryLevel(key, g);
+            }
+          });
+        } catch (e) {
+          console.warn("Error restoring layers after style change", e);
+        }
       });
 
       map.on("error", (e) => {
@@ -1136,7 +1174,8 @@ export default function MapView({
           const merged = mergeFeatureCollections(geojsons);
           if (merged?.features?.length) {
             drawBoundaryLevel("division", merged);
-            zoomToGeoJSON(merged);
+            // Use a longer animation when zooming from the global view
+            zoomToGeoJSON(merged, { duration: 1400 });
             setFeatureCount(merged.features.length);
           }
         }
