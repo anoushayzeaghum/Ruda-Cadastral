@@ -3,6 +3,7 @@ import KPISection from "./KPISection";
 import MapPanel from "./MapPanel";
 import ChartsPanel from "./ChartsPanel";
 import Header from "./Header";
+import TehsilMouzaCard from "./TehsilMouzaCard";
 import { useState, useEffect } from "react";
 
 export default function Dashboard() {
@@ -32,17 +33,20 @@ export default function Dashboard() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
 
-        <div className="flex-1 flex flex-col">
-          <div className="px-6 pt-6">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="min-w-0 px-6 pt-6">
             <KPISection />
           </div>
 
-          <div className="flex-1 grid grid-cols-4 gap-3 p-6 pt-4">
+          <div className="grid min-h-0 min-w-0 flex-1 grid-cols-4 gap-3 p-6 pt-4">
             <div className="col-span-2 h-full">
               <MapPanel darkMode={darkMode} />
             </div>
 
             <div className="col-span-2 h-full">
+              <div className="mb-3">
+                <TehsilMouzaCard />
+              </div>
               <ChartsPanel />
             </div>
           </div>
