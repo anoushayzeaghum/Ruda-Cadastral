@@ -16,8 +16,9 @@ import {
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-const DEFAULT_CENTER = [74.3587, 31.5204];
-const DEFAULT_ZOOM = 8;
+// Start zoomed out so the globe/world is visible on initial load
+const DEFAULT_CENTER = [0, 20];
+const DEFAULT_ZOOM = 1;
 
 const KHASRA_SOURCE = "khasra-source";
 const KHASRA_FILL = "khasra-fill";
@@ -32,6 +33,8 @@ const SELECTED_FILL = "selected-fill";
 const SELECTED_LINE = "selected-line";
 const SELECTED_CORNER_SOURCE = "selected-corner-source";
 const SELECTED_CORNER_LAYER = "selected-corner-layer";
+const SELECTED_CORNER_BOX_LAYER = "selected-corner-box-layer";
+const SELECTED_CORNER_TEXT_LAYER = "selected-corner-text-layer";
 
 const CONTROL_POINTS_SOURCE = "control-points-source";
 const CONTROL_POINTS_LAYER = "control-points-layer";
@@ -178,18 +181,15 @@ const ensureTriangleIcon = (map) => {
 
   const ctx = canvas.getContext("2d");
 
-  // Triangle points
   ctx.beginPath();
-  ctx.moveTo(size / 2, 6); // top
-  ctx.lineTo(size - 8, size - 8); // bottom right
-  ctx.lineTo(8, size - 8); // bottom left
+  ctx.moveTo(size / 2, 6);
+  ctx.lineTo(size - 8, size - 8);
+  ctx.lineTo(8, size - 8);
   ctx.closePath();
 
-  // Fill
   ctx.fillStyle = "#ef4444";
   ctx.fill();
 
-  // Border
   ctx.lineWidth = 4;
   ctx.strokeStyle = "#890b0b";
   ctx.stroke();
@@ -204,6 +204,7 @@ export default function MapView({
   selectedTehsil,
   selectedMouza,
   viewBy,
+  demarcationMode = false,
   onParcelSelect,
   layers = {},
   selectedRudaPhaseIds = [],
@@ -252,6 +253,43 @@ export default function MapView({
 
       map.on("load", () => {
         setIsMapReady(true);
+      });
+
+      // Whenever a style is (re)loaded — whether via the UI control or
+      // programmatic `setStyle` — restore any application layers/sources
+      // that we keep in `currentGeojson.current`.
+      map.on("style.load", () => {
+        try {
+          Object.keys(currentGeojson.current || {}).forEach((key) => {
+            const g = currentGeojson.current[key];
+            if (!g) return;
+
+            if (key === "khasra") {
+              drawKhasras(g);
+            } else if (key === "murabba") {
+              drawMurabbas(g);
+            } else if (key === "control-points") {
+              drawPointLayer({
+                sourceId: CONTROL_POINTS_SOURCE,
+                layerId: CONTROL_POINTS_LAYER,
+                geojson: g,
+                color: "#f59e0b",
+                strokeColor: "#78350f",
+                radius: 5,
+              });
+            } else if (key === "tri-junction-points") {
+              drawTriJunctionLayer({
+                sourceId: TRI_JUNCTION_POINTS_SOURCE,
+                layerId: TRI_JUNCTION_POINTS_LAYER,
+                geojson: g,
+              });
+            } else {
+              drawBoundaryLevel(key, g);
+            }
+          });
+        } catch (e) {
+          console.warn("Error restoring layers after style change", e);
+        }
       });
 
       map.on("error", (e) => {
@@ -411,7 +449,27 @@ export default function MapView({
     if (!map) return;
 
     try {
+      if (map.getLayer(SELECTED_CORNER_TEXT_LAYER)) {
+        map.off("click", SELECTED_CORNER_TEXT_LAYER, handlePointClick);
+        map.off(
+          "mouseenter",
+          SELECTED_CORNER_TEXT_LAYER,
+          handlePointMouseEnter,
+        );
+        map.off(
+          "mouseleave",
+          SELECTED_CORNER_TEXT_LAYER,
+          handlePointMouseLeave,
+        );
+        map.removeLayer(SELECTED_CORNER_TEXT_LAYER);
+      }
+
+      if (map.getLayer(SELECTED_CORNER_BOX_LAYER)) {
+        map.removeLayer(SELECTED_CORNER_BOX_LAYER);
+      }
+
       if (map.getLayer(SELECTED_CORNER_LAYER)) {
+        map.off("click", SELECTED_CORNER_LAYER, handlePointClick);
         map.off("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
         map.off("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
         map.removeLayer(SELECTED_CORNER_LAYER);
@@ -560,7 +618,7 @@ export default function MapView({
     const popup = new mapboxgl.Popup({
       offset: 10,
       maxWidth: "260px",
-      closeButton: true, // ✅ X button enable
+      closeButton: true,
       closeOnClick: false,
     })
       .setLngLat(
@@ -670,13 +728,12 @@ export default function MapView({
         source: sourceId,
         layout: {
           "icon-image": TRI_JUNCTION_TRIANGLE_IMAGE,
-          "icon-size": 0.55, // make triangle larger/smaller here
+          "icon-size": 0.55,
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
         },
       });
 
-      // move it to very top
       map.moveLayer(layerId);
 
       map.on("mouseenter", layerId, handlePointMouseEnter);
@@ -693,14 +750,25 @@ export default function MapView({
 
       const geom = feature.geometry;
       let coords = [];
-      if (geom.type === "Polygon") coords = geom.coordinates?.[0] || [];
-      else if (geom.type === "MultiPolygon")
-        coords = geom.coordinates?.[0]?.[0] || [];
 
-      const cornerFeatures = (coords || []).map((c, idx) => ({
+      if (geom.type === "Polygon") {
+        coords = geom.coordinates?.[0] || [];
+      } else if (geom.type === "MultiPolygon") {
+        coords = geom.coordinates?.[0]?.[0] || [];
+      }
+
+      if (coords.length > 1) {
+        const first = coords[0];
+        const last = coords[coords.length - 1];
+        if (first[0] === last[0] && first[1] === last[1]) {
+          coords = coords.slice(0, coords.length - 1);
+        }
+      }
+
+      const cornerFeatures = coords.slice(0, 4).map((c, idx) => ({
         type: "Feature",
         geometry: { type: "Point", coordinates: [c[0], c[1]] },
-        properties: { idx },
+        properties: { idx, label: String.fromCharCode(65 + idx) },
       }));
 
       const cornerFc = {
@@ -713,17 +781,51 @@ export default function MapView({
         data: cornerFc,
       });
 
-      map.addLayer({
-        id: SELECTED_CORNER_LAYER,
-        type: "circle",
-        source: SELECTED_CORNER_SOURCE,
-        paint: {
-          "circle-radius": 6,
-          "circle-color": "#111827",
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "#fff",
-        },
-      });
+      if (demarcationMode) {
+        map.addLayer({
+          id: SELECTED_CORNER_BOX_LAYER,
+          type: "symbol",
+          source: SELECTED_CORNER_SOURCE,
+          layout: {
+            "text-field": "■",
+            "text-size": 45,
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-allow-overlap": true,
+            "text-ignore-placement": true,
+          },
+          paint: {
+            "text-color": "#000000",
+          },
+        });
+
+        map.addLayer({
+          id: SELECTED_CORNER_TEXT_LAYER,
+          type: "symbol",
+          source: SELECTED_CORNER_SOURCE,
+          layout: {
+            "text-field": ["get", "label"],
+            "text-size": 18,
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-allow-overlap": true,
+            "text-ignore-placement": true,
+          },
+          paint: {
+            "text-color": "#ffffff",
+          },
+        });
+      } else {
+        map.addLayer({
+          id: SELECTED_CORNER_LAYER,
+          type: "circle",
+          source: SELECTED_CORNER_SOURCE,
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "#111827",
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "#fff",
+          },
+        });
+      }
 
       function cornerClickHandler(e) {
         const lngLat = e.lngLat;
@@ -759,9 +861,13 @@ export default function MapView({
         });
       }
 
-      map.on("click", SELECTED_CORNER_LAYER, cornerClickHandler);
-      map.on("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-      map.on("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
+      const activeCornerLayer = demarcationMode
+        ? SELECTED_CORNER_TEXT_LAYER
+        : SELECTED_CORNER_LAYER;
+
+      map.on("click", activeCornerLayer, cornerClickHandler);
+      map.on("mouseenter", activeCornerLayer, handlePointMouseEnter);
+      map.on("mouseleave", activeCornerLayer, handlePointMouseLeave);
     } catch (e) {
       console.warn("Failed to add corner markers", e);
     }
@@ -1068,7 +1174,8 @@ export default function MapView({
           const merged = mergeFeatureCollections(geojsons);
           if (merged?.features?.length) {
             drawBoundaryLevel("division", merged);
-            zoomToGeoJSON(merged);
+            // Use a longer animation when zooming from the global view
+            zoomToGeoJSON(merged, { duration: 1400 });
             setFeatureCount(merged.features.length);
           }
         }

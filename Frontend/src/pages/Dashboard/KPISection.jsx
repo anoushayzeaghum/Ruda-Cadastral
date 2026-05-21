@@ -10,7 +10,7 @@ import {
 const kpiCards = [
   {
     title: "Total Khasra Parcel Data",
-    value: "750,000",
+    value: "52,000",
     subtitle: "Growth this month",
     icon: TrendingUp,
     tone: "green",
@@ -23,7 +23,7 @@ const kpiCards = [
     status: [
       {
         label: "Verified",
-        value: "650,000",
+        value: "38,500",
         color: "bg-emerald-500",
         text: "text-emerald-700 dark:text-emerald-400",
         icon: CheckCircle2,
@@ -31,7 +31,7 @@ const kpiCards = [
 
       {
         label: "Not Verified",
-        value: "25,000",
+        value: "13,500",
         color: "bg-rose-500",
         text: "text-rose-700 dark:text-rose-400",
         icon: XCircle,
@@ -40,29 +40,29 @@ const kpiCards = [
   },
   {
     title: "Tehsil & Mouza Counts",
-    value: "148",
-    value2: "55,000",
+    value: "6",
+    value2: "170",
     unit1: "Tehsils",
     unit2: "Mouzas",
-    progress: 68,
+    progress: 41,
     icon: MapPinned,
     tone: "softGreen",
     span: "col-span-12 md:col-span-6 xl:col-span-3",
   },
   {
     title: "Acquired Land Progress",
-    value: "25,800",
+    value: "58,500",
     unit: "Acres",
-    ring: 72,
+    ring: 20,
     icon: Landmark,
     tone: "mint",
     span: "col-span-12 md:col-span-3 xl:col-span-2",
   },
   {
     title: "Remaining Land",
-    value: "312,134",
+    value: "18,000",
     unit: "Kanal",
-    subValue: "76,700 Acres",
+    subValue: "113,500 Acres",
     tone: "dangerSoft",
     span: "col-span-12 md:col-span-3 xl:col-span-2",
   },
