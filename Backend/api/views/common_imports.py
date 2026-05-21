@@ -9,8 +9,8 @@ from django.db.models.functions import ExtractMonth
 from django.db import connection
 from django.db.models import Q, Count, Sum, F
 
-# Get user model correctly
-User = get_user_model()
+# # Get user model correctly
+# User = get_user_model()
 
 # DRF imports
 from rest_framework import viewsets, status, serializers

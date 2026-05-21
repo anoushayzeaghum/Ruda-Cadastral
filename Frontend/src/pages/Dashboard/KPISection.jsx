@@ -1,166 +1,273 @@
 import {
   TrendingUp,
-  Database,
-  BadgeCheck,
-  Clock,
-  AlertTriangle,
-  Sprout,
-  Ruler,
+  CheckCircle2,
+  Clock3,
+  XCircle,
+  MapPinned,
+  Landmark,
 } from "lucide-react";
 
-const cardBase =
-  "rounded-2xl px-5 py-4 border shadow-sm transition hover:shadow-md dark:shadow-none";
-const cardTitleClass = "text-xs font-medium text-slate-500 dark:text-slate-400";
-const cardValueClass =
-  "mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white";
-const iconWrapClass =
-  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl";
-const iconSize = 18;
-const iconStroke = 1.75;
+const kpiCards = [
+  {
+    title: "Total Khasra Parcel Data",
+    value: "52,000",
+    subtitle: "Growth this month",
+    icon: TrendingUp,
+    tone: "green",
+    span: "col-span-12 md:col-span-6 xl:col-span-2",
+  },
+  {
+    title: "Khasra Data Status",
+    tone: "white",
+    span: "col-span-12 md:col-span-6 xl:col-span-3",
+    status: [
+      {
+        label: "Verified",
+        value: "38,500",
+        color: "bg-emerald-500",
+        text: "text-emerald-700 dark:text-emerald-400",
+        icon: CheckCircle2,
+      },
+      {
+        label: "Not Verified",
+        value: "13,500",
+        color: "bg-rose-500",
+        text: "text-rose-700 dark:text-rose-400",
+        icon: XCircle,
+      },
+    ],
+  },
+  {
+    title: "Tehsil & Mouza Counts",
+    value: "6",
+    value2: "170",
+    unit1: "Tehsils",
+    unit2: "Mouzas",
+    progress: 41,
+    icon: MapPinned,
+    tone: "softGreen",
+    span: "col-span-12 md:col-span-6 xl:col-span-3",
+  },
+  {
+    title: "Acquired Land Progress",
+    value: "58,500",
+    unit: "Acres",
+    ring: 20,
+    icon: Landmark,
+    tone: "mint",
+    span: "col-span-12 md:col-span-3 xl:col-span-2",
+  },
+  {
+    title: "Remaining Land",
+    value: "18,000",
+    unit: "Kanal",
+    subValue: "113,500 Acres",
+    tone: "dangerSoft",
+    span: "col-span-12 md:col-span-3 xl:col-span-2",
+  },
+];
+
+function toneClasses(tone) {
+  switch (tone) {
+    case "green":
+      return {
+        card: "bg-gradient-to-r from-[#1f6b4f] via-[#2b7b59] to-[#2a6f54] border-[#b8d2c2] text-white",
+        title: "text-white/90",
+        value: "text-white",
+        sub: "text-white/80",
+        icon: "text-white/90",
+      };
+    case "softGreen":
+      return {
+        card: "bg-gradient-to-r from-[#eef5ef] via-[#f8fbf7] to-[#eef7f1] border-[#d7e5da] text-[#244536]",
+        title: "text-[#365346]",
+        value: "text-[#1e3d30]",
+        sub: "text-[#5d7467]",
+        icon: "text-[#2d6c4a]",
+      };
+    case "mint":
+      return {
+        card: "bg-gradient-to-r from-[#edf7f1] via-[#f7fbf8] to-[#eff7f2] border-[#d7e6dc] text-[#244536]",
+        title: "text-[#365346]",
+        value: "text-[#1e3d30]",
+        sub: "text-[#5d7467]",
+        icon: "text-[#2d6c4a]",
+      };
+    case "dangerSoft":
+      return {
+        card: "bg-gradient-to-r from-[#faf4f2] via-[#fffafa] to-[#faf4f2] border-[#ecd9d3] text-[#62352f]",
+        title: "text-[#8f5a51]",
+        value: "text-[#7b2f27]",
+        sub: "text-[#9b6b62]",
+        icon: "text-[#9d4a3e]",
+      };
+    default:
+      return {
+        card: "bg-[#fbfbf8] border-[#d8ddd5] text-[#244536]",
+        title: "text-[#54685f]",
+        value: "text-[#20362d]",
+        sub: "text-[#708177]",
+        icon: "text-[#2d6c4a]",
+      };
+  }
+}
+
+function RingProgress({ value }) {
+  const radius = 23;
+  const circumference = 2 * Math.PI * radius;
+  const filled = circumference - (value / 100) * circumference;
+
+  return (
+    <div className="relative flex h-14 w-14 items-center justify-center">
+      <svg viewBox="0 0 60 60" className="-rotate-90 h-14 w-14">
+        <circle
+          cx="30"
+          cy="30"
+          r={radius}
+          fill="none"
+          stroke="#d7dfdb"
+          strokeWidth="6"
+        />
+        <circle
+          cx="30"
+          cy="30"
+          r={radius}
+          fill="none"
+          stroke="#2f9a59"
+          strokeWidth="6"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={filled}
+        />
+      </svg>
+      <span className="absolute text-[11px] font-semibold text-[#1e5e37]">
+        {value}%
+      </span>
+    </div>
+  );
+}
+
+function ProgressBar({ value }) {
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-[#d7dfdb]">
+      <div
+        className="h-full rounded-full bg-[#2f9a59]"
+        style={{ width: `${value}%` }}
+      />
+    </div>
+  );
+}
 
 export default function KPISection() {
   return (
-    <div className="w-full min-w-0">
-      {/* lg: spans sum to 12 (3+4+2+3) — full-width row; md: 2×2 grid */}
-      <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-12">
-        {/* Card 1 — Total parcels (emerald / growth) */}
-        <div
-          className={`min-w-0 md:col-span-1 lg:col-span-3 ${cardBase} border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-white dark:from-emerald-950/40 dark:via-[#0f1720] dark:to-[#0f1720] dark:border-emerald-700/50`}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <p className={cardTitleClass}>
-                Total Khasra Parcel Data
-              </p>
-              <h3 className={cardValueClass}>
-                750,000
-              </h3>
-              <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-              <TrendingUp size={14} strokeWidth={iconStroke} aria-hidden />
-                Growth this month
-              </p>
-            </div>
-            <div
-              className={`${iconWrapClass} bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300`}
-              aria-hidden
-            >
-              <Database size={iconSize} strokeWidth={iconStroke} />
-            </div>
-          </div>
-        </div>
+    <div className="w-full">
+      <div className="grid grid-cols-12 gap-3">
+        {kpiCards.map((card) => {
+          const tone = toneClasses(card.tone);
+          const Icon = card.icon;
 
-        {/* Card 2 — Data status (indigo / verification) */}
-        <div
-          className={`min-w-0 md:col-span-1 lg:col-span-4 ${cardBase} border-indigo-200/80 bg-gradient-to-br from-indigo-50/90 via-white to-violet-50/30 dark:from-indigo-950/35 dark:via-[#0f1720] dark:to-[#0f1720] dark:border-indigo-700/45`}
-        >
-          <p className={cardTitleClass}>
-            Khasra Data Status
-          </p>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-lg bg-white/80 px-2 py-2 dark:bg-slate-800/50">
-              <BadgeCheck
-                className="mx-auto mb-1 text-emerald-600 dark:text-emerald-400"
-                size={iconSize}
-                strokeWidth={iconStroke}
-                aria-hidden
-              />
-              <p className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Verified
-              </p>
-              <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-white">
-                650,000
-              </p>
-            </div>
-            <div className="rounded-lg bg-white/80 px-2 py-2 dark:bg-slate-800/50">
-              <Clock
-                className="mx-auto mb-1 text-amber-500 dark:text-amber-400"
-                size={iconSize}
-                strokeWidth={iconStroke}
-                aria-hidden
-              />
-              <p className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Pending
-              </p>
-              <p className="mt-0.5 text-base font-semibold text-amber-600 dark:text-amber-400">
-                75,000
-              </p>
-            </div>
-            <div className="rounded-lg bg-white/80 px-2 py-2 dark:bg-slate-800/50">
-              <AlertTriangle
-                className="mx-auto mb-1 text-rose-500 dark:text-rose-400"
-                size={iconSize}
-                strokeWidth={iconStroke}
-                aria-hidden
-              />
-              <p className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Not verified
-              </p>
-              <p className="mt-0.5 text-base font-semibold text-rose-600 dark:text-rose-400">
-                25,000
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4 — Acquired land (amber / progress ring) */}
-        <div
-          className={`min-w-0 md:col-span-1 lg:col-span-2 ${cardBase} flex items-center justify-between gap-3 border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-orange-50/30 dark:from-amber-950/30 dark:via-[#0f1720] dark:to-[#0f1720] dark:border-amber-700/45`}
-        >
-          <div>
-            <p className={cardTitleClass}>
-              Acquired Land Progress
-            </p>
-            <h3 className={cardValueClass}>
-              25,800
-              <span className="ml-1 text-sm font-normal text-slate-500 dark:text-slate-400">
-                Acres
-              </span>
-            </h3>
-          </div>
-          <div className="relative flex shrink-0 items-center justify-center" aria-hidden>
+          return (
             <div
-              className="h-10 w-10 rounded-full p-[2.5px]"
-              style={{
-                background:
-                  "conic-gradient(rgb(16 185 129) 0deg 288deg, rgb(226 232 240) 288deg 360deg)",
-              }}
+              key={card.title}
+              className={[
+                card.span,
+                "relative overflow-hidden rounded-[20px] px-4 py-3",
+                "ring-1 ring-emerald-600/80",
+                "shadow-[0_0_96px_rgba(16,185,129,0.15)]",
+                "transition-all duration-300",
+                "hover:shadow-[0_0_40px_rgba(16,185,129,0.25)]",
+                "hover:ring-emerald-600/60",
+                tone.card,
+              ].join(" ")}
             >
-              <div className="flex h-full w-full items-center justify-center rounded-full bg-white dark:bg-[#0f1720]">
-                <Sprout
-                  className="text-emerald-600 dark:text-emerald-400"
-                  size={iconSize}
-                  strokeWidth={iconStroke}
-                />
+              <div className="relative z-10 flex h-full flex-col justify-between">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className={`text-[11px] font-medium leading-4 ${tone.title}`}>
+                      {card.title}
+                    </p>
+                  </div>
+                  {Icon ? (
+                    <div className={`${tone.icon} shrink-0`}>
+                      <Icon size={18} strokeWidth={2} />
+                    </div>
+                  ) : null}
+                </div>
+
+                {card.status ? (
+                  <div className="mt-2 space-y-0">
+                    {card.status.map((item) => {
+                      const StatusIcon = item.icon;
+                      return (
+                        <div
+                          key={item.label}
+                          className="flex items-center justify-between py-1"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`h-2 w-2 rounded-full ${item.color}`} />
+                            <StatusIcon size={14} className={item.text} />
+                            <span className="text-[11px] text-slate-600 dark:text-slate-300">
+                              {item.label}
+                            </span>
+                          </div>
+                          <span className={`text-[13px] font-semibold ${item.text}`}>
+                            {item.value}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : card.value2 ? (
+                  <div className="mt-1">
+                    <div className="flex flex-wrap items-end gap-2">
+                      <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
+                        {card.value}
+                      </span>
+                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>{card.unit1}</span>
+                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>/</span>
+                      <span className={`text-[22px] font-semibold leading-none ${tone.value}`}>
+                        {card.value2}
+                      </span>
+                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>{card.unit2}</span>
+                    </div>
+                    <div className="mt-3">
+                      <ProgressBar value={card.progress} />
+                    </div>
+                  </div>
+                ) : card.ring ? (
+                  <div className="mt-1 flex items-center justify-between gap-3">
+                    <div className="flex items-end gap-1.5">
+                      <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
+                        {card.value}
+                      </span>
+                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>{card.unit}</span>
+                    </div>
+                    <RingProgress value={card.ring} />
+                  </div>
+                ) : (
+                  <div className="mt-1">
+                    <div className="flex items-end gap-1.5">
+                      <span className={`text-[24px] font-semibold leading-none ${tone.value}`}>
+                        {card.value}
+                      </span>
+                      {card.unit ? (
+                        <span className={`pb-0.5 text-[11px] ${tone.sub}`}>{card.unit}</span>
+                      ) : null}
+                    </div>
+                    {card.subtitle ? (
+                      <p className={`mt-1 text-[11px] ${tone.sub}`}>{card.subtitle}</p>
+                    ) : null}
+                    {card.subValue ? (
+                      <p className={`mt-1 text-[11px] ${tone.sub}`}>{card.subValue}</p>
+                    ) : null}
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Card 5 — Remaining land (slate / rose accent) */}
-        <div
-          className={`min-w-0 md:col-span-1 lg:col-span-3 ${cardBase} border-rose-200/70 bg-gradient-to-br from-rose-50/70 via-white to-slate-50/50 dark:from-rose-950/25 dark:via-[#0f1720] dark:to-[#0f1720] dark:border-rose-900/40`}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <p className={cardTitleClass}>
-              Remaining Land
-            </p>
-            <div
-              className={`${iconWrapClass} bg-rose-100 text-rose-700 dark:bg-rose-900/45 dark:text-rose-300`}
-              aria-hidden
-            >
-              <Ruler size={iconSize} strokeWidth={iconStroke} />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.14),transparent_32%)]" />
             </div>
-          </div>
-          <div className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
-            312,134
-            <span className="ml-1 text-sm font-normal text-slate-500 dark:text-slate-400">
-              Kanal
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            76,700 Acres
-          </p>
-        </div>
+          );
+        })}
       </div>
     </div>
   );
