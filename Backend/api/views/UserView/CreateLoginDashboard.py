@@ -4,6 +4,7 @@ from rest_framework.permissions import AllowAny
 from ..common_imports import *
 from django.contrib.auth import get_user_model
 
+
 class UserLoginDashboardCreateView(viewsets.ViewSet):
     queryset = MyUser.objects.all()
     serializer_class = MyUserLoginDashboardSerializer
