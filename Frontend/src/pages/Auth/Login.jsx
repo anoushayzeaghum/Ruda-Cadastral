@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Search, Map, Building, FileText } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 
 export default function Login() {
@@ -66,67 +66,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-green-950 via-emerald-900 to-slate-950">
-      {/* subtle topo/grid background */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.18]">
-        <svg
-          className="h-full w-full"
-          viewBox="0 0 1200 800"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient id="gridFade" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#93c5fd" stopOpacity="0.35" />
-              <stop offset="0.5" stopColor="#34d399" stopOpacity="0.25" />
-              <stop offset="1" stopColor="#ffffff" stopOpacity="0.12" />
-            </linearGradient>
-            <pattern
-              id="grid"
-              width="48"
-              height="48"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 48 0 L 0 0 0 48"
-                fill="none"
-                stroke="url(#gridFade)"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-          <rect width="1200" height="800" fill="url(#grid)" />
-          <path
-            d="M0,560 C180,520 260,620 440,590 C620,560 740,420 940,460 C1060,485 1120,540 1200,510"
-            fill="none"
-            stroke="rgba(147,197,253,0.45)"
-            strokeWidth="2"
-            strokeDasharray="10 10"
-          />
-          <path
-            d="M0,300 C240,260 320,360 520,330 C720,300 820,160 1020,200 C1120,220 1160,255 1200,235"
-            fill="none"
-            stroke="rgba(52,211,153,0.35)"
-            strokeWidth="2"
-            strokeDasharray="14 12"
-          />
-
-          {/* lightweight background motion (SVG animation, no extra CSS needed) */}
-          <animate
-            attributeName="opacity"
-            values="0.55;0.85;0.55"
-            dur="7s"
-            repeatCount="indefinite"
-          />
-        </svg>
-      </div>
-
-      {/* soft vignette */}
-      <div className="pointer-events-none absolute inset-0 bg-black/20" />
+    <div 
+      className="relative min-h-screen w-full bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: "url('/ruda_bg.png')" }}
+    >
+      {/* dark overlay to ensure text readability while maintaining brand colors */}
+      <div className="pointer-events-none absolute inset-0 bg-green-950/70" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center px-5 py-10 sm:px-8">
         <div className="grid w-full grid-cols-1 items-stretch gap-8 lg:grid-cols-2">
           {/* LEFT: brand panel */}
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-sm lg:p-10">
+          <div className="relative flex flex-col justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-sm lg:p-10">
             {/* decorative blobs */}
             <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-sky-300/15 blur-2xl" />
             <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-emerald-300/15 blur-2xl" />
@@ -140,31 +90,29 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="mt-8 space-y-4 text-center">
+            <div className="mt-8 text-center">
               <h1 className="mx-auto max-w-xl text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl">
-                Cadastral Management{" "}
-                <span className="block text-sky-200">made simple.</span>
+                CADASTRAL MANAGEMENT{" "}
+                <span className="block text-sky-200">MADE SIMPLE.</span>
               </h1>
+            </div>
 
-              <p className="mx-auto max-w-xl text-sm leading-6 text-white/80 sm:text-base">
-                Secure access to cadastral parcels, spatial records, and land
-                management tools—designed to match the RCMS dashboard
-                experience.
-              </p>
-
-              <div className="mt-6 grid gap-3 text-sm text-white/85 sm:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/15 px-4 py-3">
-                  Parcel &amp; Khasra search
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/15 px-4 py-3">
-                  Map-based insights
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/15 px-4 py-3">
-                  Ownership &amp; land use
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/15 px-4 py-3">
-                  Reports &amp; exports
-                </div>
+            <div className="mt-12 lg:mt-16 grid gap-3 text-sm text-white/85 sm:grid-cols-2">
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-left">
+                <Search size={18} className="text-white/70" strokeWidth={1.5} />
+                <span>Parcel &amp; Khasra search</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-left">
+                <Map size={18} className="text-white/70" strokeWidth={1.5} />
+                <span>Map-based insights</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-left">
+                <Building size={18} className="text-white/70" strokeWidth={1.5} />
+                <span>Ownership &amp; land use</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-left">
+                <FileText size={18} className="text-white/70" strokeWidth={1.5} />
+                <span>Reports &amp; exports</span>
               </div>
             </div>
           </div>
