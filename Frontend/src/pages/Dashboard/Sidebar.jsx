@@ -69,6 +69,7 @@ export default function Sidebar({ sidebarOpen }) {
       className={`
         bg-white dark:bg-[#0f1720] border-r border-green-900/40 flex flex-col
         transition-all duration-300 ease-in-out overflow-hidden
+        absolute md:relative z-50 h-[calc(100vh-60px)] md:h-auto shadow-xl md:shadow-none
         ${sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0 border-r-0"}
       `}
     >
