@@ -227,6 +227,28 @@ function getCardTone(tone) {
   }
 }
 
+export function TypewriterNumber({ value }) {
+  const [displayText, setDisplayText] = useState("");
+
+  React.useEffect(() => {
+    setDisplayText("");
+    const textStr = String(value);
+    let i = 0;
+    
+    const interval = setInterval(() => {
+      setDisplayText(textStr.substring(0, i + 1));
+      i++;
+      if (i >= textStr.length) {
+        clearInterval(interval);
+      }
+    }, 70); // 70ms per character for a fast typewriter effect
+    
+    return () => clearInterval(interval);
+  }, [value]);
+
+  return <span>{displayText || "\u00A0"}</span>;
+}
+
 function StatCard({ card }) {
   const tone = getCardTone(card.tone);
 
@@ -255,7 +277,7 @@ function StatCard({ card }) {
           <span
             className={`text-[20px] md:text-[24px] font-bold tracking-tight ${tone.value}`}
           >
-            {card.value}
+            <TypewriterNumber value={card.value} />
           </span>
           <span
             className={`pb-0.5 text-[12px] md:text-[13px] font-medium ${tone.unit}`}
@@ -371,7 +393,7 @@ export function FilterTab({ active, icon, label, onClick }) {
       className={[
         "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all duration-200 border-none select-none",
         active
-          ? "bg-[#10b981] hover:bg-[#059669] text-white shadow-sm"
+          ? "bg-green-700 hover:bg-green-600 text-white shadow-sm"
           : "bg-transparent hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300",
       ].join(" ")}
     >
@@ -552,7 +574,7 @@ export default function Statistics({ activeFilter = "land" }) {
             </Panel>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_1.4fr_1fr]">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
             <Panel className="px-4 py-4">
               <SectionTitle>Mouzas by Division</SectionTitle>
 
@@ -609,48 +631,6 @@ export default function Statistics({ activeFilter = "land" }) {
                     </span>
                   </div>
                   <ProgressBar value={25} color="bg-cyan-500" />
-                </div>
-              </div>
-            </Panel>
-
-            <Panel className="px-4 py-4">
-              <SectionTitle icon={<Icon type="clipboard" className="h-5 w-5" />}>
-                Digitization Status
-              </SectionTitle>
-
-              <div className="mt-3 space-y-3">
-                <div className="flex flex-col gap-1.5 sm:grid sm:grid-cols-[1fr_auto_auto] sm:items-center sm:gap-3">
-                  <div className="flex justify-between items-center sm:contents">
-                    <span className="text-[12px] font-medium text-slate-600 dark:text-slate-400">Fard Records</span>
-                    <span className="text-[16px] font-semibold text-slate-900 dark:text-white sm:order-last">
-                      76%
-                    </span>
-                  </div>
-                  <div className="flex sm:justify-start">
-                    <SegmentedBar value={76} />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-1.5 sm:grid sm:grid-cols-[1fr_95px_auto] sm:items-center sm:gap-3">
-                  <div className="flex justify-between items-center sm:contents">
-                    <span className="text-[12px] font-medium text-slate-600 dark:text-slate-400">Jamabandi</span>
-                    <span className="text-[16px] font-semibold text-slate-900 dark:text-white sm:order-last">
-                      68%
-                    </span>
-                  </div>
-                  <ProgressBar value={68} color="bg-emerald-500" />
-                </div>
-
-                <div className="flex flex-col gap-1.5 sm:grid sm:grid-cols-[1fr_95px_auto] sm:items-center sm:gap-3">
-                  <div className="flex justify-between items-center sm:contents">
-                    <span className="text-[12px] font-medium text-slate-600 dark:text-slate-400">
-                      Mutation Registers
-                    </span>
-                    <span className="text-[16px] font-semibold text-slate-900 dark:text-white sm:order-last">
-                      59%
-                    </span>
-                  </div>
-                  <ProgressBar value={59} color="bg-teal-500" />
                 </div>
               </div>
             </Panel>

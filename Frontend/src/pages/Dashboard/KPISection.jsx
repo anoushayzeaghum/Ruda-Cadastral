@@ -5,6 +5,7 @@ import {
   MapPinned,
   Landmark,
 } from "lucide-react";
+import { TypewriterNumber } from "./Statistics";
 
 const kpiCards = [
   {
@@ -214,7 +215,7 @@ export default function KPISection({ activeFilter = "land" }) {
                             </span>
                           </div>
                           <span className={`text-[13px] font-semibold ${item.text}`}>
-                            {item.value}
+                            <TypewriterNumber value={item.value} />
                           </span>
                         </div>
                       );
@@ -224,12 +225,12 @@ export default function KPISection({ activeFilter = "land" }) {
                   <div>
                     <div className="flex flex-wrap items-end gap-x-1.5 gap-y-0.5">
                       <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
-                        {card.value}
+                        <TypewriterNumber value={card.value} />
                       </span>
                       <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit1}</span>
                       <span className={`pb-0.5 text-[11px] ${tone.sub}`}>/</span>
                       <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
-                        {card.value2}
+                        <TypewriterNumber value={card.value2} />
                       </span>
                       <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit2}</span>
                     </div>
@@ -241,7 +242,7 @@ export default function KPISection({ activeFilter = "land" }) {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-end gap-1">
                       <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
-                        {card.value}
+                        <TypewriterNumber value={card.value} />
                       </span>
                       <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit}</span>
                     </div>
@@ -251,7 +252,7 @@ export default function KPISection({ activeFilter = "land" }) {
                   <div>
                     <div className="flex items-end gap-1">
                       <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
-                        {card.value}
+                        <TypewriterNumber value={card.value} />
                       </span>
                       {card.unit ? (
                         <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit}</span>

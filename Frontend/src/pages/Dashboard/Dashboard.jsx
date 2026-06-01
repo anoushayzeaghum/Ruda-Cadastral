@@ -64,7 +64,7 @@ export default function Dashboard() {
         />
 
         <div className="flex min-h-0 flex-1 overflow-hidden">
-          <Sidebar sidebarOpen={sidebarOpen} />
+          <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
           <main className="min-h-0 flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto px-3 pt-3 pb-3 xl:px-4 xl:pt-3 xl:pb-3">

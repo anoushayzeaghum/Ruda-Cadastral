@@ -35,15 +35,6 @@ export default function Header({
     >
       {/* LEFT */}
       <div className="flex items-center gap-3 md:gap-4 min-w-0">
-        <button
-          onClick={toggleSidebar}
-          className="text-white hover:bg-white/10 p-2 rounded-md transition"
-          aria-label="Toggle sidebar"
-          title="Toggle sidebar"
-        >
-          <Menu size={22} />
-        </button>
-
         <div className="bg-white rounded-full p-1 flex items-center justify-center shrink-0">
           <img
             src={rudaFirmLogo}
