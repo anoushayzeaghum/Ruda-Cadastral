@@ -27,24 +27,27 @@ export default function LeftPanel({
   const [toolboxExpanded, setToolboxExpanded] = useState(true);
   const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
 
-  const toggleLayer = (layer) => {
+  const toggleLayer = (layerKey) => {
     setLayers((prev) => ({
       ...prev,
-      [layer]: !prev[layer],
+      [layerKey]: !prev[layerKey],
     }));
   };
 
-  // fetch RUDA phases when component mounts if not provided
   useEffect(() => {
     let mounted = true;
+
     const load = async () => {
       if (rudaPhases?.length) return;
+
       try {
         const { getRudaList } = await import("../../services/api");
         const list = await getRudaList();
+
         if (!mounted) return;
+
         setRudaPhases(list || []);
-        // default select all phases
+
         const ids = (list || []).map((p) => p.gid ?? p.id ?? p.oid);
         setSelectedRudaPhaseIds(ids);
       } catch (e) {
@@ -86,13 +89,18 @@ export default function LeftPanel({
               <label className="flex items-center gap-2 cursor-pointer px-2 py-2 rounded-md text-sm hover:bg-slate-50">
                 <input
                   type="checkbox"
-                  checked={layers.rudaBoundary}
+                  checked={!!layers.rudaBoundary}
                   onChange={() => toggleLayer("rudaBoundary")}
                   className="accent-green-600 w-4 h-4"
                 />
                 <span className="text-slate-700">RUDA Boundary</span>
+
                 <button
-                  onClick={() => setRudaDropdownOpen((s) => !s)}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRudaDropdownOpen((s) => !s);
+                  }}
                   className="ml-2 text-xs text-slate-500 px-2 py-1 rounded border"
                 >
                   Phases
@@ -106,6 +114,7 @@ export default function LeftPanel({
                       type="checkbox"
                       checked={
                         Array.isArray(rudaPhases) &&
+                        rudaPhases.length > 0 &&
                         selectedRudaPhaseIds?.length === rudaPhases.length
                       }
                       onChange={(e) => {
@@ -127,10 +136,11 @@ export default function LeftPanel({
                     const name =
                       phase.name ?? phase.folderpath ?? `Phase ${id}`;
                     const checked = selectedRudaPhaseIds?.includes(id);
+
                     return (
                       <label
                         key={id}
-                        className="flex items-center gap-2 text-sm"
+                        className="flex items-center gap-2 text-sm py-1"
                       >
                         <input
                           type="checkbox"
@@ -138,7 +148,7 @@ export default function LeftPanel({
                           onChange={() => {
                             if (checked) {
                               setSelectedRudaPhaseIds((prev) =>
-                                prev.filter((x) => x !== id),
+                                (prev || []).filter((x) => x !== id),
                               );
                             } else {
                               setSelectedRudaPhaseIds((prev) => [
@@ -157,34 +167,15 @@ export default function LeftPanel({
             </div>
 
             <LayerCheckbox
-              label="Division Boundaries"
-              checked={layers.divisionBoundaries}
-              onChange={() => toggleLayer("divisionBoundaries")}
+              label="Mouza Vertices"
+              checked={!!layers.controlPoints}
+              onChange={() => toggleLayer("controlPoints")}
             />
 
             <LayerCheckbox
-              label="District Boundaries"
-              checked={layers.districtBoundaries}
-              onChange={() => toggleLayer("districtBoundaries")}
-            />
-
-            <LayerCheckbox
-              label="Tehsil Boundaries"
-              checked={layers.tehsilBoundaries}
-              onChange={() => toggleLayer("tehsilBoundaries")}
-            />
-
-            <LayerCheckbox
-              label="Mouza Boundaries"
-              checked={layers.mouzaBoundaries}
-              onChange={() => toggleLayer("mouzaBoundaries")}
-            />
-
-            <LayerCheckbox
-              label="Khasra Parcels"
-              checked={layers.khasraParcels}
-              onChange={() => toggleLayer("khasraParcels")}
-              highlight
+              label="Tri-junction Points"
+              checked={!!layers.triJunctionPoints}
+              onChange={() => toggleLayer("triJunctionPoints")}
             />
           </div>
         )}
@@ -214,7 +205,6 @@ export default function LeftPanel({
             <ToolboxButton icon={<MapPin size={18} />} label="Connect" />
             <ToolboxButton icon={<Lock size={18} />} label="Parcel" />
             <ToolboxButton icon={<Package size={18} />} label="Mouza" />
-
             <ToolboxButton icon={<Satellite size={18} />} label="Satellite" />
             <ToolboxButton icon={<Ruler size={18} />} label="Demarcate" />
             <ToolboxButton icon={<User size={18} />} label="Default" />
@@ -261,14 +251,9 @@ export default function LeftPanel({
   );
 }
 
-/* Layer Checkbox */
-function LayerCheckbox({ label, checked, onChange, highlight = false }) {
+function LayerCheckbox({ label, checked, onChange }) {
   return (
-    <label
-      className={`flex items-center justify-between cursor-pointer px-2 py-2 rounded-md text-sm ${
-        highlight ? "bg-yellow-100 hover:bg-yellow-200" : "hover:bg-slate-50"
-      }`}
-    >
+    <label className="flex items-center justify-between cursor-pointer px-2 py-2 rounded-md text-sm hover:bg-slate-50">
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -276,7 +261,6 @@ function LayerCheckbox({ label, checked, onChange, highlight = false }) {
           onChange={onChange}
           className="accent-green-600 w-4 h-4"
         />
-
         <span className="text-slate-700">{label}</span>
       </div>
 
@@ -285,12 +269,10 @@ function LayerCheckbox({ label, checked, onChange, highlight = false }) {
   );
 }
 
-/* Toolbox Button */
 function ToolboxButton({ icon, label }) {
   return (
     <button className="flex flex-col items-center justify-center gap-1 p-2 bg-white border border-slate-200 rounded-md hover:bg-green-50 hover:border-green-400 transition-colors">
       {icon}
-
       <span className="text-[10px] text-slate-700 text-center font-medium leading-tight">
         {label}
       </span>

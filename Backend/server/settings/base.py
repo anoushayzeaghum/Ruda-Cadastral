@@ -40,6 +40,9 @@ GEOS_LIBRARY_PATH = get_secret("GEOS_LIBRARY_PATH")
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
+AUTH_PROFILE_MODULE = "api.MyUser"
+
+AUTH_USER_MODEL = "api.MyUser"
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -92,6 +95,7 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Karachi"

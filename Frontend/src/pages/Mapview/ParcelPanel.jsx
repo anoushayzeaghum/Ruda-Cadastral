@@ -20,23 +20,58 @@ export default function ParcelPanel({
 }) {
   const [activeTab, setActiveTab] = useState("parcelInfo");
 
+  const areaAcres =
+    typeof parcel?.properties?._area_acres === "number"
+      ? parcel.properties._area_acres
+      : null;
+
+  const areaKanal = areaAcres !== null ? (areaAcres * 8).toFixed(2) : null;
+
+  const areaMarla = areaAcres !== null ? (areaAcres * 160).toFixed(2) : null;
+
+  const rawLandType = parcel?.properties?.type ?? "N/A";
+
+  const formatLandType = (type) => {
+    if (type === "MU") return "Murabba Bandi";
+    if (type === "QB") return "Qilla Bandi";
+    return type || "N/A";
+  };
+
   const parcelData = {
     khasraNo:
-      parcel?.properties?.khasra_id ??
       parcel?.properties?.k ??
+      parcel?.properties?.K ??
+      parcel?.properties?.khasra ??
+      parcel?.properties?.khasra_no ??
+      parcel?.properties?.khasra_id ??
+      "N/A",
+
+    murabbaNo:
       parcel?.properties?.m ??
+      parcel?.properties?.M ??
+      parcel?.properties?.murabba_no ??
+      parcel?.properties?.murabba ??
       parcel?.id ??
       "N/A",
+
     mouza: parcel?.properties?.mouza ?? parcel?.properties?.mouza_name ?? "N/A",
-    // prefer computed area (in acres) provided by MapView
+
     area:
-      parcel?.properties?._area_acres
-        ? `${parcel.properties._area_acres.toFixed(2)} Acres`
-        : parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A",
-    landType: parcel?.properties?.type ?? "N/A",
+      areaKanal !== null
+        ? `${areaKanal} Kanal`
+        : (parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A"),
+
+    agricultureArea: areaMarla !== null ? `${areaMarla} Marla` : "N/A",
+
+    landType: formatLandType(rawLandType),
+
     parcelId: parcel?.id ?? parcel?.properties?.gid ?? "N/A",
     rthIff: parcel?.properties?.rthIff ?? "N/A",
   };
+
+  const isMurabbaType = rawLandType === "MU";
+  const isViewByKhasra = parcel?.properties?._layerType !== "murabba";
+  const showMurabbaWithKhasra = isMurabbaType && isViewByKhasra;
 
   const timelineData = [
     { year: "2018", label: "Personal Ownership" },
@@ -107,19 +142,46 @@ export default function ParcelPanel({
           <>
             {/* Parcel Card */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-700 text-sm">
-                  {parcel?.properties?._layerType === "murabba"
-                    ? "Murabba No:"
-                    : "Khasra No:"}{" "}
-                  <strong className="text-slate-900">
-                    {parcel?.properties?._layerType === "murabba"
-                      ? parcel?.properties?.murabba_no ?? parcelData.parcelId
-                      : parcelData.parcelId}
-                  </strong>
-                </span>
+              <div className="flex justify-between items-center gap-4">
+                {parcel?.properties?._layerType === "murabba" ? (
+                  <>
+                    <span className="text-slate-700 text-sm">
+                      Murabba No:{" "}
+                      <strong className="text-slate-900">
+                        {parcelData.murabbaNo}
+                      </strong>
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      className="text-slate-400 shrink-0"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-6 flex-wrap min-w-0">
+                      <span className="text-slate-700 text-sm whitespace-nowrap">
+                        Khasra No:{" "}
+                        <strong className="text-slate-900">
+                          {parcelData.khasraNo}
+                        </strong>
+                      </span>
 
-                <ChevronDown size={16} className="text-slate-400" />
+                      {showMurabbaWithKhasra && (
+                        <span className="ml-14 text-slate-700 text-sm whitespace-nowrap">
+                          Murabba No:{" "}
+                          <strong className="text-slate-900">
+                            {parcelData.murabbaNo}
+                          </strong>
+                        </span>
+                      )}
+                    </div>
+
+                    <ChevronDown
+                      size={16}
+                      className="text-slate-400 shrink-0"
+                    />
+                  </>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-4">
@@ -141,8 +203,7 @@ export default function ParcelPanel({
 
                 <div>
                   <p className="text-xs text-slate-500">Land Type</p>
-                  <span className="bg-green-700 text-white text-xs px-3 py-1 rounded-md inline-flex items-center gap-1">
-                    <ChevronDown size={12} />
+                  <span className="bg-green-700 text-white text-xs px-3 py-1 rounded-md inline-flex items-center">
                     {parcelData.landType}
                   </span>
                 </div>
@@ -152,7 +213,7 @@ export default function ParcelPanel({
                     <Landmark size={12} /> Agriculture
                   </p>
                   <p className="flex items-center gap-1 text-green-700 font-semibold">
-                    <CheckCircle size={14} /> 25,800 Acres
+                    <CheckCircle size={14} /> {parcelData.agricultureArea}
                   </p>
                 </div>
               </div>
@@ -166,13 +227,13 @@ export default function ParcelPanel({
                   </p>
                   <p className="font-semibold text-slate-900">
                     {parcel?.properties?._layerType === "murabba"
-                      ? parcel?.properties?.sheets ?? parcelData.parcelId
+                      ? (parcel?.properties?.sheets ?? parcelData.parcelId)
                       : parcelData.parcelId}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-slate-500">Rth: Iff</p>
+                  <p className="text-xs text-slate-500">Assessment Circle</p>
                   <p className="font-semibold text-slate-900">
                     {parcelData.rthIff}
                   </p>
