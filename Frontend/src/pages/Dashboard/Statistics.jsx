@@ -369,10 +369,10 @@ export function FilterTab({ active, icon, label, onClick }) {
     <button
       onClick={onClick}
       className={[
-        "flex items-center gap-2 px-6 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-200 border-none select-none",
+        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-all duration-200 border-none select-none",
         active
           ? "bg-[#10b981] hover:bg-[#059669] text-white shadow-sm"
-          : "bg-[#f1f5f9] hover:bg-[#e2e8f0] dark:bg-slate-800 text-slate-700 dark:text-slate-300 dark:hover:bg-slate-700",
+          : "bg-transparent hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300",
       ].join(" ")}
     >
       {icon}
@@ -387,15 +387,28 @@ export default function Statistics({ activeFilter = "land" }) {
   return (
     <section className="w-full">
       <div className="space-y-3.5">
-        {/* ── Row 1: Map + Filtered Cards ── */}
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_2.8fr]">
-          <Panel className="p-0 bg-white dark:bg-slate-900 border-none shadow-none">
-            <div className="h-[260px] sm:h-[320px] xl:h-full min-h-[220px] overflow-hidden rounded-[18px]">
+        {/* ── Row 1: Left Cards + Map + Right Cards ── */}
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_2.2fr_1fr]">
+          {/* Left Cards */}
+          <div className="order-2 xl:order-1 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
+            {activeCards.slice(0, 2).map((card) => (
+              <StatCard
+                key={`${card.title}-${card.value}-${card.tone}`}
+                card={card}
+              />
+            ))}
+          </div>
+
+          {/* Center Map */}
+          <Panel className="order-1 xl:order-2 p-0 bg-white dark:bg-slate-900 border-none shadow-none">
+            <div className="h-[260px] sm:h-[320px] xl:h-[380px] min-h-[220px] overflow-hidden rounded-[18px]">
               <MapPanel darkMode={false} />
             </div>
           </Panel>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {activeCards.map((card) => (
+
+          {/* Right Cards */}
+          <div className="order-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
+            {activeCards.slice(2, 4).map((card) => (
               <StatCard
                 key={`${card.title}-${card.value}-${card.tone}`}
                 card={card}

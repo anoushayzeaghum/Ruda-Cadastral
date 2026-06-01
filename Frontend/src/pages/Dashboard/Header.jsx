@@ -17,6 +17,7 @@ export default function Header({
   setDarkMode,
   sidebarOpen,
   toggleSidebar,
+  filterTabs,
 }) {
   const navigate = useNavigate();
 
@@ -63,7 +64,9 @@ export default function Header({
       </div>
 
       {/* RIGHT */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="flex items-center gap-3 shrink-0 ml-auto">
+        {filterTabs}
+
         <button
           onClick={() => setDarkMode(!darkMode)}
           className={`w-12 h-6 flex items-center rounded-full p-1 transition ${
