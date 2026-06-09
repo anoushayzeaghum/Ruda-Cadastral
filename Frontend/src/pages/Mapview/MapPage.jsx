@@ -1,5 +1,8 @@
 import { useOutletContext } from "react-router-dom";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
+import * as turf from "@turf/turf";
+import { useGisAnalysis } from "../../hooks/useGisAnalysis";
+import { fetchAllAmenities } from "../../services/gisApi";
 
 import Header from "./Header";
 import SubHeader from "./SubHeader";
@@ -55,6 +58,102 @@ export default function MapPage() {
   const [selectedParcelNumber, setSelectedParcelNumber] = useState("");
   const [selectedMurabbaNumber, setSelectedMurabbaNumber] = useState("");
   const [loadedParcelsGeojson, setLoadedParcelsGeojson] = useState(null);
+
+  // NEW: single source of truth for selected parcel
+  const [activeParcel, setActiveParcel] = useState(null);
+
+  // NEW: analysis mode enum
+  const [analysisMode, setAnalysisMode] = useState("idle");
+
+  // NEW: analysis result states
+  const [selectedBufferRadius, setSelectedBufferRadius] = useState(1);
+
+  // NEW: amenity data
+  const [amenitiesGeojson, setAmenitiesGeojson] = useState({
+    hospitals: { type: "FeatureCollection", features: [] },
+    schools:   { type: "FeatureCollection", features: [] },
+    parks:     { type: "FeatureCollection", features: [] },
+    mosques:   { type: "FeatureCollection", features: [] },
+    transport: { type: "FeatureCollection", features: [] },
+  });
+  const [amenityLoadError, setAmenityLoadError] = useState(null);
+
+  // NEW: suitability weight state
+  const [suitabilityWeights, setSuitabilityWeights] = useState({
+    hospitals: 0.25,
+    schools:   0.25,
+    parks:     0.25,
+    transport: 0.25,
+  });
+
+  const resetAnalysis = useCallback(() => {
+    setAnalysisMode("idle");
+    // note: buffer/proximity/nearest/suitability/route results will be managed by the useGisAnalysis hook
+  }, []);
+
+  const loadAmenities = useCallback(async () => {
+    try {
+      const results = await fetchAllAmenities();
+      setAmenitiesGeojson(results);
+      setAmenityLoadError(null);
+    } catch (err) {
+      setAmenityLoadError(err.message);
+      console.error("Amenity load error:", err);
+    }
+  }, []);
+
+  useEffect(() => { loadAmenities(); }, [loadAmenities]);
+
+  // Instantiate the GIS analysis hook
+  const {
+    bufferResults,
+    proximityResults,
+    nearestResults,
+    suitabilityResult,
+    routeData,
+    isComputing,
+    error: gisError,
+    reset: resetGisAnalysis,
+    runBuffer,
+    runProximity,
+    runNearest,
+    runSuitability,
+    runRouting,
+  } = useGisAnalysis({ activeParcel });
+
+  // Reset hook results when parcel is deselected
+  useEffect(() => {
+    if (activeParcel === null) {
+      resetGisAnalysis?.();
+    }
+  }, [activeParcel, resetGisAnalysis]);
+
+  // GIS action handler callbacks
+  const handleAnalysisModeChange = useCallback((mode) => {
+    setAnalysisMode(mode);
+    if (mode === "proximity") runProximity();
+    if (mode === "nearest") runNearest();
+    if (mode === "buffer") runBuffer(selectedBufferRadius);
+    if (mode === "suitability") runSuitability(suitabilityWeights);
+  }, [runProximity, runNearest, runBuffer, selectedBufferRadius, runSuitability, suitabilityWeights]);
+
+  const handleBufferRadiusChange = useCallback((radius) => {
+    setSelectedBufferRadius(radius);
+    runBuffer(radius);
+  }, [runBuffer]);
+
+  const handleSuitabilityWeightChange = useCallback((category, value) => {
+    setSuitabilityWeights(prev => ({ ...prev, [category]: value }));
+  }, []);
+
+  const handleComputeSuitability = useCallback(() => {
+    runSuitability(suitabilityWeights);
+  }, [runSuitability, suitabilityWeights]);
+
+  const handleRouteRequest = useCallback((destinationFeature) => {
+    const name = destinationFeature?.properties?.name ?? "Destination";
+    runRouting(destinationFeature, name);
+  }, [runRouting]);
 
   const isMurabbaBasedKhasra = useMemo(() => {
     if (filters?.viewBy !== "khasra") return false;
@@ -184,11 +283,41 @@ export default function MapPage() {
 
   const handleParcelSelect = useCallback(
     (feature) => {
-      setSelectedParcel(feature);
+      // 1. Reset stale analysis state
+      resetAnalysis();
 
+      // 2. Compute centroid via turf
+      const centroid = turf.center(feature);
+
+      // 3. Determine parcel type
       const props = feature?.properties || {};
       const khasraNo = getKhasraNumber(props);
       const murabbaNo = getMurabbaNumber(props);
+      const parcelType =
+        feature.properties?._layerType === "murabba" ? "MURABBA" : "KHASRA";
+
+      // 4. Build activeParcel object
+      const newActiveParcel = {
+        type: parcelType,
+        id: String(feature.id ?? props.gid ?? props.id ?? ""),
+        khasraNo:
+          khasraNo !== null && khasraNo !== undefined
+            ? String(khasraNo)
+            : undefined,
+        murabbaNo:
+          murabbaNo !== null && murabbaNo !== undefined
+            ? String(murabbaNo)
+            : undefined,
+        geometry: feature.geometry,
+        centroid: centroid.geometry, // GeoJSON Point
+        properties: props,
+      };
+
+      // 5. Set activeParcel
+      setActiveParcel(newActiveParcel);
+
+      // Existing logic below — unchanged
+      setSelectedParcel(feature);
 
       if (filters?.viewBy === "khasra" && isMurabbaBasedKhasra) {
         setSelectedMurabbaNumber(
@@ -208,7 +337,7 @@ export default function MapPage() {
 
       setParcelPanelOpen(true);
     },
-    [filters?.viewBy, isMurabbaBasedKhasra],
+    [filters?.viewBy, isMurabbaBasedKhasra, resetAnalysis],
   );
 
   return (
@@ -243,6 +372,10 @@ export default function MapPage() {
             setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
             basemap={basemap}
             setBasemap={setBasemap}
+            activeParcel={activeParcel}
+            analysisMode={analysisMode}
+            onAnalysisModeChange={handleAnalysisModeChange}
+            amenityLoadError={amenityLoadError}
           />
         </div>
 
@@ -259,12 +392,34 @@ export default function MapPage() {
             selectedFeatureNumber={selectedFeatureNumber}
             onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
             onParcelSelect={handleParcelSelect}
+            activeParcel={activeParcel}
+            bufferPolygon={analysisMode === "buffer" ? bufferResults?.polygon : null}
+            bufferAmenities={analysisMode === "buffer" ? bufferResults?.amenitiesInBuffer : null}
+            proximityAmenities={analysisMode === "proximity" ? proximityResults : null}
+            nearestLines={analysisMode === "nearest" ? nearestResults : null}
+            routePolyline={analysisMode === "routing" ? routeData?.geometry : null}
           />
 
           <ParcelPanel
             parcel={selectedParcel}
             isOpen={parcelPanelOpen}
             onClose={() => setParcelPanelOpen(false)}
+            activeParcel={activeParcel}
+            analysisMode={analysisMode}
+            selectedBufferRadius={selectedBufferRadius}
+            onBufferRadiusChange={handleBufferRadiusChange}
+            proximityResults={proximityResults}
+            nearestResults={nearestResults}
+            suitabilityScore={suitabilityResult}
+            suitabilityWeights={suitabilityWeights}
+            onSuitabilityWeightChange={handleSuitabilityWeightChange}
+            onComputeSuitability={handleComputeSuitability}
+            routeData={routeData}
+            onRouteRequest={handleRouteRequest}
+            onAnalysisModeChange={handleAnalysisModeChange}
+            bufferResults={bufferResults}
+            amenitiesGeojson={amenitiesGeojson}
+            gisError={gisError}
           />
         </div>
       </div>
