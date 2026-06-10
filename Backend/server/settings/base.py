@@ -38,14 +38,6 @@ DEBUG = False
 GDAL_LIBRARY_PATH = get_secret("GDAL_LIBRARY_PATH")
 GEOS_LIBRARY_PATH = get_secret("GEOS_LIBRARY_PATH")
 
-# PROJ data directory — required for SRID transformations (e.g. 4326 → 3857)
-# This must point to the directory containing proj.db from the QGIS/GDAL install.
-import os as _os
-_proj_data = _os.environ.get("PROJ_DATA") or _os.environ.get("PROJ_LIB")
-if not _proj_data:
-    _os.environ.setdefault("PROJ_DATA", r"C:\Program Files\QGIS 3.44.11\share\proj")
-    _os.environ.setdefault("PROJ_LIB",  r"C:\Program Files\QGIS 3.44.11\share\proj")
-
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
 AUTH_PROFILE_MODULE = "api.MyUser"
@@ -59,14 +51,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.gis',
-    'django.contrib.postgres',
+    'django.contrib.gis', 
     'rest_framework',
     'rest_framework_gis',
     "corsheaders",
     'api',
-    'amenities',
-    'gis_analysis',
 ]
 
 MIDDLEWARE = [

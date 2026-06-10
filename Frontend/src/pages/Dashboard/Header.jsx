@@ -17,7 +17,6 @@ export default function Header({
   setDarkMode,
   sidebarOpen,
   toggleSidebar,
-  filterTabs,
 }) {
   const navigate = useNavigate();
 
@@ -35,6 +34,15 @@ export default function Header({
     >
       {/* LEFT */}
       <div className="flex items-center gap-3 md:gap-4 min-w-0">
+        <button
+          onClick={toggleSidebar}
+          className="text-white hover:bg-white/10 p-2 rounded-md transition"
+          aria-label="Toggle sidebar"
+          title="Toggle sidebar"
+        >
+          <Menu size={22} />
+        </button>
+
         <div className="bg-white rounded-full p-1 flex items-center justify-center shrink-0">
           <img
             src={rudaFirmLogo}
@@ -55,9 +63,7 @@ export default function Header({
       </div>
 
       {/* RIGHT */}
-      <div className="flex items-center gap-3 shrink-0 ml-auto">
-        {filterTabs}
-
+      <div className="flex items-center gap-3 shrink-0">
         <button
           onClick={() => setDarkMode(!darkMode)}
           className={`w-12 h-6 flex items-center rounded-full p-1 transition ${

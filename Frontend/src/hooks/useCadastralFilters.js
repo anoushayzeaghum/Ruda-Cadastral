@@ -179,27 +179,24 @@ export default function useCadastralFilters() {
 
         console.log("Responses from API:", responses);
 
-        // Extract features from each FeatureCollection response
-        const allFeatures = responses.flatMap((fc) => fc?.features ?? []);
+        // Extract features correctly
+        const allFeatures = responses.flatMap((fc) => fc.features);
 
-        // Convert GeoJSON features → flat objects.
-        // f.id from GeoFeatureModelSerializer(id_field="mouza_id") = mouza_id float.
-        // f.properties contains all fields including gid (the DB primary key).
+        // Convert GeoJSON → flat object
         const data = allFeatures.map((f) => ({
-          gid: f.properties?.gid ?? f.id,   // DB primary key — used for boundary URL /mouza/{gid}/geojson
-          id: f.properties?.gid ?? f.id,
-          mouza_id: f.id,                    // float identifier
+          id: f.id,
+          mouza_id: f.id, // or f.properties.mouza_id if exists
           geometry: f.geometry,
           ...f.properties,
         }));
 
-        // Dedupe by gid so duplicate features don't appear
-        const unique = dedupeBy(data, "gid");
+        const unique = dedupeBy(data, "mouza_id");
 
         console.log("Flattened mouza data:", unique);
 
+        setMouzas(sortByLabel(unique, "mouza"));
         if (!ignore) {
-          setMouzas(sortByLabel(unique, "mouza"));
+          setMouzas(sortByLabel(data, "mouza"));
         }
       } catch {
         if (!ignore) {
@@ -234,10 +231,7 @@ export default function useCadastralFilters() {
     (item) => String(item.id) === String(selectedTehsilPrimary),
   );
   const selectedMouzaOption = mouzas.find(
-    (item) =>
-      String(item.mouza_id) === String(selectedMouza) ||
-      String(item.gid) === String(selectedMouza) ||
-      String(item.id) === String(selectedMouza),
+    (item) => String(item.mouza_id) === String(selectedMouza),
   );
   const selectedDivisionOptions = divisions.filter((item) =>
     selectedDivision.includes(String(item.division_i)),
@@ -254,7 +248,6 @@ export default function useCadastralFilters() {
 
     return {
       // include both legacy `id/name` and the `mouza`/`mouza_id` keys
-      gid: selectedMouzaOption.gid,                  // DB primary key for boundary/khasra/murabba APIs
       id: selectedMouzaOption.mouza_id,
       mouza_id: selectedMouzaOption.mouza_id,
       name: selectedMouzaOption.mouza,

@@ -5,12 +5,10 @@ import {
   Settings,
   Folder,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-export default function Sidebar({ sidebarOpen, toggleSidebar }) {
+export default function Sidebar({ sidebarOpen }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -70,21 +68,14 @@ export default function Sidebar({ sidebarOpen, toggleSidebar }) {
     <aside
       className={`
         bg-white dark:bg-[#0f1720] border-r border-green-900/40 flex flex-col
-        transition-all duration-300 ease-in-out
+        transition-all duration-300 ease-in-out overflow-hidden
         absolute md:relative z-50 h-[calc(100vh-60px)] md:h-auto shadow-xl md:shadow-none
-        ${sidebarOpen ? "w-64" : "w-0 border-r-0"}
+        ${sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0 border-r-0"}
       `}
     >
-      <button
-        onClick={toggleSidebar}
-        className="absolute -right-3.5 top-5 bg-white dark:bg-[#0f1720] text-gray-600 dark:text-gray-300 border border-green-900/40 rounded-full p-1 z-50 shadow-md flex items-center justify-center transition-colors hover:bg-gray-50 dark:hover:bg-slate-800"
-      >
-        {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-      </button>
-
       <div
         className={`
-          flex-1 px-4 py-6 space-y-2 transition-opacity duration-200 overflow-hidden
+          flex-1 px-4 py-6 space-y-2 transition-opacity duration-200
           ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
         `}
       >

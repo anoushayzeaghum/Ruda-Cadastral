@@ -3,11 +3,6 @@
 import os
 import sys
 
-# PROJ_DATA must be set before Django/GDAL is imported.
-# This points to the directory containing proj.db from the QGIS install.
-os.environ.setdefault("PROJ_DATA", r"C:\Program Files\QGIS 3.44.11\share\proj")
-os.environ.setdefault("PROJ_LIB",  r"C:\Program Files\QGIS 3.44.11\share\proj")
-
 
 def main():
     """Run administrative tasks."""

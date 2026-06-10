@@ -11,12 +11,6 @@ import {
   User,
   Star,
   Plus,
-  FlaskConical,
-  CircleDashed,
-  Navigation,
-  Crosshair,
-  BarChart2,
-  Route,
 } from "lucide-react";
 
 export default function LeftPanel({
@@ -28,15 +22,10 @@ export default function LeftPanel({
   setSelectedRudaPhaseIds,
   basemap,
   setBasemap,
-  activeParcel,
-  analysisMode,
-  onAnalysisModeChange,
-  amenityLoadError,
 }) {
   const [layersExpanded, setLayersExpanded] = useState(true);
   const [toolboxExpanded, setToolboxExpanded] = useState(true);
   const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
-  const [gisExpanded, setGisExpanded] = useState(false);
 
   const toggleLayer = (layerKey) => {
     setLayers((prev) => ({
@@ -223,79 +212,6 @@ export default function LeftPanel({
         )}
       </div>
 
-      {/* GIS Analysis Tools */}
-      <div className="border-b border-slate-200">
-        <button
-          onClick={() => setGisExpanded(!gisExpanded)}
-          className="w-full px-4 py-3 flex items-center justify-between font-semibold text-slate-800 hover:bg-slate-50"
-        >
-          <span className="flex items-center gap-2 text-sm">
-            <FlaskConical size={18} />
-            GIS Analysis Tools
-          </span>
-          <ChevronDown
-            size={16}
-            className={`transition-transform ${gisExpanded ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {gisExpanded && (
-          <div className="px-3 pb-3">
-            {!activeParcel && (
-              <div className="text-xs text-slate-500 mb-2 flex items-center gap-1">
-                <Lock size={12} />
-                <span>Select a parcel to enable tools</span>
-              </div>
-            )}
-            {amenityLoadError && (
-              <div className="text-xs text-red-500 mb-2">{amenityLoadError}</div>
-            )}
-            <div className="grid grid-cols-3 gap-2">
-              <GisToolButton
-                icon={<CircleDashed size={18} />}
-                label="Buffer"
-                mode="buffer"
-                activeMode={analysisMode}
-                disabled={!activeParcel}
-                onClick={() => onAnalysisModeChange("buffer")}
-              />
-              <GisToolButton
-                icon={<Navigation size={18} />}
-                label="Proximity"
-                mode="proximity"
-                activeMode={analysisMode}
-                disabled={!activeParcel}
-                onClick={() => onAnalysisModeChange("proximity")}
-              />
-              <GisToolButton
-                icon={<Crosshair size={18} />}
-                label="Nearest"
-                mode="nearest"
-                activeMode={analysisMode}
-                disabled={!activeParcel}
-                onClick={() => onAnalysisModeChange("nearest")}
-              />
-              <GisToolButton
-                icon={<BarChart2 size={18} />}
-                label="Suitability"
-                mode="suitability"
-                activeMode={analysisMode}
-                disabled={!activeParcel}
-                onClick={() => onAnalysisModeChange("suitability")}
-              />
-              <GisToolButton
-                icon={<Route size={18} />}
-                label="Route"
-                mode="routing"
-                activeMode={analysisMode}
-                disabled={!activeParcel}
-                onClick={() => onAnalysisModeChange("routing")}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Satellite Preview */}
       <div className="px-4 py-3 border-b border-slate-200">
         <div
@@ -360,30 +276,6 @@ function ToolboxButton({ icon, label }) {
       <span className="text-[10px] text-slate-700 text-center font-medium leading-tight">
         {label}
       </span>
-    </button>
-  );
-}
-
-function GisToolButton({ icon, label, mode, activeMode, disabled, onClick }) {
-  const isActive = activeMode === mode;
-  return (
-    <button
-      onClick={disabled ? undefined : onClick}
-      className={`relative flex flex-col items-center justify-center gap-1 p-2 border rounded-md transition-colors text-[10px] font-medium leading-tight
-        ${disabled
-          ? "opacity-40 cursor-not-allowed bg-white border-slate-200 text-slate-400"
-          : isActive
-            ? "bg-green-50 border-green-500 text-green-700"
-            : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
-        }`}
-    >
-      {icon}
-      <span className="text-center">{label}</span>
-      {disabled && (
-        <span className="absolute top-0.5 right-0.5 text-slate-400">
-          <Lock size={8} />
-        </span>
-      )}
     </button>
   );
 }
