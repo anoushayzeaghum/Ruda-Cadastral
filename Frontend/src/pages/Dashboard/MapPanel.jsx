@@ -32,7 +32,7 @@ export default function MapPanel() {
     mapRef.current = map;
 
     map.on("load", async () => {
-      await loadLayers();
+      await loadLayers(map);
     });
 
     return () => {
@@ -70,8 +70,7 @@ export default function MapPanel() {
     };
   }, []);
 
-  const loadLayers = async () => {
-    const map = mapRef.current;
+  const loadLayers = async (map) => {
     if (!map) return;
 
     try {

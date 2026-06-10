@@ -5,6 +5,7 @@ import {
   MapPinned,
   Landmark,
 } from "lucide-react";
+import { TypewriterNumber } from "./Statistics";
 
 const kpiCards = [
   {
@@ -13,10 +14,12 @@ const kpiCards = [
     subtitle: "Growth this month",
     icon: TrendingUp,
     tone: "green",
+    filter: "land",
   },
   {
     title: "Khasra Data Status",
     tone: "white",
+    filter: "land",
     status: [
       {
         label: "Verified",
@@ -43,6 +46,7 @@ const kpiCards = [
     progress: 41,
     icon: MapPinned,
     tone: "softGreen",
+    filter: "mouza",
   },
   {
     title: "Acquired Land Progress",
@@ -51,6 +55,7 @@ const kpiCards = [
     ring: 20,
     icon: Landmark,
     tone: "mint",
+    filter: "land",
   },
   {
     title: "Remaining Land",
@@ -58,6 +63,7 @@ const kpiCards = [
     unit: "Kanal",
     subValue: "113,500 Acres",
     tone: "dangerSoft",
+    filter: "land",
   },
 ];
 
@@ -157,12 +163,14 @@ function ProgressBar({ value }) {
   );
 }
 
-export default function KPISection() {
+export default function KPISection({ activeFilter = "land" }) {
+  const displayedCards = kpiCards.filter((card) => card.filter === activeFilter);
+  
   return (
     <div className="w-full">
-      {/* 5 equal columns on xl, 3-col on lg, 2-col on sm, 1-col on mobile */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {kpiCards.map((card) => {
+      {/* Dynamic grid columns based on how many cards are displayed */}
+      <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 ${displayedCards.length === 4 ? "xl:grid-cols-4" : displayedCards.length === 1 ? "xl:grid-cols-1 lg:max-w-md" : "xl:grid-cols-5"}`}>
+        {displayedCards.map((card) => {
           const tone = toneClasses(card.tone);
           const Icon = card.icon;
 
@@ -207,7 +215,7 @@ export default function KPISection() {
                             </span>
                           </div>
                           <span className={`text-[13px] font-semibold ${item.text}`}>
-                            {item.value}
+                            <TypewriterNumber value={item.value} />
                           </span>
                         </div>
                       );
@@ -217,12 +225,12 @@ export default function KPISection() {
                   <div>
                     <div className="flex flex-wrap items-end gap-x-1.5 gap-y-0.5">
                       <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
-                        {card.value}
+                        <TypewriterNumber value={card.value} />
                       </span>
                       <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit1}</span>
                       <span className={`pb-0.5 text-[11px] ${tone.sub}`}>/</span>
                       <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
-                        {card.value2}
+                        <TypewriterNumber value={card.value2} />
                       </span>
                       <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit2}</span>
                     </div>
@@ -234,7 +242,7 @@ export default function KPISection() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-end gap-1">
                       <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
-                        {card.value}
+                        <TypewriterNumber value={card.value} />
                       </span>
                       <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit}</span>
                     </div>
@@ -244,7 +252,7 @@ export default function KPISection() {
                   <div>
                     <div className="flex items-end gap-1">
                       <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
-                        {card.value}
+                        <TypewriterNumber value={card.value} />
                       </span>
                       {card.unit ? (
                         <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit}</span>

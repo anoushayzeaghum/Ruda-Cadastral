@@ -1,3 +1,14 @@
+
+import os
+
+os.environ["GDAL_LIBRARY_PATH"] = r"C:\Program Files\QGIS 3.44.1\bin\gdal311.dll"
+os.environ["GEOS_LIBRARY_PATH"] = r"C:\Program Files\QGIS 3.44.1\bin\geos_c.dll"
+os.environ["PATH"] += r";C:\Program Files\QGIS 3.44.1\bin"
+
+# PROJ_DATA must be set before Django/GDAL is imported so coordinate
+# transforms (e.g. 4326 → 3857 for buffer polygon) work correctly.
+os.environ.setdefault("PROJ_DATA", r"C:\Program Files\QGIS 3.44.11\share\proj")
+os.environ.setdefault("PROJ_LIB",  r"C:\Program Files\QGIS 3.44.11\share\proj")
 """
 WSGI config for server project.
 
