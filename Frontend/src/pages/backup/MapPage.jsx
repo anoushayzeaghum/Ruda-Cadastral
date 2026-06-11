@@ -4,9 +4,9 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Header from "./Header";
 import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
-import ParcelPanel from "./ParcelPanel";
+import ParcelPanel from "../Mapview/ParcelPanel";
 
-import MapView from "./Mapview";
+import MapView from "../Mapview/Mapview";
 
 const getKhasraNumber = (props = {}) => {
   return (
@@ -215,8 +215,39 @@ export default function MapPage() {
     <div className="w-full h-screen flex flex-col bg-white">
       <Header />
 
-      <div className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white">
-        <MapView
+      {filters && (
+        <SubHeader
+          filters={filters}
+          parcelOptions={standardParcelOptions}
+          selectedParcelNumber={selectedParcelNumber}
+          onParcelNumberChange={(val) => setSelectedParcelNumber(val)}
+          isMurabbaBasedKhasra={isMurabbaBasedKhasra}
+          murabbaOptions={murabbaOptions}
+          selectedMurabbaNumber={selectedMurabbaNumber}
+          onMurabbaNumberChange={(val) => {
+            setSelectedMurabbaNumber(val);
+            setSelectedParcelNumber("");
+          }}
+          khasraOptions={khasraOptions}
+        />
+      )}
+
+      <div className="flex flex-1 overflow-hidden">
+        <div className="w-72 border-r border-slate-200 bg-white z-10">
+          <LeftPanel
+            layers={layers}
+            setLayers={setLayers}
+            rudaPhases={rudaPhases}
+            setRudaPhases={setRudaPhases}
+            selectedRudaPhaseIds={selectedRudaPhaseIds}
+            setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
+            basemap={basemap}
+            setBasemap={setBasemap}
+          />
+        </div>
+
+        <div className="flex-1 relative bg-gradient-to-b from-blue-50 to-white">
+          <MapView
             selectedMouza={filters?.selectedMouzaDetails}
             selectedDistrict={filters?.selectedDistrictOptions}
             selectedTehsil={filters?.selectedTehsilOptions}
@@ -230,39 +261,12 @@ export default function MapPage() {
             onParcelSelect={handleParcelSelect}
           />
 
-        {filters && (
-          <SubHeader
-            filters={filters}
-            parcelOptions={standardParcelOptions}
-            selectedParcelNumber={selectedParcelNumber}
-            onParcelNumberChange={(val) => setSelectedParcelNumber(val)}
-            isMurabbaBasedKhasra={isMurabbaBasedKhasra}
-            murabbaOptions={murabbaOptions}
-            selectedMurabbaNumber={selectedMurabbaNumber}
-            onMurabbaNumberChange={(val) => {
-              setSelectedMurabbaNumber(val);
-              setSelectedParcelNumber("");
-            }}
-            khasraOptions={khasraOptions}
+          <ParcelPanel
+            parcel={selectedParcel}
+            isOpen={parcelPanelOpen}
+            onClose={() => setParcelPanelOpen(false)}
           />
-        )}
-
-        <LeftPanel
-          layers={layers}
-          setLayers={setLayers}
-          rudaPhases={rudaPhases}
-          setRudaPhases={setRudaPhases}
-          selectedRudaPhaseIds={selectedRudaPhaseIds}
-          setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
-          basemap={basemap}
-          setBasemap={setBasemap}
-        />
-
-        <ParcelPanel
-          parcel={selectedParcel}
-          isOpen={parcelPanelOpen}
-          onClose={() => setParcelPanelOpen(false)}
-        />
+        </div>
       </div>
     </div>
   );

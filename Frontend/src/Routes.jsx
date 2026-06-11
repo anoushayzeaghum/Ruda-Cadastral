@@ -14,6 +14,8 @@ import Murabba from "./pages/Area Management/Murabba";
 import AreaLayout from "./layouts/AreaLayout";
 import Demarcation from "./pages/Demarcation/Demarcation";
 import ProtectedRoute from "./pages/Auth/ProtectedRoute";
+import LandingPage from "./pages/LandingPage/LandingPage";
+//import MapPage from "./pages/CadastralDashboard/MapPage";
 
 const AppRoutes = () => {
   return (
@@ -27,6 +29,9 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/demarcation" element={<Demarcation />} />
           <Route path="/mapview" element={<MapPage />} />
+          <Route path="/cadastral-map" element={<MapPage />} />
+          <Route path="/landing" element={<LandingPage />} />
+
 
           <Route path="/area" element={<AreaLayout />}>
             <Route path="division" element={<Division />} />

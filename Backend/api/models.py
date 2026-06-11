@@ -286,7 +286,7 @@ class Khasra(models.Model):
         db_table = "khasra"
 
 # --------------------------------------------------------
-# Khasra Administrative Boundary
+# Ruda Boundary
 # --------------------------------------------------------
         
 class RudaBoundary(models.Model):

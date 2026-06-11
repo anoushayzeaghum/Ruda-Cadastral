@@ -41,10 +41,11 @@ export default function SubHeader({
     selectedMouza && viewBy === "khasra" && isMurabbaBasedKhasra;
 
   return (
-<div className="absolute top-4 left-1/2 z-30 w-fit -translate-x-1/2 overflow-visible rounded-xl bg-[#0f3d2e] shadow-xl">      <div className="flex items-center justify-center gap-2 px-3 py-2 flex-wrap overflow-visible">
+    <div className="w-full bg-gray-100 border-b border-gray-300 shadow-sm relative z-20 overflow-visible">
+      <div className="flex items-center gap-3 px-4 py-2 flex-wrap overflow-visible">
      
 
-        <div className="flex items-center justify-center gap-2 flex-wrap overflow-visible">
+        <div className="flex items-center gap-2 flex-1 flex-wrap overflow-visible">
           <FilterCard
             label="Division — ڈویژن"
             value={getMultiValueDisplay({
@@ -203,11 +204,11 @@ export default function SubHeader({
 
 function FilterCard({ label, value, children }) {
   return (
-    <div className="relative min-w-[135px] overflow-visible rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 shadow-sm hover:border-green-600">
-      <p className="text-[9px] text-gray-500">{label}</p>
+    <div className="relative bg-white border border-gray-200 rounded-md px-3 py-2 min-w-[180px] hover:border-green-600 overflow-visible">
+      <p className="text-[10px] text-gray-500">{label}</p>
       <div className="flex items-center justify-between">
-        <p className="max-w-[115px] truncate text-xs font-semibold text-gray-800">{value}</p>
-        <ChevronDown size={13} className="text-gray-400 ml-2 shrink-0" />
+        <p className="text-sm font-semibold text-gray-800 truncate">{value}</p>
+        <ChevronDown size={14} className="text-gray-400 ml-2 shrink-0" />
       </div>
       {children}
     </div>

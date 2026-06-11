@@ -1,10 +1,10 @@
-import { Search, ChevronDown, LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogOut } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 import { useNavigate } from "react-router-dom";
 
 const headerBackgroundStyle = {
   backgroundImage: [
-    "linear-gradient(90deg, rgba(20, 83, 45, 0.94) 0%, rgba(22, 101, 52, 0.82) 38%, rgba(21, 128, 61, 0.72) 65%, rgba(20, 83, 45, 0.78) 100%)",
+    "linear-gradient(90deg, rgba(20, 83, 45, 0.96) 0%, rgba(22, 101, 52, 0.86) 42%, rgba(21, 128, 61, 0.72) 70%, rgba(20, 83, 45, 0.82) 100%)",
     "url('/ruda_bg.png')",
   ].join(", "),
   backgroundSize: "cover",
@@ -24,68 +24,56 @@ export default function Header() {
 
   return (
     <div
-      className="relative w-full text-white px-6 py-2 shadow-md"
+      className="relative w-full text-white px-5 py-2 shadow-md z-40"
       style={headerBackgroundStyle}
     >
       <div className="relative z-10 flex items-center justify-between">
-        {/* LEFT SECTION */}
-        <div className="flex items-center gap-4">
-          {/* Logo */}
-          <div className="bg-white rounded-full p-1 flex items-center justify-center">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="bg-white rounded-full p-1 flex items-center justify-center shrink-0">
             <img
               src={rudaFirmLogo}
               alt="RLIMS"
-              className="h-10 w-10 object-contain"
+              className="h-9 w-9 object-contain"
             />
           </div>
 
-          {/* Title */}
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-normal tracking-wide">RCMS</h1>
-            <span className="text-white/60 text-xl">|</span>
-            <p className="text-lg font-normal text-white/90">
+          <div className="flex items-center gap-3 min-w-0">
+            <h1 className="text-2xl font-normal tracking-wide shrink-0">RCMS</h1>
+            <span className="text-white/55 text-lg">|</span>
+            <p className="text-base font-normal text-white/90 truncate">
               RUDA Cadastral Management System
             </p>
           </div>
         </div>
 
-        {/* RIGHT SECTION */}
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className="flex items-center bg-white/95 rounded-md border border-white/30 px-3 py-1 w-[420px]">
-            <Search className="text-gray-500 mr-2" size={16} />
-            <input
-              type="text"
-              placeholder="Parcel ID / Khasra No., Owner Name,"
-              className="flex-1 text-sm text-gray-700 bg-transparent focus:outline-none"
-            />
-            <ChevronDown className="text-gray-500 ml-2" size={16} />
-          </div>
-
-          {/* Dashboard Button */}
-          <button
+        <div className="flex items-center gap-2">
+          <IconButton
+            title="Dashboard"
             onClick={() => navigate("/dashboard")}
-            className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium flex items-center gap-2 transition"
-          >
-            <LayoutDashboard size={16} />
-            Dashboard
-          </button>
+            icon={<LayoutDashboard size={18} />}
+          />
 
-          {/* Export Button */}
-          {/* <button className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium">
-            Export Report
-          </button> */}
-
-          {/* ✅ Logout Button (RIGHT MOST) */}
-          <button
+          <IconButton
+            title="Logout"
             onClick={handleLogout}
-            className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium flex items-center gap-2 transition"
-          >
-            <LogOut size={16} />
-            Logout
-          </button>
+            icon={<LogOut size={18} />}
+          />
         </div>
       </div>
     </div>
+  );
+}
+
+function IconButton({ title, icon, onClick }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      className="h-9 w-9 rounded-lg bg-white/15 border border-white/25 text-white flex items-center justify-center shadow-sm transition hover:bg-white/25 hover:border-white/40"
+    >
+      {icon}
+    </button>
   );
 }
