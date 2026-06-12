@@ -382,7 +382,7 @@ class SpotLevel(models.Model):
 
     class Meta:
         managed = False
-        db_table = "spotlevel"
+        db_table = "spot_level"
 
 
 # =========================
