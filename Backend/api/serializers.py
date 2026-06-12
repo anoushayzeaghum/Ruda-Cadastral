@@ -256,6 +256,7 @@ class SocietySerializer(GeoFeatureModelSerializer):
             "tehsil_id",
             "mauza",
             "mauza_id",
+            "geom",
         )
 
 # --------------------------------------------------------
@@ -292,6 +293,7 @@ class MasterPlanSerializer(GeoFeatureModelSerializer):
             "mauza",
             "district",
             "tehsil",
+            "geom",
         )
 
 # --------------------------------------------------------
