@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  getDivisions,
   getDistricts,
   getTehsils,
-  getMouzas,
+  getMauzas,
 } from "../services/api";
 
 const sortByLabel = (items, key) =>
@@ -38,59 +37,23 @@ const toggleId = (list, id) =>
   list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
 
 export default function useCadastralFilters() {
-  const [divisions, setDivisions] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [tehsils, setTehsils] = useState([]);
-  const [mouzas, setMouzas] = useState([]);
+  const [mauzas, setMauzas] = useState([]);
 
-  const [selectedDivision, setSelectedDivision] = useState([]);
   const [selectedDistrict, setSelectedDistrict] = useState([]);
   const [selectedTehsil, setSelectedTehsil] = useState([]);
-  const [selectedMouza, setSelectedMouza] = useState("");
+  const [selectedMauza, setSelectedMauza] = useState("");
   const [viewBy, setViewBy] = useState(""); // For Khasra/Murabba selection
 
   const [loading, setLoading] = useState({
-    divisions: false,
     districts: false,
     tehsils: false,
-    mouzas: false,
+    mauzas: false,
   });
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    let ignore = false;
-
-    const loadDivisions = async () => {
-      setLoading((prev) => ({ ...prev, divisions: true }));
-      setErrorMessage("");
-
-      try {
-        const data = await getDivisions();
-        if (!ignore) {
-          setDivisions(sortByLabel(data, "division"));
-        }
-      } catch {
-        if (!ignore) {
-          setDivisions([]);
-          setErrorMessage("Unable to load divisions right now.");
-        }
-      } finally {
-        if (!ignore) {
-          setLoading((prev) => ({ ...prev, divisions: false }));
-        }
-      }
-    };
-
-    loadDivisions();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!selectedDivision.length) return undefined;
-
     let ignore = false;
 
     const loadDistricts = async () => {
@@ -98,19 +61,14 @@ export default function useCadastralFilters() {
       setErrorMessage("");
 
       try {
-        const responses = await Promise.all(
-          selectedDivision.map((divisionId) => getDistricts(divisionId)),
-        );
-        const data = dedupeBy(responses.flat(), "id");
+        const data = await getDistricts();
         if (!ignore) {
           setDistricts(sortByLabel(data, "name"));
         }
       } catch {
         if (!ignore) {
           setDistricts([]);
-          setErrorMessage(
-            "Unable to load districts for the selected division.",
-          );
+          setErrorMessage("Unable to load districts right now.");
         }
       } finally {
         if (!ignore) {
@@ -124,7 +82,7 @@ export default function useCadastralFilters() {
     return () => {
       ignore = true;
     };
-  }, [selectedDivision]);
+  }, []);
 
   useEffect(() => {
     if (!selectedDistrict.length) return undefined;
@@ -167,14 +125,14 @@ export default function useCadastralFilters() {
 
     let ignore = false;
 
-    const loadMouzas = async () => {
-      setLoading((prev) => ({ ...prev, mouzas: true }));
+    const loadMauzas = async () => {
+      setLoading((prev) => ({ ...prev, mauzas: true }));
       setErrorMessage("");
 
       try {
         console.log(selectedTehsil);
         const responses = await Promise.all(
-          selectedTehsil.map((tehsil) => getMouzas(tehsil)),
+          selectedTehsil.map((tehsil) => getMauzas(tehsil)),
         );
 
         console.log("Responses from API:", responses);
@@ -185,56 +143,49 @@ export default function useCadastralFilters() {
         // Convert GeoJSON → flat object
         const data = allFeatures.map((f) => ({
           id: f.id,
-          mouza_id: f.id, // or f.properties.mouza_id if exists
+          mauza_id: f.id, // or f.properties.mauza_id if exists
           geometry: f.geometry,
           ...f.properties,
         }));
 
-        const unique = dedupeBy(data, "mouza_id");
+        const unique = dedupeBy(data, "mauza_id");
 
-        console.log("Flattened mouza data:", unique);
+        console.log("Flattened mauza data:", unique);
 
-        setMouzas(sortByLabel(unique, "mouza"));
+        setMauzas(sortByLabel(unique, "mauza"));
         if (!ignore) {
-          setMouzas(sortByLabel(data, "mouza"));
+          setMauzas(sortByLabel(data, "mauza"));
         }
       } catch {
         if (!ignore) {
-          setMouzas([]);
-          setErrorMessage("Unable to load mouzas for the selected tehsil.");
+          setMauzas([]);
+          setErrorMessage("Unable to load mauzas for the selected tehsil.");
         }
       } finally {
         if (!ignore) {
-          setLoading((prev) => ({ ...prev, mouzas: false }));
+          setLoading((prev) => ({ ...prev, mauzas: false }));
         }
       }
     };
 
-    loadMouzas();
+    loadMauzas();
 
     return () => {
       ignore = true;
     };
   }, [selectedTehsil]);
 
-  const selectedDivisionPrimary = selectedDivision[0] ?? "";
   const selectedDistrictPrimary = selectedDistrict[0] ?? "";
   const selectedTehsilPrimary = selectedTehsil[0] ?? "";
 
-  const selectedDivisionOption = divisions.find(
-    (item) => String(item.division_i) === String(selectedDivisionPrimary),
-  );
   const selectedDistrictOption = districts.find(
     (item) => String(item.id) === String(selectedDistrictPrimary),
   );
   const selectedTehsilOption = tehsils.find(
     (item) => String(item.id) === String(selectedTehsilPrimary),
   );
-  const selectedMouzaOption = mouzas.find(
-    (item) => String(item.mouza_id) === String(selectedMouza),
-  );
-  const selectedDivisionOptions = divisions.filter((item) =>
-    selectedDivision.includes(String(item.division_i)),
+  const selectedMauzaOption = mauzas.find(
+    (item) => String(item.mauza_id) === String(selectedMauza),
   );
   const selectedDistrictOptions = districts.filter((item) =>
     selectedDistrict.includes(String(item.id)),
@@ -243,52 +194,33 @@ export default function useCadastralFilters() {
     selectedTehsil.includes(String(item.id)),
   );
 
-  const selectedMouzaDetails = useMemo(() => {
-    if (!selectedMouzaOption) return null;
+  const selectedMauzaDetails = useMemo(() => {
+    if (!selectedMauzaOption) return null;
 
     return {
-      // include both legacy `id/name` and the `mouza`/`mouza_id` keys
-      id: selectedMouzaOption.mouza_id,
-      mouza_id: selectedMouzaOption.mouza_id,
-      name: selectedMouzaOption.mouza,
-      mouza: selectedMouzaOption.mouza,
-      tehsil: selectedTehsilOption?.name ?? selectedMouzaOption.tehsil,
-      tehsil_id: selectedMouzaOption.tehsil_id,
-      district: selectedDistrictOption?.name ?? selectedMouzaOption.district,
-      dist_id: selectedMouzaOption.dist_id,
-      division: selectedDivisionOption?.division ?? "",
-      division_id: selectedDivisionOption?.division_i ?? "",
+      // include both legacy `id/name` and the `mauza`/`mauza_id` keys
+      id: selectedMauzaOption.mauza_id,
+      mauza_id: selectedMauzaOption.mauza_id,
+      name: selectedMauzaOption.mauza,
+      mauza: selectedMauzaOption.mauza,
+      tehsil: selectedTehsilOption?.name ?? selectedMauzaOption.tehsil,
+      tehsil_id: selectedMauzaOption.tehsil_id,
+      district: selectedDistrictOption?.name ?? selectedMauzaOption.district,
+      dist_id: selectedMauzaOption.dist_id,
     };
   }, [
-    selectedDivisionOption,
     selectedDistrictOption,
-    selectedMouzaOption,
+    selectedMauzaOption,
     selectedTehsilOption,
   ]);
 
   const resetFilters = () => {
-    setSelectedDivision([]);
     setSelectedDistrict([]);
     setSelectedTehsil([]);
-    setSelectedMouza("");
+    setSelectedMauza("");
     setViewBy("");
-    setDistricts([]);
     setTehsils([]);
-    setMouzas([]);
-    setErrorMessage("");
-  };
-
-  const handleDivisionChange = (valueOrEvent) => {
-    const id = toId(valueOrEvent);
-    if (!id) return;
-    setSelectedDivision((prev) => toggleId(prev, id));
-    setSelectedDistrict([]);
-    setSelectedTehsil([]);
-    setSelectedMouza("");
-    setViewBy("");
-    setDistricts([]);
-    setTehsils([]);
-    setMouzas([]);
+    setMauzas([]);
     setErrorMessage("");
   };
 
@@ -297,10 +229,10 @@ export default function useCadastralFilters() {
     if (!id) return;
     setSelectedDistrict((prev) => toggleId(prev, id));
     setSelectedTehsil([]);
-    setSelectedMouza("");
+    setSelectedMauza("");
     setViewBy("");
     setTehsils([]);
-    setMouzas([]);
+    setMauzas([]);
     setErrorMessage("");
   };
 
@@ -308,17 +240,17 @@ export default function useCadastralFilters() {
     const id = toId(valueOrEvent);
     if (!id) return;
     setSelectedTehsil((prev) => toggleId(prev, id));
-    setSelectedMouza("");
+    setSelectedMauza("");
     setViewBy("");
-    setMouzas([]);
+    setMauzas([]);
     setErrorMessage("");
   };
 
-  const handleMouzaChange = (e) => {
+  const handleMauzaChange = (e) => {
     const value = String(e.target.value ?? "");
-    setSelectedMouza(value);
-    // Automatically switch to 'khasra' view when a mouza is selected,
-    // clear view when mouza is cleared.
+    setSelectedMauza(value);
+    // Automatically switch to 'khasra' view when a mauza is selected,
+    // clear view when mauza is cleared.
     setViewBy(value ? "khasra" : "");
   };
 
@@ -327,35 +259,29 @@ export default function useCadastralFilters() {
   };
 
   return {
-    divisions,
     districts,
     tehsils,
-    mouzas,
-    selectedDivision,
+    mauzas,
     selectedDistrict,
     selectedTehsil,
-    selectedMouza,
+    selectedMauza,
     viewBy,
-    selectedDivisionOption,
     selectedDistrictOption,
     selectedTehsilOption,
-    selectedDivisionOptions,
     selectedDistrictOptions,
     selectedTehsilOptions,
-    selectedMouzaOption,
-    selectedMouzaDetails,
+    selectedMauzaOption,
+    selectedMauzaDetails,
     loading,
     errorMessage,
     hasSelection: Boolean(
-      selectedDivision.length ||
       selectedDistrict.length ||
       selectedTehsil.length ||
-      selectedMouza,
+      selectedMauza,
     ),
-    handleDivisionChange,
     handleDistrictChange,
     handleTehsilChange,
-    handleMouzaChange,
+    handleMauzaChange,
     handleViewByChange,
     resetFilters,
   };

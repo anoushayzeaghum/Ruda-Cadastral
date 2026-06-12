@@ -11,7 +11,6 @@ class ListDistrictView(viewsets.ViewSet):
     def list(self, request, *args, **kwargs):
 
         try:
-            division_i = request.query_params.get("division_i")
             district_id = request.query_params.get("id")
 
             if district_id:
@@ -30,19 +29,6 @@ class ListDistrictView(viewsets.ViewSet):
                 return ApiResponse(
                     status=status.HTTP_200_OK,
                     message="District found.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
-
-            elif division_i:
-
-                queryset = District.objects.filter(division_i=division_i)
-
-                serializer = DistrictSerializer(queryset, many=True)
-
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Districts found.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()

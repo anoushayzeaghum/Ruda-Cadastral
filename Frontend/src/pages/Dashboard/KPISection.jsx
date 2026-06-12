@@ -35,11 +35,11 @@ const kpiCards = [
     ],
   },
   {
-    title: "Tehsil & Mouza Counts",
+    title: "Tehsil & Mauza Counts",
     value: "6",
     value2: "170",
     unit1: "Tehsils",
-    unit2: "Mouzas",
+    unit2: "Mauzas",
     progress: 41,
     icon: MapPinned,
     tone: "softGreen",

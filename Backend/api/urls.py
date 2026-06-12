@@ -10,21 +10,19 @@ router.register(r'create-user', UserCreateView, basename='create-user')
 router.register(r'login-user', UserLoginDashboardCreateView, basename='login-user')
 router.register(r'get-user', GetUserView, basename='get-user')
 router.register(r'update-user', UserUpdateView, basename='update-user')
-#--------------------------------- Division View ---------------------------------
-router.register(r"division", ListDivisionView, basename="division")
 
 #--------------------------------- District View ---------------------------------
 router.register(r"district", ListDistrictView, basename="district")
 
-#--------------------------------- Mouza View ---------------------------------
+#--------------------------------- Mauza View ---------------------------------
 router.register(r"tehsil", ListTehsilView, basename="tehsil")
 
-#--------------------------------- Mouza View ---------------------------------
-router.register(r"mouza", ListMouzaView, basename="mouza")
-router.register(r"mouza/create", CreateMouzaView, basename="create-mouza")
-router.register(r"mouza/update", UpdateMouzaView, basename="update-mouza")
-router.register(r"mouza/delete", DeleteMouzaView, basename="delete-mouza")
-router.register(r"mouza/import", ImportMouzaView, basename="import-mouza")
+#--------------------------------- Mauza View ---------------------------------
+router.register(r"mauza", ListMauzaView, basename="mauza")
+router.register(r"mauza/create", CreateMauzaView, basename="create-mauza")
+router.register(r"mauza/update", UpdateMauzaView, basename="update-mauza")
+router.register(r"mauza/delete", DeleteMauzaView, basename="delete-mauza")
+router.register(r"mauza/import", ImportMauzaView, basename="import-mauza")
 
 #--------------------------------- Murabba View ---------------------------------
 router.register(r"murabba", ListMurabbaView, basename="murabba")

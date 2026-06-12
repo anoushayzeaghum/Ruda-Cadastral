@@ -404,14 +404,27 @@ export default function Statistics({ activeFilter = "land" }) {
           </div>
         </div>
 
-        {/* ── Row 2: Conditional panels based on filter ── */}
-        {activeFilter === "land" ? (
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-[2.4fr_1.2fr]">
-            <Panel className="px-4 py-4">
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_1px_0.95fr] xl:gap-4 h-full">
-                <div>
-                  <div className="flex items-center justify-between gap-3">
-                    <SectionTitle green>Survey Progress</SectionTitle>
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.02fr_2.4fr_1.2fr]">
+          <Panel className="px-4 py-3.5">
+            <SectionTitle>Mauzas by Division</SectionTitle>
+
+            <div className="mt-2">
+              {divisions.map((item, index) => (
+                <RowItem
+                  key={item.name}
+                  label={item.name}
+                  value={item.count}
+                  last={index === divisions.length - 1}
+                />
+              ))}
+            </div>
+          </Panel>
+
+          <Panel className="px-4 py-3.5">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_1px_0.95fr] xl:gap-4">
+              <div>
+                <div className="flex items-center justify-between gap-3">
+                  <SectionTitle green>Survey Progress</SectionTitle>
 
                     <div className="flex items-center gap-1.5 text-[13px] font-medium text-slate-500 dark:text-slate-400">
                       <span>Total</span>
@@ -524,24 +537,28 @@ export default function Statistics({ activeFilter = "land" }) {
                   <ProgressBar value={68} color="bg-emerald-500" />
                 </div>
 
-                <div className="flex flex-col gap-1.5 sm:grid sm:grid-cols-[1fr_95px_auto] sm:items-center sm:gap-3">
-                  <div className="flex justify-between items-center sm:contents">
-                    <span className="text-[12px] font-medium text-slate-600 dark:text-slate-400">
-                      Mutation Registers
-                    </span>
-                    <span className="text-[16px] font-semibold text-slate-900 dark:text-white sm:order-last">
-                      59%
-                    </span>
-                  </div>
-                  <ProgressBar value={59} color="bg-teal-500" />
-                </div>
+              <div className="grid grid-cols-[1fr_95px_auto] items-center gap-3">
+                <span className="text-[12px] text-[#334038]">
+                  Mutation Registers
+                </span>
+                <ProgressBar value={59} color="bg-[#2f8650]" />
+                <span className="text-[16px] font-semibold text-[#1e5e37]">
+                  59%
+                </span>
               </div>
-            </Panel>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.2fr_1.4fr_1fr]">
-            <Panel className="px-4 py-4">
-              <SectionTitle>Mouzas by Division</SectionTitle>
+            </div>
+          </Panel>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.4fr_1.2fr_1fr_1.12fr]">
+          <Panel className="p-0 bg-white border-none shadow-none">
+            <div className="h-full min-h-[220px]">
+              <BarChart />
+            </div>
+          </Panel>
+
+          <Panel className="px-4 py-3.5">
+            <SectionTitle>Mauzas by Division</SectionTitle>
 
               <div className="mt-2">
                 {divisions.map((item, index) => (

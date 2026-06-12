@@ -54,7 +54,7 @@ export default function ParcelPanel({
       parcel?.id ??
       "N/A",
 
-    mouza: parcel?.properties?.mouza ?? parcel?.properties?.mouza_name ?? "N/A",
+    mauza: parcel?.properties?.mauza ?? parcel?.properties?.mauza_name ?? "N/A",
 
     area:
       areaKanal !== null
@@ -186,9 +186,9 @@ export default function ParcelPanel({
 
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
-                  <p className="text-xs text-slate-500">Mouza</p>
+                  <p className="text-xs text-slate-500">Mauza</p>
                   <p className="font-semibold text-slate-900">
-                    {parcelData.mouza}
+                    {parcelData.mauza}
                   </p>
                 </div>
 

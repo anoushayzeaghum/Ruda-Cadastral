@@ -68,7 +68,7 @@ const normalizeGeoJson = (res) => {
 
       return {
         type: "Feature",
-        id: item.mouza_id ?? item.gid ?? undefined,
+        id: item.mauza_id ?? item.gid ?? undefined,
         geometry: geometry || null,
         properties,
       };
@@ -91,15 +91,8 @@ const normalizeGeoJson = (res) => {
 //////////////// ADMIN FILTER APIs ////////////////////
 ///////////////////////////////////////////////////////
 
-export const getDivisions = async () => {
-  const res = await API.get("/division/");
-  return normalizeData(res);
-};
-
-export const getDistricts = async (division_i) => {
-  const res = await API.get("/district/", {
-    params: { division_i },
-  });
+export const getDistricts = async () => {
+  const res = await API.get("/district/");
   return normalizeData(res);
 };
 
@@ -110,29 +103,29 @@ export const getTehsils = async (district_i) => {
   return normalizeData(res);
 };
 
-export const getMouzas = async (tehsil) => {
+export const getMauzas = async (tehsil) => {
   const params = {};
   if (tehsil !== undefined && tehsil !== null && tehsil !== "") {
     params.tehsil = tehsil;
   }
 
-  const res = await API.get("/mouza/", {
+  const res = await API.get("/mauza/", {
     params,
   });
-  console.log("Raw response for getMouzas:", res);
+  console.log("Raw response for getMauzas:", res);
   return normalizeGeoJson(res);
 };
 
-export const getKhasras = async (mouza_id) => {
+export const getKhasras = async (mauza_id) => {
   const res = await API.get("/khasra/", {
-    params: { mouza_id },
+    params: { mauza_id },
   });
   return normalizeGeoJson(res);
 };
 
-export const getMurabbas = async (mouza_id) => {
+export const getMurabbas = async (mauza_id) => {
   const res = await API.get("/murabba/", {
-    params: { mouza_id },
+    params: { mauza_id },
   });
   return normalizeGeoJson(res);
 };
@@ -140,11 +133,6 @@ export const getMurabbas = async (mouza_id) => {
 ///////////////////////////////////////////////////////
 //////////////// BOUNDARY APIs ////////////////////////
 ///////////////////////////////////////////////////////
-
-export const getDivisionBoundary = async (id) => {
-  const res = await API.get(`/division/${id}/geojson`);
-  return normalizeGeoJson(res);
-};
 
 export const getDistrictBoundary = async (id) => {
   const res = await API.get(`/district/${id}/geojson`);
@@ -156,8 +144,8 @@ export const getTehsilBoundary = async (id) => {
   return normalizeGeoJson(res);
 };
 
-export const getMouzaBoundary = async (id) => {
-  const res = await API.get(`/mouza/${id}/geojson`);
+export const getMauzaBoundary = async (id) => {
+  const res = await API.get(`/mauza/${id}/geojson`);
   return normalizeGeoJson(res);
 };
 
@@ -189,25 +177,25 @@ export const getRudaGeoJSON = async (gid) => {
 ///////////////////// TRIJUNCTION APIs ///////////////////////
 ///////////////////////////////////////////////////////
 
-export const getTrijunctionPoints = async ({ mouza, type }) => {
+export const getTrijunctionPoints = async ({ mauza, type }) => {
   const params = { type };
 
-  if (mouza) {
-    params.mouza = mouza;
+  if (mauza) {
+    params.mauza = mauza;
   }
 
   const res = await API.get("/trijunction/", { params });
   return normalizeGeoJson(res);
 };
 
-// Import Mouza ZIP (shapefile inside)
-export const importMouza = async ({ file, tehsil, mouza }) => {
+// Import Mauza ZIP (shapefile inside)
+export const importMauza = async ({ file, tehsil, mauza }) => {
   const fd = new FormData();
   fd.append("file", file);
   if (tehsil) fd.append("tehsil", tehsil);
-  if (mouza) fd.append("mouza", mouza);
+  if (mauza) fd.append("mauza", mauza);
 
-  const res = await API.post("/mouza/import/", fd, {
+  const res = await API.post("/mauza/import/", fd, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 

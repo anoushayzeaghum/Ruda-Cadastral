@@ -1,35 +1,35 @@
 from ..common_imports import *
 
-class DeleteMouzaView(viewsets.ViewSet):
-    queryset = Mouza.objects.all()
-    serializer_class = MouzaSerializer
+class DeleteMauzaView(viewsets.ViewSet):
+    queryset = Mauza.objects.all()
+    serializer_class = MauzaSerializer
     permission_classes = [AllowAny]
 
     def destroy(self, request, *args, **kwargs):
-        mouza_id = kwargs.get("pk")
+        mauza_id = kwargs.get("pk")
 
         try:
-            mouza = Mouza.objects.get(id=mouza_id)
-        except Mouza.DoesNotExist:
+            mauza = Mauza.objects.get(id=mauza_id)
+        except Mauza.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="Mouza not found.",
+                message="Mauza not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            mouza.delete()
+            mauza.delete()
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="Mouza deleted successfully.",
+                message="Mauza deleted successfully.",
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
         except ProtectedError:
             return ApiResponse(
                 status=status.HTTP_400_BAD_REQUEST,
-                message="Cannot delete this Mouza because it is linked to other records.",
+                message="Cannot delete this Mauza because it is linked to other records.",
                 http_status=status.HTTP_400_BAD_REQUEST,
             ).create_response()
 

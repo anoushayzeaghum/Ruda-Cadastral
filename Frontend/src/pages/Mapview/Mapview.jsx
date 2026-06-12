@@ -3,10 +3,9 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 import {
-  getDivisionBoundary,
   getDistrictBoundary,
   getTehsilBoundary,
-  getMouzaBoundary,
+  getMauzaBoundary,
   getKhasras,
   getMurabbas,
   getRudaGeoJSON,
@@ -198,10 +197,9 @@ const ensureTriangleIcon = (map) => {
 };
 
 export default function MapView({
-  selectedDivision,
   selectedDistrict,
   selectedTehsil,
-  selectedMouza,
+  selectedMauza,
   viewBy,
   demarcationMode = false,
   onParcelSelect,
@@ -568,9 +566,9 @@ export default function MapView({
           <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
             Tri-junction Point
           </div>
-          <div><span style="font-weight: 600;">Mouza 1:</span> ${props.m1 ?? "-"}</div>
-          <div><span style="font-weight: 600;">Mouza 2:</span> ${props.m2 ?? "-"}</div>
-          <div><span style="font-weight: 600;">Mouza 3:</span> ${props.m3 ?? "-"}</div>
+          <div><span style="font-weight: 600;">Mauza 1:</span> ${props.m1 ?? "-"}</div>
+          <div><span style="font-weight: 600;">Mauza 2:</span> ${props.m2 ?? "-"}</div>
+          <div><span style="font-weight: 600;">Mauza 3:</span> ${props.m3 ?? "-"}</div>
           ${coordinatesHtml}
         </div>
       `;
@@ -1110,21 +1108,21 @@ export default function MapView({
         setIsLoading(true);
         setError("");
 
-        ["division", "district", "tehsil", "mouza"].forEach((lvl) =>
+        ["district", "tehsil", "mauza"].forEach((lvl) =>
           clearBoundaryLevel(lvl),
         );
 
         setFeatureCount(0);
 
-        if (selectedMouza) {
-          const mouzaId =
-            selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
+        if (selectedMauza) {
+          const mauzaId =
+            selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
 
-          const geojson = await getMouzaBoundary(mouzaId);
+          const geojson = await getMauzaBoundary(mauzaId);
           if (cancelled) return;
 
           if (geojson?.features?.length) {
-            drawBoundaryLevel("mouza", geojson);
+            drawBoundaryLevel("mauza", geojson);
             zoomToGeoJSON(geojson);
             setFeatureCount(geojson.features.length);
           }
@@ -1161,22 +1159,6 @@ export default function MapView({
           return;
         }
 
-        if (selectedDivision?.length) {
-          const geojsons = await Promise.all(
-            selectedDivision.map((div) =>
-              getDivisionBoundary(div.division_i || div),
-            ),
-          );
-          if (cancelled) return;
-
-          const merged = mergeFeatureCollections(geojsons);
-          if (merged?.features?.length) {
-            drawBoundaryLevel("division", merged);
-            // Use a longer animation when zooming from the global view
-            zoomToGeoJSON(merged, { duration: 1400 });
-            setFeatureCount(merged.features.length);
-          }
-        }
       } catch (e) {
         if (!cancelled) {
           console.error("Boundary load error:", e);
@@ -1195,10 +1177,9 @@ export default function MapView({
       cancelled = true;
     };
   }, [
-    selectedDivision,
-    selectedDistrict,
+      selectedDistrict,
     selectedTehsil,
-    selectedMouza,
+    selectedMauza,
     isMapReady,
   ]);
 
@@ -1252,7 +1233,7 @@ export default function MapView({
 
   useEffect(() => {
     lastSyncedSelectionRef.current = "";
-  }, [selectedMouza, viewBy]);
+  }, [selectedMauza, viewBy]);
 
   useEffect(() => {
     if (!isMapReady || !selectedFeatureNumber) return;
@@ -1364,7 +1345,7 @@ export default function MapView({
   }, [isMapReady, layers?.rudaBoundary, selectedRudaPhaseIds]);
 
   useEffect(() => {
-    if (!selectedMouza || !isMapReady || viewBy !== "khasra") {
+    if (!selectedMauza || !isMapReady || viewBy !== "khasra") {
       clearKhasraLayers();
       delete currentGeojson.current.khasra;
       return;
@@ -1375,10 +1356,10 @@ export default function MapView({
         setIsLoading(true);
         setError("");
 
-        const mouzaId =
-          selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
+        const mauzaId =
+          selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
 
-        const geojson = await getKhasras(mouzaId);
+        const geojson = await getKhasras(mauzaId);
 
         if (geojson?.features?.length) {
           drawKhasras(geojson);
@@ -1396,10 +1377,10 @@ export default function MapView({
     };
 
     loadKhasras();
-  }, [selectedMouza, isMapReady, viewBy]);
+  }, [selectedMauza, isMapReady, viewBy]);
 
   useEffect(() => {
-    if (!selectedMouza || !isMapReady || viewBy !== "murabba") {
+    if (!selectedMauza || !isMapReady || viewBy !== "murabba") {
       clearMurabbaLayers();
       delete currentGeojson.current.murabba;
       return;
@@ -1410,10 +1391,10 @@ export default function MapView({
         setIsLoading(true);
         setError("");
 
-        const mouzaId =
-          selectedMouza.mouza_id || selectedMouza.id || selectedMouza;
+        const mauzaId =
+          selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
 
-        const geojson = await getMurabbas(mouzaId);
+        const geojson = await getMurabbas(mauzaId);
 
         if (geojson?.features?.length) {
           drawMurabbas(geojson);
@@ -1431,23 +1412,23 @@ export default function MapView({
     };
 
     loadMurabbas();
-  }, [selectedMouza, isMapReady, viewBy]);
+  }, [selectedMauza, isMapReady, viewBy]);
 
   useEffect(() => {
     if (!isMapReady) return;
 
-    const mouzaName =
-      typeof selectedMouza === "object"
-        ? selectedMouza?.mouza?.trim?.() || ""
+    const mauzaName =
+      typeof selectedMauza === "object"
+        ? selectedMauza?.mauza?.trim?.() || ""
         : "";
 
     const loadPoints = async () => {
       try {
-        const normalizedMouza = (mouzaName || "").trim().toLowerCase();
+        const normalizedMauza = (mauzaName || "").trim().toLowerCase();
 
-        if (layers?.controlPoints && normalizedMouza) {
+        if (layers?.controlPoints && normalizedMauza) {
           const controlGeojson = await getTrijunctionPoints({
-            mouza: mouzaName,
+            mauza: mauzaName,
             type: "B",
           });
 
@@ -1457,7 +1438,7 @@ export default function MapView({
               const m3Value = String(feature?.properties?.m3 || "")
                 .trim()
                 .toLowerCase();
-              return m3Value === normalizedMouza;
+              return m3Value === normalizedMauza;
             }),
           };
 
@@ -1480,9 +1461,9 @@ export default function MapView({
           delete currentGeojson.current["control-points"];
         }
 
-        if (layers?.triJunctionPoints && normalizedMouza) {
+        if (layers?.triJunctionPoints && normalizedMauza) {
           const trijunctionGeojson = await getTrijunctionPoints({
-            mouza: mouzaName,
+            mauza: mauzaName,
             type: "TJ",
           });
 
@@ -1492,7 +1473,7 @@ export default function MapView({
               const m3Value = String(feature?.properties?.m3 || "")
                 .trim()
                 .toLowerCase();
-              return m3Value === normalizedMouza;
+              return m3Value === normalizedMauza;
             }),
           };
 
@@ -1527,7 +1508,7 @@ export default function MapView({
     loadPoints();
   }, [
     isMapReady,
-    selectedMouza,
+    selectedMauza,
     layers?.controlPoints,
     layers?.triJunctionPoints,
   ]);
@@ -1551,7 +1532,6 @@ export default function MapView({
           Loading...
         </div>
       )}
-
     </div>
   );
 }

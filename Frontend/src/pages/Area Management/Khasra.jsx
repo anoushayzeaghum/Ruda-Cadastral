@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getKhasras, getMouzas } from "../../services/api";
+import { getKhasras, getMauzas } from "../../services/api";
 import ImportModal from "../../components/ImportModal";
 
 export default function Khasra() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [mouzas, setMouzas] = useState([]);
+  const [mauzas, setMauzas] = useState([]);
   const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -35,12 +35,12 @@ export default function Khasra() {
 
     (async () => {
       try {
-        const m = await getMouzas();
+        const m = await getMauzas();
         const features = m?.features ?? [];
-        setMouzas(
+        setMauzas(
           features.map((f) => ({
             ...(f.properties || {}),
-            mouza_id: f.properties?.mouza_id ?? f.id,
+            mauza_id: f.properties?.mauza_id ?? f.id,
           })),
         );
       } catch (e) {
@@ -75,8 +75,7 @@ export default function Khasra() {
           .includes(q) ||
         String(item.district ?? "")
           .toLowerCase()
-          .includes(q) ||
-        "lahore".includes(q)
+          .includes(q)
       );
     });
   }, [items, search]);
@@ -113,10 +112,10 @@ export default function Khasra() {
           <div className="col-span-3">
             <label className="block text-xs text-gray-500 mb-1">MOUZA</label>
             <select className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]">
-              <option value="">Select mouza</option>
-              {mouzas.map((m) => (
-                <option key={m.mouza_id ?? m.gid} value={m.mouza_id ?? m.gid}>
-                  {m.mouza}
+              <option value="">Select mauza</option>
+              {mauzas.map((m) => (
+                <option key={m.mauza_id ?? m.gid} value={m.mauza_id ?? m.gid}>
+                  {m.mauza}
                 </option>
               ))}
             </select>
@@ -206,7 +205,6 @@ export default function Khasra() {
                     <th className="py-2 px-2 whitespace-nowrap">Mauza</th>
                     <th className="py-2 px-2 whitespace-nowrap">Tehsil</th>
                     <th className="py-2 px-2 whitespace-nowrap">District</th>
-                    <th className="py-2 px-2 whitespace-nowrap">Division</th>
                     <th className="py-2 px-2 text-right whitespace-nowrap">
                       Action
                     </th>
@@ -236,7 +234,7 @@ export default function Khasra() {
                           : "-"}
                       </td>
                       <td className="py-2 px-2 whitespace-nowrap">
-                        {d.mouza ?? "-"}
+                        {d.mauza ?? "-"}
                       </td>
                       <td className="py-2 px-2 whitespace-nowrap">
                         {d.tehsil ?? "-"}
@@ -244,7 +242,6 @@ export default function Khasra() {
                       <td className="py-2 px-2 whitespace-nowrap">
                         {d.district ?? "-"}
                       </td>
-                      <td className="py-2 px-2 whitespace-nowrap">Lahore</td>
                       <td className="py-2 px-2 text-right whitespace-nowrap">
                         <button className="text-sm px-3 py-1 mr-2 border rounded">
                           Edit
