@@ -334,14 +334,9 @@ class Society(models.Model):
 # MASTER PLAN
 # =========================
 class MasterPlan(models.Model):
+
     gid = models.AutoField(primary_key=True)
-
-    # Actual columns in your masterplan table
-    name = models.CharField(max_length=255, null=True, blank=True)
-    source = models.CharField(max_length=255, null=True, blank=True)
-    feat_count = models.IntegerField(null=True, blank=True)
-    area = models.FloatField(null=True, blank=True)
-
+    # Keep only guaranteed columns to avoid selecting missing DB columns.
     geom = gis_models.GeometryField(srid=4326)
 
     society_id = models.IntegerField(null=True, blank=True)
@@ -349,13 +344,8 @@ class MasterPlan(models.Model):
     dist_id = models.IntegerField(null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
 
-    society = models.CharField(max_length=100, null=True, blank=True)
-    mauza = models.CharField(max_length=100, null=True, blank=True)
-    district = models.CharField(max_length=100, null=True, blank=True)
-    tehsil = models.CharField(max_length=100, null=True, blank=True)
-
     def __str__(self):
-        return self.name or self.society or f"MasterPlan {self.gid}"
+        return f"MasterPlan {self.gid}"
 
     class Meta:
         managed = False
@@ -365,10 +355,8 @@ class MasterPlan(models.Model):
 # SPOT LEVEL
 # =========================
 class SpotLevel(models.Model):
-    gid = models.AutoField(primary_key=True)
 
-    # Keep this minimal to avoid selecting non-existing columns.
-    # Add extra attributes later only if they actually exist in spot_level table.
+    gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
 
     society_id = models.IntegerField(null=True, blank=True)
@@ -376,13 +364,8 @@ class SpotLevel(models.Model):
     dist_id = models.IntegerField(null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
 
-    society = models.CharField(max_length=100, null=True, blank=True)
-    mauza = models.CharField(max_length=100, null=True, blank=True)
-    district = models.CharField(max_length=100, null=True, blank=True)
-    tehsil = models.CharField(max_length=100, null=True, blank=True)
-
     def __str__(self):
-        return self.society or f"SpotLevel {self.gid}"
+        return f"SpotLevel {self.gid}"
 
     class Meta:
         managed = False
@@ -393,15 +376,8 @@ class SpotLevel(models.Model):
 # =========================
 
 class Contour(models.Model):
+
     gid = models.AutoField(primary_key=True)
-
-    # Keep optional descriptive columns only if they exist in your contour table.
-    # If any of these columns do not exist, remove that field and remove it from serializer too.
-    name = models.CharField(max_length=255, null=True, blank=True)
-    layer = models.CharField(max_length=255, null=True, blank=True)
-    elevation = models.CharField(max_length=50, null=True, blank=True)
-    closed_con = models.CharField(max_length=10, null=True, blank=True)
-
     geom = gis_models.GeometryField(srid=4326)
 
     society_id = models.IntegerField(null=True, blank=True)
@@ -409,13 +385,8 @@ class Contour(models.Model):
     dist_id = models.IntegerField(null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
 
-    society = models.CharField(max_length=100, null=True, blank=True)
-    mauza = models.CharField(max_length=100, null=True, blank=True)
-    district = models.CharField(max_length=100, null=True, blank=True)
-    tehsil = models.CharField(max_length=100, null=True, blank=True)
-
     def __str__(self):
-        return self.name or self.layer or f"Contour {self.gid}"
+        return f"Contour {self.gid}"
 
     class Meta:
         managed = False
