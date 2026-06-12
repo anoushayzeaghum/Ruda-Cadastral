@@ -274,6 +274,26 @@ export default function LeftPanel({
                     showOpacity={false}
                   />
                 </div>
+
+                <SectionTitle title="Terrain Analysis Layers" open />
+                <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+                  <LayerRow
+                    icon={<Map size={15} />}
+                    label="Digital Surface Model (DSM)"
+                    checked={getLayerVisible("dsm")}
+                    opacity={getLayerOpacity("dsm")}
+                    onToggle={() => toggleLayer("dsm")}
+                    onOpacity={(value) => updateLayer("dsm", { opacity: value })}
+                  />
+                  <LayerRow
+                    icon={<Map size={15} />}
+                    label="Digital Terrain Model (DTM)"
+                    checked={getLayerVisible("dtm")}
+                    opacity={getLayerOpacity("dtm")}
+                    onToggle={() => toggleLayer("dtm")}
+                    onOpacity={(value) => updateLayer("dtm", { opacity: value })}
+                  />
+                </div>
               </div>
             </Panel>
           )}

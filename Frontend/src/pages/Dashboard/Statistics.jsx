@@ -74,7 +74,7 @@ const actions = [
   "Generate Report",
 ];
 
-function Icon({ type, className = "w-5 h-5" }) {
+export function Icon({ type, className = "w-5 h-5" }) {
   const common = "currentColor";
 
   switch (type) {
@@ -368,9 +368,41 @@ function Icon({ type, className = "w-5 h-5" }) {
           />
         </svg>
       );
+    case "land":
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="none">
+          <path d="M2 20L8 14L13 17L22 8" stroke={common} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M16 8H22V14" stroke={common} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case "mouza":
+      return (
+        <svg viewBox="0 0 24 24" className={className} fill="none">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke={common} strokeWidth="1.8" strokeLinejoin="round" />
+          <path d="M2 17L12 22L22 17" stroke={common} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M2 12L12 17L22 12" stroke={common} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
     default:
       return null;
   }
+}
+
+export function FilterTab({ active, icon, label, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "flex items-center gap-2 px-6 py-2.5 rounded-full text-[14px] font-semibold transition-all duration-200 border-none select-none",
+        active
+          ? "bg-[#10b981] hover:bg-[#059669] text-white shadow-sm"
+          : "bg-[#f1f5f9] hover:bg-[#e2e8f0] dark:bg-slate-800 text-slate-700 dark:text-slate-300 dark:hover:bg-slate-700",
+      ].join(" ")}
+    >
+      {icon}
+      {label}
+    </button>
+  );
 }
 
 function getCardTone(tone) {

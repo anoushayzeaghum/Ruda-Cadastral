@@ -41,6 +41,11 @@ const TRI_JUNCTION_POINTS_SOURCE = "tri-junction-points-source";
 const TRI_JUNCTION_POINTS_LAYER = "tri-junction-points-layer";
 const TRI_JUNCTION_TRIANGLE_IMAGE = "tri-junction-triangle-marker";
 
+const DSM_SOURCE = "local-dsm-source";
+const DSM_LAYER = "local-dsm-layer";
+const DTM_SOURCE = "local-dtm-source";
+const DTM_LAYER = "local-dtm-layer";
+
 const MAP_THEME = {
   fillColor: "#158033",
   fillOpacity: 0.2,
@@ -215,6 +220,8 @@ export default function MapView({
   const activePopupRef = useRef(null);
   const popupTimeoutRef = useRef(null);
   const lastSyncedSelectionRef = useRef("");
+  const prevDsmVisible = useRef(false);
+  const prevDtmVisible = useRef(false);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
@@ -1512,6 +1519,96 @@ export default function MapView({
     layers?.controlPoints,
     layers?.triJunctionPoints,
   ]);
+
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const dsmVisible = typeof layers?.dsm === 'object' ? layers.dsm.visible : !!layers?.dsm;
+    const dtmVisible = typeof layers?.dtm === 'object' ? layers.dtm.visible : !!layers?.dtm;
+
+    const shouldFlyTo = (dsmVisible && !prevDsmVisible.current) || (dtmVisible && !prevDtmVisible.current);
+
+    if (shouldFlyTo) {
+      const bounds = [
+        [74.42562653088396, 31.60509230706726],
+        [74.43545280361002, 31.61121654113590]
+      ];
+      map.fitBounds(bounds, { padding: 50, duration: 1500 });
+    }
+
+    prevDsmVisible.current = dsmVisible;
+    prevDtmVisible.current = dtmVisible;
+
+    const restoreRasters = () => {
+      // DSM Layer
+      const dsmOpacity = typeof layers?.dsm === 'object' && Number.isFinite(layers.dsm.opacity) ? layers.dsm.opacity / 100 : 0.85;
+
+      if (dsmVisible) {
+        if (!map.getSource(DSM_SOURCE)) {
+          map.addSource(DSM_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(DSM_LAYER)) {
+          map.addLayer({
+              id: DSM_LAYER,
+              type: 'raster',
+              source: DSM_SOURCE,
+              paint: { 'raster-opacity': dsmOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(DSM_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(DSM_LAYER, 'raster-opacity', dsmOpacity);
+        }
+      } else {
+        if (map.getLayer(DSM_LAYER)) {
+          map.setLayoutProperty(DSM_LAYER, 'visibility', 'none');
+        }
+      }
+
+      // DTM Layer
+      const dtmVisible = typeof layers?.dtm === 'object' ? layers.dtm.visible : !!layers?.dtm;
+      const dtmOpacity = typeof layers?.dtm === 'object' && Number.isFinite(layers.dtm.opacity) ? layers.dtm.opacity / 100 : 0.85;
+
+      if (dtmVisible) {
+        if (!map.getSource(DTM_SOURCE)) {
+          map.addSource(DTM_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(DTM_LAYER)) {
+          map.addLayer({
+              id: DTM_LAYER,
+              type: 'raster',
+              source: DTM_SOURCE,
+              paint: { 'raster-opacity': dtmOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(DTM_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(DTM_LAYER, 'raster-opacity', dtmOpacity);
+        }
+      } else {
+        if (map.getLayer(DTM_LAYER)) {
+          map.setLayoutProperty(DTM_LAYER, 'visibility', 'none');
+        }
+      }
+    };
+
+    restoreRasters();
+    
+    // Attempt to restore if style changes
+    map.on('style.load', restoreRasters);
+    return () => {
+      map.off('style.load', restoreRasters);
+    };
+  }, [layers?.dsm, layers?.dtm, isMapReady]);
 
   return (
     <div className="absolute inset-0 w-full h-full">
