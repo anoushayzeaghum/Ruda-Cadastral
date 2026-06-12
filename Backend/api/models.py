@@ -248,38 +248,47 @@ class Murabba(models.Model):
 # Khasra Administrative Boundary
 # --------------------------------------------------------
 
+# --------------------------------------------------------
+# Khasra Administrative Boundary - New Format
+# --------------------------------------------------------
+
 class Khasra(models.Model):
 
     gid = models.AutoField(primary_key=True)
-    district = models.CharField(max_length=50)
-    dist_id = models.FloatField()
-    tehsil = models.CharField(max_length=50)
-    tehsil_id = models.FloatField()
-    qh = models.CharField(max_length=254, null=True, blank=True)
-    qh_id = models.FloatField(null=True, blank=True)
-    pc = models.CharField(max_length=50, null=True, blank=True)
-    pc_id = models.FloatField(null=True, blank=True)
-    mouza = models.CharField(max_length=50)
-    mouza_id = models.FloatField()
-    type = models.CharField(max_length=50)
-    m = models.IntegerField()
-    a = models.IntegerField()
-    k = models.IntegerField()
-    sk = models.CharField(max_length=20, null=True, blank=True)
-    khasra_id = models.FloatField()
-    label = models.CharField(max_length=25)
     join_shp = models.CharField(max_length=50, null=True, blank=True)
-    karam = models.DecimalField(max_digits=20, decimal_places=10)
-    remarks = models.CharField(max_length=50, null=True, blank=True)
-    b = models.CharField(max_length=50)
-    mn = models.IntegerField()
-    division = models.CharField(max_length=50)
-    khewat_id = models.FloatField()
-    divn_id = models.FloatField()
+    district = models.CharField(max_length=50, null=True, blank=True)
+    dist_id = models.FloatField(null=True, blank=True)
+    tehsil = models.CharField(max_length=50, null=True, blank=True)
+    tehsil_id = models.FloatField(null=True, blank=True)
+    kc = models.CharField(max_length=254, null=True, blank=True)
+    kc_id = models.FloatField(null=True, blank=True)
+    pc = models.CharField(max_length=100, null=True, blank=True)
+    pc_id = models.FloatField(null=True, blank=True)
+    mouza = models.CharField(max_length=100, null=True, blank=True)
+    mouza_id = models.FloatField(null=True, blank=True)
+    hadbust_no = models.IntegerField(null=True, blank=True)
+    asse_cir = models.CharField(max_length=100, null=True, blank=True)
+    karam = models.DecimalField(
+        max_digits=20,
+        decimal_places=10,
+        null=True,
+        blank=True
+    )
+    type = models.CharField(max_length=50, null=True, blank=True)
+    sq = models.IntegerField(null=True, blank=True)
+    kh = models.IntegerField(null=True, blank=True)
+    sk = models.CharField(max_length=20, null=True, blank=True)
+    khasra_id = models.FloatField(null=True, blank=True)
+    khewat_id = models.FloatField(null=True, blank=True)
+    khatoni_no = models.FloatField(null=True, blank=True)
+    dc_rate = models.FloatField(null=True, blank=True)
+    remarks = models.CharField(max_length=100, null=True, blank=True)
+    b = models.CharField(max_length=50, null=True, blank=True)
+
     geom = gis_models.MultiPolygonField(srid=4326)
 
     def __str__(self):
-        return self.label
+        return self.join_shp or str(self.gid)
 
     class Meta:
         managed = False
