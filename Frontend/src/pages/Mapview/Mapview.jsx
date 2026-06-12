@@ -46,6 +46,8 @@ const DSM_SOURCE = "local-dsm-source";
 const DSM_LAYER = "local-dsm-layer";
 const DTM_SOURCE = "local-dtm-source";
 const DTM_LAYER = "local-dtm-layer";
+const ORTHO_SOURCE = "local-ortho-source";
+const ORTHO_LAYER = "local-ortho-layer";
 
 const MEASURE_SOURCE = "measure-source";
 const MEASURE_LINE_LAYER = "measure-line-layer";
@@ -254,6 +256,7 @@ export default function MapView({
   const lastSyncedSelectionRef = useRef("");
   const prevDsmVisible = useRef(false);
   const prevDtmVisible = useRef(false);
+  const prevOrthoVisible = useRef(false);
   const measureCoordsRef = useRef([]);
 
   const [isMapReady, setIsMapReady] = useState(false);
@@ -1640,8 +1643,9 @@ export default function MapView({
 
     const dsmVisible = typeof layers?.dsm === 'object' ? layers.dsm.visible : !!layers?.dsm;
     const dtmVisible = typeof layers?.dtm === 'object' ? layers.dtm.visible : !!layers?.dtm;
+    const orthoVisible = typeof layers?.ortho === 'object' ? layers.ortho.visible : !!layers?.ortho;
 
-    const shouldFlyTo = (dsmVisible && !prevDsmVisible.current) || (dtmVisible && !prevDtmVisible.current);
+    const shouldFlyTo = (orthoVisible && !prevOrthoVisible.current) || (dsmVisible && !prevDsmVisible.current) || (dtmVisible && !prevDtmVisible.current);
 
     if (shouldFlyTo) {
       const bounds = [
@@ -1653,8 +1657,38 @@ export default function MapView({
 
     prevDsmVisible.current = dsmVisible;
     prevDtmVisible.current = dtmVisible;
+    prevOrthoVisible.current = orthoVisible;
 
     const restoreRasters = () => {
+      // Ortho Layer
+      const orthoOpacity = typeof layers?.ortho === 'object' && Number.isFinite(layers.ortho.opacity) ? layers.ortho.opacity / 100 : 1.0;
+
+      if (orthoVisible) {
+        if (!map.getSource(ORTHO_SOURCE)) {
+          map.addSource(ORTHO_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chaharbagh_Ortho/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(ORTHO_LAYER)) {
+          map.addLayer({
+              id: ORTHO_LAYER,
+              type: 'raster',
+              source: ORTHO_SOURCE,
+              paint: { 'raster-opacity': orthoOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(ORTHO_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(ORTHO_LAYER, 'raster-opacity', orthoOpacity);
+        }
+      } else {
+        if (map.getLayer(ORTHO_LAYER)) {
+          map.setLayoutProperty(ORTHO_LAYER, 'visibility', 'none');
+        }
+      }
+
       // DSM Layer
       const dsmOpacity = typeof layers?.dsm === 'object' && Number.isFinite(layers.dsm.opacity) ? layers.dsm.opacity / 100 : 0.85;
 

@@ -273,8 +273,16 @@ export default function LeftPanel({
                   />
                 </div> */}
 
-                <SectionTitle title="Terrain Analysis Layers" open />
+                <SectionTitle title="Imagery & Terrain Layers" open />
                 <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
+                  <LayerRow
+                    icon={<Map size={15} />}
+                    label="Orthophoto Imagery"
+                    checked={getLayerVisible("ortho")}
+                    opacity={getLayerOpacity("ortho")}
+                    onToggle={() => toggleLayer("ortho")}
+                    onOpacity={(value) => updateLayer("ortho", { opacity: value })}
+                  />
                   <LayerRow
                     icon={<Map size={15} />}
                     label="Digital Surface Model (DSM)"
