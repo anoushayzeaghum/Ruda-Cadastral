@@ -36,6 +36,29 @@ router.register(r"khasra/create", CreateKhasraView, basename="create-khasra")
 router.register(r"khasra/update", UpdateKhasraView, basename="update-khasra")
 router.register(r"khasra/delete", DeleteKhasraView, basename="delete-khasra")
 
+#------------------------------ Society View ------------------------------
+router.register(r"society", ListSocietyView, basename="society")
+router.register(r"society/create", CreateSocietyView, basename="create-society")
+router.register(r"society/update", UpdateSocietyView, basename="update-society")
+router.register(r"society/delete", DeleteSocietyView, basename="delete-society")
+
+#------------------------------ Master Plan View ------------------------------
+router.register(r"masterplan", ListMasterPlanView, basename="masterplan")
+router.register(r"masterplan/create", CreateMasterPlanView, basename="create-masterplan")
+router.register(r"masterplan/update", UpdateMasterPlanView, basename="update-masterplan")
+router.register(r"masterplan/delete", DeleteMasterPlanView, basename="delete-masterplan")
+
+#------------------------------ Spot Level View ------------------------------
+router.register(r"spot-level", ListSpotLevelView, basename="spot-level")
+router.register(r"spot-level/create", CreateSpotLevelView, basename="create-spot-level")
+router.register(r"spot-level/update", UpdateSpotLevelView, basename="update-spot-level")
+router.register(r"spot-level/delete", DeleteSpotLevelView, basename="delete-spot-level")
+
+#------------------------------ CB Contour View ------------------------------
+router.register(r"cb-contour", ListCBContourView, basename="cb-contour")
+router.register(r"cb-contour/create", CreateCBContourView, basename="create-cb-contour")
+router.register(r"cb-contour/update", UpdateCBContourView, basename="update-cb-contour")
+router.register(r"cb-contour/delete", DeleteCBContourView, basename="delete-cb-contour")
 #------------------------------ Ruda Boundary View ------------------------------
 router.register(r"ruda", ListRudaBoundaryView, basename="ruda")
 router.register(r"ruda/create", CreateRudaBoundaryView, basename="create-ruda")

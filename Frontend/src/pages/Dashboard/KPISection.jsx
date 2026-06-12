@@ -1,7 +1,6 @@
 import {
   TrendingUp,
   CheckCircle2,
-  Clock3,
   XCircle,
   MapPinned,
   Landmark,
@@ -14,12 +13,10 @@ const kpiCards = [
     subtitle: "Growth this month",
     icon: TrendingUp,
     tone: "green",
-    span: "col-span-12 md:col-span-6 xl:col-span-2",
   },
   {
     title: "Khasra Data Status",
     tone: "white",
-    span: "col-span-12 md:col-span-6 xl:col-span-3",
     status: [
       {
         label: "Verified",
@@ -28,7 +25,6 @@ const kpiCards = [
         text: "text-emerald-700 dark:text-emerald-400",
         icon: CheckCircle2,
       },
-
       {
         label: "Not Verified",
         value: "13,500",
@@ -47,7 +43,6 @@ const kpiCards = [
     progress: 41,
     icon: MapPinned,
     tone: "softGreen",
-    span: "col-span-12 md:col-span-6 xl:col-span-3",
   },
   {
     title: "Acquired Land Progress",
@@ -56,7 +51,6 @@ const kpiCards = [
     ring: 20,
     icon: Landmark,
     tone: "mint",
-    span: "col-span-12 md:col-span-3 xl:col-span-2",
   },
   {
     title: "Remaining Land",
@@ -64,69 +58,73 @@ const kpiCards = [
     unit: "Kanal",
     subValue: "113,500 Acres",
     tone: "dangerSoft",
-    span: "col-span-12 md:col-span-3 xl:col-span-2",
   },
 ];
 
 function toneClasses(tone) {
+  const baseCard = "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800";
+  const baseTitle = "text-slate-500 dark:text-slate-400";
+  const baseValue = "text-slate-900 dark:text-white";
+  const baseSub = "text-slate-500 dark:text-slate-400";
+
   switch (tone) {
     case "green":
       return {
-        card: "bg-gradient-to-r from-[#1f6b4f] via-[#2b7b59] to-[#2a6f54] border-[#b8d2c2] text-white",
-        title: "text-white/90",
-        value: "text-white",
-        sub: "text-white/80",
-        icon: "text-white/90",
+        card: baseCard,
+        title: baseTitle,
+        value: baseValue,
+        sub: baseSub,
+        icon: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 p-1.5 rounded-lg",
       };
     case "softGreen":
       return {
-        card: "bg-gradient-to-r from-[#eef5ef] via-[#f8fbf7] to-[#eef7f1] border-[#d7e5da] text-[#244536]",
-        title: "text-[#365346]",
-        value: "text-[#1e3d30]",
-        sub: "text-[#5d7467]",
-        icon: "text-[#2d6c4a]",
+        card: baseCard,
+        title: baseTitle,
+        value: baseValue,
+        sub: baseSub,
+        icon: "text-teal-500 bg-teal-50 dark:bg-teal-500/10 p-1.5 rounded-lg",
       };
     case "mint":
       return {
-        card: "bg-gradient-to-r from-[#edf7f1] via-[#f7fbf8] to-[#eff7f2] border-[#d7e6dc] text-[#244536]",
-        title: "text-[#365346]",
-        value: "text-[#1e3d30]",
-        sub: "text-[#5d7467]",
-        icon: "text-[#2d6c4a]",
+        card: baseCard,
+        title: baseTitle,
+        value: baseValue,
+        sub: baseSub,
+        icon: "text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10 p-1.5 rounded-lg",
       };
     case "dangerSoft":
       return {
-        card: "bg-gradient-to-r from-[#faf4f2] via-[#fffafa] to-[#faf4f2] border-[#ecd9d3] text-[#62352f]",
-        title: "text-[#8f5a51]",
-        value: "text-[#7b2f27]",
-        sub: "text-[#9b6b62]",
-        icon: "text-[#9d4a3e]",
+        card: baseCard,
+        title: baseTitle,
+        value: baseValue,
+        sub: baseSub,
+        icon: "text-rose-500 bg-rose-50 dark:bg-rose-500/10 p-1.5 rounded-lg",
       };
     default:
       return {
-        card: "bg-[#fbfbf8] border-[#d8ddd5] text-[#244536]",
-        title: "text-[#54685f]",
-        value: "text-[#20362d]",
-        sub: "text-[#708177]",
-        icon: "text-[#2d6c4a]",
+        card: baseCard,
+        title: baseTitle,
+        value: baseValue,
+        sub: baseSub,
+        icon: "text-slate-500 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-lg",
       };
   }
 }
 
 function RingProgress({ value }) {
-  const radius = 23;
+  const radius = 22;
   const circumference = 2 * Math.PI * radius;
   const filled = circumference - (value / 100) * circumference;
 
   return (
-    <div className="relative flex h-14 w-14 items-center justify-center">
-      <svg viewBox="0 0 60 60" className="-rotate-90 h-14 w-14">
+    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center">
+      <svg viewBox="0 0 60 60" className="-rotate-90 h-12 w-12">
         <circle
           cx="30"
           cy="30"
           r={radius}
           fill="none"
-          stroke="#d7dfdb"
+          className="stroke-slate-100 dark:stroke-slate-800"
           strokeWidth="6"
         />
         <circle
@@ -134,14 +132,14 @@ function RingProgress({ value }) {
           cy="30"
           r={radius}
           fill="none"
-          stroke="#2f9a59"
+          className="stroke-cyan-500"
           strokeWidth="6"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={filled}
         />
       </svg>
-      <span className="absolute text-[11px] font-semibold text-[#1e5e37]">
+      <span className="absolute text-[10px] font-semibold text-slate-700 dark:text-slate-300">
         {value}%
       </span>
     </div>
@@ -150,9 +148,9 @@ function RingProgress({ value }) {
 
 function ProgressBar({ value }) {
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-[#d7dfdb]">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
       <div
-        className="h-full rounded-full bg-[#2f9a59]"
+        className="h-full rounded-full bg-teal-500"
         style={{ width: `${value}%` }}
       />
     </div>
@@ -162,7 +160,8 @@ function ProgressBar({ value }) {
 export default function KPISection() {
   return (
     <div className="w-full">
-      <div className="grid grid-cols-12 gap-3">
+      {/* 5 equal columns on xl, 3-col on lg, 2-col on sm, 1-col on mobile */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {kpiCards.map((card) => {
           const tone = toneClasses(card.tone);
           const Icon = card.icon;
@@ -171,61 +170,43 @@ export default function KPISection() {
             <div
               key={card.title}
               className={[
-                card.span,
-                "relative overflow-hidden rounded-[20px] px-4 py-3",
-
-                // 🌿 subtle dark green border
-                "ring-1 ring-emerald-600/80",
-
-                // 🌿 soft minimal glow
-                "shadow-[0_0_96px_rgba(16,185,129,0.15)]",
-
-                // smooth hover (slightly enhanced, not aggressive)
-                "transition-all duration-300",
-                "hover:shadow-[0_0_40px_rgba(16,185,129,0.25)]",
-                "hover:ring-emerald-600/60",
-
+                "relative overflow-hidden rounded-2xl border px-4 py-4",
+                "shadow-sm transition-shadow duration-300 hover:shadow-md",
+                "flex flex-col justify-between min-h-[110px]",
                 tone.card,
               ].join(" ")}
             >
-              <div className="relative z-10 flex h-full flex-col justify-between">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p
-                      className={`text-[11px] font-medium leading-4 ${tone.title}`}
-                    >
-                      {card.title}
-                    </p>
+              {/* Top: title + icon */}
+              <div className="flex items-start justify-between gap-2">
+                <p className={`text-[12px] font-medium leading-[1.3] ${tone.title}`}>
+                  {card.title}
+                </p>
+                {Icon ? (
+                  <div className={`${tone.icon} shrink-0`}>
+                    <Icon size={16} strokeWidth={2} />
                   </div>
+                ) : null}
+              </div>
 
-                  {Icon ? (
-                    <div className={`${tone.icon} shrink-0`}>
-                      <Icon size={18} strokeWidth={2} />
-                    </div>
-                  ) : null}
-                </div>
-
+              {/* Bottom: value / content */}
+              <div className="mt-3">
                 {card.status ? (
-                  <div className="mt-2 space-y-0">
+                  <div className="space-y-1.5">
                     {card.status.map((item) => {
                       const StatusIcon = item.icon;
                       return (
                         <div
                           key={item.label}
-                          className="flex items-center justify-between py-1"
+                          className="flex items-center justify-between"
                         >
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`h-2 w-2 rounded-full ${item.color}`}
-                            />
-                            <StatusIcon size={14} className={item.text} />
-                            <span className="text-[11px] text-slate-600 dark:text-slate-300">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`h-2 w-2 rounded-full shrink-0 ${item.color}`} />
+                            <StatusIcon size={13} className={item.text} />
+                            <span className="text-[12px] font-medium text-slate-600 dark:text-slate-400">
                               {item.label}
                             </span>
                           </div>
-                          <span
-                            className={`text-[13px] font-semibold ${item.text}`}
-                          >
+                          <span className={`text-[13px] font-semibold ${item.text}`}>
                             {item.value}
                           </span>
                         </div>
@@ -233,78 +214,51 @@ export default function KPISection() {
                     })}
                   </div>
                 ) : card.value2 ? (
-                  <div className="mt-1">
-                    <div className="flex items-end gap-2 flex-wrap">
-                      <span
-                        className={`text-[24px] font-semibold leading-none ${tone.value}`}
-                      >
+                  <div>
+                    <div className="flex flex-wrap items-end gap-x-1.5 gap-y-0.5">
+                      <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
                         {card.value}
                       </span>
-                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>
-                        {card.unit1}
-                      </span>
-                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>
-                        /
-                      </span>
-                      <span
-                        className={`text-[22px] font-semibold leading-none ${tone.value}`}
-                      >
+                      <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit1}</span>
+                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>/</span>
+                      <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
                         {card.value2}
                       </span>
-                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>
-                        {card.unit2}
-                      </span>
+                      <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit2}</span>
                     </div>
-
                     <div className="mt-3">
                       <ProgressBar value={card.progress} />
                     </div>
                   </div>
                 ) : card.ring ? (
-                  <div className="mt-1 flex items-center justify-between gap-3">
-                    <div className="flex items-end gap-1.5">
-                      <span
-                        className={`text-[24px] font-semibold leading-none ${tone.value}`}
-                      >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-end gap-1">
+                      <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
                         {card.value}
                       </span>
-                      <span className={`pb-0.5 text-[11px] ${tone.sub}`}>
-                        {card.unit}
-                      </span>
+                      <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit}</span>
                     </div>
                     <RingProgress value={card.ring} />
                   </div>
                 ) : (
-                  <div className="mt-1">
-                    <div className="flex items-end gap-1.5">
-                      <span
-                        className={`text-[24px] font-semibold leading-none ${tone.value}`}
-                      >
+                  <div>
+                    <div className="flex items-end gap-1">
+                      <span className={`text-[22px] font-bold tracking-tight leading-none ${tone.value}`}>
                         {card.value}
                       </span>
                       {card.unit ? (
-                        <span className={`pb-0.5 text-[11px] ${tone.sub}`}>
-                          {card.unit}
-                        </span>
+                        <span className={`pb-0.5 text-[11px] font-medium ${tone.sub}`}>{card.unit}</span>
                       ) : null}
                     </div>
-
                     {card.subtitle ? (
-                      <p className={`mt-1 text-[11px] ${tone.sub}`}>
-                        {card.subtitle}
-                      </p>
+                      <p className={`mt-1.5 text-[11px] font-medium ${tone.sub}`}>{card.subtitle}</p>
                     ) : null}
-
                     {card.subValue ? (
-                      <p className={`mt-1 text-[11px] ${tone.sub}`}>
-                        {card.subValue}
-                      </p>
+                      <p className={`mt-1 text-[11px] font-medium ${tone.sub}`}>{card.subValue}</p>
                     ) : null}
                   </div>
                 )}
               </div>
-
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.14),transparent_32%)]" />
             </div>
           );
         })}
