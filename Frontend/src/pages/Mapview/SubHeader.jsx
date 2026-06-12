@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Database, BarChart3 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 export default function SubHeader({
   filters,
@@ -37,9 +37,9 @@ export default function SubHeader({
     selectedMauza && viewBy === "khasra" && isMurabbaBasedKhasra;
 
   return (
-    <div className="absolute top-4 left-1/2 z-30 w-[calc(100%-360px)] max-w-5xl -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
-      <div className="flex items-center justify-center gap-2 px-3 py-2 flex-wrap overflow-visible">
-        <div className="flex items-center justify-center gap-2 flex-wrap overflow-visible">
+    <div className="absolute top-4 left-1/2 z-30 w-fit max-w-[calc(100vw-96px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
+      <div className="flex w-fit items-center justify-center gap-2 px-2 py-2 overflow-visible">
+        <div className="flex w-fit items-center justify-center gap-2 overflow-visible">
           <FilterCard
             label="District — ضلع"
             value={getMultiValueDisplay({
@@ -176,10 +176,10 @@ export default function SubHeader({
 
 function FilterCard({ label, value, children }) {
   return (
-    <div className="relative min-w-[135px] overflow-visible rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 shadow-sm hover:border-green-600">
+    <div className="relative w-[128px] overflow-visible rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 shadow-sm hover:border-green-600">
       <p className="text-[9px] text-gray-500">{label}</p>
       <div className="flex items-center justify-between">
-        <p className="max-w-[115px] truncate text-xs font-semibold text-gray-800">
+        <p className="max-w-[108px] truncate text-xs font-semibold text-gray-800">
           {value}
         </p>
         <ChevronDown size={13} className="text-gray-400 ml-2 shrink-0" />
@@ -365,16 +365,6 @@ function SearchableSingleSelect({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function StatItem({ label, value }) {
-  return (
-    <div className="flex items-center gap-2 shrink-0">
-      <BarChart3 size={16} className="text-green-700" />
-      <p className="text-gray-600">{label}:</p>
-      <span className="font-semibold text-green-700">{value}</span>
     </div>
   );
 }
