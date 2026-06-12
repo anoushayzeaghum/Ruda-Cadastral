@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import Legend from "../backup/Legend";
 
 import {
   getDivisionBoundary,
@@ -247,7 +248,8 @@ export default function MapView({
         preserveDrawingBuffer: true,
       });
 
-      // Default Mapbox basemap dropdown and zoom controls removed.
+      map.addControl(new BasemapControl(), "top-left");
+      map.addControl(new mapboxgl.NavigationControl(), "top-left");
 
       map.on("load", () => {
         setIsMapReady(true);
@@ -1552,6 +1554,11 @@ export default function MapView({
         </div>
       )}
 
+      <Legend
+        featureCount={featureCount}
+        selectedMouzaName={selectedMouza?.mouza}
+        isLoading={isLoading}
+      />
     </div>
   );
 }
