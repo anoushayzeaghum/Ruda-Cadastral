@@ -276,19 +276,10 @@ class MasterPlanSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "id",
             "name",
-            "descriptio",
-            "timestamp",
-            "begin",
-            "end",
-            "altitudemo",
-            "tessellate",
-            "extrude",
-            "visibility",
-            "draworder",
-            "icon",
-            "snippet",
+            "source",
+            "feat_count",
+            "area",
             "society_id",
             "mauza_id",
             "dist_id",
@@ -304,6 +295,9 @@ class MasterPlanSerializer(GeoFeatureModelSerializer):
 # SpotLevel Serializer
 # District → Tehsil → Mauza → Society → SpotLevel
 # -------------------------------------------------------
+
+
+
 class SpotLevelSerializer(GeoFeatureModelSerializer):
 
     class Meta:
@@ -313,7 +307,6 @@ class SpotLevelSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "id",
             "society_id",
             "mauza_id",
             "dist_id",
@@ -325,10 +318,12 @@ class SpotLevelSerializer(GeoFeatureModelSerializer):
             "geom",
         )
 
+
 # --------------------------------------------------------
 # Contour Serializer
 # District → Tehsil → Mauza → Society → Contour
 # --------------------------------------------------------
+
 class ContourSerializer(GeoFeatureModelSerializer):
 
     class Meta:
@@ -352,6 +347,7 @@ class ContourSerializer(GeoFeatureModelSerializer):
             "tehsil",
             "geom",
         )
+
 # --------------------------------------------------------
 # Ruda Boundary Serializer
 # --------------------------------------------------------
