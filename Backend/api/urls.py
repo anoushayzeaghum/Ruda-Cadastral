@@ -54,11 +54,12 @@ router.register(r"spot-level/create", CreateSpotLevelView, basename="create-spot
 router.register(r"spot-level/update", UpdateSpotLevelView, basename="update-spot-level")
 router.register(r"spot-level/delete", DeleteSpotLevelView, basename="delete-spot-level")
 
-#------------------------------ CB Contour View ------------------------------
-router.register(r"cb-contour", ListCBContourView, basename="cb-contour")
-router.register(r"cb-contour/create", CreateCBContourView, basename="create-cb-contour")
-router.register(r"cb-contour/update", UpdateCBContourView, basename="update-cb-contour")
-router.register(r"cb-contour/delete", DeleteCBContourView, basename="delete-cb-contour")
+#------------------------------ Contour View ------------------------------
+router.register(r"contour", ListContourView, basename="contour")
+router.register(r"contour/create", CreateContourView, basename="create-contour")
+router.register(r"contour/update", UpdateContourView, basename="update-contour")
+router.register(r"contour/delete", DeleteContourView, basename="delete-contour")
+
 #------------------------------ Ruda Boundary View ------------------------------
 router.register(r"ruda", ListRudaBoundaryView, basename="ruda")
 router.register(r"ruda/create", CreateRudaBoundaryView, basename="create-ruda")

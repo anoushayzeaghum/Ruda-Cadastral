@@ -381,13 +381,13 @@ class SpotLevel(models.Model):
 
     class Meta:
         managed = False
-        db_table = "spot_level"
+        db_table = "spotlevel"
 
 
 # =========================
-# CB CONTOUR
+# CONTOUR
 # =========================
-class CBContour(models.Model):
+class Contour(models.Model):
     gid = models.AutoField(primary_key=True)
 
     name = models.CharField(max_length=255, null=True, blank=True)
@@ -409,7 +409,7 @@ class CBContour(models.Model):
 
     class Meta:
         managed = False
-        db_table = "cb_contour"
+        db_table = "contour"
 
 
 

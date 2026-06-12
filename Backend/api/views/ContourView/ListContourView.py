@@ -1,8 +1,8 @@
 from ..common_imports import *
 
-class ListCBContourView(viewsets.ViewSet):
-    queryset = CBContour.objects.all()
-    serializer_class = CBContourSerializer
+class ListContourView(viewsets.ViewSet):
+    queryset = Contour.objects.all()
+    serializer_class = ContourSerializer
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
@@ -16,26 +16,26 @@ class ListCBContourView(viewsets.ViewSet):
 
             # Single record
             if contour_id:
-                obj = CBContour.objects.filter(gid=contour_id).first()
+                obj = Contour.objects.filter(gid=contour_id).first()
 
                 if not obj:
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
-                        message="CB Contour not found.",
+                        message="Contour not found.",
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
-                serializer = CBContourSerializer(obj)
+                serializer = ContourSerializer(obj)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="CB Contour found.",
+                    message="Contour found.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
             # Base queryset
-            queryset = CBContour.objects.all()
+            queryset = Contour.objects.all()
 
             if society_id:
                 queryset = queryset.filter(society_id=society_id)
@@ -49,11 +49,11 @@ class ListCBContourView(viewsets.ViewSet):
             if tehsil_id:
                 queryset = queryset.filter(tehsil_id=tehsil_id)
 
-            serializer = CBContourSerializer(queryset, many=True)
+            serializer = ContourSerializer(queryset, many=True)
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="CB Contour data fetched successfully.",
+                message="Contour data fetched successfully.",
                 data=serializer.data,
                 http_status=status.HTTP_200_OK,
             ).create_response()

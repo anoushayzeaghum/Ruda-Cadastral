@@ -1,8 +1,8 @@
 from ..common_imports import *
 
-class DeleteCBContourView(viewsets.ViewSet):
-    queryset = CBContour.objects.all()
-    serializer_class = CBContourSerializer
+class DeleteContourView(viewsets.ViewSet):
+    queryset = Contour.objects.all()
+    serializer_class = ContourSerializer
     permission_classes = [AllowAny]
 
     def destroy(self, request, *args, **kwargs):
@@ -10,12 +10,12 @@ class DeleteCBContourView(viewsets.ViewSet):
         contour_id = kwargs.get("pk")
 
         try:
-            obj = CBContour.objects.get(gid=contour_id)
+            obj = Contour.objects.get(gid=contour_id)
 
-        except CBContour.DoesNotExist:
+        except Contour.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="CB Contour not found.",
+                message="Contour not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
@@ -24,14 +24,14 @@ class DeleteCBContourView(viewsets.ViewSet):
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="CB Contour deleted successfully.",
+                message="Contour deleted successfully.",
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
         except ProtectedError:
             return ApiResponse(
                 status=status.HTTP_400_BAD_REQUEST,
-                message="Cannot delete CB Contour because it is linked to other records.",
+                message="Cannot delete Contour because it is linked to other records.",
                 http_status=status.HTTP_400_BAD_REQUEST,
             ).create_response()
 
