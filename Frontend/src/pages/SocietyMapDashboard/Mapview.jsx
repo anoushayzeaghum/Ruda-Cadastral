@@ -665,7 +665,7 @@ export default function MapView({
   ]);
 
   return (
-    <div className="absolute inset-0 h-full w-full">
+    <div className="absolute inset-0 h-full w-full z-0">
       <div ref={mapRef} className="absolute inset-0 h-full w-full" />
 
       {error && (
