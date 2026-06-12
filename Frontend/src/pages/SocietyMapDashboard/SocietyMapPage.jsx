@@ -6,11 +6,12 @@ import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
 import ParcelPanel from "./ParcelPanel";
 import MapView from "./Mapview";
-import { getSocieties } from "../../services/api";
+import { getDistricts, getTehsils, getMauzas, getSocieties } from "../../services/api";
 
 export default function SocietyMapPage() {
   const outletContext = useOutletContext() ?? {};
-  const filters = outletContext.filters;
+  const localFilters = useSocietyFilters();
+  const filters = outletContext.filters ?? localFilters;
 
   const [selectedSocietyId, setSelectedSocietyId] = useState("");
   const [societyOptions, setSocietyOptions] = useState([]);
@@ -191,4 +192,185 @@ export default function SocietyMapPage() {
       </div>
     </div>
   );
+}
+
+
+function collectionToItems(collection) {
+  if (Array.isArray(collection)) return collection;
+  if (!Array.isArray(collection?.features)) return [];
+
+  return collection.features.map((feature) => ({
+    id: feature.id ?? feature.properties?.id ?? feature.properties?.gid,
+    geometry: feature.geometry ?? null,
+    ...feature.properties,
+  }));
+}
+
+function useSocietyFilters() {
+  const [districts, setDistricts] = useState([]);
+  const [tehsils, setTehsils] = useState([]);
+  const [mauzas, setMauzas] = useState([]);
+
+  const [selectedDistrict, setSelectedDistrict] = useState([]);
+  const [selectedTehsil, setSelectedTehsil] = useState([]);
+  const [selectedMauza, setSelectedMauza] = useState("");
+
+  const [loading, setLoading] = useState({
+    districts: false,
+    tehsils: false,
+    mauzas: false,
+  });
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadDistricts = async () => {
+      try {
+        setLoading((prev) => ({ ...prev, districts: true }));
+        const data = await getDistricts();
+        if (mounted) setDistricts(collectionToItems(data));
+      } catch (error) {
+        console.error("Failed to load districts", error);
+        if (mounted) setErrorMessage("Failed to load districts");
+      } finally {
+        if (mounted) setLoading((prev) => ({ ...prev, districts: false }));
+      }
+    };
+
+    loadDistricts();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadTehsils = async () => {
+      setSelectedTehsil([]);
+      setSelectedMauza("");
+      setMauzas([]);
+
+      if (!selectedDistrict.length) {
+        setTehsils([]);
+        return;
+      }
+
+      try {
+        setLoading((prev) => ({ ...prev, tehsils: true }));
+        const lists = await Promise.all(selectedDistrict.map((id) => getTehsils(id)));
+        const merged = lists.flatMap(collectionToItems);
+        const unique = Array.from(
+          new Map(merged.map((item) => [String(item.id ?? item.gid), item])).values(),
+        );
+        if (mounted) setTehsils(unique);
+      } catch (error) {
+        console.error("Failed to load tehsils", error);
+        if (mounted) setErrorMessage("Failed to load tehsils");
+      } finally {
+        if (mounted) setLoading((prev) => ({ ...prev, tehsils: false }));
+      }
+    };
+
+    loadTehsils();
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedDistrict]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadMauzas = async () => {
+      setSelectedMauza("");
+
+      if (!selectedTehsil.length) {
+        setMauzas([]);
+        return;
+      }
+
+      try {
+        setLoading((prev) => ({ ...prev, mauzas: true }));
+        const lists = await Promise.all(selectedTehsil.map((id) => getMauzas(id)));
+        const merged = lists.flatMap(collectionToItems);
+        const unique = Array.from(
+          new Map(merged.map((item) => [String(item.mauza_id ?? item.gid), item])).values(),
+        );
+        if (mounted) setMauzas(unique);
+      } catch (error) {
+        console.error("Failed to load mauzas", error);
+        if (mounted) setErrorMessage("Failed to load mauzas");
+      } finally {
+        if (mounted) setLoading((prev) => ({ ...prev, mauzas: false }));
+      }
+    };
+
+    loadMauzas();
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedTehsil]);
+
+  const handleDistrictChange = (value) => {
+    setSelectedDistrict((prev) =>
+      prev.includes(String(value))
+        ? prev.filter((item) => item !== String(value))
+        : [...prev, String(value)],
+    );
+  };
+
+  const handleTehsilChange = (value) => {
+    setSelectedTehsil((prev) =>
+      prev.includes(String(value))
+        ? prev.filter((item) => item !== String(value))
+        : [...prev, String(value)],
+    );
+  };
+
+  const handleMauzaChange = (eventOrValue) => {
+    const value = eventOrValue?.target ? eventOrValue.target.value : eventOrValue;
+    setSelectedMauza(String(value || ""));
+  };
+
+  const selectedDistrictOptions = districts.filter((item) =>
+    selectedDistrict.includes(String(item.id)),
+  );
+  const selectedTehsilOptions = tehsils.filter((item) =>
+    selectedTehsil.includes(String(item.id)),
+  );
+  const selectedMauzaDetails =
+    mauzas.find((item) => String(item.mauza_id) === String(selectedMauza)) || null;
+
+  return {
+    districts,
+    tehsils,
+    mauzas,
+    selectedDistrict,
+    selectedTehsil,
+    selectedMauza,
+    selectedDistrictOptions,
+    selectedTehsilOptions,
+    selectedMauzaDetails,
+    selectedDistrictOption: selectedDistrictOptions[0] || null,
+    selectedTehsilOption: selectedTehsilOptions[0] || null,
+    selectedMauzaOption: selectedMauzaDetails,
+    loading,
+    errorMessage,
+    hasSelection: !!selectedDistrict.length || !!selectedTehsil.length || !!selectedMauza,
+    handleDistrictChange,
+    handleTehsilChange,
+    handleMauzaChange,
+    resetFilters: () => {
+      setSelectedDistrict([]);
+      setSelectedTehsil([]);
+      setSelectedMauza("");
+      setTehsils([]);
+      setMauzas([]);
+      setErrorMessage("");
+    },
+  };
 }
