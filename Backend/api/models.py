@@ -305,7 +305,8 @@ class Society(models.Model):
     objectid = models.IntegerField()
 
     society = models.CharField(max_length=255)
-
+    society_id = models.IntegerField()
+    
     district = models.CharField(max_length=100)
     dist_id = models.IntegerField()
 
