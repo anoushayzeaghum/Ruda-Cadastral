@@ -41,7 +41,8 @@ export default function SubHeader({
     selectedMouza && viewBy === "khasra" && isMurabbaBasedKhasra;
 
   return (
-<div className="absolute top-4 left-1/2 z-30 w-fit -translate-x-1/2 overflow-visible rounded-xl bg-[#0f3d2e] shadow-xl">      <div className="flex items-center justify-center gap-2 px-3 py-2 flex-wrap overflow-visible">
+    <div className="absolute top-4 left-1/2 z-30 w-[calc(100%-360px)] max-w-5xl -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
+      <div className="flex items-center justify-center gap-2 px-3 py-2 flex-wrap overflow-visible">
      
 
         <div className="flex items-center justify-center gap-2 flex-wrap overflow-visible">
