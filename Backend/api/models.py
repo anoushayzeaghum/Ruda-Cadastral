@@ -302,21 +302,29 @@ class Khasra(models.Model):
 class Society(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    objectid = models.IntegerField()
+    # These columns exist in your current society table.
+    # Do NOT add objectid here unless the database table also has objectid.
+    name = models.CharField(max_length=255, null=True, blank=True)
+    source = models.CharField(max_length=255, null=True, blank=True)
+    feat_count = models.IntegerField(null=True, blank=True)
+    area = models.FloatField(null=True, blank=True)
 
-    society = models.CharField(max_length=255)
-    society_id = models.IntegerField()
-    
-    district = models.CharField(max_length=100)
-    dist_id = models.IntegerField()
+    society = models.CharField(max_length=255, null=True, blank=True)
+    society_id = models.IntegerField(null=True, blank=True)
 
-    tehsil = models.CharField(max_length=100)
-    tehsil_id = models.IntegerField()
+    district = models.CharField(max_length=100, null=True, blank=True)
+    dist_id = models.IntegerField(null=True, blank=True)
 
-    mauza = models.CharField(max_length=100)
-    mauza_id = models.IntegerField()
+    tehsil = models.CharField(max_length=100, null=True, blank=True)
+    tehsil_id = models.IntegerField(null=True, blank=True)
+
+    mauza = models.CharField(max_length=100, null=True, blank=True)
+    mauza_id = models.IntegerField(null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return self.society or self.name or f"Society {self.gid}"
 
     class Meta:
         managed = False

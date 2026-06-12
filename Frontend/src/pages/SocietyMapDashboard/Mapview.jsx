@@ -53,7 +53,19 @@ const getLayerOpacity = (layers = {}, key, fallback = 100) => {
   return fallback;
 };
 
-const getSocietyId = (society) => society?.gid ?? society?.id ?? society?.objectid;
+const getSocietyBoundaryId = (society) =>
+  society?.gid ?? society?.id ?? society?.objectid;
+
+const getSocietyDataId = (society) =>
+  society?.society_id ?? society?.properties?.society_id ?? getSocietyBoundaryId(society);
+
+const getMauzaBoundaryId = (selectedMauza, selectedMauzaId) =>
+  selectedMauza?.mauza_id ??
+  selectedMauza?.properties?.mauza_id ??
+  selectedMauza?.id ??
+  selectedMauza?.gid ??
+  selectedMauzaId ??
+  selectedMauza;
 
 function ringArea(coords) {
   let area = 0;
@@ -97,6 +109,7 @@ export default function MapView({
   selectedDistrict,
   selectedTehsil,
   selectedMauza,
+  selectedMauzaId,
   selectedSociety,
   onParcelSelect,
   layers = {},
@@ -481,8 +494,9 @@ export default function MapView({
           }
         }
 
-        if (selectedMauza) {
-          const mauzaId = selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
+        const mauzaId = getMauzaBoundaryId(selectedMauza, selectedMauzaId);
+
+        if (mauzaId) {
           const geojson = await getMauzaBoundary(mauzaId);
           if (cancelled) return;
           if (geojson?.features?.length) {
@@ -522,6 +536,7 @@ export default function MapView({
     selectedDistrict,
     selectedTehsil,
     selectedMauza,
+    selectedMauzaId,
     isMapReady,
     layers?.districtBoundary,
     layers?.tehsilBoundary,
@@ -546,8 +561,8 @@ export default function MapView({
         setIsLoading(true);
         setError("");
 
-        const societyId = getSocietyId(selectedSociety);
-        const geojson = await getSocietyGeoJSON(societyId);
+        const societyGid = getSocietyBoundaryId(selectedSociety);
+        const geojson = await getSocietyGeoJSON(societyGid);
         if (cancelled) return;
 
         if (geojson?.features?.length) {
@@ -583,16 +598,16 @@ export default function MapView({
 
     let cancelled = false;
 
-    const societyId = getSocietyId(selectedSociety);
-    const mauzaId = selectedMauza?.mauza_id || selectedMauza?.id || selectedMauza;
-    const params = { society_id: societyId, mauza_id: mauzaId };
+    const societyDataId = getSocietyDataId(selectedSociety);
+    const params = { society_id: societyDataId };
 
     const loadOptionalLayers = async () => {
-      if (!selectedSociety) {
-        ["masterPlan", "spotLevel", "contours"].forEach((key) => {
-          clearLayer(key);
-          delete currentGeojson.current[key];
-        });
+      ["masterPlan", "spotLevel", "contours"].forEach((key) => {
+        clearLayer(key);
+        delete currentGeojson.current[key];
+      });
+
+      if (!selectedSociety || !societyDataId) {
         return;
       }
 
@@ -658,6 +673,7 @@ export default function MapView({
   }, [
     selectedSociety,
     selectedMauza,
+    selectedMauzaId,
     isMapReady,
     layers?.masterPlan,
     layers?.spotLevel,

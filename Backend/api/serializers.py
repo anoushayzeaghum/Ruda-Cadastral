@@ -248,8 +248,12 @@ class SocietySerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "objectid",
-            "society", "society_id",
+            "name",
+            "source",
+            "feat_count",
+            "area",
+            "society",
+            "society_id",
             "district",
             "dist_id",
             "tehsil",

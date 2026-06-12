@@ -164,10 +164,31 @@ export const getMurabbaBoundary = async (id) => {
 //////////////// SOCIETY LAYER APIs ///////////////////
 ///////////////////////////////////////////////////////
 
-export const getSocieties = async (mauza_id) => {
+export const getSocieties = async (filters = {}) => {
   const params = {};
-  if (mauza_id !== undefined && mauza_id !== null && mauza_id !== "") {
-    params.mauza_id = mauza_id;
+
+  // Backward compatible: old calls like getSocieties(mauza_id) still work.
+  if (typeof filters !== "object" || filters === null || Array.isArray(filters)) {
+    if (filters !== undefined && filters !== null && filters !== "") {
+      params.mauza_id = filters;
+    }
+  } else {
+    const allowedKeys = [
+      "mauza_id",
+      "mauza",
+      "society_id",
+      "dist_id",
+      "district",
+      "tehsil_id",
+      "tehsil",
+    ];
+
+    allowedKeys.forEach((key) => {
+      const value = filters[key];
+      if (value !== undefined && value !== null && value !== "") {
+        params[key] = value;
+      }
+    });
   }
 
   const res = await API.get("/society/", { params });

@@ -66,22 +66,22 @@ const SOCIETY_RASTER_LAYERS = [
 ];
 
 export default function LeftPanel({
-  layers,
-  setLayers,
-  rudaPhases,
-  setRudaPhases,
-  selectedRudaPhaseIds,
-  setSelectedRudaPhaseIds,
-  basemap,
-  setBasemap,
-  selectedMauza,
-  selectedSociety,
+  layers = {},
+  setLayers = () => {},
+  rudaPhases = [],
+  setRudaPhases = () => {},
+  selectedRudaPhaseIds = [],
+  setSelectedRudaPhaseIds = () => {},
+  basemap = "Streets",
+  setBasemap = () => {},
+  selectedMauza = null,
+  selectedSociety = null,
   selectedFilterLayers = [],
 }) {
   const [activePanel, setActivePanel] = useState("layers");
   const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
   const hasMauza = !!selectedMauza;
-  const hasSociety = !!selectedSociety || !!selectedMauza;
+  const hasSociety = !!selectedSociety;
   const initializedOpacityKeysRef = useRef(new Set());
 
   const getDefaultOpacityForSelectedLayer = (item) => {

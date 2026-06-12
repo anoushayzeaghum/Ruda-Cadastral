@@ -1,31 +1,94 @@
 import { useOutletContext } from "react-router-dom";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import Header from "./Header";
 import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
 import ParcelPanel from "./ParcelPanel";
 import MapView from "./Mapview";
-import { getDistricts, getTehsils, getMauzas, getSocieties } from "../../services/api";
+import {
+  getDistricts,
+  getTehsils,
+  getMauzas,
+  getSocieties,
+} from "../../services/api";
+
+const toText = (value) => String(value ?? "");
+
+const getDistrictId = (district) =>
+  district?.id ?? district?.gid ?? district?.properties?.id;
+
+const getTehsilId = (tehsil) =>
+  tehsil?.id ?? tehsil?.gid ?? tehsil?.properties?.id;
+
+const getMauzaId = (mauza) =>
+  mauza?.mauza_id ??
+  mauza?.properties?.mauza_id ??
+  mauza?.id ??
+  mauza?.gid;
+
+const getSocietyPk = (society) =>
+  society?.gid ?? society?.id ?? society?.objectid ?? society?.properties?.gid;
+
+const normalizeLayer = (layer, defaultOpacity, defaultVisible = false) => {
+  if (typeof layer === "object" && layer !== null) {
+    return {
+      visible: layer.visible !== false,
+      opacity: Number.isFinite(Number(layer.opacity))
+        ? Number(layer.opacity)
+        : defaultOpacity,
+    };
+  }
+
+  if (typeof layer === "boolean") {
+    return {
+      visible: layer,
+      opacity: defaultOpacity,
+    };
+  }
+
+  return {
+    visible: defaultVisible,
+    opacity: defaultOpacity,
+  };
+};
+
+const sortByText = (items, key) =>
+  [...items].sort((a, b) =>
+    String(a?.[key] ?? "").localeCompare(String(b?.[key] ?? "")),
+  );
 
 export default function SocietyMapPage() {
   const outletContext = useOutletContext() ?? {};
   const localFilters = useSocietyFilters();
+
+  // Society dashboard should work independently. If a parent layout provides
+  // filters, it will still use them; otherwise it uses the local society filters.
   const filters = outletContext.filters ?? localFilters;
 
   const [selectedSocietyId, setSelectedSocietyId] = useState("");
   const [societyOptions, setSocietyOptions] = useState([]);
+  const [societyLoading, setSocietyLoading] = useState(false);
+  const [societyError, setSocietyError] = useState("");
   const [selectedSocietyFeature, setSelectedSocietyFeature] = useState(null);
   const [societyPanelOpen, setSocietyPanelOpen] = useState(false);
 
+  const [rudaPhases, setRudaPhases] = useState([]);
+  const [selectedRudaPhaseIds, setSelectedRudaPhaseIds] = useState([]);
+
   const [layers, setLayers] = useState({
+    rudaBoundary: { visible: false, opacity: 10 },
+    proposedRoads: { visible: false, opacity: 100 },
+
     districtBoundary: { visible: true, opacity: 0 },
     tehsilBoundary: { visible: true, opacity: 0 },
     mauzaBoundary: { visible: true, opacity: 0 },
-    societyBoundary: { visible: true, opacity: 25 },
+
+    societyBoundary: { visible: false, opacity: 25 },
     masterPlan: { visible: false, opacity: 70 },
     spotLevel: { visible: false, opacity: 100 },
     contours: { visible: false, opacity: 100 },
+
     dem: { visible: false, opacity: 100 },
     dtm: { visible: false, opacity: 100 },
     orthoImage: { visible: false, opacity: 100 },
@@ -35,28 +98,74 @@ export default function SocietyMapPage() {
 
   const [basemap, setBasemap] = useState("Streets");
 
+  const selectedMauzaId = filters?.selectedMauza ?? "";
+
   useEffect(() => {
     let mounted = true;
 
     const loadSocieties = async () => {
-      const mauzaId = filters?.selectedMauza;
+      const mauzaId = selectedMauzaId;
+      const mauzaName =
+        filters?.selectedMauzaDetails?.mauza ||
+        filters?.selectedMauzaDetails?.name ||
+        filters?.selectedMauzaOption?.mauza ||
+        filters?.selectedMauzaOption?.name ||
+        "";
 
       setSelectedSocietyId("");
       setSelectedSocietyFeature(null);
       setSocietyPanelOpen(false);
+      setSocietyError("");
 
-      if (!mauzaId) {
+      setLayers((prev) => ({
+        ...prev,
+        societyBoundary: {
+          ...normalizeLayer(prev.societyBoundary, 25),
+          visible: false,
+        },
+        masterPlan: {
+          ...normalizeLayer(prev.masterPlan, 70),
+          visible: false,
+        },
+        spotLevel: {
+          ...normalizeLayer(prev.spotLevel, 100),
+          visible: false,
+        },
+        contours: {
+          ...normalizeLayer(prev.contours, 100),
+          visible: false,
+        },
+      }));
+
+      if (!mauzaId && !mauzaName) {
         setSocietyOptions([]);
+        setSocietyLoading(false);
         return;
       }
 
       try {
-        const list = await getSocieties(mauzaId);
+        setSocietyLoading(true);
+
+        // First try by mauza_id. Also send mauza name so the backend can fall
+        // back to name matching if an old society record has a different mauza_id.
+        let list = await getSocieties({ mauza_id: mauzaId, mauza: mauzaName });
+
+        // Extra frontend fallback for already-running backends that do not yet
+        // support combined mauza_id + mauza filtering.
+        if ((!Array.isArray(list) || !list.length) && mauzaName) {
+          list = await getSocieties({ mauza: mauzaName });
+        }
+
         if (!mounted) return;
-        setSocietyOptions(list || []);
+        setSocietyOptions(Array.isArray(list) ? list : []);
       } catch (e) {
         console.error("Failed to load societies", e);
-        if (mounted) setSocietyOptions([]);
+        if (mounted) {
+          setSocietyOptions([]);
+          setSocietyError("Failed to load societies for selected mauza.");
+        }
+      } finally {
+        if (mounted) setSocietyLoading(false);
       }
     };
 
@@ -65,14 +174,41 @@ export default function SocietyMapPage() {
     return () => {
       mounted = false;
     };
-  }, [filters?.selectedMauza]);
+  }, [selectedMauzaId, filters?.selectedMauzaDetails, filters?.selectedMauzaOption]);
 
   const selectedSociety = useMemo(() => {
+    if (!selectedSocietyId) return null;
+
     return (
-      societyOptions.find((s) => String(s.gid ?? s.id) === String(selectedSocietyId)) ||
-      null
+      societyOptions.find(
+        (society) => toText(getSocietyPk(society)) === toText(selectedSocietyId),
+      ) || null
     );
   }, [societyOptions, selectedSocietyId]);
+
+  // When a society is selected, its boundary should become enabled automatically.
+  // Other society datasets stay off until the user checks them from Vector Boundaries.
+  useEffect(() => {
+    setSelectedSocietyFeature(null);
+    setSocietyPanelOpen(false);
+
+    setLayers((prev) => ({
+      ...prev,
+      societyBoundary: {
+        ...normalizeLayer(prev.societyBoundary, 25),
+        visible: !!selectedSociety,
+      },
+      masterPlan: selectedSociety
+        ? normalizeLayer(prev.masterPlan, 70)
+        : { ...normalizeLayer(prev.masterPlan, 70), visible: false },
+      spotLevel: selectedSociety
+        ? normalizeLayer(prev.spotLevel, 100)
+        : { ...normalizeLayer(prev.spotLevel, 100), visible: false },
+      contours: selectedSociety
+        ? normalizeLayer(prev.contours, 100)
+        : { ...normalizeLayer(prev.contours, 100), visible: false },
+    }));
+  }, [selectedSociety]);
 
   const selectedFilterLayers = useMemo(() => {
     if (!filters) return [];
@@ -81,9 +217,10 @@ export default function SocietyMapPage() {
 
     if (filters?.selectedDistrictOptions?.length) {
       const label = filters.selectedDistrictOptions
-        .map((d) => d?.name)
+        .map((district) => district?.name)
         .filter(Boolean)
         .join(", ");
+
       items.push({
         key: "districtBoundary",
         label: `District: ${label || "Selected District"}`,
@@ -92,21 +229,26 @@ export default function SocietyMapPage() {
 
     if (filters?.selectedTehsilOptions?.length) {
       const label = filters.selectedTehsilOptions
-        .map((t) => t?.name)
+        .map((tehsil) => tehsil?.name)
         .filter(Boolean)
         .join(", ");
+
       items.push({
         key: "tehsilBoundary",
         label: `Tehsil: ${label || "Selected Tehsil"}`,
       });
     }
 
-    if (filters?.selectedMauzaDetails) {
+    if (filters?.selectedMauza || filters?.selectedMauzaDetails) {
       const label =
         filters.selectedMauzaDetails?.mauza ||
         filters.selectedMauzaDetails?.name ||
-        "Selected Mauza";
-      items.push({ key: "mauzaBoundary", label: `Mauza: ${label}` });
+        `Mauza ${filters.selectedMauza}`;
+
+      items.push({
+        key: "mauzaBoundary",
+        label: `Mauza: ${label}`,
+      });
     }
 
     if (selectedSociety) {
@@ -119,6 +261,8 @@ export default function SocietyMapPage() {
     return items;
   }, [filters, selectedSociety]);
 
+  // Keep selected administrative boundary layers initialized as visible so
+  // District, Tehsil, and Mauza boundaries draw immediately after dropdown selection.
   useEffect(() => {
     const activeKeys = new Set(selectedFilterLayers.map((item) => item.key));
     const managedKeys = [
@@ -134,18 +278,32 @@ export default function SocietyMapPage() {
 
       managedKeys.forEach((key) => {
         if (!activeKeys.has(key)) return;
-        if (!next[key]) {
-          next[key] = { visible: true, opacity: key === "societyBoundary" ? 25 : 0 };
+
+        const defaultOpacity = key === "societyBoundary" ? 25 : 0;
+        const shouldBeVisible = key === "societyBoundary" ? !!selectedSociety : true;
+        const current = next[key];
+
+        if (!current || typeof current !== "object") {
+          next[key] = {
+            visible: shouldBeVisible,
+            opacity: defaultOpacity,
+          };
           changed = true;
-        } else if (typeof next[key] !== "object") {
-          next[key] = { visible: !!next[key], opacity: key === "societyBoundary" ? 25 : 0 };
+          return;
+        }
+
+        if (current.visible !== shouldBeVisible && key !== "societyBoundary") {
+          next[key] = {
+            ...current,
+            visible: shouldBeVisible,
+          };
           changed = true;
         }
       });
 
       return changed ? next : prev;
     });
-  }, [selectedFilterLayers]);
+  }, [selectedFilterLayers, selectedSociety]);
 
   return (
     <div className="w-full h-screen flex flex-col bg-white">
@@ -154,11 +312,13 @@ export default function SocietyMapPage() {
       <div className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white">
         <MapView
           selectedMauza={filters?.selectedMauzaDetails}
+          selectedMauzaId={filters?.selectedMauza}
           selectedDistrict={filters?.selectedDistrictOptions}
           selectedTehsil={filters?.selectedTehsilOptions}
           selectedSociety={selectedSociety}
           layers={layers}
           selectedFilterLayers={selectedFilterLayers}
+          selectedRudaPhaseIds={selectedRudaPhaseIds}
           basemap={basemap}
           onParcelSelect={(feature) => {
             setSelectedSocietyFeature(feature);
@@ -170,16 +330,27 @@ export default function SocietyMapPage() {
           <SubHeader
             filters={filters}
             societyOptions={societyOptions}
+            societyLoading={societyLoading}
+            societyError={societyError}
             selectedSocietyId={selectedSocietyId}
-            onSocietyChange={setSelectedSocietyId}
+            onSocietyChange={(value) => {
+              setSelectedSocietyId(value);
+              setSelectedSocietyFeature(null);
+              setSocietyPanelOpen(false);
+            }}
           />
         )}
 
         <LeftPanel
           layers={layers}
           setLayers={setLayers}
+          rudaPhases={rudaPhases}
+          setRudaPhases={setRudaPhases}
+          selectedRudaPhaseIds={selectedRudaPhaseIds}
+          setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
           basemap={basemap}
           setBasemap={setBasemap}
+          selectedMauza={filters?.selectedMauzaDetails || filters?.selectedMauza}
           selectedSociety={selectedSociety}
           selectedFilterLayers={selectedFilterLayers}
         />
@@ -194,16 +365,31 @@ export default function SocietyMapPage() {
   );
 }
 
-
 function collectionToItems(collection) {
   if (Array.isArray(collection)) return collection;
   if (!Array.isArray(collection?.features)) return [];
 
   return collection.features.map((feature) => ({
-    id: feature.id ?? feature.properties?.id ?? feature.properties?.gid,
+    id:
+      feature.id ??
+      feature.properties?.id ??
+      feature.properties?.mauza_id ??
+      feature.properties?.gid,
     geometry: feature.geometry ?? null,
     ...feature.properties,
   }));
+}
+
+function dedupeBy(items, getKey) {
+  const map = new Map();
+
+  items.forEach((item) => {
+    const key = getKey(item);
+    if (key === undefined || key === null || key === "") return;
+    if (!map.has(toText(key))) map.set(toText(key), item);
+  });
+
+  return Array.from(map.values());
 }
 
 function useSocietyFilters() {
@@ -228,11 +414,18 @@ function useSocietyFilters() {
     const loadDistricts = async () => {
       try {
         setLoading((prev) => ({ ...prev, districts: true }));
+        setErrorMessage("");
+
         const data = await getDistricts();
-        if (mounted) setDistricts(collectionToItems(data));
+        const items = collectionToItems(data);
+
+        if (mounted) setDistricts(sortByText(items, "name"));
       } catch (error) {
         console.error("Failed to load districts", error);
-        if (mounted) setErrorMessage("Failed to load districts");
+        if (mounted) {
+          setDistricts([]);
+          setErrorMessage("Failed to load districts");
+        }
       } finally {
         if (mounted) setLoading((prev) => ({ ...prev, districts: false }));
       }
@@ -260,15 +453,21 @@ function useSocietyFilters() {
 
       try {
         setLoading((prev) => ({ ...prev, tehsils: true }));
-        const lists = await Promise.all(selectedDistrict.map((id) => getTehsils(id)));
-        const merged = lists.flatMap(collectionToItems);
-        const unique = Array.from(
-          new Map(merged.map((item) => [String(item.id ?? item.gid), item])).values(),
+        setErrorMessage("");
+
+        const lists = await Promise.all(
+          selectedDistrict.map((districtId) => getTehsils(districtId)),
         );
-        if (mounted) setTehsils(unique);
+        const merged = lists.flatMap(collectionToItems);
+        const unique = dedupeBy(merged, getTehsilId);
+
+        if (mounted) setTehsils(sortByText(unique, "name"));
       } catch (error) {
         console.error("Failed to load tehsils", error);
-        if (mounted) setErrorMessage("Failed to load tehsils");
+        if (mounted) {
+          setTehsils([]);
+          setErrorMessage("Failed to load tehsils");
+        }
       } finally {
         if (mounted) setLoading((prev) => ({ ...prev, tehsils: false }));
       }
@@ -294,15 +493,21 @@ function useSocietyFilters() {
 
       try {
         setLoading((prev) => ({ ...prev, mauzas: true }));
-        const lists = await Promise.all(selectedTehsil.map((id) => getMauzas(id)));
-        const merged = lists.flatMap(collectionToItems);
-        const unique = Array.from(
-          new Map(merged.map((item) => [String(item.mauza_id ?? item.gid), item])).values(),
+        setErrorMessage("");
+
+        const lists = await Promise.all(
+          selectedTehsil.map((tehsilId) => getMauzas(tehsilId)),
         );
-        if (mounted) setMauzas(unique);
+        const merged = lists.flatMap(collectionToItems);
+        const unique = dedupeBy(merged, getMauzaId);
+
+        if (mounted) setMauzas(sortByText(unique, "mauza"));
       } catch (error) {
         console.error("Failed to load mauzas", error);
-        if (mounted) setErrorMessage("Failed to load mauzas");
+        if (mounted) {
+          setMauzas([]);
+          setErrorMessage("Failed to load mauzas");
+        }
       } finally {
         if (mounted) setLoading((prev) => ({ ...prev, mauzas: false }));
       }
@@ -316,34 +521,45 @@ function useSocietyFilters() {
   }, [selectedTehsil]);
 
   const handleDistrictChange = (value) => {
+    const id = toText(value?.target ? value.target.value : value);
+    if (!id) return;
+
     setSelectedDistrict((prev) =>
-      prev.includes(String(value))
-        ? prev.filter((item) => item !== String(value))
-        : [...prev, String(value)],
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
   const handleTehsilChange = (value) => {
+    const id = toText(value?.target ? value.target.value : value);
+    if (!id) return;
+
     setSelectedTehsil((prev) =>
-      prev.includes(String(value))
-        ? prev.filter((item) => item !== String(value))
-        : [...prev, String(value)],
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
   const handleMauzaChange = (eventOrValue) => {
     const value = eventOrValue?.target ? eventOrValue.target.value : eventOrValue;
-    setSelectedMauza(String(value || ""));
+    setSelectedMauza(toText(value));
   };
 
-  const selectedDistrictOptions = districts.filter((item) =>
-    selectedDistrict.includes(String(item.id)),
+  const selectedDistrictOptions = districts.filter((district) =>
+    selectedDistrict.includes(toText(getDistrictId(district))),
   );
-  const selectedTehsilOptions = tehsils.filter((item) =>
-    selectedTehsil.includes(String(item.id)),
+
+  const selectedTehsilOptions = tehsils.filter((tehsil) =>
+    selectedTehsil.includes(toText(getTehsilId(tehsil))),
   );
+
   const selectedMauzaDetails =
-    mauzas.find((item) => String(item.mauza_id) === String(selectedMauza)) || null;
+    mauzas.find((mauza) => toText(getMauzaId(mauza)) === toText(selectedMauza)) ||
+    (selectedMauza
+      ? {
+          id: selectedMauza,
+          mauza_id: selectedMauza,
+          mauza: `Mauza ${selectedMauza}`,
+        }
+      : null);
 
   return {
     districts,
@@ -360,7 +576,8 @@ function useSocietyFilters() {
     selectedMauzaOption: selectedMauzaDetails,
     loading,
     errorMessage,
-    hasSelection: !!selectedDistrict.length || !!selectedTehsil.length || !!selectedMauza,
+    hasSelection:
+      !!selectedDistrict.length || !!selectedTehsil.length || !!selectedMauza,
     handleDistrictChange,
     handleTehsilChange,
     handleMauzaChange,

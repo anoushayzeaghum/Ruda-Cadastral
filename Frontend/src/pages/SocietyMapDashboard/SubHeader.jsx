@@ -4,6 +4,8 @@ import { ChevronDown } from "lucide-react";
 export default function SubHeader({
   filters,
   societyOptions = [],
+  societyLoading = false,
+  societyError = "",
   selectedSocietyId = "",
   onSocietyChange = () => {},
 }) {
@@ -22,9 +24,26 @@ export default function SubHeader({
 
   const selectedMauza = filters.selectedMauza ?? "";
 
+  const getMauzaId = (mauza) =>
+    mauza?.mauza_id ?? mauza?.properties?.mauza_id ?? mauza?.id ?? mauza?.gid;
+
+  const getSocietyPk = (society) =>
+    society?.gid ?? society?.properties?.gid ?? society?.id ?? society?.objectid;
+
+  const selectedMauzaName =
+    mauzas.find((m) => String(getMauzaId(m)) === String(selectedMauza))
+      ?.mauza || "Select";
+
   const selectedSocietyName =
-    societyOptions.find((s) => String(s.gid ?? s.id) === String(selectedSocietyId))
-      ?.society || "Select";
+    societyOptions.find(
+      (s) => String(getSocietyPk(s)) === String(selectedSocietyId),
+    )?.society || "Select";
+
+  const societyDisplayValue = societyLoading
+    ? "Loading..."
+    : selectedMauza && !societyOptions.length
+      ? "No Society"
+      : selectedSocietyName;
 
   return (
     <div className="absolute top-4 left-1/2 z-30 w-fit max-w-[calc(100vw-96px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
@@ -70,39 +89,44 @@ export default function SubHeader({
             />
           </FilterCard>
 
-          <FilterCard
-            label="Mauza — موضع"
-            value={
-              mauzas.find((m) => String(m.mauza_id) === String(selectedMauza))
-                ?.mauza || "Select"
-            }
-          >
+          <FilterCard label="Mauza — موضع" value={selectedMauzaName}>
             <NativeSelectOverlay
               value={selectedMauza}
               onChange={filters.handleMauzaChange}
               disabled={!selectedTehsil.length || filters.loading?.mauzas}
             >
               <option value="">-- Mauza --</option>
-              {mauzas.map((m) => (
-                <option key={m.mauza_id} value={m.mauza_id}>
-                  {m.mauza}
-                </option>
-              ))}
+              {mauzas.map((m) => {
+                const id = getMauzaId(m);
+                return (
+                  <option key={id} value={id}>
+                    {m.mauza}
+                  </option>
+                );
+              })}
             </NativeSelectOverlay>
           </FilterCard>
 
-          <FilterCard label="Society" value={selectedSocietyName}>
+          <FilterCard label="Society" value={societyDisplayValue}>
             <NativeSelectOverlay
               value={selectedSocietyId}
               onChange={(e) => onSocietyChange(e.target.value)}
-              disabled={!selectedMauza || !societyOptions.length}
+              disabled={!selectedMauza || societyLoading || !societyOptions.length}
+              title={societyError || undefined}
             >
-              <option value="">-- Society --</option>
+              <option value="">
+                {societyLoading
+                  ? "Loading societies..."
+                  : societyOptions.length
+                    ? "-- Society --"
+                    : "No society found"}
+              </option>
               {societyOptions.map((society) => {
-                const id = society.gid ?? society.id;
+                const id = getSocietyPk(society);
+                const label = society.society || society.name || `Society ${id}`;
                 return (
                   <option key={id} value={id}>
-                    {society.society}
+                    {label}
                   </option>
                 );
               })}
@@ -135,7 +159,7 @@ function NativeSelectOverlay({ value, onChange, disabled, children }) {
       value={value}
       onChange={onChange}
       disabled={disabled}
-      className="absolute inset-0 opacity-0 cursor-pointer"
+      className="absolute inset-0 z-10 opacity-0 cursor-pointer disabled:cursor-not-allowed"
     >
       {children}
     </select>
