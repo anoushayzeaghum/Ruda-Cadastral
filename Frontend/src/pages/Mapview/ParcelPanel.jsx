@@ -39,8 +39,6 @@ export default function ParcelPanel({
 
   const parcelData = {
     khasraNo:
-      parcel?.properties?.kh ??
-      parcel?.properties?.KH ??
       parcel?.properties?.k ??
       parcel?.properties?.K ??
       parcel?.properties?.khasra ??

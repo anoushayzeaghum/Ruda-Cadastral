@@ -171,6 +171,29 @@ const getMurabbaNumber = (props = {}) => {
   );
 };
 
+const getLayerVisible = (layers = {}, key, fallback = true) => {
+  const value = layers?.[key];
+  if (typeof value === "object") return value.visible !== false;
+  if (typeof value === "boolean") return value;
+  return fallback;
+};
+
+const getLayerOpacity = (layers = {}, key, fallback = 100) => {
+  const value = layers?.[key];
+  if (typeof value === "object" && Number.isFinite(Number(value.opacity))) {
+    return Number(value.opacity);
+  }
+  return fallback;
+};
+
+const boundaryLevelToLayerKey = (level) => {
+  if (level === "district") return "districtBoundary";
+  if (level === "tehsil") return "tehsilBoundary";
+  if (level === "mauza") return "mauzaBoundary";
+  if (level?.startsWith?.("ruda")) return "rudaBoundary";
+  return null;
+};
+
 const ensureTriangleIcon = (map) => {
   if (!map || map.hasImage(TRI_JUNCTION_TRIANGLE_IMAGE)) return;
 
@@ -206,6 +229,7 @@ export default function MapView({
   demarcationMode = false,
   onParcelSelect,
   layers = {},
+  selectedFilterLayers = [],
   selectedRudaPhaseIds = [],
   basemap = "Streets",
   selectedFeatureNumber,
@@ -282,7 +306,14 @@ export default function MapView({
                 geojson: g,
               });
             } else {
-              drawBoundaryLevel(key, g);
+              const layerKey = boundaryLevelToLayerKey(key);
+              if (!layerKey || getLayerVisible(layers, layerKey, true)) {
+                drawBoundaryLevel(
+                  key,
+                  g,
+                  layerKey ? getLayerOpacity(layers, layerKey, 100) : null,
+                );
+              }
             }
           });
         } catch (e) {
@@ -370,12 +401,19 @@ export default function MapView({
     }
   };
 
-  const drawBoundaryLevel = (level, geojson) => {
+  const drawBoundaryLevel = (level, geojson, opacityOverride = null) => {
     const map = mapInstance.current;
     if (!map) return;
 
     const ids = getBoundaryIds(level);
     clearBoundaryLevel(level);
+
+    const opacity =
+      opacityOverride !== null && opacityOverride !== undefined
+        ? Number(opacityOverride) / 100
+        : level.startsWith("ruda")
+          ? getLayerOpacity(layers, "rudaBoundary", 50) / 100
+          : 0.2;
 
     try {
       map.addSource(ids.source, {
@@ -389,7 +427,7 @@ export default function MapView({
         source: ids.source,
         paint: {
           "fill-color": level.startsWith("ruda") ? "#3d7cc4" : "#0b6a2e",
-          "fill-opacity": level.startsWith("ruda") ? 0.5 : 0.2,
+          "fill-opacity": opacity,
         },
       });
 
@@ -932,7 +970,7 @@ export default function MapView({
         source: KHASRA_SOURCE,
         paint: {
           "fill-color": MAP_THEME.fillColor,
-          "fill-opacity": MAP_THEME.fillOpacity,
+          "fill-opacity": getLayerOpacity(layers, "khasraLayer", 100) / 100,
         },
       });
 
@@ -1030,7 +1068,7 @@ export default function MapView({
         source: MURABBA_SOURCE,
         paint: {
           "fill-color": MAP_THEME.fillColor,
-          "fill-opacity": MAP_THEME.fillOpacity,
+          "fill-opacity": getLayerOpacity(layers, "murabbaLayer", 100) / 100,
         },
       });
 
@@ -1116,19 +1154,27 @@ export default function MapView({
 
         setFeatureCount(0);
 
-        if (selectedMauza) {
-          const mauzaId =
-            selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
+        const loadedGeojsons = [];
 
-          const geojson = await getMauzaBoundary(mauzaId);
+        if (selectedDistrict?.length) {
+          const geojsons = await Promise.all(
+            selectedDistrict.map((d) => getDistrictBoundary(d.id || d)),
+          );
           if (cancelled) return;
 
-          if (geojson?.features?.length) {
-            drawBoundaryLevel("mauza", geojson);
-            zoomToGeoJSON(geojson);
-            setFeatureCount(geojson.features.length);
+          const merged = mergeFeatureCollections(geojsons);
+          if (merged?.features?.length) {
+            currentGeojson.current.district = merged;
+            loadedGeojsons.push(merged);
+
+            if (getLayerVisible(layers, "districtBoundary", true)) {
+              drawBoundaryLevel(
+                "district",
+                merged,
+                getLayerOpacity(layers, "districtBoundary", 100),
+              );
+            }
           }
-          return;
         }
 
         if (selectedTehsil?.length) {
@@ -1139,26 +1185,44 @@ export default function MapView({
 
           const merged = mergeFeatureCollections(geojsons);
           if (merged?.features?.length) {
-            drawBoundaryLevel("tehsil", merged);
-            zoomToGeoJSON(merged);
-            setFeatureCount(merged.features.length);
+            currentGeojson.current.tehsil = merged;
+            loadedGeojsons.push(merged);
+
+            if (getLayerVisible(layers, "tehsilBoundary", true)) {
+              drawBoundaryLevel(
+                "tehsil",
+                merged,
+                getLayerOpacity(layers, "tehsilBoundary", 100),
+              );
+            }
           }
-          return;
         }
 
-        if (selectedDistrict?.length) {
-          const geojsons = await Promise.all(
-            selectedDistrict.map((d) => getDistrictBoundary(d.id || d)),
-          );
+        if (selectedMauza) {
+          const mauzaId =
+            selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
+
+          const geojson = await getMauzaBoundary(mauzaId);
           if (cancelled) return;
 
-          const merged = mergeFeatureCollections(geojsons);
-          if (merged?.features?.length) {
-            drawBoundaryLevel("district", merged);
-            zoomToGeoJSON(merged);
-            setFeatureCount(merged.features.length);
+          if (geojson?.features?.length) {
+            currentGeojson.current.mauza = geojson;
+            loadedGeojsons.push(geojson);
+
+            if (getLayerVisible(layers, "mauzaBoundary", true)) {
+              drawBoundaryLevel(
+                "mauza",
+                geojson,
+                getLayerOpacity(layers, "mauzaBoundary", 100),
+              );
+            }
           }
-          return;
+        }
+
+        const zoomTarget = loadedGeojsons[loadedGeojsons.length - 1];
+        if (zoomTarget?.features?.length) {
+          zoomToGeoJSON(zoomTarget);
+          setFeatureCount(zoomTarget.features.length);
         }
 
       } catch (e) {
@@ -1183,6 +1247,9 @@ export default function MapView({
     selectedTehsil,
     selectedMauza,
     isMapReady,
+    layers?.districtBoundary,
+    layers?.tehsilBoundary,
+    layers?.mauzaBoundary,
   ]);
 
   useEffect(() => {
@@ -1221,7 +1288,14 @@ export default function MapView({
                 geojson: g,
               });
             } else {
-              drawBoundaryLevel(key, g);
+              const layerKey = boundaryLevelToLayerKey(key);
+              if (!layerKey || getLayerVisible(layers, layerKey, true)) {
+                drawBoundaryLevel(
+                  key,
+                  g,
+                  layerKey ? getLayerOpacity(layers, layerKey, 100) : null,
+                );
+              }
             }
           });
         } catch (e) {
@@ -1307,7 +1381,7 @@ export default function MapView({
     if (!isMapReady) return;
 
     const loadRuda = async () => {
-      if (!layers?.rudaBoundary) {
+      if (!getLayerVisible(layers, "rudaBoundary", false)) {
         try {
           (selectedRudaPhaseIds || []).forEach((id) => {
             const lvl = `ruda-${id}`;
@@ -1335,7 +1409,11 @@ export default function MapView({
         );
 
         results.filter(Boolean).forEach((item) => {
-          drawBoundaryLevel(`ruda-${item.gid}`, item.geojson);
+          drawBoundaryLevel(
+            `ruda-${item.gid}`,
+            item.geojson,
+            getLayerOpacity(layers, "rudaBoundary", 50),
+          );
           currentGeojson.current[`ruda-${item.gid}`] = item.geojson;
         });
       } finally {
@@ -1347,7 +1425,12 @@ export default function MapView({
   }, [isMapReady, layers?.rudaBoundary, selectedRudaPhaseIds]);
 
   useEffect(() => {
-    if (!selectedMauza || !isMapReady || viewBy !== "khasra") {
+    if (
+      !selectedMauza ||
+      !isMapReady ||
+      viewBy !== "khasra" ||
+      !getLayerVisible(layers, "khasraLayer", true)
+    ) {
       clearKhasraLayers();
       delete currentGeojson.current.khasra;
       return;
@@ -1379,10 +1462,15 @@ export default function MapView({
     };
 
     loadKhasras();
-  }, [selectedMauza, isMapReady, viewBy]);
+  }, [selectedMauza, isMapReady, viewBy, layers?.khasraLayer]);
 
   useEffect(() => {
-    if (!selectedMauza || !isMapReady || viewBy !== "murabba") {
+    if (
+      !selectedMauza ||
+      !isMapReady ||
+      viewBy !== "murabba" ||
+      !getLayerVisible(layers, "murabbaLayer", true)
+    ) {
       clearMurabbaLayers();
       delete currentGeojson.current.murabba;
       return;
@@ -1414,7 +1502,7 @@ export default function MapView({
     };
 
     loadMurabbas();
-  }, [selectedMauza, isMapReady, viewBy]);
+  }, [selectedMauza, isMapReady, viewBy, layers?.murabbaLayer]);
 
   useEffect(() => {
     if (!isMapReady) return;
@@ -1428,7 +1516,7 @@ export default function MapView({
       try {
         const normalizedMauza = (mauzaName || "").trim().toLowerCase();
 
-        if (layers?.controlPoints && normalizedMauza) {
+        if (getLayerVisible(layers, "controlPoints", false) && normalizedMauza) {
           const controlGeojson = await getTrijunctionPoints({
             mauza: mauzaName,
             type: "B",
@@ -1463,7 +1551,7 @@ export default function MapView({
           delete currentGeojson.current["control-points"];
         }
 
-        if (layers?.triJunctionPoints && normalizedMauza) {
+        if (getLayerVisible(layers, "triJunctionPoints", false) && normalizedMauza) {
           const trijunctionGeojson = await getTrijunctionPoints({
             mauza: mauzaName,
             type: "TJ",
