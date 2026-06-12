@@ -200,6 +200,13 @@ export const getSocietyGeoJSON = async (gid) => {
   return normalizeGeoJson(res);
 };
 
+export const getSocietyBoundaryGeoJSONBySocietyId = async (society_id) => {
+  const res = await API.get("/society/", {
+    params: { society_id },
+  });
+  return normalizeGeoJson(res);
+};
+
 export const getMasterPlanGeoJSON = async ({ society_id, mauza_id } = {}) => {
   const params = {};
   if (society_id) params.society_id = society_id;
