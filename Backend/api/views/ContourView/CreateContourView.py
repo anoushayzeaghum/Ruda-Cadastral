@@ -1,23 +1,23 @@
 from ..common_imports import *
 
-class CreateCBContourView(viewsets.ViewSet):
-    queryset = CBContour.objects.all()
-    serializer_class = CBContourSerializer
+class CreateContourView(viewsets.ViewSet):
+    queryset = Contour.objects.all()
+    serializer_class = ContourSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         data = request.data
 
         try:
-            serializer = CBContourSerializer(data=data)
+            serializer = ContourSerializer(data=data)
             serializer.is_valid(raise_exception=True)
 
             contour = serializer.save()
 
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
-                message="CB Contour created successfully.",
-                data=CBContourSerializer(contour).data,
+                message="Contour created successfully.",
+                data=ContourSerializer(contour).data,
                 http_status=status.HTTP_201_CREATED,
             ).create_response()
 
