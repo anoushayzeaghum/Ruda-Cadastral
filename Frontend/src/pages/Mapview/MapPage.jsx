@@ -4,12 +4,14 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Header from "./Header";
 import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
-import ParcelPanel from "./ParcelPanel";
+import ParcelPanel from "../SocietyMapDashboard/ParcelPanel";
 
-import MapView from "./Mapview";
+import MapView from "../SocietyMapDashboard/Mapview";
 
 const getKhasraNumber = (props = {}) => {
   return (
+    props.kh ??
+    props.KH ??
     props.k ??
     props.K ??
     props.khasra ??
@@ -43,9 +45,14 @@ export default function MapPage() {
   const [parcelPanelOpen, setParcelPanelOpen] = useState(false);
 
   const [layers, setLayers] = useState({
-    rudaBoundary: false,
-    controlPoints: false,
-    triJunctionPoints: false,
+    rudaBoundary: { visible: false, opacity: 10 },
+    districtBoundary: { visible: true, opacity: 0 },
+    tehsilBoundary: { visible: true, opacity: 0 },
+    mauzaBoundary: { visible: true, opacity: 0 },
+    khasraLayer: { visible: true, opacity: 25 },
+    murabbaLayer: { visible: true, opacity: 25 },
+    controlPoints: { visible: false, opacity: 100 },
+    triJunctionPoints: { visible: false, opacity: 100 },
   });
 
   const [rudaPhases, setRudaPhases] = useState([]);
@@ -166,6 +173,105 @@ export default function MapPage() {
     return khasraOptions;
   }, [filters?.viewBy, isMurabbaBasedKhasra, khasraOptions]);
 
+  const selectedFilterLayers = useMemo(() => {
+    if (!filters) return [];
+
+    const items = [];
+
+    if (filters?.selectedDistrictOptions?.length) {
+      const label = filters.selectedDistrictOptions
+        .map((d) => d?.name)
+        .filter(Boolean)
+        .join(", ");
+      items.push({
+        key: "districtBoundary",
+        label: `District: ${label || "Selected District"}`,
+      });
+    }
+
+    if (filters?.selectedTehsilOptions?.length) {
+      const label = filters.selectedTehsilOptions
+        .map((t) => t?.name)
+        .filter(Boolean)
+        .join(", ");
+      items.push({
+        key: "tehsilBoundary",
+        label: `Tehsil: ${label || "Selected Tehsil"}`,
+      });
+    }
+
+    if (filters?.selectedMauzaDetails) {
+      const label =
+        filters.selectedMauzaDetails?.mauza ||
+        filters.selectedMauzaDetails?.name ||
+        "Selected Mauza";
+      items.push({
+        key: "mauzaBoundary",
+        label: `Mauza: ${label}`,
+      });
+    }
+
+    if (filters?.selectedMauzaDetails && filters?.viewBy === "khasra") {
+      items.push({
+        key: "khasraLayer",
+        label: selectedParcelNumber
+          ? `Khasra: ${selectedParcelNumber}`
+          : "Khasra Layer",
+      });
+    }
+
+    if (filters?.selectedMauzaDetails && filters?.viewBy === "murabba") {
+      items.push({
+        key: "murabbaLayer",
+        label: selectedParcelNumber
+          ? `Murabba: ${selectedParcelNumber}`
+          : "Murabba Layer",
+      });
+    }
+
+    return items;
+  }, [
+    filters,
+    filters?.selectedDistrictOptions,
+    filters?.selectedTehsilOptions,
+    filters?.selectedMauzaDetails,
+    filters?.viewBy,
+    selectedParcelNumber,
+  ]);
+
+  useEffect(() => {
+    const activeKeys = new Set(selectedFilterLayers.map((item) => item.key));
+    const managedKeys = [
+      "districtBoundary",
+      "tehsilBoundary",
+      "mauzaBoundary",
+      "khasraLayer",
+      "murabbaLayer",
+    ];
+
+    setLayers((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      managedKeys.forEach((key) => {
+        if (!activeKeys.has(key)) return;
+
+        if (!next[key]) {
+          next[key] = { visible: true, opacity: 100 };
+          changed = true;
+          return;
+        }
+
+        if (typeof next[key] !== "object") {
+          next[key] = { visible: !!next[key], opacity: 100 };
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [selectedFilterLayers]);
+
   const selectedFeatureNumber = useMemo(() => {
     if (filters?.viewBy === "khasra" && isMurabbaBasedKhasra) {
       if (!selectedMurabbaNumber || !selectedParcelNumber) return "";
@@ -222,6 +328,7 @@ export default function MapPage() {
           selectedTehsil={filters?.selectedTehsilOptions}
           viewBy={filters?.viewBy}
           layers={layers}
+          selectedFilterLayers={selectedFilterLayers}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
           basemap={basemap}
           selectedFeatureNumber={selectedFeatureNumber}
@@ -255,6 +362,8 @@ export default function MapPage() {
           setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
           basemap={basemap}
           setBasemap={setBasemap}
+          selectedMauza={filters?.selectedMauzaDetails}
+          selectedFilterLayers={selectedFilterLayers}
         />
 
         <ParcelPanel

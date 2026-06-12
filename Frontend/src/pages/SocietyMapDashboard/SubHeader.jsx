@@ -3,14 +3,9 @@ import { ChevronDown } from "lucide-react";
 
 export default function SubHeader({
   filters,
-  parcelOptions = [],
-  selectedParcelNumber = "",
-  onParcelNumberChange = () => {},
-  isMurabbaBasedKhasra = false,
-  murabbaOptions = [],
-  selectedMurabbaNumber = "",
-  onMurabbaNumberChange = () => {},
-  khasraOptions = [],
+  societyOptions = [],
+  selectedSocietyId = "",
+  onSocietyChange = () => {},
 }) {
   if (!filters) return null;
 
@@ -26,15 +21,10 @@ export default function SubHeader({
     : [];
 
   const selectedMauza = filters.selectedMauza ?? "";
-  const viewBy = filters.viewBy ?? "";
 
-  const mauzaCount = mauzas.length;
-
-  const showStandardParcelDropdown =
-    selectedMauza && viewBy && !(viewBy === "khasra" && isMurabbaBasedKhasra);
-
-  const showMurabbaKhasraDropdowns =
-    selectedMauza && viewBy === "khasra" && isMurabbaBasedKhasra;
+  const selectedSocietyName =
+    societyOptions.find((s) => String(s.gid ?? s.id) === String(selectedSocietyId))
+      ?.society || "Select";
 
   return (
     <div className="absolute top-4 left-1/2 z-30 w-fit max-w-[calc(100vw-96px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
@@ -101,73 +91,23 @@ export default function SubHeader({
             </NativeSelectOverlay>
           </FilterCard>
 
-          <FilterCard
-            label="View By — انتخاب کریں"
-            value={
-              viewBy
-                ? viewBy.charAt(0).toUpperCase() + viewBy.slice(1)
-                : "Select"
-            }
-          >
+          <FilterCard label="Society" value={selectedSocietyName}>
             <NativeSelectOverlay
-              value={viewBy}
-              onChange={filters.handleViewByChange}
-              disabled={!selectedMauza}
+              value={selectedSocietyId}
+              onChange={(e) => onSocietyChange(e.target.value)}
+              disabled={!selectedMauza || !societyOptions.length}
             >
-              <option value="">-- Select View --</option>
-              <option value="khasra">Khasra</option>
-              <option value="murabba">Murabba</option>
+              <option value="">-- Society --</option>
+              {societyOptions.map((society) => {
+                const id = society.gid ?? society.id;
+                return (
+                  <option key={id} value={id}>
+                    {society.society}
+                  </option>
+                );
+              })}
             </NativeSelectOverlay>
           </FilterCard>
-
-          {showStandardParcelDropdown && (
-            <FilterCard
-              label={viewBy === "khasra" ? "Khasra No" : "Murabba No"}
-              value={selectedParcelNumber || "Select"}
-            >
-              <SearchableSingleSelect
-                options={parcelOptions}
-                selectedValue={selectedParcelNumber}
-                onChange={onParcelNumberChange}
-                disabled={!parcelOptions?.length}
-                placeholder={
-                  viewBy === "khasra"
-                    ? "Search Khasra No..."
-                    : "Search Murabba No..."
-                }
-              />
-            </FilterCard>
-          )}
-
-          {showMurabbaKhasraDropdowns && (
-            <>
-              <FilterCard
-                label="Murabba No"
-                value={selectedMurabbaNumber || "Select"}
-              >
-                <SearchableSingleSelect
-                  options={murabbaOptions}
-                  selectedValue={selectedMurabbaNumber}
-                  onChange={onMurabbaNumberChange}
-                  disabled={!murabbaOptions?.length}
-                  placeholder="Search Murabba No..."
-                />
-              </FilterCard>
-
-              <FilterCard
-                label="Khasra No"
-                value={selectedParcelNumber || "Select"}
-              >
-                <SearchableSingleSelect
-                  options={khasraOptions}
-                  selectedValue={selectedParcelNumber}
-                  onChange={onParcelNumberChange}
-                  disabled={!selectedMurabbaNumber || !khasraOptions?.length}
-                  placeholder="Search Khasra No..."
-                />
-              </FilterCard>
-            </>
-          )}
         </div>
       </div>
     </div>

@@ -25,8 +25,8 @@ export default function MapPanel() {
     const map = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/streets-v12",
-      center: [74.3587, 31.5204],
-      zoom: 10,
+      center: [69.3451, 30.3753],
+      zoom: 5,
     });
 
     mapRef.current = map;

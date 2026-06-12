@@ -159,6 +159,53 @@ export const getMurabbaBoundary = async (id) => {
   return normalizeGeoJson(res);
 };
 
+
+///////////////////////////////////////////////////////
+//////////////// SOCIETY LAYER APIs ///////////////////
+///////////////////////////////////////////////////////
+
+export const getSocieties = async (mauza_id) => {
+  const params = {};
+  if (mauza_id !== undefined && mauza_id !== null && mauza_id !== "") {
+    params.mauza_id = mauza_id;
+  }
+
+  const res = await API.get("/society/", { params });
+  return normalizeData(res);
+};
+
+export const getSocietyGeoJSON = async (gid) => {
+  const res = await API.get(`/society/${gid}/geojson`);
+  return normalizeGeoJson(res);
+};
+
+export const getMasterPlanGeoJSON = async ({ society_id, mauza_id } = {}) => {
+  const params = {};
+  if (society_id) params.society_id = society_id;
+  if (mauza_id) params.mauza_id = mauza_id;
+
+  const res = await API.get("/masterplan/", { params });
+  return normalizeGeoJson(res);
+};
+
+export const getSpotLevelGeoJSON = async ({ society_id, mauza_id } = {}) => {
+  const params = {};
+  if (society_id) params.society_id = society_id;
+  if (mauza_id) params.mauza_id = mauza_id;
+
+  const res = await API.get("/spot-level/", { params });
+  return normalizeGeoJson(res);
+};
+
+export const getContourGeoJSON = async ({ society_id, mauza_id } = {}) => {
+  const params = {};
+  if (society_id) params.society_id = society_id;
+  if (mauza_id) params.mauza_id = mauza_id;
+
+  const res = await API.get("/contour/", { params });
+  return normalizeGeoJson(res);
+};
+
 ///////////////////////////////////////////////////////
 ///////////////////// RUDA APIs ///////////////////////
 ///////////////////////////////////////////////////////
