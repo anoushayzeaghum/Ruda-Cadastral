@@ -320,13 +320,13 @@ class SpotLevelSerializer(GeoFeatureModelSerializer):
         )
 
 # --------------------------------------------------------
-# CBContour Serializer
-# District → Tehsil → Mauza → Society → CBContour
+# Contour Serializer
+# District → Tehsil → Mauza → Society → Contour
 # --------------------------------------------------------
-class CBContourSerializer(GeoFeatureModelSerializer):
+class ContourSerializer(GeoFeatureModelSerializer):
 
     class Meta:
-        model = CBContour
+        model = Contour
         geo_field = "geom"
         id_field = "gid"
 

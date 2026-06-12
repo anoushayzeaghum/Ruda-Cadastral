@@ -1,8 +1,8 @@
 from ..common_imports import *
 
-class UpdateCBContourView(viewsets.ViewSet):
-    queryset = CBContour.objects.all()
-    serializer_class = CBContourSerializer
+class UpdateContourView(viewsets.ViewSet):
+    queryset = Contour.objects.all()
+    serializer_class = ContourSerializer
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
@@ -11,24 +11,24 @@ class UpdateCBContourView(viewsets.ViewSet):
         data = request.data
 
         try:
-            obj = CBContour.objects.get(gid=contour_id)
+            obj = Contour.objects.get(gid=contour_id)
 
-        except CBContour.DoesNotExist:
+        except Contour.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="CB Contour not found.",
+                message="Contour not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            serializer = CBContourSerializer(obj, data=data, partial=True)
+            serializer = ContourSerializer(obj, data=data, partial=True)
 
             if serializer.is_valid():
                 serializer.save()
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="CB Contour updated successfully.",
+                    message="Contour updated successfully.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
