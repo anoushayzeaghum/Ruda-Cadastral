@@ -296,6 +296,122 @@ class Khasra(models.Model):
         managed = False
         db_table = "khasra"
 
+# --------------------------------------------------------
+# Society Administrative Boundary
+# --------------------------------------------------------
+class Society(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.IntegerField()
+
+    society = models.CharField(max_length=255)
+
+    district = models.CharField(max_length=100)
+    dist_id = models.IntegerField()
+
+    tehsil = models.CharField(max_length=100)
+    tehsil_id = models.IntegerField()
+
+    mauza = models.CharField(max_length=100)
+    mauza_id = models.IntegerField()
+
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    class Meta:
+        managed = False
+        db_table = "society"
+
+# =========================
+# MASTER PLAN
+# =========================
+class MasterPlan(models.Model):
+    gid = models.AutoField(primary_key=True)
+    id = models.CharField(max_length=100, null=True, blank=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+    descriptio = models.TextField(null=True, blank=True)
+
+    timestamp = models.CharField(max_length=100, null=True, blank=True)
+    begin = models.CharField(max_length=100, null=True, blank=True)
+    end = models.CharField(max_length=100, null=True, blank=True)
+
+    altitudemo = models.CharField(max_length=50, null=True, blank=True)
+    tessellate = models.CharField(max_length=50, null=True, blank=True)
+    extrude = models.CharField(max_length=50, null=True, blank=True)
+    visibility = models.CharField(max_length=50, null=True, blank=True)
+    draworder = models.CharField(max_length=50, null=True, blank=True)
+    icon = models.CharField(max_length=255, null=True, blank=True)
+    snippet = models.TextField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(srid=4326)
+
+    society_id = models.IntegerField(null=True, blank=True)
+    mauza_id = models.IntegerField(null=True, blank=True)
+    dist_id = models.IntegerField(null=True, blank=True)
+    tehsil_id = models.IntegerField(null=True, blank=True)
+
+    society = models.CharField(max_length=100, null=True, blank=True)
+    mauza = models.CharField(max_length=100, null=True, blank=True)
+    district = models.CharField(max_length=100, null=True, blank=True)
+    tehsil = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "masterplan"
+
+
+# =========================
+# SPOT LEVEL
+# =========================
+class SpotLevel(models.Model):
+    gid = models.AutoField(primary_key=True)
+    id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(srid=4326)
+
+    society_id = models.IntegerField(null=True, blank=True)
+    mauza_id = models.IntegerField(null=True, blank=True)
+    dist_id = models.IntegerField(null=True, blank=True)
+    tehsil_id = models.IntegerField(null=True, blank=True)
+
+    society = models.CharField(max_length=100, null=True, blank=True)
+    mauza = models.CharField(max_length=100, null=True, blank=True)
+    district = models.CharField(max_length=100, null=True, blank=True)
+    tehsil = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "spot_level"
+
+
+# =========================
+# CB CONTOUR
+# =========================
+class CBContour(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+    layer = models.CharField(max_length=255, null=True, blank=True)
+    elevation = models.CharField(max_length=50, null=True, blank=True)
+    closed_con = models.CharField(max_length=10, null=True, blank=True)
+
+    geom = gis_models.GeometryField(srid=4326)
+
+    society_id = models.IntegerField(null=True, blank=True)
+    mauza_id = models.IntegerField(null=True, blank=True)
+    dist_id = models.IntegerField(null=True, blank=True)
+    tehsil_id = models.IntegerField(null=True, blank=True)
+
+    society = models.CharField(max_length=100, null=True, blank=True)
+    mauza = models.CharField(max_length=100, null=True, blank=True)
+    district = models.CharField(max_length=100, null=True, blank=True)
+    tehsil = models.CharField(max_length=100, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "cb_contour"
+
+
 
 # --------------------------------------------------------
 # Ruda Boundary
