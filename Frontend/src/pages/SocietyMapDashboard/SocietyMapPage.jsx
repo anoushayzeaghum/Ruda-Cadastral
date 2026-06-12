@@ -4,9 +4,8 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Header from "./Header";
 import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
-import ParcelPanel from "../SocietyMapDashboard/ParcelPanel";
-
-import MapView from "../SocietyMapDashboard/Mapview";
+import ParcelPanel from "./ParcelPanel";
+import MapView from "./Mapview";
 
 const getKhasraNumber = (props = {}) => {
   return (
@@ -37,7 +36,7 @@ const getLandType = (props = {}) => {
   return props.type ?? props.land_type ?? null;
 };
 
-export default function MapPage() {
+export default function SocietyMapPage() {
   const outletContext = useOutletContext() ?? {};
   const filters = outletContext.filters;
 

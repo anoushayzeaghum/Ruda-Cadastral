@@ -14,8 +14,7 @@ import AreaLayout from "./layouts/AreaLayout";
 import Demarcation from "./pages/Demarcation/Demarcation";
 import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 import LandingPage from "./pages/LandingPage/LandingPage";
-//import MapPage from "./pages/CadastralDashboard/MapPage";
-
+import SocietyMapPage from "./pages/SocietyMapDashboard/SocietyMapPage";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -30,6 +29,7 @@ const AppRoutes = () => {
           <Route path="/mapview" element={<MapPage />} />
           <Route path="/cadastral-map" element={<MapPage />} />
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/society-map" element={<SocietyMapPage />} />
 
           <Route path="/area" element={<AreaLayout />}>
             <Route path="district" element={<District />} />
