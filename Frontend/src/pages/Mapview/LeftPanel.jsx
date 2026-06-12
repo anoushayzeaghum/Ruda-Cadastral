@@ -18,11 +18,26 @@ import {
 } from "lucide-react";
 
 const BASEMAPS = [
-  { name: "Satellite", preview: "bg-[linear-gradient(135deg,#314b33,#8b7c52,#2c4a59)]" },
-  { name: "Streets", preview: "bg-[linear-gradient(135deg,#f0eadb,#d8d1bb,#b6c4b5)]" },
-  { name: "Light", preview: "bg-[linear-gradient(135deg,#f8fafc,#e2e8f0,#cbd5e1)]" },
-  { name: "Dark", preview: "bg-[linear-gradient(135deg,#0f172a,#334155,#111827)]" },
-  { name: "Outdoors", preview: "bg-[linear-gradient(135deg,#6f9f55,#d5c17b,#7ba98f)]" },
+  {
+    name: "Satellite",
+    preview: "bg-[linear-gradient(135deg,#314b33,#8b7c52,#2c4a59)]",
+  },
+  {
+    name: "Streets",
+    preview: "bg-[linear-gradient(135deg,#f0eadb,#d8d1bb,#b6c4b5)]",
+  },
+  {
+    name: "Light",
+    preview: "bg-[linear-gradient(135deg,#f8fafc,#e2e8f0,#cbd5e1)]",
+  },
+  {
+    name: "Dark",
+    preview: "bg-[linear-gradient(135deg,#0f172a,#334155,#111827)]",
+  },
+  {
+    name: "Outdoors",
+    preview: "bg-[linear-gradient(135deg,#6f9f55,#d5c17b,#7ba98f)]",
+  },
 ];
 
 export default function LeftPanel({
@@ -34,12 +49,12 @@ export default function LeftPanel({
   setSelectedRudaPhaseIds,
   basemap,
   setBasemap,
-  selectedMouza,
+  selectedMauza,
   selectedFilterLayers = [],
 }) {
   const [activePanel, setActivePanel] = useState("layers");
   const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
-  const hasMouza = !!selectedMouza;
+  const hasMauza = !!selectedMauza;
 
   const selectedLayerItems = useMemo(
     () => selectedFilterLayers.filter((item) => item?.label && item?.key),
@@ -50,7 +65,9 @@ export default function LeftPanel({
     setLayers((prev) => ({
       ...prev,
       [layerKey]: {
-        ...(typeof prev?.[layerKey] === "object" ? prev[layerKey] : { visible: !!prev?.[layerKey], opacity: 100 }),
+        ...(typeof prev?.[layerKey] === "object"
+          ? prev[layerKey]
+          : { visible: !!prev?.[layerKey], opacity: 100 }),
         ...patch,
       },
     }));
@@ -63,10 +80,13 @@ export default function LeftPanel({
 
   const getLayerOpacity = (layerKey) => {
     const value = layers?.[layerKey];
-    return typeof value === "object" && Number.isFinite(Number(value.opacity)) ? Number(value.opacity) : 100;
+    return typeof value === "object" && Number.isFinite(Number(value.opacity))
+      ? Number(value.opacity)
+      : 100;
   };
 
-  const toggleLayer = (layerKey) => updateLayer(layerKey, { visible: !getLayerVisible(layerKey) });
+  const toggleLayer = (layerKey) =>
+    updateLayer(layerKey, { visible: !getLayerVisible(layerKey) });
 
   useEffect(() => {
     let mounted = true;
@@ -96,9 +116,30 @@ export default function LeftPanel({
     <div className="pointer-events-none absolute left-3 top-24 z-30 flex items-start gap-2">
       {/* Separate icon buttons. No combined background wrapper. */}
       <div className="pointer-events-auto flex flex-col gap-2">
-        <PanelIcon title="Layer Manager" active={activePanel === "layers"} onClick={() => setActivePanel(activePanel === "layers" ? "" : "layers")} icon={<Layers size={18} />} />
-        <PanelIcon title="Toolbox" active={activePanel === "toolbox"} onClick={() => setActivePanel(activePanel === "toolbox" ? "" : "toolbox")} icon={<Wrench size={18} />} />
-        <PanelIcon title="Map Background" active={activePanel === "basemap"} onClick={() => setActivePanel(activePanel === "basemap" ? "" : "basemap")} icon={<Satellite size={18} />} />
+        <PanelIcon
+          title="Layer Manager"
+          active={activePanel === "layers"}
+          onClick={() =>
+            setActivePanel(activePanel === "layers" ? "" : "layers")
+          }
+          icon={<Layers size={18} />}
+        />
+        <PanelIcon
+          title="Toolbox"
+          active={activePanel === "toolbox"}
+          onClick={() =>
+            setActivePanel(activePanel === "toolbox" ? "" : "toolbox")
+          }
+          icon={<Wrench size={18} />}
+        />
+        <PanelIcon
+          title="Map Background"
+          active={activePanel === "basemap"}
+          onClick={() =>
+            setActivePanel(activePanel === "basemap" ? "" : "basemap")
+          }
+          icon={<Satellite size={18} />}
+        />
       </div>
 
       {activePanel && (
@@ -114,7 +155,9 @@ export default function LeftPanel({
                     checked={getLayerVisible("rudaBoundary")}
                     opacity={getLayerOpacity("rudaBoundary")}
                     onToggle={() => toggleLayer("rudaBoundary")}
-                    onOpacity={(value) => updateLayer("rudaBoundary", { opacity: value })}
+                    onOpacity={(value) =>
+                      updateLayer("rudaBoundary", { opacity: value })
+                    }
                     rightAction={
                       <button
                         type="button"
@@ -123,7 +166,10 @@ export default function LeftPanel({
                         onClick={() => setRudaDropdownOpen((s) => !s)}
                         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-100"
                       >
-                        <ChevronRight size={15} className={`transition ${rudaDropdownOpen ? "rotate-90" : ""}`} />
+                        <ChevronRight
+                          size={15}
+                          className={`transition ${rudaDropdownOpen ? "rotate-90" : ""}`}
+                        />
                       </button>
                     }
                   />
@@ -133,9 +179,16 @@ export default function LeftPanel({
                       <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
                         <input
                           type="checkbox"
-                          checked={Array.isArray(rudaPhases) && rudaPhases.length > 0 && selectedRudaPhaseIds?.length === rudaPhases.length}
+                          checked={
+                            Array.isArray(rudaPhases) &&
+                            rudaPhases.length > 0 &&
+                            selectedRudaPhaseIds?.length === rudaPhases.length
+                          }
                           onChange={(e) => {
-                            if (e.target.checked) setSelectedRudaPhaseIds(rudaPhases.map((p) => p.gid ?? p.id ?? p.oid));
+                            if (e.target.checked)
+                              setSelectedRudaPhaseIds(
+                                rudaPhases.map((p) => p.gid ?? p.id ?? p.oid),
+                              );
                             else setSelectedRudaPhaseIds([]);
                           }}
                           className="accent-green-700"
@@ -145,16 +198,27 @@ export default function LeftPanel({
 
                       {(rudaPhases || []).map((phase) => {
                         const id = phase.gid ?? phase.id ?? phase.oid;
-                        const name = phase.name ?? phase.folderpath ?? `Phase ${id}`;
+                        const name =
+                          phase.name ?? phase.folderpath ?? `Phase ${id}`;
                         const checked = selectedRudaPhaseIds?.includes(id);
                         return (
-                          <label key={id} className="flex items-center gap-2 py-1 text-xs text-slate-700">
+                          <label
+                            key={id}
+                            className="flex items-center gap-2 py-1 text-xs text-slate-700"
+                          >
                             <input
                               type="checkbox"
                               checked={!!checked}
                               onChange={() => {
-                                if (checked) setSelectedRudaPhaseIds((prev) => (prev || []).filter((x) => x !== id));
-                                else setSelectedRudaPhaseIds((prev) => [...(prev || []), id]);
+                                if (checked)
+                                  setSelectedRudaPhaseIds((prev) =>
+                                    (prev || []).filter((x) => x !== id),
+                                  );
+                                else
+                                  setSelectedRudaPhaseIds((prev) => [
+                                    ...(prev || []),
+                                    id,
+                                  ]);
                               }}
                               className="accent-green-700"
                             />
@@ -178,22 +242,24 @@ export default function LeftPanel({
                           checked={getLayerVisible(item.key)}
                           opacity={getLayerOpacity(item.key)}
                           onToggle={() => toggleLayer(item.key)}
-                          onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+                          onOpacity={(value) =>
+                            updateLayer(item.key, { opacity: value })
+                          }
                         />
                       ))}
                     </div>
                   </>
                 )}
 
-                <SectionTitle title="Mouza Based Layers" open />
+                <SectionTitle title="Mauza Based Layers" open />
                 <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
                   <LayerRow
                     icon={<Network size={15} />}
-                    label="Mouza Vertices"
+                    label="Mauza Vertices"
                     checked={getLayerVisible("controlPoints")}
                     opacity={getLayerOpacity("controlPoints")}
-                    disabled={!hasMouza}
-                    disabledText="Select mouza first"
+                    disabled={!hasMauza}
+                    disabledText="Select mauza first"
                     onToggle={() => toggleLayer("controlPoints")}
                     showOpacity={false}
                   />
@@ -202,8 +268,8 @@ export default function LeftPanel({
                     label="Tri-junction Points"
                     checked={getLayerVisible("triJunctionPoints")}
                     opacity={getLayerOpacity("triJunctionPoints")}
-                    disabled={!hasMouza}
-                    disabledText="Select mouza first"
+                    disabled={!hasMauza}
+                    disabledText="Select mauza first"
                     onToggle={() => toggleLayer("triJunctionPoints")}
                     showOpacity={false}
                   />
@@ -217,7 +283,7 @@ export default function LeftPanel({
               <div className="grid grid-cols-3 gap-2 p-3">
                 <ToolboxButton icon={<MapPin size={18} />} label="Connect" />
                 <ToolboxButton icon={<Lock size={18} />} label="Parcel" />
-                <ToolboxButton icon={<Package size={18} />} label="Mouza" />
+                <ToolboxButton icon={<Package size={18} />} label="Mauza" />
                 <ToolboxButton icon={<Ruler size={18} />} label="Demarcate" />
                 <ToolboxButton icon={<User size={18} />} label="Default" />
                 <ToolboxButton icon={<Grid3X3 size={18} />} label="Grid" />
@@ -241,8 +307,13 @@ export default function LeftPanel({
                   >
                     <div className={`h-16 w-full ${item.preview}`} />
                     <div className="flex items-center justify-between px-2 py-2 text-xs font-semibold text-slate-800">
-                      <span className="flex items-center gap-1.5"><Map size={14} />{item.name}</span>
-                      {basemap === item.name && <span className="text-green-700">✓</span>}
+                      <span className="flex items-center gap-1.5">
+                        <Map size={14} />
+                        {item.name}
+                      </span>
+                      {basemap === item.name && (
+                        <span className="text-green-700">✓</span>
+                      )}
                     </div>
                   </button>
                 ))}
@@ -277,7 +348,9 @@ function Panel({ title, children }) {
   return (
     <div>
       <div className="flex items-center justify-between border-b border-slate-200 bg-[#0f3d2e] px-3 py-2.5">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-white">{title}</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-white">
+          {title}
+        </h3>
       </div>
       {children}
     </div>
@@ -306,7 +379,9 @@ function LayerRow({
   showOpacity = true,
 }) {
   return (
-    <div className={`rounded-md border border-slate-200 bg-white p-2 ${disabled ? "opacity-55" : ""}`}>
+    <div
+      className={`rounded-md border border-slate-200 bg-white p-2 ${disabled ? "opacity-55" : ""}`}
+    >
       <div className="flex items-center justify-between gap-2">
         <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-slate-800">
           <input
@@ -320,7 +395,11 @@ function LayerRow({
           <span className="truncate">{label}</span>
         </label>
         <div className="flex shrink-0 items-center gap-2">
-          {showOpacity && <span className="text-xs font-semibold text-slate-600">{opacity}%</span>}
+          {showOpacity && (
+            <span className="text-xs font-semibold text-slate-600">
+              {opacity}%
+            </span>
+          )}
           {rightAction}
         </div>
       </div>
@@ -336,7 +415,9 @@ function LayerRow({
           className="mt-2 h-1.5 w-full accent-green-700"
         />
       )}
-      {disabled && disabledText && <p className="mt-1 text-[10px] text-slate-500">{disabledText}</p>}
+      {disabled && disabledText && (
+        <p className="mt-1 text-[10px] text-slate-500">{disabledText}</p>
+      )}
     </div>
   );
 }
@@ -345,7 +426,9 @@ function ToolboxButton({ icon, label }) {
   return (
     <button className="flex flex-col items-center justify-center gap-1 rounded-md border border-slate-200 bg-white p-2 text-slate-800 transition hover:border-green-700 hover:bg-green-50">
       <span className="text-green-700">{icon}</span>
-      <span className="text-center text-[10px] font-medium leading-tight">{label}</span>
+      <span className="text-center text-[10px] font-medium leading-tight">
+        {label}
+      </span>
     </button>
   );
 }

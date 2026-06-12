@@ -11,7 +11,7 @@ class ListMurabbaView(viewsets.ViewSet):
 
         try:
             murabba_id = request.query_params.get("id")
-            mouza = request.query_params.get("mouza") or request.query_params.get("mouza_id")
+            mauza = request.query_params.get("mauza") or request.query_params.get("mauza_id")
             tehsil = request.query_params.get("tehsil")
 
             # Single murabba
@@ -34,20 +34,20 @@ class ListMurabbaView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            # Filter by Mouza
-            elif mouza:
-                # mouza can be name or numeric id
+            # Filter by Mauza
+            elif mauza:
+                # mauza can be name or numeric id
                 try:
-                    mouza_int = int(mouza)
-                    queryset = Murabba.objects.filter(mouza_id=mouza_int)
+                    mauza_int = int(mauza)
+                    queryset = Murabba.objects.filter(mauza_id=mauza_int)
                 except Exception:
-                    queryset = Murabba.objects.filter(mouza=mouza)
+                    queryset = Murabba.objects.filter(mauza=mauza)
 
                 serializer = MurabbaSerializer(queryset, many=True)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Murabbas found for Mouza.",
+                    message="Murabbas found for Mauza.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()

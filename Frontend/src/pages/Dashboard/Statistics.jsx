@@ -700,7 +700,7 @@ export default function Statistics() {
 
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.02fr_2.4fr_1.2fr]">
           <Panel className="px-4 py-3.5">
-            <SectionTitle>Mouzas by Division</SectionTitle>
+            <SectionTitle>Mauzas by Division</SectionTitle>
 
             <div className="mt-2">
               {divisions.map((item, index) => (
@@ -840,7 +840,7 @@ export default function Statistics() {
           </Panel>
 
           <Panel className="px-4 py-3.5">
-            <SectionTitle>Mouzas by Division</SectionTitle>
+            <SectionTitle>Mauzas by Division</SectionTitle>
 
             <div className="mt-3">
               {divisions.map((item, index) => (

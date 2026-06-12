@@ -13,7 +13,7 @@ class ListTrijunctionView(viewsets.ViewSet):
             m1 = request.query_params.get("m1")
             m2 = request.query_params.get("m2")
             m3 = request.query_params.get("m3")
-            mouza = request.query_params.get("mouza")
+            mauza = request.query_params.get("mauza")
             junction_type = request.query_params.get("type")
 
             if gid:
@@ -49,11 +49,11 @@ class ListTrijunctionView(viewsets.ViewSet):
             if junction_type:
                 queryset = queryset.filter(type__iexact=junction_type)
 
-            # TJ points -> use ONLY m3 as mouza name
-            if junction_type and junction_type.upper() == "TJ" and mouza:
-                queryset = queryset.filter(m3__iexact=mouza)
+            # TJ points -> use ONLY m3 as mauza name
+            if junction_type and junction_type.upper() == "TJ" and mauza:
+                queryset = queryset.filter(m3__iexact=mauza)
 
-            # B points -> no mouza filter, show all control points
+            # B points -> no mauza filter, show all control points
             # so do nothing extra here
 
             serializer = TrijunctionSerializer(queryset, many=True)

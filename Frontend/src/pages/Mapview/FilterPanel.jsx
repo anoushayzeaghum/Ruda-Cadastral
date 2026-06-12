@@ -2,17 +2,15 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
   if (!filters) return null;
 
   const {
-    divisions,
     districts,
     tehsils,
-    mouzas,
+    mauzas,
     errorMessage,
     hasSelection,
     resetFilters,
-    selectedDivisionOption,
     selectedDistrictOption,
     selectedTehsilOption,
-    selectedMouzaOption,
+    selectedMauzaOption,
   } = filters;
 
   return (
@@ -39,10 +37,9 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 mb-5">
-            <Stat label="Divisions" value={divisions.length} />
             <Stat label="Districts" value={districts.length} />
             <Stat label="Tehsils" value={tehsils.length} />
-            <Stat label="Mouzas" value={mouzas.length} />
+            <Stat label="Mauzas" value={mauzas.length} />
           </div>
 
           {errorMessage && (
@@ -66,14 +63,10 @@ export default function FilterPanel({ filters, isCollapsed, onToggle }) {
               <h3 className="font-bold mb-3">Current Selection</h3>
 
               <ul className="space-y-2 text-sm">
-                <Row
-                  label="Division"
-                  value={selectedDivisionOption?.division}
-                />
                 <Row label="District" value={selectedDistrictOption?.name} />
                 <Row label="Tehsil" value={selectedTehsilOption?.name} />
-                <Row label="Mouza" value={selectedMouzaOption?.mouza} />
-                <Row label="Mouza ID" value={selectedMouzaOption?.mouza_id} />
+                <Row label="Mauza" value={selectedMauzaOption?.mauza} />
+                <Row label="Mauza ID" value={selectedMauzaOption?.mauza_id} />
               </ul>
             </div>
           )}

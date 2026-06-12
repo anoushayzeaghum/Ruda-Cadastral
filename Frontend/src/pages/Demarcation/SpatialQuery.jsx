@@ -1,55 +1,19 @@
 import React, { useEffect, useState } from "react";
-import {
-  getDivisions,
-  getDistricts,
-  getTehsils,
-  getMouzas,
-} from "../../services/api";
+import { getDistricts, getTehsils, getMauzas } from "../../services/api";
 
 export default function SpatialQuery({
   filters = {},
   onFiltersChange = () => {},
   parcelOptions = [],
 }) {
-  const [divisions, setDivisions] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [tehsils, setTehsils] = useState([]);
-  const [mouzas, setMouzas] = useState([]);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const d = await getDivisions();
-        setDivisions(
-          d.map((it) => {
-            const label =
-              it.division_name ||
-              it.name ||
-              it.title ||
-              it.division ||
-              it.display_name ||
-              it.label ||
-              String(it.id ?? it.pk ?? it.division_i ?? it.i);
-            const value = it.id ?? it.pk ?? it.division_i ?? it.i ?? label;
-            return { value, label };
-          }),
-        );
-      } catch (e) {
-        setDivisions([]);
-      }
-    }
-    load();
-  }, []);
+  const [mauzas, setMauzas] = useState([]);
 
   useEffect(() => {
     async function loadDistricts() {
-      const id = filters?.selectedDivisionOptions?.value ?? null;
-      if (!id) {
-        setDistricts([]);
-        return;
-      }
       try {
-        const res = await getDistricts(id);
+        const res = await getDistricts();
         setDistricts(
           res.map((it) => ({
             value: it.id ?? it.pk ?? it.district_i ?? it.i,
@@ -61,7 +25,7 @@ export default function SpatialQuery({
       }
     }
     loadDistricts();
-  }, [filters?.selectedDivisionOptions]);
+  }, []);
 
   useEffect(() => {
     async function loadTehsils() {
@@ -86,29 +50,29 @@ export default function SpatialQuery({
   }, [filters?.selectedDistrictOptions]);
 
   useEffect(() => {
-    async function loadMouzas() {
+    async function loadMauzas() {
       const id = filters?.selectedTehsilOptions?.value ?? null;
       if (!id) {
-        setMouzas([]);
+        setMauzas([]);
         return;
       }
       try {
-        const fc = await getMouzas(id);
+        const fc = await getMauzas(id);
         const list = (fc?.features || []).map((f) => ({
           value: f.properties?.id ?? f.id ?? f.properties?.gid,
           label:
-            f.properties?.mouza ||
-            f.properties?.mouza_name ||
+            f.properties?.mauza ||
+            f.properties?.mauza_name ||
             f.properties?.name ||
             String(f.properties?.id ?? f.id),
           raw: f,
         }));
-        setMouzas(list);
+        setMauzas(list);
       } catch (e) {
-        setMouzas([]);
+        setMauzas([]);
       }
     }
-    loadMouzas();
+    loadMauzas();
   }, [filters?.selectedTehsilOptions]);
 
   function handleChange(key, value) {
@@ -117,10 +81,9 @@ export default function SpatialQuery({
 
   function clearAll() {
     onFiltersChange({
-      selectedDivisionOptions: null,
       selectedDistrictOptions: null,
       selectedTehsilOptions: null,
-      selectedMouzaDetails: null,
+      selectedMauzaDetails: null,
       selectedParcelNumber: "",
     });
   }
@@ -135,26 +98,6 @@ export default function SpatialQuery({
 
       <div className="p-4 h-[calc(100%-56px)]">
         <div className="space-y-3">
-          <select
-            className="inputStyle"
-            value={filters?.selectedDivisionOptions?.value ?? ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              const opt =
-                divisions.find((d) => String(d.value) === String(v)) ?? null;
-              handleChange("selectedDivisionOptions", opt);
-              handleChange("selectedDistrictOptions", null);
-              handleChange("selectedTehsilOptions", null);
-              handleChange("selectedMouzaDetails", null);
-            }}
-          >
-            <option value="">Select Division</option>
-            {divisions.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
-              </option>
-            ))}
-          </select>
 
           <select
             className="inputStyle"
@@ -165,7 +108,7 @@ export default function SpatialQuery({
                 districts.find((d) => String(d.value) === String(v)) ?? null;
               handleChange("selectedDistrictOptions", opt);
               handleChange("selectedTehsilOptions", null);
-              handleChange("selectedMouzaDetails", null);
+              handleChange("selectedMauzaDetails", null);
             }}
             disabled={!districts.length}
           >
@@ -185,7 +128,7 @@ export default function SpatialQuery({
               const opt =
                 tehsils.find((d) => String(d.value) === String(v)) ?? null;
               handleChange("selectedTehsilOptions", opt);
-              handleChange("selectedMouzaDetails", null);
+              handleChange("selectedMauzaDetails", null);
             }}
             disabled={!tehsils.length}
           >
@@ -199,29 +142,29 @@ export default function SpatialQuery({
 
           <select
             className="inputStyle"
-            value={filters?.selectedMouzaDetails?.value ?? ""}
+            value={filters?.selectedMauzaDetails?.value ?? ""}
             onChange={(e) => {
               const v = e.target.value;
               const opt =
-                mouzas.find((d) => String(d.value) === String(v)) ?? null;
+                mauzas.find((d) => String(d.value) === String(v)) ?? null;
 
               const normalized = opt
                 ? {
                     value: opt.value, // fixed
                     label: opt.label, // fixed
                     id: opt.value,
-                    mouza: opt.label,
-                    mouza_id: opt.value,
+                    mauza: opt.label,
+                    mauza_id: opt.value,
                     raw: opt.raw,
                   }
                 : null;
 
-              handleChange("selectedMouzaDetails", normalized);
+              handleChange("selectedMauzaDetails", normalized);
             }}
-            disabled={!mouzas.length}
+            disabled={!mauzas.length}
           >
-            <option value="">Select Mouza</option>
-            {mouzas.map((m) => (
+            <option value="">Select Mauza</option>
+            {mauzas.map((m) => (
               <option key={m.value} value={m.value}>
                 {m.label}
               </option>

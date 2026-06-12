@@ -1,4 +1,4 @@
-export default function Legend({ featureCount, selectedMouzaName, isLoading }) {
+export default function Legend({ featureCount, selectedMauzaName, isLoading }) {
   return (
     <aside className="absolute bottom-5 left-5 z-20 bg-white/95 backdrop-blur-md border rounded-xl shadow-lg p-4 min-w-[180px]">
       <div className="font-normal text-[#1e3a5f] border-b border-green-500 pb-1 mb-3">
@@ -11,9 +11,9 @@ export default function Legend({ featureCount, selectedMouzaName, isLoading }) {
       </div>
 
       <div className="text-xs mt-3 border-t pt-2">
-        <p className="text-slate-500 uppercase">Selected Mouza</p>
+        <p className="text-slate-500 uppercase">Selected Mauza</p>
         <p className="text-[#1e3a5f] font-semibold">
-          {selectedMouzaName ?? "None"}
+          {selectedMauzaName ?? "None"}
         </p>
       </div>
 
