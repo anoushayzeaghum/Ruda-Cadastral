@@ -3,6 +3,10 @@ from .Tehsils import *
 from .Mauza import *
 from .Murabba import *
 from .Khasra import *
+from .Society import *
+from .MasterPlanView import *
+from .SpotLevelView import *
+from .CBContourView import *
 from .Trijunction import *
 from .RudaBoundary import *
 from .UserView import *

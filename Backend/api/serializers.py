@@ -235,7 +235,117 @@ class KhasraSerializer(GeoFeatureModelSerializer):
             "geom",
         )
 
+# --------------------------------------------------------
+# Society Serializer
+# District → Tehsil → Mauza → Society
+# --------------------------------------------------------
+class SocietySerializer(GeoFeatureModelSerializer):
 
+    class Meta:
+        model = Society
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "society",
+            "district",
+            "dist_id",
+            "tehsil",
+            "tehsil_id",
+            "mauza",
+            "mauza_id",
+        )
+
+# --------------------------------------------------------
+# MasterPlan Serializer
+# District → Tehsil → Mauza → Society → MasterPlan
+# -------------------------------------------------------
+class MasterPlanSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = MasterPlan
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "id",
+            "name",
+            "descriptio",
+            "timestamp",
+            "begin",
+            "end",
+            "altitudemo",
+            "tessellate",
+            "extrude",
+            "visibility",
+            "draworder",
+            "icon",
+            "snippet",
+            "society_id",
+            "mauza_id",
+            "dist_id",
+            "tehsil_id",
+            "society",
+            "mauza",
+            "district",
+            "tehsil",
+        )
+
+# --------------------------------------------------------
+# SpotLevel Serializer
+# District → Tehsil → Mauza → Society → SpotLevel
+# -------------------------------------------------------
+class SpotLevelSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = SpotLevel
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "id",
+            "society_id",
+            "mauza_id",
+            "dist_id",
+            "tehsil_id",
+            "society",
+            "mauza",
+            "district",
+            "tehsil",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# CBContour Serializer
+# District → Tehsil → Mauza → Society → CBContour
+# --------------------------------------------------------
+class CBContourSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = CBContour
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "layer",
+            "elevation",
+            "closed_con",
+            "society_id",
+            "mauza_id",
+            "dist_id",
+            "tehsil_id",
+            "society",
+            "mauza",
+            "district",
+            "tehsil",
+            "geom",
+        )
 # --------------------------------------------------------
 # Ruda Boundary Serializer
 # --------------------------------------------------------
