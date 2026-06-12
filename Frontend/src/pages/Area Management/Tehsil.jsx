@@ -50,18 +50,11 @@ export default function Tehsil() {
       const districtId = String(
         item.dist_id ?? item.district_id ?? "",
       ).toLowerCase();
-      const division = String(item.division ?? "").toLowerCase();
-      const divisionId = String(
-        item.division_id ?? item.div_id ?? "",
-      ).toLowerCase();
-
       return (
         tehsil.includes(q) ||
         tehsilId.includes(q) ||
         district.includes(q) ||
-        districtId.includes(q) ||
-        division.includes(q) ||
-        divisionId.includes(q)
+        districtId.includes(q)
       );
     });
   }, [items, search]);
@@ -140,7 +133,7 @@ export default function Tehsil() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by tehsil/district/division .."
+            placeholder="Search by tehsil/district .."
             className="border rounded-md px-3 py-2 text-sm w-64 bg-white dark:bg-[#0b1419]"
           />
         </div>
@@ -159,7 +152,6 @@ export default function Tehsil() {
                     <th className="py-3">Tehsil</th>
                     <th className="py-3">Tehsil ID</th>
                     <th className="py-3">District</th>
-                    <th className="py-3">Division</th>
                     <th className="py-3 text-right">Action</th>
                   </tr>
                 </thead>
@@ -182,9 +174,6 @@ export default function Tehsil() {
                       </td>
 
                       <td className="py-3">{d.district ?? "-"}</td>
-
-                      {/* ✅ Static Division */}
-                      <td className="py-3">Lahore</td>
 
                       <td className="py-3 text-right">
                         <button className="text-sm px-3 py-1 mr-2 border rounded">

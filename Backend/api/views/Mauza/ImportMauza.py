@@ -7,13 +7,13 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.db import transaction
 
 
-class ImportMouzaView(viewsets.ViewSet):
-    """Import Mouza features from an uploaded ZIP containing a shapefile.
+class ImportMauzaView(viewsets.ViewSet):
+    """Import Mauza features from an uploaded ZIP containing a shapefile.
 
     Expects multipart/form-data with:
       - file: ZIP archive containing .shp/.shx/.dbf/.prj
       - tehsil: (optional) tehsil name to assign to imported records
-      - mouza: (optional) mouza name to assign to imported records
+      - mauza: (optional) mauza name to assign to imported records
     """
 
     permission_classes = [AllowAny]
@@ -21,7 +21,7 @@ class ImportMouzaView(viewsets.ViewSet):
     def create(self, request, *args, **kwargs):
         uploaded_file = request.FILES.get("file")
         tehsil_override = request.POST.get("tehsil")
-        mouza_override = request.POST.get("mouza")
+        mauza_override = request.POST.get("mauza")
 
         if not uploaded_file:
             return ApiResponse(
@@ -73,7 +73,7 @@ class ImportMouzaView(viewsets.ViewSet):
                     ).create_response()
 
             # Required attribute fields
-            required = ["mouza_id"]
+            required = ["mauza_id"]
             layer_defn = layer.GetLayerDefn()
             field_names = [layer_defn.GetFieldDefn(i).GetName() for i in range(layer_defn.GetFieldCount())]
 
@@ -86,7 +86,7 @@ class ImportMouzaView(viewsets.ViewSet):
                 ).create_response()
 
             created = []
-            from api.models import Mouza as MouzaModel
+            from api.models import Mauza as MauzaModel
 
             with transaction.atomic():
                 for feat in layer:
@@ -104,21 +104,21 @@ class ImportMouzaView(viewsets.ViewSet):
                         val = feat.GetField(name)
                         props[name.lower()] = val
 
-                    mouza_id_val = props.get("mouza_id")
+                    mauza_id_val = props.get("mauza_id")
                     # allow override values from form
                     tehsil_val = tehsil_override or props.get("tehsil")
-                    mouza_val = mouza_override or props.get("mouza")
+                    mauza_val = mauza_override or props.get("mauza")
                     district_val = props.get("district")
                     dist_id_val = props.get("dist_id") or props.get("disti") or props.get("dist_id")
                     tehsil_id_val = props.get("tehsil_id")
 
-                    if mouza_id_val is None:
+                    if mauza_id_val is None:
                         # skip features without id
                         continue
 
-                    # Upsert (merge) based on mouza_id
-                    mouza_id_float = float(mouza_id_val)
-                    existing = MouzaModel.objects.filter(mouza_id=mouza_id_float).first()
+                    # Upsert (merge) based on mauza_id
+                    mauza_id_float = float(mauza_id_val)
+                    existing = MauzaModel.objects.filter(mauza_id=mauza_id_float).first()
 
                     if existing:
                         # update existing record
@@ -134,26 +134,26 @@ class ImportMouzaView(viewsets.ViewSet):
                                 existing.tehsil_id = float(tehsil_id_val)
                             except Exception:
                                 pass
-                        existing.mouza = mouza_val or existing.mouza
+                        existing.mauza = mauza_val or existing.mauza
                         existing.geom = g
                         existing.save()
                         created.append(existing.id)
                     else:
-                        mouza_obj = MouzaModel(
+                        mauza_obj = MauzaModel(
                             district=district_val or "",
                             dist_id=float(dist_id_val) if dist_id_val not in (None, "") else None,
                             tehsil=tehsil_val or "",
                             tehsil_id=float(tehsil_id_val) if tehsil_id_val not in (None, "") else None,
-                            mouza=mouza_val or "",
-                            mouza_id=mouza_id_float,
+                            mauza=mauza_val or "",
+                            mauza_id=mauza_id_float,
                             geom=g,
                         )
-                        mouza_obj.save()
-                        created.append(mouza_obj.id)
+                        mauza_obj.save()
+                        created.append(mauza_obj.id)
 
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
-                message=f"Imported {len(created)} Mouza features.",
+                message=f"Imported {len(created)} Mauza features.",
                 data={"created": len(created)},
                 http_status=status.HTTP_201_CREATED,
             ).create_response()

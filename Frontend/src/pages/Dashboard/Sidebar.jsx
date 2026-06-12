@@ -15,8 +15,8 @@ export default function Sidebar({ sidebarOpen }) {
   const isActive = (path) => location.pathname === path;
 
   const isAreaPath = location.pathname.startsWith("/area/");
-  const isMouzaGroupPath =
-    location.pathname === "/area/mouza" ||
+  const isMauzaGroupPath =
+    location.pathname === "/area/mauza" ||
     location.pathname === "/area/khasra" ||
     location.pathname === "/area/murabba";
 
@@ -27,25 +27,24 @@ export default function Sidebar({ sidebarOpen }) {
   ];
 
   const areaItems = [
-    { label: "Division", path: "/area/division" },
     { label: "District", path: "/area/district" },
     { label: "Tehsil", path: "/area/tehsil" },
-    { label: "Mouza", path: "/area/mouza" },
+    { label: "Mauza", path: "/area/mauza" },
   ];
 
-  const mouzaItems = [
+  const mauzaItems = [
     { label: "Khasra", path: "/area/khasra" },
     { label: "Murabba", path: "/area/murabba" },
   ];
 
   const [areaOpen, setAreaOpen] = useState(false);
-  const [mouzaOpen, setMouzaOpen] = useState(isMouzaGroupPath);
+  const [mauzaOpen, setMauzaOpen] = useState(isMauzaGroupPath);
 
   useMemo(() => {
-    if (!isMouzaGroupPath) {
-      setMouzaOpen(false);
+    if (!isMauzaGroupPath) {
+      setMauzaOpen(false);
     }
-  }, [isMouzaGroupPath]);
+  }, [isMauzaGroupPath]);
 
   const handleAreaToggle = () => {
     setAreaOpen((prev) => !prev);
@@ -54,14 +53,14 @@ export default function Sidebar({ sidebarOpen }) {
   const handleAreaItemClick = (path) => {
     navigate(path);
 
-    if (path === "/area/mouza") {
+    if (path === "/area/mauza") {
       setAreaOpen(true);
-      setMouzaOpen(true);
+      setMauzaOpen(true);
     }
   };
 
-  const handleMouzaToggle = () => {
-    setMouzaOpen((prev) => !prev);
+  const handleMauzaToggle = () => {
+    setMauzaOpen((prev) => !prev);
   };
 
   return (
@@ -125,8 +124,8 @@ export default function Sidebar({ sidebarOpen }) {
             }`}
           >
             {areaItems.map((it) => {
-              const mouzaIsSelected =
-                it.path === "/area/mouza" && isMouzaGroupPath;
+              const mauzaIsSelected =
+                it.path === "/area/mauza" && isMauzaGroupPath;
 
               return (
                 <div key={it.label}>
@@ -134,7 +133,7 @@ export default function Sidebar({ sidebarOpen }) {
                     onClick={() => handleAreaItemClick(it.path)}
                     className={`flex w-full items-center gap-3 px-2 py-2 rounded-lg text-sm transition text-left
                       ${
-                        isActive(it.path) || mouzaIsSelected
+                        isActive(it.path) || mauzaIsSelected
                           ? "bg-black/5 dark:bg-white/5 text-black dark:text-white"
                           : "hover:bg-black/3 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400"
                       }
@@ -142,31 +141,31 @@ export default function Sidebar({ sidebarOpen }) {
                   >
                     <span className="flex-1 text-[13px]">{it.label}</span>
 
-                    {it.path === "/area/mouza" && (
+                    {it.path === "/area/mauza" && (
                       <span
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleMouzaToggle();
+                          handleMauzaToggle();
                         }}
                         className="inline-flex items-center justify-center p-1"
                       >
                         <ChevronDown
                           size={14}
                           className={`${
-                            mouzaOpen ? "rotate-180" : ""
+                            mauzaOpen ? "rotate-180" : ""
                           } transition-transform`}
                         />
                       </span>
                     )}
                   </button>
 
-                  {it.path === "/area/mouza" && (
+                  {it.path === "/area/mauza" && (
                     <div
                       className={`mt-1 space-y-1 pl-5 overflow-hidden transition-all ${
-                        mouzaOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                        mauzaOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
                       }`}
                     >
-                      {mouzaItems.map((sub) => (
+                      {mauzaItems.map((sub) => (
                         <button
                           key={sub.label}
                           onClick={() => navigate(sub.path)}

@@ -7,15 +7,6 @@ export default function PlotDetails({ parcel = null }) {
 
   const fields = [
     {
-      label: "Division",
-      value:
-        p.division_name ||
-        p.division ||
-        p.division_name_en ||
-        p.division_i ||
-        "Lahore",
-    },
-    {
       label: "District",
       value:
         p.district_name ||
@@ -34,8 +25,8 @@ export default function PlotDetails({ parcel = null }) {
         "Ferozwala",
     },
     {
-      label: "Mouza",
-      value: p.mouza_name || p.mouza || p.mouza_name_en || p.mouza_id || "-",
+      label: "Mauza",
+      value: p.mauza_name || p.mauza || p.mauza_name_en || p.mauza_id || "-",
     },
     {
       label: "Type",
@@ -104,13 +95,6 @@ export default function PlotDetails({ parcel = null }) {
       parcel?.id,
       "0",
     ),
-    division: safeValue(
-      p.division_name,
-      p.division,
-      p.division_name_en,
-      p.division_i,
-      "Lahore",
-    ),
     district: safeValue(
       p.district_name,
       p.district,
@@ -133,7 +117,7 @@ export default function PlotDetails({ parcel = null }) {
       p.society,
       "Residential / Planned Development",
     ),
-    mouza: safeValue(p.mouza_name, p.mouza, p.mouza_name_en, p.mouza_id, "-"),
+    mauza: safeValue(p.mauza_name, p.mauza, p.mauza_name_en, p.mauza_id, "-"),
     area: safeValue(
       p._area_acres ? `${p._area_acres.toFixed(2)} Acres` : null,
       p._area_m2 ? `${p._area_m2} m²` : null,
@@ -522,17 +506,17 @@ export default function PlotDetails({ parcel = null }) {
 
       // Row 2
       x = contentX;
-      drawSimpleCell(x, y, colWidths[0], rowH, "Division");
+      drawSimpleCell(x, y, colWidths[0], rowH, "District");
       x += colWidths[0];
-      drawSimpleCell(x, y, colWidths[1], rowH, reportDetails.division);
+      drawSimpleCell(x, y, colWidths[1], rowH, reportDetails.district);
       x += colWidths[1];
-      drawSimpleCell(x, y, colWidths[2], rowH, "District");
+      drawSimpleCell(x, y, colWidths[2], rowH, "Tehsil");
       x += colWidths[2];
-      drawSimpleCell(x, y, colWidths[3], rowH, reportDetails.district);
+      drawSimpleCell(x, y, colWidths[3], rowH, reportDetails.tehsil);
       x += colWidths[3];
-      drawSimpleCell(x, y, colWidths[4], rowH, "Tehsil");
+      drawSimpleCell(x, y, colWidths[4], rowH, "Mauza");
       x += colWidths[4];
-      drawSimpleCell(x, y, colWidths[5], rowH, reportDetails.tehsil);
+      drawSimpleCell(x, y, colWidths[5], rowH, reportDetails.mauza);
       y += rowH;
 
       // Row 3
@@ -541,13 +525,13 @@ export default function PlotDetails({ parcel = null }) {
       x += colWidths[0];
       drawSimpleCell(x, y, colWidths[1], rowH, reportDetails.landuse);
       x += colWidths[1];
-      drawSimpleCell(x, y, colWidths[2], rowH, "Mouza");
+      drawSimpleCell(x, y, colWidths[2], rowH, "Area");
       x += colWidths[2];
-      drawSimpleCell(x, y, colWidths[3], rowH, reportDetails.mouza);
+      drawSimpleCell(x, y, colWidths[3], rowH, reportDetails.area);
       x += colWidths[3];
-      drawSimpleCell(x, y, colWidths[4], rowH, "Area");
+      drawSimpleCell(x, y, colWidths[4], rowH, "");
       x += colWidths[4];
-      drawSimpleCell(x, y, colWidths[5], rowH, reportDetails.area);
+      drawSimpleCell(x, y, colWidths[5], rowH, "");
       y += rowH;
 
       // Row 4
@@ -647,7 +631,7 @@ export default function PlotDetails({ parcel = null }) {
         ["Coordinate System", "WGS 84 (EPSG:4326)"],
         ["Units", "Decimal Degrees"],
         ["Area", String(reportDetails.area || "-")],
-        ["Mouza", String(reportDetails.mouza || "-")],
+        ["Mauza", String(reportDetails.mauza || "-")],
         ["Landuse", String(reportDetails.landuse || "-")],
         ["Note", "Subject to field verification"],
       ];

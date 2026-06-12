@@ -1,15 +1,15 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { getDivisionBoundary } from "../../services/api";
+import { getDistrictBoundary } from "../../services/api";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-const LAHORE_DIVISION_ID = 6; // <-- Lahore ka actual division_i yahan do
+const LAHORE_DISTRICT_ID = 6; // <-- Lahore district ka actual id yahan do
 
-const LAHORE_SOURCE_ID = "lahore-division-source";
-const LAHORE_FILL_ID = "lahore-division-fill";
-const LAHORE_OUTLINE_ID = "lahore-division-outline";
+const LAHORE_SOURCE_ID = "lahore-district-source";
+const LAHORE_FILL_ID = "lahore-district-fill";
+const LAHORE_OUTLINE_ID = "lahore-district-outline";
 
 const RUDA_SOURCE_ID = "ruda-phases-source";
 const RUDA_FILL_ID = "ruda-phases-fill";
@@ -75,8 +75,8 @@ export default function MapPanel() {
     if (!map) return;
 
     try {
-      // 1) Lahore layer from backend
-      const lahoreGeoJson = await getDivisionBoundary(LAHORE_DIVISION_ID);
+      // 1) Lahore district layer from backend
+      const lahoreGeoJson = await getDistrictBoundary(LAHORE_DISTRICT_ID);
 
       // 2) RUDA layer from public geojson
       const rudaResponse = await fetch("/ruda_phases.geojson");
@@ -97,7 +97,7 @@ export default function MapPanel() {
       removeSourceIfExists(map, LAHORE_SOURCE_ID);
 
       // =========================
-      // LAHORE FIRST (bottom)
+      // LAHORE DISTRICT FIRST (bottom)
       // =========================
       if (lahoreGeoJson?.features?.length) {
         map.addSource(LAHORE_SOURCE_ID, {
@@ -170,7 +170,7 @@ export default function MapPanel() {
         });
       }
     } catch (error) {
-      console.error("Error loading Lahore + RUDA layers:", error);
+      console.error("Error loading Lahore District + RUDA layers:", error);
     }
   };
 

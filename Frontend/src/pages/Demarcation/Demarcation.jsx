@@ -13,10 +13,9 @@ export default function Demarcation() {
 
   // filters for SpatialQuery/Map
   const [filters, setFilters] = useState({
-    selectedDivisionOptions: null,
     selectedDistrictOptions: null,
     selectedTehsilOptions: null,
-    selectedMouzaDetails: null,
+    selectedMauzaDetails: null,
     viewBy: "khasra",
     selectedParcelNumber: "",
   });
@@ -70,7 +69,7 @@ export default function Demarcation() {
 
           <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3 min-h-0">
             <LandUseBreakdown />
-            <PlotDetails parcel={selectedParcel} /> 
+            <PlotDetails parcel={selectedParcel} />
             {/* <SelectedPlots /> */}
           </div>
 

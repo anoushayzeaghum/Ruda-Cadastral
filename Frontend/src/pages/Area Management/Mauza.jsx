@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { getMouzas, getTehsils } from "../../services/api";
+import { getMauzas, getTehsils } from "../../services/api";
 import ImportModal from "../../components/ImportModal";
 
-export default function Mouza() {
+export default function Mauza() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [tehsils, setTehsils] = useState([]);
@@ -13,15 +13,15 @@ export default function Mouza() {
     const fetch = async () => {
       try {
         setLoading(true);
-        const res = await getMouzas();
+        const res = await getMauzas();
         const features = res?.features ?? [];
         const props = features.map((f) => ({
           ...(f.properties || {}),
-          mouza_id: f.properties?.mouza_id ?? f.id, // 🔥 fallback from id_field
+          mauza_id: f.properties?.mauza_id ?? f.id, // 🔥 fallback from id_field
         }));
         setItems(props);
       } catch (err) {
-        console.error("Failed to load mouzas:", err);
+        console.error("Failed to load mauzas:", err);
       } finally {
         setLoading(false);
       }
@@ -41,9 +41,9 @@ export default function Mouza() {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border p-6 bg-white dark:bg-[#07111a]">
-        <h2 className="text-xl font-semibold">Mouza — Add / Edit</h2>
+        <h2 className="text-xl font-semibold">Mauza — Add / Edit</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Import a new mouza or edit an existing one.
+          Import a new mauza or edit an existing one.
         </p>
 
         <div className="mt-6 grid grid-cols-12 gap-4 items-center">
@@ -65,13 +65,13 @@ export default function Mouza() {
             </label>
             <input
               className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
-              placeholder="Enter mouza name"
+              placeholder="Enter mauza name"
             />
           </div>
 
           <div className="col-span-3 flex gap-3 justify-end">
             <ImportModal
-              title="Import Mouza"
+              title="Import Mauza"
               open={showImport}
               onClose={() => setShowImport(false)}
             />
@@ -79,7 +79,7 @@ export default function Mouza() {
               onClick={() => setShowImport(true)}
               className="bg-red-600 text-white px-4 py-2 rounded-md"
             >
-              Import Mouza
+              Import Mauza
             </button>
             <button className="border px-4 py-2 rounded-md">Clear</button>
           </div>
@@ -88,7 +88,7 @@ export default function Mouza() {
 
       <div className="rounded-lg border p-6 bg-white dark:bg-[#07111a]">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Mouza List</h3>
+          <h3 className="font-semibold">Mauza List</h3>
           <div className="flex items-center gap-2">
             <input
               placeholder="Search by name .."
@@ -139,7 +139,7 @@ export default function Mouza() {
           {loading ? (
             <div className="py-6 text-center">Loading...</div>
           ) : items.length === 0 ? (
-            <div className="py-6 text-center">No mouzas found</div>
+            <div className="py-6 text-center">No mauzas found</div>
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
@@ -149,20 +149,17 @@ export default function Mouza() {
                   <th className="py-3">Mauza ID</th>
                   <th className="py-3">Tehsil</th>
                   <th className="py-3">District</th>
-                  <th className="py-3">Division</th>
-
                   <th className="py-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((d, idx) => (
-                  <tr key={d.mouza_id ?? d.gid ?? idx} className="border-t">
+                  <tr key={d.mauza_id ?? d.gid ?? idx} className="border-t">
                     <td className="py-3 w-12">{idx + 1}</td>
-                    <td className="py-3">{d.mouza}</td>
-                    <td className="py-3">{d.mouza_id}</td>
+                    <td className="py-3">{d.mauza}</td>
+                    <td className="py-3">{d.mauza_id}</td>
                     <td className="py-3">{d.tehsil}</td>
                     <td className="py-3">{d.district}</td>
-                    <td className="py-3">{"Lahore"}</td>
                     <td className="py-3 text-right">
                       <button className="text-sm px-3 py-1 mr-2 border rounded">
                         Edit

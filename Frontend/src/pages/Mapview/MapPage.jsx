@@ -71,7 +71,7 @@ export default function MapPage() {
     setSelectedMurabbaNumber("");
     setSelectedParcel(null);
     setParcelPanelOpen(false);
-  }, [filters?.selectedMouza, filters?.viewBy]);
+  }, [filters?.selectedMauza, filters?.viewBy]);
 
   const murabbaOptions = useMemo(() => {
     if (!isMurabbaBasedKhasra) return [];
@@ -217,18 +217,17 @@ export default function MapPage() {
 
       <div className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white">
         <MapView
-            selectedMouza={filters?.selectedMouzaDetails}
-            selectedDistrict={filters?.selectedDistrictOptions}
-            selectedTehsil={filters?.selectedTehsilOptions}
-            selectedDivision={filters?.selectedDivisionOptions}
-            viewBy={filters?.viewBy}
-            layers={layers}
-            selectedRudaPhaseIds={selectedRudaPhaseIds}
-            basemap={basemap}
-            selectedFeatureNumber={selectedFeatureNumber}
-            onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
-            onParcelSelect={handleParcelSelect}
-          />
+          selectedMauza={filters?.selectedMauzaDetails}
+          selectedDistrict={filters?.selectedDistrictOptions}
+          selectedTehsil={filters?.selectedTehsilOptions}
+          viewBy={filters?.viewBy}
+          layers={layers}
+          selectedRudaPhaseIds={selectedRudaPhaseIds}
+          basemap={basemap}
+          selectedFeatureNumber={selectedFeatureNumber}
+          onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
+          onParcelSelect={handleParcelSelect}
+        />
 
         {filters && (
           <SubHeader

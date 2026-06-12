@@ -5,10 +5,9 @@ import MapPage from "./pages/Mapview/MapPage";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
-import Division from "./pages/Area Management/Division";
 import District from "./pages/Area Management/District";
 import Tehsil from "./pages/Area Management/Tehsil";
-import Mouza from "./pages/Area Management/Mouza";
+import Mauza from "./pages/Area Management/Mauza";
 import Khasra from "./pages/Area Management/Khasra";
 import Murabba from "./pages/Area Management/Murabba";
 import AreaLayout from "./layouts/AreaLayout";
@@ -32,12 +31,10 @@ const AppRoutes = () => {
           <Route path="/cadastral-map" element={<MapPage />} />
           <Route path="/landing" element={<LandingPage />} />
 
-
           <Route path="/area" element={<AreaLayout />}>
-            <Route path="division" element={<Division />} />
             <Route path="district" element={<District />} />
             <Route path="tehsil" element={<Tehsil />} />
-            <Route path="mouza" element={<Mouza />} />
+            <Route path="mauza" element={<Mauza />} />
             <Route path="khasra" element={<Khasra />} />
             <Route path="murabba" element={<Murabba />} />
           </Route>

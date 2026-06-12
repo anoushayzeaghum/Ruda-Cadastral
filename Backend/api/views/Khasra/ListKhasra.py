@@ -12,8 +12,8 @@ class ListKhasraView(viewsets.ViewSet):
         try:
             khasra_id = request.query_params.get("id")
 
-            # Support both mouza name or id (mouza_id)
-            mouza = request.query_params.get("mouza") or request.query_params.get("mouza_id")
+            # Support both mauza name or id (mauza_id)
+            mauza = request.query_params.get("mauza") or request.query_params.get("mauza_id")
 
             murabba = request.query_params.get("m")
 
@@ -40,20 +40,20 @@ class ListKhasraView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            # Filter by Mouza
-            elif mouza:
-                # mouza can be name or numeric id
+            # Filter by Mauza
+            elif mauza:
+                # mauza can be name or numeric id
                 try:
-                    mouza_int = int(mouza)
-                    queryset = Khasra.objects.filter(mouza_id=mouza_int)
+                    mauza_int = int(mauza)
+                    queryset = Khasra.objects.filter(mauza_id=mauza_int)
                 except Exception:
-                    queryset = Khasra.objects.filter(mouza=mouza)
+                    queryset = Khasra.objects.filter(mauza=mauza)
 
                 serializer = KhasraSerializer(queryset, many=True)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Khasras found for Mouza.",
+                    message="Khasras found for Mauza.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()

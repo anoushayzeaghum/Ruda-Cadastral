@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { importMouza } from "../services/api";
+import { importMauza } from "../services/api";
 
 export default function ImportModal({ title = "Import", open, onClose }) {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState(null);
   const [tehsil, setTehsil] = useState("");
-  const [mouza, setMouza] = useState("");
+  const [mauza, setMauza] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
@@ -26,7 +26,7 @@ export default function ImportModal({ title = "Import", open, onClose }) {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await importMouza({ file, tehsil, mouza });
+      const res = await importMauza({ file, tehsil, mauza });
       setMessage({ type: "success", text: res.message || "Imported." });
     } catch (e) {
       setMessage({
@@ -61,10 +61,10 @@ export default function ImportModal({ title = "Import", open, onClose }) {
             className="border rounded px-3 py-2"
           />
 
-          <label className="text-sm">Mouza (optional override)</label>
+          <label className="text-sm">Mauza (optional override)</label>
           <input
-            value={mouza}
-            onChange={(e) => setMouza(e.target.value)}
+            value={mauza}
+            onChange={(e) => setMauza(e.target.value)}
             className="border rounded px-3 py-2"
           />
 
@@ -81,7 +81,7 @@ export default function ImportModal({ title = "Import", open, onClose }) {
                 ideally .prj
               </li>
               <li>
-                Required attribute field: <strong>mouza_id</strong>
+                Required attribute field: <strong>mauza_id</strong>
               </li>
               <li>Projection must be WGS84 (EPSG:4326)</li>
             </ul>

@@ -2,10 +2,13 @@ from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from .models import *
 
+
 # --------------------------------------------------------
 # MyUser Serializer
 # --------------------------------------------------------
+
 class MyUserSerializer(serializers.ModelSerializer):
+
     full_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -23,6 +26,7 @@ class MyUserSerializer(serializers.ModelSerializer):
             "is_active",
             "password",
         ]
+
         extra_kwargs = {
             "password": {"write_only": True, "required": True},
             "first_name": {"required": True},
@@ -41,7 +45,6 @@ class MyUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         password = validated_data.pop("password", None)
 
-        # avoid None issues on optional fields
         validated_data["address"] = validated_data.get("address", "") or ""
         validated_data["contact"] = validated_data.get("contact", "") or ""
         validated_data["role"] = validated_data.get("role", "admin")
@@ -57,10 +60,14 @@ class MyUserSerializer(serializers.ModelSerializer):
         user.is_active = True
         user.save()
         return user
-    
+
+
 class MyUserLoginDashboardSerializer(serializers.ModelSerializer):
+
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+    full_name = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = MyUser
         fields = [
@@ -70,30 +77,18 @@ class MyUserLoginDashboardSerializer(serializers.ModelSerializer):
             "full_name",
             "is_active",
         ]
+
         extra_kwargs = {
             "password": {"write_only": True},
         }
 
-# --------------------------------------------------------
-# Division Serializer
-# --------------------------------------------------------
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip()
 
-class DivisionSerializer(GeoFeatureModelSerializer):
 
-    class Meta:
-        model = Division
-        geo_field = "geom"
-        id_field = "gid"
-
-        fields = (
-            "gid",
-            "division",
-            "division_i",
-            "geom",
-        )
-        
 # --------------------------------------------------------
 # District Serializer
+# Main hierarchy starts from District
 # --------------------------------------------------------
 
 class DistrictSerializer(GeoFeatureModelSerializer):
@@ -104,18 +99,20 @@ class DistrictSerializer(GeoFeatureModelSerializer):
         id_field = "id"
 
         fields = (
+            "gid",
             "id",
+            "objectid",
             "name",
-            "division",
-            "division_i",
             "extent",
             "shape_star",
             "shape_stle",
             "geom",
         )
 
+
 # --------------------------------------------------------
 # Tehsil Serializer
+# District → Tehsil
 # --------------------------------------------------------
 
 class TehsilSerializer(GeoFeatureModelSerializer):
@@ -126,7 +123,9 @@ class TehsilSerializer(GeoFeatureModelSerializer):
         id_field = "id"
 
         fields = (
+            "gid",
             "id",
+            "objectid",
             "name",
             "district",
             "district_i",
@@ -136,15 +135,18 @@ class TehsilSerializer(GeoFeatureModelSerializer):
             "geom",
         )
 
+
 # --------------------------------------------------------
-# Mouza Serializer
+# Mauza Serializer
+# District → Tehsil → Mauza
 # --------------------------------------------------------
-class MouzaSerializer(GeoFeatureModelSerializer):
+
+class MauzaSerializer(GeoFeatureModelSerializer):
 
     class Meta:
-        model = Mouza
+        model = Mauza
         geo_field = "geom"
-        id_field = "mouza_id"
+        id_field = "mauza_id"
 
         fields = (
             "gid",
@@ -152,18 +154,21 @@ class MouzaSerializer(GeoFeatureModelSerializer):
             "dist_id",
             "tehsil",
             "tehsil_id",
-            "qh",
-            "qh_id",
+            "kc",
+            "kc_id",
             "pc",
             "pc_id",
-            "mouza",
-            "mouza_id",
+            "mauza",
+            "mauza_id",
             "geom",
         )
-        
+
+
 # --------------------------------------------------------
 # Murabba Serializer
+# District → Tehsil → Mauza → Murabba
 # --------------------------------------------------------
+
 class MurabbaSerializer(GeoFeatureModelSerializer):
 
     class Meta:
@@ -177,19 +182,23 @@ class MurabbaSerializer(GeoFeatureModelSerializer):
             "dist_id",
             "tehsil",
             "tehsil_id",
-            "qh",
-            "qh_id",
+            "kc",
+            "kc_id",
             "pc",
             "pc_id",
-            "mouza",
-            "mouza_id",
+            "mauza",
+            "mauza_id",
             "murabba_no",
             "sheets",
             "geom",
         )
+
+
 # --------------------------------------------------------
-# Khasra Serializer
+# Khasra Serializer - New Format
+# District → Tehsil → Mauza → Khasra
 # --------------------------------------------------------
+
 class KhasraSerializer(GeoFeatureModelSerializer):
 
     class Meta:
@@ -204,39 +213,40 @@ class KhasraSerializer(GeoFeatureModelSerializer):
             "dist_id",
             "tehsil",
             "tehsil_id",
-            "qh",
-            "qh_id",
+            "kc",
+            "kc_id",
             "pc",
             "pc_id",
-            "mouza",
-            "mouza_id",
-            "type",
-            "m",
-            "a",
-            "k",
-            "sk",
-            "label",
+            "mauza",
+            "mauza_id",
+            "hadbust_no",
+            "asse_cir",
             "karam",
-            "remarks",
+            "type",
+            "sq",
+            "kh",
+            "sk",
             "khasra_id",
-            "b",
-            "mn",
-            "division",
             "khewat_id",
-            "divn_id",
+            "khatoni_no",
+            "dc_rate",
+            "remarks",
+            "b",
             "geom",
         )
-        
+
+
 # --------------------------------------------------------
-# Ruda Phases Boundary Serializer
+# Ruda Boundary Serializer
 # --------------------------------------------------------
 
 class RudaBoundarySerializer(GeoFeatureModelSerializer):
-   
+
     class Meta:
         model = RudaBoundary
         geo_field = "geom"
         id_field = "gid"
+
         fields = (
             "gid",
             "oid",
@@ -253,7 +263,8 @@ class RudaBoundarySerializer(GeoFeatureModelSerializer):
             "shape_area",
             "geom",
         )
-        
+
+
 # --------------------------------------------------------
 # Trijunction Serializer
 # --------------------------------------------------------

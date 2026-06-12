@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getDistricts, getDivisions } from "../../services/api";
+import { getDistricts } from "../../services/api";
 import ImportModal from "../../components/ImportModal";
 
 export default function District() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [divisions, setDivisions] = useState([]);
   const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -24,14 +23,6 @@ export default function District() {
 
     fetch();
 
-    (async () => {
-      try {
-        const d = await getDivisions();
-        setDivisions(d || []);
-      } catch (e) {
-        console.error(e);
-      }
-    })();
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -43,16 +34,9 @@ export default function District() {
       const districtId = String(
         item.district_id ?? item.dist_id ?? item.id ?? item.gid ?? "",
       ).toLowerCase();
-      const division = String(item.division ?? "").toLowerCase();
-      const divisionId = String(
-        item.division_id ?? item.div_id ?? "",
-      ).toLowerCase();
-
       return (
         district.includes(q) ||
-        districtId.includes(q) ||
-        division.includes(q) ||
-        divisionId.includes(q)
+        districtId.includes(q)
       );
     });
   }, [items, search]);
@@ -66,19 +50,7 @@ export default function District() {
         </p>
 
         <div className="mt-6 grid grid-cols-12 gap-4 items-center">
-          <div className="col-span-4">
-            <label className="block text-xs text-gray-500 mb-1">DIVISION</label>
-            <select className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]">
-              <option value="">Select division</option>
-              {divisions.map((dv) => (
-                <option key={dv.id ?? dv.gid} value={dv.id ?? dv.gid}>
-                  {dv.division ?? dv.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-span-5">
+          <div className="col-span-6">
             <label className="block text-xs text-gray-500 mb-1">
               DISTRICT NAME
             </label>
@@ -88,7 +60,7 @@ export default function District() {
             />
           </div>
 
-          <div className="col-span-3 flex gap-3 justify-end">
+          <div className="col-span-6 flex gap-3 justify-end">
             <ImportModal
               title="Import District"
               open={showImport}
@@ -111,7 +83,7 @@ export default function District() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by district/division .."
+            placeholder="Search by district .."
             className="border rounded-md px-3 py-2 text-sm w-64 bg-white dark:bg-[#0b1419]"
           />
         </div>
@@ -128,7 +100,6 @@ export default function District() {
                   <th className="py-3">Sr. No</th>
                   <th className="py-3">District</th>
                   <th className="py-3">District ID</th>
-                  <th className="py-3">Division</th>
                   <th className="py-3 text-right">Action</th>
                 </tr>
               </thead>
@@ -145,8 +116,6 @@ export default function District() {
                         d.district_id ?? d.dist_id ?? d.id ?? d.gid ?? "",
                       ).toUpperCase()}
                     </td>
-                    <td className="py-3">{d.division ?? "Lahore"}</td>
-
                     <td className="py-3 text-right">
                       <button className="text-sm px-3 py-1 mr-2 border rounded">
                         Edit

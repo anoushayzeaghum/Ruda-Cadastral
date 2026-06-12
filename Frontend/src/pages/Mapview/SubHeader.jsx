@@ -14,14 +14,10 @@ export default function SubHeader({
 }) {
   if (!filters) return null;
 
-  const divisions = Array.isArray(filters.divisions) ? filters.divisions : [];
   const districts = Array.isArray(filters.districts) ? filters.districts : [];
   const tehsils = Array.isArray(filters.tehsils) ? filters.tehsils : [];
-  const mouzas = Array.isArray(filters.mouzas) ? filters.mouzas : [];
+  const mauzas = Array.isArray(filters.mauzas) ? filters.mauzas : [];
 
-  const selectedDivision = Array.isArray(filters.selectedDivision)
-    ? filters.selectedDivision
-    : [];
   const selectedDistrict = Array.isArray(filters.selectedDistrict)
     ? filters.selectedDistrict
     : [];
@@ -29,43 +25,21 @@ export default function SubHeader({
     ? filters.selectedTehsil
     : [];
 
-  const selectedMouza = filters.selectedMouza ?? "";
+  const selectedMauza = filters.selectedMauza ?? "";
   const viewBy = filters.viewBy ?? "";
 
-  const mouzaCount = mouzas.length;
+  const mauzaCount = mauzas.length;
 
   const showStandardParcelDropdown =
-    selectedMouza && viewBy && !(viewBy === "khasra" && isMurabbaBasedKhasra);
+    selectedMauza && viewBy && !(viewBy === "khasra" && isMurabbaBasedKhasra);
 
   const showMurabbaKhasraDropdowns =
-    selectedMouza && viewBy === "khasra" && isMurabbaBasedKhasra;
+    selectedMauza && viewBy === "khasra" && isMurabbaBasedKhasra;
 
   return (
     <div className="absolute top-4 left-1/2 z-30 w-[calc(100%-360px)] max-w-5xl -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
       <div className="flex items-center justify-center gap-2 px-3 py-2 flex-wrap overflow-visible">
-     
-
         <div className="flex items-center justify-center gap-2 flex-wrap overflow-visible">
-          <FilterCard
-            label="Division — ڈویژن"
-            value={getMultiValueDisplay({
-              options: divisions,
-              selected: selectedDivision,
-              idKey: "division_i",
-              labelKey: "division",
-            })}
-          >
-            <MultiSelectDropdown
-              options={divisions.map((d) => ({
-                value: String(d.division_i),
-                label: d.division,
-              }))}
-              selectedValues={selectedDivision}
-              onToggle={filters.handleDivisionChange}
-              disabled={filters.loading?.divisions}
-            />
-          </FilterCard>
-
           <FilterCard
             label="District — ضلع"
             value={getMultiValueDisplay({
@@ -82,7 +56,7 @@ export default function SubHeader({
               }))}
               selectedValues={selectedDistrict}
               onToggle={filters.handleDistrictChange}
-              disabled={!selectedDivision.length || filters.loading?.districts}
+              disabled={filters.loading?.districts}
             />
           </FilterCard>
 
@@ -109,19 +83,19 @@ export default function SubHeader({
           <FilterCard
             label="Mauza — موضع"
             value={
-              mouzas.find((m) => String(m.mouza_id) === String(selectedMouza))
-                ?.mouza || "Select"
+              mauzas.find((m) => String(m.mauza_id) === String(selectedMauza))
+                ?.mauza || "Select"
             }
           >
             <NativeSelectOverlay
-              value={selectedMouza}
-              onChange={filters.handleMouzaChange}
-              disabled={!selectedTehsil.length || filters.loading?.mouzas}
+              value={selectedMauza}
+              onChange={filters.handleMauzaChange}
+              disabled={!selectedTehsil.length || filters.loading?.mauzas}
             >
-              <option value="">-- Mouza --</option>
-              {mouzas.map((m) => (
-                <option key={m.mouza_id} value={m.mouza_id}>
-                  {m.mouza}
+              <option value="">-- Mauza --</option>
+              {mauzas.map((m) => (
+                <option key={m.mauza_id} value={m.mauza_id}>
+                  {m.mauza}
                 </option>
               ))}
             </NativeSelectOverlay>
@@ -138,7 +112,7 @@ export default function SubHeader({
             <NativeSelectOverlay
               value={viewBy}
               onChange={filters.handleViewByChange}
-              disabled={!selectedMouza}
+              disabled={!selectedMauza}
             >
               <option value="">-- Select View --</option>
               <option value="khasra">Khasra</option>
@@ -196,8 +170,6 @@ export default function SubHeader({
           )}
         </div>
       </div>
-
-  
     </div>
   );
 }
@@ -207,7 +179,9 @@ function FilterCard({ label, value, children }) {
     <div className="relative min-w-[135px] overflow-visible rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 shadow-sm hover:border-green-600">
       <p className="text-[9px] text-gray-500">{label}</p>
       <div className="flex items-center justify-between">
-        <p className="max-w-[115px] truncate text-xs font-semibold text-gray-800">{value}</p>
+        <p className="max-w-[115px] truncate text-xs font-semibold text-gray-800">
+          {value}
+        </p>
         <ChevronDown size={13} className="text-gray-400 ml-2 shrink-0" />
       </div>
       {children}
