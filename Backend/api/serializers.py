@@ -273,21 +273,12 @@ class MasterPlanSerializer(GeoFeatureModelSerializer):
         model = MasterPlan
         geo_field = "geom"
         id_field = "gid"
-
         fields = (
             "gid",
-            "name",
-            "source",
-            "feat_count",
-            "area",
             "society_id",
             "mauza_id",
             "dist_id",
             "tehsil_id",
-            "society",
-            "mauza",
-            "district",
-            "tehsil",
             "geom",
         )
 
@@ -304,17 +295,12 @@ class SpotLevelSerializer(GeoFeatureModelSerializer):
         model = SpotLevel
         geo_field = "geom"
         id_field = "gid"
-
         fields = (
             "gid",
             "society_id",
             "mauza_id",
             "dist_id",
             "tehsil_id",
-            "society",
-            "mauza",
-            "district",
-            "tehsil",
             "geom",
         )
 
@@ -330,21 +316,12 @@ class ContourSerializer(GeoFeatureModelSerializer):
         model = Contour
         geo_field = "geom"
         id_field = "gid"
-
         fields = (
             "gid",
-            "name",
-            "layer",
-            "elevation",
-            "closed_con",
             "society_id",
             "mauza_id",
             "dist_id",
             "tehsil_id",
-            "society",
-            "mauza",
-            "district",
-            "tehsil",
             "geom",
         )
 
