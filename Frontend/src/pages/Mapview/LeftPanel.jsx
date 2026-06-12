@@ -12,6 +12,10 @@ import {
   Map,
   Grid3X3,
   Eye,
+  Info,
+  Search,
+  ChevronDown,
+  X,
   MapPinned,
   Network,
   Route,
@@ -231,24 +235,13 @@ export default function LeftPanel({
                 </div>
 
                 {selectedLayerItems.length > 0 && (
-                  <>
-                    <SectionTitle title="Selected Administrative Layers" open />
-                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
-                      {selectedLayerItems.map((item) => (
-                        <LayerRow
-                          key={item.key}
-                          icon={<Eye size={15} />}
-                          label={item.label}
-                          checked={getLayerVisible(item.key)}
-                          opacity={getLayerOpacity(item.key)}
-                          onToggle={() => toggleLayer(item.key)}
-                          onOpacity={(value) =>
-                            updateLayer(item.key, { opacity: value })
-                          }
-                        />
-                      ))}
-                    </div>
-                  </>
+                  <SelectedAdministrativeLayers
+                    items={selectedLayerItems}
+                    getLayerVisible={getLayerVisible}
+                    getLayerOpacity={getLayerOpacity}
+                    toggleLayer={toggleLayer}
+                    updateLayer={updateLayer}
+                  />
                 )}
 
                 <SectionTitle title="Mauza Based Layers" open />
@@ -322,6 +315,105 @@ export default function LeftPanel({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function SelectedAdministrativeLayers({
+  items,
+  getLayerVisible,
+  getLayerOpacity,
+  toggleLayer,
+  updateLayer,
+}) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
+        <X size={15} strokeWidth={2.5} className="shrink-0 text-slate-700" />
+        <h4 className="text-[12px] font-semibold leading-tight text-slate-700">
+          Selected Administrative Layers
+        </h4>
+      </div>
+
+      <div className="bg-white px-2.5 py-2">
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          {items.map((item, index) => (
+            <AdminLayerRow
+              key={item.key}
+              label={item.label}
+              checked={getLayerVisible(item.key)}
+              opacity={getLayerOpacity(item.key)}
+              isLast={index === items.length - 1}
+              onToggle={() => toggleLayer(item.key)}
+              onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminLayerRow({ label, checked, opacity, isLast, onToggle, onOpacity }) {
+  return (
+    <div
+      className={`bg-white px-2.5 py-2 ${
+        isLast ? "" : "border-b border-slate-100"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={!!checked}
+          onChange={onToggle}
+          className="h-4 w-4 shrink-0 accent-green-700"
+        />
+
+        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-slate-700">
+          {label}
+        </span>
+
+        <div className="flex shrink-0 items-center gap-1.5 text-slate-800">
+          <button
+            type="button"
+            title="Layer info"
+            aria-label="Layer info"
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
+          >
+            <Info size={14} fill="currentColor" strokeWidth={2.2} />
+          </button>
+          <button
+            type="button"
+            title="Zoom/Search layer"
+            aria-label="Zoom/Search layer"
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
+          >
+            <Search size={15} strokeWidth={2.6} />
+          </button>
+          <button
+            type="button"
+            title="Layer options"
+            aria-label="Layer options"
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
+          >
+            <ChevronDown size={16} fill="currentColor" strokeWidth={2.6} />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-2 flex items-center gap-2 pl-6">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={opacity}
+          onChange={(e) => onOpacity(Number(e.target.value))}
+          className="h-1.5 min-w-0 flex-1 accent-green-700"
+        />
+        <span className="w-9 shrink-0 text-right text-[11px] font-medium text-slate-600">
+          {opacity}%
+        </span>
+      </div>
     </div>
   );
 }
