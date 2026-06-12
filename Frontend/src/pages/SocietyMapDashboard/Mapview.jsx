@@ -7,6 +7,7 @@ import {
   getTehsilBoundary,
   getMauzaBoundary,
   getSocietyGeoJSON,
+  getSocietyBoundaryGeoJSONBySocietyId,
   getMasterPlanGeoJSON,
   getSpotLevelGeoJSON,
   getContourGeoJSON,
@@ -29,7 +30,10 @@ const SELECTED_SOURCE = "selected-source";
 const SELECTED_FILL = "selected-fill";
 const SELECTED_LINE = "selected-line";
 
-const emptyFeatureCollection = () => ({ type: "FeatureCollection", features: [] });
+const emptyFeatureCollection = () => ({
+  type: "FeatureCollection",
+  features: [],
+});
 
 const mergeFeatureCollections = (collections) => ({
   type: "FeatureCollection",
@@ -57,7 +61,9 @@ const getSocietyBoundaryId = (society) =>
   society?.gid ?? society?.id ?? society?.objectid;
 
 const getSocietyDataId = (society) =>
-  society?.society_id ?? society?.properties?.society_id ?? getSocietyBoundaryId(society);
+  society?.society_id ??
+  society?.properties?.society_id ??
+  getSocietyBoundaryId(society);
 
 const getMauzaBoundaryId = (selectedMauza, selectedMauzaId) =>
   selectedMauza?.mauza_id ??
@@ -233,7 +239,14 @@ export default function MapView({
     }
   };
 
-  const drawPolygonLayer = ({ key, geojson, fillColor, lineColor, opacity, clickable }) => {
+  const drawPolygonLayer = ({
+    key,
+    geojson,
+    fillColor,
+    lineColor,
+    opacity,
+    clickable,
+  }) => {
     const map = mapInstance.current;
     if (!map) return;
 
@@ -552,17 +565,28 @@ export default function MapView({
       clearLayer("societyBoundary");
       delete currentGeojson.current.societyBoundary;
       try {
-        mapInstance.current?.getSource(SELECTED_SOURCE)?.setData(emptyFeatureCollection());
+        mapInstance.current
+          ?.getSource(SELECTED_SOURCE)
+          ?.setData(emptyFeatureCollection());
       } catch (e) {}
 
-      if (!selectedSociety || !getLayerVisible(layers, "societyBoundary", true)) return;
+      if (!selectedSociety || !getLayerVisible(layers, "societyBoundary", true))
+        return;
 
       try {
         setIsLoading(true);
         setError("");
 
-        const societyGid = getSocietyBoundaryId(selectedSociety);
-        const geojson = await getSocietyGeoJSON(societyGid);
+        const societyDataId = getSocietyDataId(selectedSociety);
+        let geojson = null;
+
+        // Prefer fetching by society_id if available (required behavior)
+        if (societyDataId) {
+          geojson = await getSocietyBoundaryGeoJSONBySocietyId(societyDataId);
+        } else {
+          const societyGid = getSocietyBoundaryId(selectedSociety);
+          geojson = await getSocietyGeoJSON(societyGid);
+        }
         if (cancelled) return;
 
         if (geojson?.features?.length) {
