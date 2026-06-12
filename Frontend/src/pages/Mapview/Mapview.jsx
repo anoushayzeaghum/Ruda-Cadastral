@@ -15,8 +15,8 @@ import {
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 // Start zoomed out so the globe/world is visible on initial load
-const DEFAULT_CENTER = [0, 20];
-const DEFAULT_ZOOM = 1;
+const DEFAULT_CENTER = [69.3451, 30.3753];
+const DEFAULT_ZOOM = 5;
 
 const KHASRA_SOURCE = "khasra-source";
 const KHASRA_FILL = "khasra-fill";
@@ -1381,16 +1381,23 @@ export default function MapView({
     if (!isMapReady) return;
 
     const loadRuda = async () => {
-      if (!getLayerVisible(layers, "rudaBoundary", false)) {
+      const clearRudaLevels = () => {
         try {
-          (selectedRudaPhaseIds || []).forEach((id) => {
-            const lvl = `ruda-${id}`;
-            clearBoundaryLevel(lvl);
-            delete currentGeojson.current[lvl];
-          });
+          Object.keys(currentGeojson.current || {})
+            .filter((key) => key.startsWith("ruda-"))
+            .forEach((level) => {
+              clearBoundaryLevel(level);
+              delete currentGeojson.current[level];
+            });
         } catch (e) {}
+      };
+
+      if (!getLayerVisible(layers, "rudaBoundary", false)) {
+        clearRudaLevels();
         return;
       }
+
+      clearRudaLevels();
 
       if (!selectedRudaPhaseIds?.length) return;
 
