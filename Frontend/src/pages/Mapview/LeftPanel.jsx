@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Layers,
   Wrench,
@@ -12,6 +12,10 @@ import {
   Map,
   Grid3X3,
   Eye,
+  Info,
+  Search,
+  ChevronDown,
+  X,
   MapPinned,
   Network,
   Route,
@@ -55,11 +59,69 @@ export default function LeftPanel({
   const [activePanel, setActivePanel] = useState("layers");
   const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
   const hasMauza = !!selectedMauza;
+  const initializedOpacityKeysRef = useRef(new Set());
+
+  const getDefaultOpacityForSelectedLayer = (item) => {
+    const text = `${item?.key || ""} ${item?.label || ""}`.toLowerCase();
+
+    if (text.includes("district") || text.includes("tehsil") || text.includes("mauza")) {
+      return 0;
+    }
+
+    if (text.includes("khasra") || text.includes("murabba")) {
+      return 25;
+    }
+
+    return 100;
+  };
+
 
   const selectedLayerItems = useMemo(
     () => selectedFilterLayers.filter((item) => item?.label && item?.key),
     [selectedFilterLayers],
   );
+  useEffect(() => {
+    setLayers((prev) => {
+      let changed = false;
+      const next = { ...prev };
+
+      const rudaLayerDefaults = {
+        rudaBoundary: 10,
+        proposedRoads: 100,
+      };
+
+      Object.entries(rudaLayerDefaults).forEach(([key, opacity]) => {
+        if (initializedOpacityKeysRef.current.has(key)) return;
+
+        const current = next[key];
+        next[key] = {
+          ...(typeof current === "object"
+            ? current
+            : { visible: !!current }),
+          opacity,
+        };
+        initializedOpacityKeysRef.current.add(key);
+        changed = true;
+      });
+
+      selectedLayerItems.forEach((item) => {
+        if (!item?.key || initializedOpacityKeysRef.current.has(item.key)) return;
+
+        const current = next[item.key];
+        next[item.key] = {
+          ...(typeof current === "object"
+            ? current
+            : { visible: current === undefined ? true : !!current }),
+          opacity: getDefaultOpacityForSelectedLayer(item),
+        };
+        initializedOpacityKeysRef.current.add(item.key);
+        changed = true;
+      });
+
+      return changed ? next : prev;
+    });
+  }, [selectedLayerItems, setLayers]);
+
 
   const updateLayer = (layerKey, patch) => {
     setLayers((prev) => ({
@@ -88,6 +150,23 @@ export default function LeftPanel({
   const toggleLayer = (layerKey) =>
     updateLayer(layerKey, { visible: !getLayerVisible(layerKey) });
 
+  const getRudaPhaseId = (phase) => phase?.gid ?? phase?.id ?? phase?.oid;
+
+  const getAllRudaPhaseIds = () =>
+    (rudaPhases || [])
+      .map((phase) => getRudaPhaseId(phase))
+      .filter((id) => id !== undefined && id !== null);
+
+  const toggleRudaBoundaryLayer = () => {
+    const willOpen = !getLayerVisible("rudaBoundary");
+
+    if (willOpen && (!selectedRudaPhaseIds || selectedRudaPhaseIds.length === 0)) {
+      setSelectedRudaPhaseIds(getAllRudaPhaseIds());
+    }
+
+    toggleLayer("rudaBoundary");
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -98,8 +177,8 @@ export default function LeftPanel({
         const { getRudaList } = await import("../../services/api");
         const list = await getRudaList();
         if (!mounted) return;
-        setRudaPhases(list || []);
         const ids = (list || []).map((p) => p.gid ?? p.id ?? p.oid);
+        setRudaPhases(list || []);
         setSelectedRudaPhaseIds(ids);
       } catch (e) {
         console.error("Failed to load RUDA phases", e);
@@ -147,111 +226,30 @@ export default function LeftPanel({
           {activePanel === "layers" && (
             <Panel title="Layer Manager">
               <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3">
-                <SectionTitle title="RUDA Boundary" open />
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
-                  <LayerRow
-                    icon={<MapPinned size={15} />}
-                    label="RUDA Boundary"
-                    checked={getLayerVisible("rudaBoundary")}
-                    opacity={getLayerOpacity("rudaBoundary")}
-                    onToggle={() => toggleLayer("rudaBoundary")}
-                    onOpacity={(value) =>
-                      updateLayer("rudaBoundary", { opacity: value })
-                    }
-                    rightAction={
-                      <button
-                        type="button"
-                        title="Show RUDA phases"
-                        aria-label="Show RUDA phases"
-                        onClick={() => setRudaDropdownOpen((s) => !s)}
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-100"
-                      >
-                        <ChevronRight
-                          size={15}
-                          className={`transition ${rudaDropdownOpen ? "rotate-90" : ""}`}
-                        />
-                      </button>
-                    }
-                  />
-
-                  {rudaDropdownOpen && (
-                    <div className="mt-2 max-h-44 overflow-y-auto rounded-md border border-slate-200 bg-white p-2 shadow-sm">
-                      <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={
-                            Array.isArray(rudaPhases) &&
-                            rudaPhases.length > 0 &&
-                            selectedRudaPhaseIds?.length === rudaPhases.length
-                          }
-                          onChange={(e) => {
-                            if (e.target.checked)
-                              setSelectedRudaPhaseIds(
-                                rudaPhases.map((p) => p.gid ?? p.id ?? p.oid),
-                              );
-                            else setSelectedRudaPhaseIds([]);
-                          }}
-                          className="accent-green-700"
-                        />
-                        Select All Phases
-                      </label>
-
-                      {(rudaPhases || []).map((phase) => {
-                        const id = phase.gid ?? phase.id ?? phase.oid;
-                        const name =
-                          phase.name ?? phase.folderpath ?? `Phase ${id}`;
-                        const checked = selectedRudaPhaseIds?.includes(id);
-                        return (
-                          <label
-                            key={id}
-                            className="flex items-center gap-2 py-1 text-xs text-slate-700"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={!!checked}
-                              onChange={() => {
-                                if (checked)
-                                  setSelectedRudaPhaseIds((prev) =>
-                                    (prev || []).filter((x) => x !== id),
-                                  );
-                                else
-                                  setSelectedRudaPhaseIds((prev) => [
-                                    ...(prev || []),
-                                    id,
-                                  ]);
-                              }}
-                              className="accent-green-700"
-                            />
-                            <span className="truncate">{name}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                <RudaBoundaryLayers
+                  rudaPhases={rudaPhases}
+                  selectedRudaPhaseIds={selectedRudaPhaseIds}
+                  setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
+                  rudaDropdownOpen={rudaDropdownOpen}
+                  setRudaDropdownOpen={setRudaDropdownOpen}
+                  getLayerVisible={getLayerVisible}
+                  getLayerOpacity={getLayerOpacity}
+                  toggleLayer={toggleLayer}
+                  toggleRudaBoundaryLayer={toggleRudaBoundaryLayer}
+                  updateLayer={updateLayer}
+                />
 
                 {selectedLayerItems.length > 0 && (
-                  <>
-                    <SectionTitle title="Selected Administrative Layers" open />
-                    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
-                      {selectedLayerItems.map((item) => (
-                        <LayerRow
-                          key={item.key}
-                          icon={<Eye size={15} />}
-                          label={item.label}
-                          checked={getLayerVisible(item.key)}
-                          opacity={getLayerOpacity(item.key)}
-                          onToggle={() => toggleLayer(item.key)}
-                          onOpacity={(value) =>
-                            updateLayer(item.key, { opacity: value })
-                          }
-                        />
-                      ))}
-                    </div>
-                  </>
+                  <SelectedAdministrativeLayers
+                    items={selectedLayerItems}
+                    getLayerVisible={getLayerVisible}
+                    getLayerOpacity={getLayerOpacity}
+                    toggleLayer={toggleLayer}
+                    updateLayer={updateLayer}
+                  />
                 )}
 
-                <SectionTitle title="Mauza Based Layers" open />
+                {/* <SectionTitle title="Mauza Based Layers" open />
                 <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
                   <LayerRow
                     icon={<Network size={15} />}
@@ -273,7 +271,7 @@ export default function LeftPanel({
                     onToggle={() => toggleLayer("triJunctionPoints")}
                     showOpacity={false}
                   />
-                </div>
+                </div> */}
 
                 <SectionTitle title="Terrain Analysis Layers" open />
                 <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
@@ -304,7 +302,12 @@ export default function LeftPanel({
                 <ToolboxButton icon={<MapPin size={18} />} label="Connect" />
                 <ToolboxButton icon={<Lock size={18} />} label="Parcel" />
                 <ToolboxButton icon={<Package size={18} />} label="Mauza" />
-                <ToolboxButton icon={<Ruler size={18} />} label="Demarcate" />
+                <ToolboxButton 
+                  icon={<Ruler size={18} />} 
+                  label="Measure" 
+                  active={getLayerVisible("measure")}
+                  onClick={() => toggleLayer("measure")} 
+                />
                 <ToolboxButton icon={<User size={18} />} label="Default" />
                 <ToolboxButton icon={<Grid3X3 size={18} />} label="Grid" />
               </div>
@@ -342,6 +345,298 @@ export default function LeftPanel({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+
+function RudaBoundaryLayers({
+  rudaPhases,
+  selectedRudaPhaseIds,
+  setSelectedRudaPhaseIds,
+  rudaDropdownOpen,
+  setRudaDropdownOpen,
+  getLayerVisible,
+  getLayerOpacity,
+  toggleLayer,
+  toggleRudaBoundaryLayer,
+  updateLayer,
+}) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
+        <h4 className="text-[12px] font-semibold leading-tight text-slate-700">
+          RUDA Boundaries
+        </h4>
+      </div>
+
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <RudaLayerRow
+            label="RUDA Boundary"
+            checked={getLayerVisible("rudaBoundary")}
+            opacity={getLayerOpacity("rudaBoundary")}
+            isOpen={rudaDropdownOpen}
+            onToggle={toggleRudaBoundaryLayer}
+            onOpacity={(value) => updateLayer("rudaBoundary", { opacity: value })}
+            onDropdownToggle={() => setRudaDropdownOpen((s) => !s)}
+          />
+
+          {rudaDropdownOpen && (
+            <div className="border-b border-slate-100 bg-slate-50 px-3 py-2">
+              <div className="max-h-44 overflow-y-auto rounded-lg border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
+                {(rudaPhases || []).length === 0 ? (
+                  <p className="px-1 py-1 text-[11px] font-medium text-slate-500">
+                    No phases found
+                  </p>
+                ) : (
+                  <>
+                    {(() => {
+                      const allIds = (rudaPhases || [])
+                        .map((phase) => phase.gid ?? phase.id ?? phase.oid)
+                        .filter((id) => id !== undefined && id !== null);
+                      const selectedIdSet = new Set(
+                        (selectedRudaPhaseIds || []).map((id) => String(id)),
+                      );
+                      const allChecked =
+                        allIds.length > 0 &&
+                        allIds.every((id) => selectedIdSet.has(String(id)));
+
+                      return (
+                        <div className="mb-1 flex items-center justify-between border-b border-slate-100 pb-1.5">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={allChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedRudaPhaseIds(allIds);
+                                } else {
+                                  setSelectedRudaPhaseIds([]);
+                                }
+                              }}
+                              className="h-3.5 w-3.5 shrink-0 accent-green-700"
+                            />
+                            <span className="text-[12px] font-semibold leading-tight text-slate-700">
+                              Select All
+                            </span>
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => setSelectedRudaPhaseIds([])}
+                            className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-green-700 hover:bg-green-50"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      );
+                    })()}
+
+                    {(rudaPhases || []).map((phase) => {
+                      const id = phase.gid ?? phase.id ?? phase.oid;
+                      const name = phase.name ?? phase.folderpath ?? `Phase ${id}`;
+                      const selectedIdSet = new Set(
+                        (selectedRudaPhaseIds || []).map((value) => String(value)),
+                      );
+                      const checked = selectedIdSet.has(String(id));
+
+                      return (
+                        <label
+                          key={id}
+                          className="flex items-center gap-2 border-b border-slate-50 py-1.5 last:border-b-0"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!checked}
+                            onChange={() => {
+                              if (checked) {
+                                setSelectedRudaPhaseIds((prev) =>
+                                  (prev || []).filter((x) => String(x) !== String(id)),
+                                );
+                              } else {
+                                setSelectedRudaPhaseIds((prev) => [
+                                  ...(prev || []),
+                                  id,
+                                ]);
+                              }
+                            }}
+                            className="h-3.5 w-3.5 shrink-0 accent-green-700"
+                          />
+                          <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-slate-700">
+                            {name}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          <AdminLayerRow
+            label="Proposed Roads"
+            checked={getLayerVisible("proposedRoads")}
+            opacity={getLayerOpacity("proposedRoads")}
+            isLast
+            onToggle={() => toggleLayer("proposedRoads")}
+            onOpacity={(value) => updateLayer("proposedRoads", { opacity: value })}
+          />
+      </div>
+    </div>
+  );
+}
+
+function RudaLayerRow({
+  label,
+  checked,
+  opacity,
+  isOpen,
+  onToggle,
+  onOpacity,
+  onDropdownToggle,
+}) {
+  return (
+    <div className="border-b border-slate-100 bg-white px-2.5 py-2">
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={!!checked}
+          onChange={onToggle}
+          className="h-4 w-4 shrink-0 accent-green-700"
+        />
+
+        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-slate-700">
+          {label}
+        </span>
+
+        <div className="flex shrink-0 items-center gap-1.5 text-slate-800">
+          <button
+            type="button"
+            title="Show RUDA phases"
+            aria-label="Show RUDA phases"
+            onClick={onDropdownToggle}
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
+          >
+            <ChevronDown
+              size={16}
+              fill="currentColor"
+              strokeWidth={2.6}
+              className={`transition ${isOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-0.5 flex items-center gap-2 pl-6">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={opacity}
+          onChange={(e) => onOpacity(Number(e.target.value))}
+          className="h-1.5 min-w-0 flex-1 accent-green-700"
+        />
+        <span className="w-9 shrink-0 text-right text-[11px] font-medium text-slate-600">
+          {opacity}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SelectedAdministrativeLayers({
+  items,
+  getLayerVisible,
+  getLayerOpacity,
+  toggleLayer,
+  updateLayer,
+}) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
+        <h4 className="text-[12px] font-semibold leading-tight text-slate-700">
+          Selected Administrative Layers
+        </h4>
+      </div>
+
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          {items.map((item, index) => (
+            <AdminLayerRow
+              key={item.key}
+              label={item.label}
+              checked={getLayerVisible(item.key)}
+              opacity={getLayerOpacity(item.key)}
+              isLast={index === items.length - 1}
+              onToggle={() => toggleLayer(item.key)}
+              onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+            />
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function AdminLayerRow({ label, checked, opacity, isLast, onToggle, onOpacity }) {
+  return (
+    <div
+      className={`bg-white px-2.5 py-2 ${
+        isLast ? "" : "border-b border-slate-100"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={!!checked}
+          onChange={onToggle}
+          className="h-4 w-4 shrink-0 accent-green-700"
+        />
+
+        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-slate-700">
+          {label}
+        </span>
+
+        <div className="flex shrink-0 items-center gap-1.5 text-slate-800">
+          <button
+            type="button"
+            title="Layer info"
+            aria-label="Layer info"
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
+          >
+            <Info size={14} fill="currentColor" strokeWidth={2.2} />
+          </button>
+          <button
+            type="button"
+            title="Zoom/Search layer"
+            aria-label="Zoom/Search layer"
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
+          >
+            <Search size={15} strokeWidth={2.6} />
+          </button>
+          <button
+            type="button"
+            title="Layer options"
+            aria-label="Layer options"
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
+          >
+            <ChevronDown size={16} fill="currentColor" strokeWidth={2.6} />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-0.5 flex items-center gap-2 pl-6">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={opacity}
+          onChange={(e) => onOpacity(Number(e.target.value))}
+          className="h-1.5 min-w-0 flex-1 accent-green-700"
+        />
+        <span className="w-9 shrink-0 text-right text-[11px] font-medium text-slate-600">
+          {opacity}%
+        </span>
+      </div>
     </div>
   );
 }
@@ -432,7 +727,7 @@ function LayerRow({
           value={opacity}
           disabled={disabled}
           onChange={(e) => onOpacity(Number(e.target.value))}
-          className="mt-2 h-1.5 w-full accent-green-700"
+          className="mt-0.5 h-1.5 w-full accent-green-700"
         />
       )}
       {disabled && disabledText && (
@@ -442,10 +737,18 @@ function LayerRow({
   );
 }
 
-function ToolboxButton({ icon, label }) {
+function ToolboxButton({ icon, label, active, onClick }) {
   return (
-    <button className="flex flex-col items-center justify-center gap-1 rounded-md border border-slate-200 bg-white p-2 text-slate-800 transition hover:border-green-700 hover:bg-green-50">
-      <span className="text-green-700">{icon}</span>
+    <button 
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition ${
+        active 
+          ? "border-green-700 bg-green-50 text-green-800" 
+          : "border-slate-200 bg-white text-slate-800 hover:border-green-700 hover:bg-green-50"
+      }`}
+    >
+      <span className={active ? "text-green-800" : "text-green-700"}>{icon}</span>
       <span className="text-center text-[10px] font-medium leading-tight">
         {label}
       </span>
