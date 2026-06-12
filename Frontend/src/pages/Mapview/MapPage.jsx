@@ -45,12 +45,12 @@ export default function MapPage() {
   const [parcelPanelOpen, setParcelPanelOpen] = useState(false);
 
   const [layers, setLayers] = useState({
-    rudaBoundary: { visible: false, opacity: 50 },
-    districtBoundary: { visible: true, opacity: 100 },
-    tehsilBoundary: { visible: true, opacity: 100 },
-    mauzaBoundary: { visible: true, opacity: 100 },
-    khasraLayer: { visible: true, opacity: 100 },
-    murabbaLayer: { visible: true, opacity: 100 },
+    rudaBoundary: { visible: false, opacity: 10 },
+    districtBoundary: { visible: true, opacity: 0 },
+    tehsilBoundary: { visible: true, opacity: 0 },
+    mauzaBoundary: { visible: true, opacity: 0 },
+    khasraLayer: { visible: true, opacity: 25 },
+    murabbaLayer: { visible: true, opacity: 25 },
     controlPoints: { visible: false, opacity: 100 },
     triJunctionPoints: { visible: false, opacity: 100 },
   });
