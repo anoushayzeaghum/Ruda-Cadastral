@@ -195,7 +195,7 @@ export default function LeftPanel({
                     disabled={!hasMouza}
                     disabledText="Select mouza first"
                     onToggle={() => toggleLayer("controlPoints")}
-                    onOpacity={(value) => updateLayer("controlPoints", { opacity: value })}
+                    showOpacity={false}
                   />
                   <LayerRow
                     icon={<Route size={15} />}
@@ -205,7 +205,7 @@ export default function LeftPanel({
                     disabled={!hasMouza}
                     disabledText="Select mouza first"
                     onToggle={() => toggleLayer("triJunctionPoints")}
-                    onOpacity={(value) => updateLayer("triJunctionPoints", { opacity: value })}
+                    showOpacity={false}
                   />
                 </div>
               </div>
@@ -293,7 +293,18 @@ function SectionTitle({ title, open }) {
   );
 }
 
-function LayerRow({ icon, label, checked, opacity, onToggle, onOpacity, disabled = false, disabledText = "", rightAction = null }) {
+function LayerRow({
+  icon,
+  label,
+  checked,
+  opacity,
+  onToggle,
+  onOpacity,
+  disabled = false,
+  disabledText = "",
+  rightAction = null,
+  showOpacity = true,
+}) {
   return (
     <div className={`rounded-md border border-slate-200 bg-white p-2 ${disabled ? "opacity-55" : ""}`}>
       <div className="flex items-center justify-between gap-2">
@@ -309,20 +320,22 @@ function LayerRow({ icon, label, checked, opacity, onToggle, onOpacity, disabled
           <span className="truncate">{label}</span>
         </label>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="text-xs font-semibold text-slate-600">{opacity}%</span>
+          {showOpacity && <span className="text-xs font-semibold text-slate-600">{opacity}%</span>}
           {rightAction}
         </div>
       </div>
 
-      <input
-        type="range"
-        min="0"
-        max="100"
-        value={opacity}
-        disabled={disabled}
-        onChange={(e) => onOpacity(Number(e.target.value))}
-        className="mt-2 h-1.5 w-full accent-green-700"
-      />
+      {showOpacity && (
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={opacity}
+          disabled={disabled}
+          onChange={(e) => onOpacity(Number(e.target.value))}
+          className="mt-2 h-1.5 w-full accent-green-700"
+        />
+      )}
       {disabled && disabledText && <p className="mt-1 text-[10px] text-slate-500">{disabledText}</p>}
     </div>
   );
