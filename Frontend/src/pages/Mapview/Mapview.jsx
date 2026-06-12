@@ -148,6 +148,8 @@ class BasemapControl {
 
 const getKhasraNumber = (props = {}) => {
   return (
+    props.kh ??
+    props.KH ??
     props.k ??
     props.K ??
     props.khasra ??
