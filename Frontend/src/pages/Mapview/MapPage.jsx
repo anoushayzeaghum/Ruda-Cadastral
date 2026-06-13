@@ -56,6 +56,7 @@ export default function MapPage() {
     murabbaLayer: { visible: true, opacity: 25 },
     controlPoints: { visible: false, opacity: 100 },
     triJunctionPoints: { visible: false, opacity: 100 },
+    proposedRoads: { visible: false, opacity: 100 },
   });
 
   const [rudaPhases, setRudaPhases] = useState([]);

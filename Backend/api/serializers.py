@@ -326,6 +326,30 @@ class ContourSerializer(GeoFeatureModelSerializer):
         )
 
 # --------------------------------------------------------
+# Ruda Proposed Roads Serializer
+# --------------------------------------------------------
+class RudaProposedRoadsSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = RudaProposedRoads
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "kml_id",
+            "name",
+            "kml_desc",
+            "fid",
+            "entity",
+            "layer",
+            "color",
+            "linetype",
+            "elevation",
+            "linewt",
+            "refname",
+            "geom",
+        )
+# --------------------------------------------------------
 # Ruda Boundary Serializer
 # --------------------------------------------------------
 
