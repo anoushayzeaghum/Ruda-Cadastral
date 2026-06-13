@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Map,
@@ -33,6 +33,11 @@ import {
 
 /* ─── data ──────────────────────────────────────────────────────────────── */
 
+const HERO_SLIDES = [
+  "/s1.png", "/s2.png", "/s3.png", "/s4.png",
+  "/s5.png", "/s6.png", "/s7.png",
+];
+
 const NAV_LINKS = [
   { href: "#home",     label: "Home" },
   { href: "#about",    label: "About" },
@@ -51,53 +56,47 @@ const STATS = [
 
 const GIS_APPS = [
   {
-    icon: <Layers size={28} />,
+    icon: <Layers size={22} />,
     title: "Cadastral Web Map",
     desc: "Explore parcel boundaries, Khasra layers, mauza limits, administrative boundaries and contextual GIS layers in one interactive map.",
+    img: "/s1.png",
     route: "/Mapview/MapPage",
     color: "from-emerald-500 to-green-700",
   },
   {
-    icon: <Search size={28} />,
+    icon: <Search size={22} />,
     title: "Parcel Search & Verification",
     desc: "Search parcels using cadastral identifiers, location references, mauza information, survey status and verification attributes.",
+    img: "/s2.png",
     color: "from-teal-500 to-cyan-700",
   },
   {
-    icon: <ClipboardList size={28} />,
+    icon: <ClipboardList size={22} />,
     title: "Field Survey Dashboard",
     desc: "Monitor field teams, survey progress, GPS observations, verification remarks, evidence attachments and pending cadastral checks.",
+    img: "/s3.png",
     color: "from-blue-500 to-indigo-700",
   },
   {
-    icon: <FileText size={28} />,
+    icon: <FileText size={22} />,
     title: "Land Record & Ownership",
     desc: "Review land status, ownership references, parcel attributes, acquisition categories and record-linked spatial summaries.",
+    img: "/s4.png",
     color: "from-violet-500 to-purple-700",
   },
   {
-    icon: <Eye size={28} />,
+    icon: <Eye size={22} />,
     title: "Change Detection & Monitoring",
     desc: "Compare imagery, survey layers and field observations to support encroachment monitoring, land-use review and progress tracking.",
+    img: "/s5.png",
     color: "from-amber-500 to-orange-600",
   },
   {
-    icon: <Smartphone size={28} />,
+    icon: <Smartphone size={22} />,
     title: "Mobile Field Data / ODK",
     desc: "Collect standardized field data with GPS locations, parcel photos, verification notes and structured cadastral survey forms.",
+    img: "/s6.png",
     color: "from-rose-500 to-red-700",
-  },
-  {
-    icon: <Globe size={28} />,
-    title: "RUDA GeoNode Catalog",
-    desc: "Organize, discover and share cadastral datasets, GIS layers, maps and project documentation across the organization.",
-    color: "from-sky-500 to-blue-700",
-  },
-  {
-    icon: <Server size={28} />,
-    title: "RUDA GeoServer Services",
-    desc: "Publish and manage cadastral map services, WMS/WFS layers, spatial datasets and secure GIS services for the project.",
-    color: "from-green-500 to-emerald-700",
   },
 ];
 
@@ -165,6 +164,90 @@ function Avatar({ name, size = "md" }) {
   );
 }
 
+/* ─── scroll-reveal hook ─────────────────────────────────────────────────── */
+
+function useInView(options = {}) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setVisible(true);
+        obs.unobserve(el);
+      }
+    }, { threshold: 0.15, ...options });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return [ref, visible];
+}
+
+/* ─── GIS app card ───────────────────────────────────────────────────────── */
+
+function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
+  const [ref, visible] = useInView();
+
+  return (
+    <article
+      ref={ref}
+      onClick={onClick}
+      className={`group relative bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100
+        transition-all duration-500 ease-out
+        ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}
+        hover:-translate-y-2 hover:shadow-2xl
+        ${route ? "cursor-pointer" : "cursor-default"}`}
+      style={{ transitionDelay: `${(index % 4) * 80}ms` }}
+    >
+      {/* Image header */}
+      <div className="relative h-56 overflow-hidden">
+        <img
+          src={img}
+          alt={title}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        />
+        {/* gradient overlay */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-70 group-hover:opacity-60 transition-opacity duration-300`} />
+
+        {/* icon badge */}
+        <div className="absolute top-4 left-4 w-10 h-10 rounded-xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-white">
+          {icon}
+        </div>
+
+        {/* open badge for linked cards */}
+        {route && (
+          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="flex items-center gap-1 bg-white/90 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full">
+              Open <ExternalLink size={10} />
+            </div>
+          </div>
+        )}
+
+        {/* title on image */}
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-6 bg-gradient-to-t from-black/70 to-transparent">
+          <h3 className="text-white font-black text-base leading-snug">{title}</h3>
+        </div>
+      </div>
+
+      {/* body */}
+      <div className="p-5">
+        <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+        {route && (
+          <div className="mt-4 flex items-center gap-1 text-emerald-700 font-bold text-sm group-hover:gap-2 transition-all">
+            Open App <ArrowRight size={13} />
+          </div>
+        )}
+      </div>
+
+      {/* bottom accent bar */}
+      <div className={`h-0.5 w-0 group-hover:w-full bg-gradient-to-r ${color} transition-all duration-500`} />
+    </article>
+  );
+}
+
 /* ─── component ──────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
@@ -173,6 +256,7 @@ export default function LandingPage() {
   const [scrolled, setScrolled]       = useState(false);
   const [showTop,  setShowTop]        = useState(false);
   const [activeSection, setActive]    = useState("home");
+  const [slideIndex, setSlideIndex]   = useState(0);
 
   useEffect(() => {
     const onScroll = () => {
@@ -190,6 +274,14 @@ export default function LandingPage() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Auto-advance hero slideshow every 5 s
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSlideIndex((i) => (i + 1) % HERO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(timer);
   }, []);
 
   return (
@@ -274,20 +366,52 @@ export default function LandingPage() {
       <section
         id="home"
         className="relative min-h-[92vh] flex items-center justify-center overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(to bottom, rgba(0,40,20,0.72) 0%, rgba(0,30,15,0.88) 100%), url('/ruda_bg.png')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
       >
-        {/* decorative rings */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full border border-white/10" />
-          <div className="absolute -top-16 -right-16 w-[400px] h-[400px] rounded-full border border-white/10" />
-          <div className="absolute -bottom-48 -left-48 w-[700px] h-[700px] rounded-full border border-white/5" />
+        {/* ── Slideshow layers ── */}
+        {HERO_SLIDES.map((src, i) => (
+          <div
+            key={src}
+            className="absolute inset-0 transition-opacity duration-[1800ms] ease-in-out"
+            style={{
+              opacity: i === slideIndex ? 1 : 0,
+              backgroundImage: `url('${src}')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              // subtle Ken Burns per slide
+              animation: i === slideIndex ? "kenBurns 10s ease-in-out forwards" : "none",
+            }}
+          />
+        ))}
+
+        {/* Ken Burns keyframes injected once */}
+        <style>{`
+          @keyframes kenBurns {
+            0%   { transform: scale(1)    translateX(0px)  translateY(0px);  }
+            100% { transform: scale(1.08) translateX(-12px) translateY(-6px); }
+          }
+        `}</style>
+
+        {/* dark overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/55 to-black/80 z-10" />
+
+        {/* slide indicators */}
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex gap-2">
+          {HERO_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setSlideIndex(i)}
+              aria-label={`Slide ${i + 1}`}
+              className={`rounded-full transition-all duration-300 ${
+                i === slideIndex
+                  ? "w-6 h-2 bg-amber-400"
+                  : "w-2 h-2 bg-white/40 hover:bg-white/70"
+              }`}
+            />
+          ))}
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto px-5 text-center text-white py-24">
+        {/* content */}
+        <div className="relative z-20 max-w-5xl mx-auto px-5 text-center text-white py-24">
           {/* badge */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 text-white/90 text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-8">
             <Star size={12} fill="currentColor" className="text-amber-400" />
@@ -307,7 +431,9 @@ export default function LandingPage() {
 
           <div className="flex flex-wrap gap-4 justify-center">
             <button
-              onClick={() => navigate("/Mapview/MapPage")}
+              onClick={() => {
+                document.querySelector("#apps")?.scrollIntoView({ behavior: "smooth" });
+              }}
               className="flex items-center gap-3 bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-base px-8 py-4 rounded-full transition-all hover:shadow-2xl hover:-translate-y-1"
             >
               <Map size={20} /> Explore GIS Platforms
@@ -322,8 +448,8 @@ export default function LandingPage() {
         </div>
 
         {/* Stats bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white/10 backdrop-blur border-t border-white/15">
-          <div className="max-w-4xl mx-auto px-5 py-6 grid grid-cols-2 sm:grid-cols-4 gap-4 text-white text-center">
+        <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm border-t border-white/10 z-20">
+          <div className="max-w-4xl mx-auto px-5 py-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-white text-center">
             {STATS.map(({ value, label }) => (
               <div key={label}>
                 <div className="text-2xl sm:text-3xl font-black text-amber-400">{value}</div>
@@ -431,32 +557,19 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {GIS_APPS.map(({ icon, title, desc, route, color }) => (
-              <article
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {GIS_APPS.map(({ icon, title, desc, img, route, color }, i) => (
+              <AppCard
                 key={title}
+                index={i}
+                icon={icon}
+                title={title}
+                desc={desc}
+                img={img}
+                route={route}
+                color={color}
                 onClick={() => route && navigate(route)}
-                className={`group bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${route ? "cursor-pointer" : "cursor-default"}`}
-              >
-                {/* color bar */}
-                <div className={`h-1.5 w-full bg-gradient-to-r ${color}`} />
-
-                <div className="p-6">
-                  {/* icon */}
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white mb-4 transition-transform group-hover:scale-110`}>
-                    {icon}
-                  </div>
-
-                  <h3 className="font-black text-slate-900 text-base mb-2 leading-snug">{title}</h3>
-                  <p className="text-slate-500 text-xs leading-relaxed">{desc}</p>
-
-                  {route && (
-                    <div className="mt-4 flex items-center gap-1 text-emerald-700 font-bold text-xs group-hover:gap-2 transition-all">
-                      Open App <ExternalLink size={12} />
-                    </div>
-                  )}
-                </div>
-              </article>
+              />
             ))}
           </div>
         </div>
@@ -503,7 +616,7 @@ export default function LandingPage() {
       ══════════════════════════════════════════════════ */}
       <section className="relative py-24 overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(0,45,25,0.92) 40%, rgba(0,45,25,0.75) 100%), url('/ruda_bg.png')`,
+          backgroundImage: `linear-gradient(to right, rgba(0,45,25,0.92) 40%, rgba(0,45,25,0.75) 100%), url('/s3.png')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
