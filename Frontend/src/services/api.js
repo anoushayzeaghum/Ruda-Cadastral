@@ -257,9 +257,33 @@ export const getRudaProposedRoadsList = async () => {
   return normalizeData(res);
 };
 
-export const getRudaProposedRoadsGeoJSON = async (gid) => {
-  const res = await API.get(`/ruda-proposed-roads/${gid}/geojson`);
-  return normalizeGeoJson(res);
+export const getRudaProposedRoadsGeoJSON = async (gid = null) => {
+  // The router exposes the proposed roads GeoJSON on the list endpoint.
+  // There is no /ruda-proposed-roads/:gid/geojson route, so using that URL
+  // causes 404 and the road layer never draws.
+  const res = await API.get(`/ruda-proposed-roads/`);
+  const geojson = normalizeGeoJson(res);
+
+  if (gid === null || gid === undefined || gid === "") {
+    return geojson;
+  }
+
+  const selectedId = String(gid);
+
+  return {
+    type: "FeatureCollection",
+    features: (geojson.features || []).filter((feature) => {
+      const props = feature?.properties || {};
+      const featureId =
+        props.gid ??
+        feature?.id ??
+        props.id ??
+        props.oid ??
+        props.fid;
+
+      return String(featureId) === selectedId;
+    }),
+  };
 };
 
 ///////////////////////////////////////////////////////
