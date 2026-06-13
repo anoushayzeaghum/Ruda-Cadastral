@@ -2639,10 +2639,10 @@ export default function MapView({
         style={{ pointerEvents: "auto" }}
       />
 
-      <MapControls
+      {/* <MapControls
         map={isMapReady ? mapInstance.current : null}
         fullscreenTargetRef={mapWrapperRef}
-      />
+      /> */}
 
       {error && (
         <div className="absolute top-5 left-5 bg-red-500 text-white px-4 py-2 rounded shadow">

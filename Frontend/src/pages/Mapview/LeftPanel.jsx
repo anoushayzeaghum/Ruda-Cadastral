@@ -362,33 +362,7 @@ export default function LeftPanel({
                   />
                 </div> */}
 
-                <SectionTitle title="Imagery & Terrain Layers" open />
-                <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
-                  <LayerRow
-                    icon={<Map size={15} />}
-                    label="Orthophoto Imagery"
-                    checked={getLayerVisible("ortho")}
-                    opacity={getLayerOpacity("ortho")}
-                    onToggle={() => toggleLayer("ortho")}
-                    onOpacity={(value) => updateLayer("ortho", { opacity: value })}
-                  />
-                  <LayerRow
-                    icon={<Map size={15} />}
-                    label="Digital Surface Model (DSM)"
-                    checked={getLayerVisible("dsm")}
-                    opacity={getLayerOpacity("dsm")}
-                    onToggle={() => toggleLayer("dsm")}
-                    onOpacity={(value) => updateLayer("dsm", { opacity: value })}
-                  />
-                  <LayerRow
-                    icon={<Map size={15} />}
-                    label="Digital Terrain Model (DTM)"
-                    checked={getLayerVisible("dtm")}
-                    opacity={getLayerOpacity("dtm")}
-                    onToggle={() => toggleLayer("dtm")}
-                    onOpacity={(value) => updateLayer("dtm", { opacity: value })}
-                  />
-                </div>
+               
               </div>
             </Panel>
           )}
@@ -699,12 +673,8 @@ function RudaProposedRoadsLayers({
   getAllProposedRoadIds,
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
-        <h4 className="text-[12px] font-semibold text-slate-700">
-          RUDA Proposed Roads
-        </h4>
-      </div>
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <RudaLayerRow
