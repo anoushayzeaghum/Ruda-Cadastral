@@ -60,6 +60,12 @@ router.register(r"contour/create", CreateContourView, basename="create-contour")
 router.register(r"contour/update", UpdateContourView, basename="update-contour")
 router.register(r"contour/delete", DeleteContourView, basename="delete-contour")
 
+#------------------------------ Ruda Proposed Roads View ------------------------------
+router.register(r"ruda-proposed-roads", ListRudaProposedRoadsView, basename="ruda-proposed-roads")
+router.register(r"ruda-proposed-roads/create", CreateRudaProposedRoadsView, basename="create-ruda-proposed-roads")
+router.register(r"ruda-proposed-roads/update", UpdateRudaProposedRoadsView, basename="update-ruda-proposed-roads")
+router.register(r"ruda-proposed-roads/delete", DeleteRudaProposedRoadsView, basename="delete-ruda-proposed-roads")
+
 #------------------------------ Ruda Boundary View ------------------------------
 router.register(r"ruda", ListRudaBoundaryView, basename="ruda")
 router.register(r"ruda/create", CreateRudaBoundaryView, basename="create-ruda")

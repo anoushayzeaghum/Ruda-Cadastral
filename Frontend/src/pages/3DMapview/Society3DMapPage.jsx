@@ -11,9 +11,9 @@ import { getFeatureId } from "./cesiumHelpers";
 
 const initialLayers = {
   societyBoundary: { visible: false, opacity: 25 },
-  masterPlan: { visible: false, opacity: 70 },
-  plots3d: { visible: false, opacity: 85 },
-  buildings3d: { visible: false, opacity: 85 },
+  masterPlan: { visible: false, opacity: 25 },
+  plots3d: { visible: false, opacity: 88 },
+  buildings3d: { visible: false, opacity: 90 },
   roads: { visible: false, opacity: 100 },
   greenSpaces: { visible: false, opacity: 75 },
   spotLevel: { visible: false, opacity: 100 },
@@ -35,7 +35,7 @@ export default function Society3DMapPage() {
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
 
   const [extrusion, setExtrusion] = useState({
-    heightFeet: 35,
+    heightFeet: 100,
     color: "#22d3ee",
     extrudeFrom: "base",
   });
@@ -97,7 +97,8 @@ export default function Society3DMapPage() {
     setLayers((prev) => ({
       ...prev,
       societyBoundary: { ...prev.societyBoundary, visible: Boolean(selectedSociety) },
-      masterPlan: { ...prev.masterPlan, visible: Boolean(selectedSociety) },
+      // Keep the flat purple master plan off by default so it does not cover the colored 3D visualization.
+      masterPlan: { ...prev.masterPlan, visible: false },
       plots3d: { ...prev.plots3d, visible: Boolean(selectedSociety) },
       buildings3d: { ...prev.buildings3d, visible: false },
       roads: { ...prev.roads, visible: false },

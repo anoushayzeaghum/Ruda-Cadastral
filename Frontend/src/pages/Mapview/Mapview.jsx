@@ -262,6 +262,7 @@ export default function MapView({
   layers = {},
   selectedFilterLayers = [],
   selectedRudaPhaseIds = [],
+  selectedProposedRoadIds = [],
   basemap = "Streets",
   selectedFeatureNumber,
   onFeaturesLoaded,
@@ -287,6 +288,16 @@ export default function MapView({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const clearProposedRoads = () => {
+    try {
+      Object.keys(currentGeojson.current || {})
+        .filter((key) => key.startsWith("proposed-road-"))
+        .forEach((level) => {
+          clearBoundaryLevel(level);
+          delete currentGeojson.current[level];
+        });
+    } catch (e) {}
+  };
   const closeActivePopup = () => {
     if (popupTimeoutRef.current) {
       clearTimeout(popupTimeoutRef.current);
@@ -392,6 +403,59 @@ export default function MapView({
     }
   }, []);
 
+  useEffect(() => {
+  if (!isMapReady) return;
+
+  const loadProposedRoads = async () => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    // ❌ if layer OFF → clear everything
+    if (!getLayerVisible(layers, "proposedRoads", false)) {
+      clearProposedRoads();
+      return;
+    }
+
+    clearProposedRoads();
+
+    if (!selectedProposedRoadIds?.length) return;
+
+    try {
+      setIsLoading(true);
+
+      const results = await Promise.all(
+        selectedProposedRoadIds.map((gid) =>
+          getRudaProposedRoadsGeoJSON(gid)
+            .then((geojson) => ({ gid, geojson }))
+            .catch((e) => {
+              console.error("Proposed road geojson error", e);
+              return null;
+            })
+        )
+      );
+
+      results.filter(Boolean).forEach((item) => {
+        drawBoundaryLevel(
+          `proposed-road-${item.gid}`,
+          item.geojson,
+          getLayerOpacity(layers, "proposedRoads", 100)
+        );
+
+        currentGeojson.current[`proposed-road-${item.gid}`] =
+          item.geojson;
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  loadProposedRoads();
+}, [
+  isMapReady,
+  layers?.proposedRoads,
+  selectedProposedRoadIds,
+]);
+
   const zoomToGeoJSON = (geojson, options = {}) => {
     const map = mapInstance.current;
     if (!map || !geojson?.features?.length) return;
@@ -476,8 +540,21 @@ export default function MapView({
         type: "fill",
         source: ids.source,
         paint: {
-          "fill-color": level.startsWith("ruda") ? "#3d7cc4" : "#0b6a2e",
+          "fill-color":
+            level.startsWith("ruda")
+              ? "#3d7cc4"
+              : level.startsWith("proposed-road")
+                ? "#ef4444"
+                : "#0b6a2e",
+
           "fill-opacity": opacity,
+
+          "fill-outline-color":
+            level.startsWith("ruda")
+              ? "#14532d"
+              : level.startsWith("proposed-road")
+                ? "#7f1d1d"
+                : "#194c8e",
         },
       });
 

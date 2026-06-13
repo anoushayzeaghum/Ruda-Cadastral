@@ -59,6 +59,10 @@ export default function LeftPanel({
   const hasMauza = !!selectedMauza;
   const initializedOpacityKeysRef = useRef(new Set());
 
+  const [rudaProposedRoads, setRudaProposedRoads] = useState([]);
+  const [selectedProposedRoadIds, setSelectedProposedRoadIds] = useState([]);
+  const [proposedDropdownOpen, setProposedDropdownOpen] = useState(false);
+
   const getDefaultOpacityForSelectedLayer = (item) => {
     const text = `${item?.key || ""} ${item?.label || ""}`.toLowerCase();
 
@@ -189,6 +193,50 @@ export default function LeftPanel({
     };
   }, [rudaPhases, setRudaPhases, setSelectedRudaPhaseIds]);
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProposedRoads = async () => {
+      if (rudaProposedRoads?.length) return;
+
+      try {
+        const { getRudaProposedRoadsList } = await import("../../services/api");
+        const list = await getRudaProposedRoadsList();
+
+        if (!mounted) return;
+
+        const ids = (list || []).map(
+          (r) => r.gid ?? r.id ?? r.oid
+        );
+
+        setRudaProposedRoads(list || []);
+        setSelectedProposedRoadIds(ids); // select all by default
+      } catch (e) {
+        console.error("Failed to load proposed roads", e);
+      }
+    };
+
+    loadProposedRoads();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const getAllProposedRoadIds = () =>
+    (rudaProposedRoads || [])
+      .map((r) => r.gid ?? r.id ?? r.oid)
+      .filter(Boolean);
+
+  const toggleProposedRoadLayer = () => {
+    const willOpen = !getLayerVisible("proposedRoads");
+
+    if (willOpen && selectedProposedRoadIds.length === 0) {
+      setSelectedProposedRoadIds(getAllProposedRoadIds());
+    }
+
+    toggleLayer("proposedRoads");
+  };
   return (
     <div className="pointer-events-none absolute left-3 top-24 z-30 flex items-start gap-2">
       {/* Separate icon buttons. No combined background wrapper. */}
@@ -235,6 +283,19 @@ export default function LeftPanel({
                   toggleLayer={toggleLayer}
                   toggleRudaBoundaryLayer={toggleRudaBoundaryLayer}
                   updateLayer={updateLayer}
+                />
+                <RudaProposedRoadsLayers
+                  rudaProposedRoads={rudaProposedRoads}
+                  selectedProposedRoadIds={selectedProposedRoadIds}
+                  setSelectedProposedRoadIds={setSelectedProposedRoadIds}
+                  proposedDropdownOpen={proposedDropdownOpen}
+                  setProposedDropdownOpen={setProposedDropdownOpen}
+                  getLayerVisible={getLayerVisible}
+                  getLayerOpacity={getLayerOpacity}
+                  toggleLayer={toggleLayer}
+                  toggleProposedRoadLayer={toggleProposedRoadLayer}
+                  updateLayer={updateLayer}
+                  getAllProposedRoadIds={getAllProposedRoadIds}
                 />
 
                 {selectedLayerItems.length > 0 && (
@@ -577,19 +638,142 @@ function RudaBoundaryLayers({
             </div>
           )}
 
-          <AdminLayerRow
+          {/* <AdminLayerRow
             label="Proposed Roads"
             checked={getLayerVisible("proposedRoads")}
             opacity={getLayerOpacity("proposedRoads")}
             isLast
             onToggle={() => toggleLayer("proposedRoads")}
             onOpacity={(value) => updateLayer("proposedRoads", { opacity: value })}
-          />
+          /> */}
       </div>
     </div>
   );
 }
 
+function RudaProposedRoadsLayers({
+  rudaProposedRoads,
+  selectedProposedRoadIds,
+  setSelectedProposedRoadIds,
+  proposedDropdownOpen,
+  setProposedDropdownOpen,
+  getLayerVisible,
+  getLayerOpacity,
+  toggleLayer,
+  toggleProposedRoadLayer,
+  updateLayer,
+  getAllProposedRoadIds,
+}) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
+        <h4 className="text-[12px] font-semibold text-slate-700">
+          RUDA Proposed Roads
+        </h4>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <RudaLayerRow
+          label="Proposed Roads"
+          checked={getLayerVisible("proposedRoads")}
+          opacity={getLayerOpacity("proposedRoads")}
+          isOpen={proposedDropdownOpen}
+          onToggle={toggleProposedRoadLayer}
+          onOpacity={(value) =>
+            updateLayer("proposedRoads", { opacity: value })
+          }
+          onDropdownToggle={() =>
+            setProposedDropdownOpen((s) => !s)
+          }
+        />
+
+        {proposedDropdownOpen && (
+          <div className="border-b border-slate-100 bg-slate-50 px-3 py-2">
+            <div className="max-h-44 overflow-y-auto rounded-lg border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
+
+              {(rudaProposedRoads || []).length === 0 ? (
+                <p className="px-1 py-1 text-[11px] text-slate-500">
+                  No proposed roads found
+                </p>
+              ) : (
+                <>
+                  {/* Select All */}
+                  <div className="mb-1 flex items-center justify-between border-b border-slate-100 pb-1.5">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedProposedRoadIds.length ===
+                          rudaProposedRoads.length
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedProposedRoadIds(
+                              getAllProposedRoadIds()
+                            );
+                          } else {
+                            setSelectedProposedRoadIds([]);
+                          }
+                        }}
+                        className="h-3.5 w-3.5 accent-green-700"
+                      />
+                      <span className="text-[12px] font-semibold">
+                        Select All
+                      </span>
+                    </label>
+
+                    <button
+                      onClick={() => setSelectedProposedRoadIds([])}
+                      className="text-[11px] text-green-700"
+                    >
+                      Reset
+                    </button>
+                  </div>
+
+                  {/* List */}
+                  {(rudaProposedRoads || []).map((road) => {
+                    const id = road.gid ?? road.id ?? road.oid;
+                    const name = road.name ?? `Road ${id}`;
+
+                    const checked = selectedProposedRoadIds.includes(id);
+
+                    return (
+                      <label
+                        key={id}
+                        className="flex items-center gap-2 py-1.5"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            if (checked) {
+                              setSelectedProposedRoadIds((prev) =>
+                                prev.filter((x) => x !== id)
+                              );
+                            } else {
+                              setSelectedProposedRoadIds((prev) => [
+                                ...prev,
+                                id,
+                              ]);
+                            }
+                          }}
+                          className="h-3.5 w-3.5 accent-green-700"
+                        />
+                        <span className="truncate text-[12px]">
+                          {name}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 function RudaLayerRow({
   label,
   checked,
