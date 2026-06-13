@@ -12,12 +12,9 @@ import {
 const VECTOR_LAYERS = [
   { key: "societyBoundary", label: "Society Boundary", icon: Building2 },
   { key: "masterPlan", label: "Master Plan", icon: Map },
-  { key: "plots3d", label: "3D Plots / Parcels", icon: Building2 },
   { key: "buildings3d", label: "3D Buildings", icon: Building2 },
-  { key: "roads", label: "Roads", icon: Route },
-  { key: "greenSpaces", label: "Green Spaces", icon: Trees },
   { key: "spotLevel", label: "Spot Level", icon: Waypoints },
-  { key: "contours", label: "Contours", icon: Mountain },
+  // { key: "contours", label: "Contours", icon: Mountain },
 ];
 
 export default function Society3DLayerPanel({
