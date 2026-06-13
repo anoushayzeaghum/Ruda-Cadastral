@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { importMauza, importDistrict } from "../services/api";
+import { importMauza, importDistrict, importTehsil, } from "../services/api";
 
-export default function ImportModal({ title = "Import", open, onClose, type = "mauza" }) {
+export default function ImportModal({ title = "Import", open, onClose, type = "mauza", onSuccess, }) {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState(null);
   const [tehsil, setTehsil] = useState("");
@@ -29,12 +29,19 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
     try {
       let res;
 
-    if (type === "district") {
-      res = await importDistrict({ file });
-    } else {
-      res = await importMauza({ file, tehsil, mauza });
-    }
+      if (type === "district") {
+        res = await importDistrict({ file });
+      }
+      else if (type === "tehsil") {
+        res = await importTehsil({ file });
+      }
+      else {
+        res = await importMauza({ file, tehsil, mauza });
+      }
       setMessage({ type: "success", text: res.message || "Imported." });
+      if (onSuccess) onSuccess();
+      onClose?.();
+
     } catch (e) {
       setMessage({
         type: "error",
@@ -61,19 +68,23 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
         </p>
 
         <div className="mt-4 grid grid-cols-1 gap-3">
-          <label className="text-sm">Tehsil (optional override)</label>
-          <input
-            value={tehsil}
-            onChange={(e) => setTehsil(e.target.value)}
-            className="border rounded px-3 py-2"
-          />
+          {type === "mauza" && (
+            <>
+              <label className="text-sm">Tehsil (optional override)</label>
+              <input
+                value={tehsil}
+                onChange={(e) => setTehsil(e.target.value)}
+                className="border rounded px-3 py-2"
+              />
 
-          <label className="text-sm">Mauza (optional override)</label>
-          <input
-            value={mauza}
-            onChange={(e) => setMauza(e.target.value)}
-            className="border rounded px-3 py-2"
-          />
+              <label className="text-sm">Mauza (optional override)</label>
+              <input
+                value={mauza}
+                onChange={(e) => setMauza(e.target.value)}
+                className="border rounded px-3 py-2"
+              />
+            </>
+          )}
 
           <input type="file" accept=".zip" onChange={handleFile} />
         </div>
