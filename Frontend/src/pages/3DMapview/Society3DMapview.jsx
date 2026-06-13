@@ -63,21 +63,23 @@ const SOCIETY_LAYER_CONFIG = {
     name: "Master Plan",
     fillColor: "#7c3aed",
     outlineColor: "#4c1d95",
-    opacity: 0.7,
+    opacity: 0.25,
   },
   plots3d: {
-    name: "3D Plots / Parcels",
+    name: "3D Master Plan Visualization",
     fillColor: "#22d3ee",
     outlineColor: "#0e7490",
-    opacity: 0.75,
+    opacity: 0.88,
     extrude: true,
+    smartStyle: true,
   },
   buildings3d: {
     name: "3D Buildings",
     fillColor: "#facc15",
     outlineColor: "#713f12",
-    opacity: 0.85,
+    opacity: 0.9,
     extrude: true,
+    smartStyle: true,
   },
   roads: {
     name: "Roads",
@@ -370,6 +372,7 @@ export default function Society3DMapview({
       extrude: config.extrude,
       defaultHeightFeet: config.defaultHeightFeet,
       extrusionOverrides: config.extrusionOverrides,
+      smartStyle: config.smartStyle,
     });
 
     layerEntitiesRef.current[key] = entities;
