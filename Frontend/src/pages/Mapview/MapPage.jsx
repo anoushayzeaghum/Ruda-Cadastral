@@ -61,6 +61,7 @@ export default function MapPage() {
 
   const [rudaPhases, setRudaPhases] = useState([]);
   const [selectedRudaPhaseIds, setSelectedRudaPhaseIds] = useState([]);
+  const [selectedProposedRoadIds, setSelectedProposedRoadIds] = useState([]);
   const [basemap, setBasemap] = useState("Streets");
 
   const [selectedParcelNumber, setSelectedParcelNumber] = useState("");
@@ -338,6 +339,7 @@ export default function MapPage() {
           layers={layers}
           selectedFilterLayers={selectedFilterLayers}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
+          selectedProposedRoadIds={selectedProposedRoadIds}
           basemap={basemap}
           selectedFeatureNumber={selectedFeatureNumber}
           onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
@@ -371,6 +373,8 @@ export default function MapPage() {
           setRudaPhases={setRudaPhases}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
           setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
+          selectedProposedRoadIds={selectedProposedRoadIds}
+          setSelectedProposedRoadIds={setSelectedProposedRoadIds}
           basemap={basemap}
           setBasemap={setBasemap}
           selectedMauza={filters?.selectedMauzaDetails}
