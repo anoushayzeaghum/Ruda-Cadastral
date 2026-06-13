@@ -224,7 +224,7 @@ export default function LeftPanel({
   }, [rudaPhases, setRudaPhases, setSelectedRudaPhaseIds]);
 
   return (
-    <div className="pointer-events-none absolute left-3 top-24 z-30 flex items-start gap-2">
+    <div className="pointer-events-none absolute right-3 top-4 z-30 flex flex-row-reverse items-start gap-2">
       {/* Separate icon buttons. No combined background wrapper. */}
       <div className="pointer-events-auto flex flex-col gap-2">
         <PanelIcon
@@ -270,10 +270,10 @@ export default function LeftPanel({
       </div>
 
       {activePanel && (
-        <div className="pointer-events-auto w-[320px] max-h-[calc(100vh-170px)] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
+        <div className="pointer-events-auto w-[320px] max-h-[calc(100vh-110px)] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
           {activePanel === "layers" && (
             <Panel title="Layer Manager">
-              <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3">
+              <div className="max-h-[calc(100vh-165px)] overflow-y-auto px-3 pb-3">
                 <RudaBoundaryLayers
                   rudaPhases={rudaPhases}
                   selectedRudaPhaseIds={selectedRudaPhaseIds}
@@ -326,7 +326,7 @@ export default function LeftPanel({
 
           {activePanel === "vectorBoundaries" && (
             <Panel title="Vector Boundaries">
-              <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3">
+              <div className="max-h-[calc(100vh-165px)] overflow-y-auto px-3 pb-3">
                 <LayerManagerCard title="Vector Boundaries">
                   {SOCIETY_VECTOR_LAYERS.map((item, index) => (
                     <SocietyLayerRow
@@ -349,7 +349,7 @@ export default function LeftPanel({
 
           {activePanel === "rasterDatasets" && (
             <Panel title="Raster Datasets">
-              <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3">
+              <div className="max-h-[calc(100vh-165px)] overflow-y-auto px-3 pb-3">
                 <LayerManagerCard title="Raster Datasets">
                   {SOCIETY_RASTER_LAYERS.map((item, index) => (
                     <SocietyLayerRow
