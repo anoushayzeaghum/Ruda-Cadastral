@@ -1,5 +1,11 @@
 import { useOutletContext } from "react-router-dom";
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 
 import Header from "./Header";
 import SubHeader from "./SubHeader";
@@ -7,7 +13,6 @@ import LeftPanel from "./LeftPanel";
 import ParcelPanel from "./ParcelPanel";
 import MapControls from "./MapControls";
 import Legend from "./Legend";
-
 import MapView from "./MapView";
 
 const getKhasraNumber = (props = {}) => {
@@ -331,7 +336,10 @@ export default function MapPage() {
     <div className="w-full h-screen flex flex-col bg-white">
       <Header />
 
-      <div ref={mapShellRef} className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white">
+      <div
+        ref={mapShellRef}
+        className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white"
+      >
         <MapView
           selectedMauza={filters?.selectedMauzaDetails}
           selectedDistrict={filters?.selectedDistrictOptions}
@@ -382,13 +390,12 @@ export default function MapPage() {
           selectedFilterLayers={selectedFilterLayers}
         />
 
-
-<Legend
-  layers={layers}
-  rudaPhases={rudaPhases}
-  selectedRudaPhaseIds={selectedRudaPhaseIds}
-  selectedProposedRoadIds={selectedProposedRoadIds}
-/>
+        <Legend
+          layers={layers}
+          rudaPhases={rudaPhases}
+          selectedRudaPhaseIds={selectedRudaPhaseIds}
+          selectedProposedRoadIds={selectedProposedRoadIds}
+        />
 
         <ParcelPanel
           parcel={selectedParcel}

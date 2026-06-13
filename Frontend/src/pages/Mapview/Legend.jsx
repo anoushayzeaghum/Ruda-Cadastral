@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Map as MapIcon, Route } from "lucide-react";
-import { getRudaProposedRoadsList } from "../../services/api";
+import { ChevronDown, Map as MapIcon, Route } from "lucide-react";
 
 const RUDA_PHASE_COLORS = [
   "#6bb7e8",
@@ -17,19 +16,15 @@ const RUDA_PHASE_COLORS = [
   "#8dd3c7",
 ];
 
-const ROAD_STYLE_PALETTE = [
-  "#ef4444",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#06b6d4",
-  "#3b82f6",
-  "#8b5cf6",
-  "#ec4899",
-  "#14b8a6",
-  "#a855f7",
-  "#84cc16",
-  "#f43f5e",
+const roadLegendItems = [
+  { label: "Primary Roads (300'-Wide)", color: "#19598d", width: 5 },
+  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 4 },
+  { label: "Tertiary Roads", color: "#ff9800", width: 3 },
+  { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
+  { label: "Uti Walk Cycle", color: "#8bc34a", width: 2 },
+  { label: "Bridge", color: "#75008a", width: 5 },
+  { label: "300' CL", color: "#9b2400", width: 2 },
+  { label: "300' ROW", color: "#00bcd4", width: 2.5 },
 ];
 
 const hashString = (value = "") => {
@@ -85,31 +80,6 @@ const getRudaPhaseLabel = (phase = {}) => {
   return phaseId ? `Phase ${phaseId}` : "RUDA Phase";
 };
 
-const getRoadLayerName = (road = {}) =>
-  String(
-    road.layer ||
-      road.Layer ||
-      road.road_layer ||
-      road.road_type ||
-      road.name ||
-      "Proposed Road",
-  ).trim() || "Proposed Road";
-
-const getRoadColor = (layerName = "") =>
-  ROAD_STYLE_PALETTE[hashString(layerName) % ROAD_STYLE_PALETTE.length];
-
-const getRoadWidth = (layerName = "") => {
-  const text = String(layerName || "").toLowerCase();
-
-  if (text.includes("300") || text.includes("express") || text.includes("motorway")) return 8;
-  if (text.includes("200") || text.includes("primary") || text.includes("arterial")) return 7;
-  if (text.includes("150") || text.includes("secondary")) return 6;
-  if (text.includes("120") || text.includes("100")) return 5;
-  if (text.includes("80") || text.includes("60") || text.includes("local")) return 4;
-
-  return 4.5;
-};
-
 export default function Legend({
   layers = {},
   rudaPhases = [],
@@ -117,36 +87,14 @@ export default function Legend({
   selectedProposedRoadIds = [],
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [roads, setRoads] = useState([]);
 
-  const rudaVisible = getLayerVisible(layers, "rudaBoundary", false);
-  const roadsVisible = getLayerVisible(layers, "proposedRoads", false);
-  const shouldShow = rudaVisible || roadsVisible;
+  const showRudaLegend = getLayerVisible(layers, "rudaBoundary", false);
+  const showRoadLegend = getLayerVisible(layers, "proposedRoads", false);
+  const shouldShow = showRudaLegend || showRoadLegend;
 
   useEffect(() => {
     if (shouldShow) setCollapsed(false);
   }, [shouldShow]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadRoads = async () => {
-      if (!roadsVisible || roads.length) return;
-
-      try {
-        const list = await getRudaProposedRoadsList();
-        if (mounted) setRoads(list || []);
-      } catch (e) {
-        console.error("Failed to load proposed road legend", e);
-      }
-    };
-
-    loadRoads();
-
-    return () => {
-      mounted = false;
-    };
-  }, [roadsVisible, roads.length]);
 
   const rudaLegendItems = useMemo(() => {
     const selected = new Set((selectedRudaPhaseIds || []).map((id) => String(id)));
@@ -167,61 +115,52 @@ export default function Legend({
       });
   }, [rudaPhases, selectedRudaPhaseIds]);
 
-  const roadLegendItems = useMemo(() => {
-    const selected = new Set((selectedProposedRoadIds || []).map((id) => String(id)));
-    const byLayer = new Map();
-
-    (roads || []).forEach((road) => {
-      const id = road?.gid ?? road?.id ?? road?.oid ?? road?.fid;
-      if (selected.size && !selected.has(String(id))) return;
-
-      const layerName = getRoadLayerName(road);
-      if (!byLayer.has(layerName)) {
-        byLayer.set(layerName, {
-          label: layerName,
-          color: getRoadColor(layerName),
-          width: getRoadWidth(layerName),
-        });
-      }
-    });
-
-    return Array.from(byLayer.values()).sort((a, b) => a.label.localeCompare(b.label));
-  }, [roads, selectedProposedRoadIds]);
-
   if (!shouldShow) return null;
 
   return (
-    <aside className="pointer-events-auto absolute bottom-5 right-5 z-40 w-[290px] overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md">
+    <aside className="pointer-events-auto absolute bottom-5 right-5 z-30 w-[310px] overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md">
       <button
         type="button"
-        onClick={() => setCollapsed((prev) => !prev)}
-        className="flex w-full items-center justify-between bg-[#158033] px-4 py-3 text-left text-white"
+        onClick={() => setCollapsed((value) => !value)}
+        className="flex w-full items-center justify-between bg-[#0f5f2d] px-3.5 py-2.5 text-left text-white"
       >
-        <div className="flex items-center gap-2">
-          <MapIcon size={17} />
-          <span className="text-sm font-semibold tracking-wide">MAP LEGEND</span>
-        </div>
-        {collapsed ? <ChevronUp size={17} /> : <ChevronDown size={17} />}
+        <span className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide">
+          <MapIcon size={16} />
+          Legend
+        </span>
+
+        <ChevronDown
+          size={17}
+          strokeWidth={2.5}
+          className={`transition-transform ${collapsed ? "" : "rotate-180"}`}
+        />
       </button>
 
       {!collapsed && (
-        <div className="max-h-[360px] overflow-y-auto px-4 py-3 text-xs text-slate-700">
-          {rudaVisible && (
+        <div className="max-h-[380px] overflow-y-auto px-3.5 py-3">
+          {showRudaLegend && (
             <div className="mb-4">
-              <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                <MapIcon size={14} />
-                RUDA Boundary Phases
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[12px] font-semibold text-slate-800">
+                  RUDA Boundary Phases
+                </p>
+
+                <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                  {(selectedRudaPhaseIds || []).length} selected
+                </span>
               </div>
 
               <div className="space-y-2">
                 {rudaLegendItems.length ? (
                   rudaLegendItems.map((item) => (
-                    <div key={`ruda-${item.id}`} className="flex items-center gap-2">
+                    <div key={`ruda-${item.id}`} className="flex items-center gap-2.5">
                       <span
-                        className="h-4 w-6 shrink-0 rounded border border-slate-700"
+                        className="h-4 w-7 shrink-0 rounded border border-slate-600"
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="truncate">{item.label}</span>
+                      <span className="min-w-0 flex-1 truncate text-[11.5px] leading-tight text-slate-700">
+                        {item.label}
+                      </span>
                     </div>
                   ))
                 ) : (
@@ -231,31 +170,37 @@ export default function Legend({
             </div>
           )}
 
-          {roadsVisible && (
-            <div>
-              <div className="mb-2 flex items-center gap-2 border-t border-slate-200 pt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                <Route size={14} />
-                Proposed Roads
+          {showRoadLegend && (
+            <div className={showRudaLegend ? "border-t border-slate-200 pt-3" : ""}>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-800">
+                  <Route size={14} />
+                  RUDA Proposed Roads
+                </p>
+
+                <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                  {(selectedProposedRoadIds || []).length} selected
+                </span>
               </div>
 
-              <div className="space-y-2.5">
-                {roadLegendItems.length ? (
-                  roadLegendItems.map((item) => (
-                    <div key={`road-${item.label}`} className="flex items-center gap-2">
-                      <span className="flex h-4 w-9 shrink-0 items-center">
-                        <span
-                          className="block w-full rounded-full"
-                          style={{
-                            borderTop: `${Math.max(2, Math.min(item.width, 7))}px solid ${item.color}`,
-                          }}
-                        />
-                      </span>
-                      <span className="truncate" title={item.label}>{item.label}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-[11px] text-slate-400">Road legend will appear after roads load.</div>
-                )}
+              <div className="space-y-2">
+                {roadLegendItems.map((item) => (
+                  <div key={item.label} className="flex items-center gap-2.5">
+                    <span className="flex h-5 w-10 shrink-0 items-center">
+                      <span
+                        className="block w-full rounded-full"
+                        style={{
+                          height: `${item.width}px`,
+                          backgroundColor: item.color,
+                        }}
+                      />
+                    </span>
+
+                    <span className="min-w-0 flex-1 truncate text-[11.5px] leading-tight text-slate-700">
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

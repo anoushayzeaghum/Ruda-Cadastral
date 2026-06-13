@@ -336,13 +336,14 @@ class Society(models.Model):
 class MasterPlan(models.Model):
 
     gid = models.AutoField(primary_key=True)
-    # Keep only guaranteed columns to avoid selecting missing DB columns.
     geom = gis_models.GeometryField(srid=4326)
 
     society_id = models.IntegerField(null=True, blank=True)
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
+    land_use = models.CharField(max_length=100, null=True, blank=True)
+    height = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return f"MasterPlan {self.gid}"
