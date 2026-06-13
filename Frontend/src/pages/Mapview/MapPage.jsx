@@ -1,12 +1,13 @@
 import { useOutletContext } from "react-router-dom";
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 
 import Header from "./Header";
 import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
 import ParcelPanel from "../SocietyMapDashboard/ParcelPanel";
+import MapControls from "./MapControls";
 
-import MapView from "../SocietyMapDashboard/Mapview";
+import MapView from "../Mapview/Mapview";
 
 const getKhasraNumber = (props = {}) => {
   return (
@@ -41,6 +42,8 @@ export default function MapPage() {
   const outletContext = useOutletContext() ?? {};
   const filters = outletContext.filters;
 
+  const mapShellRef = useRef(null);
+  const [mapboxMap, setMapboxMap] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [parcelPanelOpen, setParcelPanelOpen] = useState(false);
 
@@ -317,11 +320,15 @@ export default function MapPage() {
     [filters?.viewBy, isMurabbaBasedKhasra],
   );
 
+  const handleMapReady = useCallback((map) => {
+    setMapboxMap(map || null);
+  }, []);
+
   return (
     <div className="w-full h-screen flex flex-col bg-white">
       <Header />
 
-      <div className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white">
+      <div ref={mapShellRef} className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white">
         <MapView
           selectedMauza={filters?.selectedMauzaDetails}
           selectedDistrict={filters?.selectedDistrictOptions}
@@ -334,7 +341,10 @@ export default function MapPage() {
           selectedFeatureNumber={selectedFeatureNumber}
           onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
           onParcelSelect={handleParcelSelect}
+          onMapReady={handleMapReady}
         />
+
+        <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} />
 
         {filters && (
           <SubHeader
