@@ -42,6 +42,35 @@ const BASEMAPS = [
   },
 ];
 
+const RUDA_PHASE_COLORS = [
+  "#6bb7e8",
+  "#f8d56b",
+  "#6bd69a",
+  "#f59e72",
+  "#b99cf3",
+  "#78d6d0",
+  "#f3a6c8",
+  "#a7d77b",
+  "#f4b860",
+  "#86a8e7",
+  "#d7b377",
+  "#8dd3c7",
+];
+
+const hashString = (value = "") => {
+  const text = String(value || "");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+const getRudaPhaseColor = (phaseId) => {
+  const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
+  return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
+};
+
 export default function LeftPanel({
   layers,
   setLayers,
@@ -49,6 +78,8 @@ export default function LeftPanel({
   setRudaPhases,
   selectedRudaPhaseIds,
   setSelectedRudaPhaseIds,
+  selectedProposedRoadIds,
+  setSelectedProposedRoadIds,
   basemap,
   setBasemap,
   selectedMauza,
@@ -60,7 +91,6 @@ export default function LeftPanel({
   const initializedOpacityKeysRef = useRef(new Set());
 
   const [rudaProposedRoads, setRudaProposedRoads] = useState([]);
-  const [selectedProposedRoadIds, setSelectedProposedRoadIds] = useState([]);
   const [proposedDropdownOpen, setProposedDropdownOpen] = useState(false);
 
   const getDefaultOpacityForSelectedLayer = (item) => {
@@ -231,7 +261,7 @@ export default function LeftPanel({
   const toggleProposedRoadLayer = () => {
     const willOpen = !getLayerVisible("proposedRoads");
 
-    if (willOpen && selectedProposedRoadIds.length === 0) {
+    if (willOpen && (selectedProposedRoadIds || []).length === 0) {
       setSelectedProposedRoadIds(getAllProposedRoadIds());
     }
 
@@ -626,6 +656,10 @@ function RudaBoundaryLayers({
                             }}
                             className="h-3.5 w-3.5 shrink-0 accent-green-700"
                           />
+                          <span
+                            className="h-3.5 w-5 shrink-0 rounded-sm border border-slate-500"
+                            style={{ backgroundColor: getRudaPhaseColor(id) }}
+                          />
                           <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-slate-700">
                             {name}
                           </span>
@@ -703,7 +737,7 @@ function RudaProposedRoadsLayers({
                       <input
                         type="checkbox"
                         checked={
-                          selectedProposedRoadIds.length ===
+                          (selectedProposedRoadIds || []).length ===
                           rudaProposedRoads.length
                         }
                         onChange={(e) => {
@@ -735,7 +769,7 @@ function RudaProposedRoadsLayers({
                     const id = road.gid ?? road.id ?? road.oid;
                     const name = road.name ?? `Road ${id}`;
 
-                    const checked = selectedProposedRoadIds.includes(id);
+                    const checked = (selectedProposedRoadIds || []).includes(id);
 
                     return (
                       <label

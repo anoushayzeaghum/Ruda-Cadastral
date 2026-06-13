@@ -10,12 +10,12 @@ import { getDistricts, getItemId, getLabel, getMauzaId, getMauzas, getSocieties,
 import { getFeatureId } from "./cesiumHelpers";
 
 const initialLayers = {
-  societyBoundary: { visible: false, opacity: 25 },
-  masterPlan: { visible: false, opacity: 25 },
-  plots3d: { visible: false, opacity: 88 },
-  buildings3d: { visible: false, opacity: 90 },
+  societyBoundary: { visible: false, opacity: 35 },
+  masterPlan: { visible: false, opacity: 15 },
+  plots3d: { visible: false, opacity: 100 },
+  buildings3d: { visible: false, opacity: 100 },
   roads: { visible: false, opacity: 100 },
-  greenSpaces: { visible: false, opacity: 75 },
+  greenSpaces: { visible: false, opacity: 100 },
   spotLevel: { visible: false, opacity: 100 },
   contours: { visible: false, opacity: 100 },
 };

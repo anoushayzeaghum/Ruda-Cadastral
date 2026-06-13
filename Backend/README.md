@@ -37,18 +37,26 @@ ADD COLUMN IF NOT EXISTS name VARCHAR(255),
 ADD COLUMN IF NOT EXISTS source VARCHAR(255),
 ADD COLUMN IF NOT EXISTS feat_count INTEGER,
 ADD COLUMN IF NOT EXISTS area DOUBLE PRECISION,
+ADD COLUMN IF NOT EXISTS society VARCHAR(255),
+ADD COLUMN IF NOT EXISTS society_id INTEGER,
+ADD COLUMN IF NOT EXISTS district VARCHAR(100),
+ADD COLUMN IF NOT EXISTS dist_id INTEGER,
+ADD COLUMN IF NOT EXISTS tehsil VARCHAR(100),
+ADD COLUMN IF NOT EXISTS tehsil_id INTEGER,
+ADD COLUMN IF NOT EXISTS mauza VARCHAR(100),
+ADD COLUMN IF NOT EXISTS mauza_id INTEGER;
 
-    ADD COLUMN IF NOT EXISTS society VARCHAR(255),
-    ADD COLUMN IF NOT EXISTS society_id INTEGER,
-
-    ADD COLUMN IF NOT EXISTS district VARCHAR(100),
-    ADD COLUMN IF NOT EXISTS dist_id INTEGER,
-
-    ADD COLUMN IF NOT EXISTS tehsil VARCHAR(100),
-    ADD COLUMN IF NOT EXISTS tehsil_id INTEGER,
-
-    ADD COLUMN IF NOT EXISTS mauza VARCHAR(100),
-    ADD COLUMN IF NOT EXISTS mauza_id INTEGER;
+UPDATE public.society
+SET
+society_id = 1,
+society = 'Chaharbagh Phase 1',
+dist_id = 18,
+district = 'Lahore',
+tehsil_id = 16,
+tehsil = 'Shalimar',
+mauza_id = 1,
+mauza = 'Handu Gujran'
+WHERE gid = 1;
 
 -- =====================================================
 -- MASTERPLAN TABLE
@@ -58,6 +66,31 @@ ADD COLUMN IF NOT EXISTS society_id INTEGER,
 ADD COLUMN IF NOT EXISTS mauza_id INTEGER,
 ADD COLUMN IF NOT EXISTS dist_id INTEGER,
 ADD COLUMN IF NOT EXISTS tehsil_id INTEGER;
+ADD COLUMN IF NOT EXISTS height double precision;
+
+Run this query: 
+
+UPDATE public.masterplan
+SET
+    society_id = 1,
+    society = 'Chaharbagh Phase 1',
+    dist_id = 18,
+    district = 'Lahore',
+    tehsil_id = 16,
+    tehsil = 'Shalimar',
+    mauza_id = 1,
+    mauza = 'Handu Gujran';
+
+UPDATE public.masterplan
+SET height = CASE
+WHEN land_use = 'Residential Plot' THEN 20
+WHEN land_use = 'Commercial Plot' THEN 25
+WHEN land_use = 'Green Belt' THEN 0
+WHEN land_use = 'Barren Land' THEN 0
+WHEN land_use = 'Road' THEN 2
+WHEN land_use = 'Park' THEN 5
+ELSE height
+END;
 
 -- =====================================================
 -- SPOT LEVEL TABLE

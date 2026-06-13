@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
-import { Expand, Home, Layers, LocateFixed, Minus, Plus, RotateCcw } from "lucide-react";
+import {
+  Expand,
+  Home,
+  Layers,
+  LocateFixed,
+  Minus,
+  Plus,
+  RotateCcw,
+} from "lucide-react";
 
 import {
   addGeoJSONLayer,
@@ -69,7 +77,7 @@ const SOCIETY_LAYER_CONFIG = {
     name: "3D Master Plan Visualization",
     fillColor: "#22d3ee",
     outlineColor: "#0e7490",
-    opacity: 0.88,
+    opacity: 1,
     extrude: true,
     smartStyle: true,
   },
@@ -77,7 +85,7 @@ const SOCIETY_LAYER_CONFIG = {
     name: "3D Buildings",
     fillColor: "#facc15",
     outlineColor: "#713f12",
-    opacity: 0.9,
+    opacity: 1,
     extrude: true,
     smartStyle: true,
   },
@@ -152,7 +160,10 @@ export default function Society3DMapview({
   const [isLoading, setIsLoading] = useState(false);
   const [mapError, setMapError] = useState("");
 
-  const selectedSocietyId = useMemo(() => getSocietyId(selectedSociety), [selectedSociety]);
+  const selectedSocietyId = useMemo(
+    () => getSocietyId(selectedSociety),
+    [selectedSociety],
+  );
 
   useEffect(() => {
     if (!containerRef.current || viewerRef.current) return;
@@ -194,7 +205,10 @@ export default function Society3DMapview({
       selectedEntityRef.current = entity;
       setEntityHighlighted(entity, true);
 
-      const selectedFeature = cloneFeatureWithLayer(entity.featureData, entity.layerKey);
+      const selectedFeature = cloneFeatureWithLayer(
+        entity.featureData,
+        entity.layerKey,
+      );
       onFeatureSelect?.(selectedFeature);
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -233,13 +247,22 @@ export default function Society3DMapview({
         const tasks = [];
 
         if (selectedDistrict) {
-          tasks.push({ key: "district", promise: getDistrictBoundary(selectedDistrict) });
+          tasks.push({
+            key: "district",
+            promise: getDistrictBoundary(selectedDistrict),
+          });
         }
         if (selectedTehsil) {
-          tasks.push({ key: "tehsil", promise: getTehsilBoundary(selectedTehsil) });
+          tasks.push({
+            key: "tehsil",
+            promise: getTehsilBoundary(selectedTehsil),
+          });
         }
         if (selectedMauza) {
-          tasks.push({ key: "mauza", promise: getMauzaBoundary(selectedMauza) });
+          tasks.push({
+            key: "mauza",
+            promise: getMauzaBoundary(selectedMauza),
+          });
         }
 
         if (!tasks.length) return;
@@ -251,7 +274,11 @@ export default function Society3DMapview({
           if (cancelled) return;
 
           lastGeoJSON = geojson?.features?.length ? geojson : lastGeoJSON;
-          drawLayer(task.key, geojson || emptyFeatureCollection(), ADMIN_LAYER_CONFIG[task.key]);
+          drawLayer(
+            task.key,
+            geojson || emptyFeatureCollection(),
+            ADMIN_LAYER_CONFIG[task.key],
+          );
         }
 
         if (lastGeoJSON?.features?.length && !selectedSocietyId) {
@@ -272,7 +299,13 @@ export default function Society3DMapview({
     return () => {
       cancelled = true;
     };
-  }, [selectedDistrict, selectedTehsil, selectedMauza, selectedSocietyId, isReady]);
+  }, [
+    selectedDistrict,
+    selectedTehsil,
+    selectedMauza,
+    selectedSocietyId,
+    isReady,
+  ]);
 
   useEffect(() => {
     if (!viewerRef.current || !isReady) return;
@@ -320,13 +353,21 @@ export default function Society3DMapview({
 
           if (cancelled) return;
 
-          if (!flyTarget && key === "societyBoundary" && geojson?.features?.length) {
+          if (
+            !flyTarget &&
+            key === "societyBoundary" &&
+            geojson?.features?.length
+          ) {
             flyTarget = geojson;
           }
 
           drawLayer(key, geojson, {
             ...SOCIETY_LAYER_CONFIG[key],
-            opacity: layerOpacity(layers, key, SOCIETY_LAYER_CONFIG[key].opacity * 100),
+            opacity: layerOpacity(
+              layers,
+              key,
+              SOCIETY_LAYER_CONFIG[key].opacity * 100,
+            ),
             defaultHeightFeet: extrusion.heightFeet,
             extrusionOverrides: appliedExtrusions,
           });
@@ -335,7 +376,10 @@ export default function Society3DMapview({
         const flyKey = `society-${selectedSocietyId}`;
         if (flyTarget?.features?.length && !flyDoneRef.current[flyKey]) {
           flyDoneRef.current[flyKey] = true;
-          flyToGeoJSON(viewerRef.current, flyTarget, { pitch: -42, duration: 1.4 });
+          flyToGeoJSON(viewerRef.current, flyTarget, {
+            pitch: -42,
+            duration: 1.4,
+          });
         }
       } catch (error) {
         if (!cancelled) {
@@ -352,7 +396,13 @@ export default function Society3DMapview({
     return () => {
       cancelled = true;
     };
-  }, [selectedSocietyId, layers, isReady, extrusion.heightFeet, appliedExtrusions]);
+  }, [
+    selectedSocietyId,
+    layers,
+    isReady,
+    extrusion.heightFeet,
+    appliedExtrusions,
+  ]);
 
   const drawLayer = (key, geojson, config) => {
     const viewer = viewerRef.current;
@@ -416,8 +466,10 @@ export default function Society3DMapview({
     const viewer = viewerRef.current;
     if (!viewer || !selectedSocietyId) return;
 
-    const geojson = dataCacheRef.current[`${selectedSocietyId}:societyBoundary`];
-    if (geojson?.features?.length) flyToGeoJSON(viewer, geojson, { pitch: -42 });
+    const geojson =
+      dataCacheRef.current[`${selectedSocietyId}:societyBoundary`];
+    if (geojson?.features?.length)
+      flyToGeoJSON(viewer, geojson, { pitch: -42 });
   };
 
   const toggleFullscreen = async () => {
@@ -437,12 +489,36 @@ export default function Society3DMapview({
 
       <div className="absolute right-4 top-24 z-20 flex flex-col gap-2">
         <MapTool title="Layer Manager" icon={<Layers size={17} />} />
-        <MapTool title="Reset Camera" onClick={() => resetCamera(viewerRef.current)} icon={<Home size={17} />} />
-        <MapTool title="Fly to Society" onClick={flyToSelectedSociety} icon={<LocateFixed size={17} />} />
-        <MapTool title="Zoom In" onClick={() => zoomBy(-0.35)} icon={<Plus size={19} />} />
-        <MapTool title="Zoom Out" onClick={() => zoomBy(0.35)} icon={<Minus size={19} />} />
-        <MapTool title="Fullscreen" onClick={toggleFullscreen} icon={<Expand size={17} />} />
-        <MapTool title="Clear Selection" onClick={clearSelection} icon={<RotateCcw size={17} />} />
+        <MapTool
+          title="Reset Camera"
+          onClick={() => resetCamera(viewerRef.current)}
+          icon={<Home size={17} />}
+        />
+        <MapTool
+          title="Fly to Society"
+          onClick={flyToSelectedSociety}
+          icon={<LocateFixed size={17} />}
+        />
+        <MapTool
+          title="Zoom In"
+          onClick={() => zoomBy(-0.35)}
+          icon={<Plus size={19} />}
+        />
+        <MapTool
+          title="Zoom Out"
+          onClick={() => zoomBy(0.35)}
+          icon={<Minus size={19} />}
+        />
+        <MapTool
+          title="Fullscreen"
+          onClick={toggleFullscreen}
+          icon={<Expand size={17} />}
+        />
+        <MapTool
+          title="Clear Selection"
+          onClick={clearSelection}
+          icon={<RotateCcw size={17} />}
+        />
       </div>
 
       <div className="absolute bottom-4 right-4 z-20 rounded-lg bg-slate-950/80 px-3 py-2 text-[11px] font-semibold text-white shadow">
@@ -467,7 +543,11 @@ export default function Society3DMapview({
 function resetCamera(viewer) {
   if (!viewer) return;
   viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(DEFAULT_VIEW.lon, DEFAULT_VIEW.lat, DEFAULT_VIEW.height),
+    destination: Cesium.Cartesian3.fromDegrees(
+      DEFAULT_VIEW.lon,
+      DEFAULT_VIEW.lat,
+      DEFAULT_VIEW.height,
+    ),
     duration: 0.9,
     orientation: {
       heading: Cesium.Math.toRadians(0),

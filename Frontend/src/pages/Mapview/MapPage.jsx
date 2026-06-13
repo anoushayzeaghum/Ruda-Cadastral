@@ -1,12 +1,18 @@
 import { useOutletContext } from "react-router-dom";
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from "react";
 
 import Header from "./Header";
 import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
 import ParcelPanel from "./ParcelPanel";
 import MapControls from "./MapControls";
-
+import Legend from "./Legend";
 import MapView from "./MapView";
 
 const getKhasraNumber = (props = {}) => {
@@ -61,6 +67,7 @@ export default function MapPage() {
 
   const [rudaPhases, setRudaPhases] = useState([]);
   const [selectedRudaPhaseIds, setSelectedRudaPhaseIds] = useState([]);
+  const [selectedProposedRoadIds, setSelectedProposedRoadIds] = useState([]);
   const [basemap, setBasemap] = useState("Streets");
 
   const [selectedParcelNumber, setSelectedParcelNumber] = useState("");
@@ -347,7 +354,10 @@ export default function MapPage() {
     <div className="w-full h-screen flex flex-col bg-white">
       <Header />
 
-      <div ref={mapShellRef} className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white">
+      <div
+        ref={mapShellRef}
+        className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white"
+      >
         <MapView
           selectedMauza={filters?.selectedMauzaDetails}
           selectedDistrict={filters?.selectedDistrictOptions}
@@ -356,6 +366,7 @@ export default function MapPage() {
           layers={layers}
           selectedFilterLayers={selectedFilterLayers}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
+          selectedProposedRoadIds={selectedProposedRoadIds}
           basemap={basemap}
           selectedFeatureNumber={selectedFeatureNumber}
           onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
@@ -389,10 +400,19 @@ export default function MapPage() {
           setRudaPhases={setRudaPhases}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
           setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
+          selectedProposedRoadIds={selectedProposedRoadIds}
+          setSelectedProposedRoadIds={setSelectedProposedRoadIds}
           basemap={basemap}
           setBasemap={setBasemap}
           selectedMauza={filters?.selectedMauzaDetails}
           selectedFilterLayers={selectedFilterLayers}
+        />
+
+        <Legend
+          layers={layers}
+          rudaPhases={rudaPhases}
+          selectedRudaPhaseIds={selectedRudaPhaseIds}
+          selectedProposedRoadIds={selectedProposedRoadIds}
         />
 
         <ParcelPanel
