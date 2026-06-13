@@ -249,6 +249,20 @@ export const getRudaGeoJSON = async (gid) => {
 };
 
 ///////////////////////////////////////////////////////
+///////////////////// RUDA PROPOSED ROADS APIs ///////////////////////
+///////////////////////////////////////////////////////
+
+export const getRudaProposedRoadsList = async () => {
+  const res = await API.get(`/ruda-proposed-roads/`);
+  return normalizeData(res);
+};
+
+export const getRudaProposedRoadsGeoJSON = async (gid) => {
+  const res = await API.get(`/ruda-proposed-roads/${gid}/geojson`);
+  return normalizeGeoJson(res);
+};
+
+///////////////////////////////////////////////////////
 ///////////////////// TRIJUNCTION APIs ///////////////////////
 ///////////////////////////////////////////////////////
 
@@ -276,3 +290,5 @@ export const importMauza = async ({ file, tehsil, mauza }) => {
 
   return res.data;
 };
+
+

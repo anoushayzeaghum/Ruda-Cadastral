@@ -392,6 +392,36 @@ class Contour(models.Model):
         managed = False
         db_table = "contour"
 
+# =========================
+# RUDA PROPOSED ROADS
+# =========================
+
+class RudaProposedRoads(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    kml_id = models.CharField(max_length=50, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    kml_desc = models.TextField(null=True, blank=True)
+
+    fid = models.IntegerField(null=True, blank=True)
+    entity = models.CharField(max_length=100, null=True, blank=True)
+    layer = models.CharField(max_length=100, null=True, blank=True)
+    color = models.CharField(max_length=20, null=True, blank=True)
+    linetype = models.CharField(max_length=50, null=True, blank=True)
+
+    elevation = models.FloatField(null=True, blank=True)
+    linewt = models.FloatField(null=True, blank=True)
+
+    refname = models.CharField(max_length=255, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(srid=4326)
+
+    def __str__(self):
+        return self.name or f"Road {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "ruda_proposed_roads"
 
 # --------------------------------------------------------
 # Ruda Boundary
@@ -421,7 +451,6 @@ class RudaBoundary(models.Model):
     class Meta:
         managed = False
         db_table = "ruda_boundary"
-
 
 # --------------------------------------------------------
 # Trijunction Boundary
