@@ -120,6 +120,7 @@ export default function MapView({
   onParcelSelect,
   layers = {},
   basemap = "Streets",
+  clearSelectionSignal = 0,
 }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -236,6 +237,17 @@ export default function MapView({
         source: SELECTED_SOURCE,
         paint: { "line-color": "#b38f00", "line-width": 2.5 },
       });
+    }
+  };
+
+  const clearSelectedFeature = () => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    try {
+      map.getSource(SELECTED_SOURCE)?.setData(emptyFeatureCollection());
+    } catch (e) {
+      console.warn("Could not clear selected feature", e);
     }
   };
 
@@ -445,6 +457,11 @@ export default function MapView({
       console.error("Failed to change basemap style", e);
     }
   }, [basemap, isMapReady]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    clearSelectedFeature();
+  }, [clearSelectionSignal, isMapReady]);
 
   useEffect(() => {
     if (!isMapReady) return;
