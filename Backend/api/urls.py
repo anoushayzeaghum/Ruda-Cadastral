@@ -81,6 +81,8 @@ router.register(r"trijunction/delete", DeleteTrijunctionView, basename="delete-t
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+
+    path("import/district/", import_district_shapefile),
     
     path('', include(router.urls)),
 ]

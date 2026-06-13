@@ -103,6 +103,17 @@ export const getTehsils = async (district_i) => {
   return normalizeData(res);
 };
 
+export const importDistrict = ({ file }) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return API.post("/import/district/", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  }).then((res) => res.data);
+};
+
 export const getMauzas = async (tehsil) => {
   const params = {};
   if (tehsil !== undefined && tehsil !== null && tehsil !== "") {

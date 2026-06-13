@@ -65,6 +65,7 @@ export default function District() {
               title="Import District"
               open={showImport}
               onClose={() => setShowImport(false)}
+              type="district"
             />
             <button
               onClick={() => setShowImport(true)}

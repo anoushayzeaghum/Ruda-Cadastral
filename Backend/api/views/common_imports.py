@@ -24,11 +24,12 @@ from ..models import *
 from ..serializers import *
 
 # Custom utilities
-import api.utils as utils
-from ..utils import ApiResponse, get_tokens_for_user
+import api.shapefiles as shapefiles
+from api.utils import ApiResponse, get_tokens_for_user
 
 # Export Excel
 from django.http import HttpResponse, FileResponse
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 import pandas as pd
+
