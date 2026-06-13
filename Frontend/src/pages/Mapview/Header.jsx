@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogOut, Home } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 import { useNavigate } from "react-router-dom";
 
@@ -38,7 +38,9 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-3 min-w-0">
-            <h1 className="text-2xl font-normal tracking-wide shrink-0">RCMS</h1>
+            <h1 className="text-2xl font-normal tracking-wide shrink-0">
+              RCMS
+            </h1>
             <span className="text-white/55 text-lg">|</span>
             <p className="text-base font-normal text-white/90 truncate">
               RUDA Cadastral Management System
@@ -47,11 +49,14 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <IconButton
-            title="Dashboard"
-            onClick={() => navigate("/dashboard")}
-            icon={<LayoutDashboard size={18} />}
-          />
+          <button
+            onClick={() => navigate("/")}
+            className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-md flex items-center justify-center transition"
+            aria-label="Go to landing page"
+            title="Home"
+          >
+            <Home size={18} />
+          </button>
 
           <IconButton
             title="Logout"
