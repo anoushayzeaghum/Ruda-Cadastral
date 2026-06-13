@@ -324,6 +324,24 @@ export default function MapPage() {
     setMapboxMap(map || null);
   }, []);
 
+  // Reset the printMap flag immediately after it fires so it can be triggered again
+  useEffect(() => {
+    const isPrint = typeof layers?.printMap === "object"
+      ? layers.printMap.visible
+      : !!layers?.printMap;
+
+    if (!isPrint) return;
+
+    const timer = setTimeout(() => {
+      setLayers((prev) => ({
+        ...prev,
+        printMap: { visible: false },
+      }));
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [layers?.printMap]);
+
   return (
     <div className="w-full h-screen flex flex-col bg-white">
       <Header />

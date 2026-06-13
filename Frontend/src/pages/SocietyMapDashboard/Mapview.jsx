@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import * as turf from "@turf/turf";
 
 import {
   getDistrictBoundary,
@@ -36,6 +37,33 @@ const DTM_SOURCE = "local-dtm-source";
 const DTM_LAYER = "local-dtm-layer";
 const ORTHO_SOURCE = "local-ortho-source";
 const ORTHO_LAYER = "local-ortho-layer";
+
+const MEASURE_SOURCE = "measure-source";
+const MEASURE_LINE_LAYER = "measure-line-layer";
+const MEASURE_POINTS_LAYER = "measure-points-layer";
+const MEASURE_LABELS_LAYER = "measure-labels-layer";
+
+const MEASURE_AREA_SOURCE = "measure-area-source";
+const MEASURE_AREA_FILL_LAYER = "measure-area-fill-layer";
+const MEASURE_AREA_LINE_LAYER = "measure-area-line-layer";
+const MEASURE_AREA_POINTS_LAYER = "measure-area-points-layer";
+const MEASURE_AREA_LABEL_LAYER = "measure-area-label-layer";
+
+const BEARING_SOURCE = "bearing-source";
+const BEARING_LINE_LAYER = "bearing-line-layer";
+const BEARING_POINTS_LAYER = "bearing-points-layer";
+const BEARING_LABEL_LAYER = "bearing-label-layer";
+
+const BUFFER_SOURCE = "buffer-source";
+const BUFFER_FILL_LAYER = "buffer-fill-layer";
+const BUFFER_LINE_LAYER = "buffer-line-layer";
+const BUFFER_CENTER_LAYER = "buffer-center-layer";
+
+
+const SNAP_SOURCE = "snap-source";
+const SNAP_LAYER = "snap-layer";
+const SNAP_LINE_LAYER = "snap-line-layer";
+const SNAP_LABEL_LAYER = "snap-label-layer";
 
 const emptyFeatureCollection = () => ({
   type: "FeatureCollection",
@@ -136,6 +164,12 @@ export default function MapView({
   const prevDemVisible = useRef(false);
   const prevDtmVisible = useRef(false);
   const prevOrthoVisible = useRef(false);
+
+  const measureCoordsRef = useRef([]);
+  const measureAreaCoordsRef = useRef([]);
+  const bearingCoordsRef = useRef([]);
+  const coordPickerPopupRef = useRef(null);
+  const locationMarkerRef = useRef(null);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -851,6 +885,580 @@ export default function MapView({
       map.off('style.load', restoreRasters);
     };
   }, [layers?.dem, layers?.dtm, layers?.orthoImage, isMapReady]);
+
+  // ── Distance Measure Tool ─────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const measureVisible = typeof layers?.measure === "object"
+      ? layers.measure.visible
+      : !!layers?.measure;
+
+    const updateMeasureSource = () => {
+      const coords = measureCoordsRef.current;
+      const features = [];
+      coords.forEach((coord) => features.push(turf.point(coord)));
+      if (coords.length > 1) {
+        const line = turf.lineString(coords);
+        features.push(line);
+        const distance = turf.length(line, { units: "kilometers" });
+        const lastPt = turf.point(coords[coords.length - 1], {
+          distance: `${distance.toFixed(2)} km`,
+        });
+        features.push(lastPt);
+      }
+      if (map.getSource(MEASURE_SOURCE)) {
+        map.getSource(MEASURE_SOURCE).setData(turf.featureCollection(features));
+      }
+    };
+
+    const handleClick = (e) => {
+      measureCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
+      updateMeasureSource();
+    };
+    const handleRightClick = (e) => {
+      e.preventDefault();
+      measureCoordsRef.current = [];
+      updateMeasureSource();
+    };
+
+    if (measureVisible) {
+      map.getCanvas().style.cursor = "crosshair";
+      if (!map.getSource(MEASURE_SOURCE)) {
+        map.addSource(MEASURE_SOURCE, { type: "geojson", data: turf.featureCollection([]) });
+      }
+      if (!map.getLayer(MEASURE_LINE_LAYER)) {
+        map.addLayer({ id: MEASURE_LINE_LAYER, type: "line", source: MEASURE_SOURCE,
+          filter: ["==", "$type", "LineString"],
+          paint: { "line-color": "#ff0000", "line-width": 3, "line-dasharray": [2, 2] } });
+      }
+      if (!map.getLayer(MEASURE_POINTS_LAYER)) {
+        map.addLayer({ id: MEASURE_POINTS_LAYER, type: "circle", source: MEASURE_SOURCE,
+          filter: ["==", "$type", "Point"],
+          paint: { "circle-radius": 5, "circle-color": "#ffffff", "circle-stroke-width": 2, "circle-stroke-color": "#ff0000" } });
+      }
+      if (!map.getLayer(MEASURE_LABELS_LAYER)) {
+        map.addLayer({ id: MEASURE_LABELS_LAYER, type: "symbol", source: MEASURE_SOURCE,
+          filter: ["has", "distance"],
+          layout: { "text-field": ["get", "distance"], "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"], "text-size": 14, "text-anchor": "bottom", "text-offset": [0, -1] },
+          paint: { "text-color": "#ff0000", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+      }
+      map.on("click", handleClick);
+      map.on("contextmenu", handleRightClick);
+      updateMeasureSource();
+    } else {
+      map.getCanvas().style.cursor = "";
+      measureCoordsRef.current = [];
+      try {
+        if (map.getLayer(MEASURE_LABELS_LAYER)) map.removeLayer(MEASURE_LABELS_LAYER);
+        if (map.getLayer(MEASURE_POINTS_LAYER)) map.removeLayer(MEASURE_POINTS_LAYER);
+        if (map.getLayer(MEASURE_LINE_LAYER)) map.removeLayer(MEASURE_LINE_LAYER);
+        if (map.getSource(MEASURE_SOURCE)) map.removeSource(MEASURE_SOURCE);
+      } catch (e) { /* ignore */ }
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+    }
+
+    return () => {
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+  }, [layers?.measure, isMapReady]);
+
+  // ── Area Measure Tool ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const areaVisible = typeof layers?.measureArea === "object"
+      ? layers.measureArea.visible
+      : !!layers?.measureArea;
+
+    const clearAreaLayers = () => {
+      try {
+        if (map.getLayer(MEASURE_AREA_LABEL_LAYER)) map.removeLayer(MEASURE_AREA_LABEL_LAYER);
+        if (map.getLayer(MEASURE_AREA_FILL_LAYER)) map.removeLayer(MEASURE_AREA_FILL_LAYER);
+        if (map.getLayer(MEASURE_AREA_LINE_LAYER)) map.removeLayer(MEASURE_AREA_LINE_LAYER);
+        if (map.getLayer(MEASURE_AREA_POINTS_LAYER)) map.removeLayer(MEASURE_AREA_POINTS_LAYER);
+        if (map.getSource(MEASURE_AREA_SOURCE)) map.removeSource(MEASURE_AREA_SOURCE);
+      } catch (e) { /* ignore */ }
+    };
+
+    const updateAreaSource = (closed = false) => {
+      const coords = measureAreaCoordsRef.current;
+      const features = [];
+      coords.forEach((c) => features.push(turf.point(c)));
+      if (coords.length >= 2) {
+        features.push(turf.lineString(closed ? [...coords, coords[0]] : coords));
+      }
+      if (closed && coords.length >= 3) {
+        const poly = turf.polygon([[...coords, coords[0]]]);
+        features.push(poly);
+        const areaSqM = turf.area(poly);
+        const areaAcres = areaSqM / 4046.8564224;
+        const areaKanal = areaAcres * 8;
+        const centroid = turf.centroid(poly);
+        centroid.properties = {
+          areaLabel: `${areaSqM.toFixed(0)} m²  |  ${areaAcres.toFixed(3)} ac  |  ${areaKanal.toFixed(2)} kanal`,
+        };
+        features.push(centroid);
+      }
+      if (map.getSource(MEASURE_AREA_SOURCE)) {
+        map.getSource(MEASURE_AREA_SOURCE).setData(turf.featureCollection(features));
+      }
+    };
+
+    const handleClick = (e) => {
+      measureAreaCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
+      updateAreaSource(false);
+    };
+    const handleRightClick = (e) => {
+      e.preventDefault();
+      if (measureAreaCoordsRef.current.length >= 3) {
+        updateAreaSource(true);
+      } else {
+        measureAreaCoordsRef.current = [];
+        updateAreaSource(false);
+      }
+    };
+
+    if (areaVisible) {
+      map.getCanvas().style.cursor = "crosshair";
+      if (!map.getSource(MEASURE_AREA_SOURCE)) {
+        map.addSource(MEASURE_AREA_SOURCE, { type: "geojson", data: turf.featureCollection([]) });
+      }
+      if (!map.getLayer(MEASURE_AREA_FILL_LAYER)) {
+        map.addLayer({ id: MEASURE_AREA_FILL_LAYER, type: "fill", source: MEASURE_AREA_SOURCE,
+          filter: ["==", "$type", "Polygon"],
+          paint: { "fill-color": "#0066ff", "fill-opacity": 0.15 } });
+      }
+      if (!map.getLayer(MEASURE_AREA_LINE_LAYER)) {
+        map.addLayer({ id: MEASURE_AREA_LINE_LAYER, type: "line", source: MEASURE_AREA_SOURCE,
+          filter: ["any", ["==", "$type", "LineString"], ["==", "$type", "Polygon"]],
+          paint: { "line-color": "#0066ff", "line-width": 2, "line-dasharray": [2, 2] } });
+      }
+      if (!map.getLayer(MEASURE_AREA_POINTS_LAYER)) {
+        map.addLayer({ id: MEASURE_AREA_POINTS_LAYER, type: "circle", source: MEASURE_AREA_SOURCE,
+          filter: ["==", "$type", "Point"],
+          paint: { "circle-radius": 5, "circle-color": "#ffffff", "circle-stroke-width": 2, "circle-stroke-color": "#0066ff" } });
+      }
+      if (!map.getLayer(MEASURE_AREA_LABEL_LAYER)) {
+        map.addLayer({ id: MEASURE_AREA_LABEL_LAYER, type: "symbol", source: MEASURE_AREA_SOURCE,
+          filter: ["has", "areaLabel"],
+          layout: { "text-field": ["get", "areaLabel"], "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"], "text-size": 12, "text-anchor": "center" },
+          paint: { "text-color": "#003399", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+      }
+      map.on("click", handleClick);
+      map.on("contextmenu", handleRightClick);
+    } else {
+      map.getCanvas().style.cursor = "";
+      measureAreaCoordsRef.current = [];
+      clearAreaLayers();
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+    }
+
+    return () => {
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+  }, [layers?.measureArea, isMapReady]);
+
+  // ── Bearing Tool ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const bearingVisible = typeof layers?.measureBearing === "object"
+      ? layers.measureBearing.visible
+      : !!layers?.measureBearing;
+
+    const clearBearingLayers = () => {
+      try {
+        if (map.getLayer(BEARING_LABEL_LAYER)) map.removeLayer(BEARING_LABEL_LAYER);
+        if (map.getLayer(BEARING_LINE_LAYER)) map.removeLayer(BEARING_LINE_LAYER);
+        if (map.getLayer(BEARING_POINTS_LAYER)) map.removeLayer(BEARING_POINTS_LAYER);
+        if (map.getSource(BEARING_SOURCE)) map.removeSource(BEARING_SOURCE);
+      } catch (e) { /* ignore */ }
+    };
+
+    const updateBearingSource = () => {
+      const coords = bearingCoordsRef.current;
+      const features = [];
+      coords.forEach((c) => features.push(turf.point(c)));
+      if (coords.length === 2) {
+        features.push(turf.lineString(coords));
+        const bearing = turf.bearing(turf.point(coords[0]), turf.point(coords[1]));
+        const dist = turf.distance(turf.point(coords[0]), turf.point(coords[1]), { units: "meters" });
+        const midpoint = turf.midpoint(turf.point(coords[0]), turf.point(coords[1]));
+        midpoint.properties = { bearingLabel: `${bearing.toFixed(1)}°  ·  ${dist.toFixed(1)} m` };
+        features.push(midpoint);
+      }
+      if (map.getSource(BEARING_SOURCE)) {
+        map.getSource(BEARING_SOURCE).setData(turf.featureCollection(features));
+      }
+    };
+
+    const handleClick = (e) => {
+      if (bearingCoordsRef.current.length >= 2) {
+        bearingCoordsRef.current = [[e.lngLat.lng, e.lngLat.lat]];
+      } else {
+        bearingCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
+      }
+      updateBearingSource();
+    };
+    const handleRightClick = (e) => {
+      e.preventDefault();
+      bearingCoordsRef.current = [];
+      updateBearingSource();
+    };
+
+    if (bearingVisible) {
+      map.getCanvas().style.cursor = "crosshair";
+      if (!map.getSource(BEARING_SOURCE)) {
+        map.addSource(BEARING_SOURCE, { type: "geojson", data: turf.featureCollection([]) });
+      }
+      if (!map.getLayer(BEARING_LINE_LAYER)) {
+        map.addLayer({ id: BEARING_LINE_LAYER, type: "line", source: BEARING_SOURCE,
+          filter: ["==", "$type", "LineString"],
+          paint: { "line-color": "#e67e00", "line-width": 2 } });
+      }
+      if (!map.getLayer(BEARING_POINTS_LAYER)) {
+        map.addLayer({ id: BEARING_POINTS_LAYER, type: "circle", source: BEARING_SOURCE,
+          filter: ["==", "$type", "Point"],
+          paint: { "circle-radius": 6, "circle-color": "#ffffff", "circle-stroke-width": 2, "circle-stroke-color": "#e67e00" } });
+      }
+      if (!map.getLayer(BEARING_LABEL_LAYER)) {
+        map.addLayer({ id: BEARING_LABEL_LAYER, type: "symbol", source: BEARING_SOURCE,
+          filter: ["has", "bearingLabel"],
+          layout: { "text-field": ["get", "bearingLabel"], "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"], "text-size": 13, "text-anchor": "bottom", "text-offset": [0, -1] },
+          paint: { "text-color": "#b35000", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+      }
+      map.on("click", handleClick);
+      map.on("contextmenu", handleRightClick);
+    } else {
+      map.getCanvas().style.cursor = "";
+      bearingCoordsRef.current = [];
+      clearBearingLayers();
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+    }
+
+    return () => {
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+  }, [layers?.measureBearing, isMapReady]);
+
+  // ── Coordinate Picker ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const coordVisible = typeof layers?.coordPicker === "object"
+      ? layers.coordPicker.visible
+      : !!layers?.coordPicker;
+
+    const handleClick = (e) => {
+      const { lng, lat } = e.lngLat;
+      const lngStr = lng.toFixed(6);
+      const latStr = lat.toFixed(6);
+      if (coordPickerPopupRef.current) {
+        coordPickerPopupRef.current.remove();
+        coordPickerPopupRef.current = null;
+      }
+      navigator.clipboard?.writeText(`${latStr}, ${lngStr}`).catch(() => {});
+      const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, closeOnClick: false, maxWidth: "260px" })
+        .setLngLat([lng, lat])
+        .setHTML(`
+          <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#1f2937;min-width:190px">
+            <div style="font-weight:700;color:#0f3d2e;margin-bottom:6px;font-size:13px;">📍 Coordinates</div>
+            <div><span style="font-weight:600">Latitude:</span> ${latStr}</div>
+            <div><span style="font-weight:600">Longitude:</span> ${lngStr}</div>
+            <div style="margin-top:8px;padding:4px 8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;font-size:11px;color:#166534">
+              ✓ Copied to clipboard
+            </div>
+          </div>
+        `)
+        .addTo(map);
+      coordPickerPopupRef.current = popup;
+      popup.on("close", () => { coordPickerPopupRef.current = null; });
+    };
+
+    if (coordVisible) {
+      map.getCanvas().style.cursor = "crosshair";
+      map.on("click", handleClick);
+    } else {
+      map.getCanvas().style.cursor = "";
+      if (coordPickerPopupRef.current) {
+        coordPickerPopupRef.current.remove();
+        coordPickerPopupRef.current = null;
+      }
+      map.off("click", handleClick);
+    }
+
+    return () => {
+      map.off("click", handleClick);
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+  }, [layers?.coordPicker, isMapReady]);
+
+  // ── My Location ───────────────────────────────────────────────────────────
+  // One-shot geolocation: fires as soon as the tool is toggled on, pins the
+  // user's GPS position with a pulsing marker and auto-deactivates.
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const locationVisible = typeof layers?.myLocation === "object"
+      ? layers.myLocation.visible
+      : !!layers?.myLocation;
+
+    if (!locationVisible) return;
+
+    if (!navigator.geolocation) {
+      const center = map.getCenter();
+      new mapboxgl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "240px" })
+        .setLngLat([center.lng, center.lat])
+        .setHTML(`<div style="font-family:Arial,sans-serif;font-size:12px;color:#b91c1c">
+          Geolocation is not supported by your browser.
+        </div>`)
+        .addTo(map);
+      return;
+    }
+
+    // Build a pulsing "you are here" dot element
+    const buildPulseEl = () => {
+      const wrapper = document.createElement("div");
+      wrapper.style.cssText = "position:relative;width:20px;height:20px;";
+
+      const pulse = document.createElement("div");
+      pulse.style.cssText = `
+        position:absolute;inset:0;border-radius:50%;
+        background:rgba(14,165,233,0.3);
+        animation:gps-pulse 1.6s ease-out infinite;
+      `;
+
+      const dot = document.createElement("div");
+      dot.style.cssText = `
+        position:absolute;top:50%;left:50%;
+        transform:translate(-50%,-50%);
+        width:12px;height:12px;border-radius:50%;
+        background:#0ea5e9;border:2.5px solid #fff;
+        box-shadow:0 0 0 2px #0369a1;
+      `;
+
+      // Inject keyframes once
+      if (!document.getElementById("gps-pulse-style")) {
+        const style = document.createElement("style");
+        style.id = "gps-pulse-style";
+        style.textContent = `
+          @keyframes gps-pulse {
+            0%   { transform:scale(1);   opacity:0.8; }
+            100% { transform:scale(2.8); opacity:0;   }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      wrapper.appendChild(pulse);
+      wrapper.appendChild(dot);
+      return wrapper;
+    };
+
+    // Remove any existing marker before placing a new one
+    if (locationMarkerRef.current) {
+      locationMarkerRef.current.remove();
+      locationMarkerRef.current = null;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { longitude: lng, latitude: lat } = pos.coords;
+
+        // Guard: remove again in case of a race between two rapid toggles
+        if (locationMarkerRef.current) {
+          locationMarkerRef.current.remove();
+          locationMarkerRef.current = null;
+        }
+
+        locationMarkerRef.current = new mapboxgl.Marker({ element: buildPulseEl(), anchor: "center" })
+          .setLngLat([lng, lat])
+          .addTo(map);
+
+        map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 1200, essential: true });
+
+        navigator.clipboard?.writeText(`${lat.toFixed(6)}, ${lng.toFixed(6)}`).catch(() => {});
+      },
+      (err) => {
+        console.warn("Geolocation error:", err.message);
+        const center = map.getCenter();
+        new mapboxgl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "260px" })
+          .setLngLat([center.lng, center.lat])
+          .setHTML(`<div style="font-family:Arial,sans-serif;font-size:12px;color:#b91c1c;padding:2px">
+            ⚠️ Could not get your location.<br/>
+            <span style="color:#6b7280;font-size:11px">${err.message}</span>
+          </div>`)
+          .addTo(map);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  }, [layers?.myLocation, isMapReady]);
+
+  // ── Snap to Feature ───────────────────────────────────────────────────────
+
+  // Click anywhere on the map → finds the nearest vertex from any loaded
+  // GeoJSON layer and places a snapped marker at that exact coordinate.
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const snapVisible = typeof layers?.snapToFeature === "object"
+      ? layers.snapToFeature.visible
+      : !!layers?.snapToFeature;
+
+    const clearSnapLayers = () => {
+      try {
+        if (map.getLayer(SNAP_LABEL_LAYER)) map.removeLayer(SNAP_LABEL_LAYER);
+        if (map.getLayer(SNAP_LINE_LAYER)) map.removeLayer(SNAP_LINE_LAYER);
+        if (map.getLayer(SNAP_LAYER)) map.removeLayer(SNAP_LAYER);
+        if (map.getSource(SNAP_SOURCE)) map.removeSource(SNAP_SOURCE);
+      } catch (e) { /* ignore */ }
+    };
+
+    // Collect all vertices from every loaded GeoJSON layer
+    const getAllVertices = () => {
+      const vertices = [];
+      const saved = currentGeojson.current;
+
+      Object.values(saved).forEach((fc) => {
+        if (!Array.isArray(fc?.features)) return;
+        fc.features.forEach((feature) => {
+          const geom = feature?.geometry;
+          if (!geom) return;
+
+          const extractCoords = (coords) => {
+            if (!Array.isArray(coords)) return;
+            if (typeof coords[0] === "number") {
+              vertices.push(turf.point(coords));
+            } else {
+              coords.forEach(extractCoords);
+            }
+          };
+          extractCoords(geom.coordinates);
+        });
+      });
+
+      return vertices;
+    };
+
+    const handleClick = (e) => {
+      const { lng, lat } = e.lngLat;
+      const clickPt = turf.point([lng, lat]);
+
+      const vertices = getAllVertices();
+      if (!vertices.length) {
+        // No loaded layers to snap to — show info popup
+        const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, closeOnClick: true, maxWidth: "240px" })
+          .setLngLat([lng, lat])
+          .setHTML(`<div style="font-family:Arial,sans-serif;font-size:12px;color:#92400e;padding:4px">
+            🧲 No loaded layers to snap to.<br/>Load a boundary or society layer first.
+          </div>`)
+          .addTo(map);
+        return;
+      }
+
+      // Find nearest vertex using turf.nearestPoint
+      const vertexCollection = turf.featureCollection(vertices);
+      const nearest = turf.nearestPoint(clickPt, vertexCollection);
+      const [snapLng, snapLat] = nearest.geometry.coordinates;
+
+      const distM = turf.distance(clickPt, nearest, { units: "meters" });
+
+      const snapFeatures = [
+        turf.point([snapLng, snapLat], {
+          snapLabel: `${snapLat.toFixed(6)}, ${snapLng.toFixed(6)}\n↔ ${distM.toFixed(1)} m`,
+        }),
+        // Dashed line from click to snap point
+        turf.lineString([[lng, lat], [snapLng, snapLat]]),
+      ];
+
+      if (!map.getSource(SNAP_SOURCE)) {
+        map.addSource(SNAP_SOURCE, { type: "geojson", data: turf.featureCollection(snapFeatures) });
+
+        map.addLayer({
+          id: SNAP_LINE_LAYER,
+          type: "line",
+          source: SNAP_SOURCE,
+          filter: ["==", "$type", "LineString"],
+          paint: { "line-color": "#0ea5e9", "line-width": 1.5, "line-dasharray": [2, 2] },
+        });
+
+        map.addLayer({
+          id: SNAP_LAYER,
+          type: "circle",
+          source: SNAP_SOURCE,
+          filter: ["==", "$type", "Point"],
+          paint: {
+            "circle-radius": 7,
+            "circle-color": "#0ea5e9",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#ffffff",
+          },
+        });
+
+        map.addLayer({
+          id: SNAP_LABEL_LAYER,
+          type: "symbol",
+          source: SNAP_SOURCE,
+          filter: ["has", "snapLabel"],
+          layout: {
+            "text-field": ["get", "snapLabel"],
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-size": 11,
+            "text-anchor": "bottom",
+            "text-offset": [0, -1.2],
+          },
+          paint: {
+            "text-color": "#0369a1",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 2,
+          },
+        });
+      } else {
+        map.getSource(SNAP_SOURCE).setData(turf.featureCollection(snapFeatures));
+      }
+
+      // Copy snapped coords to clipboard
+      navigator.clipboard?.writeText(`${snapLat.toFixed(6)}, ${snapLng.toFixed(6)}`).catch(() => {});
+    };
+
+    const handleRightClick = (e) => {
+      e.preventDefault();
+      clearSnapLayers();
+    };
+
+    if (snapVisible) {
+      map.getCanvas().style.cursor = "crosshair";
+      map.on("click", handleClick);
+      map.on("contextmenu", handleRightClick);
+    } else {
+      map.getCanvas().style.cursor = "";
+      clearSnapLayers();
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+    }
+
+    return () => {
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+  }, [layers?.snapToFeature, isMapReady]);
 
   return (
     <div className="absolute inset-0 h-full w-full z-0">

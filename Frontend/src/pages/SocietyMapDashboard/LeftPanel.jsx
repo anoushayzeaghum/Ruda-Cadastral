@@ -2,29 +2,25 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Layers,
   Wrench,
-  MapPin,
-  Lock,
-  Package,
   Satellite,
   Ruler,
-  User,
   ChevronRight,
   Map,
-  Grid3X3,
-  Eye,
   Info,
   Search,
   ChevronDown,
-  X,
-  MapPinned,
-  Network,
-  Route,
+  Crosshair,
+  SquareDashedIcon,
+  Compass,
+  LocateFixed,
+  Magnet,
   Building2,
   Mountain,
   Activity,
   Image,
   Globe2,
   Plane,
+  MapPinned,
 } from "lucide-react";
 
 const BASEMAPS = [
@@ -372,14 +368,130 @@ export default function LeftPanel({
 
           {activePanel === "toolbox" && (
             <Panel title="Toolbox">
-              <div className="grid grid-cols-3 gap-2 p-3">
-                <ToolboxButton icon={<MapPin size={18} />} label="Connect" />
-                <ToolboxButton icon={<Lock size={18} />} label="Parcel" />
-                <ToolboxButton icon={<Package size={18} />} label="Mauza" />
-                <ToolboxButton icon={<Ruler size={18} />} label="Demarcate" />
-                <ToolboxButton icon={<User size={18} />} label="Default" />
-                <ToolboxButton icon={<Grid3X3 size={18} />} label="Grid" />
+              <div className="px-3 pb-1 pt-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                  Measurement Tools
+                </p>
               </div>
+              <div className="grid grid-cols-3 gap-2 px-3 pb-3">
+                <ToolboxButton
+                  icon={<Ruler size={18} />}
+                  label="Distance"
+                  active={getLayerVisible("measure")}
+                  description="Click to measure line distance. Right-click to clear."
+                  onClick={() => {
+                    const willActivate = !getLayerVisible("measure");
+                    if (willActivate) {
+                      updateLayer("measureArea", { visible: false });
+                      updateLayer("measureBearing", { visible: false });
+                      updateLayer("coordPicker", { visible: false });
+                    }
+                    toggleLayer("measure");
+                  }}
+                />
+                <ToolboxButton
+                  icon={<SquareDashedIcon size={18} />}
+                  label="Area"
+                  active={getLayerVisible("measureArea")}
+                  description="Click to draw a polygon and calculate area. Right-click to close & finish."
+                  onClick={() => {
+                    const willActivate = !getLayerVisible("measureArea");
+                    if (willActivate) {
+                      updateLayer("measure", { visible: false });
+                      updateLayer("measureBearing", { visible: false });
+                      updateLayer("coordPicker", { visible: false });
+                    }
+                    toggleLayer("measureArea");
+                  }}
+                />
+                <ToolboxButton
+                  icon={<Compass size={18} />}
+                  label="Bearing"
+                  active={getLayerVisible("measureBearing")}
+                  description="Click two points to measure the bearing angle between them."
+                  onClick={() => {
+                    const willActivate = !getLayerVisible("measureBearing");
+                    if (willActivate) {
+                      updateLayer("measure", { visible: false });
+                      updateLayer("measureArea", { visible: false });
+                      updateLayer("coordPicker", { visible: false });
+                    }
+                    toggleLayer("measureBearing");
+                  }}
+                />
+                <ToolboxButton
+                  icon={<Crosshair size={18} />}
+                  label="Coordinates"
+                  active={getLayerVisible("coordPicker")}
+                  description="Click anywhere to copy the exact coordinates of that point."
+                  onClick={() => {
+                    const willActivate = !getLayerVisible("coordPicker");
+                    if (willActivate) {
+                      updateLayer("measure", { visible: false });
+                      updateLayer("measureArea", { visible: false });
+                      updateLayer("measureBearing", { visible: false });
+                    }
+                    toggleLayer("coordPicker");
+                  }}
+                />
+                <ToolboxButton
+                  icon={<LocateFixed size={18} />}
+                  label="My Location"
+                  active={getLayerVisible("myLocation")}
+                  description="Pin your current GPS location on the map."
+                  onClick={() => {
+                    const willActivate = !getLayerVisible("myLocation");
+                    if (willActivate) {
+                      updateLayer("measure", { visible: false });
+                      updateLayer("measureArea", { visible: false });
+                      updateLayer("measureBearing", { visible: false });
+                      updateLayer("coordPicker", { visible: false });
+                      updateLayer("snapToFeature", { visible: false });
+                    }
+                    toggleLayer("myLocation");
+                  }}
+                />
+                <ToolboxButton
+                  icon={<Magnet size={18} />}
+                  label="Snap Point"
+                  active={getLayerVisible("snapToFeature")}
+                  description="Click anywhere — snaps to the nearest vertex from loaded layers and shows its coordinates."
+                  onClick={() => {
+                    const willActivate = !getLayerVisible("snapToFeature");
+                    if (willActivate) {
+                      updateLayer("measure", { visible: false });
+                      updateLayer("measureArea", { visible: false });
+                      updateLayer("measureBearing", { visible: false });
+                      updateLayer("coordPicker", { visible: false });
+                      updateLayer("myLocation", { visible: false });
+                    }
+                    toggleLayer("snapToFeature");
+                  }}
+                />
+              </div>
+
+              {/* Active tool hint */}
+              {(getLayerVisible("measure") ||
+                getLayerVisible("measureArea") ||
+                getLayerVisible("measureBearing") ||
+                getLayerVisible("coordPicker") ||
+                getLayerVisible("myLocation") ||
+                getLayerVisible("snapToFeature")) && (
+                <div className="mx-3 mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-700">
+                  {getLayerVisible("measure") &&
+                    "📏 Click points to measure distance. Right-click to clear."}
+                  {getLayerVisible("measureArea") &&
+                    "🔲 Click to draw polygon vertices. Right-click to close and calculate area."}
+                  {getLayerVisible("measureBearing") &&
+                    "🧭 Click the start point, then the end point to measure bearing."}
+                  {getLayerVisible("coordPicker") &&
+                    "📍 Click anywhere on the map to get precise coordinates."}
+                  {getLayerVisible("myLocation") &&
+                    "📡 Locating your position — please allow location access if prompted."}
+                  {getLayerVisible("snapToFeature") &&
+                    "🧲 Click anywhere — snaps to the nearest vertex from loaded layers."}
+                </div>
+              )}
             </Panel>
           )}
 
@@ -874,10 +986,20 @@ function LayerRow({
   );
 }
 
-function ToolboxButton({ icon, label }) {
+function ToolboxButton({ icon, label, active, onClick, description }) {
   return (
-    <button className="flex flex-col items-center justify-center gap-1 rounded-md border border-slate-200 bg-white p-2 text-slate-800 transition hover:border-green-700 hover:bg-green-50">
-      <span className="text-green-700">{icon}</span>
+    <button
+      type="button"
+      onClick={onClick}
+      title={description || label}
+      aria-label={label}
+      className={`flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition ${
+        active
+          ? "border-green-700 bg-green-50 text-green-800 shadow-inner"
+          : "border-slate-200 bg-white text-slate-800 hover:border-green-700 hover:bg-green-50"
+      }`}
+    >
+      <span className={active ? "text-green-800" : "text-green-700"}>{icon}</span>
       <span className="text-center text-[10px] font-medium leading-tight">
         {label}
       </span>
