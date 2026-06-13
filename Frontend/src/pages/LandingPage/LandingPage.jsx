@@ -209,8 +209,8 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
           alt={title}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
-        {/* gradient overlay */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-70 group-hover:opacity-60 transition-opacity duration-300`} />
+        {/* subtle dark overlay only at bottom for title legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
 
         {/* icon badge */}
         <div className="absolute top-4 left-4 w-10 h-10 rounded-xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-white">
@@ -227,8 +227,8 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
         )}
 
         {/* title on image */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-6 bg-gradient-to-t from-black/70 to-transparent">
-          <h3 className="text-white font-black text-base leading-snug">{title}</h3>
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-8">
+          <h3 className="text-white font-black text-base leading-snug drop-shadow-lg">{title}</h3>
         </div>
       </div>
 
