@@ -6,6 +6,7 @@ import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
 import ParcelPanel from "./ParcelPanel";
 import MapControls from "./MapControls";
+import Legend from "./Legend";
 
 import MapView from "./MapView";
 
@@ -380,6 +381,14 @@ export default function MapPage() {
           selectedMauza={filters?.selectedMauzaDetails}
           selectedFilterLayers={selectedFilterLayers}
         />
+
+
+<Legend
+  layers={layers}
+  rudaPhases={rudaPhases}
+  selectedRudaPhaseIds={selectedRudaPhaseIds}
+  selectedProposedRoadIds={selectedProposedRoadIds}
+/>
 
         <ParcelPanel
           parcel={selectedParcel}
