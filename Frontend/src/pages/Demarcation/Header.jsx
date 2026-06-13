@@ -1,4 +1,4 @@
-import { Search, ChevronDown, LayoutDashboard } from "lucide-react";
+import { LogOut, Home } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 import { useNavigate } from "react-router-dom";
 
@@ -14,6 +14,14 @@ const headerBackgroundStyle = {
 
 export default function Header() {
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+
+    navigate("/login");
+  };
 
   return (
     <div
@@ -46,13 +54,25 @@ export default function Header() {
 
         {/* RIGHT SECTION */}
         <div className="flex items-center gap-3">
-          {/* Dashboard Button */}
+          {/* Home Button */}
           <button
-            onClick={() => navigate("/dashboard")}
-            className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium flex items-center gap-2 transition"
+            onClick={() => navigate("/")}
+            className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-md flex items-center justify-center transition"
+            aria-label="Go to landing page"
+            title="Home"
           >
-            <LayoutDashboard size={16} />
-            Dashboard
+            <Home size={18} />
+          </button>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="bg-white/15 hover:bg-white/25 text-white px-3 py-2 rounded-md flex items-center gap-2 transition"
+            aria-label="Logout"
+            title="Logout"
+          >
+            <LogOut size={18} />
+            <span className="text-sm font-medium">Logout</span>
           </button>
         </div>
       </div>
