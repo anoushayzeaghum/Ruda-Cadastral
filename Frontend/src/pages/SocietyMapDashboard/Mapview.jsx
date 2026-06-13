@@ -30,6 +30,13 @@ const SELECTED_SOURCE = "selected-source";
 const SELECTED_FILL = "selected-fill";
 const SELECTED_LINE = "selected-line";
 
+const DSM_SOURCE = "local-dsm-source";
+const DSM_LAYER = "local-dsm-layer";
+const DTM_SOURCE = "local-dtm-source";
+const DTM_LAYER = "local-dtm-layer";
+const ORTHO_SOURCE = "local-ortho-source";
+const ORTHO_LAYER = "local-ortho-layer";
+
 const emptyFeatureCollection = () => ({
   type: "FeatureCollection",
   features: [],
@@ -125,6 +132,10 @@ export default function MapView({
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const currentGeojson = useRef({});
+
+  const prevDemVisible = useRef(false);
+  const prevDtmVisible = useRef(false);
+  const prevOrthoVisible = useRef(false);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -720,6 +731,126 @@ export default function MapView({
     layers?.spotLevel,
     layers?.contours,
   ]);
+
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const demVisible = getLayerVisible(layers, "dem", false);
+    const dtmVisible = getLayerVisible(layers, "dtm", false);
+    const orthoVisible = getLayerVisible(layers, "orthoImage", false);
+
+    const shouldFlyTo = (orthoVisible && !prevOrthoVisible.current) || (demVisible && !prevDemVisible.current) || (dtmVisible && !prevDtmVisible.current);
+
+    if (shouldFlyTo) {
+      const bounds = [
+        [74.42562653088396, 31.60509230706726],
+        [74.43545280361002, 31.61121654113590]
+      ];
+      map.fitBounds(bounds, { padding: 50, duration: 1500 });
+    }
+
+    prevDemVisible.current = demVisible;
+    prevDtmVisible.current = dtmVisible;
+    prevOrthoVisible.current = orthoVisible;
+
+    const restoreRasters = () => {
+      // Ortho Layer
+      const orthoOpacity = getLayerOpacity(layers, "orthoImage", 100) / 100;
+
+      if (orthoVisible) {
+        if (!map.getSource(ORTHO_SOURCE)) {
+          map.addSource(ORTHO_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chaharbagh_Ortho/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(ORTHO_LAYER)) {
+          map.addLayer({
+              id: ORTHO_LAYER,
+              type: 'raster',
+              source: ORTHO_SOURCE,
+              paint: { 'raster-opacity': orthoOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(ORTHO_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(ORTHO_LAYER, 'raster-opacity', orthoOpacity);
+        }
+      } else {
+        if (map.getLayer(ORTHO_LAYER)) {
+          map.setLayoutProperty(ORTHO_LAYER, 'visibility', 'none');
+        }
+      }
+
+      // DSM (DEM) Layer
+      const dsmOpacity = getLayerOpacity(layers, "dem", 85) / 100;
+
+      if (demVisible) {
+        if (!map.getSource(DSM_SOURCE)) {
+          map.addSource(DSM_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(DSM_LAYER)) {
+          map.addLayer({
+              id: DSM_LAYER,
+              type: 'raster',
+              source: DSM_SOURCE,
+              paint: { 'raster-opacity': dsmOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(DSM_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(DSM_LAYER, 'raster-opacity', dsmOpacity);
+        }
+      } else {
+        if (map.getLayer(DSM_LAYER)) {
+          map.setLayoutProperty(DSM_LAYER, 'visibility', 'none');
+        }
+      }
+
+      // DTM Layer
+      const dtmOpacity = getLayerOpacity(layers, "dtm", 85) / 100;
+
+      if (dtmVisible) {
+        if (!map.getSource(DTM_SOURCE)) {
+          map.addSource(DTM_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(DTM_LAYER)) {
+          map.addLayer({
+              id: DTM_LAYER,
+              type: 'raster',
+              source: DTM_SOURCE,
+              paint: { 'raster-opacity': dtmOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(DTM_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(DTM_LAYER, 'raster-opacity', dtmOpacity);
+        }
+      } else {
+        if (map.getLayer(DTM_LAYER)) {
+          map.setLayoutProperty(DTM_LAYER, 'visibility', 'none');
+        }
+      }
+    };
+
+    restoreRasters();
+    
+    // Attempt to restore if style changes
+    map.on('style.load', restoreRasters);
+    return () => {
+      map.off('style.load', restoreRasters);
+    };
+  }, [layers?.dem, layers?.dtm, layers?.orthoImage, isMapReady]);
 
   return (
     <div className="absolute inset-0 h-full w-full z-0">

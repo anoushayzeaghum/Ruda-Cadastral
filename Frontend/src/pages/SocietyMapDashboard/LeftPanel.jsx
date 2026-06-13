@@ -58,7 +58,7 @@ const SOCIETY_VECTOR_LAYERS = [
 ];
 
 const SOCIETY_RASTER_LAYERS = [
-  { key: "dem", label: "DEM", icon: <Mountain size={15} /> },
+  { key: "dem", label: "DSM", icon: <Mountain size={15} /> },
   { key: "dtm", label: "DTM", icon: <Activity size={15} /> },
   { key: "orthoImage", label: "Ortho Image", icon: <Image size={15} /> },
   { key: "satelliteView", label: "Satellite View", icon: <Globe2 size={15} /> },
