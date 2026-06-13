@@ -659,7 +659,6 @@ export default function Statistics({ activeFilter = "land" }) {
               </div>
             </Panel>
           </div>
-        )}
 
         {/* ── Row 3: Bar Chart + Quick Actions (always visible) ── */}
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-[2.4fr_1.2fr]">
