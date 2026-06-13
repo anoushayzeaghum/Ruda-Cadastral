@@ -46,7 +46,7 @@ export default function SubHeader({
       : selectedSocietyName;
 
   return (
-    <div className="absolute top-4 left-1/2 z-30 w-fit max-w-[calc(100vw-96px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
+    <div className="absolute top-4 left-[46%] z-30 w-fit max-w-[calc(100vw-96px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
       <div className="flex w-fit items-center justify-center gap-2 px-2 py-2 overflow-visible">
         <div className="flex w-fit items-center justify-center gap-2 overflow-visible">
           <FilterCard
