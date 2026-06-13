@@ -3,6 +3,8 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import * as turf from "@turf/turf";
 
+import MapControls from "./MapControls";
+
 import {
   getDistrictBoundary,
   getTehsilBoundary,
@@ -248,6 +250,7 @@ export default function MapView({
   selectedFeatureNumber,
   onFeaturesLoaded,
 }) {
+  const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const currentGeojson = useRef({});
@@ -1890,11 +1893,16 @@ export default function MapView({
   }, [layers?.measure, isMapReady]);
 
   return (
-    <div className="absolute inset-0 w-full h-full">
+    <div ref={mapWrapperRef} className="absolute inset-0 w-full h-full bg-white">
       <div
         ref={mapRef}
         className="absolute inset-0 w-full h-full"
         style={{ pointerEvents: "auto" }}
+      />
+
+      <MapControls
+        map={isMapReady ? mapInstance.current : null}
+        fullscreenTargetRef={mapWrapperRef}
       />
 
       {error && (
@@ -1904,7 +1912,7 @@ export default function MapView({
       )}
 
       {isLoading && (
-        <div className="absolute top-5 right-5 bg-blue-500 text-white px-4 py-2 rounded shadow">
+        <div className="absolute top-5 right-24 z-50 bg-blue-500 text-white px-4 py-2 rounded shadow">
           Loading...
         </div>
       )}
