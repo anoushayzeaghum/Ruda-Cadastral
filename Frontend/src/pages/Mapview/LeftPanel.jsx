@@ -51,6 +51,8 @@ export default function LeftPanel({
   setRudaPhases,
   selectedRudaPhaseIds,
   setSelectedRudaPhaseIds,
+  selectedProposedRoadIds,
+  setSelectedProposedRoadIds,
   basemap,
   setBasemap,
   selectedMauza,
@@ -62,7 +64,6 @@ export default function LeftPanel({
   const initializedOpacityKeysRef = useRef(new Set());
 
   const [rudaProposedRoads, setRudaProposedRoads] = useState([]);
-  const [selectedProposedRoadIds, setSelectedProposedRoadIds] = useState([]);
   const [proposedDropdownOpen, setProposedDropdownOpen] = useState(false);
 
   const getDefaultOpacityForSelectedLayer = (item) => {
@@ -233,7 +234,7 @@ export default function LeftPanel({
   const toggleProposedRoadLayer = () => {
     const willOpen = !getLayerVisible("proposedRoads");
 
-    if (willOpen && selectedProposedRoadIds.length === 0) {
+    if (willOpen && (selectedProposedRoadIds || []).length === 0) {
       setSelectedProposedRoadIds(getAllProposedRoadIds());
     }
 
@@ -575,7 +576,7 @@ function RudaProposedRoadsLayers({
                       <input
                         type="checkbox"
                         checked={
-                          selectedProposedRoadIds.length ===
+                          (selectedProposedRoadIds || []).length ===
                           rudaProposedRoads.length
                         }
                         onChange={(e) => {
@@ -607,7 +608,7 @@ function RudaProposedRoadsLayers({
                     const id = road.gid ?? road.id ?? road.oid;
                     const name = road.name ?? `Road ${id}`;
 
-                    const checked = selectedProposedRoadIds.includes(id);
+                    const checked = (selectedProposedRoadIds || []).includes(id);
 
                     return (
                       <label
