@@ -51,6 +51,160 @@ const MAP_THEME = {
   lineWidth: 2,
 };
 
+const RUDA_PHASE_COLORS = [
+  "#6bb7e8",
+  "#f8d56b",
+  "#6bd69a",
+  "#f59e72",
+  "#b99cf3",
+  "#78d6d0",
+  "#f3a6c8",
+  "#a7d77b",
+  "#f4b860",
+  "#86a8e7",
+  "#d7b377",
+  "#8dd3c7",
+];
+
+const ROAD_STYLE_PALETTE = [
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#06b6d4",
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#14b8a6",
+  "#a855f7",
+  "#84cc16",
+  "#f43f5e",
+];
+
+const hashString = (value = "") => {
+  const text = String(value || "");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+const getRudaPhaseColor = (phaseId) => {
+  const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
+  return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
+};
+
+const stripHtml = (value = "") =>
+  String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getRudaPhaseIdFromLevel = (level = "") => {
+  const match = String(level).match(/^ruda-(.+)$/);
+  return match?.[1] || "";
+};
+
+const getRudaPhaseLabel = (props = {}, phaseId = "") => {
+  const candidates = [
+    props.phase,
+    props.phase_name,
+    props.name,
+    props.folderpath,
+    props.popupinfo,
+    props.snippet,
+  ];
+
+  for (const value of candidates) {
+    const clean = stripHtml(value);
+    if (!clean) continue;
+
+    const phaseMatch = clean.match(/phase\s*[-_:]?\s*([a-z0-9]+)/i);
+    if (phaseMatch?.[1]) return `Phase ${phaseMatch[1]}`;
+
+    if (clean.length <= 28) return clean;
+    return clean.slice(0, 28);
+  }
+
+  return phaseId ? `Phase ${phaseId}` : "RUDA Phase";
+};
+
+const getRoadLayerName = (props = {}) =>
+  String(
+    props.layer ||
+      props.Layer ||
+      props.road_layer ||
+      props.road_type ||
+      props.name ||
+      "Proposed Road",
+  ).trim() || "Proposed Road";
+
+const getRoadColor = (layerName = "") => {
+  const index = hashString(layerName) % ROAD_STYLE_PALETTE.length;
+  return ROAD_STYLE_PALETTE[index];
+};
+
+const getRoadWidth = (layerName = "") => {
+  const text = String(layerName || "").toLowerCase();
+
+  if (text.includes("300") || text.includes("express") || text.includes("motorway")) return 8;
+  if (text.includes("200") || text.includes("primary") || text.includes("arterial")) return 7;
+  if (text.includes("150") || text.includes("secondary")) return 6;
+  if (text.includes("120") || text.includes("100")) return 5;
+  if (text.includes("80") || text.includes("60") || text.includes("local")) return 4;
+
+  return 4.5;
+};
+
+const getUniqueRoadLayerNames = (features = []) => {
+  const seen = new Set();
+  const names = [];
+
+  features.forEach((feature) => {
+    const name = getRoadLayerName(feature?.properties || {});
+    if (!seen.has(name)) {
+      seen.add(name);
+      names.push(name);
+    }
+  });
+
+  return names;
+};
+
+const buildRoadMatchExpression = (layerNames, valueGetter, fallback) => {
+  const expression = ["match", ["to-string", ["coalesce", ["get", "layer"], "Proposed Road"]]];
+
+  layerNames.forEach((name) => {
+    expression.push(name, valueGetter(name));
+  });
+
+  expression.push(fallback);
+  return expression;
+};
+
+const prepareRudaGeojsonForDisplay = (level, geojson) => {
+  const phaseId = getRudaPhaseIdFromLevel(level);
+  const color = getRudaPhaseColor(phaseId);
+
+  return {
+    type: "FeatureCollection",
+    features: (geojson?.features || []).map((feature) => {
+      const props = feature?.properties || {};
+      return {
+        ...feature,
+        properties: {
+          ...props,
+          _ruda_phase_id: phaseId,
+          _ruda_phase_color: color,
+          _ruda_phase_label: getRudaPhaseLabel(props, phaseId),
+        },
+      };
+    }),
+  };
+};
+
 const emptyFeatureCollection = () => ({
   type: "FeatureCollection",
   features: [],
@@ -256,7 +410,7 @@ export default function MapView({
   const clearProposedRoads = () => {
     try {
       Object.keys(currentGeojson.current || {})
-        .filter((key) => key.startsWith("proposed-road-"))
+        .filter((key) => key.startsWith("proposed-road"))
         .forEach((level) => {
           clearBoundaryLevel(level);
           delete currentGeojson.current[level];
@@ -458,89 +612,149 @@ export default function MapView({
     }
   };
 
-  const getBoundaryIds = (level) => ({
-    source: `${level}-boundary-source`,
-    fill: `${level}-boundary-fill`,
-    line: `${level}-boundary-line`,
-  });
+const getBoundaryIds = (level) => ({
+  source: `${level}-boundary-source`,
+  fill: `${level}-boundary-fill`,
+  line: `${level}-boundary-line`,
+  dashLine: `${level}-boundary-dash-line`,
+  label: `${level}-boundary-label`,
+});
 
-  const clearBoundaryLevel = (level) => {
-    const map = mapInstance.current;
-    if (!map) return;
+const clearBoundaryLevel = (level) => {
+  const map = mapInstance.current;
+  if (!map) return;
 
-    const ids = getBoundaryIds(level);
+  const ids = getBoundaryIds(level);
 
-    try {
-      if (map.getLayer(ids.fill)) map.removeLayer(ids.fill);
-      if (map.getLayer(ids.line)) map.removeLayer(ids.line);
-      if (map.getSource(ids.source)) map.removeSource(ids.source);
-    } catch (e) {
-      console.warn(`Error clearing boundary level ${level}`, e);
-    }
-  };
+  try {
+    if (map.getLayer(ids.label)) map.removeLayer(ids.label);
+    if (map.getLayer(ids.dashLine)) map.removeLayer(ids.dashLine);
+    if (map.getLayer(ids.line)) map.removeLayer(ids.line);
+    if (map.getLayer(ids.fill)) map.removeLayer(ids.fill);
+    if (map.getSource(ids.source)) map.removeSource(ids.source);
+  } catch (e) {
+    console.warn(`Error clearing boundary level ${level}`, e);
+  }
+};
 
-  const drawBoundaryLevel = (level, geojson, opacityOverride = null) => {
-    const map = mapInstance.current;
-    if (!map) return;
+const drawBoundaryLevel = (level, geojson, opacityOverride = null) => {
+  const map = mapInstance.current;
+  if (!map) return;
 
-    const ids = getBoundaryIds(level);
-    clearBoundaryLevel(level);
+  const ids = getBoundaryIds(level);
+  clearBoundaryLevel(level);
 
-    const opacity =
-      opacityOverride !== null && opacityOverride !== undefined
-        ? Number(opacityOverride) / 100
-        : level.startsWith("ruda")
-          ? getLayerOpacity(layers, "rudaBoundary", 50) / 100
-          : 0.2;
+  const isRudaLayer = level.startsWith("ruda");
+  const isProposedRoadLayer = level.startsWith("proposed-road");
 
-    try {
-      map.addSource(ids.source, {
-        type: "geojson",
-        data: geojson || emptyFeatureCollection(),
-      });
+  const opacity =
+    opacityOverride !== null && opacityOverride !== undefined
+      ? Number(opacityOverride) / 100
+      : isRudaLayer
+        ? getLayerOpacity(layers, "rudaBoundary", 50) / 100
+        : 0.2;
 
-      if (level.startsWith("proposed-road")) {
-        map.addLayer({
-          id: ids.line,
-          type: "line",
-          source: ids.source,
-          paint: {
-            "line-color": "#ef4444",
-            "line-width": 4,
-            "line-opacity": opacity,
-          },
-        });
+  const sourceGeojson = isRudaLayer
+    ? prepareRudaGeojsonForDisplay(level, geojson)
+    : geojson || emptyFeatureCollection();
 
-        currentGeojson.current[level] = geojson;
-        return;
-      }
+  try {
+    map.addSource(ids.source, {
+      type: "geojson",
+      data: sourceGeojson,
+    });
 
-      map.addLayer({
-        id: ids.fill,
-        type: "fill",
-        source: ids.source,
-        paint: {
-          "fill-color": level.startsWith("ruda") ? "#3d7cc4" : "#0b6a2e",
-          "fill-opacity": opacity,
-          "fill-outline-color": level.startsWith("ruda") ? "#14532d" : "#194c8e",
-        },
-      });
+    if (isProposedRoadLayer) {
+      const roadLayerNames = getUniqueRoadLayerNames(sourceGeojson.features || []);
 
       map.addLayer({
         id: ids.line,
         type: "line",
         source: ids.source,
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
         paint: {
-          "line-color": level.startsWith("ruda") ? "#14532d" : "#194c8e",
-          "line-width": MAP_THEME.lineWidth,
+          "line-color": buildRoadMatchExpression(
+            roadLayerNames,
+            getRoadColor,
+            "#ef4444",
+          ),
+          "line-width": buildRoadMatchExpression(
+            roadLayerNames,
+            getRoadWidth,
+            4,
+          ),
+          "line-opacity": opacity,
         },
       });
 
-      currentGeojson.current[level] = geojson;
-    } catch (e) {
-      console.error("drawBoundaryLevel error", e);
+      currentGeojson.current[level] = sourceGeojson;
+      return;
     }
-  };
+
+    map.addLayer({
+      id: ids.fill,
+      type: "fill",
+      source: ids.source,
+      paint: {
+        "fill-color": isRudaLayer
+          ? ["coalesce", ["get", "_ruda_phase_color"], "#3d7cc4"]
+          : "#0b6a2e",
+        "fill-opacity": opacity,
+        "fill-outline-color": isRudaLayer ? "#1f2937" : "#194c8e",
+      },
+    });
+
+    map.addLayer({
+      id: ids.line,
+      type: "line",
+      source: ids.source,
+      paint: {
+        "line-color": isRudaLayer ? "#111827" : "#194c8e",
+        "line-width": isRudaLayer ? 2 : MAP_THEME.lineWidth,
+        "line-opacity": 0.95,
+      },
+    });
+
+    if (isRudaLayer) {
+      map.addLayer({
+        id: ids.dashLine,
+        type: "line",
+        source: ids.source,
+        paint: {
+          "line-color": "#111827",
+          "line-width": 1.2,
+          "line-dasharray": [1.4, 1.2],
+          "line-opacity": 0.9,
+        },
+      });
+
+      map.addLayer({
+        id: ids.label,
+        type: "symbol",
+        source: ids.source,
+        layout: {
+          "text-field": ["coalesce", ["get", "_ruda_phase_label"], "RUDA Phase"],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 10, 10, 15, 13],
+          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+        },
+        paint: {
+          "text-color": "#111827",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.4,
+        },
+      });
+    }
+
+    currentGeojson.current[level] = sourceGeojson;
+  } catch (e) {
+    console.error("drawBoundaryLevel error", e);
+  }
+};
 
   const clearLayerAndSource = (fillId, lineId, sourceId) => {
     const map = mapInstance.current;
