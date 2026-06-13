@@ -27,7 +27,7 @@ class UserLoginDashboardCreateView(viewsets.ViewSet):
             
             if user and user.check_password(password) and user.is_active:
                 login(request, user)  # manually log in
-                auth_data = utils.get_tokens_for_user(user)
+                auth_data = shapefiles.get_tokens_for_user(user)
 
                 verified = user.is_verified
             

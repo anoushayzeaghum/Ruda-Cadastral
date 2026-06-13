@@ -9,7 +9,7 @@ class LoginView(APIView):
         user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)
-            auth_data = utils.get_tokens_for_user(request.user)
+            auth_data = shapefiles.get_tokens_for_user(request.user)
             verified = user.is_verified
 
             res = {
