@@ -28,6 +28,235 @@ export function getFeatureId(feature, fallback = "feature") {
   );
 }
 
+function getPossibleIds(feature) {
+  const props = feature?.properties || {};
+  return [
+    feature?.id,
+    props.id,
+    props.gid,
+    props.objectid,
+    props.plot_id,
+    props.plot_no,
+    props.parcel_id,
+    props.parcelid,
+    props.khasra_id,
+    props.kh,
+    props.k,
+  ]
+    .filter((value) => value !== undefined && value !== null && value !== "")
+    .map((value) => String(value));
+}
+
+/*
+  IMPORTANT:
+  This is the easiest place to control special features manually.
+
+  Example:
+  - gid 253 is your green/open-space polygon, so it is kept flat and green.
+  - Add more gid/objectid values here when you identify roads, parks, plazas, etc.
+*/
+const FEATURE_STYLE_OVERRIDES = {
+  "253": {
+    category: "greenSpace",
+    label: "Green Space",
+    fillColor: "#16a34a",
+    outlineColor: "#14532d",
+    opacity: 0.9,
+    extrude: false,
+    heightMeters: 0,
+  },
+
+  // Add your own IDs like this:
+  // "254": { category: "road", fillColor: "#22c55e", extrude: false, heightMeters: 0 },
+  // "300": { category: "commercial", fillColor: "#facc15", heightMeters: 55 },
+  // "301": { category: "civic", fillColor: "#ef4444", heightMeters: 45 },
+};
+
+const CATEGORY_PALETTES = {
+  residential: ["#7dd3fc", "#60a5fa", "#93c5fd", "#bae6fd", "#67e8f9"],
+  commercial: ["#facc15", "#eab308", "#f59e0b", "#fb923c"],
+  civic: ["#ef4444", "#dc2626", "#94a3b8", "#64748b"],
+  mixedUse: ["#c084fc", "#d8b4fe", "#a855f7", "#e879f9"],
+  greenSpace: ["#16a34a"],
+  road: ["#22c55e"],
+  water: ["#38bdf8"],
+};
+
+function hashString(value = "") {
+  let hash = 0;
+  const text = String(value);
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function pickFromPalette(category, seed) {
+  const palette = CATEGORY_PALETTES[category] || CATEGORY_PALETTES.residential;
+  return palette[hashString(seed) % palette.length];
+}
+
+function normalizeText(value) {
+  return String(value ?? "").toLowerCase().trim();
+}
+
+function getSearchableProperties(feature) {
+  const props = feature?.properties || {};
+  return [
+    props.landuse,
+    props.land_use,
+    props.use,
+    props.type,
+    props.category,
+    props.class,
+    props.name,
+    props.label,
+    props.description,
+    props.remarks,
+    props.zone,
+    props.block,
+  ]
+    .map(normalizeText)
+    .filter(Boolean)
+    .join(" ");
+}
+
+function firstMatchingOverride(feature) {
+  const ids = getPossibleIds(feature);
+  return ids.map((id) => FEATURE_STYLE_OVERRIDES[id]).find(Boolean) || null;
+}
+
+function ringAreaSqMeters(ring = []) {
+  if (!Array.isArray(ring) || ring.length < 3) return 0;
+
+  const valid = ring
+    .map((coord) => [Number(coord?.[0]), Number(coord?.[1])])
+    .filter(([lon, lat]) => Number.isFinite(lon) && Number.isFinite(lat));
+
+  if (valid.length < 3) return 0;
+
+  const earthRadius = 6378137;
+  const avgLat = valid.reduce((sum, coord) => sum + coord[1], 0) / valid.length;
+  const lat0 = Cesium.Math.toRadians(avgLat);
+
+  const projected = valid.map(([lon, lat]) => {
+    const x = earthRadius * Cesium.Math.toRadians(lon) * Math.cos(lat0);
+    const y = earthRadius * Cesium.Math.toRadians(lat);
+    return [x, y];
+  });
+
+  let area = 0;
+  for (let i = 0; i < projected.length; i += 1) {
+    const [x1, y1] = projected[i];
+    const [x2, y2] = projected[(i + 1) % projected.length];
+    area += x1 * y2 - x2 * y1;
+  }
+
+  return Math.abs(area / 2);
+}
+
+function ringPerimeterMeters(ring = []) {
+  if (!Array.isArray(ring) || ring.length < 2) return 0;
+
+  let total = 0;
+  for (let i = 0; i < ring.length; i += 1) {
+    const current = ring[i];
+    const next = ring[(i + 1) % ring.length];
+    const lon1 = Number(current?.[0]);
+    const lat1 = Number(current?.[1]);
+    const lon2 = Number(next?.[0]);
+    const lat2 = Number(next?.[1]);
+
+    if (
+      !Number.isFinite(lon1) ||
+      !Number.isFinite(lat1) ||
+      !Number.isFinite(lon2) ||
+      !Number.isFinite(lat2)
+    ) {
+      continue;
+    }
+
+    const c1 = Cesium.Cartographic.fromDegrees(lon1, lat1);
+    const c2 = Cesium.Cartographic.fromDegrees(lon2, lat2);
+    const geodesic = new Cesium.EllipsoidGeodesic(c1, c2);
+    total += geodesic.surfaceDistance;
+  }
+
+  return total;
+}
+
+function getPolygonAreaSqMeters(coordinates = []) {
+  if (!Array.isArray(coordinates) || !coordinates.length) return 0;
+  const outer = ringAreaSqMeters(coordinates[0]);
+  const holes = coordinates.slice(1).reduce((sum, ring) => sum + ringAreaSqMeters(ring), 0);
+  return Math.max(outer - holes, 0);
+}
+
+function getPolygonPerimeterMeters(coordinates = []) {
+  if (!Array.isArray(coordinates) || !coordinates.length) return 0;
+  return ringPerimeterMeters(coordinates[0]);
+}
+
+function getFeatureAreaSqMeters(feature) {
+  const geometry = feature?.geometry;
+  if (!geometry) return 0;
+
+  if (geometry.type === "Polygon") return getPolygonAreaSqMeters(geometry.coordinates);
+  if (geometry.type === "MultiPolygon") {
+    return geometry.coordinates.reduce((sum, polygon) => sum + getPolygonAreaSqMeters(polygon), 0);
+  }
+
+  return 0;
+}
+
+function getFeaturePerimeterMeters(feature) {
+  const geometry = feature?.geometry;
+  if (!geometry) return 0;
+
+  if (geometry.type === "Polygon") return getPolygonPerimeterMeters(geometry.coordinates);
+  if (geometry.type === "MultiPolygon") {
+    return geometry.coordinates.reduce((sum, polygon) => sum + getPolygonPerimeterMeters(polygon), 0);
+  }
+
+  return 0;
+}
+
+function classifyFeature(feature, options = {}) {
+  const override = firstMatchingOverride(feature);
+  if (override?.category) return override.category;
+
+  const text = getSearchableProperties(feature);
+  const area = getFeatureAreaSqMeters(feature);
+  const perimeter = getFeaturePerimeterMeters(feature);
+  const thinness = perimeter > 0 ? area / perimeter : Number.POSITIVE_INFINITY;
+
+  if (/green|park|open|garden|landscape|recreation|playground|lawn|grass|tree/.test(text)) return "greenSpace";
+  if (/water|lake|pond|canal|drain|stream/.test(text)) return "water";
+  if (/road|street|avenue|boulevard|drive|path|walk|walkway|row|right.?of.?way|transport|parking/.test(text)) {
+    return "road";
+  }
+  if (/commercial|market|shop|business|mall|office|retail/.test(text)) return "commercial";
+  if (/mixed|mixed.?use/.test(text)) return "mixedUse";
+  if (/public|civic|facility|amenity|mosque|school|hospital|clinic|community|plaza|graveyard|utility/.test(text)) {
+    return "civic";
+  }
+  if (/residential|plot|parcel|house|housing|block/.test(text)) return "residential";
+
+  // Geometry-based fallback for data with no landuse/height/category fields.
+  // Long, thin polygons normally represent road corridors in a master plan.
+  if ((options.key === "plots3d" || options.key === "buildings3d") && area > 700 && thinness < 8) {
+    return "road";
+  }
+
+  // Very large polygons in a society master plan are usually parks, plazas, facilities, or circulation areas.
+  // Keep them lower instead of making one giant tower.
+  if ((options.key === "plots3d" || options.key === "buildings3d") && area > 18000) {
+    return "civic";
+  }
+
+  return options.key === "buildings3d" ? "commercial" : "residential";
+}
+
 export function getHeightMeters(feature, fallbackFeet = 35) {
   const props = feature?.properties || {};
   const floorCount = Number(props.floor_count ?? props.floors ?? props.no_of_floors ?? props.storeys);
@@ -38,7 +267,81 @@ export function getHeightMeters(feature, fallbackFeet = 35) {
   if (Number.isFinite(heightFeet) && heightFeet > 0) return heightFeet * 0.3048;
   if (Number.isFinite(floorCount) && floorCount > 0) return floorCount * 3.2;
 
-  return Number(fallbackFeet || 35) * 0.3048;
+  return Number(fallbackFeet ?? 35) * 0.3048;
+}
+
+function getAutoHeightMeters(feature, category, options = {}) {
+  const explicitHeight = getHeightMeters(feature, 0);
+  if (explicitHeight > 0) return explicitHeight;
+
+  if (category === "greenSpace" || category === "road" || category === "water") return 0;
+
+  const featureId = getFeatureId(feature);
+  const area = getFeatureAreaSqMeters(feature);
+  const hash = hashString(`${options.key || "layer"}-${featureId}`);
+
+  let min = 10;
+  let max = 30;
+
+  if (category === "commercial") {
+    min = 28;
+    max = 95;
+  } else if (category === "civic") {
+    min = 14;
+    max = 55;
+  } else if (category === "mixedUse") {
+    min = 24;
+    max = 75;
+  } else if (options.key === "buildings3d") {
+    min = 22;
+    max = 80;
+  }
+
+  const randomPart = min + (hash % Math.max(max - min, 1));
+  const areaBonus = Math.min(18, Math.sqrt(Math.max(area, 0)) / 14);
+
+  return Math.round(randomPart + areaBonus);
+}
+
+function getSmartFeatureStyle(feature, options = {}) {
+  const override = firstMatchingOverride(feature);
+  const category = override?.category || classifyFeature(feature, options);
+  const featureId = getFeatureId(feature);
+
+  const autoFill = pickFromPalette(category, featureId);
+
+  const baseStyle = {
+    category,
+    label: category,
+    fillColor: autoFill,
+    outlineColor: category === "road" || category === "greenSpace" ? "#064e3b" : "#172554",
+    opacity: options.opacity,
+    extrude: !["greenSpace", "road", "water"].includes(category),
+    heightMeters: getAutoHeightMeters(feature, category, options),
+  };
+
+  if (category === "greenSpace") {
+    baseStyle.fillColor = "#16a34a";
+    baseStyle.outlineColor = "#14532d";
+    baseStyle.opacity = 0.92;
+  }
+
+  if (category === "road") {
+    baseStyle.fillColor = "#22c55e";
+    baseStyle.outlineColor = "#ffffff";
+    baseStyle.opacity = 0.9;
+  }
+
+  if (category === "water") {
+    baseStyle.fillColor = "#38bdf8";
+    baseStyle.outlineColor = "#0369a1";
+    baseStyle.opacity = 0.75;
+  }
+
+  return {
+    ...baseStyle,
+    ...(override || {}),
+  };
 }
 
 export function flattenCoordinates(coordinates, output = []) {
@@ -90,7 +393,7 @@ export function flyToGeoJSON(viewer, geojson, options = {}) {
     destination: rectangle,
     duration: options.duration ?? 1.2,
     orientation: {
-      heading: Cesium.Math.toRadians(0),
+      heading: Cesium.Math.toRadians(options.heading ?? 0),
       pitch: Cesium.Math.toRadians(options.pitch ?? -45),
       roll: 0,
     },
@@ -98,7 +401,7 @@ export function flyToGeoJSON(viewer, geojson, options = {}) {
 }
 
 function color(cssColor, alpha = 1) {
-  return Cesium.Color.fromCssColorString(cssColor).withAlpha(alpha);
+  return Cesium.Color.fromCssColorString(cssColor || "#ffffff").withAlpha(alpha ?? 1);
 }
 
 function ringToCartesian(ring = []) {
@@ -145,16 +448,20 @@ function pointPosition(coordinates = []) {
 function createPolygonEntity(viewer, feature, coordinates, options, fallbackIndex) {
   const featureId = getFeatureId(feature, `${options.key}-${fallbackIndex}`);
   const override = options.extrusionOverrides?.[featureId];
-  const fillColor = override?.color || options.fillColor;
-  const material = color(fillColor, options.opacity);
-  const outlineColor = color(options.outlineColor || "#111827", 1);
-  const shouldExtrude = Boolean(options.extrude);
+  const smartStyle = options.smartStyle ? getSmartFeatureStyle(feature, options) : null;
+
+  const fillColor = override?.color || smartStyle?.fillColor || options.fillColor || "#38bdf8";
+  const finalOpacity = Number.isFinite(Number(smartStyle?.opacity)) ? smartStyle.opacity : options.opacity;
+  const material = color(fillColor, finalOpacity);
+  const outlineColor = color(smartStyle?.outlineColor || options.outlineColor || "#111827", 1);
+
+  const shouldExtrude = Boolean(options.extrude) && smartStyle?.extrude !== false;
   const extrudedHeight = shouldExtrude
-    ? Number(override?.heightMeters || getHeightMeters(feature, options.defaultHeightFeet))
+    ? Number(override?.heightMeters ?? smartStyle?.heightMeters ?? getHeightMeters(feature, options.defaultHeightFeet))
     : undefined;
 
   const entity = viewer.entities.add({
-    name: options.name,
+    name: smartStyle?.label || options.name,
     polygon: {
       hierarchy: polygonHierarchyFromCoordinates(coordinates),
       material,
@@ -165,10 +472,18 @@ function createPolygonEntity(viewer, feature, coordinates, options, fallbackInde
       extrudedHeight,
       closeTop: true,
       closeBottom: true,
+      shadows: Cesium.ShadowMode.DISABLED,
     },
   });
 
-  entity.featureData = feature;
+  entity.featureData = {
+    ...feature,
+    properties: {
+      ...(feature.properties || {}),
+      _visualCategory: smartStyle?.category,
+      _visualHeightMeters: extrudedHeight ?? 0,
+    },
+  };
   entity.featureId = featureId;
   entity.layerKey = options.key;
   entity.originalMaterial = material;
@@ -191,6 +506,7 @@ function createLineEntity(viewer, feature, coordinates, options, fallbackIndex) 
   entity.featureData = feature;
   entity.featureId = getFeatureId(feature, `${options.key}-${fallbackIndex}`);
   entity.layerKey = options.key;
+  entity.originalWidth = options.width || 2;
   return entity;
 }
 
@@ -230,6 +546,7 @@ function createPointEntity(viewer, feature, coordinates, options, fallbackIndex)
   entity.featureData = feature;
   entity.featureId = getFeatureId(feature, `${options.key}-${fallbackIndex}`);
   entity.layerKey = options.key;
+  entity.originalPixelSize = options.pixelSize || 7;
   return entity;
 }
 
@@ -306,11 +623,11 @@ export function setEntityHighlighted(entity, highlighted) {
   }
 
   if (entity.polyline) {
-    entity.polyline.width = highlighted ? 4 : 2;
+    entity.polyline.width = highlighted ? Math.max(Number(entity.originalWidth || 2) + 2, 4) : entity.originalWidth || 2;
   }
 
   if (entity.point) {
-    entity.point.pixelSize = highlighted ? 12 : 7;
+    entity.point.pixelSize = highlighted ? 12 : entity.originalPixelSize || 7;
   }
 }
 
