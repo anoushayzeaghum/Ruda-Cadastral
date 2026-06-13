@@ -11,6 +11,7 @@ import {
   getKhasras,
   getMurabbas,
   getRudaGeoJSON,
+  getRudaProposedRoadsGeoJSON,
   getTrijunctionPoints,
 } from "../../services/api";
 
@@ -192,6 +193,7 @@ const boundaryLevelToLayerKey = (level) => {
   if (level === "district") return "districtBoundary";
   if (level === "tehsil") return "tehsilBoundary";
   if (level === "mauza") return "mauzaBoundary";
+  if (level?.startsWith?.("proposed-road")) return "proposedRoads";
   if (level?.startsWith?.("ruda")) return "rudaBoundary";
   return null;
 };
@@ -357,57 +359,66 @@ export default function MapView({
   }, []);
 
   useEffect(() => {
-  if (!isMapReady) return;
+    if (!isMapReady) return;
 
-  const loadProposedRoads = async () => {
-    const map = mapInstance.current;
-    if (!map) return;
+    const loadProposedRoads = async () => {
+      const map = mapInstance.current;
+      if (!map) return;
 
-    // ❌ if layer OFF → clear everything
-    if (!getLayerVisible(layers, "proposedRoads", false)) {
+      if (!getLayerVisible(layers, "proposedRoads", false)) {
+        clearProposedRoads();
+        return;
+      }
+
       clearProposedRoads();
-      return;
-    }
 
-    clearProposedRoads();
+      if (!selectedProposedRoadIds?.length) return;
 
-    if (!selectedProposedRoadIds?.length) return;
+      try {
+        setIsLoading(true);
 
-    try {
-      setIsLoading(true);
+        const allRoadsGeojson = await getRudaProposedRoadsGeoJSON();
+        const selectedIds = new Set(
+          selectedProposedRoadIds.map((id) => String(id))
+        );
 
-      const results = await Promise.all(
-        selectedProposedRoadIds.map((gid) =>
-          getRudaProposedRoadsGeoJSON(gid)
-            .then((geojson) => ({ gid, geojson }))
-            .catch((e) => {
-              console.error("Proposed road geojson error", e);
-              return null;
-            })
-        )
-      );
+        const filteredGeojson = {
+          type: "FeatureCollection",
+          features: (allRoadsGeojson.features || []).filter((feature) => {
+            const props = feature?.properties || {};
+            const featureId =
+              props.gid ??
+              feature?.id ??
+              props.id ??
+              props.oid ??
+              props.fid;
 
-      results.filter(Boolean).forEach((item) => {
+            return selectedIds.has(String(featureId));
+          }),
+        };
+
+        if (!filteredGeojson.features.length) return;
+
         drawBoundaryLevel(
-          `proposed-road-${item.gid}`,
-          item.geojson,
+          "proposed-roads",
+          filteredGeojson,
           getLayerOpacity(layers, "proposedRoads", 100)
         );
 
-        currentGeojson.current[`proposed-road-${item.gid}`] =
-          item.geojson;
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        currentGeojson.current["proposed-roads"] = filteredGeojson;
+      } catch (e) {
+        console.error("Proposed roads layer load error", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  loadProposedRoads();
-}, [
-  isMapReady,
-  layers?.proposedRoads,
-  selectedProposedRoadIds,
-]);
+    loadProposedRoads();
+  }, [
+    isMapReady,
+    layers?.proposedRoads,
+    selectedProposedRoadIds,
+  ]);
 
   const zoomToGeoJSON = (geojson, options = {}) => {
     const map = mapInstance.current;
@@ -488,26 +499,30 @@ export default function MapView({
         data: geojson || emptyFeatureCollection(),
       });
 
+      if (level.startsWith("proposed-road")) {
+        map.addLayer({
+          id: ids.line,
+          type: "line",
+          source: ids.source,
+          paint: {
+            "line-color": "#ef4444",
+            "line-width": 4,
+            "line-opacity": opacity,
+          },
+        });
+
+        currentGeojson.current[level] = geojson;
+        return;
+      }
+
       map.addLayer({
         id: ids.fill,
         type: "fill",
         source: ids.source,
         paint: {
-          "fill-color":
-            level.startsWith("ruda")
-              ? "#3d7cc4"
-              : level.startsWith("proposed-road")
-                ? "#ef4444"
-                : "#0b6a2e",
-
+          "fill-color": level.startsWith("ruda") ? "#3d7cc4" : "#0b6a2e",
           "fill-opacity": opacity,
-
-          "fill-outline-color":
-            level.startsWith("ruda")
-              ? "#14532d"
-              : level.startsWith("proposed-road")
-                ? "#7f1d1d"
-                : "#194c8e",
+          "fill-outline-color": level.startsWith("ruda") ? "#14532d" : "#194c8e",
         },
       });
 
