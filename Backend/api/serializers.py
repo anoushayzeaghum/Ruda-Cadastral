@@ -279,6 +279,8 @@ class MasterPlanSerializer(GeoFeatureModelSerializer):
             "mauza_id",
             "dist_id",
             "tehsil_id",
+            "land_use",
+            "height",
             "geom",
         )
 

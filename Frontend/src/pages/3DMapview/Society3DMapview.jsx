@@ -63,7 +63,8 @@ const SOCIETY_LAYER_CONFIG = {
     name: "Master Plan",
     fillColor: "#7c3aed",
     outlineColor: "#4c1d95",
-    opacity: 0.25,
+    opacity: 1,
+    smartStyle: true,
   },
   plots3d: {
     name: "3D Master Plan Visualization",
