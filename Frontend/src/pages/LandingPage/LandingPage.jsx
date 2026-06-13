@@ -34,67 +34,76 @@ import {
 /* ─── data ──────────────────────────────────────────────────────────────── */
 
 const HERO_SLIDES = [
-  "/s1.png", "/s2.png", "/s3.png", "/s4.png",
-  "/s5.png", "/s6.png", "/s7.png",
+  "/s1.png",
+  "/s2.png",
+  "/s3.png",
+  "/s4.png",
+  "/s5.png",
+  "/s6.png",
+  "/s7.png",
 ];
 
 const NAV_LINKS = [
-  { href: "#home",     label: "Home" },
-  { href: "#about",    label: "About" },
-  { href: "#apps",     label: "GIS Apps" },
+  { href: "#home", label: "Home" },
+  { href: "#about", label: "About" },
+  { href: "#apps", label: "GIS Apps" },
   { href: "#features", label: "Features" },
-  { href: "#team",     label: "Our Team" },
-  { href: "#contact",  label: "Contact" },
+  { href: "#team", label: "Our Team" },
+  { href: "#contact", label: "Contact" },
 ];
 
 const STATS = [
-  { value: "2,400+",  label: "Parcels Mapped" },
-  { value: "18",      label: "Mauzas Covered" },
+  { value: "2,400+", label: "Parcels Mapped" },
+  { value: "18", label: "Mauzas Covered" },
   { value: "340 km²", label: "Project Area" },
-  { value: "99.8%",   label: "Data Accuracy" },
+  { value: "99.8%", label: "Data Accuracy" },
 ];
 
 const GIS_APPS = [
   {
     icon: <Layers size={22} />,
-    title: "Cadastral Web Map",
-    desc: "Explore parcel boundaries, Khasra layers, mauza limits, administrative boundaries and contextual GIS layers in one interactive map.",
+    title: "Cadastral Management System",
+    desc: "Manage and visualize cadastral records, Khasra layers, mauza limits and administrative boundaries in one interactive GIS platform.",
     img: "/s1.png",
-    route: "/Mapview/MapPage",
+    route: "/Mapview",
     color: "from-emerald-500 to-green-700",
   },
   {
     icon: <Search size={22} />,
-    title: "Parcel Search & Verification",
-    desc: "Search parcels using cadastral identifiers, location references, mauza information, survey status and verification attributes.",
+    title: "GeoLayer Data Explorer",
+    desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
     img: "/s2.png",
+    route: "/society-map",
     color: "from-teal-500 to-cyan-700",
   },
   {
     icon: <ClipboardList size={22} />,
-    title: "Field Survey Dashboard",
-    desc: "Monitor field teams, survey progress, GPS observations, verification remarks, evidence attachments and pending cadastral checks.",
+    title: "3D GeoVerse",
+    desc: "Experience cadastral and society data in an immersive 3D environment with land-use visualization.",
     img: "/s3.png",
+    route: "/society-3d",
     color: "from-blue-500 to-indigo-700",
   },
   {
     icon: <FileText size={22} />,
-    title: "Land Record & Ownership",
-    desc: "Review land status, ownership references, parcel attributes, acquisition categories and record-linked spatial summaries.",
+    title: "Plot Demarcation Hub",
+    desc: "Search plots, view demarcation details, verify and generate printable plot reports for cadastral documentation.",
     img: "/s4.png",
+    route: "/demarcation",
     color: "from-violet-500 to-purple-700",
   },
   {
     icon: <Eye size={22} />,
-    title: "Change Detection & Monitoring",
-    desc: "Compare imagery, survey layers and field observations to support encroachment monitoring, land-use review and progress tracking.",
+    title: "System Administration Portal",
+    desc: "Control and manage the complete cadastral system, including users, records, spatial datasets, dashboards, permissions and administrative workflows.",
     img: "/s5.png",
+    route: "/dashboard",
     color: "from-amber-500 to-orange-600",
   },
   {
     icon: <Smartphone size={22} />,
     title: "Mobile Field Data / ODK",
-    desc: "Collect standardized field data with GPS locations, parcel photos, verification notes and structured cadastral survey forms.",
+    desc: "Collect, submit and manage mobile field survey data with GPS locations, parcel photos, verification notes and structured ODK-based cadastral forms.",
     img: "/s6.png",
     color: "from-rose-500 to-red-700",
   },
@@ -146,19 +155,37 @@ const FEATURES = [
 ];
 
 const TEAM = [
-  { name: "Project Director",    role: "RUDA Cadastral Project",          featured: true  },
-  { name: "Director GIS",        role: "GIS & Spatial Data Management",   featured: false },
-  { name: "Cadastral Lead",      role: "Parcel Mapping & Land Records",   featured: false },
-  { name: "Survey Manager",      role: "Field Operations & GPS Control",  featured: false },
+  { name: "Project Director", role: "RUDA Cadastral Project", featured: true },
+  {
+    name: "Director GIS",
+    role: "GIS & Spatial Data Management",
+    featured: false,
+  },
+  {
+    name: "Cadastral Lead",
+    role: "Parcel Mapping & Land Records",
+    featured: false,
+  },
+  {
+    name: "Survey Manager",
+    role: "Field Operations & GPS Control",
+    featured: false,
+  },
 ];
 
 /* ─── helpers ────────────────────────────────────────────────────────────── */
 
 function Avatar({ name, size = "md" }) {
-  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2);
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2);
   const sz = size === "lg" ? "w-24 h-24 text-2xl" : "w-16 h-16 text-lg";
   return (
-    <div className={`${sz} rounded-full bg-gradient-to-br from-emerald-600 to-green-800 flex items-center justify-center text-white font-bold shrink-0`}>
+    <div
+      className={`${sz} rounded-full bg-gradient-to-br from-emerald-600 to-green-800 flex items-center justify-center text-white font-bold shrink-0`}
+    >
       {initials}
     </div>
   );
@@ -173,12 +200,15 @@ function useInView(options = {}) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setVisible(true);
-        obs.unobserve(el);
-      }
-    }, { threshold: 0.15, ...options });
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          obs.unobserve(el);
+        }
+      },
+      { threshold: 0.15, ...options },
+    );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -228,7 +258,9 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
 
         {/* title on image */}
         <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-8">
-          <h3 className="text-white font-black text-base leading-snug drop-shadow-lg">{title}</h3>
+          <h3 className="text-white font-black text-base leading-snug drop-shadow-lg">
+            {title}
+          </h3>
         </div>
       </div>
 
@@ -243,7 +275,9 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
       </div>
 
       {/* bottom accent bar */}
-      <div className={`h-0.5 w-0 group-hover:w-full bg-gradient-to-r ${color} transition-all duration-500`} />
+      <div
+        className={`h-0.5 w-0 group-hover:w-full bg-gradient-to-r ${color} transition-all duration-500`}
+      />
     </article>
   );
 }
@@ -252,11 +286,11 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen]       = useState(false);
-  const [scrolled, setScrolled]       = useState(false);
-  const [showTop,  setShowTop]        = useState(false);
-  const [activeSection, setActive]    = useState("home");
-  const [slideIndex, setSlideIndex]   = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [showTop, setShowTop] = useState(false);
+  const [activeSection, setActive] = useState("home");
+  const [slideIndex, setSlideIndex] = useState(0);
 
   useEffect(() => {
     const onScroll = () => {
@@ -266,7 +300,9 @@ export default function LandingPage() {
       // active nav highlight
       const offsets = NAV_LINKS.map(({ href }) => {
         const el = document.querySelector(href);
-        return el ? { id: href.slice(1), top: el.getBoundingClientRect().top } : null;
+        return el
+          ? { id: href.slice(1), top: el.getBoundingClientRect().top }
+          : null;
       }).filter(Boolean);
 
       const current = offsets.filter((o) => o.top <= 120).at(-1);
@@ -286,7 +322,6 @@ export default function LandingPage() {
 
   return (
     <div className="font-sans text-slate-800 bg-white overflow-x-hidden">
-
       {/* ── Top strip ── */}
       <div className="bg-gradient-to-r from-[#003f25] to-[#097947] text-white text-xs font-semibold tracking-widest flex items-center justify-center gap-4 py-2">
         <span className="w-14 h-px bg-white/40" />
@@ -295,11 +330,17 @@ export default function LandingPage() {
       </div>
 
       {/* ── Sticky header ── */}
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? "bg-white shadow-lg" : "bg-white/95 backdrop-blur-sm shadow-sm"}`}>
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? "bg-white shadow-lg" : "bg-white/95 backdrop-blur-sm shadow-sm"}`}
+      >
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between h-20">
           {/* Brand */}
           <a href="#home" className="flex items-center gap-3 shrink-0">
-            <img src="/Ruda_logo.jpg" alt="RUDA" className="h-12 w-auto rounded object-contain" />
+            <img
+              src="/Ruda_logo.jpg"
+              alt="RUDA"
+              className="h-12 w-auto rounded object-contain"
+            />
           </a>
 
           {/* Desktop nav */}
@@ -322,7 +363,7 @@ export default function LandingPage() {
           {/* CTA + hamburger */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate("/Mapview/MapPage")}
+              onClick={() => navigate("/Mapview")}
               className="hidden sm:flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold px-5 py-2.5 rounded-full transition-all hover:shadow-lg hover:-translate-y-px"
             >
               Open Map <ArrowRight size={15} />
@@ -351,7 +392,7 @@ export default function LandingPage() {
               </a>
             ))}
             <button
-              onClick={() => navigate("/Mapview/MapPage")}
+              onClick={() => navigate("/Mapview")}
               className="mt-2 flex items-center justify-center gap-2 bg-emerald-700 text-white text-sm font-bold px-5 py-3 rounded-full"
             >
               Open Map <ArrowRight size={15} />
@@ -378,7 +419,8 @@ export default function LandingPage() {
               backgroundSize: "cover",
               backgroundPosition: "center",
               // subtle Ken Burns per slide
-              animation: i === slideIndex ? "kenBurns 10s ease-in-out forwards" : "none",
+              animation:
+                i === slideIndex ? "kenBurns 10s ease-in-out forwards" : "none",
             }}
           />
         ))}
@@ -432,7 +474,9 @@ export default function LandingPage() {
           <div className="flex flex-wrap gap-4 justify-center">
             <button
               onClick={() => {
-                document.querySelector("#apps")?.scrollIntoView({ behavior: "smooth" });
+                document
+                  .querySelector("#apps")
+                  ?.scrollIntoView({ behavior: "smooth" });
               }}
               className="flex items-center gap-3 bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-base px-8 py-4 rounded-full transition-all hover:shadow-2xl hover:-translate-y-1"
             >
@@ -452,8 +496,12 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto px-5 py-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-white text-center">
             {STATS.map(({ value, label }) => (
               <div key={label}>
-                <div className="text-2xl sm:text-3xl font-black text-amber-400">{value}</div>
-                <div className="text-xs font-semibold text-white/70 mt-1 uppercase tracking-wide">{label}</div>
+                <div className="text-2xl sm:text-3xl font-black text-amber-400">
+                  {value}
+                </div>
+                <div className="text-xs font-semibold text-white/70 mt-1 uppercase tracking-wide">
+                  {label}
+                </div>
               </div>
             ))}
           </div>
@@ -516,9 +564,7 @@ export default function LandingPage() {
                 }}
               />
               {/* fallback */}
-              <div
-                className="hidden w-full h-[420px] bg-gradient-to-br from-emerald-800 to-green-900 items-center justify-center"
-              >
+              <div className="hidden w-full h-[420px] bg-gradient-to-br from-emerald-800 to-green-900 items-center justify-center">
                 <Map size={80} className="text-white/30" />
               </div>
             </div>
@@ -526,13 +572,17 @@ export default function LandingPage() {
             {/* floating badge */}
             <div className="absolute -bottom-6 -left-6 bg-amber-400 text-slate-900 rounded-2xl p-5 shadow-xl">
               <div className="text-3xl font-black">2026</div>
-              <div className="text-xs font-bold uppercase tracking-wide">Active Platform</div>
+              <div className="text-xs font-bold uppercase tracking-wide">
+                Active Platform
+              </div>
             </div>
 
             {/* floating stat */}
             <div className="absolute -top-6 -right-6 bg-emerald-700 text-white rounded-2xl px-5 py-4 shadow-xl">
               <div className="text-2xl font-black">340 km²</div>
-              <div className="text-xs font-semibold opacity-80">Coverage Area</div>
+              <div className="text-xs font-semibold opacity-80">
+                Coverage Area
+              </div>
             </div>
           </div>
         </div>
@@ -552,8 +602,8 @@ export default function LandingPage() {
             </h2>
             <div className="w-16 h-1.5 bg-amber-400 rounded-full mx-auto mb-6" />
             <p className="max-w-xl mx-auto text-slate-500 text-base leading-relaxed">
-              Interactive applications for cadastral mapping, land record review,
-              field survey tracking and spatial decision support.
+              Interactive applications for cadastral mapping, land record
+              review, field survey tracking and spatial decision support.
             </p>
           </div>
 
@@ -600,11 +650,17 @@ export default function LandingPage() {
                 key={title}
                 className={`${bg} rounded-2xl p-7 group hover:shadow-md transition-all`}
               >
-                <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center text-white mb-5`}>
+                <div
+                  className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center text-white mb-5`}
+                >
                   {icon}
                 </div>
-                <h3 className="font-black text-slate-900 text-base mb-2">{title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+                <h3 className="font-black text-slate-900 text-base mb-2">
+                  {title}
+                </h3>
+                <p className="text-slate-500 text-[13px] leading-relaxed">
+                  {desc}
+                </p>{" "}
               </div>
             ))}
           </div>
@@ -614,7 +670,8 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════════════
           MAP PREVIEW BAND
       ══════════════════════════════════════════════════ */}
-      <section className="relative py-24 overflow-hidden"
+      <section
+        className="relative py-24 overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(to right, rgba(0,45,25,0.92) 40%, rgba(0,45,25,0.75) 100%), url('/s3.png')`,
           backgroundSize: "cover",
@@ -649,9 +706,16 @@ export default function LandingPage() {
               ["340 km²", "Project Area"],
               ["99.8%", "Data Accuracy"],
             ].map(([val, lbl]) => (
-              <div key={lbl} className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-white text-center">
-                <div className="text-3xl font-black text-amber-400 mb-1">{val}</div>
-                <div className="text-xs font-semibold text-white/70 uppercase tracking-wide">{lbl}</div>
+              <div
+                key={lbl}
+                className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-white text-center"
+              >
+                <div className="text-3xl font-black text-amber-400 mb-1">
+                  {val}
+                </div>
+                <div className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+                  {lbl}
+                </div>
               </div>
             ))}
           </div>
@@ -667,7 +731,9 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
               The Team
             </div>
-            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-4">Meet Our Team</h2>
+            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-4">
+              Meet Our Team
+            </h2>
             <div className="w-16 h-1.5 bg-amber-400 rounded-full mx-auto" />
           </div>
 
@@ -675,15 +741,22 @@ export default function LandingPage() {
           <div className="flex flex-col items-center mb-10">
             <Avatar name="Project Director" size="lg" />
             <div className="mt-4 text-center">
-              <div className="font-black text-slate-900 text-lg">Project Director</div>
-              <div className="text-sm text-emerald-700 font-semibold mt-0.5">RUDA Cadastral Project</div>
+              <div className="font-black text-slate-900 text-lg">
+                Project Director
+              </div>
+              <div className="text-sm text-emerald-700 font-semibold mt-0.5">
+                RUDA Cadastral Project
+              </div>
             </div>
           </div>
 
           {/* other members */}
           <div className="grid sm:grid-cols-3 gap-6 max-w-2xl mx-auto">
             {TEAM.filter((m) => !m.featured).map(({ name, role }) => (
-              <div key={name} className="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100">
+              <div
+                key={name}
+                className="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100"
+              >
                 <Avatar name={name} />
                 <div className="mt-4">
                   <div className="font-bold text-slate-900 text-sm">{name}</div>
@@ -703,23 +776,34 @@ export default function LandingPage() {
           {/* brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-6">
-              <img src="/Ruda_logo.jpg"    alt="RUDA"           className="w-12 h-12 rounded-lg object-contain bg-white p-1" />
-              <img src="/gop_logo.png"     alt="Govt of Punjab" className="w-12 h-12 rounded-lg object-contain bg-white p-1" />
+              <img
+                src="/Ruda_logo.jpg"
+                alt="RUDA"
+                className="w-12 h-12 rounded-lg object-contain bg-white p-1"
+              />
+              <img
+                src="/gop_logo.png"
+                alt="Govt of Punjab"
+                className="w-12 h-12 rounded-lg object-contain bg-white p-1"
+              />
             </div>
             <p className="text-white/70 text-sm leading-relaxed mb-6">
               RUDA Cadastral Project is a GIS-enabled initiative for digital
-              cadastral mapping, parcel intelligence and spatial decision support
-              for the Ravi Urban Development Authority project area.
+              cadastral mapping, parcel intelligence and spatial decision
+              support for the Ravi Urban Development Authority project area.
             </p>
             <div className="flex gap-2">
               {[
                 { icon: <Facebook size={15} />, href: "#" },
-                { icon: <Twitter size={15} />,  href: "#" },
+                { icon: <Twitter size={15} />, href: "#" },
                 { icon: <Linkedin size={15} />, href: "#" },
-                { icon: <Instagram size={15} />,href: "#" },
+                { icon: <Instagram size={15} />, href: "#" },
               ].map(({ icon, href }, i) => (
-                <a key={i} href={href}
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-amber-400 hover:text-slate-900 flex items-center justify-center transition-all">
+                <a
+                  key={i}
+                  href={href}
+                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-amber-400 hover:text-slate-900 flex items-center justify-center transition-all"
+                >
                   {icon}
                 </a>
               ))}
@@ -731,8 +815,11 @@ export default function LandingPage() {
             <h3 className="font-black text-base mb-5">Quick Links</h3>
             <div className="flex flex-col gap-2.5">
               {NAV_LINKS.map(({ href, label }) => (
-                <a key={href} href={href}
-                  className="text-white/70 hover:text-amber-400 text-sm transition-colors flex items-center gap-2">
+                <a
+                  key={href}
+                  href={href}
+                  className="text-white/70 hover:text-amber-400 text-sm transition-colors flex items-center gap-2"
+                >
                   <ArrowRight size={12} /> {label}
                 </a>
               ))}
@@ -761,7 +848,10 @@ export default function LandingPage() {
           {/* contact form */}
           <div>
             <h3 className="font-black text-base mb-5">Send a Message</h3>
-            <form className="flex flex-col gap-3" onSubmit={(e) => e.preventDefault()}>
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => e.preventDefault()}
+            >
               {["Your Name", "Your Email", "Subject"].map((ph) => (
                 <input
                   key={ph}
