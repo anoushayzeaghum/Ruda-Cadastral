@@ -159,7 +159,6 @@ export const getMurabbaBoundary = async (id) => {
   return normalizeGeoJson(res);
 };
 
-
 ///////////////////////////////////////////////////////
 //////////////// SOCIETY LAYER APIs ///////////////////
 ///////////////////////////////////////////////////////
@@ -168,7 +167,11 @@ export const getSocieties = async (filters = {}) => {
   const params = {};
 
   // Backward compatible: old calls like getSocieties(mauza_id) still work.
-  if (typeof filters !== "object" || filters === null || Array.isArray(filters)) {
+  if (
+    typeof filters !== "object" ||
+    filters === null ||
+    Array.isArray(filters)
+  ) {
     if (filters !== undefined && filters !== null && filters !== "") {
       params.mauza_id = filters;
     }
@@ -275,11 +278,7 @@ export const getRudaProposedRoadsGeoJSON = async (gid = null) => {
     features: (geojson.features || []).filter((feature) => {
       const props = feature?.properties || {};
       const featureId =
-        props.gid ??
-        feature?.id ??
-        props.id ??
-        props.oid ??
-        props.fid;
+        props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid;
 
       return String(featureId) === selectedId;
     }),
@@ -314,5 +313,3 @@ export const importMauza = async ({ file, tehsil, mauza }) => {
 
   return res.data;
 };
-
-
