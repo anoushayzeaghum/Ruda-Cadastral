@@ -4,9 +4,9 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Header from "./Header";
 import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
-import ParcelPanel from "./ParcelPanel";
+import ParcelPanel from "../SocietyMapDashboard/ParcelPanel";
 
-import MapView from "./Mapview";
+import MapView from "../SocietyMapDashboard/Mapview";
 
 const getKhasraNumber = (props = {}) => {
   return (

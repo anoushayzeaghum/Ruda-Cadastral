@@ -302,20 +302,29 @@ class Khasra(models.Model):
 class Society(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    objectid = models.IntegerField()
+    # These columns exist in your current society table.
+    # Do NOT add objectid here unless the database table also has objectid.
+    name = models.CharField(max_length=255, null=True, blank=True)
+    source = models.CharField(max_length=255, null=True, blank=True)
+    feat_count = models.IntegerField(null=True, blank=True)
+    area = models.FloatField(null=True, blank=True)
 
-    society = models.CharField(max_length=255)
+    society = models.CharField(max_length=255, null=True, blank=True)
+    society_id = models.IntegerField(null=True, blank=True)
 
-    district = models.CharField(max_length=100)
-    dist_id = models.IntegerField()
+    district = models.CharField(max_length=100, null=True, blank=True)
+    dist_id = models.IntegerField(null=True, blank=True)
 
-    tehsil = models.CharField(max_length=100)
-    tehsil_id = models.IntegerField()
+    tehsil = models.CharField(max_length=100, null=True, blank=True)
+    tehsil_id = models.IntegerField(null=True, blank=True)
 
-    mauza = models.CharField(max_length=100)
-    mauza_id = models.IntegerField()
+    mauza = models.CharField(max_length=100, null=True, blank=True)
+    mauza_id = models.IntegerField(null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return self.society or self.name or f"Society {self.gid}"
 
     class Meta:
         managed = False
@@ -325,24 +334,9 @@ class Society(models.Model):
 # MASTER PLAN
 # =========================
 class MasterPlan(models.Model):
+
     gid = models.AutoField(primary_key=True)
-    id = models.CharField(max_length=100, null=True, blank=True)
-
-    name = models.CharField(max_length=255, null=True, blank=True)
-    descriptio = models.TextField(null=True, blank=True)
-
-    timestamp = models.CharField(max_length=100, null=True, blank=True)
-    begin = models.CharField(max_length=100, null=True, blank=True)
-    end = models.CharField(max_length=100, null=True, blank=True)
-
-    altitudemo = models.CharField(max_length=50, null=True, blank=True)
-    tessellate = models.CharField(max_length=50, null=True, blank=True)
-    extrude = models.CharField(max_length=50, null=True, blank=True)
-    visibility = models.CharField(max_length=50, null=True, blank=True)
-    draworder = models.CharField(max_length=50, null=True, blank=True)
-    icon = models.CharField(max_length=255, null=True, blank=True)
-    snippet = models.TextField(null=True, blank=True)
-
+    # Keep only guaranteed columns to avoid selecting missing DB columns.
     geom = gis_models.GeometryField(srid=4326)
 
     society_id = models.IntegerField(null=True, blank=True)
@@ -350,23 +344,19 @@ class MasterPlan(models.Model):
     dist_id = models.IntegerField(null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
 
-    society = models.CharField(max_length=100, null=True, blank=True)
-    mauza = models.CharField(max_length=100, null=True, blank=True)
-    district = models.CharField(max_length=100, null=True, blank=True)
-    tehsil = models.CharField(max_length=100, null=True, blank=True)
+    def __str__(self):
+        return f"MasterPlan {self.gid}"
 
     class Meta:
         managed = False
         db_table = "masterplan"
 
-
 # =========================
 # SPOT LEVEL
 # =========================
 class SpotLevel(models.Model):
-    gid = models.AutoField(primary_key=True)
-    id = models.IntegerField(null=True, blank=True)
 
+    gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
 
     society_id = models.IntegerField(null=True, blank=True)
@@ -374,27 +364,20 @@ class SpotLevel(models.Model):
     dist_id = models.IntegerField(null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
 
-    society = models.CharField(max_length=100, null=True, blank=True)
-    mauza = models.CharField(max_length=100, null=True, blank=True)
-    district = models.CharField(max_length=100, null=True, blank=True)
-    tehsil = models.CharField(max_length=100, null=True, blank=True)
+    def __str__(self):
+        return f"SpotLevel {self.gid}"
 
     class Meta:
         managed = False
-        db_table = "spotlevel"
-
+        db_table = "spot_level"
 
 # =========================
 # CONTOUR
 # =========================
+
 class Contour(models.Model):
+
     gid = models.AutoField(primary_key=True)
-
-    name = models.CharField(max_length=255, null=True, blank=True)
-    layer = models.CharField(max_length=255, null=True, blank=True)
-    elevation = models.CharField(max_length=50, null=True, blank=True)
-    closed_con = models.CharField(max_length=10, null=True, blank=True)
-
     geom = gis_models.GeometryField(srid=4326)
 
     society_id = models.IntegerField(null=True, blank=True)
@@ -402,15 +385,12 @@ class Contour(models.Model):
     dist_id = models.IntegerField(null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
 
-    society = models.CharField(max_length=100, null=True, blank=True)
-    mauza = models.CharField(max_length=100, null=True, blank=True)
-    district = models.CharField(max_length=100, null=True, blank=True)
-    tehsil = models.CharField(max_length=100, null=True, blank=True)
+    def __str__(self):
+        return f"Contour {self.gid}"
 
     class Meta:
         managed = False
         db_table = "contour"
-
 
 
 # --------------------------------------------------------

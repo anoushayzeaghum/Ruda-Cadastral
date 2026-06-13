@@ -248,14 +248,19 @@ class SocietySerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "objectid",
+            "name",
+            "source",
+            "feat_count",
+            "area",
             "society",
+            "society_id",
             "district",
             "dist_id",
             "tehsil",
             "tehsil_id",
             "mauza",
             "mauza_id",
+            "geom",
         )
 
 # --------------------------------------------------------
@@ -268,84 +273,58 @@ class MasterPlanSerializer(GeoFeatureModelSerializer):
         model = MasterPlan
         geo_field = "geom"
         id_field = "gid"
-
         fields = (
             "gid",
-            "id",
-            "name",
-            "descriptio",
-            "timestamp",
-            "begin",
-            "end",
-            "altitudemo",
-            "tessellate",
-            "extrude",
-            "visibility",
-            "draworder",
-            "icon",
-            "snippet",
             "society_id",
             "mauza_id",
             "dist_id",
             "tehsil_id",
-            "society",
-            "mauza",
-            "district",
-            "tehsil",
+            "geom",
         )
 
 # --------------------------------------------------------
 # SpotLevel Serializer
 # District → Tehsil → Mauza → Society → SpotLevel
 # -------------------------------------------------------
+
+
+
 class SpotLevelSerializer(GeoFeatureModelSerializer):
 
     class Meta:
         model = SpotLevel
         geo_field = "geom"
         id_field = "gid"
-
         fields = (
             "gid",
-            "id",
             "society_id",
             "mauza_id",
             "dist_id",
             "tehsil_id",
-            "society",
-            "mauza",
-            "district",
-            "tehsil",
             "geom",
         )
+
 
 # --------------------------------------------------------
 # Contour Serializer
 # District → Tehsil → Mauza → Society → Contour
 # --------------------------------------------------------
+
 class ContourSerializer(GeoFeatureModelSerializer):
 
     class Meta:
         model = Contour
         geo_field = "geom"
         id_field = "gid"
-
         fields = (
             "gid",
-            "name",
-            "layer",
-            "elevation",
-            "closed_con",
             "society_id",
             "mauza_id",
             "dist_id",
             "tehsil_id",
-            "society",
-            "mauza",
-            "district",
-            "tehsil",
             "geom",
         )
+
 # --------------------------------------------------------
 # Ruda Boundary Serializer
 # --------------------------------------------------------
