@@ -56,10 +56,10 @@ function getPossibleIds(feature) {
   - Add more gid/objectid values here when you identify roads, parks, plazas, etc.
 */
 const FEATURE_STYLE_OVERRIDES = {
-  "253": {
+  253: {
     category: "greenSpace",
     label: "Green Space",
-    fillColor: "#16a34a",
+    fillColor: "#26c961",
     outlineColor: "#14532d",
     opacity: 0.9,
     extrude: false,
@@ -97,7 +97,119 @@ function pickFromPalette(category, seed) {
 }
 
 function normalizeText(value) {
-  return String(value ?? "").toLowerCase().trim();
+  return String(value ?? "")
+    .toLowerCase()
+    .trim();
+}
+
+function normalizeLandUseValue(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .trim()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .replace(/\s+/g, " ");
+}
+
+function getLandUseValue(feature) {
+  const props = feature?.properties || {};
+
+  return normalizeLandUseValue(
+    props.land_use ??
+      props.landuse ??
+      props.landUse ??
+      props.LAND_USE ??
+      props.LANDUSE ??
+      props.Land_Use ??
+      props.Landuse ??
+      props.land_use_type ??
+      props.use ??
+      props.type ??
+      "",
+  );
+}
+
+function getStyleFromLandUse(feature) {
+  const landUse = getLandUseValue(feature);
+
+  if (!landUse) return null;
+
+  if (landUse === "residential plot" || /\bresidential\b/.test(landUse)) {
+    return {
+      category: "residential",
+      label: "Residential Plot",
+      fillColor: "#0d6efd",
+      outlineColor: "#002a6a",
+      opacity: 1,
+      extrude: true,
+    };
+  }
+
+  if (landUse === "commercial plot" || /\bcommercial\b/.test(landUse)) {
+    return {
+      category: "commercial",
+      label: "Commercial Plot",
+      fillColor: "#efb400",
+      outlineColor: "#c49300",
+      opacity: 1,
+      extrude: true,
+    };
+  }
+
+  if (landUse === "green belt" || /green\s*belt/.test(landUse)) {
+    return {
+      category: "greenBelt",
+      label: "Green Belt",
+      fillColor: "#24ba74",
+      outlineColor: "#14532d",
+      opacity: 1,
+      extrude: false,
+      heightMeters: 0,
+    };
+  }
+
+  if (landUse === "barren land" || /barren/.test(landUse)) {
+    return {
+      category: "barrenLand",
+      label: "Barren Land",
+      fillColor: "#92400e",
+      outlineColor: "#451a03",
+      opacity: 1,
+      extrude: false,
+      heightMeters: 0,
+    };
+  }
+
+  if (
+    landUse === "road" ||
+    /\broad\b|street|avenue|boulevard|drive|walkway|right of way|row/.test(
+      landUse,
+    )
+  ) {
+    return {
+      category: "road",
+      label: "Road",
+      fillColor: "#ef4444",
+      outlineColor: "#7f1d1d",
+      opacity: 1,
+      extrude: false,
+      heightMeters: 0,
+    };
+  }
+
+  if (landUse === "park" || /\bpark\b|garden|playground/.test(landUse)) {
+    return {
+      category: "park",
+      label: "Park",
+      fillColor: "#14532d",
+      outlineColor: "#052e16",
+      opacity: 1,
+      extrude: false,
+      heightMeters: 0,
+    };
+  }
+
+  return null;
 }
 
 function getSearchableProperties(feature) {
@@ -188,7 +300,9 @@ function ringPerimeterMeters(ring = []) {
 function getPolygonAreaSqMeters(coordinates = []) {
   if (!Array.isArray(coordinates) || !coordinates.length) return 0;
   const outer = ringAreaSqMeters(coordinates[0]);
-  const holes = coordinates.slice(1).reduce((sum, ring) => sum + ringAreaSqMeters(ring), 0);
+  const holes = coordinates
+    .slice(1)
+    .reduce((sum, ring) => sum + ringAreaSqMeters(ring), 0);
   return Math.max(outer - holes, 0);
 }
 
@@ -201,9 +315,13 @@ function getFeatureAreaSqMeters(feature) {
   const geometry = feature?.geometry;
   if (!geometry) return 0;
 
-  if (geometry.type === "Polygon") return getPolygonAreaSqMeters(geometry.coordinates);
+  if (geometry.type === "Polygon")
+    return getPolygonAreaSqMeters(geometry.coordinates);
   if (geometry.type === "MultiPolygon") {
-    return geometry.coordinates.reduce((sum, polygon) => sum + getPolygonAreaSqMeters(polygon), 0);
+    return geometry.coordinates.reduce(
+      (sum, polygon) => sum + getPolygonAreaSqMeters(polygon),
+      0,
+    );
   }
 
   return 0;
@@ -213,9 +331,13 @@ function getFeaturePerimeterMeters(feature) {
   const geometry = feature?.geometry;
   if (!geometry) return 0;
 
-  if (geometry.type === "Polygon") return getPolygonPerimeterMeters(geometry.coordinates);
+  if (geometry.type === "Polygon")
+    return getPolygonPerimeterMeters(geometry.coordinates);
   if (geometry.type === "MultiPolygon") {
-    return geometry.coordinates.reduce((sum, polygon) => sum + getPolygonPerimeterMeters(polygon), 0);
+    return geometry.coordinates.reduce(
+      (sum, polygon) => sum + getPolygonPerimeterMeters(polygon),
+      0,
+    );
   }
 
   return 0;
@@ -230,27 +352,49 @@ function classifyFeature(feature, options = {}) {
   const perimeter = getFeaturePerimeterMeters(feature);
   const thinness = perimeter > 0 ? area / perimeter : Number.POSITIVE_INFINITY;
 
-  if (/green|park|open|garden|landscape|recreation|playground|lawn|grass|tree/.test(text)) return "greenSpace";
+  if (
+    /green|park|open|garden|landscape|recreation|playground|lawn|grass|tree/.test(
+      text,
+    )
+  )
+    return "greenSpace";
   if (/water|lake|pond|canal|drain|stream/.test(text)) return "water";
-  if (/road|street|avenue|boulevard|drive|path|walk|walkway|row|right.?of.?way|transport|parking/.test(text)) {
+  if (
+    /road|street|avenue|boulevard|drive|path|walk|walkway|row|right.?of.?way|transport|parking/.test(
+      text,
+    )
+  ) {
     return "road";
   }
-  if (/commercial|market|shop|business|mall|office|retail/.test(text)) return "commercial";
+  if (/commercial|market|shop|business|mall|office|retail/.test(text))
+    return "commercial";
   if (/mixed|mixed.?use/.test(text)) return "mixedUse";
-  if (/public|civic|facility|amenity|mosque|school|hospital|clinic|community|plaza|graveyard|utility/.test(text)) {
+  if (
+    /public|civic|facility|amenity|mosque|school|hospital|clinic|community|plaza|graveyard|utility/.test(
+      text,
+    )
+  ) {
     return "civic";
   }
-  if (/residential|plot|parcel|house|housing|block/.test(text)) return "residential";
+  if (/residential|plot|parcel|house|housing|block/.test(text))
+    return "residential";
 
   // Geometry-based fallback for data with no landuse/height/category fields.
   // Long, thin polygons normally represent road corridors in a master plan.
-  if ((options.key === "plots3d" || options.key === "buildings3d") && area > 700 && thinness < 8) {
+  if (
+    (options.key === "plots3d" || options.key === "buildings3d") &&
+    area > 700 &&
+    thinness < 8
+  ) {
     return "road";
   }
 
   // Very large polygons in a society master plan are usually parks, plazas, facilities, or circulation areas.
   // Keep them lower instead of making one giant tower.
-  if ((options.key === "plots3d" || options.key === "buildings3d") && area > 18000) {
+  if (
+    (options.key === "plots3d" || options.key === "buildings3d") &&
+    area > 18000
+  ) {
     return "civic";
   }
 
@@ -259,8 +403,15 @@ function classifyFeature(feature, options = {}) {
 
 export function getHeightMeters(feature, fallbackFeet = 35) {
   const props = feature?.properties || {};
-  const floorCount = Number(props.floor_count ?? props.floors ?? props.no_of_floors ?? props.storeys);
-  const heightValue = Number(props.height_m ?? props.height_meter ?? props.height ?? props.building_height);
+  const floorCount = Number(
+    props.floor_count ?? props.floors ?? props.no_of_floors ?? props.storeys,
+  );
+  const heightValue = Number(
+    props.height_m ??
+      props.height_meter ??
+      props.height ??
+      props.building_height,
+  );
   const heightFeet = Number(props.height_ft ?? props.height_feet);
 
   if (Number.isFinite(heightValue) && heightValue > 0) return heightValue;
@@ -274,7 +425,12 @@ function getAutoHeightMeters(feature, category, options = {}) {
   const explicitHeight = getHeightMeters(feature, 0);
   if (explicitHeight > 0) return explicitHeight;
 
-  if (category === "greenSpace" || category === "road" || category === "water") return 0;
+  if (
+    ["greenSpace", "greenBelt", "road", "water", "park", "barrenLand"].includes(
+      category,
+    )
+  )
+    return 0;
 
   const featureId = getFeatureId(feature);
   const area = getFeatureAreaSqMeters(feature);
@@ -305,37 +461,54 @@ function getAutoHeightMeters(feature, category, options = {}) {
 
 function getSmartFeatureStyle(feature, options = {}) {
   const override = firstMatchingOverride(feature);
-  const category = override?.category || classifyFeature(feature, options);
-  const featureId = getFeatureId(feature);
+  const landUseStyle = getStyleFromLandUse(feature);
 
+  const category =
+    override?.category ||
+    landUseStyle?.category ||
+    classifyFeature(feature, options);
+  const featureId = getFeatureId(feature);
   const autoFill = pickFromPalette(category, featureId);
+
+  const flatCategories = [
+    "greenSpace",
+    "greenBelt",
+    "road",
+    "water",
+    "park",
+    "barrenLand",
+  ];
 
   const baseStyle = {
     category,
-    label: category,
-    fillColor: autoFill,
-    outlineColor: category === "road" || category === "greenSpace" ? "#064e3b" : "#172554",
-    opacity: options.opacity,
-    extrude: !["greenSpace", "road", "water"].includes(category),
-    heightMeters: getAutoHeightMeters(feature, category, options),
+    label: landUseStyle?.label || category,
+    fillColor: landUseStyle?.fillColor || autoFill,
+    outlineColor:
+      landUseStyle?.outlineColor ||
+      (flatCategories.includes(category) ? "#064e3b" : "#172554"),
+    opacity: landUseStyle?.opacity ?? options.opacity,
+    extrude: landUseStyle?.extrude ?? !flatCategories.includes(category),
+    heightMeters:
+      landUseStyle?.heightMeters ??
+      getAutoHeightMeters(feature, category, options),
   };
 
-  if (category === "greenSpace") {
+  if (!landUseStyle && category === "greenSpace") {
     baseStyle.fillColor = "#16a34a";
     baseStyle.outlineColor = "#14532d";
-    baseStyle.opacity = 0.92;
+    baseStyle.opacity = 1;
   }
 
-  if (category === "road") {
-    baseStyle.fillColor = "#22c55e";
-    baseStyle.outlineColor = "#ffffff";
-    baseStyle.opacity = 0.9;
+  if (!landUseStyle && category === "road") {
+    baseStyle.fillColor = "#ef4444";
+    baseStyle.outlineColor = "#7f1d1d";
+    baseStyle.opacity = 1;
   }
 
-  if (category === "water") {
+  if (!landUseStyle && category === "water") {
     baseStyle.fillColor = "#38bdf8";
     baseStyle.outlineColor = "#0369a1";
-    baseStyle.opacity = 0.75;
+    baseStyle.opacity = 0.85;
   }
 
   return {
@@ -361,7 +534,9 @@ export function flattenCoordinates(coordinates, output = []) {
 }
 
 export function getBoundsFromGeoJSON(geojson) {
-  const coords = flattenCoordinates(geojson?.features?.map((feature) => feature.geometry?.coordinates) || []);
+  const coords = flattenCoordinates(
+    geojson?.features?.map((feature) => feature.geometry?.coordinates) || [],
+  );
 
   if (!coords.length) return null;
 
@@ -401,7 +576,9 @@ export function flyToGeoJSON(viewer, geojson, options = {}) {
 }
 
 function color(cssColor, alpha = 1) {
-  return Cesium.Color.fromCssColorString(cssColor || "#ffffff").withAlpha(alpha ?? 1);
+  return Cesium.Color.fromCssColorString(cssColor || "#ffffff").withAlpha(
+    alpha ?? 1,
+  );
 }
 
 function ringToCartesian(ring = []) {
@@ -432,7 +609,8 @@ function linePositions(coordinates = []) {
     const lon = Number(coord?.[0]);
     const lat = Number(coord?.[1]);
     const height = Number(coord?.[2] || 0);
-    if (Number.isFinite(lon) && Number.isFinite(lat)) values.push(lon, lat, height);
+    if (Number.isFinite(lon) && Number.isFinite(lat))
+      values.push(lon, lat, height);
   });
   return Cesium.Cartesian3.fromDegreesArrayHeights(values);
 }
@@ -445,19 +623,38 @@ function pointPosition(coordinates = []) {
   return Cesium.Cartesian3.fromDegrees(lon, lat, height);
 }
 
-function createPolygonEntity(viewer, feature, coordinates, options, fallbackIndex) {
+function createPolygonEntity(
+  viewer,
+  feature,
+  coordinates,
+  options,
+  fallbackIndex,
+) {
   const featureId = getFeatureId(feature, `${options.key}-${fallbackIndex}`);
   const override = options.extrusionOverrides?.[featureId];
-  const smartStyle = options.smartStyle ? getSmartFeatureStyle(feature, options) : null;
+  const smartStyle = options.smartStyle
+    ? getSmartFeatureStyle(feature, options)
+    : null;
 
-  const fillColor = override?.color || smartStyle?.fillColor || options.fillColor || "#38bdf8";
-  const finalOpacity = Number.isFinite(Number(smartStyle?.opacity)) ? smartStyle.opacity : options.opacity;
+  const fillColor =
+    override?.color || smartStyle?.fillColor || options.fillColor || "#38bdf8";
+  const finalOpacity = Number.isFinite(Number(smartStyle?.opacity))
+    ? smartStyle.opacity
+    : options.opacity;
   const material = color(fillColor, finalOpacity);
-  const outlineColor = color(smartStyle?.outlineColor || options.outlineColor || "#111827", 1);
+  const outlineColor = color(
+    smartStyle?.outlineColor || options.outlineColor || "#111827",
+    1,
+  );
 
-  const shouldExtrude = Boolean(options.extrude) && smartStyle?.extrude !== false;
+  const shouldExtrude =
+    Boolean(options.extrude) && smartStyle?.extrude !== false;
   const extrudedHeight = shouldExtrude
-    ? Number(override?.heightMeters ?? smartStyle?.heightMeters ?? getHeightMeters(feature, options.defaultHeightFeet))
+    ? Number(
+        override?.heightMeters ??
+          smartStyle?.heightMeters ??
+          getHeightMeters(feature, options.defaultHeightFeet),
+      )
     : undefined;
 
   const entity = viewer.entities.add({
@@ -492,13 +689,22 @@ function createPolygonEntity(viewer, feature, coordinates, options, fallbackInde
   return entity;
 }
 
-function createLineEntity(viewer, feature, coordinates, options, fallbackIndex) {
+function createLineEntity(
+  viewer,
+  feature,
+  coordinates,
+  options,
+  fallbackIndex,
+) {
   const entity = viewer.entities.add({
     name: options.name,
     polyline: {
       positions: linePositions(coordinates),
       width: options.width || 2,
-      material: color(options.lineColor || options.outlineColor || "#0f172a", options.opacity),
+      material: color(
+        options.lineColor || options.outlineColor || "#0f172a",
+        options.opacity,
+      ),
       clampToGround: options.clampToGround ?? true,
     },
   });
@@ -510,19 +716,29 @@ function createLineEntity(viewer, feature, coordinates, options, fallbackIndex) 
   return entity;
 }
 
-function createPointEntity(viewer, feature, coordinates, options, fallbackIndex) {
+function createPointEntity(
+  viewer,
+  feature,
+  coordinates,
+  options,
+  fallbackIndex,
+) {
   const position = pointPosition(coordinates);
   if (!position) return null;
 
   const props = feature?.properties || {};
-  const labelText = props.level ?? props.spot_level ?? props.elevation ?? props.z ?? "";
+  const labelText =
+    props.level ?? props.spot_level ?? props.elevation ?? props.z ?? "";
 
   const entity = viewer.entities.add({
     name: options.name,
     position,
     point: {
       pixelSize: options.pixelSize || 7,
-      color: color(options.pointColor || options.fillColor || "#ef4444", options.opacity),
+      color: color(
+        options.pointColor || options.fillColor || "#ef4444",
+        options.opacity,
+      ),
       outlineColor: Cesium.Color.WHITE,
       outlineWidth: 1,
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
@@ -560,7 +776,13 @@ export function addGeoJSONLayer(viewer, geojson, options = {}) {
     if (!geometry) return;
 
     if (geometry.type === "Polygon") {
-      const entity = createPolygonEntity(viewer, feature, geometry.coordinates, options, featureIndex);
+      const entity = createPolygonEntity(
+        viewer,
+        feature,
+        geometry.coordinates,
+        options,
+        featureIndex,
+      );
       if (entity) entities.push(entity);
       return;
     }
@@ -580,28 +802,52 @@ export function addGeoJSONLayer(viewer, geojson, options = {}) {
     }
 
     if (geometry.type === "LineString") {
-      const entity = createLineEntity(viewer, feature, geometry.coordinates, options, featureIndex);
+      const entity = createLineEntity(
+        viewer,
+        feature,
+        geometry.coordinates,
+        options,
+        featureIndex,
+      );
       if (entity) entities.push(entity);
       return;
     }
 
     if (geometry.type === "MultiLineString") {
       geometry.coordinates.forEach((lineCoords, lineIndex) => {
-        const entity = createLineEntity(viewer, feature, lineCoords, options, `${featureIndex}-${lineIndex}`);
+        const entity = createLineEntity(
+          viewer,
+          feature,
+          lineCoords,
+          options,
+          `${featureIndex}-${lineIndex}`,
+        );
         if (entity) entities.push(entity);
       });
       return;
     }
 
     if (geometry.type === "Point") {
-      const entity = createPointEntity(viewer, feature, geometry.coordinates, options, featureIndex);
+      const entity = createPointEntity(
+        viewer,
+        feature,
+        geometry.coordinates,
+        options,
+        featureIndex,
+      );
       if (entity) entities.push(entity);
       return;
     }
 
     if (geometry.type === "MultiPoint") {
       geometry.coordinates.forEach((pointCoords, pointIndex) => {
-        const entity = createPointEntity(viewer, feature, pointCoords, options, `${featureIndex}-${pointIndex}`);
+        const entity = createPointEntity(
+          viewer,
+          feature,
+          pointCoords,
+          options,
+          `${featureIndex}-${pointIndex}`,
+        );
         if (entity) entities.push(entity);
       });
     }
@@ -623,7 +869,9 @@ export function setEntityHighlighted(entity, highlighted) {
   }
 
   if (entity.polyline) {
-    entity.polyline.width = highlighted ? Math.max(Number(entity.originalWidth || 2) + 2, 4) : entity.originalWidth || 2;
+    entity.polyline.width = highlighted
+      ? Math.max(Number(entity.originalWidth || 2) + 2, 4)
+      : entity.originalWidth || 2;
   }
 
   if (entity.point) {
@@ -653,5 +901,7 @@ export function applyBasemap(viewer, basemap) {
     }),
   };
 
-  viewer.imageryLayers.addImageryProvider(providers[basemap] || providers.Satellite);
+  viewer.imageryLayers.addImageryProvider(
+    providers[basemap] || providers.Satellite,
+  );
 }
