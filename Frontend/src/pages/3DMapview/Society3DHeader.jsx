@@ -43,7 +43,7 @@ export default function Society3DHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <IconButton title="Back to Dashboard" onClick={() => navigate("/dashboard")} icon={<Home size={18} />} />
+          <IconButton title="Back to Dashboard" onClick={() => navigate("/landing")} icon={<Home size={18} />} />
           <IconButton title="3D View" icon={<Box size={18} />} />
           <IconButton title="Logout" onClick={handleLogout} icon={<LogOut size={18} />} />
         </div>
@@ -54,6 +54,7 @@ export default function Society3DHeader() {
 
 function IconButton({ title, icon, onClick }) {
   return (
+    
     <button
       type="button"
       title={title}
