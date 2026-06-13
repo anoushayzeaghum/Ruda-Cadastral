@@ -1,4 +1,4 @@
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 
@@ -76,7 +76,14 @@ export default function Header({
             }`}
           />
         </button>
-
+        <button
+          onClick={() => navigate("/")}
+          className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-md flex items-center justify-center transition"
+          aria-label="Go to landing page"
+          title="Home"
+        >
+          <Home size={18} />
+        </button>
         <button
           onClick={handleLogout}
           className="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-1.5 rounded-md font-medium flex items-center gap-2 transition"
