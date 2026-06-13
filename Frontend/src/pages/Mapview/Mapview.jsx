@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import * as turf from "@turf/turf";
 
 import MapControls from "./MapControls";
 
@@ -43,6 +44,34 @@ const CONTROL_POINTS_LAYER = "control-points-layer";
 const TRI_JUNCTION_POINTS_SOURCE = "tri-junction-points-source";
 const TRI_JUNCTION_POINTS_LAYER = "tri-junction-points-layer";
 const TRI_JUNCTION_TRIANGLE_IMAGE = "tri-junction-triangle-marker";
+
+const DSM_SOURCE = "local-dsm-source";
+const DSM_LAYER = "local-dsm-layer";
+const DTM_SOURCE = "local-dtm-source";
+const DTM_LAYER = "local-dtm-layer";
+const ORTHO_SOURCE = "local-ortho-source";
+const ORTHO_LAYER = "local-ortho-layer";
+
+const MEASURE_SOURCE = "measure-source";
+const MEASURE_LINE_LAYER = "measure-line-layer";
+const MEASURE_POINTS_LAYER = "measure-points-layer";
+const MEASURE_LABELS_LAYER = "measure-labels-layer";
+
+const MEASURE_AREA_SOURCE = "measure-area-source";
+const MEASURE_AREA_FILL_LAYER = "measure-area-fill-layer";
+const MEASURE_AREA_LINE_LAYER = "measure-area-line-layer";
+const MEASURE_AREA_POINTS_LAYER = "measure-area-points-layer";
+const MEASURE_AREA_LABEL_LAYER = "measure-area-label-layer";
+
+const BEARING_SOURCE = "bearing-source";
+const BEARING_LINE_LAYER = "bearing-line-layer";
+const BEARING_POINTS_LAYER = "bearing-points-layer";
+const BEARING_LABEL_LAYER = "bearing-label-layer";
+
+const BUFFER_SOURCE = "buffer-source";
+const BUFFER_FILL_LAYER = "buffer-fill-layer";
+const BUFFER_LINE_LAYER = "buffer-line-layer";
+const BUFFER_CENTER_LAYER = "buffer-center-layer";
 
 const MAP_THEME = {
   fillColor: "#158033",
@@ -352,6 +381,7 @@ export default function MapView({
   basemap = "Streets",
   selectedFeatureNumber,
   onFeaturesLoaded,
+  onMapReady,
 }) {
   const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
@@ -360,6 +390,13 @@ export default function MapView({
   const activePopupRef = useRef(null);
   const popupTimeoutRef = useRef(null);
   const lastSyncedSelectionRef = useRef("");
+  const prevDsmVisible = useRef(false);
+  const prevDtmVisible = useRef(false);
+  const prevOrthoVisible = useRef(false);
+  const measureCoordsRef = useRef([]);
+  const measureAreaCoordsRef = useRef([]);
+  const bearingCoordsRef = useRef([]);
+  const coordPickerPopupRef = useRef(null);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
@@ -400,8 +437,18 @@ export default function MapView({
         preserveDrawingBuffer: true,
       });
 
-      // Default Mapbox basemap dropdown and zoom controls removed.
-
+      // Add standard GIS controls
+      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+      map.addControl(
+        new mapboxgl.GeolocateControl({
+          positionOptions: { enableHighAccuracy: true },
+          trackUserLocation: true,
+          showUserHeading: true,
+        }),
+        "top-right"
+      );
+      map.addControl(new mapboxgl.FullscreenControl(), "top-right");
+      map.addControl(new mapboxgl.ScaleControl({ maxWidth: 200, unit: "metric" }), "bottom-right");
       map.on("load", () => {
         setIsMapReady(true);
       });
@@ -1876,6 +1923,710 @@ export default function MapView({
     layers?.controlPoints,
     layers?.triJunctionPoints,
   ]);
+
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const dsmVisible = typeof layers?.dsm === 'object' ? layers.dsm.visible : !!layers?.dsm;
+    const dtmVisible = typeof layers?.dtm === 'object' ? layers.dtm.visible : !!layers?.dtm;
+    const orthoVisible = typeof layers?.ortho === 'object' ? layers.ortho.visible : !!layers?.ortho;
+
+    const shouldFlyTo = (orthoVisible && !prevOrthoVisible.current) || (dsmVisible && !prevDsmVisible.current) || (dtmVisible && !prevDtmVisible.current);
+
+    if (shouldFlyTo) {
+      const bounds = [
+        [74.42562653088396, 31.60509230706726],
+        [74.43545280361002, 31.61121654113590]
+      ];
+      map.fitBounds(bounds, { padding: 50, duration: 1500 });
+    }
+
+    prevDsmVisible.current = dsmVisible;
+    prevDtmVisible.current = dtmVisible;
+    prevOrthoVisible.current = orthoVisible;
+
+    const restoreRasters = () => {
+      // Ortho Layer
+      const orthoOpacity = typeof layers?.ortho === 'object' && Number.isFinite(layers.ortho.opacity) ? layers.ortho.opacity / 100 : 1.0;
+
+      if (orthoVisible) {
+        if (!map.getSource(ORTHO_SOURCE)) {
+          map.addSource(ORTHO_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chaharbagh_Ortho/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(ORTHO_LAYER)) {
+          map.addLayer({
+              id: ORTHO_LAYER,
+              type: 'raster',
+              source: ORTHO_SOURCE,
+              paint: { 'raster-opacity': orthoOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(ORTHO_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(ORTHO_LAYER, 'raster-opacity', orthoOpacity);
+        }
+      } else {
+        if (map.getLayer(ORTHO_LAYER)) {
+          map.setLayoutProperty(ORTHO_LAYER, 'visibility', 'none');
+        }
+      }
+
+      // DSM Layer
+      const dsmOpacity = typeof layers?.dsm === 'object' && Number.isFinite(layers.dsm.opacity) ? layers.dsm.opacity / 100 : 0.85;
+
+      if (dsmVisible) {
+        if (!map.getSource(DSM_SOURCE)) {
+          map.addSource(DSM_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(DSM_LAYER)) {
+          map.addLayer({
+              id: DSM_LAYER,
+              type: 'raster',
+              source: DSM_SOURCE,
+              paint: { 'raster-opacity': dsmOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(DSM_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(DSM_LAYER, 'raster-opacity', dsmOpacity);
+        }
+      } else {
+        if (map.getLayer(DSM_LAYER)) {
+          map.setLayoutProperty(DSM_LAYER, 'visibility', 'none');
+        }
+      }
+
+      // DTM Layer
+      const dtmVisible = typeof layers?.dtm === 'object' ? layers.dtm.visible : !!layers?.dtm;
+      const dtmOpacity = typeof layers?.dtm === 'object' && Number.isFinite(layers.dtm.opacity) ? layers.dtm.opacity / 100 : 0.85;
+
+      if (dtmVisible) {
+        if (!map.getSource(DTM_SOURCE)) {
+          map.addSource(DTM_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(DTM_LAYER)) {
+          map.addLayer({
+              id: DTM_LAYER,
+              type: 'raster',
+              source: DTM_SOURCE,
+              paint: { 'raster-opacity': dtmOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(DTM_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(DTM_LAYER, 'raster-opacity', dtmOpacity);
+        }
+      } else {
+        if (map.getLayer(DTM_LAYER)) {
+          map.setLayoutProperty(DTM_LAYER, 'visibility', 'none');
+        }
+      }
+    };
+
+    restoreRasters();
+    
+    // Attempt to restore if style changes
+    map.on('style.load', restoreRasters);
+    return () => {
+      map.off('style.load', restoreRasters);
+    };
+  }, [layers?.dsm, layers?.dtm, isMapReady]);
+
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const measureVisible = typeof layers?.measure === 'object' ? layers.measure.visible : !!layers?.measure;
+
+    const updateMeasureSource = () => {
+      const coords = measureCoordsRef.current;
+      const features = [];
+      
+      if (coords.length > 0) {
+        coords.forEach(coord => {
+          features.push(turf.point(coord));
+        });
+      }
+      
+      if (coords.length > 1) {
+        const line = turf.lineString(coords);
+        features.push(line);
+        
+        const distance = turf.length(line, { units: 'kilometers' });
+        // Add a label point at the end
+        const lastPoint = turf.point(coords[coords.length - 1], {
+          distance: `${distance.toFixed(2)} km`
+        });
+        features.push(lastPoint);
+      }
+      
+      if (map.getSource(MEASURE_SOURCE)) {
+        map.getSource(MEASURE_SOURCE).setData(turf.featureCollection(features));
+      }
+    };
+
+    const handleMapClick = (e) => {
+      measureCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
+      updateMeasureSource();
+    };
+
+    const handleMapRightClick = (e) => {
+      e.preventDefault();
+      // clear measure on right click
+      measureCoordsRef.current = [];
+      updateMeasureSource();
+    };
+
+    if (measureVisible) {
+      map.getCanvas().style.cursor = 'crosshair';
+      
+      if (!map.getSource(MEASURE_SOURCE)) {
+        map.addSource(MEASURE_SOURCE, {
+          type: 'geojson',
+          data: emptyFeatureCollection()
+        });
+      }
+      
+      if (!map.getLayer(MEASURE_LINE_LAYER)) {
+        map.addLayer({
+          id: MEASURE_LINE_LAYER,
+          type: 'line',
+          source: MEASURE_SOURCE,
+          filter: ['==', '$type', 'LineString'],
+          paint: {
+            'line-color': '#ff0000',
+            'line-width': 3,
+            'line-dasharray': [2, 2]
+          }
+        });
+      }
+      
+      if (!map.getLayer(MEASURE_POINTS_LAYER)) {
+        map.addLayer({
+          id: MEASURE_POINTS_LAYER,
+          type: 'circle',
+          source: MEASURE_SOURCE,
+          filter: ['==', '$type', 'Point'],
+          paint: {
+            'circle-radius': 5,
+            'circle-color': '#ffffff',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ff0000'
+          }
+        });
+      }
+      
+      if (!map.getLayer(MEASURE_LABELS_LAYER)) {
+        map.addLayer({
+          id: MEASURE_LABELS_LAYER,
+          type: 'symbol',
+          source: MEASURE_SOURCE,
+          filter: ['has', 'distance'],
+          layout: {
+            'text-field': ['get', 'distance'],
+            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+            'text-size': 14,
+            'text-anchor': 'bottom',
+            'text-offset': [0, -1]
+          },
+          paint: {
+            'text-color': '#ff0000',
+            'text-halo-color': '#ffffff',
+            'text-halo-width': 2
+          }
+        });
+      }
+
+      map.on('click', handleMapClick);
+      map.on('contextmenu', handleMapRightClick);
+      
+      updateMeasureSource();
+
+    } else {
+      map.getCanvas().style.cursor = '';
+      measureCoordsRef.current = [];
+      
+      if (map.getSource(MEASURE_SOURCE)) {
+        map.getSource(MEASURE_SOURCE).setData(emptyFeatureCollection());
+      }
+      
+      map.off('click', handleMapClick);
+      map.off('contextmenu', handleMapRightClick);
+    }
+
+    return () => {
+      map.off('click', handleMapClick);
+      map.off('contextmenu', handleMapRightClick);
+      if (map.getCanvas()) {
+        map.getCanvas().style.cursor = '';
+      }
+    };
+  }, [layers?.measure, isMapReady]);
+
+  // ── Area Measure Tool ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const areaVisible = typeof layers?.measureArea === "object"
+      ? layers.measureArea.visible
+      : !!layers?.measureArea;
+
+    const clearAreaLayers = () => {
+      try {
+        if (map.getLayer(MEASURE_AREA_LABEL_LAYER)) map.removeLayer(MEASURE_AREA_LABEL_LAYER);
+        if (map.getLayer(MEASURE_AREA_FILL_LAYER)) map.removeLayer(MEASURE_AREA_FILL_LAYER);
+        if (map.getLayer(MEASURE_AREA_LINE_LAYER)) map.removeLayer(MEASURE_AREA_LINE_LAYER);
+        if (map.getLayer(MEASURE_AREA_POINTS_LAYER)) map.removeLayer(MEASURE_AREA_POINTS_LAYER);
+        if (map.getSource(MEASURE_AREA_SOURCE)) map.removeSource(MEASURE_AREA_SOURCE);
+      } catch (e) { /* ignore */ }
+    };
+
+    const updateAreaSource = (closed = false) => {
+      const coords = measureAreaCoordsRef.current;
+      const features = [];
+
+      coords.forEach((c) => features.push(turf.point(c)));
+
+      if (coords.length >= 2) {
+        const lineCoords = closed ? [...coords, coords[0]] : coords;
+        features.push(turf.lineString(lineCoords));
+      }
+
+      if (closed && coords.length >= 3) {
+        const poly = turf.polygon([[...coords, coords[0]]]);
+        features.push(poly);
+        const areaSqM = turf.area(poly);
+        const areaAcres = areaSqM / 4046.8564224;
+        const areaKanal = areaAcres * 8;
+        const centroid = turf.centroid(poly);
+        centroid.properties = {
+          areaLabel: `${areaSqM.toFixed(0)} m²  |  ${areaAcres.toFixed(3)} ac  |  ${areaKanal.toFixed(2)} kanal`,
+        };
+        features.push(centroid);
+      }
+
+      if (map.getSource(MEASURE_AREA_SOURCE)) {
+        map.getSource(MEASURE_AREA_SOURCE).setData(turf.featureCollection(features));
+      }
+    };
+
+    const handleClick = (e) => {
+      measureAreaCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
+      updateAreaSource(false);
+    };
+
+    const handleRightClick = (e) => {
+      e.preventDefault();
+      if (measureAreaCoordsRef.current.length >= 3) {
+        updateAreaSource(true);
+      } else {
+        measureAreaCoordsRef.current = [];
+        updateAreaSource(false);
+      }
+    };
+
+    if (areaVisible) {
+      map.getCanvas().style.cursor = "crosshair";
+
+      if (!map.getSource(MEASURE_AREA_SOURCE)) {
+        map.addSource(MEASURE_AREA_SOURCE, {
+          type: "geojson",
+          data: turf.featureCollection([]),
+        });
+      }
+
+      if (!map.getLayer(MEASURE_AREA_FILL_LAYER)) {
+        map.addLayer({
+          id: MEASURE_AREA_FILL_LAYER,
+          type: "fill",
+          source: MEASURE_AREA_SOURCE,
+          filter: ["==", "$type", "Polygon"],
+          paint: { "fill-color": "#0066ff", "fill-opacity": 0.15 },
+        });
+      }
+
+      if (!map.getLayer(MEASURE_AREA_LINE_LAYER)) {
+        map.addLayer({
+          id: MEASURE_AREA_LINE_LAYER,
+          type: "line",
+          source: MEASURE_AREA_SOURCE,
+          filter: ["any", ["==", "$type", "LineString"], ["==", "$type", "Polygon"]],
+          paint: { "line-color": "#0066ff", "line-width": 2, "line-dasharray": [2, 2] },
+        });
+      }
+
+      if (!map.getLayer(MEASURE_AREA_POINTS_LAYER)) {
+        map.addLayer({
+          id: MEASURE_AREA_POINTS_LAYER,
+          type: "circle",
+          source: MEASURE_AREA_SOURCE,
+          filter: ["==", "$type", "Point"],
+          paint: {
+            "circle-radius": 5,
+            "circle-color": "#ffffff",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#0066ff",
+          },
+        });
+      }
+
+      if (!map.getLayer(MEASURE_AREA_LABEL_LAYER)) {
+        map.addLayer({
+          id: MEASURE_AREA_LABEL_LAYER,
+          type: "symbol",
+          source: MEASURE_AREA_SOURCE,
+          filter: ["has", "areaLabel"],
+          layout: {
+            "text-field": ["get", "areaLabel"],
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-size": 12,
+            "text-anchor": "center",
+          },
+          paint: {
+            "text-color": "#003399",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 2,
+          },
+        });
+      }
+
+      map.on("click", handleClick);
+      map.on("contextmenu", handleRightClick);
+    } else {
+      map.getCanvas().style.cursor = "";
+      measureAreaCoordsRef.current = [];
+      clearAreaLayers();
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+    }
+
+    return () => {
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+  }, [layers?.measureArea, isMapReady]);
+
+  // ── Bearing Tool ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const bearingVisible = typeof layers?.measureBearing === "object"
+      ? layers.measureBearing.visible
+      : !!layers?.measureBearing;
+
+    const clearBearingLayers = () => {
+      try {
+        if (map.getLayer(BEARING_LABEL_LAYER)) map.removeLayer(BEARING_LABEL_LAYER);
+        if (map.getLayer(BEARING_LINE_LAYER)) map.removeLayer(BEARING_LINE_LAYER);
+        if (map.getLayer(BEARING_POINTS_LAYER)) map.removeLayer(BEARING_POINTS_LAYER);
+        if (map.getSource(BEARING_SOURCE)) map.removeSource(BEARING_SOURCE);
+      } catch (e) { /* ignore */ }
+    };
+
+    const updateBearingSource = () => {
+      const coords = bearingCoordsRef.current;
+      const features = [];
+
+      coords.forEach((c) => features.push(turf.point(c)));
+
+      if (coords.length === 2) {
+        features.push(turf.lineString(coords));
+        const bearing = turf.bearing(turf.point(coords[0]), turf.point(coords[1]));
+        const dist = turf.distance(turf.point(coords[0]), turf.point(coords[1]), { units: "meters" });
+        const midpoint = turf.midpoint(turf.point(coords[0]), turf.point(coords[1]));
+        midpoint.properties = {
+          bearingLabel: `${bearing.toFixed(1)}°  ·  ${dist.toFixed(1)} m`,
+        };
+        features.push(midpoint);
+      }
+
+      if (map.getSource(BEARING_SOURCE)) {
+        map.getSource(BEARING_SOURCE).setData(turf.featureCollection(features));
+      }
+    };
+
+    const handleClick = (e) => {
+      if (bearingCoordsRef.current.length >= 2) {
+        bearingCoordsRef.current = [[e.lngLat.lng, e.lngLat.lat]];
+      } else {
+        bearingCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
+      }
+      updateBearingSource();
+    };
+
+    const handleRightClick = (e) => {
+      e.preventDefault();
+      bearingCoordsRef.current = [];
+      updateBearingSource();
+    };
+
+    if (bearingVisible) {
+      map.getCanvas().style.cursor = "crosshair";
+
+      if (!map.getSource(BEARING_SOURCE)) {
+        map.addSource(BEARING_SOURCE, {
+          type: "geojson",
+          data: turf.featureCollection([]),
+        });
+      }
+
+      if (!map.getLayer(BEARING_LINE_LAYER)) {
+        map.addLayer({
+          id: BEARING_LINE_LAYER,
+          type: "line",
+          source: BEARING_SOURCE,
+          filter: ["==", "$type", "LineString"],
+          paint: { "line-color": "#e67e00", "line-width": 2 },
+        });
+      }
+
+      if (!map.getLayer(BEARING_POINTS_LAYER)) {
+        map.addLayer({
+          id: BEARING_POINTS_LAYER,
+          type: "circle",
+          source: BEARING_SOURCE,
+          filter: ["==", "$type", "Point"],
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "#ffffff",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#e67e00",
+          },
+        });
+      }
+
+      if (!map.getLayer(BEARING_LABEL_LAYER)) {
+        map.addLayer({
+          id: BEARING_LABEL_LAYER,
+          type: "symbol",
+          source: BEARING_SOURCE,
+          filter: ["has", "bearingLabel"],
+          layout: {
+            "text-field": ["get", "bearingLabel"],
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-size": 13,
+            "text-anchor": "bottom",
+            "text-offset": [0, -1],
+          },
+          paint: {
+            "text-color": "#b35000",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 2,
+          },
+        });
+      }
+
+      map.on("click", handleClick);
+      map.on("contextmenu", handleRightClick);
+    } else {
+      map.getCanvas().style.cursor = "";
+      bearingCoordsRef.current = [];
+      clearBearingLayers();
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+    }
+
+    return () => {
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+  }, [layers?.measureBearing, isMapReady]);
+
+  // ── Coordinate Picker ────────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const coordVisible = typeof layers?.coordPicker === "object"
+      ? layers.coordPicker.visible
+      : !!layers?.coordPicker;
+
+    const handleClick = (e) => {
+      const { lng, lat } = e.lngLat;
+      const lngStr = lng.toFixed(6);
+      const latStr = lat.toFixed(6);
+
+      if (coordPickerPopupRef.current) {
+        coordPickerPopupRef.current.remove();
+        coordPickerPopupRef.current = null;
+      }
+
+      navigator.clipboard?.writeText(`${latStr}, ${lngStr}`).catch(() => {});
+
+      const popup = new mapboxgl.Popup({
+        offset: 10,
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: "260px",
+      })
+        .setLngLat([lng, lat])
+        .setHTML(`
+          <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#1f2937;min-width:190px">
+            <div style="font-weight:700;color:#0f3d2e;margin-bottom:6px;font-size:13px;">📍 Coordinates</div>
+            <div><span style="font-weight:600">Latitude:</span> ${latStr}</div>
+            <div><span style="font-weight:600">Longitude:</span> ${lngStr}</div>
+            <div style="margin-top:8px;padding:4px 8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;font-size:11px;color:#166534">
+              ✓ Copied to clipboard
+            </div>
+          </div>
+        `)
+        .addTo(map);
+
+      coordPickerPopupRef.current = popup;
+      popup.on("close", () => { coordPickerPopupRef.current = null; });
+    };
+
+    if (coordVisible) {
+      map.getCanvas().style.cursor = "crosshair";
+      map.on("click", handleClick);
+    } else {
+      map.getCanvas().style.cursor = "";
+      if (coordPickerPopupRef.current) {
+        coordPickerPopupRef.current.remove();
+        coordPickerPopupRef.current = null;
+      }
+      map.off("click", handleClick);
+    }
+
+    return () => {
+      map.off("click", handleClick);
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+  }, [layers?.coordPicker, isMapReady]);
+
+  // ── Buffer Tool ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const bufferVisible = typeof layers?.measureBuffer === "object"
+      ? layers.measureBuffer.visible
+      : !!layers?.measureBuffer;
+
+    const clearBufferLayers = () => {
+      try {
+        if (map.getLayer(BUFFER_CENTER_LAYER)) map.removeLayer(BUFFER_CENTER_LAYER);
+        if (map.getLayer(BUFFER_FILL_LAYER)) map.removeLayer(BUFFER_FILL_LAYER);
+        if (map.getLayer(BUFFER_LINE_LAYER)) map.removeLayer(BUFFER_LINE_LAYER);
+        if (map.getSource(BUFFER_SOURCE)) map.removeSource(BUFFER_SOURCE);
+      } catch (e) { /* ignore */ }
+    };
+
+    const BUFFER_RADIUS_M = 500;
+
+    const handleClick = (e) => {
+      const { lng, lat } = e.lngLat;
+      const pt = turf.point([lng, lat]);
+      const buffered = turf.buffer(pt, BUFFER_RADIUS_M, { units: "meters" });
+      const features = [pt, buffered];
+
+      if (!map.getSource(BUFFER_SOURCE)) {
+        map.addSource(BUFFER_SOURCE, {
+          type: "geojson",
+          data: turf.featureCollection(features),
+        });
+
+        map.addLayer({
+          id: BUFFER_FILL_LAYER,
+          type: "fill",
+          source: BUFFER_SOURCE,
+          filter: ["==", "$type", "Polygon"],
+          paint: { "fill-color": "#9333ea", "fill-opacity": 0.12 },
+        });
+
+        map.addLayer({
+          id: BUFFER_LINE_LAYER,
+          type: "line",
+          source: BUFFER_SOURCE,
+          filter: ["==", "$type", "Polygon"],
+          paint: { "line-color": "#9333ea", "line-width": 2 },
+        });
+
+        map.addLayer({
+          id: BUFFER_CENTER_LAYER,
+          type: "circle",
+          source: BUFFER_SOURCE,
+          filter: ["==", "$type", "Point"],
+          paint: {
+            "circle-radius": 5,
+            "circle-color": "#ffffff",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#9333ea",
+          },
+        });
+      } else {
+        map.getSource(BUFFER_SOURCE).setData(turf.featureCollection(features));
+      }
+    };
+
+    const handleRightClick = (e) => {
+      e.preventDefault();
+      clearBufferLayers();
+    };
+
+    if (bufferVisible) {
+      map.getCanvas().style.cursor = "crosshair";
+      map.on("click", handleClick);
+      map.on("contextmenu", handleRightClick);
+    } else {
+      map.getCanvas().style.cursor = "";
+      clearBufferLayers();
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+    }
+
+    return () => {
+      map.off("click", handleClick);
+      map.off("contextmenu", handleRightClick);
+      if (map.getCanvas()) map.getCanvas().style.cursor = "";
+    };
+  }, [layers?.measureBuffer, isMapReady]);
+
+  // ── Print / Export Map ────────────────────────────────────────────────────
+  // Exposed via ref so parent can trigger it without toggling layer state
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady) return;
+
+    const printVisible = typeof layers?.printMap === "object"
+      ? layers.printMap.visible
+      : !!layers?.printMap;
+
+    if (!printVisible) return;
+
+    try {
+      const canvas = map.getCanvas();
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `map-export-${new Date().toISOString().slice(0, 10)}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (e) {
+      console.warn("Map export failed — ensure preserveDrawingBuffer is true", e);
+    }
+
+    // Notify parent to reset the flag so it doesn't re-trigger
+    if (typeof onMapReady === "function") {
+      // We reuse onMapReady only for the map instance; export reset is handled by MapPage
+    }
+  }, [layers?.printMap, isMapReady]);
 
   return (
     <div

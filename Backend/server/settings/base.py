@@ -38,6 +38,37 @@ DEBUG = False
 GDAL_LIBRARY_PATH = get_secret("GDAL_LIBRARY_PATH")
 GEOS_LIBRARY_PATH = get_secret("GEOS_LIBRARY_PATH")
 
+if os.name == "nt" and GDAL_LIBRARY_PATH:
+    try:
+        from pathlib import Path
+        gdal_path = Path(GDAL_LIBRARY_PATH)
+        qgis_base = gdal_path.parent.parent
+        qgis_bin = str(gdal_path.parent)
+
+        gdal_data_paths = [
+            qgis_base / "apps" / "gdal" / "share" / "gdal",
+            qgis_base / "share" / "gdal"
+        ]
+        proj_lib_paths = [
+            qgis_base / "share" / "proj",
+            qgis_base / "apps" / "proj" / "share" / "proj"
+        ]
+
+        for p in gdal_data_paths:
+            if p.exists():
+                os.environ["GDAL_DATA"] = str(p)
+                break
+
+        for p in proj_lib_paths:
+            if p.exists():
+                os.environ["PROJ_LIB"] = str(p)
+                break
+
+        if os.path.exists(qgis_bin):
+            os.environ["PATH"] = qgis_bin + os.path.pathsep + os.environ.get("PATH", "")
+    except Exception:
+        pass
+
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
 AUTH_PROFILE_MODULE = "api.MyUser"
