@@ -173,13 +173,13 @@ export default function Society3DMapPage() {
           onSocietyChange={setSelectedSocietyId}
         />
 
-        <Society3DExtrusionPanel
+        {/* <Society3DExtrusionPanel
           extrusion={extrusion}
           setExtrusion={setExtrusion}
           selectedFeature={selectedFeature}
           onApplyToSelected={applyExtrusionToSelected}
           onClearExtrusions={clearExtrusions}
-        />
+        /> */}
 
         <Society3DLayerPanel
           layers={layers}
