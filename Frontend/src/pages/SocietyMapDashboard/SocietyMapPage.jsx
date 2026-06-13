@@ -72,6 +72,7 @@ export default function SocietyMapPage() {
   const [societyError, setSocietyError] = useState("");
   const [selectedSocietyFeature, setSelectedSocietyFeature] = useState(null);
   const [societyPanelOpen, setSocietyPanelOpen] = useState(false);
+  const [selectionClearSignal, setSelectionClearSignal] = useState(0);
 
   const [rudaPhases, setRudaPhases] = useState([]);
   const [selectedRudaPhaseIds, setSelectedRudaPhaseIds] = useState([]);
@@ -115,6 +116,7 @@ export default function SocietyMapPage() {
       setSelectedSocietyId("");
       setSelectedSocietyFeature(null);
       setSocietyPanelOpen(false);
+      setSelectionClearSignal((prev) => prev + 1);
       setSocietyError("");
 
       setLayers((prev) => ({
@@ -191,6 +193,7 @@ export default function SocietyMapPage() {
   useEffect(() => {
     setSelectedSocietyFeature(null);
     setSocietyPanelOpen(false);
+    setSelectionClearSignal((prev) => prev + 1);
 
     setLayers((prev) => ({
       ...prev,
@@ -305,6 +308,12 @@ export default function SocietyMapPage() {
     });
   }, [selectedFilterLayers, selectedSociety]);
 
+  const handleParcelPanelClose = () => {
+    setSocietyPanelOpen(false);
+    setSelectedSocietyFeature(null);
+    setSelectionClearSignal((prev) => prev + 1);
+  };
+
   return (
     <div className="w-full h-screen flex flex-col bg-white">
       <Header />
@@ -320,6 +329,7 @@ export default function SocietyMapPage() {
           selectedFilterLayers={selectedFilterLayers}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
           basemap={basemap}
+          clearSelectionSignal={selectionClearSignal}
           onParcelSelect={(feature) => {
             setSelectedSocietyFeature(feature);
             setSocietyPanelOpen(true);
@@ -337,6 +347,7 @@ export default function SocietyMapPage() {
               setSelectedSocietyId(value);
               setSelectedSocietyFeature(null);
               setSocietyPanelOpen(false);
+              setSelectionClearSignal((prev) => prev + 1);
             }}
           />
         )}
@@ -358,7 +369,7 @@ export default function SocietyMapPage() {
         <ParcelPanel
           parcel={selectedSocietyFeature}
           isOpen={societyPanelOpen}
-          onClose={() => setSocietyPanelOpen(false)}
+          onClose={handleParcelPanelClose}
         />
       </div>
     </div>

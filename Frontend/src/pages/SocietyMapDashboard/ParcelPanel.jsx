@@ -81,7 +81,7 @@ export default function ParcelPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute right-3 top-24 z-20 w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-170px)]">
+    <div className="absolute left-3 top-24 z-20 w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-170px)]">
       <div className="border-b border-slate-200">
         <div className="flex items-center justify-between gap-2 bg-[#0f3d2e] px-3 py-2.5">
           <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-white min-w-0">
