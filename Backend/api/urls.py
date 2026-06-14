@@ -83,6 +83,10 @@ urlpatterns = [
     path('api/', include(router.urls)),
 
     path("import/district/", import_district_shapefile),
+    path("import/tehsil/", import_tehsil_shapefile),
+    path("import/mauza/", import_mauza_shapefile),
+    path("import/murabba/", import_murabba_shapefile),
+    path("import/khasra/", import_khasra_shapefile),
     
     path('', include(router.urls)),
 ]

@@ -22,23 +22,28 @@ import {
 const BASEMAPS = [
   {
     name: "Satellite",
-    preview: "bg-[linear-gradient(135deg,#314b33,#8b7c52,#2c4a59)]",
+    preview:
+      "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/4640/3075",
   },
   {
     name: "Streets",
-    preview: "bg-[linear-gradient(135deg,#f0eadb,#d8d1bb,#b6c4b5)]",
+    preview:
+      "https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/13/4640/3075",
   },
   {
     name: "Light",
-    preview: "bg-[linear-gradient(135deg,#f8fafc,#e2e8f0,#cbd5e1)]",
+    preview:
+      "https://images.unsplash.com/photo-1501004318641-b39e6451bec6",
   },
   {
     name: "Dark",
-    preview: "bg-[linear-gradient(135deg,#0f172a,#334155,#111827)]",
+    preview:
+      "https://images.unsplash.com/photo-1500375592092-40eb2168fd21",
   },
   {
     name: "Outdoors",
-    preview: "bg-[linear-gradient(135deg,#6f9f55,#d5c17b,#7ba98f)]",
+    preview:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
   },
 ];
 
@@ -288,7 +293,7 @@ export default function LeftPanel({
           icon={<Wrench size={18} />}
         />
         <PanelIcon
-          title="Map Background"
+          title="Basemap"
           active={activePanel === "basemap"}
           onClick={() =>
             setActivePanel(activePanel === "basemap" ? "" : "basemap")
@@ -362,33 +367,7 @@ export default function LeftPanel({
                   />
                 </div> */}
 
-                <SectionTitle title="Imagery & Terrain Layers" open />
-                <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
-                  <LayerRow
-                    icon={<Map size={15} />}
-                    label="Orthophoto Imagery"
-                    checked={getLayerVisible("ortho")}
-                    opacity={getLayerOpacity("ortho")}
-                    onToggle={() => toggleLayer("ortho")}
-                    onOpacity={(value) => updateLayer("ortho", { opacity: value })}
-                  />
-                  <LayerRow
-                    icon={<Map size={15} />}
-                    label="Digital Surface Model (DSM)"
-                    checked={getLayerVisible("dsm")}
-                    opacity={getLayerOpacity("dsm")}
-                    onToggle={() => toggleLayer("dsm")}
-                    onOpacity={(value) => updateLayer("dsm", { opacity: value })}
-                  />
-                  <LayerRow
-                    icon={<Map size={15} />}
-                    label="Digital Terrain Model (DTM)"
-                    checked={getLayerVisible("dtm")}
-                    opacity={getLayerOpacity("dtm")}
-                    onToggle={() => toggleLayer("dtm")}
-                    onOpacity={(value) => updateLayer("dtm", { opacity: value })}
-                  />
-                </div>
+               
               </div>
             </Panel>
           )}
@@ -509,7 +488,7 @@ export default function LeftPanel({
           )}
 
           {activePanel === "basemap" && (
-            <Panel title="Map Background">
+            <Panel title="Basemap">
               <div className="grid grid-cols-2 gap-2 p-3">
                 {BASEMAPS.map((item) => (
                   <button
@@ -522,7 +501,15 @@ export default function LeftPanel({
                         : "border-slate-200 bg-white hover:bg-slate-50"
                     }`}
                   >
-                    <div className={`h-16 w-full ${item.preview}`} />
+                    <div className="relative h-16 w-full overflow-hidden">
+                      <img
+                        src={item.preview}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                      />
+
+                      
+                    </div>
                     <div className="flex items-center justify-between px-2 py-2 text-xs font-semibold text-slate-800">
                       <span className="flex items-center gap-1.5">
                         <Map size={14} />
@@ -699,12 +686,8 @@ function RudaProposedRoadsLayers({
   getAllProposedRoadIds,
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
-        <h4 className="text-[12px] font-semibold text-slate-700">
-          RUDA Proposed Roads
-        </h4>
-      </div>
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      
 
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <RudaLayerRow

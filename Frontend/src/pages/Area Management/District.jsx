@@ -8,6 +8,26 @@ export default function District() {
   const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState("");
 
+  
+  const fetchDistricts = async () => {
+    try {
+      setLoading(true);
+      const res = await getDistricts();
+      setItems(res || []);
+    } catch (err) {
+      console.error("Failed to load districts:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchDistricts();
+  }, []);
+
+  const handleImportSuccess = () => {
+    fetchDistricts(); // reload data after import
+  };
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -66,6 +86,7 @@ export default function District() {
               open={showImport}
               onClose={() => setShowImport(false)}
               type="district"
+              onSuccess={handleImportSuccess}
             />
             <button
               onClick={() => setShowImport(true)}

@@ -12,6 +12,16 @@ export default function Tehsil() {
 
   const itemsPerPage = 10;
 
+  const fetchTehsils = async () => {
+    try {
+      setLoading(true);
+      const res = await getTehsils();
+      setItems(res || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -115,6 +125,8 @@ export default function Tehsil() {
               title="Import Tehsil"
               open={showImport}
               onClose={() => setShowImport(false)}
+              type="tehsil"
+              onSuccess={fetchTehsils}
             />
             <button
               onClick={() => setShowImport(true)}

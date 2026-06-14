@@ -103,6 +103,7 @@ export const getTehsils = async (district_i) => {
   return normalizeData(res);
 };
 
+
 export const importDistrict = ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -112,6 +113,23 @@ export const importDistrict = ({ file }) => {
       "Content-Type": "multipart/form-data",
     },
   }).then((res) => res.data);
+};
+
+export const importTehsil = async ({ file }) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await API.post(
+    "/import/tehsil/",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data;
 };
 
 export const getMauzas = async (tehsil) => {
@@ -134,11 +152,45 @@ export const getKhasras = async (mauza_id) => {
   return normalizeGeoJson(res);
 };
 
+export const importKhasra = async ({ file }) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await API.post(
+    "/import/khasra/",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data;
+};
+
 export const getMurabbas = async (mauza_id) => {
   const res = await API.get("/murabba/", {
     params: { mauza_id },
   });
   return normalizeGeoJson(res);
+};
+
+export const importMurabba = async ({ file }) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await API.post(
+    "/import/murabba/",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data;
 };
 
 ///////////////////////////////////////////////////////
@@ -327,3 +379,19 @@ export const importMauza = async ({ file, tehsil, mauza }) => {
 };
 
 
+export const importMauzaShapefile = async ({ file }) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await API.post(
+    "/import/mauza/",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return res.data;
+};

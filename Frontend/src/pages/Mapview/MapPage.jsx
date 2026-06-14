@@ -374,7 +374,7 @@ export default function MapPage() {
           onMapReady={handleMapReady}
         />
 
-        <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} />
+        {/* <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} /> */}
 
         {filters && (
           <SubHeader

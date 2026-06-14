@@ -9,25 +9,30 @@ export default function Mauza() {
   const [showImport, setShowImport] = useState(false);
   const [showFields, setShowFields] = useState(false);
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        setLoading(true);
-        const res = await getMauzas();
-        const features = res?.features ?? [];
-        const props = features.map((f) => ({
-          ...(f.properties || {}),
-          mauza_id: f.properties?.mauza_id ?? f.id, // 🔥 fallback from id_field
-        }));
-        setItems(props);
-      } catch (err) {
-        console.error("Failed to load mauzas:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchMauzas = async () => {
+    try {
+      setLoading(true);
 
-    fetch();
+      const res = await getMauzas();
+
+      const features = res?.features ?? [];
+
+      const props = features.map((f) => ({
+        ...(f.properties || {}),
+        mauza_id: f.properties?.mauza_id ?? f.id,
+      }));
+
+      setItems(props);
+    } catch (err) {
+      console.error("Failed to load mauzas:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMauzas();
+
     (async () => {
       try {
         const t = await getTehsils();
@@ -36,7 +41,7 @@ export default function Mauza() {
         console.error(e);
       }
     })();
-  }, []);
+}, []);
 
   return (
     <div className="space-y-6">
@@ -74,6 +79,8 @@ export default function Mauza() {
               title="Import Mauza"
               open={showImport}
               onClose={() => setShowImport(false)}
+              type="mauza"
+              onSuccess={fetchMauzas}
             />
             <button
               onClick={() => setShowImport(true)}

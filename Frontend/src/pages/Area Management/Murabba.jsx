@@ -142,6 +142,8 @@ export default function Murabba() {
               title="Import Murabba"
               open={showImport}
               onClose={() => setShowImport(false)}
+              type="murabba"
+              onSuccess={fetchMurabbas}
             />
             <button
               onClick={() => setShowImport(true)}
