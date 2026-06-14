@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useOutletContext } from "react-router-dom";
 import Sidebar from "../pages/Dashboard/Sidebar";
 import Header from "../pages/Dashboard/Header";
 
 export default function AreaLayout() {
+  const outletContext = useOutletContext();
   const [darkMode, setDarkMode] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -48,7 +49,7 @@ export default function AreaLayout() {
 
           <main className="min-h-0 flex-1 overflow-hidden">
             <div className="h-full overflow-y-auto px-3 pt-3 pb-3 xl:px-4 xl:pt-3 xl:pb-3">
-              <Outlet />
+              <Outlet context={outletContext} />
             </div>
           </main>
         </div>
