@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { importMauza, importDistrict, importTehsil, } from "../services/api";
+import { importMauza, importDistrict, importTehsil, importMauzaShapefile, importKhasra, importMurabba, } from "../services/api";
 
 export default function ImportModal({ title = "Import", open, onClose, type = "mauza", onSuccess, }) {
   const [file, setFile] = useState(null);
@@ -35,8 +35,16 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
       else if (type === "tehsil") {
         res = await importTehsil({ file });
       }
-      else {
-        res = await importMauza({ file, tehsil, mauza });
+      else if (type === "mauza") {
+        res = await importMauzaShapefile({ file });
+      }
+
+      else if (type === "khasra") {
+        res = await importKhasra({ file });
+      }
+
+      else if (type === "murabba") {
+        res = await importMurabba({ file });
       }
       setMessage({ type: "success", text: res.message || "Imported." });
       if (onSuccess) onSuccess();

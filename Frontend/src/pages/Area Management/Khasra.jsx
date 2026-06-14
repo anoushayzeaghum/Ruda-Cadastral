@@ -13,42 +13,46 @@ export default function Khasra() {
 
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        setLoading(true);
-        const res = await getKhasras();
-        const features = res?.features ?? [];
-        const props = features.map((f) => ({
-          ...(f.properties || {}),
-          khasra_id: f.properties?.khasra_id ?? f.id ?? f.properties?.gid,
-        }));
-        setItems(props);
-      } catch (err) {
-        console.error("Failed to load khasras:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchKhasras = async () => {
+    try {
+      setLoading(true);
 
-    fetch();
+      const res = await getKhasras();
+      const features = res?.features ?? [];
+
+      const props = features.map((f) => ({
+        ...(f.properties || {}),
+        khasra_id: f.properties?.khasra_id ?? f.id ?? f.properties?.gid,
+      }));
+
+      setItems(props);
+    } catch (err) {
+      console.error("Failed to load khasras:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchKhasras();
 
     (async () => {
       try {
         const m = await getMauzas();
         const features = m?.features ?? [];
+
         setMauzas(
           features.map((f) => ({
             ...(f.properties || {}),
             mauza_id: f.properties?.mauza_id ?? f.id,
-          })),
+          }))
         );
       } catch (e) {
         console.error(e);
       }
     })();
   }, []);
-
+  
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return items;
@@ -151,6 +155,8 @@ export default function Khasra() {
               title="Import Khasra"
               open={showImport}
               onClose={() => setShowImport(false)}
+              type="khasra"
+              onSuccess={fetchKhasras}
             />
             <button
               onClick={() => setShowImport(true)}
