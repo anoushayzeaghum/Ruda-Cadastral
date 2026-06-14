@@ -3,6 +3,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import * as turf from "@turf/turf";
 
+import Header from "./Header";
 import MapControls from "./MapControls";
 
 import {
@@ -81,8 +82,8 @@ const MAP_THEME = {
 };
 
 const ROAD_LEGEND_ITEMS = [
-  { label: "Primary Roads (300'-Wide)", color: "#19598d", width: 5 },
-  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 4 },
+  { label: "Primary Roads (300'-Wide)", color: "#19598d", width: 3 },
+  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 3 },
   { label: "Tertiary Roads", color: "#ff9800", width: 3 },
   { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
   { label: "Uti Walk Cycle", color: "#8bc34a", width: 2 },
