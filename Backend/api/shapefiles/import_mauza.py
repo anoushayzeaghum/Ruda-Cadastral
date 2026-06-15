@@ -4,17 +4,16 @@ from ..models import Mauza
 
 
 mauza_mapping = {
-    # replace after checking fields
-    "district": "DISTRICT",
-    "dist_id": "DIST_ID",
-    "tehsil": "TEHSIL",
-    "tehsil_id": "TEHSIL_ID",
+    "district": "District",
+    "dist_id": "Dist_ID",
+    "tehsil": "Tehsil",
+    "tehsil_id": "Tehsil_ID",
     "kc": "KC",
     "kc_id": "KC_ID",
     "pc": "PC",
     "pc_id": "PC_ID",
-    "mauza": "MAUZA",
-    "mauza_id": "MAUZA_ID",
+    "mauza": "Mauza",
+    "mauza_id": "Mauza_ID",
     "geom": "MULTIPOLYGON",
 }
 

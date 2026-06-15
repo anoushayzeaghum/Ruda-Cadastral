@@ -11,3 +11,7 @@ from .RudaProposedRoadsView import *
 from .Trijunction import *
 from .RudaBoundary import *
 from .UserView import *
+
+from .SquareView import *   
+from .AcreView import *
+from .FieldPointsView import *
