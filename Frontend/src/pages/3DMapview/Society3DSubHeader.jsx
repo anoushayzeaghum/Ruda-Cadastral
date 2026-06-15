@@ -20,24 +20,28 @@ export default function Society3DSubHeader({
     getLabel(
       districts.find((item) => String(getItemId(item)) === String(selectedDistrict)),
       ["name", "district", "district_name"],
+      "Select",
     ) || "Select";
 
   const tehsilName =
     getLabel(
       tehsils.find((item) => String(getItemId(item)) === String(selectedTehsil)),
       ["name", "tehsil", "tehsil_name"],
+      "Select",
     ) || "Select";
 
   const mauzaName =
     getLabel(
       mauzas.find((item) => String(getMauzaId(item)) === String(selectedMauza)),
       ["mauza", "name", "mauza_name"],
+      "Select",
     ) || "Select";
 
   const societyName =
     getLabel(
       societies.find((item) => String(getSocietyId(item)) === String(selectedSociety)),
       ["society", "name", "society_name"],
+      "Select",
     ) || "Select";
 
   return (

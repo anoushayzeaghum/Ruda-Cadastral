@@ -1,9 +1,16 @@
 import * as Cesium from "cesium";
 
 export const DEFAULT_VIEW = {
+  // Pakistan default extent. The dashboard opens here before any selection is made.
   lon: 74.2484,
-  lat: 31.6176,
+  lat: 9.6176,
   height: 45000,
+  bounds: {
+    west: 60.8729,
+    south: 23.6345,
+    east: 77.8375,
+    north: 37.0841,
+  },
 };
 
 export function emptyFeatureCollection() {
@@ -553,15 +560,34 @@ export function getBoundsFromGeoJSON(geojson) {
   };
 }
 
-export function flyToGeoJSON(viewer, geojson, options = {}) {
-  const bounds = getBoundsFromGeoJSON(geojson);
+function expandBounds(bounds, paddingRatio = 0.18) {
+  if (!bounds) return null;
+
+  const minSpan = 0.002;
+  const lonSpan = Math.max(bounds.east - bounds.west, minSpan);
+  const latSpan = Math.max(bounds.north - bounds.south, minSpan);
+  const lonPadding = lonSpan * paddingRatio;
+  const latPadding = latSpan * paddingRatio;
+
+  return {
+    west: Math.max(bounds.west - lonPadding, -180),
+    south: Math.max(bounds.south - latPadding, -90),
+    east: Math.min(bounds.east + lonPadding, 180),
+    north: Math.min(bounds.north + latPadding, 90),
+  };
+}
+
+export function flyToBounds(viewer, bounds, options = {}) {
   if (!viewer || !bounds) return;
 
+  const paddedBounds = expandBounds(bounds, options.padding ?? 0.18);
+  if (!paddedBounds) return;
+
   const rectangle = Cesium.Rectangle.fromDegrees(
-    bounds.west,
-    bounds.south,
-    bounds.east,
-    bounds.north,
+    paddedBounds.west,
+    paddedBounds.south,
+    paddedBounds.east,
+    paddedBounds.north,
   );
 
   viewer.camera.flyTo({
@@ -573,6 +599,11 @@ export function flyToGeoJSON(viewer, geojson, options = {}) {
       roll: 0,
     },
   });
+}
+
+export function flyToGeoJSON(viewer, geojson, options = {}) {
+  const bounds = getBoundsFromGeoJSON(geojson);
+  flyToBounds(viewer, bounds, options);
 }
 
 function color(cssColor, alpha = 1) {
@@ -902,6 +933,6 @@ export function applyBasemap(viewer, basemap) {
   };
 
   viewer.imageryLayers.addImageryProvider(
-    providers[basemap] || providers.Satellite,
+    providers[basemap] || providers.Streets,
   );
 }

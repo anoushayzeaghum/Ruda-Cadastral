@@ -29,7 +29,7 @@ export default function Society3DMapPage() {
   const [societyError, setSocietyError] = useState("");
 
   const [layers, setLayers] = useState(initialLayers);
-  const [basemap, setBasemap] = useState("Satellite");
+  const [basemap, setBasemap] = useState("Streets");
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
