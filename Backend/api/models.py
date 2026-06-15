@@ -740,12 +740,16 @@ class Plot(models.Model):
 # =========================
 class Road(models.Model):
     gid = models.AutoField(primary_key=True)
+
     name = models.CharField(max_length=255, null=True, blank=True)
     block = models.CharField(max_length=255, null=True, blank=True)
-    width = models.CharField(max_length=100, null=True, blank=True)
-    road_type = models.CharField(max_length=255, null=True, blank=True)
-    description = models.CharField(max_length=255, null=True, blank=True)
-    project_id = models.IntegerField(null=True, blank=True) 
+
+    dimension = models.CharField(max_length=100, null=True, blank=True)
+    type = models.CharField(max_length=255, null=True, blank=True)
+    row = models.CharField(max_length=100, null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
+    block_id = models.IntegerField(null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(
         srid=4326,

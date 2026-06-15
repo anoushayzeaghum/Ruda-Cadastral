@@ -592,15 +592,18 @@ class RoadSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Road
         geo_field = "geom"
+        id_field = "gid"
 
         fields = (
             "gid",
             "name",
             "block",
-            "width",
+            "dimension",
+            "type",
+            "row",
             "project_id",
-            "road_type",
-            "description",
+            "block_id",
+            "geom",
         )
 
 # --------------------------------------------------------

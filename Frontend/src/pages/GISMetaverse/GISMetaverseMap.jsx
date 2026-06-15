@@ -29,6 +29,7 @@ const LAYERS = {
   blockLine: "metaverse-block-line",
   masterPlanFill: "metaverse-masterplan-fill",
   masterPlanLine: "metaverse-masterplan-line",
+  masterPlanLabel: "metaverse-masterplan-label",
   spotLevelCircle: "metaverse-spot-level-circle",
   contoursLine: "metaverse-contours-line",
   roadsFill: "metaverse-roads-fill",
@@ -53,9 +54,11 @@ function fitGeoJSON(map, geojson) {
     if (geom.type === "Point") addCoord(geom.coordinates);
     if (geom.type === "MultiPoint") geom.coordinates.forEach(addCoord);
     if (geom.type === "LineString") geom.coordinates.forEach(addCoord);
-    if (geom.type === "MultiLineString") geom.coordinates.flat(1).forEach(addCoord);
+    if (geom.type === "MultiLineString")
+      geom.coordinates.flat(1).forEach(addCoord);
     if (geom.type === "Polygon") geom.coordinates.flat(1).forEach(addCoord);
-    if (geom.type === "MultiPolygon") geom.coordinates.flat(2).forEach(addCoord);
+    if (geom.type === "MultiPolygon")
+      geom.coordinates.flat(2).forEach(addCoord);
   });
 
   if (!bounds.isEmpty()) {
@@ -177,6 +180,32 @@ function addMasterPlanLayer(map, data) {
       paint: {
         "line-color": "#111827",
         "line-width": 1,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.masterPlanLabel)) {
+    map.addLayer({
+      id: LAYERS.masterPlanLabel,
+      type: "symbol",
+      source: SOURCES.masterPlan,
+      minzoom: 16,
+      layout: {
+        "text-field": [
+          "coalesce",
+          ["to-string", ["get", "plot_no"]],
+          ["to-string", ["get", "name"]],
+          "",
+        ],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 16, 10, 18, 13],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+      },
+      paint: {
+        "text-color": "#111827",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.5,
       },
     });
   }
@@ -315,7 +344,10 @@ export default function GISMetaverseMap({
         return;
       }
 
-      const blockGeoJSON = await getBlocksGeoJSON(filters.projectId, filters.block);
+      const blockGeoJSON = await getBlocksGeoJSON(
+        filters.projectId,
+        filters.block,
+      );
       addBlockLayer(map, blockGeoJSON);
       setLayerVisibility(map, [LAYERS.blockFill, LAYERS.blockLine], true);
       fitGeoJSON(map, blockGeoJSON);
@@ -330,7 +362,8 @@ export default function GISMetaverseMap({
     if (!map || !filters?.projectId) return;
 
     const run = async () => {
-      const hasPlotFilter = !!filters.plotType || !!filters.plotNo || !!filters.area;
+      const hasPlotFilter =
+        !!filters.plotType || !!filters.plotNo || !!filters.area;
 
       if (!hasPlotFilter && !layerVisibility.masterPlan) {
         if (map.getSource(SOURCES.masterPlan)) {
@@ -350,8 +383,8 @@ export default function GISMetaverseMap({
       addMasterPlanLayer(map, plotGeoJSON);
       setLayerVisibility(
         map,
-        [LAYERS.masterPlanFill, LAYERS.masterPlanLine],
-        true
+        [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
+        true,
       );
 
       if (hasPlotFilter) fitGeoJSON(map, plotGeoJSON);
@@ -376,27 +409,23 @@ export default function GISMetaverseMap({
     setLayerVisibility(
       map,
       [LAYERS.boundaryFill, LAYERS.boundaryLine],
-      layerVisibility.boundary
+      layerVisibility.boundary,
     );
     setLayerVisibility(
       map,
-      [LAYERS.masterPlanFill, LAYERS.masterPlanLine],
-      layerVisibility.masterPlan
+      [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
+      layerVisibility.masterPlan,
     );
     setLayerVisibility(
       map,
       [LAYERS.spotLevelCircle],
-      layerVisibility.spotLevel
+      layerVisibility.spotLevel,
     );
-    setLayerVisibility(
-      map,
-      [LAYERS.contoursLine],
-      layerVisibility.contours
-    );
+    setLayerVisibility(map, [LAYERS.contoursLine], layerVisibility.contours);
     setLayerVisibility(
       map,
       [LAYERS.roadsFill, LAYERS.roadsLine],
-      layerVisibility.roads
+      layerVisibility.roads,
     );
   }, [layerVisibility, mapRef]);
 

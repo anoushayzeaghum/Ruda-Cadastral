@@ -88,7 +88,7 @@ export const getSpotLevelGeoJSON = async (projectId) => {
   if (!projectId) return emptyFC();
 
   const res = await axios.get(`${API_BASE}/spot-level/`, {
-    params: { society_id: projectId },
+    params: { project_id: projectId },
   });
 
   return unwrapGeoJSON(res.data);
@@ -98,7 +98,7 @@ export const getContourGeoJSON = async (projectId) => {
   if (!projectId) return emptyFC();
 
   const res = await axios.get(`${API_BASE}/contour/`, {
-    params: { society_id: projectId },
+    params: { project_id: projectId },
   });
 
   return unwrapGeoJSON(res.data);
@@ -107,18 +107,9 @@ export const getContourGeoJSON = async (projectId) => {
 export const getRoadsGeoJSON = async (projectId) => {
   if (!projectId) return emptyFC();
 
-  const blocks = await getBlocks(projectId);
-  const blockNames = blocks.map((b) => b.block).filter(Boolean);
+  const res = await axios.get(`${API_BASE}/road/`, {
+    params: { project_id: projectId },
+  });
 
-  const res = await axios.get(`${API_BASE}/road/`);
-  const roadGeoJSON = unwrapGeoJSON(res.data);
-
-  if (!blockNames.length) return roadGeoJSON;
-
-  return {
-    type: "FeatureCollection",
-    features: roadGeoJSON.features.filter((f) =>
-      blockNames.includes(f.properties?.block)
-    ),
-  };
+  return unwrapGeoJSON(res.data);
 };
