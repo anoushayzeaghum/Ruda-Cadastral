@@ -139,86 +139,81 @@ function getLandUseValue(feature) {
 function getStyleFromLandUse(feature) {
   const landUse = getLandUseValue(feature);
 
-  if (!landUse) return null;
-
   if (landUse === "residential plot" || /\bresidential\b/.test(landUse)) {
-    return {
-      category: "residential",
-      label: "Residential Plot",
-      fillColor: "#0d6efd",
-      outlineColor: "#002a6a",
-      opacity: 1,
-      extrude: true,
-    };
-  }
-
-  if (landUse === "commercial plot" || /\bcommercial\b/.test(landUse)) {
-    return {
-      category: "commercial",
-      label: "Commercial Plot",
-      fillColor: "#efb400",
-      outlineColor: "#c49300",
-      opacity: 1,
-      extrude: true,
-    };
-  }
-
-  if (landUse === "green belt" || /green\s*belt/.test(landUse)) {
-    return {
-      category: "greenBelt",
-      label: "Green Belt",
-      fillColor: "#24ba74",
-      outlineColor: "#14532d",
-      opacity: 1,
-      extrude: false,
-      heightMeters: 0,
-    };
-  }
-
-  if (landUse === "barren land" || /barren/.test(landUse)) {
-    return {
-      category: "barrenLand",
-      label: "Barren Land",
-      fillColor: "#92400e",
-      outlineColor: "#451a03",
-      opacity: 1,
-      extrude: false,
-      heightMeters: 0,
-    };
-  }
-
-  if (
-    landUse === "road" ||
-    /\broad\b|street|avenue|boulevard|drive|walkway|right of way|row/.test(
-      landUse,
-    )
-  ) {
-    return {
-      category: "road",
-      label: "Road",
-      fillColor: "#ef4444",
-      outlineColor: "#7f1d1d",
-      opacity: 1,
-      extrude: false,
-      heightMeters: 0,
-    };
-  }
-
-  if (landUse === "park" || /\bpark\b|garden|playground/.test(landUse)) {
-    return {
-      category: "park",
-      label: "Park",
-      fillColor: "#14532d",
-      outlineColor: "#052e16",
-      opacity: 1,
-      extrude: false,
-      heightMeters: 0,
-    };
-  }
-
-  return null;
+  return {
+    category: "residential",
+    label: "Residential Plot",
+    fillColor: "#f59e0b",
+    outlineColor: "#b45309",
+    opacity: 1,
+    extrude: true,
+  };
 }
 
+if (landUse === "commercial plot" || /\bcommercial\b/.test(landUse)) {
+  return {
+    category: "commercial",
+    label: "Commercial Plot",
+    fillColor: "#ef4444",
+    outlineColor: "#991b1b",
+    opacity: 1,
+    extrude: true,
+  };
+}
+
+if (landUse === "green belt" || /green\s*belt/.test(landUse)) {
+  return {
+    category: "greenBelt",
+    label: "Green Belt",
+    fillColor: "#16a34a",
+    outlineColor: "#14532d",
+    opacity: 1,
+    extrude: false,
+    heightMeters: 0,
+  };
+}
+
+if (landUse === "barren land" || /barren/.test(landUse)) {
+  return {
+    category: "barrenLand",
+    label: "Barren Land",
+    fillColor: "#a8a29e",
+    outlineColor: "#57534e",
+    opacity: 1,
+    extrude: false,
+    heightMeters: 0,
+  };
+}
+
+if (
+  landUse === "road" ||
+  /\broad\b|street|avenue|boulevard|drive|walkway|right of way|row/.test(
+    landUse,
+  )
+) {
+  return {
+    category: "road",
+    label: "Road",
+    fillColor: "#374151",
+    outlineColor: "#111827",
+    opacity: 1,
+    extrude: false,
+    heightMeters: 0,
+  };
+}
+
+if (landUse === "park" || /\bpark\b|garden|playground/.test(landUse)) {
+  return {
+    category: "park",
+    label: "Park",
+    fillColor: "#065f46",
+    outlineColor: "#022c22",
+    opacity: 1,
+    extrude: false,
+    heightMeters: 0,
+  };
+}
+}
 function getSearchableProperties(feature) {
   const props = feature?.properties || {};
   return [
