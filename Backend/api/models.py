@@ -308,13 +308,10 @@ class Society(models.Model):
     source = models.CharField(max_length=255, null=True, blank=True)
     feat_count = models.IntegerField(null=True, blank=True)
     area = models.FloatField(null=True, blank=True)
-
     society = models.CharField(max_length=255, null=True, blank=True)
     society_id = models.IntegerField(null=True, blank=True)
-
     district = models.CharField(max_length=100, null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
-
     tehsil = models.CharField(max_length=100, null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
 
@@ -337,7 +334,6 @@ class MasterPlan(models.Model):
 
     gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
-
     society_id = models.IntegerField(null=True, blank=True)
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
@@ -359,7 +355,6 @@ class SpotLevel(models.Model):
 
     gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
-
     society_id = models.IntegerField(null=True, blank=True)
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
@@ -380,7 +375,6 @@ class Contour(models.Model):
 
     gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
-
     society_id = models.IntegerField(null=True, blank=True)
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
@@ -460,21 +454,15 @@ class RudaBoundary(models.Model):
 class Trijunction(models.Model):
 
     gid = models.AutoField(primary_key=True)
-
     type = models.CharField(max_length=20, null=True, blank=True)
-
     m1 = models.CharField(max_length=50, null=True, blank=True)
     m1_id = models.FloatField(null=True, blank=True)
-
     m2 = models.CharField(max_length=50, null=True, blank=True)
     m2_id = models.FloatField(null=True, blank=True)
-
     m3 = models.CharField(max_length=50, null=True, blank=True)
     m3_id = models.FloatField(null=True, blank=True)
-
     layer = models.CharField(max_length=254, null=True, blank=True)
     path = models.CharField(max_length=254, null=True, blank=True)
-
     geom = gis_models.GeometryField(srid=4326)
 
     def __str__(self):
