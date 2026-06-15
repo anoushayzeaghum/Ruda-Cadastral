@@ -5,6 +5,7 @@ import Header from "./Header";
 import SubHeader from "./SubHeader";
 import LeftPanel from "./LeftPanel";
 import ParcelPanel from "./ParcelPanel";
+import Legend from "./Legend";
 import MapView from "./Mapview";
 import {
   getDistricts,
@@ -76,6 +77,7 @@ export default function SocietyMapPage() {
 
   const [rudaPhases, setRudaPhases] = useState([]);
   const [selectedRudaPhaseIds, setSelectedRudaPhaseIds] = useState([]);
+  const [selectedProposedRoadIds, setSelectedProposedRoadIds] = useState([]);
 
   const [layers, setLayers] = useState({
     rudaBoundary: { visible: false, opacity: 10 },
@@ -328,6 +330,7 @@ export default function SocietyMapPage() {
           layers={layers}
           selectedFilterLayers={selectedFilterLayers}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
+          selectedProposedRoadIds={selectedProposedRoadIds}
           basemap={basemap}
           clearSelectionSignal={selectionClearSignal}
           onParcelSelect={(feature) => {
@@ -359,11 +362,20 @@ export default function SocietyMapPage() {
           setRudaPhases={setRudaPhases}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
           setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
+          selectedProposedRoadIds={selectedProposedRoadIds}
+          setSelectedProposedRoadIds={setSelectedProposedRoadIds}
           basemap={basemap}
           setBasemap={setBasemap}
           selectedMauza={filters?.selectedMauzaDetails || filters?.selectedMauza}
           selectedSociety={selectedSociety}
           selectedFilterLayers={selectedFilterLayers}
+        />
+
+        <Legend
+          layers={layers}
+          rudaPhases={rudaPhases}
+          selectedRudaPhaseIds={selectedRudaPhaseIds}
+          selectedProposedRoadIds={selectedProposedRoadIds}
         />
 
         <ParcelPanel

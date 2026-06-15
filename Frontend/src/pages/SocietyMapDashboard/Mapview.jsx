@@ -12,6 +12,8 @@ import {
   getMasterPlanGeoJSON,
   getSpotLevelGeoJSON,
   getContourGeoJSON,
+  getRudaGeoJSON,
+  getRudaProposedRoadsGeoJSON,
 } from "../../services/api";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -76,6 +78,103 @@ const mergeFeatureCollections = (collections) => ({
     Array.isArray(collection?.features) ? collection.features : [],
   ),
 });
+
+// ── RUDA & Proposed Roads — shared constants (mirrors Cadastral Mapview) ──
+
+const ROAD_LEGEND_ITEMS = [
+  { label: "Primary Roads (300'-Wide)", color: "#19598d", width: 5 },
+  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 4 },
+  { label: "Tertiary Roads", color: "#ff9800", width: 3 },
+  { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
+  { label: "Uti Walk Cycle", color: "#8bc34a", width: 2 },
+  { label: "Bridge", color: "#75008a", width: 5 },
+  { label: "300' CL", color: "#9b2400", width: 2 },
+  { label: "300' ROW", color: "#00bcd4", width: 2.5 },
+];
+
+const ROAD_COLOR_EXPRESSION = [
+  "match", ["get", "layer"],
+  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.color]),
+  "#555555",
+];
+
+const ROAD_WIDTH_EXPRESSION = [
+  "match", ["get", "layer"],
+  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.width]),
+  2.5,
+];
+
+const RUDA_PHASE_COLORS = [
+  "#6bb7e8", "#f8d56b", "#6bd69a", "#f59e72", "#b99cf3",
+  "#78d6d0", "#f3a6c8", "#a7d77b", "#f4b860", "#86a8e7",
+  "#d7b377", "#8dd3c7",
+];
+
+const hashString = (value = "") => {
+  const text = String(value || "");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+const stripHtml = (value = "") =>
+  String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getRudaPhaseColor = (phaseId) => {
+  const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
+  return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
+};
+
+const getRudaPhaseIdFromLevel = (level = "") => {
+  const match = String(level).match(/^ruda-(.+)$/);
+  return match?.[1] || "";
+};
+
+const getRudaPhaseLabel = (props = {}, phaseId = "") => {
+  const candidates = [
+    props.phase, props.phase_name, props.name,
+    props.folderpath, props.popupinfo, props.snippet,
+  ];
+  for (const value of candidates) {
+    const clean = stripHtml(value);
+    if (!clean) continue;
+    const phaseMatch = clean.match(/phase\s*[-_:]?\s*([a-z0-9]+)/i);
+    if (phaseMatch?.[1]) return `Phase ${phaseMatch[1]}`;
+    if (clean.length <= 28) return clean;
+    return clean.slice(0, 28);
+  }
+  return phaseId ? `Phase ${phaseId}` : "RUDA Phase";
+};
+
+const prepareRudaGeojsonForDisplay = (level, geojson) => {
+  const phaseId = getRudaPhaseIdFromLevel(level);
+  const color = getRudaPhaseColor(phaseId);
+  return {
+    type: "FeatureCollection",
+    features: (geojson?.features || []).map((feature) => {
+      const props = feature?.properties || {};
+      return {
+        ...feature,
+        properties: {
+          ...props,
+          _ruda_phase_id: phaseId,
+          _ruda_phase_color: color,
+          _ruda_phase_label: getRudaPhaseLabel(props, phaseId),
+        },
+      };
+    }),
+  };
+};
+
+const normalizeRoadLayerName = (value) => String(value ?? "").trim();
+
+// ──────────────────────────────────────────────────────────────────────────
 
 const getLayerVisible = (layers = {}, key, fallback = true) => {
   const value = layers?.[key];
@@ -156,6 +255,8 @@ export default function MapView({
   layers = {},
   basemap = "Streets",
   clearSelectionSignal = 0,
+  selectedRudaPhaseIds = [],
+  selectedProposedRoadIds = [],
 }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -256,6 +357,148 @@ export default function MapView({
       });
     }
   };
+
+  // ── RUDA/Roads boundary helpers (identical pattern to Cadastral Mapview) ──
+
+  const getBoundaryIds = (level) => ({
+    source:   `${level}-boundary-source`,
+    fill:     `${level}-boundary-fill`,
+    line:     `${level}-boundary-line`,
+    dashLine: `${level}-boundary-dash-line`,
+    label:    `${level}-boundary-label`,
+  });
+
+  const clearBoundaryLevel = (level) => {
+    const map = mapInstance.current;
+    if (!map) return;
+    const ids = getBoundaryIds(level);
+    try {
+      if (map.getLayer(ids.label))    map.removeLayer(ids.label);
+      if (map.getLayer(ids.dashLine)) map.removeLayer(ids.dashLine);
+      if (map.getLayer(ids.line))     map.removeLayer(ids.line);
+      if (map.getLayer(ids.fill))     map.removeLayer(ids.fill);
+      if (map.getSource(ids.source))  map.removeSource(ids.source);
+    } catch (e) {
+      console.warn(`Error clearing boundary level ${level}`, e);
+    }
+  };
+
+  const drawBoundaryLevel = (level, geojson, opacityOverride = null) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const ids = getBoundaryIds(level);
+    clearBoundaryLevel(level);
+
+    const isRudaLayer         = level.startsWith("ruda");
+    const isProposedRoadLayer = level.startsWith("proposed-road");
+
+    const opacity =
+      opacityOverride !== null && opacityOverride !== undefined
+        ? Number(opacityOverride) / 100
+        : isRudaLayer
+          ? getLayerOpacity(layers, "rudaBoundary", 50) / 100
+          : 0.2;
+
+    const sourceGeojson = isRudaLayer
+      ? prepareRudaGeojsonForDisplay(level, geojson)
+      : geojson || emptyFeatureCollection();
+
+    try {
+      map.addSource(ids.source, { type: "geojson", data: sourceGeojson });
+
+      // Proposed roads — line only with per-type colour/width
+      if (isProposedRoadLayer) {
+        map.addLayer({
+          id: ids.line,
+          type: "line",
+          source: ids.source,
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": ROAD_COLOR_EXPRESSION,
+            "line-width": ROAD_WIDTH_EXPRESSION,
+            "line-opacity": opacity,
+          },
+        });
+        currentGeojson.current[level] = sourceGeojson;
+        return;
+      }
+
+      // RUDA / generic polygon
+      map.addLayer({
+        id: ids.fill,
+        type: "fill",
+        source: ids.source,
+        paint: {
+          "fill-color": isRudaLayer
+            ? ["coalesce", ["get", "_ruda_phase_color"], "#3d7cc4"]
+            : "#0b6a2e",
+          "fill-opacity": opacity,
+          "fill-outline-color": isRudaLayer ? "#1f2937" : "#194c8e",
+        },
+      });
+
+      map.addLayer({
+        id: ids.line,
+        type: "line",
+        source: ids.source,
+        paint: {
+          "line-color": isRudaLayer ? "#111827" : "#194c8e",
+          "line-width": isRudaLayer ? 2 : 2,
+          "line-opacity": 0.95,
+        },
+      });
+
+      if (isRudaLayer) {
+        map.addLayer({
+          id: ids.dashLine,
+          type: "line",
+          source: ids.source,
+          paint: {
+            "line-color": "#111827",
+            "line-width": 1.2,
+            "line-dasharray": [1.4, 1.2],
+            "line-opacity": 0.9,
+          },
+        });
+
+        map.addLayer({
+          id: ids.label,
+          type: "symbol",
+          source: ids.source,
+          layout: {
+            "text-field": ["coalesce", ["get", "_ruda_phase_label"], "RUDA Phase"],
+            "text-size": ["interpolate", ["linear"], ["zoom"], 10, 10, 15, 13],
+            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+            "text-allow-overlap": false,
+            "text-ignore-placement": false,
+          },
+          paint: {
+            "text-color": "#111827",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 1.4,
+          },
+        });
+      }
+
+      currentGeojson.current[level] = sourceGeojson;
+    } catch (e) {
+      console.error("drawBoundaryLevel error", e);
+    }
+  };
+
+  const clearProposedRoads = () => {
+    try {
+      Object.keys(currentGeojson.current || {})
+        .filter((key) => key.startsWith("proposed-road"))
+        .forEach((level) => {
+          clearBoundaryLevel(level);
+          delete currentGeojson.current[level];
+        });
+    } catch (e) { /* ignore */ }
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   const ensureSelectedLayers = () => {
     const map = mapInstance.current;
@@ -1091,6 +1334,120 @@ export default function MapView({
       map.off('style.load', restoreRasters);
     };
   }, [layers?.dem, layers?.dtm, layers?.orthoImage, isMapReady]);
+
+  // ── RUDA Boundary (identical behavior to Cadastral Dashboard) ─────────────
+  useEffect(() => {
+    if (!isMapReady) return;
+
+    const clearRudaLevels = () => {
+      try {
+        Object.keys(currentGeojson.current || {})
+          .filter((key) => key.startsWith("ruda-"))
+          .forEach((level) => {
+            clearBoundaryLevel(level);
+            delete currentGeojson.current[level];
+          });
+      } catch (e) { /* ignore */ }
+    };
+
+    if (!getLayerVisible(layers, "rudaBoundary", false)) {
+      clearRudaLevels();
+      return;
+    }
+
+    clearRudaLevels();
+
+    if (!selectedRudaPhaseIds?.length) return;
+
+    const loadRuda = async () => {
+      try {
+        setIsLoading(true);
+
+        const results = await Promise.all(
+          selectedRudaPhaseIds.map((gid) =>
+            getRudaGeoJSON(gid)
+              .then((geojson) => ({ gid, geojson }))
+              .catch((e) => {
+                console.error("RUDA geojson error", e);
+                return null;
+              }),
+          ),
+        );
+
+        results.filter(Boolean).forEach((item) => {
+          drawBoundaryLevel(
+            `ruda-${item.gid}`,
+            item.geojson,
+            getLayerOpacity(layers, "rudaBoundary", 50),
+          );
+          currentGeojson.current[`ruda-${item.gid}`] = item.geojson;
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRuda();
+  }, [isMapReady, layers?.rudaBoundary, selectedRudaPhaseIds]);
+
+  // ── Proposed Roads (identical behavior to Cadastral Dashboard) ────────────
+  useEffect(() => {
+    if (!isMapReady) return;
+
+    if (!getLayerVisible(layers, "proposedRoads", false)) {
+      clearProposedRoads();
+      return;
+    }
+
+    clearProposedRoads();
+
+    if (!selectedProposedRoadIds?.length) return;
+
+    const loadProposedRoads = async () => {
+      try {
+        setIsLoading(true);
+
+        const allRoadsGeojson = await getRudaProposedRoadsGeoJSON();
+        const selectedIds = new Set(
+          selectedProposedRoadIds.map((id) => String(id)),
+        );
+
+        const filteredGeojson = {
+          type: "FeatureCollection",
+          features: (allRoadsGeojson.features || [])
+            .filter((feature) => {
+              const props = feature?.properties || {};
+              const featureId =
+                props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid;
+              return selectedIds.has(String(featureId));
+            })
+            .map((feature) => ({
+              ...feature,
+              properties: {
+                ...(feature?.properties || {}),
+                layer: normalizeRoadLayerName(feature?.properties?.layer),
+              },
+            })),
+        };
+
+        if (!filteredGeojson.features.length) return;
+
+        drawBoundaryLevel(
+          "proposed-roads",
+          filteredGeojson,
+          getLayerOpacity(layers, "proposedRoads", 100),
+        );
+
+        currentGeojson.current["proposed-roads"] = filteredGeojson;
+      } catch (e) {
+        console.error("Proposed roads layer load error", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProposedRoads();
+  }, [isMapReady, layers?.proposedRoads, selectedProposedRoadIds]);
 
   // ── Distance Measure Tool ─────────────────────────────────────────────────
   useEffect(() => {
