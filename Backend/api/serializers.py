@@ -477,3 +477,23 @@ class FieldPointsSerializer(GeoFeatureModelSerializer):
             "elevation",
             "geom",
         )
+
+# --------------------------------------------------------
+# GeodeticNetwork Serializer
+
+class GeodeticNetworkSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = GeodeticNetwork
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "easting_m",
+            "northing_m",
+            "code",
+            "elevation",
+            "geom",
+        )

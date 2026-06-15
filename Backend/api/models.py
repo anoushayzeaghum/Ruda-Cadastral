@@ -563,3 +563,28 @@ class FieldPoints(models.Model):
     class Meta:
         managed = False
         db_table = "fieldpoints"
+
+# =========================
+# Geodetic Network
+# =========================
+class GeodeticNetwork(models.Model):
+
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=100, null=True, blank=True)
+
+    easting_m = models.FloatField(null=True, blank=True)
+    northing_m = models.FloatField(null=True, blank=True)
+
+    code = models.CharField(max_length=50, null=True, blank=True)
+
+    elevation = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.PointField(srid=4326)
+
+    def __str__(self):
+        return self.name if self.name else f"Geodetic {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "geodeticnetwork"
