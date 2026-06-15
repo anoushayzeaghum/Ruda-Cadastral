@@ -103,6 +103,7 @@ export const getTehsils = async (district_i) => {
   return normalizeData(res);
 };
 
+
 export const importDistrict = ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -118,11 +119,15 @@ export const importTehsil = async ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await API.post("/import/tehsil/", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const res = await API.post(
+    "/import/tehsil/",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 
   return res.data;
 };
@@ -151,11 +156,15 @@ export const importKhasra = async ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await API.post("/import/khasra/", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const res = await API.post(
+    "/import/khasra/",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 
   return res.data;
 };
@@ -190,11 +199,15 @@ export const importMurabba = async ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await API.post("/import/murabba/", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const res = await API.post(
+    "/import/murabba/",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 
   return res.data;
 };
@@ -228,6 +241,7 @@ export const getMurabbaBoundary = async (id) => {
   return normalizeGeoJson(res);
 };
 
+
 ///////////////////////////////////////////////////////
 //////////////// SOCIETY LAYER APIs ///////////////////
 ///////////////////////////////////////////////////////
@@ -236,11 +250,7 @@ export const getSocieties = async (filters = {}) => {
   const params = {};
 
   // Backward compatible: old calls like getSocieties(mauza_id) still work.
-  if (
-    typeof filters !== "object" ||
-    filters === null ||
-    Array.isArray(filters)
-  ) {
+  if (typeof filters !== "object" || filters === null || Array.isArray(filters)) {
     if (filters !== undefined && filters !== null && filters !== "") {
       params.mauza_id = filters;
     }
@@ -347,7 +357,11 @@ export const getRudaProposedRoadsGeoJSON = async (gid = null) => {
     features: (geojson.features || []).filter((feature) => {
       const props = feature?.properties || {};
       const featureId =
-        props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid;
+        props.gid ??
+        feature?.id ??
+        props.id ??
+        props.oid ??
+        props.fid;
 
       return String(featureId) === selectedId;
     }),
@@ -369,9 +383,16 @@ export const getTrijunctionPoints = async ({ mauza, mauza_id, type } = {}) => {
     params.mauza = mauza;
   }
 
-  // Trijunction has m1_id / m2_id / m3_id in the model, not a direct mauza_id
-  // column, so the frontend filters those IDs after the GeoJSON is returned.
+  if (mauza_id !== undefined && mauza_id !== null && mauza_id !== "") {
+    params.mauza_id = mauza_id;
+  }
+
   const res = await API.get("/trijunction/", { params });
+  return normalizeGeoJson(res);
+};
+
+export const getGeodeticNetworkGeoJSON = async () => {
+  const res = await API.get("/geodeticnetwork/");
   return normalizeGeoJson(res);
 };
 
@@ -389,15 +410,20 @@ export const importMauza = async ({ file, tehsil, mauza }) => {
   return res.data;
 };
 
+
 export const importMauzaShapefile = async ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await API.post("/import/mauza/", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const res = await API.post(
+    "/import/mauza/",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
 
   return res.data;
 };

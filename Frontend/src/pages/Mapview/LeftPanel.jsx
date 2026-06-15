@@ -49,12 +49,12 @@ const BASEMAPS = [
 
 const VECTOR_BOUNDARY_LAYERS = [
   { key: "khasraLayer", label: "Khasra Boundary" },
-  { key: "squareBoundary", label: "Square Boundary" },
-  { key: "acreBoundary", label: "Acre Boundary" },
+  { key: "squareLayer", label: "Square Boundary" },
+  { key: "acreLayer", label: "Acre Boundary" },
   { key: "murabbaLayer", label: "Murabba Boundary" },
   { key: "triJunctionPoints", label: "Tri Junction Points" },
   { key: "fieldPoints", label: "Field Points" },
-  { key: "mussavi", label: "Mussavi" },
+  { key: "mussaviLayer", label: "Mussavi" },
 ];
 
 const RUDA_PHASE_COLORS = [
@@ -197,6 +197,16 @@ export default function LeftPanel({
 
   const toggleLayer = (layerKey) =>
     updateLayer(layerKey, { visible: !getLayerVisible(layerKey) });
+
+  const toggleVectorBoundaryLayer = (layerKey) => {
+    const forceLoadKeys = new Set(["khasraLayer", "murabbaLayer"]);
+    const nextVisible = !getLayerVisible(layerKey);
+
+    updateLayer(layerKey, {
+      visible: nextVisible,
+      ...(forceLoadKeys.has(layerKey) ? { forceLoad: nextVisible } : {}),
+    });
+  };
 
   const getRudaPhaseId = (phase) => phase?.gid ?? phase?.id ?? phase?.oid;
 
@@ -394,7 +404,7 @@ export default function LeftPanel({
                   items={VECTOR_BOUNDARY_LAYERS}
                   getLayerVisible={getLayerVisible}
                   getLayerOpacity={getLayerOpacity}
-                  toggleLayer={toggleLayer}
+                  toggleLayer={toggleVectorBoundaryLayer}
                   updateLayer={updateLayer}
                 />
               </div>

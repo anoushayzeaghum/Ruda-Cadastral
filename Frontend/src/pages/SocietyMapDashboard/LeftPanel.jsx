@@ -110,7 +110,7 @@ export default function LeftPanel({
       const next = { ...prev };
 
       const rudaLayerDefaults = {
-        rudaBoundary: 10,
+        rudaBoundary: 70,
         proposedRoads: 100,
         societyBoundary: 25,
         masterPlan: 70,

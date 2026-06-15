@@ -57,19 +57,19 @@ console.log("filters =", outletContext?.filters);
 
   const [layers, setLayers] = useState({
     rudaBoundary: { visible: false, opacity: 10 },
+    proposedRoads: { visible: false, opacity: 100 },
+    geodeticNetwork: { visible: false, opacity: 100 },
     districtBoundary: { visible: true, opacity: 0 },
     tehsilBoundary: { visible: true, opacity: 0 },
     mauzaBoundary: { visible: true, opacity: 0 },
     khasraLayer: { visible: false, opacity: 25 },
-    squareBoundary: { visible: false, opacity: 25 },
-    acreBoundary: { visible: false, opacity: 25 },
+    squareLayer: { visible: false, opacity: 35 },
+    acreLayer: { visible: false, opacity: 35 },
     murabbaLayer: { visible: false, opacity: 25 },
+    controlPoints: { visible: false, opacity: 100 },
     triJunctionPoints: { visible: false, opacity: 100 },
     fieldPoints: { visible: false, opacity: 100 },
-    controlPoints: { visible: false, opacity: 100 },
-    proposedRoads: { visible: false, opacity: 100 },
-    geodeticNetwork: { visible: false, opacity: 100 },
-    mussavi: { visible: false, opacity: 100 },
+    mussaviLayer: { visible: false, opacity: 100 },
   });
 
   const [rudaPhases, setRudaPhases] = useState([]);
@@ -281,13 +281,18 @@ console.log("filters =", outletContext?.filters);
         }
 
         if (typeof next[key] !== "object") {
-          next[key] = { visible: true, opacity: 100 };
+          next[key] = { visible: !!next[key], opacity: 100 };
           changed = true;
-          return;
         }
 
-        if (next[key].visible !== true) {
-          next[key] = { ...next[key], visible: true };
+        if (
+          (key === "khasraLayer" || key === "murabbaLayer") &&
+          next[key]?.visible !== true
+        ) {
+          next[key] = {
+            ...next[key],
+            visible: true,
+          };
           changed = true;
         }
       });
