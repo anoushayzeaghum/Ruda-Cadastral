@@ -5,7 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-export default function GISMetaverseMap({ mapRef }) {
+export default function GISMetaverseMap({ mapRef, setIsMapReady }) {
   const mapContainerRef = useRef(null);
 
   useEffect(() => {
@@ -18,9 +18,14 @@ export default function GISMetaverseMap({ mapRef }) {
       zoom: 12,
     });
 
+    mapRef.current.on('load', () => {
+      setIsMapReady(true);
+    });
+
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
+      setIsMapReady(false);
     };
   }, [mapRef]);
 

@@ -66,6 +66,15 @@ const DTM_LAYER = "local-dtm-layer";
 const ORTHO_SOURCE = "local-ortho-source";
 const ORTHO_LAYER = "local-ortho-layer";
 
+const AS_BUILT_JAN_2023_SOURCE = "local-asbuilt-jan2023-source";
+const AS_BUILT_JAN_2023_LAYER = "local-asbuilt-jan2023-layer";
+const ORTHO_JUNE_2023_SOURCE = "local-ortho-june2023-source";
+const ORTHO_JUNE_2023_LAYER = "local-ortho-june2023-layer";
+const ORTHO_NOV_2024_SOURCE = "local-ortho-nov2024-source";
+const ORTHO_NOV_2024_LAYER = "local-ortho-nov2024-layer";
+const HANDU_GUJRAN_ORTHO_SOURCE = "local-handugujran-ortho-source";
+const HANDU_GUJRAN_ORTHO_LAYER = "local-handugujran-ortho-layer";
+
 const MEASURE_SOURCE = "measure-source";
 const MEASURE_LINE_LAYER = "measure-line-layer";
 const MEASURE_POINTS_LAYER = "measure-points-layer";
@@ -469,6 +478,10 @@ export default function MapView({
   const prevDsmVisible = useRef(false);
   const prevDtmVisible = useRef(false);
   const prevOrthoVisible = useRef(false);
+  const prevAsBuiltJan2023Visible = useRef(false);
+  const prevOrthoJune2023Visible = useRef(false);
+  const prevOrthoNov2024Visible = useRef(false);
+  const prevHanduGujranOrthoVisible = useRef(false);
   const measureCoordsRef = useRef([]);
   const measureAreaCoordsRef = useRef([]);
   const bearingCoordsRef = useRef([]);
@@ -2426,8 +2439,12 @@ if (!map.getLayer(SELECTED_LINE)) {
     const dsmVisible = typeof layers?.dsm === 'object' ? layers.dsm.visible : !!layers?.dsm;
     const dtmVisible = typeof layers?.dtm === 'object' ? layers.dtm.visible : !!layers?.dtm;
     const orthoVisible = typeof layers?.ortho === 'object' ? layers.ortho.visible : !!layers?.ortho;
+    const asBuiltJan2023Visible = typeof layers?.asBuiltJan2023 === 'object' ? layers.asBuiltJan2023.visible : !!layers?.asBuiltJan2023;
+    const orthoJune2023Visible = typeof layers?.orthoJune2023 === 'object' ? layers.orthoJune2023.visible : !!layers?.orthoJune2023;
+    const orthoNov2024Visible = typeof layers?.orthoNov2024 === 'object' ? layers.orthoNov2024.visible : !!layers?.orthoNov2024;
+    const handuGujranOrthoVisible = typeof layers?.handuGujranOrtho === 'object' ? layers.handuGujranOrtho.visible : !!layers?.handuGujranOrtho;
 
-    const shouldFlyTo = (orthoVisible && !prevOrthoVisible.current) || (dsmVisible && !prevDsmVisible.current) || (dtmVisible && !prevDtmVisible.current);
+    const shouldFlyTo = (orthoVisible && !prevOrthoVisible.current) || (dsmVisible && !prevDsmVisible.current) || (dtmVisible && !prevDtmVisible.current) || (asBuiltJan2023Visible && !prevAsBuiltJan2023Visible.current) || (orthoJune2023Visible && !prevOrthoJune2023Visible.current) || (orthoNov2024Visible && !prevOrthoNov2024Visible.current) || (handuGujranOrthoVisible && !prevHanduGujranOrthoVisible.current);
 
     if (shouldFlyTo) {
       const bounds = [
@@ -2440,6 +2457,10 @@ if (!map.getLayer(SELECTED_LINE)) {
     prevDsmVisible.current = dsmVisible;
     prevDtmVisible.current = dtmVisible;
     prevOrthoVisible.current = orthoVisible;
+    prevAsBuiltJan2023Visible.current = asBuiltJan2023Visible;
+    prevOrthoJune2023Visible.current = orthoJune2023Visible;
+    prevOrthoNov2024Visible.current = orthoNov2024Visible;
+    prevHanduGujranOrthoVisible.current = handuGujranOrthoVisible;
 
     const restoreRasters = () => {
       // Ortho Layer
@@ -2529,6 +2550,122 @@ if (!map.getLayer(SELECTED_LINE)) {
           map.setLayoutProperty(DTM_LAYER, 'visibility', 'none');
         }
       }
+
+      // AsBuilt Jan 2023 Layer
+      const asBuiltJan2023Opacity = typeof layers?.asBuiltJan2023 === 'object' && Number.isFinite(layers.asBuiltJan2023.opacity) ? layers.asBuiltJan2023.opacity / 100 : 1.0;
+
+      if (asBuiltJan2023Visible) {
+        if (!map.getSource(AS_BUILT_JAN_2023_SOURCE)) {
+          map.addSource(AS_BUILT_JAN_2023_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chahar_Bagh_AsBuilt_Jan2023/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(AS_BUILT_JAN_2023_LAYER)) {
+          map.addLayer({
+              id: AS_BUILT_JAN_2023_LAYER,
+              type: 'raster',
+              source: AS_BUILT_JAN_2023_SOURCE,
+              paint: { 'raster-opacity': asBuiltJan2023Opacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(AS_BUILT_JAN_2023_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(AS_BUILT_JAN_2023_LAYER, 'raster-opacity', asBuiltJan2023Opacity);
+        }
+      } else {
+        if (map.getLayer(AS_BUILT_JAN_2023_LAYER)) {
+          map.setLayoutProperty(AS_BUILT_JAN_2023_LAYER, 'visibility', 'none');
+        }
+      }
+
+      // Ortho June 2023 Layer
+      const orthoJune2023Opacity = typeof layers?.orthoJune2023 === 'object' && Number.isFinite(layers.orthoJune2023.opacity) ? layers.orthoJune2023.opacity / 100 : 1.0;
+
+      if (orthoJune2023Visible) {
+        if (!map.getSource(ORTHO_JUNE_2023_SOURCE)) {
+          map.addSource(ORTHO_JUNE_2023_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chahar_Bagh_Ortho_June2023/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(ORTHO_JUNE_2023_LAYER)) {
+          map.addLayer({
+              id: ORTHO_JUNE_2023_LAYER,
+              type: 'raster',
+              source: ORTHO_JUNE_2023_SOURCE,
+              paint: { 'raster-opacity': orthoJune2023Opacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(ORTHO_JUNE_2023_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(ORTHO_JUNE_2023_LAYER, 'raster-opacity', orthoJune2023Opacity);
+        }
+      } else {
+        if (map.getLayer(ORTHO_JUNE_2023_LAYER)) {
+          map.setLayoutProperty(ORTHO_JUNE_2023_LAYER, 'visibility', 'none');
+        }
+      }
+
+      // Ortho Nov 2024 Layer
+      const orthoNov2024Opacity = typeof layers?.orthoNov2024 === 'object' && Number.isFinite(layers.orthoNov2024.opacity) ? layers.orthoNov2024.opacity / 100 : 1.0;
+
+      if (orthoNov2024Visible) {
+        if (!map.getSource(ORTHO_NOV_2024_SOURCE)) {
+          map.addSource(ORTHO_NOV_2024_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Chahar_Bagh_Ortho_Nov2024/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(ORTHO_NOV_2024_LAYER)) {
+          map.addLayer({
+              id: ORTHO_NOV_2024_LAYER,
+              type: 'raster',
+              source: ORTHO_NOV_2024_SOURCE,
+              paint: { 'raster-opacity': orthoNov2024Opacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(ORTHO_NOV_2024_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(ORTHO_NOV_2024_LAYER, 'raster-opacity', orthoNov2024Opacity);
+        }
+      } else {
+        if (map.getLayer(ORTHO_NOV_2024_LAYER)) {
+          map.setLayoutProperty(ORTHO_NOV_2024_LAYER, 'visibility', 'none');
+        }
+      }
+
+      // Handu Gujran Ortho Layer
+      const handuGujranOrthoOpacity = typeof layers?.handuGujranOrtho === 'object' && Number.isFinite(layers.handuGujranOrtho.opacity) ? layers.handuGujranOrtho.opacity / 100 : 1.0;
+
+      if (handuGujranOrthoVisible) {
+        if (!map.getSource(HANDU_GUJRAN_ORTHO_SOURCE)) {
+          map.addSource(HANDU_GUJRAN_ORTHO_SOURCE, {
+              type: 'raster',
+              tiles: ['http://localhost:8080/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png'],
+              tileSize: 256
+          });
+        }
+        if (!map.getLayer(HANDU_GUJRAN_ORTHO_LAYER)) {
+          map.addLayer({
+              id: HANDU_GUJRAN_ORTHO_LAYER,
+              type: 'raster',
+              source: HANDU_GUJRAN_ORTHO_SOURCE,
+              paint: { 'raster-opacity': handuGujranOrthoOpacity },
+              layout: { 'visibility': 'visible' }
+          });
+        } else {
+          map.setLayoutProperty(HANDU_GUJRAN_ORTHO_LAYER, 'visibility', 'visible');
+          map.setPaintProperty(HANDU_GUJRAN_ORTHO_LAYER, 'raster-opacity', handuGujranOrthoOpacity);
+        }
+      } else {
+        if (map.getLayer(HANDU_GUJRAN_ORTHO_LAYER)) {
+          map.setLayoutProperty(HANDU_GUJRAN_ORTHO_LAYER, 'visibility', 'none');
+        }
+      }
     };
 
     restoreRasters();
@@ -2538,7 +2675,7 @@ if (!map.getLayer(SELECTED_LINE)) {
     return () => {
       map.off('style.load', restoreRasters);
     };
-  }, [layers?.dsm, layers?.dtm, isMapReady]);
+  }, [layers?.dsm, layers?.dtm, layers?.ortho, layers?.asBuiltJan2023, layers?.orthoJune2023, layers?.orthoNov2024, layers?.handuGujranOrtho, isMapReady]);
 
   useEffect(() => {
     const map = mapInstance.current;
