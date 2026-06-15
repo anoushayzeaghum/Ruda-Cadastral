@@ -68,6 +68,8 @@ export default function LeftPanel({
   setRudaPhases = () => {},
   selectedRudaPhaseIds = [],
   setSelectedRudaPhaseIds = () => {},
+  selectedProposedRoadIds = [],
+  setSelectedProposedRoadIds = () => {},
   basemap = "Streets",
   setBasemap = () => {},
   selectedMauza = null,
@@ -79,6 +81,9 @@ export default function LeftPanel({
   const hasMauza = !!selectedMauza;
   const hasSociety = !!selectedSociety;
   const initializedOpacityKeysRef = useRef(new Set());
+
+  // Proposed roads list + IDs (mirrors Cadastral LeftPanel pattern)
+  const [rudaProposedRoads, setRudaProposedRoads] = useState([]);
 
   const getDefaultOpacityForSelectedLayer = (item) => {
     const text = `${item?.key || ""} ${item?.label || ""}`.toLowerCase();
@@ -219,6 +224,40 @@ export default function LeftPanel({
     };
   }, [rudaPhases, setRudaPhases, setSelectedRudaPhaseIds]);
 
+  // Load proposed roads list once and auto-select all IDs
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRoads = async () => {
+      if (rudaProposedRoads?.length) return;
+      try {
+        const { getRudaProposedRoadsList } = await import("../../services/api");
+        const list = await getRudaProposedRoadsList();
+        if (!mounted) return;
+        const ids = (list || []).map((r) => r.gid ?? r.id ?? r.oid).filter(Boolean);
+        setRudaProposedRoads(list || []);
+        setSelectedProposedRoadIds(ids);
+      } catch (e) {
+        console.error("Failed to load proposed roads", e);
+      }
+    };
+
+    loadRoads();
+    return () => { mounted = false; };
+  }, [rudaProposedRoads, setSelectedProposedRoadIds]);
+
+  // When toggling Proposed Roads ON, ensure all IDs are selected
+  const toggleProposedRoadLayer = () => {
+    const willOpen = !getLayerVisible("proposedRoads");
+    if (willOpen && (!selectedProposedRoadIds || selectedProposedRoadIds.length === 0)) {
+      const allIds = (rudaProposedRoads || [])
+        .map((r) => r.gid ?? r.id ?? r.oid)
+        .filter(Boolean);
+      setSelectedProposedRoadIds(allIds);
+    }
+    toggleLayer("proposedRoads");
+  };
+
   return (
     <div className="pointer-events-none absolute right-3 top-4 z-30 flex flex-row-reverse items-start gap-2">
       {/* Separate icon buttons. No combined background wrapper. */}
@@ -280,6 +319,7 @@ export default function LeftPanel({
                   getLayerOpacity={getLayerOpacity}
                   toggleLayer={toggleLayer}
                   toggleRudaBoundaryLayer={toggleRudaBoundaryLayer}
+                  toggleProposedRoadLayer={toggleProposedRoadLayer}
                   updateLayer={updateLayer}
                 />
 
@@ -541,6 +581,7 @@ function RudaBoundaryLayers({
   getLayerOpacity,
   toggleLayer,
   toggleRudaBoundaryLayer,
+  toggleProposedRoadLayer,
   updateLayer,
 }) {
   return (
@@ -660,7 +701,7 @@ function RudaBoundaryLayers({
             checked={getLayerVisible("proposedRoads")}
             opacity={getLayerOpacity("proposedRoads")}
             isLast
-            onToggle={() => toggleLayer("proposedRoads")}
+            onToggle={toggleProposedRoadLayer}
             onOpacity={(value) => updateLayer("proposedRoads", { opacity: value })}
           />
       </div>
