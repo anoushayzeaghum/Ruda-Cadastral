@@ -79,6 +79,7 @@ export default function SocietyMapPage() {
   const [layers, setLayers] = useState({
     rudaBoundary: { visible: false, opacity: 70 },
     proposedRoads: { visible: false, opacity: 100 },
+    geodeticNetwork: { visible: false, opacity: 100 },
 
     districtBoundary: { visible: true, opacity: 0 },
     tehsilBoundary: { visible: true, opacity: 0 },
