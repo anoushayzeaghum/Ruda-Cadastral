@@ -1,6 +1,6 @@
 import {
   Layers,
-  ScanLine,
+  Drone,
   Filter as FilterIcon,
   MousePointerClick,
   Hourglass,
@@ -15,10 +15,12 @@ import {
 import Filter from "./tools/Filter";
 import Basemaps from "./tools/Basemaps";
 import LayersPanel from "./tools/Layers";
+import DroneImagery from "./tools/DroneImagery";
+import TimeLapse from "./tools/TimeLapse";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
-  { id: "droneImagery", label: "Drone Imagery", icon: ScanLine },
+  { id: "droneImagery", label: "Drone Imagery", icon: Drone },
   { id: "filter", label: "Filter", icon: FilterIcon },
   { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
   { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
@@ -74,9 +76,15 @@ export default function MetaverseLeftToolbar({
           className={`absolute left-14 z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl ${
             activeTool === "filter"
               ? "w-[320px] overflow-visible"
-              : activeTool === "basemaps"
-                ? "w-[380px] max-h-[340px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+              : activeTool === "layers"
+                ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                : activeTool === "basemaps"
+                  ? "w-[380px] max-h-[340px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  : activeTool === "droneImagery"
+                    ? "w-[320px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                    : activeTool === "timeLapse"
+                      ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                      : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
           }`}
           style={{ top: `${panelTop}px` }}
         >
@@ -88,9 +96,15 @@ export default function MetaverseLeftToolbar({
 
           {activeTool === "basemaps" && <Basemaps map={map} />}
 
+          {activeTool === "droneImagery" && <DroneImagery map={map} />}
+
+          {activeTool === "timeLapse" && <TimeLapse map={map} />}
+
           {activeTool !== "layers" &&
             activeTool !== "filter" &&
-            activeTool !== "basemaps" && (
+            activeTool !== "basemaps" &&
+            activeTool !== "droneImagery" &&
+            activeTool !== "timeLapse" && (
               <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
             )}
         </div>

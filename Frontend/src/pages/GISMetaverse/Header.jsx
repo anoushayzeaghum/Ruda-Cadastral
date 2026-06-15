@@ -36,7 +36,7 @@ export default function Header() {
           </div>
 
           <h1 className="shrink-0 text-2xl font-normal tracking-wide">
-            GIS METAVERSE
+            RUDA GIS METAVERSE
           </h1>
         </div>
 

@@ -22,7 +22,7 @@ export default function DroneImagery({ map }) {
     if (!map) return;
     const bounds = [
       [74.42562653088396, 31.60509230706726],
-      [74.43545280361002, 31.61121654113590],
+      [74.43545280361002, 31.6112165411359],
     ];
     map.fitBounds(bounds, { padding: 50, duration: 1500 });
   };
@@ -35,7 +35,9 @@ export default function DroneImagery({ map }) {
       if (!map.getSource(JAN2023_SOURCE)) {
         map.addSource(JAN2023_SOURCE, {
           type: "raster",
-          tiles: ["http://localhost:8080/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png"],
+          tiles: [
+            "http://localhost:8080/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+          ],
           tileSize: 256,
         });
       }
@@ -50,7 +52,11 @@ export default function DroneImagery({ map }) {
         flyToChaharbagh();
       } else {
         map.setLayoutProperty(JAN2023_LAYER, "visibility", "visible");
-        map.setPaintProperty(JAN2023_LAYER, "raster-opacity", jan2023Opacity / 100);
+        map.setPaintProperty(
+          JAN2023_LAYER,
+          "raster-opacity",
+          jan2023Opacity / 100,
+        );
       }
     } else {
       if (map.getLayer(JAN2023_LAYER)) {
@@ -67,7 +73,9 @@ export default function DroneImagery({ map }) {
       if (!map.getSource(JUNE2023_SOURCE)) {
         map.addSource(JUNE2023_SOURCE, {
           type: "raster",
-          tiles: ["http://localhost:8080/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png"],
+          tiles: [
+            "http://localhost:8080/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+          ],
           tileSize: 256,
         });
       }
@@ -82,7 +90,11 @@ export default function DroneImagery({ map }) {
         flyToChaharbagh();
       } else {
         map.setLayoutProperty(JUNE2023_LAYER, "visibility", "visible");
-        map.setPaintProperty(JUNE2023_LAYER, "raster-opacity", june2023Opacity / 100);
+        map.setPaintProperty(
+          JUNE2023_LAYER,
+          "raster-opacity",
+          june2023Opacity / 100,
+        );
       }
     } else {
       if (map.getLayer(JUNE2023_LAYER)) {
@@ -99,7 +111,9 @@ export default function DroneImagery({ map }) {
       if (!map.getSource(NOV2024_SOURCE)) {
         map.addSource(NOV2024_SOURCE, {
           type: "raster",
-          tiles: ["http://localhost:8080/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png"],
+          tiles: [
+            "http://localhost:8080/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+          ],
           tileSize: 256,
         });
       }
@@ -114,7 +128,11 @@ export default function DroneImagery({ map }) {
         flyToChaharbagh();
       } else {
         map.setLayoutProperty(NOV2024_LAYER, "visibility", "visible");
-        map.setPaintProperty(NOV2024_LAYER, "raster-opacity", nov2024Opacity / 100);
+        map.setPaintProperty(
+          NOV2024_LAYER,
+          "raster-opacity",
+          nov2024Opacity / 100,
+        );
       }
     } else {
       if (map.getLayer(NOV2024_LAYER)) {
@@ -132,11 +150,11 @@ export default function DroneImagery({ map }) {
 
       <div className="p-3 text-[12px]">
         <div className="mb-3 text-white/70">
-          Toggle historical drone imagery of Chaharbagh Phase 1 to monitor construction progress over time.
+          Toggle historical drone imagery of Chaharbagh Phase 1 to monitor
+          construction progress over time.
         </div>
 
         <div className="rounded-sm border border-[#3b4558] bg-[#232b3a] p-2 space-y-4">
-
           {/* Jan 2023 */}
           <div>
             <div className="flex items-center justify-between">
@@ -230,7 +248,6 @@ export default function DroneImagery({ map }) {
               </span>
             </div>
           </div>
-
         </div>
       </div>
     </div>
