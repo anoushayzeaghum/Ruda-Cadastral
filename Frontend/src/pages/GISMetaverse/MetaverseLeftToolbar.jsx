@@ -74,9 +74,11 @@ export default function MetaverseLeftToolbar({
           className={`absolute left-14 z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl ${
             activeTool === "filter"
               ? "w-[320px] overflow-visible"
-              : activeTool === "basemaps"
-                ? "w-[380px] max-h-[340px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+              : activeTool === "layers"
+                ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                : activeTool === "basemaps"
+                  ? "w-[380px] max-h-[340px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
           }`}
           style={{ top: `${panelTop}px` }}
         >

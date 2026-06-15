@@ -108,16 +108,14 @@ export default function TopographicPlan({ map }) {
             onOpacityChange={setDsmOpacity}
           />
 
-          <div className="mt-4 border-t border-[#394354] pt-3">
-            <RasterLayerRow
-              label="Chaharbagh DTM"
-              color="#42a5f5"
-              checked={dtmVisible}
-              opacity={dtmOpacity}
-              onCheckedChange={setDtmVisible}
-              onOpacityChange={setDtmOpacity}
-            />
-          </div>
+          <RasterLayerRow
+            label="Chaharbagh DTM"
+            color="#42a5f5"
+            checked={dtmVisible}
+            opacity={dtmOpacity}
+            onCheckedChange={setDtmVisible}
+            onOpacityChange={setDtmOpacity}
+          />
         </div>
       )}
     </div>
@@ -133,7 +131,7 @@ function RasterLayerRow({
   onOpacityChange,
 }) {
   return (
-    <div className="mt-1">
+    <div className="mt-3 first:mt-1">
       <div className="flex items-center justify-between">
         <label className="flex cursor-pointer items-center gap-2">
           <input
