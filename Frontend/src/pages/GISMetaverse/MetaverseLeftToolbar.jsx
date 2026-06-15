@@ -7,7 +7,7 @@ import {
   Send,
   Ruler,
   Box,
-  Map,
+  Globe2,
   FileInput,
   ChevronRight,
   ChevronDown,
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import Filter from "./tools/Filter";
+import Basemaps from "./tools/Basemaps";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
@@ -27,7 +28,7 @@ const tools = [
   { id: "flyTo", label: "Fly To", icon: Send },
   { id: "measurement", label: "Measurement", icon: Ruler },
   { id: "threeD", label: "3D View", icon: Box },
-  { id: "basemaps", label: "Basemaps", icon: Map },
+  { id: "basemaps", label: "Basemaps", icon: Globe2 },
   { id: "import", label: "Import", icon: FileInput },
 ];
 
@@ -77,17 +78,25 @@ export default function MetaverseLeftToolbar({
           className={`absolute left-14 z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl ${
             activeTool === "filter"
               ? "w-[320px] overflow-visible"
-              : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+              : activeTool === "basemaps"
+                ? "w-[380px] max-h-[340px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
           }`}
           style={{ top: `${panelTop}px` }}
         >
           {activeTool === "layers" && <LayersPanel />}
+
           {activeTool === "filter" && (
             <Filter onClose={() => setActiveTool(null)} />
           )}
-          {activeTool !== "layers" && activeTool !== "filter" && (
-            <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
-          )}
+
+          {activeTool === "basemaps" && <Basemaps map={map} />}
+
+          {activeTool !== "layers" &&
+            activeTool !== "filter" &&
+            activeTool !== "basemaps" && (
+              <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
+            )}
         </div>
       )}
     </>
