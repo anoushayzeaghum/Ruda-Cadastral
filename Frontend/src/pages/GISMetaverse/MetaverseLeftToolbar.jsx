@@ -15,11 +15,12 @@ import {
   Search,
   Info,
   Grid3X3,
+  Drone
 } from "lucide-react";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
-  { id: "droneImagery", label: "Drone Imagery", icon: ScanLine },
+  { id: "droneImagery", label: "Drone Imagery", icon: Drone },
   { id: "filter", label: "Filter", icon: Filter },
   { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
   { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
@@ -31,6 +32,7 @@ const tools = [
 ];
 
 import DroneImagery from "./tools/DroneImagery";
+import TimeLapse from "./tools/TimeLapse";
 
 export default function MetaverseLeftToolbar({
   activeTool,
@@ -67,7 +69,8 @@ export default function MetaverseLeftToolbar({
         <div className="absolute left-14 top-3 z-30 w-[270px] max-h-[calc(100vh-90px)] overflow-hidden rounded-md bg-[#202736] border border-[#3a4354] shadow-2xl text-white">
           {activeTool === "layers" && <LayersPanel map={map} />}
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
-          {activeTool !== "layers" && activeTool !== "droneImagery" && (
+          {activeTool === "timeLapse" && <TimeLapse map={map} />}
+          {activeTool !== "layers" && activeTool !== "droneImagery" && activeTool !== "timeLapse" && (
             <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
           )}
         </div>
