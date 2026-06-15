@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { ChevronLeft, ChevronRight, Play, Pause, SkipBack, SkipForward } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 
 const BOUNDS = [
   [74.42562653088396, 31.60509230706726],
@@ -53,7 +60,7 @@ export default function TimeLapse({ map }) {
           mm.setLayoutProperty(
             item.layerId,
             "visibility",
-            i === index ? "visible" : "none"
+            i === index ? "visible" : "none",
           );
         }
       } catch (e) {
@@ -140,10 +147,7 @@ export default function TimeLapse({ map }) {
 
         {/* Mini Map */}
         <div className="relative rounded-md overflow-hidden border border-[#3b4558] mb-3">
-          <div
-            ref={containerRef}
-            style={{ width: "100%", height: "200px" }}
-          />
+          <div ref={containerRef} style={{ width: "100%", height: "200px" }} />
           {/* Date Badge */}
           <div
             className="absolute top-2 left-2 px-2 py-1 rounded text-[11px] font-bold text-white shadow-lg"
