@@ -1280,28 +1280,28 @@ export default function MapView({
     }
 
     if (!map.getLayer(SELECTED_FILL)) {
-      map.addLayer({
-        id: SELECTED_FILL,
-        type: "fill",
-        source: SELECTED_SOURCE,
-        paint: {
-          "fill-color": "#FFD54F",
-          "fill-opacity": 0.7,
-        },
-      });
-    }
+  map.addLayer({
+    id: SELECTED_FILL,
+    type: "fill",
+    source: SELECTED_SOURCE,
+    paint: {
+      "fill-color": "#ffffff",
+      "fill-opacity": 0.9,
+    },
+  });
+}
 
-    if (!map.getLayer(SELECTED_LINE)) {
-      map.addLayer({
-        id: SELECTED_LINE,
-        type: "line",
-        source: SELECTED_SOURCE,
-        paint: {
-          "line-color": "#b38f00",
-          "line-width": 2,
-        },
-      });
-    }
+if (!map.getLayer(SELECTED_LINE)) {
+  map.addLayer({
+    id: SELECTED_LINE,
+    type: "line",
+    source: SELECTED_SOURCE,
+    paint: {
+      "line-color": "#004225",
+      "line-width": 3,
+    },
+  });
+}
   };
 
   const drawKhasras = (geojson) => {
