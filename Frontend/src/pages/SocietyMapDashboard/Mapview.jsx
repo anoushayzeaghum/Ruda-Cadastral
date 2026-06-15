@@ -1360,7 +1360,7 @@ useEffect(() => {
           map.setLayoutProperty(ORTHO_LAYER, "visibility", "none");
         }
       }
-
+      
       // DSM (DEM) Layer
       const dsmOpacity = getLayerOpacity(layers, "dem", 85) / 100;
 

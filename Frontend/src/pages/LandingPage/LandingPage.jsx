@@ -57,7 +57,7 @@ const GIS_APPS = [
   },
   {
     icon: <Search size={22} />,
-    title: "GeoLayer Data Explorer",
+    title: "GIS Metaverse",
     desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
     img: "/s2.png",
     route: "/society-map",

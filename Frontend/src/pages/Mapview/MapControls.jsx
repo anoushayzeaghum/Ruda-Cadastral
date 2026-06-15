@@ -245,23 +245,21 @@ export default function MapControls({
   }, [map]);
 
   const buttonBase =
-  "flex h-8 w-8 items-center justify-center text-white transition focus:outline-none focus:ring-1 focus:ring-green-300 focus:ring-offset-1 focus:ring-offset-slate-900";
+    "flex h-8 w-8 items-center justify-center text-white transition focus:outline-none focus:ring-1 focus:ring-green-300 focus:ring-offset-1 focus:ring-offset-slate-900";
 
   const singleButtonClass = (active = false) =>
-    `${buttonBase} rounded-lg border shadow-lg ${
-      active
-        ? "border-green-300 bg-[#0f3d2e]"
-        : "border-slate-600/80 bg-[#1f2937] hover:bg-[#0f3d2e]"
+    `${buttonBase} rounded-lg border shadow-lg ${active
+      ? "border-green-300 bg-[#0f3d2e]"
+      : "border-slate-600/80 bg-[#1f2937] hover:bg-[#0f3d2e]"
     }`;
 
   const groupedButtonClass = `${buttonBase} bg-[#1f2937] hover:bg-[#0f3d2e]`;
 
   return (
     <div
-        className={`pointer-events-none absolute z-40 flex items-start gap-1.5 transition-all duration-200 ${
-          compact ? "right-72 top-4 scale-90" : "right-1 top-4"
+      className={`pointer-events-none absolute z-40 flex items-start gap-1.5 transition-all duration-200 ${compact ? "right-72 top-4 scale-90" : "right-1 top-4"
         }`}
-      >
+    >
       <div className="flex flex-col items-end gap-1">
         <div className="rounded bg-slate-900/90 px-1.5 py-0.5 text-[9px] font-medium leading-none text-white shadow-lg backdrop-blur-sm">
           {coords}
@@ -298,9 +296,8 @@ export default function MapControls({
           aria-label="Location / marker"
           onClick={handleLocation}
           disabled={isLocating}
-          className={`${singleButtonClass(activeTool === "marker")} ${
-            isLocating ? "cursor-wait opacity-80" : ""
-          }`}
+          className={`${singleButtonClass(activeTool === "marker")} ${isLocating ? "cursor-wait opacity-80" : ""
+            }`}
         >
           <MapPin size={19} />
         </button>
