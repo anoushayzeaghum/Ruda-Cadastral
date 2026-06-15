@@ -4,7 +4,6 @@ from ..models import Khasra
 
 
 khasra_mapping = {
-    # replace after checking fields
     "join_shp": "JOIN_SHP",
     "district": "DISTRICT",
     "dist_id": "DIST_ID",
