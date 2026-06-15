@@ -573,8 +573,8 @@ class GeodeticNetwork(models.Model):
 
     name = models.CharField(max_length=100, null=True, blank=True)
 
-    easting_m = models.FloatField(db_column="easting_(m)", null=True, blank=True)
-    northing_m = models.FloatField(db_column="northing_(", null=True, blank=True)
+    easting_m = models.FloatField(db_column="easting_m", null=True, blank=True)
+    northing_m = models.FloatField(db_column="northing_m", null=True, blank=True)
 
     code = models.CharField(max_length=50, null=True, blank=True)
 
