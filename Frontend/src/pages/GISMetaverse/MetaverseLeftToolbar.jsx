@@ -38,6 +38,9 @@ export default function MetaverseLeftToolbar({
   activeTool,
   setActiveTool,
   map,
+  filters,
+  layerVisibility,
+  setLayerVisibility,
 }) {
   const activeToolIndex = tools.findIndex((tool) => tool.id === activeTool);
 
@@ -88,8 +91,14 @@ export default function MetaverseLeftToolbar({
           }`}
           style={{ top: `${panelTop}px` }}
         >
-          {activeTool === "layers" && <LayersPanel map={map} />}
-
+          {activeTool === "layers" && (
+            <LayersPanel
+              map={map}
+              filters={filters}
+              layerVisibility={layerVisibility}
+              setLayerVisibility={setLayerVisibility}
+            />
+          )}
           {activeTool === "filter" && (
             <Filter onClose={() => setActiveTool(null)} />
           )}

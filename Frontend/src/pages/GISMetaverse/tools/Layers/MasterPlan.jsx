@@ -1,8 +1,24 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
-export default function MasterPlan() {
-  const [open, setOpen] = useState(false);
+export default function MasterPlan({
+  selectedProjectId,
+  layerVisibility,
+  setLayerVisibility,
+}) {
+  const [open, setOpen] = useState(true);
+
+  const toggleLayer = (key) => {
+    if (!selectedProjectId) {
+      alert("Please select a project first.");
+      return;
+    }
+
+    setLayerVisibility((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   return (
     <div className="border-b border-[#343c4c]">
@@ -17,24 +33,55 @@ export default function MasterPlan() {
 
       {open && (
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
-          <LayerItem checked color="#ff8b24" label="Boundary" />
-          <LayerItem color="#42a5f5" label="Master Plan Boundary" />
-          <LayerItem color="#65c96b" label="Spot Level" />
-          <LayerItem color="#d7bf32" label="Contours" />
+          <LayerItem
+            checked={layerVisibility.boundary}
+            color="#ff8b24"
+            label="Boundary"
+            onChange={() => toggleLayer("boundary")}
+          />
+
+          <LayerItem
+            checked={layerVisibility.masterPlan}
+            color="#42a5f5"
+            label="Master Plan Boundary"
+            onChange={() => toggleLayer("masterPlan")}
+          />
+
+          <LayerItem
+            checked={layerVisibility.spotLevel}
+            color="#65c96b"
+            label="Spot Level"
+            onChange={() => toggleLayer("spotLevel")}
+          />
+
+          <LayerItem
+            checked={layerVisibility.contours}
+            color="#d7bf32"
+            label="Contours"
+            onChange={() => toggleLayer("contours")}
+          />
+
+          <LayerItem
+            checked={layerVisibility.roads}
+            color="#ef4444"
+            label="Roads"
+            onChange={() => toggleLayer("roads")}
+          />
         </div>
       )}
     </div>
   );
 }
 
-function LayerItem({ checked = false, color, label }) {
+function LayerItem({ checked, color, label, onChange }) {
   return (
     <div className="mt-3 first:mt-1">
       <div className="flex items-center justify-between">
         <label className="flex cursor-pointer items-center gap-2">
           <input
             type="checkbox"
-            defaultChecked={checked}
+            checked={checked}
+            onChange={onChange}
             className="accent-[#65c96b]"
           />
           <span

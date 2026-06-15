@@ -18,6 +18,14 @@ export default function MetaverseDashboard() {
     area: "",
   });
 
+  const [layerVisibility, setLayerVisibility] = useState({
+    boundary: false,
+    masterPlan: false,
+    spotLevel: false,
+    contours: false,
+    roads: false,
+  });
+
   const handleReset = () => {
     setMetaverseFilters({
       projectId: "",
@@ -25,6 +33,14 @@ export default function MetaverseDashboard() {
       plotType: "",
       plotNo: "",
       area: "",
+    });
+
+    setLayerVisibility({
+      boundary: false,
+      masterPlan: false,
+      spotLevel: false,
+      contours: false,
+      roads: false,
     });
   };
 
@@ -37,11 +53,14 @@ export default function MetaverseDashboard() {
           mapRef={mapRef}
           setIsMapReady={setIsMapReady}
           filters={metaverseFilters}
+          layerVisibility={layerVisibility}
+          setLayerVisibility={setLayerVisibility}
         />
 
         <MetaverseSubHeader
           filters={metaverseFilters}
           setFilters={setMetaverseFilters}
+          setLayerVisibility={setLayerVisibility}
           onReset={handleReset}
           onCalendarClick={() => console.log("Calendar clicked")}
         />
@@ -50,6 +69,9 @@ export default function MetaverseDashboard() {
           activeTool={activeTool}
           setActiveTool={setActiveTool}
           map={isMapReady ? mapRef.current : null}
+          filters={metaverseFilters}
+          layerVisibility={layerVisibility}
+          setLayerVisibility={setLayerVisibility}
         />
 
         <MetaverseMapControls map={isMapReady ? mapRef.current : null} />

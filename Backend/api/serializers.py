@@ -303,6 +303,7 @@ class SpotLevelSerializer(GeoFeatureModelSerializer):
             "mauza_id",
             "dist_id",
             "tehsil_id",
+            "project_id",
             "geom",
         )
 
@@ -324,6 +325,7 @@ class ContourSerializer(GeoFeatureModelSerializer):
             "mauza_id",
             "dist_id",
             "tehsil_id",
+            "project_id",
             "geom",
         )
 
@@ -596,6 +598,7 @@ class RoadSerializer(GeoFeatureModelSerializer):
             "name",
             "block",
             "width",
+            "project_id",
             "road_type",
             "description",
         )

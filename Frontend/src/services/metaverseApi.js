@@ -2,13 +2,10 @@ import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
-const unwrapApiData = (data) => {
-  return data?.data || data?.results || data;
-};
+const unwrapApiData = (data) => data?.data || data?.results || data;
 
-const normalizeFeatures = (data) => {
+export const normalizeFeatures = (data) => {
   const raw = unwrapApiData(data);
-
   if (Array.isArray(raw)) return raw;
 
   const features = raw?.features || raw?.data?.features || [];
@@ -22,16 +19,50 @@ const normalizeFeatures = (data) => {
   }));
 };
 
+const emptyFC = () => ({ type: "FeatureCollection", features: [] });
+
+const unwrapGeoJSON = (data) => {
+  const raw = unwrapApiData(data);
+  if (raw?.type === "FeatureCollection") return raw;
+  if (raw?.features) return raw;
+  if (Array.isArray(raw)) return { type: "FeatureCollection", features: raw };
+  return emptyFC();
+};
+
 export const getProjects = async () => {
   const res = await axios.get(`${API_BASE}/project/`);
   return normalizeFeatures(res.data);
+};
+
+export const getProjectGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  const res = await axios.get(`${API_BASE}/project/`, {
+    params: { gid: projectId },
+  });
+
+  return unwrapGeoJSON(res.data);
 };
 
 export const getBlocks = async (projectId) => {
   const res = await axios.get(`${API_BASE}/block/`, {
     params: { project_id: projectId },
   });
+
   return normalizeFeatures(res.data);
+};
+
+export const getBlocksGeoJSON = async (projectId, block) => {
+  if (!projectId) return emptyFC();
+
+  const res = await axios.get(`${API_BASE}/block/`, {
+    params: {
+      project_id: projectId,
+      block: block || undefined,
+    },
+  });
+
+  return unwrapGeoJSON(res.data);
 };
 
 export const getPlotsGeoJSON = async (filters = {}) => {
@@ -39,7 +70,7 @@ export const getPlotsGeoJSON = async (filters = {}) => {
     params: filters,
   });
 
-  return unwrapApiData(res.data);
+  return unwrapGeoJSON(res.data);
 };
 
 export const getPlotOptions = async (filters = {}) => {
@@ -50,5 +81,44 @@ export const getPlotOptions = async (filters = {}) => {
     plotTypes: [...new Set(plots.map((p) => p.type).filter(Boolean))],
     plotNos: [...new Set(plots.map((p) => p.plot_no).filter(Boolean))],
     areas: [...new Set(plots.map((p) => p.plot_area).filter(Boolean))],
+  };
+};
+
+export const getSpotLevelGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  const res = await axios.get(`${API_BASE}/spot-level/`, {
+    params: { society_id: projectId },
+  });
+
+  return unwrapGeoJSON(res.data);
+};
+
+export const getContourGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  const res = await axios.get(`${API_BASE}/contour/`, {
+    params: { society_id: projectId },
+  });
+
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRoadsGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  const blocks = await getBlocks(projectId);
+  const blockNames = blocks.map((b) => b.block).filter(Boolean);
+
+  const res = await axios.get(`${API_BASE}/road/`);
+  const roadGeoJSON = unwrapGeoJSON(res.data);
+
+  if (!blockNames.length) return roadGeoJSON;
+
+  return {
+    type: "FeatureCollection",
+    features: roadGeoJSON.features.filter((f) =>
+      blockNames.includes(f.properties?.block)
+    ),
   };
 };
