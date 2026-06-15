@@ -208,23 +208,22 @@ class Murabba(models.Model):
 
     gid = models.AutoField(primary_key=True)
 
-    district = models.CharField(max_length=50)
-    dist_id = models.FloatField()
+    district = models.CharField(max_length=50, null=True, blank=True)
+    dist_id = models.FloatField(null=True, blank=True)
 
-    tehsil = models.CharField(max_length=50)
-    tehsil_id = models.FloatField()
+    tehsil = models.CharField(max_length=50, null=True, blank=True)
+    tehsil_id = models.FloatField(null=True, blank=True)
 
-    kc = models.CharField(max_length=50, null=True, blank=True)
-    kc_id = models.FloatField(null=True, blank=True)
-
+    # Your current murabba table does not expose kc reliably, so it is not mapped here.
+    # pc fields are kept because they exist in the table.
     pc = models.CharField(max_length=50, null=True, blank=True)
     pc_id = models.FloatField(null=True, blank=True)
 
-    mauza = models.CharField(max_length=50)
-    mauza_id = models.FloatField()
+    # Database columns are named mouza / mouza_id, but the frontend uses mauza / mauza_id.
+    mauza = models.CharField(db_column="mouza", max_length=50, null=True, blank=True)
+    mauza_id = models.FloatField(db_column="mouza_id", null=True, blank=True)
 
-    murabba_no = models.IntegerField(db_column="m")
-    sheets = models.CharField(max_length=50)
+    murabba_no = models.IntegerField(db_column="m", null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(srid=4326)
 
