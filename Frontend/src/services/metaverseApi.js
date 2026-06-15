@@ -113,3 +113,43 @@ export const getRoadsGeoJSON = async (projectId) => {
 
   return unwrapGeoJSON(res.data);
 };
+
+export const getWaterSupplyPointsGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  const res = await axios.get(`${API_BASE}/wspoint-features-cb1/`, {
+    params: { project_id: projectId },
+  });
+
+  return unwrapGeoJSON(res.data);
+};
+
+export const getWaterSupplyLinesGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  const res = await axios.get(`${API_BASE}/wsl-cb1/`, {
+    params: { project_id: projectId },
+  });
+
+  return unwrapGeoJSON(res.data);
+};
+
+export const getSewagePointsGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  const res = await axios.get(`${API_BASE}/swpoint-cb1/`, {
+    params: { project_id: projectId },
+  });
+
+  return unwrapGeoJSON(res.data);
+};
+
+export const getCameraLocationsGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  const res = await axios.get(`${API_BASE}/camera-location/`, {
+    params: { project_id: projectId },
+  });
+
+  return unwrapGeoJSON(res.data);
+};

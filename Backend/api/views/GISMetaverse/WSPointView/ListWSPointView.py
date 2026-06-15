@@ -11,6 +11,7 @@ class ListWSPointView(viewsets.ViewSet):
         try:
             gid = request.query_params.get("gid")
             type_val = request.query_params.get("type")
+            project_id = request.query_params.get("project_id")
             name = request.query_params.get("name")
 
             if gid:
@@ -37,6 +38,9 @@ class ListWSPointView(viewsets.ViewSet):
 
             if name:
                 queryset = queryset.filter(name__icontains=name)
+
+            if project_id:
+                queryset = queryset.filter(project_id=project_id)
 
             serializer = WSPointSerializer(queryset, many=True)
 

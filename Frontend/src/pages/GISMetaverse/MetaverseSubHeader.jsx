@@ -82,6 +82,10 @@ export default function MetaverseSubHeader({
           spotLevel: false,
           contours: false,
           roads: false,
+          waterSupplyPoints: false,
+          waterSupplyLines: false,
+          sewagePoints: false,
+          cameraLocations: false,
         });
       }
 

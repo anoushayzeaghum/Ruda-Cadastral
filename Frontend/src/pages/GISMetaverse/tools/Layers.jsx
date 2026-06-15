@@ -19,7 +19,11 @@ export default function LayersPanel({
         setLayerVisibility={setLayerVisibility}
       />
       <TopographicPlan map={map} />
-      <ServiceUtilities />
+      <ServiceUtilities
+        selectedProjectId={filters?.projectId}
+        layerVisibility={layerVisibility}
+        setLayerVisibility={setLayerVisibility}
+      />
       <LandRevenueRecord />
       <Miscellaneous />
       <NotifiedBoundaries />

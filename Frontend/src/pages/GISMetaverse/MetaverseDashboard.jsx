@@ -24,6 +24,10 @@ export default function MetaverseDashboard() {
     spotLevel: false,
     contours: false,
     roads: false,
+    waterSupplyPoints: false,
+    waterSupplyLines: false,
+    sewagePoints: false,
+    cameraLocations: false,
   });
 
   const handleReset = () => {
@@ -41,6 +45,10 @@ export default function MetaverseDashboard() {
       spotLevel: false,
       contours: false,
       roads: false,
+      waterSupplyPoints: false,
+      waterSupplyLines: false,
+      sewagePoints: false,
+      cameraLocations: false,
     });
   };
 

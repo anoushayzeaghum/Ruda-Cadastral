@@ -12,6 +12,7 @@ class ListWSLView(viewsets.ViewSet):
             gid = request.query_params.get("gid")
             name = request.query_params.get("name")
             type_val = request.query_params.get("type")
+            project_id = request.query_params.get("project_id")
 
             if gid:
                 obj = WSL.objects.filter(gid=gid).first()
@@ -37,6 +38,9 @@ class ListWSLView(viewsets.ViewSet):
 
             if type_val:
                 queryset = queryset.filter(type__icontains=type_val)
+
+            if project_id:
+                queryset = queryset.filter(project_id=project_id)
 
             serializer = WSLSerializer(queryset, many=True)
 

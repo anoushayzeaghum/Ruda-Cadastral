@@ -770,7 +770,7 @@ class Road(models.Model):
 class CameraLocation(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    sr_no = models.IntegerField(null=True, blank=True)
+    sr_no = models.IntegerField(db_column="sr_no_", null=True, blank=True)
 
     project = models.CharField(max_length=255, null=True, blank=True)
 
@@ -784,7 +784,9 @@ class CameraLocation(models.Model):
 
     iframe_lin = models.TextField(null=True, blank=True)
 
-    geom = gis_models.PointField(
+    project_id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(
         srid=4326,
         null=True,
         blank=True
@@ -807,7 +809,9 @@ class SWPoint(models.Model):
 
     name = models.CharField(max_length=255, null=True, blank=True)
 
-    geom = gis_models.PointField(srid=4326, null=True, blank=True)
+    project_id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(srid=4326, null=True, blank=True)
 
     def __str__(self):
         return self.name or f"SWPoint {self.gid}"
@@ -830,7 +834,9 @@ class WSL(models.Model):
 
     name = models.CharField(max_length=255, null=True, blank=True)
 
-    geom = gis_models.LineStringField(srid=4326, null=True, blank=True)
+    project_id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(srid=4326, null=True, blank=True)
 
     def __str__(self):
         return self.name or f"WSL {self.gid}"
@@ -849,7 +855,9 @@ class WSPoint(models.Model):
 
     name = models.CharField(max_length=255, null=True, blank=True)
 
-    geom = gis_models.PointField(srid=4326, null=True, blank=True)
+    project_id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(srid=4326, null=True, blank=True)
 
     def __str__(self):
         return self.name or f"WS Point {self.gid}"

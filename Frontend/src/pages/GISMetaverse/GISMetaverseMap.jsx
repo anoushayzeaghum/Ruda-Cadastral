@@ -9,6 +9,10 @@ import {
   getProjectGeoJSON,
   getRoadsGeoJSON,
   getSpotLevelGeoJSON,
+  getWaterSupplyPointsGeoJSON,
+  getWaterSupplyLinesGeoJSON,
+  getSewagePointsGeoJSON,
+  getCameraLocationsGeoJSON,
 } from "../../services/metaverseApi";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -20,6 +24,10 @@ const SOURCES = {
   spotLevel: "metaverse-spot-level-source",
   contours: "metaverse-contours-source",
   roads: "metaverse-roads-source",
+  waterSupplyPoints: "metaverse-water-supply-points-source",
+  waterSupplyLines: "metaverse-water-supply-lines-source",
+  sewagePoints: "metaverse-sewage-points-source",
+  cameraLocations: "metaverse-camera-locations-source",
 };
 
 const LAYERS = {
@@ -34,6 +42,13 @@ const LAYERS = {
   contoursLine: "metaverse-contours-line",
   roadsFill: "metaverse-roads-fill",
   roadsLine: "metaverse-roads-line",
+  waterSupplyPointsCircle: "metaverse-water-supply-points-circle",
+  waterSupplyPointsLabel: "metaverse-water-supply-points-label",
+  waterSupplyLinesLine: "metaverse-water-supply-lines-line",
+  sewagePointsCircle: "metaverse-sewage-points-circle",
+  sewagePointsLabel: "metaverse-sewage-points-label",
+  cameraLocationsCircle: "metaverse-camera-locations-circle",
+  cameraLocationsLabel: "metaverse-camera-locations-label",
 };
 
 const emptyFC = { type: "FeatureCollection", features: [] };
@@ -68,6 +83,30 @@ function fitGeoJSON(map, geojson) {
       maxZoom: 17,
     });
   }
+}
+
+function normalizeGeometryCollections(data) {
+  if (!data?.features?.length) return data || emptyFC;
+
+  return {
+    ...data,
+    features: data.features.map((feature) => {
+      if (feature.geometry?.type !== "GeometryCollection") return feature;
+
+      const geometry = feature.geometry.geometries?.find((geom) =>
+        [
+          "Point",
+          "MultiPoint",
+          "LineString",
+          "MultiLineString",
+          "Polygon",
+          "MultiPolygon",
+        ].includes(geom.type),
+      );
+
+      return geometry ? { ...feature, geometry } : feature;
+    }),
+  };
 }
 
 function ensureSource(map, sourceId, data = emptyFC) {
@@ -238,8 +277,168 @@ function addContourLayer(map, data) {
       type: "line",
       source: SOURCES.contours,
       paint: {
-        "line-color": "#d7bf32",
+        "line-color": "#615514",
         "line-width": 1.5,
+      },
+    });
+  }
+}
+
+function addWaterSupplyPointsLayer(map, data) {
+  ensureSource(
+    map,
+    SOURCES.waterSupplyPoints,
+    normalizeGeometryCollections(data),
+  );
+
+  if (!map.getLayer(LAYERS.waterSupplyPointsCircle)) {
+    map.addLayer({
+      id: LAYERS.waterSupplyPointsCircle,
+      type: "circle",
+      source: SOURCES.waterSupplyPoints,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 4, 18, 7],
+        "circle-color": "#42a5f5",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.5,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.waterSupplyPointsLabel)) {
+    map.addLayer({
+      id: LAYERS.waterSupplyPointsLabel,
+      type: "symbol",
+      source: SOURCES.waterSupplyPoints,
+      minzoom: 16,
+      layout: {
+        "text-field": [
+          "coalesce",
+          ["to-string", ["get", "name"]],
+          ["to-string", ["get", "type"]],
+          "",
+        ],
+        "text-size": 10,
+        "text-offset": [0, 1.2],
+        "text-anchor": "top",
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": "#0f172a",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2,
+      },
+    });
+  }
+}
+
+function addWaterSupplyLinesLayer(map, data) {
+  ensureSource(
+    map,
+    SOURCES.waterSupplyLines,
+    normalizeGeometryCollections(data),
+  );
+
+  if (!map.getLayer(LAYERS.waterSupplyLinesLine)) {
+    map.addLayer({
+      id: LAYERS.waterSupplyLinesLine,
+      type: "line",
+      source: SOURCES.waterSupplyLines,
+      paint: {
+        "line-color": "#00386a",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 10, 2, 18, 4],
+      },
+    });
+  }
+}
+
+function addSewagePointsLayer(map, data) {
+  ensureSource(map, SOURCES.sewagePoints, normalizeGeometryCollections(data));
+
+  if (!map.getLayer(LAYERS.sewagePointsCircle)) {
+    map.addLayer({
+      id: LAYERS.sewagePointsCircle,
+      type: "circle",
+      source: SOURCES.sewagePoints,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 4, 18, 7],
+        "circle-color": "#8e44ad",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.5,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.sewagePointsLabel)) {
+    map.addLayer({
+      id: LAYERS.sewagePointsLabel,
+      type: "symbol",
+      source: SOURCES.sewagePoints,
+      minzoom: 16,
+      layout: {
+        "text-field": [
+          "coalesce",
+          ["to-string", ["get", "name"]],
+          ["to-string", ["get", "type"]],
+          "",
+        ],
+        "text-size": 10,
+        "text-offset": [0, 1.2],
+        "text-anchor": "top",
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": "#0f172a",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2,
+      },
+    });
+  }
+}
+
+function addCameraLocationsLayer(map, data) {
+  ensureSource(
+    map,
+    SOURCES.cameraLocations,
+    normalizeGeometryCollections(data),
+  );
+
+  if (!map.getLayer(LAYERS.cameraLocationsCircle)) {
+    map.addLayer({
+      id: LAYERS.cameraLocationsCircle,
+      type: "circle",
+      source: SOURCES.cameraLocations,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 5, 18, 8],
+        "circle-color": "#f97316",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.5,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.cameraLocationsLabel)) {
+    map.addLayer({
+      id: LAYERS.cameraLocationsLabel,
+      type: "symbol",
+      source: SOURCES.cameraLocations,
+      minzoom: 15,
+      layout: {
+        "text-field": [
+          "coalesce",
+          ["to-string", ["get", "camera"]],
+          ["to-string", ["get", "name"]],
+          "",
+        ],
+        "text-size": 10,
+        "text-offset": [0, 1.2],
+        "text-anchor": "top",
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": "#0f172a",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2,
       },
     });
   }
@@ -254,7 +453,7 @@ function addRoadLayer(map, data) {
       type: "fill",
       source: SOURCES.roads,
       paint: {
-        "fill-color": "#ef4444",
+        "fill-color": "#d01f1f",
         "fill-opacity": 0.35,
       },
     });
@@ -427,6 +626,26 @@ export default function GISMetaverseMap({
       [LAYERS.roadsFill, LAYERS.roadsLine],
       layerVisibility.roads,
     );
+    setLayerVisibility(
+      map,
+      [LAYERS.waterSupplyPointsCircle, LAYERS.waterSupplyPointsLabel],
+      layerVisibility.waterSupplyPoints,
+    );
+    setLayerVisibility(
+      map,
+      [LAYERS.waterSupplyLinesLine],
+      layerVisibility.waterSupplyLines,
+    );
+    setLayerVisibility(
+      map,
+      [LAYERS.sewagePointsCircle, LAYERS.sewagePointsLabel],
+      layerVisibility.sewagePoints,
+    );
+    setLayerVisibility(
+      map,
+      [LAYERS.cameraLocationsCircle, LAYERS.cameraLocationsLabel],
+      layerVisibility.cameraLocations,
+    );
   }, [layerVisibility, mapRef]);
 
   useEffect(() => {
@@ -448,6 +667,26 @@ export default function GISMetaverseMap({
         const data = await getRoadsGeoJSON(filters.projectId);
         addRoadLayer(map, data);
       }
+
+      if (layerVisibility.waterSupplyPoints) {
+        const data = await getWaterSupplyPointsGeoJSON(filters.projectId);
+        addWaterSupplyPointsLayer(map, data);
+      }
+
+      if (layerVisibility.waterSupplyLines) {
+        const data = await getWaterSupplyLinesGeoJSON(filters.projectId);
+        addWaterSupplyLinesLayer(map, data);
+      }
+
+      if (layerVisibility.sewagePoints) {
+        const data = await getSewagePointsGeoJSON(filters.projectId);
+        addSewagePointsLayer(map, data);
+      }
+
+      if (layerVisibility.cameraLocations) {
+        const data = await getCameraLocationsGeoJSON(filters.projectId);
+        addCameraLocationsLayer(map, data);
+      }
     };
 
     if (map.isStyleLoaded()) run();
@@ -457,6 +696,10 @@ export default function GISMetaverseMap({
     layerVisibility.spotLevel,
     layerVisibility.contours,
     layerVisibility.roads,
+    layerVisibility.waterSupplyPoints,
+    layerVisibility.waterSupplyLines,
+    layerVisibility.sewagePoints,
+    layerVisibility.cameraLocations,
     mapRef,
   ]);
 
