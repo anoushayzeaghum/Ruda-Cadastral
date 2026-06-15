@@ -743,6 +743,10 @@ class Road(models.Model):
 
     block = models.CharField(max_length=255, null=True, blank=True)
 
+    project_id = models.IntegerField(null=True, blank=True)
+
+    block_id = models.IntegerField(null=True, blank=True)
+
     width = models.CharField(max_length=100, null=True, blank=True)
 
     road_type = models.CharField(max_length=255, null=True, blank=True)
@@ -773,6 +777,8 @@ class CameraLocation(models.Model):
     project = models.CharField(max_length=255, null=True, blank=True)
 
     camera = models.CharField(max_length=255, null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
 
     y = models.FloatField(null=True, blank=True)
 

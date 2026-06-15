@@ -597,7 +597,7 @@ class RoadSerializer(GeoFeatureModelSerializer):
             "block",
             "width",
             "road_type",
-            "description",
+            "description", "project_id", "block_id",
         )
 
 # --------------------------------------------------------
@@ -617,7 +617,7 @@ class CameraLocationSerializer(GeoFeatureModelSerializer):
             "y",
             "x",
             "coordinate",
-            "iframe_lin",
+            "iframe_lin", "project_id"
         )
 
 # --------------------------------------------------------
