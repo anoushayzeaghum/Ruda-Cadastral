@@ -619,7 +619,7 @@ class Project(models.Model):
 
     class Meta:
         managed = False
-        db_table = "projects"
+        db_table = "project"
 
 # =========================
 # Block
@@ -643,7 +643,7 @@ class Block(models.Model):
 
     class Meta:
         managed = False
-        db_table = "blocks"
+        db_table = "block"
 
 
 
@@ -731,7 +731,7 @@ class Plot(models.Model):
 
     class Meta:
         managed = False
-        db_table = "plots"
+        db_table = "plot"
 
 # =========================
 # Road
