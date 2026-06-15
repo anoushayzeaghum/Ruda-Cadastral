@@ -133,7 +133,7 @@ export default function LeftPanel({
       const next = { ...prev };
 
       const rudaLayerDefaults = {
-        rudaBoundary: 10,
+        rudaBoundary: 70,
         proposedRoads: 100,
         geodeticNetwork: 100,
       };
@@ -305,7 +305,7 @@ export default function LeftPanel({
           }
           icon={<Layers size={18} />}
         />
-        <PanelIcon
+        {/* <PanelIcon
           title="Vector Boundaries"
           active={activePanel === "vectorBoundaries"}
           onClick={() =>
@@ -314,7 +314,7 @@ export default function LeftPanel({
             )
           }
           icon={<Map size={18} />}
-        />
+        /> */}
         <PanelIcon
           title="Toolbox"
           active={activePanel === "toolbox"}

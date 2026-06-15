@@ -1338,7 +1338,7 @@ useEffect(() => {
           map.addSource(ORTHO_SOURCE, {
             type: "raster",
             tiles: [
-              "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+              "http://localhost:8080/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
           });
@@ -1369,7 +1369,7 @@ useEffect(() => {
           map.addSource(DSM_SOURCE, {
             type: "raster",
             tiles: [
-              "http://localhost:8081/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
+              "http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
           });
@@ -1400,7 +1400,7 @@ useEffect(() => {
           map.addSource(DTM_SOURCE, {
             type: "raster",
             tiles: [
-              "http://localhost:8081/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
+              "http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
           });
