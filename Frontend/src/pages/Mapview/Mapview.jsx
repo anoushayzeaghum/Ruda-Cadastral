@@ -1841,10 +1841,26 @@ export default function MapView({
   }, [selectedMauza, viewBy]);
 
   useEffect(() => {
-    if (!isMapReady || !selectedFeatureNumber) return;
+    if (!isMapReady) return;
 
     const map = mapInstance.current;
     if (!map) return;
+
+    if (!selectedFeatureNumber) {
+      lastSyncedSelectionRef.current = "";
+      delete currentGeojson.current["selected-area"];
+
+      try {
+        ensureSelectedLayers(map);
+        const src = map.getSource(SELECTED_SOURCE);
+        if (src) src.setData(emptyFeatureCollection());
+      } catch (e) {
+        console.warn("Could not clear selected parcel", e);
+      }
+
+      clearCornerMarkers();
+      return;
+    }
 
     const selectionKey =
       typeof selectedFeatureNumber === "object"
@@ -1905,7 +1921,7 @@ export default function MapView({
         console.warn("Could not highlight selected parcel", e);
       }
     }
-  }, [selectedFeatureNumber, viewBy, isMapReady]);
+  }, [selectedFeatureNumber, viewBy, isMapReady, featureCount]);
 
   useEffect(() => {
     if (!isMapReady) return;

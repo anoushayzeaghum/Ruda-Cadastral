@@ -346,6 +346,16 @@ console.log("filters =", outletContext?.filters);
     [filters?.viewBy, isMurabbaBasedKhasra],
   );
 
+  const handleParcelPanelClose = useCallback(() => {
+    setParcelPanelOpen(false);
+    setSelectedParcel(null);
+    setSelectedParcelNumber("");
+
+    if (!(filters?.viewBy === "khasra" && isMurabbaBasedKhasra)) {
+      setSelectedMurabbaNumber("");
+    }
+  }, [filters?.viewBy, isMurabbaBasedKhasra]);
+
   const handleMapReady = useCallback((map) => {
     setMapboxMap(map || null);
   }, []);
@@ -436,7 +446,7 @@ console.log("filters =", outletContext?.filters);
         <ParcelPanel
           parcel={selectedParcel}
           isOpen={parcelPanelOpen}
-          onClose={() => setParcelPanelOpen(false)}
+          onClose={handleParcelPanelClose}
         />
       </div>
     </div>
