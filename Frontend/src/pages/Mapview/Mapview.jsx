@@ -1421,28 +1421,28 @@ export default function MapView({
     }
 
     if (!map.getLayer(SELECTED_FILL)) {
-      map.addLayer({
-        id: SELECTED_FILL,
-        type: "fill",
-        source: SELECTED_SOURCE,
-        paint: {
-          "fill-color": "#FFD54F",
-          "fill-opacity": 0.7,
-        },
-      });
-    }
+  map.addLayer({
+    id: SELECTED_FILL,
+    type: "fill",
+    source: SELECTED_SOURCE,
+    paint: {
+      "fill-color": "#ffffff",
+      "fill-opacity": 0.9,
+    },
+  });
+}
 
-    if (!map.getLayer(SELECTED_LINE)) {
-      map.addLayer({
-        id: SELECTED_LINE,
-        type: "line",
-        source: SELECTED_SOURCE,
-        paint: {
-          "line-color": "#b38f00",
-          "line-width": 2,
-        },
-      });
-    }
+if (!map.getLayer(SELECTED_LINE)) {
+  map.addLayer({
+    id: SELECTED_LINE,
+    type: "line",
+    source: SELECTED_SOURCE,
+    paint: {
+      "line-color": "#004225",
+      "line-width": 3,
+    },
+  });
+}
   };
 
   const drawKhasras = (geojson) => {
@@ -1841,10 +1841,26 @@ export default function MapView({
   }, [selectedMauza, viewBy]);
 
   useEffect(() => {
-    if (!isMapReady || !selectedFeatureNumber) return;
+    if (!isMapReady) return;
 
     const map = mapInstance.current;
     if (!map) return;
+
+    if (!selectedFeatureNumber) {
+      lastSyncedSelectionRef.current = "";
+      delete currentGeojson.current["selected-area"];
+
+      try {
+        ensureSelectedLayers(map);
+        const src = map.getSource(SELECTED_SOURCE);
+        if (src) src.setData(emptyFeatureCollection());
+      } catch (e) {
+        console.warn("Could not clear selected parcel", e);
+      }
+
+      clearCornerMarkers();
+      return;
+    }
 
     const selectionKey =
       typeof selectedFeatureNumber === "object"
@@ -1905,7 +1921,7 @@ export default function MapView({
         console.warn("Could not highlight selected parcel", e);
       }
     }
-  }, [selectedFeatureNumber, viewBy, isMapReady]);
+  }, [selectedFeatureNumber, viewBy, isMapReady, featureCount]);
 
   useEffect(() => {
     if (!isMapReady) return;
