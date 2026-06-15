@@ -15,3 +15,4 @@ from .UserView import *
 from .SquareView import *   
 from .AcreView import *
 from .FieldPointsView import *
+from .GeodeticNetworkView import *

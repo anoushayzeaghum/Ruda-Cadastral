@@ -96,6 +96,12 @@ router.register(r"fieldpoints/create", CreateFieldPointsView, basename="create-f
 router.register(r"fieldpoints/update", UpdateFieldPointsView, basename="update-fieldpoints")
 router.register(r"fieldpoints/delete", DeleteFieldPointsView, basename="delete-fieldpoints")
 
+#------------------------------ Geodetic Network View ------------------------------
+router.register(r"geodeticnetwork", ListGeodeticNetworkView, basename="geodeticnetwork")
+router.register(r"geodeticnetwork/create", CreateGeodeticNetworkView, basename="create-geodeticnetwork")
+router.register(r"geodeticnetwork/update", UpdateGeodeticNetworkView, basename="update-geodeticnetwork")
+router.register(r"geodeticnetwork/delete", DeleteGeodeticNetworkView, basename="delete-geodeticnetwork")
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
