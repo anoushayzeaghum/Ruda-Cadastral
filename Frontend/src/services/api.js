@@ -103,7 +103,6 @@ export const getTehsils = async (district_i) => {
   return normalizeData(res);
 };
 
-
 export const importDistrict = ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -119,15 +118,11 @@ export const importTehsil = async ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await API.post(
-    "/import/tehsil/",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  const res = await API.post("/import/tehsil/", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
   return res.data;
 };
@@ -156,15 +151,11 @@ export const importKhasra = async ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await API.post(
-    "/import/khasra/",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  const res = await API.post("/import/khasra/", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
   return res.data;
 };
@@ -177,20 +168,28 @@ export const getMurabbas = async (mauza_id) => {
 };
 
 export const getSquares = async (mauza_id) => {
-  const res = await API.get("/square/", {
-    params: { mauza_id },
-  });
+  const params = {};
+  if (mauza_id !== undefined && mauza_id !== null && mauza_id !== "") {
+    params.mauza_id = mauza_id;
+  }
+
+  const res = await API.get("/square/", { params });
   return normalizeGeoJson(res);
 };
 
 export const getAcres = async (mauza_id) => {
-  const res = await API.get("/acre/", {
-    params: { mauza_id },
-  });
+  const params = {};
+  if (mauza_id !== undefined && mauza_id !== null && mauza_id !== "") {
+    params.mauza_id = mauza_id;
+  }
+
+  const res = await API.get("/acre/", { params });
   return normalizeGeoJson(res);
 };
 
 export const getFieldPoints = async () => {
+  // Field points table has no mauza_id. Mapview spatially filters/clips
+  // these points to the currently open Mauza/Khasra boundary.
   const res = await API.get("/fieldpoints/");
   return normalizeGeoJson(res);
 };
@@ -199,15 +198,11 @@ export const importMurabba = async ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await API.post(
-    "/import/murabba/",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  const res = await API.post("/import/murabba/", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
   return res.data;
 };
@@ -241,7 +236,6 @@ export const getMurabbaBoundary = async (id) => {
   return normalizeGeoJson(res);
 };
 
-
 ///////////////////////////////////////////////////////
 //////////////// SOCIETY LAYER APIs ///////////////////
 ///////////////////////////////////////////////////////
@@ -250,7 +244,11 @@ export const getSocieties = async (filters = {}) => {
   const params = {};
 
   // Backward compatible: old calls like getSocieties(mauza_id) still work.
-  if (typeof filters !== "object" || filters === null || Array.isArray(filters)) {
+  if (
+    typeof filters !== "object" ||
+    filters === null ||
+    Array.isArray(filters)
+  ) {
     if (filters !== undefined && filters !== null && filters !== "") {
       params.mauza_id = filters;
     }
@@ -357,11 +355,7 @@ export const getRudaProposedRoadsGeoJSON = async (gid = null) => {
     features: (geojson.features || []).filter((feature) => {
       const props = feature?.properties || {};
       const featureId =
-        props.gid ??
-        feature?.id ??
-        props.id ??
-        props.oid ??
-        props.fid;
+        props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid;
 
       return String(featureId) === selectedId;
     }),
@@ -372,22 +366,10 @@ export const getRudaProposedRoadsGeoJSON = async (gid = null) => {
 ///////////////////// TRIJUNCTION APIs ///////////////////////
 ///////////////////////////////////////////////////////
 
-export const getTrijunctionPoints = async ({ mauza, mauza_id, type } = {}) => {
-  const params = {};
-
-  if (type) {
-    params.type = type;
-  }
-
-  if (mauza) {
-    params.mauza = mauza;
-  }
-
-  if (mauza_id !== undefined && mauza_id !== null && mauza_id !== "") {
-    params.mauza_id = mauza_id;
-  }
-
-  const res = await API.get("/trijunction/", { params });
+export const getTrijunctionPoints = async () => {
+  // Trijunction table has no mauza_id/type filter fields in the DB.
+  // Fetch all points and let Mapview spatially clip/filter them to the open Mauza/Khasra area.
+  const res = await API.get("/trijunction/");
   return normalizeGeoJson(res);
 };
 
@@ -410,20 +392,15 @@ export const importMauza = async ({ file, tehsil, mauza }) => {
   return res.data;
 };
 
-
 export const importMauzaShapefile = async ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await API.post(
-    "/import/mauza/",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+  const res = await API.post("/import/mauza/", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
   return res.data;
 };
