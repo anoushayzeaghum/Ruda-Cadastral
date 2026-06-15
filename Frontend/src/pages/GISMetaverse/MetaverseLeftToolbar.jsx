@@ -41,6 +41,8 @@ export default function MetaverseLeftToolbar({
   filters,
   layerVisibility,
   setLayerVisibility,
+  adminBoundaryVisibility,
+  setAdminBoundaryVisibility,
 }) {
   const activeToolIndex = tools.findIndex((tool) => tool.id === activeTool);
 
@@ -97,6 +99,8 @@ export default function MetaverseLeftToolbar({
               filters={filters}
               layerVisibility={layerVisibility}
               setLayerVisibility={setLayerVisibility}
+              adminBoundaryVisibility={adminBoundaryVisibility}
+              setAdminBoundaryVisibility={setAdminBoundaryVisibility}
             />
           )}
           {activeTool === "filter" && (

@@ -153,3 +153,18 @@ export const getCameraLocationsGeoJSON = async (projectId) => {
 
   return unwrapGeoJSON(res.data);
 };
+
+export const getRudaGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ruda/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRudaProposedRoadsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ruda-proposed-roads/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getGeodeticNetworkGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/geodeticnetwork/`);
+  return unwrapGeoJSON(res.data);
+};

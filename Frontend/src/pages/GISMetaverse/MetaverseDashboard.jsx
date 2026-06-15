@@ -10,6 +10,12 @@ export default function MetaverseDashboard() {
   const [isMapReady, setIsMapReady] = useState(false);
   const [activeTool, setActiveTool] = useState("layers");
 
+  const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState({
+    rudaBoundary: false,
+    geodeticNetwork: false,
+    proposedRoads: false,
+  });
+
   const [metaverseFilters, setMetaverseFilters] = useState({
     projectId: "",
     block: "",
@@ -63,6 +69,7 @@ export default function MetaverseDashboard() {
           filters={metaverseFilters}
           layerVisibility={layerVisibility}
           setLayerVisibility={setLayerVisibility}
+          adminBoundaryVisibility={adminBoundaryVisibility}
         />
 
         <MetaverseSubHeader
@@ -80,6 +87,8 @@ export default function MetaverseDashboard() {
           filters={metaverseFilters}
           layerVisibility={layerVisibility}
           setLayerVisibility={setLayerVisibility}
+          adminBoundaryVisibility={adminBoundaryVisibility}
+          setAdminBoundaryVisibility={setAdminBoundaryVisibility}
         />
 
         <MetaverseMapControls map={isMapReady ? mapRef.current : null} />

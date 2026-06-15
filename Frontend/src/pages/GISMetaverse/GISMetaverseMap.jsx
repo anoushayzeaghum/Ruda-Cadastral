@@ -13,6 +13,9 @@ import {
   getWaterSupplyLinesGeoJSON,
   getSewagePointsGeoJSON,
   getCameraLocationsGeoJSON,
+  getRudaGeoJSON,
+  getRudaProposedRoadsGeoJSON,
+  getGeodeticNetworkGeoJSON,
 } from "../../services/metaverseApi";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -28,6 +31,9 @@ const SOURCES = {
   waterSupplyLines: "metaverse-water-supply-lines-source",
   sewagePoints: "metaverse-sewage-points-source",
   cameraLocations: "metaverse-camera-locations-source",
+  rudaBoundary: "metaverse-ruda-boundary-source",
+  proposedRoads: "metaverse-proposed-roads-source",
+  geodeticNetwork: "metaverse-geodetic-network-source",
 };
 
 const LAYERS = {
@@ -49,6 +55,9 @@ const LAYERS = {
   sewagePointsLabel: "metaverse-sewage-points-label",
   cameraLocationsCircle: "metaverse-camera-locations-circle",
   cameraLocationsLabel: "metaverse-camera-locations-label",
+  rudaBoundaryLine: "metaverse-ruda-boundary-line",
+  proposedRoadsLine: "metaverse-proposed-roads-line",
+  geodeticNetworkCircle: "metaverse-geodetic-network-circle",
 };
 
 const emptyFC = { type: "FeatureCollection", features: [] };
@@ -477,6 +486,7 @@ export default function GISMetaverseMap({
   setIsMapReady,
   filters,
   layerVisibility,
+  adminBoundaryVisibility,
   setLayerVisibility: updateLayerVisibility,
 }) {
   const mapContainerRef = useRef(null);
@@ -600,6 +610,87 @@ export default function GISMetaverseMap({
     layerVisibility.masterPlan,
     mapRef,
   ]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const run = async () => {
+      if (adminBoundaryVisibility.rudaBoundary) {
+        const data = await getRudaGeoJSON();
+        ensureSource(map, SOURCES.rudaBoundary, data);
+
+        if (!map.getLayer(LAYERS.rudaBoundaryLine)) {
+          map.addLayer({
+            id: LAYERS.rudaBoundaryLine,
+            type: "line",
+            source: SOURCES.rudaBoundary,
+            paint: {
+              "line-color": "#6B7280",
+              "line-width": 2.5,
+            },
+          });
+        }
+      }
+
+      if (adminBoundaryVisibility.proposedRoads) {
+        const data = await getRudaProposedRoadsGeoJSON();
+        ensureSource(map, SOURCES.proposedRoads, data);
+
+        if (!map.getLayer(LAYERS.proposedRoadsLine)) {
+          map.addLayer({
+            id: LAYERS.proposedRoadsLine,
+            type: "line",
+            source: SOURCES.proposedRoads,
+            paint: {
+              "line-color": "#f97316",
+              "line-width": 3,
+            },
+          });
+        }
+      }
+
+      if (adminBoundaryVisibility.geodeticNetwork) {
+        const data = await getGeodeticNetworkGeoJSON();
+        ensureSource(map, SOURCES.geodeticNetwork, data);
+
+        if (!map.getLayer(LAYERS.geodeticNetworkCircle)) {
+          map.addLayer({
+            id: LAYERS.geodeticNetworkCircle,
+            type: "circle",
+            source: SOURCES.geodeticNetwork,
+            paint: {
+              "circle-radius": 5,
+              "circle-color": "#22c55e",
+              "circle-stroke-color": "#ffffff",
+              "circle-stroke-width": 1,
+            },
+          });
+        }
+      }
+
+      setLayerVisibility(
+        map,
+        [LAYERS.rudaBoundaryLine],
+        adminBoundaryVisibility.rudaBoundary,
+      );
+
+      setLayerVisibility(
+        map,
+        [LAYERS.proposedRoadsLine],
+        adminBoundaryVisibility.proposedRoads,
+      );
+
+      setLayerVisibility(
+        map,
+        [LAYERS.geodeticNetworkCircle],
+        adminBoundaryVisibility.geodeticNetwork,
+      );
+    };
+
+    if (map.isStyleLoaded()) run();
+    else map.once("load", run);
+  }, [adminBoundaryVisibility, mapRef]);
 
   useEffect(() => {
     const map = mapRef.current;
