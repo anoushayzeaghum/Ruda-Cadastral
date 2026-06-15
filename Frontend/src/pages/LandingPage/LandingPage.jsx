@@ -5,7 +5,6 @@ import {
   BarChart3,
   Box,
   Database,
-  Users,
   Mail,
   Phone,
   MapPin,
@@ -19,8 +18,6 @@ import {
   FileText,
   Eye,
   Smartphone,
-  Globe,
-  Server,
   Star,
   Shield,
   Zap,
@@ -31,17 +28,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-/* ─── data ──────────────────────────────────────────────────────────────── */
-
-const HERO_SLIDES = [
-  "/s1.png",
-  "/s2.png",
-  "/s3.png",
-  "/s4.png",
-  "/s5.png",
-  "/s6.png",
-  "/s7.png",
-];
+const HERO_SLIDES = ["/s1.png", "/s2.png", "/s3.png", "/s4.png", "/s5.png", "/s6.png", "/s7.png"];
 
 const NAV_LINKS = [
   { href: "#home", label: "Home" },
@@ -66,7 +53,7 @@ const GIS_APPS = [
     desc: "Manage and visualize cadastral records, Khasra layers, mauza limits and administrative boundaries in one interactive GIS platform.",
     img: "/s1.png",
     route: "/Mapview",
-    color: "from-emerald-500 to-green-700",
+    color: "from-[#49B84A] to-[#004225]",
   },
   {
     icon: <Search size={22} />,
@@ -74,7 +61,7 @@ const GIS_APPS = [
     desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
     img: "/s2.png",
     route: "/society-map",
-    color: "from-teal-500 to-cyan-700",
+    color: "from-[#0B7A3B] to-[#004225]",
   },
   {
     icon: <ClipboardList size={22} />,
@@ -82,7 +69,7 @@ const GIS_APPS = [
     desc: "Experience cadastral and society data in an immersive 3D environment with land-use visualization.",
     img: "/s3.png",
     route: "/society-3d",
-    color: "from-blue-500 to-indigo-700",
+    color: "from-[#49B84A] to-[#0B7A3B]",
   },
   {
     icon: <FileText size={22} />,
@@ -90,7 +77,7 @@ const GIS_APPS = [
     desc: "Search plots, view demarcation details, verify and generate printable plot reports for cadastral documentation.",
     img: "/s4.png",
     route: "/demarcation",
-    color: "from-violet-500 to-purple-700",
+    color: "from-[#0B7A3B] to-[#00351f]",
   },
   {
     icon: <Eye size={22} />,
@@ -98,14 +85,14 @@ const GIS_APPS = [
     desc: "Control and manage the complete cadastral system, including users, records, spatial datasets, dashboards, permissions and administrative workflows.",
     img: "/s5.png",
     route: "/dashboard",
-    color: "from-amber-500 to-orange-600",
+    color: "from-[#49B84A] to-[#004225]",
   },
   {
     icon: <Smartphone size={22} />,
     title: "Mobile Field Data / ODK",
     desc: "Collect, submit and manage mobile field survey data with GPS locations, parcel photos, verification notes and structured ODK-based cadastral forms.",
     img: "/s6.png",
-    color: "from-rose-500 to-red-700",
+    color: "from-[#0B7A3B] to-[#004225]",
   },
 ];
 
@@ -114,66 +101,52 @@ const FEATURES = [
     icon: <Map size={26} />,
     title: "Interactive Mapping",
     desc: "Explore parcel boundaries and cadastral data through intuitive map controls and layered visualization.",
-    bg: "bg-emerald-50",
-    iconBg: "bg-emerald-600",
+    bg: "bg-[#edf8ef]",
+    iconBg: "bg-[#0B7A3B]",
   },
   {
     icon: <BarChart3 size={26} />,
     title: "Data Analytics",
     desc: "Generate insights for verified area, pending surveys, parcel categories and project progress.",
-    bg: "bg-blue-50",
-    iconBg: "bg-blue-600",
+    bg: "bg-[#f0f9f1]",
+    iconBg: "bg-[#004225]",
   },
   {
     icon: <Box size={26} />,
     title: "3D Visualization",
     desc: "Support visual review of infrastructure, terrain context and project planning layers in immersive 3D.",
-    bg: "bg-violet-50",
-    iconBg: "bg-violet-600",
+    bg: "bg-[#edf8ef]",
+    iconBg: "bg-[#49B84A]",
   },
   {
     icon: <Database size={26} />,
     title: "Real-time Data",
     desc: "Integrate field survey observations, GPS evidence and centralized cadastral records seamlessly.",
-    bg: "bg-amber-50",
-    iconBg: "bg-amber-600",
+    bg: "bg-[#f0f9f1]",
+    iconBg: "bg-[#0B7A3B]",
   },
   {
     icon: <Shield size={26} />,
     title: "Secure Access",
     desc: "Role-based access control ensures the right data reaches the right teams at the right time.",
-    bg: "bg-rose-50",
-    iconBg: "bg-rose-600",
+    bg: "bg-[#edf8ef]",
+    iconBg: "bg-[#004225]",
   },
   {
     icon: <Zap size={26} />,
     title: "High Performance",
     desc: "Optimized tile serving and spatial indexing deliver fast map loads even for large datasets.",
-    bg: "bg-teal-50",
-    iconBg: "bg-teal-600",
+    bg: "bg-[#f0f9f1]",
+    iconBg: "bg-[#49B84A]",
   },
 ];
 
 const TEAM = [
   { name: "Project Director", role: "RUDA Cadastral Project", featured: true },
-  {
-    name: "Director GIS",
-    role: "GIS & Spatial Data Management",
-    featured: false,
-  },
-  {
-    name: "Cadastral Lead",
-    role: "Parcel Mapping & Land Records",
-    featured: false,
-  },
-  {
-    name: "Survey Manager",
-    role: "Field Operations & GPS Control",
-    featured: false,
-  },
+  { name: "Director GIS", role: "GIS & Spatial Data Management", featured: false },
+  { name: "Cadastral Lead", role: "Parcel Mapping & Land Records", featured: false },
+  { name: "Survey Manager", role: "Field Operations & GPS Control", featured: false },
 ];
-
-/* ─── helpers ────────────────────────────────────────────────────────────── */
 
 function Avatar({ name, size = "md" }) {
   const initials = name
@@ -182,16 +155,15 @@ function Avatar({ name, size = "md" }) {
     .join("")
     .slice(0, 2);
   const sz = size === "lg" ? "w-24 h-24 text-2xl" : "w-16 h-16 text-lg";
+
   return (
     <div
-      className={`${sz} rounded-full bg-gradient-to-br from-emerald-600 to-green-800 flex items-center justify-center text-white font-bold shrink-0`}
+      className={`${sz} rounded-full bg-gradient-to-br from-[#49B84A] to-[#004225] flex items-center justify-center text-white font-bold shrink-0`}
     >
       {initials}
     </div>
   );
 }
-
-/* ─── scroll-reveal hook ─────────────────────────────────────────────────── */
 
 function useInView(options = {}) {
   const ref = useRef(null);
@@ -200,6 +172,7 @@ function useInView(options = {}) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
     const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -209,14 +182,13 @@ function useInView(options = {}) {
       },
       { threshold: 0.15, ...options },
     );
+
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
   return [ref, visible];
 }
-
-/* ─── GIS app card ───────────────────────────────────────────────────────── */
 
 function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
   const [ref, visible] = useInView();
@@ -232,22 +204,19 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
         ${route ? "cursor-pointer" : "cursor-default"}`}
       style={{ transitionDelay: `${(index % 4) * 80}ms` }}
     >
-      {/* Image header */}
       <div className="relative h-56 overflow-hidden">
         <img
           src={img}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
-        {/* subtle dark overlay only at bottom for title legibility */}
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
 
-        {/* icon badge */}
         <div className="absolute top-4 left-4 w-10 h-10 rounded-xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-white">
           {icon}
         </div>
 
-        {/* open badge for linked cards */}
         {route && (
           <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <div className="flex items-center gap-1 bg-white/90 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full">
@@ -256,7 +225,6 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
           </div>
         )}
 
-        {/* title on image */}
         <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-8">
           <h3 className="text-white font-black text-base leading-snug drop-shadow-lg">
             {title}
@@ -264,25 +232,22 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
         </div>
       </div>
 
-      {/* body */}
       <div className="p-5">
         <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+
         {route && (
-          <div className="mt-4 flex items-center gap-1 text-emerald-700 font-bold text-sm group-hover:gap-2 transition-all">
+          <div className="mt-4 flex items-center gap-1 text-[#0B7A3B] font-bold text-sm group-hover:gap-2 transition-all">
             Open App <ArrowRight size={13} />
           </div>
         )}
       </div>
 
-      {/* bottom accent bar */}
       <div
         className={`h-0.5 w-0 group-hover:w-full bg-gradient-to-r ${color} transition-all duration-500`}
       />
     </article>
   );
 }
-
-/* ─── component ──────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -297,7 +262,6 @@ export default function LandingPage() {
       setScrolled(window.scrollY > 20);
       setShowTop(window.scrollY > 400);
 
-      // active nav highlight
       const offsets = NAV_LINKS.map(({ href }) => {
         const el = document.querySelector(href);
         return el
@@ -308,33 +272,33 @@ export default function LandingPage() {
       const current = offsets.filter((o) => o.top <= 120).at(-1);
       if (current) setActive(current.id);
     };
+
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Auto-advance hero slideshow every 5 s
   useEffect(() => {
     const timer = setInterval(() => {
       setSlideIndex((i) => (i + 1) % HERO_SLIDES.length);
     }, 5000);
+
     return () => clearInterval(timer);
   }, []);
 
   return (
     <div className="font-sans text-slate-800 bg-white overflow-x-hidden">
-      {/* ── Top strip ── */}
-      <div className="bg-gradient-to-r from-[#003f25] to-[#097947] text-white text-xs font-semibold tracking-widest flex items-center justify-center gap-4 py-2">
+      <div className="bg-gradient-to-r from-[#00351f] via-[#004225] to-[#0B7A3B] text-white text-xs font-semibold tracking-widest flex items-center justify-center gap-4 py-2">
         <span className="w-14 h-px bg-white/40" />
         RUDA CADASTRAL PROJECT — RAVI URBAN DEVELOPMENT AUTHORITY
         <span className="w-14 h-px bg-white/40" />
       </div>
 
-      {/* ── Sticky header ── */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? "bg-white shadow-lg" : "bg-white/95 backdrop-blur-sm shadow-sm"}`}
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled ? "bg-white shadow-lg" : "bg-white/95 backdrop-blur-sm shadow-sm"
+        }`}
       >
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between h-20">
-          {/* Brand */}
           <a href="#home" className="flex items-center gap-3 shrink-0">
             <img
               src="/Ruda_logo.jpg"
@@ -343,7 +307,6 @@ export default function LandingPage() {
             />
           </a>
 
-          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map(({ href, label }) => (
               <a
@@ -351,8 +314,8 @@ export default function LandingPage() {
                 href={href}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   activeSection === href.slice(1)
-                    ? "bg-emerald-700 text-white"
-                    : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-800"
+                    ? "bg-[#0B7A3B] text-white"
+                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
                 }`}
               >
                 {label}
@@ -360,17 +323,17 @@ export default function LandingPage() {
             ))}
           </nav>
 
-          {/* CTA + hamburger */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/Mapview")}
-              className="hidden sm:flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold px-5 py-2.5 rounded-full transition-all hover:shadow-lg hover:-translate-y-px"
+              className="hidden sm:flex items-center gap-2 bg-[#0B7A3B] hover:bg-[#004225] text-white text-sm font-bold px-5 py-2.5 rounded-full transition-all hover:shadow-lg hover:-translate-y-px"
             >
               Open Map <ArrowRight size={15} />
             </button>
+
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden p-2 rounded-lg bg-emerald-700 text-white"
+              className="md:hidden p-2 rounded-lg bg-[#0B7A3B] text-white"
               aria-label="Toggle menu"
             >
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -378,7 +341,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden bg-white border-t border-slate-100 px-5 py-4 flex flex-col gap-1 shadow-xl">
             {NAV_LINKS.map(({ href, label }) => (
@@ -386,14 +348,15 @@ export default function LandingPage() {
                 key={href}
                 href={href}
                 onClick={() => setMenuOpen(false)}
-                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition-colors"
+                className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225] transition-colors"
               >
                 {label}
               </a>
             ))}
+
             <button
               onClick={() => navigate("/Mapview")}
-              className="mt-2 flex items-center justify-center gap-2 bg-emerald-700 text-white text-sm font-bold px-5 py-3 rounded-full"
+              className="mt-2 flex items-center justify-center gap-2 bg-[#0B7A3B] text-white text-sm font-bold px-5 py-3 rounded-full"
             >
               Open Map <ArrowRight size={15} />
             </button>
@@ -401,14 +364,10 @@ export default function LandingPage() {
         )}
       </header>
 
-      {/* ══════════════════════════════════════════════════
-          HERO
-      ══════════════════════════════════════════════════ */}
       <section
         id="home"
         className="relative min-h-[92vh] flex items-center justify-center overflow-hidden"
       >
-        {/* ── Slideshow layers ── */}
         {HERO_SLIDES.map((src, i) => (
           <div
             key={src}
@@ -418,14 +377,12 @@ export default function LandingPage() {
               backgroundImage: `url('${src}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-              // subtle Ken Burns per slide
               animation:
                 i === slideIndex ? "kenBurns 10s ease-in-out forwards" : "none",
             }}
           />
         ))}
 
-        {/* Ken Burns keyframes injected once */}
         <style>{`
           @keyframes kenBurns {
             0%   { transform: scale(1)    translateX(0px)  translateY(0px);  }
@@ -433,10 +390,8 @@ export default function LandingPage() {
           }
         `}</style>
 
-        {/* dark overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/55 to-black/80 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black/85 z-10" />
 
-        {/* slide indicators */}
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex gap-2">
           {HERO_SLIDES.map((_, i) => (
             <button
@@ -445,27 +400,25 @@ export default function LandingPage() {
               aria-label={`Slide ${i + 1}`}
               className={`rounded-full transition-all duration-300 ${
                 i === slideIndex
-                  ? "w-6 h-2 bg-amber-400"
+                  ? "w-6 h-2 bg-[#49B84A]"
                   : "w-2 h-2 bg-white/40 hover:bg-white/70"
               }`}
             />
           ))}
         </div>
 
-        {/* content */}
         <div className="relative z-20 max-w-5xl mx-auto px-5 text-center text-white py-24">
-          {/* badge */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 text-white/90 text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-8">
-            <Star size={12} fill="currentColor" className="text-amber-400" />
+            <Star size={12} fill="currentColor" className="text-[#49B84A]" />
             Geospatial Platform for RUDA Project Area
           </div>
 
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.07] mb-8 tracking-tight">
             RUDA Cadastral
-            <span className="block text-amber-400 mt-1">GIS Portal</span>
+            <span className="block text-[#49B84A] mt-1">GIS Portal</span>
           </h1>
 
-          <p className="max-w-2xl mx-auto text-lg sm:text-xl text-white/80 leading-relaxed mb-12">
+          <p className="max-w-2xl mx-auto text-lg sm:text-xl text-white/85 leading-relaxed mb-12">
             A GIS-enabled cadastral platform for parcel mapping, land record
             visualization, field survey integration and decision support across
             the RUDA project area.
@@ -478,10 +431,11 @@ export default function LandingPage() {
                   .querySelector("#apps")
                   ?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="flex items-center gap-3 bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-base px-8 py-4 rounded-full transition-all hover:shadow-2xl hover:-translate-y-1"
+              className="flex items-center gap-3 bg-[#0B7A3B] hover:bg-[#004225] text-white font-black text-base px-8 py-4 rounded-full transition-all hover:shadow-2xl hover:-translate-y-1"
             >
               <Map size={20} /> Explore GIS Platforms
             </button>
+
             <a
               href="#about"
               className="flex items-center gap-3 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-base px-8 py-4 rounded-full transition-all backdrop-blur"
@@ -491,12 +445,11 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Stats bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm border-t border-white/10 z-20">
+        <div className="absolute bottom-0 left-0 right-0 bg-black/45 backdrop-blur-sm border-t border-white/10 z-20">
           <div className="max-w-4xl mx-auto px-5 py-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-white text-center">
             {STATS.map(({ value, label }) => (
               <div key={label}>
-                <div className="text-2xl sm:text-3xl font-black text-amber-400">
+                <div className="text-2xl sm:text-3xl font-black text-[#49B84A]">
                   {value}
                 </div>
                 <div className="text-xs font-semibold text-white/70 mt-1 uppercase tracking-wide">
@@ -508,21 +461,20 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          ABOUT
-      ══════════════════════════════════════════════════ */}
       <section id="about" className="py-28 bg-white">
         <div className="max-w-6xl mx-auto px-5 grid lg:grid-cols-2 gap-16 items-center">
-          {/* text */}
           <div>
-            <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-6">
+            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-6">
               About the Platform
             </div>
+
             <h2 className="text-4xl lg:text-5xl font-black text-slate-900 leading-tight mb-4">
               RUDA Cadastral
-              <span className="block text-emerald-700">GIS Platform</span>
+              <span className="block text-[#0B7A3B]">GIS Platform</span>
             </h2>
-            <div className="w-16 h-1.5 bg-amber-400 rounded-full mb-8" />
+
+            <div className="w-16 h-1.5 bg-[#49B84A] rounded-full mb-8" />
+
             <div className="space-y-5 text-slate-600 text-base leading-relaxed">
               <p>
                 The RUDA Cadastral Project is designed as a centralized
@@ -543,15 +495,15 @@ export default function LandingPage() {
                 RUDA project area.
               </p>
             </div>
+
             <button
               onClick={() => navigate("/Mapview/MapPage")}
-              className="mt-10 inline-flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-7 py-3.5 rounded-full transition-all hover:shadow-lg"
+              className="mt-10 inline-flex items-center gap-2 bg-[#0B7A3B] hover:bg-[#004225] text-white font-bold px-7 py-3.5 rounded-full transition-all hover:shadow-lg"
             >
               Open Cadastral Map <ArrowRight size={16} />
             </button>
           </div>
 
-          {/* visual card */}
           <div className="relative">
             <div className="rounded-3xl overflow-hidden shadow-2xl">
               <img
@@ -563,22 +515,20 @@ export default function LandingPage() {
                   e.currentTarget.nextSibling.style.display = "flex";
                 }}
               />
-              {/* fallback */}
-              <div className="hidden w-full h-[420px] bg-gradient-to-br from-emerald-800 to-green-900 items-center justify-center">
+
+              <div className="hidden w-full h-[420px] bg-gradient-to-br from-[#004225] to-[#00351f] items-center justify-center">
                 <Map size={80} className="text-white/30" />
               </div>
             </div>
 
-            {/* floating badge */}
-            <div className="absolute -bottom-6 -left-6 bg-amber-400 text-slate-900 rounded-2xl p-5 shadow-xl">
+            <div className="absolute -bottom-6 -left-6 bg-[#49B84A] text-white rounded-2xl p-5 shadow-xl">
               <div className="text-3xl font-black">2026</div>
               <div className="text-xs font-bold uppercase tracking-wide">
                 Active Platform
               </div>
             </div>
 
-            {/* floating stat */}
-            <div className="absolute -top-6 -right-6 bg-emerald-700 text-white rounded-2xl px-5 py-4 shadow-xl">
+            <div className="absolute -top-6 -right-6 bg-[#004225] text-white rounded-2xl px-5 py-4 shadow-xl">
               <div className="text-2xl font-black">340 km²</div>
               <div className="text-xs font-semibold opacity-80">
                 Coverage Area
@@ -588,19 +538,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          GIS APPS
-      ══════════════════════════════════════════════════ */}
       <section id="apps" className="py-28 bg-slate-50">
         <div className="max-w-6xl mx-auto px-5">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
+            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
               GIS Applications
             </div>
+
             <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-4">
               Explore RUDA GIS Apps
             </h2>
-            <div className="w-16 h-1.5 bg-amber-400 rounded-full mx-auto mb-6" />
+
+            <div className="w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-6" />
+
             <p className="max-w-xl mx-auto text-slate-500 text-base leading-relaxed">
               Interactive applications for cadastral mapping, land record
               review, field survey tracking and spatial decision support.
@@ -625,19 +575,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          FEATURES
-      ══════════════════════════════════════════════════ */}
       <section id="features" className="py-28 bg-white">
         <div className="max-w-6xl mx-auto px-5">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-800 text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
+            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
               Platform Capabilities
             </div>
+
             <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-4">
               Platform Features
             </h2>
-            <div className="w-16 h-1.5 bg-amber-400 rounded-full mx-auto mb-6" />
+
+            <div className="w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-6" />
+
             <p className="max-w-xl mx-auto text-slate-500 text-base leading-relaxed">
               Purpose-built GIS capabilities for cadastral operations, field
               verification and land management decision support.
@@ -655,25 +605,24 @@ export default function LandingPage() {
                 >
                   {icon}
                 </div>
+
                 <h3 className="font-black text-slate-900 text-base mb-2">
                   {title}
                 </h3>
+
                 <p className="text-slate-500 text-[13px] leading-relaxed">
                   {desc}
-                </p>{" "}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          MAP PREVIEW BAND
-      ══════════════════════════════════════════════════ */}
       <section
         className="relative py-24 overflow-hidden"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(0,45,25,0.92) 40%, rgba(0,45,25,0.75) 100%), url('/s3.png')`,
+          backgroundImage: `linear-gradient(to right, rgba(0,53,31,0.94) 40%, rgba(0,66,37,0.78) 100%), url('/s3.png')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -683,17 +632,20 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-6">
               Live Platform
             </div>
+
             <h2 className="text-4xl lg:text-5xl font-black leading-tight mb-6">
               Start Exploring the
-              <span className="block text-amber-400">Cadastral Map</span>
+              <span className="block text-[#49B84A]">Cadastral Map</span>
             </h2>
+
             <p className="text-white/75 text-base leading-relaxed mb-8 max-w-md">
               Access parcel-level data, administrative boundaries, survey layers
               and more — all in one interactive GIS environment.
             </p>
+
             <button
               onClick={() => navigate("/Mapview/MapPage")}
-              className="inline-flex items-center gap-3 bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-base px-8 py-4 rounded-full transition-all hover:shadow-xl hover:-translate-y-1"
+              className="inline-flex items-center gap-3 bg-[#0B7A3B] hover:bg-[#004225] text-white font-black text-base px-8 py-4 rounded-full transition-all hover:shadow-xl hover:-translate-y-1"
             >
               <Map size={20} /> Launch Cadastral Map
             </button>
@@ -710,9 +662,10 @@ export default function LandingPage() {
                 key={lbl}
                 className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-6 text-white text-center"
               >
-                <div className="text-3xl font-black text-amber-400 mb-1">
+                <div className="text-3xl font-black text-[#49B84A] mb-1">
                   {val}
                 </div>
+
                 <div className="text-xs font-semibold text-white/70 uppercase tracking-wide">
                   {lbl}
                 </div>
@@ -722,35 +675,34 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          TEAM
-      ══════════════════════════════════════════════════ */}
       <section id="team" className="py-28 bg-slate-50">
         <div className="max-w-5xl mx-auto px-5">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
+            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
               The Team
             </div>
+
             <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-4">
               Meet Our Team
             </h2>
-            <div className="w-16 h-1.5 bg-amber-400 rounded-full mx-auto" />
+
+            <div className="w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto" />
           </div>
 
-          {/* featured member */}
           <div className="flex flex-col items-center mb-10">
             <Avatar name="Project Director" size="lg" />
+
             <div className="mt-4 text-center">
               <div className="font-black text-slate-900 text-lg">
                 Project Director
               </div>
-              <div className="text-sm text-emerald-700 font-semibold mt-0.5">
+
+              <div className="text-sm text-[#0B7A3B] font-semibold mt-0.5">
                 RUDA Cadastral Project
               </div>
             </div>
           </div>
 
-          {/* other members */}
           <div className="grid sm:grid-cols-3 gap-6 max-w-2xl mx-auto">
             {TEAM.filter((m) => !m.featured).map(({ name, role }) => (
               <div
@@ -758,6 +710,7 @@ export default function LandingPage() {
                 className="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100"
               >
                 <Avatar name={name} />
+
                 <div className="mt-4">
                   <div className="font-bold text-slate-900 text-sm">{name}</div>
                   <div className="text-xs text-slate-500 mt-1">{role}</div>
@@ -768,12 +721,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          FOOTER / CONTACT
-      ══════════════════════════════════════════════════ */}
       <footer id="contact" className="bg-[#00351f] text-white">
         <div className="max-w-6xl mx-auto px-5 pt-16 pb-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-6">
               <img
@@ -787,11 +736,13 @@ export default function LandingPage() {
                 className="w-12 h-12 rounded-lg object-contain bg-white p-1"
               />
             </div>
+
             <p className="text-white/70 text-sm leading-relaxed mb-6">
               RUDA Cadastral Project is a GIS-enabled initiative for digital
               cadastral mapping, parcel intelligence and spatial decision
               support for the Ravi Urban Development Authority project area.
             </p>
+
             <div className="flex gap-2">
               {[
                 { icon: <Facebook size={15} />, href: "#" },
@@ -802,7 +753,7 @@ export default function LandingPage() {
                 <a
                   key={i}
                   href={href}
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-amber-400 hover:text-slate-900 flex items-center justify-center transition-all"
+                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-[#49B84A] hover:text-white flex items-center justify-center transition-all"
                 >
                   {icon}
                 </a>
@@ -810,15 +761,15 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* quick links */}
           <div>
             <h3 className="font-black text-base mb-5">Quick Links</h3>
+
             <div className="flex flex-col gap-2.5">
               {NAV_LINKS.map(({ href, label }) => (
                 <a
                   key={href}
                   href={href}
-                  className="text-white/70 hover:text-amber-400 text-sm transition-colors flex items-center gap-2"
+                  className="text-white/70 hover:text-[#49B84A] text-sm transition-colors flex items-center gap-2"
                 >
                   <ArrowRight size={12} /> {label}
                 </a>
@@ -826,28 +777,30 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* contact info */}
           <div>
             <h3 className="font-black text-base mb-5">Contact Info</h3>
+
             <div className="flex flex-col gap-4">
               <div className="flex gap-3 text-white/70 text-sm">
-                <MapPin size={16} className="shrink-0 mt-0.5 text-amber-400" />
+                <MapPin size={16} className="shrink-0 mt-0.5 text-[#49B84A]" />
                 Ravi Urban Development Authority, Lahore, Pakistan
               </div>
+
               <div className="flex gap-3 text-white/70 text-sm">
-                <Phone size={16} className="shrink-0 text-amber-400" />
+                <Phone size={16} className="shrink-0 text-[#49B84A]" />
                 +92-42-99333531-6
               </div>
+
               <div className="flex gap-3 text-white/70 text-sm">
-                <Mail size={16} className="shrink-0 text-amber-400" />
+                <Mail size={16} className="shrink-0 text-[#49B84A]" />
                 info@ruda.gov.pk
               </div>
             </div>
           </div>
 
-          {/* contact form */}
           <div>
             <h3 className="font-black text-base mb-5">Send a Message</h3>
+
             <form
               className="flex flex-col gap-3"
               onSubmit={(e) => e.preventDefault()}
@@ -856,17 +809,19 @@ export default function LandingPage() {
                 <input
                   key={ph}
                   placeholder={ph}
-                  className="bg-white/10 border border-white/15 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none focus:border-amber-400 transition-colors"
+                  className="bg-white/10 border border-white/15 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none focus:border-[#49B84A] transition-colors"
                 />
               ))}
+
               <textarea
                 placeholder="Your Message"
                 rows={3}
-                className="bg-white/10 border border-white/15 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none focus:border-amber-400 transition-colors resize-none"
+                className="bg-white/10 border border-white/15 rounded-lg px-4 py-2.5 text-sm text-white placeholder-white/40 outline-none focus:border-[#49B84A] transition-colors resize-none"
               />
+
               <button
                 type="submit"
-                className="bg-amber-400 hover:bg-amber-300 text-slate-900 font-black text-sm py-2.5 rounded-lg transition-colors"
+                className="bg-[#0B7A3B] hover:bg-[#49B84A] text-white font-black text-sm py-2.5 rounded-lg transition-colors"
               >
                 Send Message
               </button>
@@ -880,11 +835,10 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* Back to top */}
       {showTop && (
         <a
           href="#home"
-          className="fixed right-6 bottom-6 z-50 w-11 h-11 bg-amber-400 hover:bg-amber-300 text-slate-900 rounded-full flex items-center justify-center shadow-xl transition-all hover:-translate-y-1"
+          className="fixed right-6 bottom-6 z-50 w-11 h-11 bg-[#0B7A3B] hover:bg-[#004225] text-white rounded-full flex items-center justify-center shadow-xl transition-all hover:-translate-y-1"
           aria-label="Back to top"
         >
           <ChevronUp size={20} strokeWidth={2.5} />
