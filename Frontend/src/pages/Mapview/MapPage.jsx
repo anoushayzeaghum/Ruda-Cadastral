@@ -47,7 +47,7 @@ const getLandType = (props = {}) => {
 export default function MapPage() {
   const outletContext = useOutletContext() ?? {};
   console.log("outletContext =", outletContext);
-console.log("filters =", outletContext?.filters);
+  console.log("filters =", outletContext?.filters);
   const filters = outletContext.filters;
 
   const mapShellRef = useRef(null);
@@ -56,7 +56,7 @@ console.log("filters =", outletContext?.filters);
   const [parcelPanelOpen, setParcelPanelOpen] = useState(false);
 
   const [layers, setLayers] = useState({
-    rudaBoundary: { visible: false, opacity: 10 },
+    rudaBoundary: { visible: false, opacity: 70 },
     districtBoundary: { visible: true, opacity: 0 },
     tehsilBoundary: { visible: true, opacity: 0 },
     mauzaBoundary: { visible: true, opacity: 0 },
@@ -347,9 +347,10 @@ console.log("filters =", outletContext?.filters);
 
   // Reset the printMap flag immediately after it fires so it can be triggered again
   useEffect(() => {
-    const isPrint = typeof layers?.printMap === "object"
-      ? layers.printMap.visible
-      : !!layers?.printMap;
+    const isPrint =
+      typeof layers?.printMap === "object"
+        ? layers.printMap.visible
+        : !!layers?.printMap;
 
     if (!isPrint) return;
 
@@ -388,7 +389,7 @@ console.log("filters =", outletContext?.filters);
         />
 
         {/* <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} /> */}
-{console.log("filters:", filters)}
+        {console.log("filters:", filters)}
         {filters && (
           <SubHeader
             filters={filters}

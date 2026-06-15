@@ -23,10 +23,7 @@ const getTehsilId = (tehsil) =>
   tehsil?.id ?? tehsil?.gid ?? tehsil?.properties?.id;
 
 const getMauzaId = (mauza) =>
-  mauza?.mauza_id ??
-  mauza?.properties?.mauza_id ??
-  mauza?.id ??
-  mauza?.gid;
+  mauza?.mauza_id ?? mauza?.properties?.mauza_id ?? mauza?.id ?? mauza?.gid;
 
 const getSocietyPk = (society) =>
   society?.gid ?? society?.id ?? society?.objectid ?? society?.properties?.gid;
@@ -80,7 +77,7 @@ export default function SocietyMapPage() {
   const [selectedProposedRoadIds, setSelectedProposedRoadIds] = useState([]);
 
   const [layers, setLayers] = useState({
-    rudaBoundary: { visible: false, opacity: 10 },
+    rudaBoundary: { visible: false, opacity: 70 },
     proposedRoads: { visible: false, opacity: 100 },
 
     districtBoundary: { visible: true, opacity: 0 },
@@ -178,14 +175,19 @@ export default function SocietyMapPage() {
     return () => {
       mounted = false;
     };
-  }, [selectedMauzaId, filters?.selectedMauzaDetails, filters?.selectedMauzaOption]);
+  }, [
+    selectedMauzaId,
+    filters?.selectedMauzaDetails,
+    filters?.selectedMauzaOption,
+  ]);
 
   const selectedSociety = useMemo(() => {
     if (!selectedSocietyId) return null;
 
     return (
       societyOptions.find(
-        (society) => toText(getSocietyPk(society)) === toText(selectedSocietyId),
+        (society) =>
+          toText(getSocietyPk(society)) === toText(selectedSocietyId),
       ) || null
     );
   }, [societyOptions, selectedSocietyId]);
@@ -285,7 +287,8 @@ export default function SocietyMapPage() {
         if (!activeKeys.has(key)) return;
 
         const defaultOpacity = key === "societyBoundary" ? 25 : 0;
-        const shouldBeVisible = key === "societyBoundary" ? !!selectedSociety : true;
+        const shouldBeVisible =
+          key === "societyBoundary" ? !!selectedSociety : true;
         const current = next[key];
 
         if (!current || typeof current !== "object") {
@@ -366,7 +369,9 @@ export default function SocietyMapPage() {
           setSelectedProposedRoadIds={setSelectedProposedRoadIds}
           basemap={basemap}
           setBasemap={setBasemap}
-          selectedMauza={filters?.selectedMauzaDetails || filters?.selectedMauza}
+          selectedMauza={
+            filters?.selectedMauzaDetails || filters?.selectedMauza
+          }
           selectedSociety={selectedSociety}
           selectedFilterLayers={selectedFilterLayers}
         />
@@ -562,7 +567,9 @@ function useSocietyFilters() {
   };
 
   const handleMauzaChange = (eventOrValue) => {
-    const value = eventOrValue?.target ? eventOrValue.target.value : eventOrValue;
+    const value = eventOrValue?.target
+      ? eventOrValue.target.value
+      : eventOrValue;
     setSelectedMauza(toText(value));
   };
 
@@ -575,7 +582,9 @@ function useSocietyFilters() {
   );
 
   const selectedMauzaDetails =
-    mauzas.find((mauza) => toText(getMauzaId(mauza)) === toText(selectedMauza)) ||
+    mauzas.find(
+      (mauza) => toText(getMauzaId(mauza)) === toText(selectedMauza),
+    ) ||
     (selectedMauza
       ? {
           id: selectedMauza,
