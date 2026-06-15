@@ -47,7 +47,7 @@ const getLandType = (props = {}) => {
 export default function MapPage() {
   const outletContext = useOutletContext() ?? {};
   console.log("outletContext =", outletContext);
-  console.log("filters =", outletContext?.filters);
+console.log("filters =", outletContext?.filters);
   const filters = outletContext.filters;
 
   const mapShellRef = useRef(null);
@@ -56,20 +56,20 @@ export default function MapPage() {
   const [parcelPanelOpen, setParcelPanelOpen] = useState(false);
 
   const [layers, setLayers] = useState({
-    rudaBoundary: { visible: false, opacity: 70 },
+    rudaBoundary: { visible: false, opacity: 10 },
+    proposedRoads: { visible: false, opacity: 100 },
+    geodeticNetwork: { visible: false, opacity: 100 },
     districtBoundary: { visible: true, opacity: 0 },
     tehsilBoundary: { visible: true, opacity: 0 },
     mauzaBoundary: { visible: true, opacity: 0 },
     khasraLayer: { visible: false, opacity: 25 },
-    squareBoundary: { visible: false, opacity: 25 },
-    acreBoundary: { visible: false, opacity: 25 },
+    squareLayer: { visible: false, opacity: 35 },
+    acreLayer: { visible: false, opacity: 35 },
     murabbaLayer: { visible: false, opacity: 25 },
+    controlPoints: { visible: false, opacity: 100 },
     triJunctionPoints: { visible: false, opacity: 100 },
     fieldPoints: { visible: false, opacity: 100 },
-    controlPoints: { visible: false, opacity: 100 },
-    proposedRoads: { visible: false, opacity: 100 },
-    geodeticNetwork: { visible: false, opacity: 100 },
-    mussavi: { visible: false, opacity: 100 },
+    mussaviLayer: { visible: false, opacity: 100 },
   });
 
   const [rudaPhases, setRudaPhases] = useState([]);
@@ -281,13 +281,18 @@ export default function MapPage() {
         }
 
         if (typeof next[key] !== "object") {
-          next[key] = { visible: true, opacity: 100 };
+          next[key] = { visible: !!next[key], opacity: 100 };
           changed = true;
-          return;
         }
 
-        if (next[key].visible !== true) {
-          next[key] = { ...next[key], visible: true };
+        if (
+          (key === "khasraLayer" || key === "murabbaLayer") &&
+          next[key]?.visible !== true
+        ) {
+          next[key] = {
+            ...next[key],
+            visible: true,
+          };
           changed = true;
         }
       });
@@ -347,10 +352,9 @@ export default function MapPage() {
 
   // Reset the printMap flag immediately after it fires so it can be triggered again
   useEffect(() => {
-    const isPrint =
-      typeof layers?.printMap === "object"
-        ? layers.printMap.visible
-        : !!layers?.printMap;
+    const isPrint = typeof layers?.printMap === "object"
+      ? layers.printMap.visible
+      : !!layers?.printMap;
 
     if (!isPrint) return;
 
@@ -389,7 +393,7 @@ export default function MapPage() {
         />
 
         {/* <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} /> */}
-        {console.log("filters:", filters)}
+{console.log("filters:", filters)}
         {filters && (
           <SubHeader
             filters={filters}
