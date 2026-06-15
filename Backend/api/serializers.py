@@ -550,20 +550,37 @@ class PlotSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Plot
         geo_field = "geom"
+        id_field = "gid"
 
         fields = (
             "gid",
-            "name", "type", "remarks", "project_id", "block_id"
-            "plot_no", "plot_area",
+            "name",
+            "type",
+            "remarks",
+            "project_id",
+            "block_id",
+            "plot_no",
+            "plot_area",
             "block",
-            "shape_leng", "shape_area", "dimension", "parkfront", "rd_ft", "storey", "rd_facing",
-            "h", "demar",
+            "shape_leng",
+            "shape_area",
+            "dimension",
+            "parkfront",
+            "rd_ft",
+            "storey",
+            "rd_facing",
+            "h",
+            "demar",
             "possession",
             "poss_st",
             "canceled",
             "site_plan",
             "unique_id",
-            "tr_srno", "tr_own", "tr_p_no", "tr_cate",
+            "tr_srno",
+            "tr_own",
+            "tr_p_no",
+            "tr_cate",
+            "geom",
         )
 
 # --------------------------------------------------------

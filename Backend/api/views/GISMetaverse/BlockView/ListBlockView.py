@@ -12,25 +12,15 @@ class ListBlockView(viewsets.ViewSet):
             gid = request.query_params.get("gid")
             name = request.query_params.get("name")
             block = request.query_params.get("block")
+            project_id = request.query_params.get("project_id")
+
+            queryset = Block.objects.all().order_by("gid")
 
             if gid:
-                obj = Block.objects.filter(gid=gid).first()
+                queryset = queryset.filter(gid=gid)
 
-                if not obj:
-                    return ApiResponse(
-                        status=status.HTTP_404_NOT_FOUND,
-                        message="Block not found.",
-                        http_status=status.HTTP_404_NOT_FOUND,
-                    ).create_response()
-
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Block found.",
-                    data=BlockSerializer(obj).data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
-
-            queryset = Block.objects.all()
+            if project_id:
+                queryset = queryset.filter(project_id=project_id)
 
             if name:
                 queryset = queryset.filter(name__icontains=name)
@@ -44,33 +34,6 @@ class ListBlockView(viewsets.ViewSet):
                 status=status.HTTP_200_OK,
                 message="Block list fetched successfully.",
                 data=serializer.data,
-                http_status=status.HTTP_200_OK,
-            ).create_response()
-
-        except Exception as e:
-            return ApiResponse(
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                message="Server error.",
-                data=str(e),
-                http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ).create_response()
-
-    @action(detail=True, methods=["get"], url_path="geojson", url_name="geojson")
-    def geojson(self, request, pk=None):
-        try:
-            obj = Block.objects.filter(gid=pk).first()
-
-            if not obj:
-                return ApiResponse(
-                    status=status.HTTP_404_NOT_FOUND,
-                    message="Block not found.",
-                    http_status=status.HTTP_404_NOT_FOUND,
-                ).create_response()
-
-            return ApiResponse(
-                status=status.HTTP_200_OK,
-                message="GeoJSON fetched.",
-                data=BlockSerializer(obj).data,
                 http_status=status.HTTP_200_OK,
             ).create_response()
 

@@ -10,15 +10,39 @@ export default function MetaverseDashboard() {
   const [isMapReady, setIsMapReady] = useState(false);
   const [activeTool, setActiveTool] = useState("layers");
 
+  const [metaverseFilters, setMetaverseFilters] = useState({
+    projectId: "",
+    block: "",
+    plotType: "",
+    plotNo: "",
+    area: "",
+  });
+
+  const handleReset = () => {
+    setMetaverseFilters({
+      projectId: "",
+      block: "",
+      plotType: "",
+      plotNo: "",
+      area: "",
+    });
+  };
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#111827]">
       <Header />
 
       <div className="relative h-[calc(100vh-56px)] w-full">
-        <GISMetaverseMap mapRef={mapRef} setIsMapReady={setIsMapReady} />
+        <GISMetaverseMap
+          mapRef={mapRef}
+          setIsMapReady={setIsMapReady}
+          filters={metaverseFilters}
+        />
 
         <MetaverseSubHeader
-          onReset={() => console.log("Reset clicked")}
+          filters={metaverseFilters}
+          setFilters={setMetaverseFilters}
+          onReset={handleReset}
           onCalendarClick={() => console.log("Calendar clicked")}
         />
 
