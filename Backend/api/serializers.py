@@ -182,14 +182,11 @@ class MurabbaSerializer(GeoFeatureModelSerializer):
             "dist_id",
             "tehsil",
             "tehsil_id",
-            "kc",
-            "kc_id",
             "pc",
             "pc_id",
             "mauza",
             "mauza_id",
             "murabba_no",
-            "sheets",
             "geom",
         )
 
