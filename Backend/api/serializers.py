@@ -503,3 +503,148 @@ class GeodeticNetworkSerializer(GeoFeatureModelSerializer):
             "elevation",
             "geom",
         )
+# --------------------------------------------------------
+# Project Serializer
+# --------------------------------------------------------
+class ProjectSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Project
+        geo_field = "geom"
+        id_field = "gid"
+        fields = (
+            "gid",
+            "name", "type", "brief_name",
+            "geom"
+        )
+
+# --------------------------------------------------------
+# Block Serializer
+# --------------------------------------------------------
+
+class BlockSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = Block
+        geo_field = "geom"
+        fields = ("gid", "name", "area", "block" , "geom", "project_id")
+
+
+# --------------------------------------------------------
+# BlockLevel Serializer
+# --------------------------------------------------------
+class BlockLevelSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = BlockLevel
+        geo_field = "geom"
+        fields = (
+            "gid",
+            "name",
+            "block",
+            "dimension",
+        )
+
+# --------------------------------------------------------
+# Plot Serializer
+# --------------------------------------------------------
+class PlotSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = Plot
+        geo_field = "geom"
+
+        fields = (
+            "gid",
+            "name", "type", "remarks", "project_id", "block_id"
+            "plot_no", "plot_area",
+            "block",
+            "shape_leng", "shape_area", "dimension", "parkfront", "rd_ft", "storey", "rd_facing",
+            "h", "demar",
+            "possession",
+            "poss_st",
+            "canceled",
+            "site_plan",
+            "unique_id",
+            "tr_srno", "tr_own", "tr_p_no", "tr_cate",
+        )
+
+# --------------------------------------------------------
+# Road Serializer
+# --------------------------------------------------------
+class RoadSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = Road
+        geo_field = "geom"
+
+        fields = (
+            "gid",
+            "name",
+            "block",
+            "width",
+            "road_type",
+            "description",
+        )
+
+# --------------------------------------------------------
+# CameraLocation Serializer
+# --------------------------------------------------------
+
+class CameraLocationSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = CameraLocation
+        geo_field = "geom"
+
+        fields = (
+            "gid",
+            "sr_no_",
+            "project",
+            "camera",
+            "y",
+            "x",
+            "coordinate",
+            "iframe_lin",
+        )
+
+# --------------------------------------------------------
+# SWPoint Serializer
+# --------------------------------------------------------
+
+class SWPointSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = SWPoint
+        geo_field = "geom"
+
+        fields = (
+            "gid",
+            "type",
+            "name",
+        )
+
+# --------------------------------------------------------
+# WSL Serializer
+# --------------------------------------------------------
+class WSLSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = WSL
+        geo_field = "geom"
+
+        fields = (
+            "gid",
+            "shape_leng",
+            "dia",
+            "type",
+            "name",
+        )
+
+# --------------------------------------------------------
+# WSPoint Serializer
+# --------------------------------------------------------
+
+class WSPointSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = WSPoint
+        geo_field = "geom"
+
+        fields = (
+            "gid",
+            "type",
+            "name",
+        )

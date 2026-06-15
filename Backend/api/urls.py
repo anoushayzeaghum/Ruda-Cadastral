@@ -102,6 +102,62 @@ router.register(r"geodeticnetwork/create", CreateGeodeticNetworkView, basename="
 router.register(r"geodeticnetwork/update", UpdateGeodeticNetworkView, basename="update-geodeticnetwork")
 router.register(r"geodeticnetwork/delete", DeleteGeodeticNetworkView, basename="delete-geodeticnetwork")
 
+
+# ------------------------------ Project Views ------------------------------
+router.register(r"project", ListProjectView, basename="project")
+router.register(r"project/create", CreateProjectView, basename="create-project")
+router.register(r"project/update", UpdateProjectView, basename="update-project")
+router.register(r"project/delete", DeleteProjectView, basename="delete-project")
+
+
+# ------------------------------ Block Views ------------------------------
+router.register(r"block", ListBlockView, basename="block")
+router.register(r"block/create", CreateBlockView, basename="create-block")
+router.register(r"block/update", UpdateBlockView, basename="update-block")
+router.register(r"block/delete", DeleteBlockView, basename="delete-block")
+
+# ------------------------------ BLock Level Views ------------------------------
+router.register(r"block-level", ListBlockLevelView, basename="block-level")
+router.register(r"block-level/create", CreateBlockLevelView, basename="create-block-level")
+router.register(r"block-level/update", UpdateBlockLevelView, basename="update-block-level")
+router.register(r"block-level/delete", DeleteBlockLevelView, basename="delete-block-level")
+
+# ------------------------------ Plot Views ------------------------------
+router.register(r"plot", ListPlotView, basename="plot")
+router.register(r"plot/create", CreatePlotView, basename="create-plot")
+router.register(r"plot/update", UpdatePlotView, basename="update-plot")
+router.register(r"plot/delete", DeletePlotView, basename="delete-plot")
+
+# ------------------------------ Road Views ------------------------------
+router.register(r"road", ListRoadView, basename="road")
+router.register(r"road/create", CreateRoadView, basename="create-road")
+router.register(r"road/update", UpdateRoadView, basename="update-road")
+router.register(r"road/delete", DeleteRoadView, basename="delete-road")
+
+# ------------------------------ Camera Location Views ------------------------------
+router.register(r"camera-location", ListCameraLocationView, basename="camera-location")
+router.register(r"camera-location/create", CreateCameraLocationView, basename="create-camera-location")
+router.register(r"camera-location/update", UpdateCameraLocationView, basename="update-camera-location")
+router.register(r"camera-location/delete", DeleteCameraLocationView, basename="delete-camera-location")
+
+# ------------------------------ SW PointViews ------------------------------
+router.register(r"swpoint-cb1", ListSWPointView, basename="swpoint-cb1")
+router.register(r"swpoint-cb1/create", CreateSWPointView, basename="create-swpoint-cb1")
+router.register(r"swpoint-cb1/update", UpdateSWPointView, basename="update-swpoint-cb1")
+router.register(r"swpoint-cb1/delete", DeleteSWPointView, basename="delete-swpoint-cb1")
+
+# ------------------------------ WSL CB1 Views ------------------------------
+router.register(r"wsl-cb1", ListWSLView, basename="wsl-cb1")
+router.register(r"wsl-cb1/create", CreateWSLView, basename="create-wsl-cb1")
+router.register(r"wsl-cb1/update", UpdateWSLView, basename="update-wsl-cb1")
+router.register(r"wsl-cb1/delete", DeleteWSLView, basename="delete-wsl-cb1")
+
+# ------------------------------ WS Point Features CB1 ------------------------------
+router.register(r"wspoint-features-cb1", ListWSPointView, basename="wspoint-features-cb1")
+router.register(r"wspoint-features-cb1/create", CreateWSPointView, basename="create-wspoint-features-cb1")
+router.register(r"wspoint-features-cb1/update", UpdateWSPointView, basename="update-wspoint-features-cb1")
+router.register(r"wspoint-features-cb1/delete", DeleteWSPointView, basename="delete-wspoint-features-cb1")
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
