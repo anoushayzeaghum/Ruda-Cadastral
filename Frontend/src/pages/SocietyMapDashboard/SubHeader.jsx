@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Video, X } from "lucide-react";
 
 export default function SubHeader({
   filters,
@@ -40,97 +40,151 @@ export default function SubHeader({
       ? "No Society"
       : selectedSocietyName;
 
+  const [videoOpen, setVideoOpen] = useState(false);
+
+  // Show drone video button only when a society is selected
+  const showDroneBtn = !!selectedSocietyId;
+
   return (
-    /* Outer wrapper — overflow-visible so portalled menus aren't clipped */
-    <div className="absolute top-4 left-[46%] z-30 w-fit max-w-[calc(100vw-96px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
-
-      {/* Scrollable row — only x scrolls; y stays visible via the portal trick */}
-      <div
-        className="flex items-center gap-1.5 px-2 py-1.5"
-        style={{
-          overflowX: "auto",
-          overflowY: "visible",
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-          /* Chrome/Safari scrollbar hidden via global style injected below */
-        }}
-      >
-        {/* Inject webkit scrollbar rule once */}
-        <style>{`
-          .sh-scroll-row::-webkit-scrollbar { display: none; }
-        `}</style>
-
-        <FilterCard
-          label="District — ضلع"
-          value={getMultiValueDisplay({
-            options: districts,
-            selected: selectedDistrict,
-            idKey: "id",
-            labelKey: "name",
-          })}
+    <>
+      {/* ── Drone video modal ── */}
+      {videoOpen && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setVideoOpen(false)}
         >
-          <MultiSelectDropdown
-            options={districts.map((d) => ({ value: String(d.id), label: d.name }))}
-            selectedValues={selectedDistrict}
-            onToggle={filters.handleDistrictChange}
-            disabled={filters.loading?.districts}
-          />
-        </FilterCard>
+          <div
+            className="relative w-full max-w-4xl mx-4 rounded-2xl overflow-hidden shadow-2xl bg-black"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* header */}
+            <div className="flex items-center justify-between bg-[#0f3d2e] px-4 py-2.5">
+              <div className="flex items-center gap-2 text-white font-semibold text-sm">
+                <Video size={16} />
+                Drone Video — {selectedSocietyName}
+              </div>
+              <button
+                type="button"
+                onClick={() => setVideoOpen(false)}
+                className="text-white/70 hover:text-white transition"
+                aria-label="Close video"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-        <FilterCard
-          label="Tehsil — تحصیل"
-          value={getMultiValueDisplay({
-            options: tehsils,
-            selected: selectedTehsil,
-            idKey: "id",
-            labelKey: "name",
-          })}
+            {/* video */}
+            <video
+              src="/Ruda Chahar Bagh Drone Video 1.mp4"
+              controls
+              autoPlay
+              className="w-full max-h-[70vh] bg-black"
+            />
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {/* ── Filter bar ── */}
+      <div className="absolute top-4 left-[46%] z-30 w-fit max-w-[calc(100vw-96px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
+        <div
+          className="flex items-center gap-1.5 px-2 py-1.5"
+          style={{
+            overflowX: "auto",
+            overflowY: "visible",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
         >
-          <MultiSelectDropdown
-            options={tehsils.map((t) => ({ value: String(t.id), label: t.name }))}
-            selectedValues={selectedTehsil}
-            onToggle={filters.handleTehsilChange}
-            disabled={!selectedDistrict.length || filters.loading?.tehsils}
-          />
-        </FilterCard>
+          <style>{`.sh-scroll-row::-webkit-scrollbar { display: none; }`}</style>
 
-        <FilterCard label="Mauza — موضع" value={selectedMauzaName}>
-          <NativeSelectOverlay
-            value={selectedMauza}
-            onChange={filters.handleMauzaChange}
-            disabled={!selectedTehsil.length || filters.loading?.mauzas}
-          >
-            <option value="">-- Mauza --</option>
-            {mauzas.map((m) => {
-              const id = getMauzaId(m);
-              return <option key={id} value={id}>{m.mauza}</option>;
+          <FilterCard
+            label="District — ضلع"
+            value={getMultiValueDisplay({
+              options: districts,
+              selected: selectedDistrict,
+              idKey: "id",
+              labelKey: "name",
             })}
-          </NativeSelectOverlay>
-        </FilterCard>
+          >
+            <MultiSelectDropdown
+              options={districts.map((d) => ({ value: String(d.id), label: d.name }))}
+              selectedValues={selectedDistrict}
+              onToggle={filters.handleDistrictChange}
+              disabled={filters.loading?.districts}
+            />
+          </FilterCard>
 
-        <FilterCard label="Society" value={societyDisplayValue}>
-          <NativeSelectOverlay
-            value={selectedSocietyId}
-            onChange={(e) => onSocietyChange(e.target.value)}
-            disabled={!selectedMauza || societyLoading || !societyOptions.length}
-            title={societyError || undefined}
-          >
-            <option value="">
-              {societyLoading
-                ? "Loading societies..."
-                : societyOptions.length
-                  ? "-- Society --"
-                  : "No society found"}
-            </option>
-            {societyOptions.map((society) => {
-              const id = getSocietyPk(society);
-              const label = society.society || society.name || `Society ${id}`;
-              return <option key={id} value={id}>{label}</option>;
+          <FilterCard
+            label="Tehsil — تحصیل"
+            value={getMultiValueDisplay({
+              options: tehsils,
+              selected: selectedTehsil,
+              idKey: "id",
+              labelKey: "name",
             })}
-          </NativeSelectOverlay>
-        </FilterCard>
+          >
+            <MultiSelectDropdown
+              options={tehsils.map((t) => ({ value: String(t.id), label: t.name }))}
+              selectedValues={selectedTehsil}
+              onToggle={filters.handleTehsilChange}
+              disabled={!selectedDistrict.length || filters.loading?.tehsils}
+            />
+          </FilterCard>
+
+          <FilterCard label="Mauza — موضع" value={selectedMauzaName}>
+            <NativeSelectOverlay
+              value={selectedMauza}
+              onChange={filters.handleMauzaChange}
+              disabled={!selectedTehsil.length || filters.loading?.mauzas}
+            >
+              <option value="">-- Mauza --</option>
+              {mauzas.map((m) => {
+                const id = getMauzaId(m);
+                return <option key={id} value={id}>{m.mauza}</option>;
+              })}
+            </NativeSelectOverlay>
+          </FilterCard>
+
+          <FilterCard label="Society" value={societyDisplayValue}>
+            <NativeSelectOverlay
+              value={selectedSocietyId}
+              onChange={(e) => onSocietyChange(e.target.value)}
+              disabled={!selectedMauza || societyLoading || !societyOptions.length}
+              title={societyError || undefined}
+            >
+              <option value="">
+                {societyLoading
+                  ? "Loading societies..."
+                  : societyOptions.length
+                    ? "-- Society --"
+                    : "No society found"}
+              </option>
+              {societyOptions.map((society) => {
+                const id = getSocietyPk(society);
+                const label = society.society || society.name || `Society ${id}`;
+                return <option key={id} value={id}>{label}</option>;
+              })}
+            </NativeSelectOverlay>
+          </FilterCard>
+
+          {/* Drone video button — appears after society is selected */}
+          {showDroneBtn && (
+            <button
+              type="button"
+              onClick={() => setVideoOpen(true)}
+              title="Watch drone video for this society"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-400/60 bg-amber-400/15 px-2.5 py-1.5 text-amber-300 transition hover:bg-amber-400/30 hover:text-amber-200"
+            >
+              <Video size={13} />
+              <span className="text-[11px] font-semibold leading-none whitespace-nowrap">
+                Drone Video
+              </span>
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
