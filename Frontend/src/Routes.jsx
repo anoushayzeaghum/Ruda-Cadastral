@@ -16,6 +16,7 @@ import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 import LandingPage from "./pages/LandingPage/LandingPage";
 import SocietyMapPage from "./pages/SocietyMapDashboard/SocietyMapPage";
 import Society3DMapPage from "./pages/3DMapview/Society3DMapPage";
+import MetaverseDashboard from "./pages/GISMetaverse/MetaverseDashboard";
 
 const AppRoutes = () => {
   return (
@@ -39,6 +40,7 @@ const AppRoutes = () => {
           <Route path="/cadastral-map" element={<MapPage />} />
           <Route path="/society-map" element={<SocietyMapPage />} />
           <Route path="/society-3d" element={<Society3DMapPage />} />
+          <Route path="/gis-metaverse" element={<MetaverseDashboard />} />
 
           <Route path="/area" element={<AreaLayout />}>
             <Route path="district" element={<District />} />
