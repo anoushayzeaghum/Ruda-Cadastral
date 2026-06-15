@@ -30,6 +30,8 @@ const tools = [
   { id: "import", label: "Import", icon: FileInput },
 ];
 
+import DroneImagery from "./tools/DroneImagery";
+
 export default function MetaverseLeftToolbar({
   activeTool,
   setActiveTool,
@@ -64,7 +66,8 @@ export default function MetaverseLeftToolbar({
       {activeTool && (
         <div className="absolute left-14 top-3 z-30 w-[270px] max-h-[calc(100vh-90px)] overflow-hidden rounded-md bg-[#202736] border border-[#3a4354] shadow-2xl text-white">
           {activeTool === "layers" && <LayersPanel map={map} />}
-          {activeTool !== "layers" && (
+          {activeTool === "droneImagery" && <DroneImagery map={map} />}
+          {activeTool !== "layers" && activeTool !== "droneImagery" && (
             <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
           )}
         </div>
