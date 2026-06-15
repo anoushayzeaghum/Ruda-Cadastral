@@ -17,6 +17,7 @@ import {
   CircleDot,
   Network,
   Route,
+  Image as ImageIcon,
 } from "lucide-react";
 
 const BASEMAPS = [
@@ -55,6 +56,16 @@ const VECTOR_BOUNDARY_LAYERS = [
   { key: "triJunctionPoints", label: "Tri Junction Points" },
   { key: "fieldPoints", label: "Field Points" },
   { key: "mussaviLayer", label: "Mussavi" },
+];
+
+const RASTER_DATA_LAYERS = [
+  { key: "dsm", label: "Chaharbagh DSM" },
+  { key: "dtm", label: "Chaharbagh DTM" },
+  { key: "ortho", label: "Chaharbagh Ortho" },
+  { key: "asBuiltJan2023", label: "AsBuilt Jan 2023" },
+  { key: "orthoJune2023", label: "Ortho June 2023" },
+  { key: "orthoNov2024", label: "Ortho Nov 2024" },
+  { key: "handuGujranOrtho", label: "Handu Gujran Ortho" },
 ];
 
 const RUDA_PHASE_COLORS = [
@@ -331,6 +342,14 @@ export default function LeftPanel({
           }
           icon={<Satellite size={18} />}
         />
+        <PanelIcon
+          title="Raster Data"
+          active={activePanel === "rasterData"}
+          onClick={() =>
+            setActivePanel(activePanel === "rasterData" ? "" : "rasterData")
+          }
+          icon={<ImageIcon size={18} />}
+        />
       </div>
 
       {activePanel && (
@@ -563,8 +582,54 @@ export default function LeftPanel({
               </div>
             </Panel>
           )}
+
+          {activePanel === "rasterData" && (
+            <Panel title="Raster Data">
+              <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3">
+                <RasterDataLayers
+                  items={RASTER_DATA_LAYERS}
+                  getLayerVisible={getLayerVisible}
+                  getLayerOpacity={getLayerOpacity}
+                  toggleLayer={toggleLayer}
+                  updateLayer={updateLayer}
+                />
+              </div>
+            </Panel>
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function RasterDataLayers({
+  items,
+  getLayerVisible,
+  getLayerOpacity,
+  toggleLayer,
+  updateLayer,
+}) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
+        <h4 className="text-[12px] font-semibold leading-tight text-slate-700">
+          Raster Layers
+        </h4>
+      </div>
+
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        {items.map((item, index) => (
+          <AdminLayerRow
+            key={item.key}
+            label={item.label}
+            checked={getLayerVisible(item.key)}
+            opacity={getLayerOpacity(item.key)}
+            isLast={index === items.length - 1}
+            onToggle={() => toggleLayer(item.key)}
+            onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+          />
+        ))}
+      </div>
     </div>
   );
 }

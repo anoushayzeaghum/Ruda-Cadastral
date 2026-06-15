@@ -7,6 +7,7 @@ import MetaverseMapControls from "./MetaverseMapControls";
 
 export default function MetaverseDashboard() {
   const mapRef = useRef(null);
+  const [isMapReady, setIsMapReady] = useState(false);
   const [activeTool, setActiveTool] = useState("layers");
 
   return (
@@ -14,7 +15,7 @@ export default function MetaverseDashboard() {
       <Header />
 
       <div className="relative h-[calc(100vh-56px)] w-full">
-        <GISMetaverseMap mapRef={mapRef} />
+        <GISMetaverseMap mapRef={mapRef} setIsMapReady={setIsMapReady} />
 
         <MetaverseSubHeader
           onReset={() => console.log("Reset clicked")}
@@ -24,10 +25,10 @@ export default function MetaverseDashboard() {
         <MetaverseLeftToolbar
           activeTool={activeTool}
           setActiveTool={setActiveTool}
-          map={mapRef.current}
+          map={isMapReady ? mapRef.current : null}
         />
 
-        <MetaverseMapControls map={mapRef.current} />
+        <MetaverseMapControls map={isMapReady ? mapRef.current : null} />
       </div>
     </div>
   );

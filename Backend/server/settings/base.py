@@ -66,6 +66,8 @@ if os.name == "nt" and GDAL_LIBRARY_PATH:
 
         if os.path.exists(qgis_bin):
             os.environ["PATH"] = qgis_bin + os.path.pathsep + os.environ.get("PATH", "")
+            if hasattr(os, 'add_dll_directory'):
+                os.add_dll_directory(qgis_bin)
     except Exception:
         pass
 
