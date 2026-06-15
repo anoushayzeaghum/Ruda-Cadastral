@@ -1,7 +1,7 @@
 import {
   Layers,
   ScanLine,
-  Filter,
+  Filter as FilterIcon,
   MousePointerClick,
   Hourglass,
   Send,
@@ -16,10 +16,12 @@ import {
   Grid3X3,
 } from "lucide-react";
 
+import Filter from "./tools/Filter";
+
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
   { id: "droneImagery", label: "Drone Imagery", icon: ScanLine },
-  { id: "filter", label: "Filter", icon: Filter },
+  { id: "filter", label: "Filter", icon: FilterIcon },
   { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
   { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
   { id: "flyTo", label: "Fly To", icon: Send },
@@ -29,11 +31,21 @@ const tools = [
   { id: "import", label: "Import", icon: FileInput },
 ];
 
+const TOOL_BUTTON_SIZE = 36;
+const TOOL_GAP = 4;
+
 export default function MetaverseLeftToolbar({
   activeTool,
   setActiveTool,
   map,
 }) {
+  const activeToolIndex = tools.findIndex((tool) => tool.id === activeTool);
+
+  const panelTop =
+    activeToolIndex >= 0
+      ? 12 + activeToolIndex * (TOOL_BUTTON_SIZE + TOOL_GAP)
+      : 12;
+
   return (
     <>
       <div className="absolute left-2 top-3 z-30 flex flex-col gap-1">
@@ -47,11 +59,11 @@ export default function MetaverseLeftToolbar({
               type="button"
               title={tool.label}
               onClick={() => setActiveTool(isActive ? null : tool.id)}
-              className={`h-9 w-9 rounded-md border flex items-center justify-center shadow-md transition
+              className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition
                 ${
                   isActive
-                    ? "bg-[#243041] border-[#8bd66f] text-white"
-                    : "bg-[#1d2533] border-[#344055] text-white hover:bg-[#293445]"
+                    ? "border-[#8bd66f] bg-[#243041] text-white"
+                    : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
                 }`}
             >
               <Icon size={20} strokeWidth={2.2} />
@@ -61,9 +73,19 @@ export default function MetaverseLeftToolbar({
       </div>
 
       {activeTool && (
-        <div className="absolute left-14 top-3 z-30 w-[270px] max-h-[calc(100vh-90px)] overflow-hidden rounded-md bg-[#202736] border border-[#3a4354] shadow-2xl text-white">
+        <div
+          className={`absolute left-14 z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl ${
+            activeTool === "filter"
+              ? "w-[320px] overflow-visible"
+              : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+          }`}
+          style={{ top: `${panelTop}px` }}
+        >
           {activeTool === "layers" && <LayersPanel />}
-          {activeTool !== "layers" && (
+          {activeTool === "filter" && (
+            <Filter onClose={() => setActiveTool(null)} />
+          )}
+          {activeTool !== "layers" && activeTool !== "filter" && (
             <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
           )}
         </div>
