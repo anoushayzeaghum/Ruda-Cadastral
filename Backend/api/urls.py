@@ -78,6 +78,24 @@ router.register(r"trijunction/create", CreateTrijunctionView, basename="create-t
 router.register(r"trijunction/update", UpdateTrijunctionView, basename="update-trijunction")
 router.register(r"trijunction/delete", DeleteTrijunctionView, basename="delete-trijunction")
 
+#------------------------------ Square View ------------------------------
+router.register(r"square", ListSquareView, basename="square")
+router.register(r"square/create", CreateSquareView, basename="create-square")
+router.register(r"square/update", UpdateSquareView, basename="update-square")
+router.register(r"square/delete", DeleteSquareView, basename="delete-square")
+
+#------------------------------ Acre View ------------------------------
+router.register(r"acre", ListAcreView, basename="acre")
+router.register(r"acre/create", CreateAcreView, basename="create-acre")
+router.register(r"acre/update", UpdateAcreView, basename="update-acre")
+router.register(r"acre/delete", DeleteAcreView, basename="delete-acre")
+
+#------------------------------ Field Points View ------------------------------
+router.register(r"fieldpoints", ListFieldPointsView, basename="fieldpoints")
+router.register(r"fieldpoints/create", CreateFieldPointsView, basename="create-fieldpoints")
+router.register(r"fieldpoints/update", UpdateFieldPointsView, basename="update-fieldpoints")
+router.register(r"fieldpoints/delete", DeleteFieldPointsView, basename="delete-fieldpoints")
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),

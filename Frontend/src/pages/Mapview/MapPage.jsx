@@ -60,11 +60,16 @@ console.log("filters =", outletContext?.filters);
     districtBoundary: { visible: true, opacity: 0 },
     tehsilBoundary: { visible: true, opacity: 0 },
     mauzaBoundary: { visible: true, opacity: 0 },
-    khasraLayer: { visible: true, opacity: 25 },
-    murabbaLayer: { visible: true, opacity: 25 },
-    controlPoints: { visible: false, opacity: 100 },
+    khasraLayer: { visible: false, opacity: 25 },
+    squareBoundary: { visible: false, opacity: 25 },
+    acreBoundary: { visible: false, opacity: 25 },
+    murabbaLayer: { visible: false, opacity: 25 },
     triJunctionPoints: { visible: false, opacity: 100 },
+    fieldPoints: { visible: false, opacity: 100 },
+    controlPoints: { visible: false, opacity: 100 },
     proposedRoads: { visible: false, opacity: 100 },
+    geodeticNetwork: { visible: false, opacity: 100 },
+    mussavi: { visible: false, opacity: 100 },
   });
 
   const [rudaPhases, setRudaPhases] = useState([]);
@@ -276,7 +281,13 @@ console.log("filters =", outletContext?.filters);
         }
 
         if (typeof next[key] !== "object") {
-          next[key] = { visible: !!next[key], opacity: 100 };
+          next[key] = { visible: true, opacity: 100 };
+          changed = true;
+          return;
+        }
+
+        if (next[key].visible !== true) {
+          next[key] = { ...next[key], visible: true };
           changed = true;
         }
       });

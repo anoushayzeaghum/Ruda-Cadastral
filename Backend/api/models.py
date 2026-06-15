@@ -308,13 +308,10 @@ class Society(models.Model):
     source = models.CharField(max_length=255, null=True, blank=True)
     feat_count = models.IntegerField(null=True, blank=True)
     area = models.FloatField(null=True, blank=True)
-
     society = models.CharField(max_length=255, null=True, blank=True)
     society_id = models.IntegerField(null=True, blank=True)
-
     district = models.CharField(max_length=100, null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
-
     tehsil = models.CharField(max_length=100, null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
 
@@ -337,7 +334,6 @@ class MasterPlan(models.Model):
 
     gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
-
     society_id = models.IntegerField(null=True, blank=True)
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
@@ -359,7 +355,6 @@ class SpotLevel(models.Model):
 
     gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
-
     society_id = models.IntegerField(null=True, blank=True)
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
@@ -380,7 +375,6 @@ class Contour(models.Model):
 
     gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
-
     society_id = models.IntegerField(null=True, blank=True)
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
@@ -460,21 +454,15 @@ class RudaBoundary(models.Model):
 class Trijunction(models.Model):
 
     gid = models.AutoField(primary_key=True)
-
     type = models.CharField(max_length=20, null=True, blank=True)
-
     m1 = models.CharField(max_length=50, null=True, blank=True)
     m1_id = models.FloatField(null=True, blank=True)
-
     m2 = models.CharField(max_length=50, null=True, blank=True)
     m2_id = models.FloatField(null=True, blank=True)
-
     m3 = models.CharField(max_length=50, null=True, blank=True)
     m3_id = models.FloatField(null=True, blank=True)
-
     layer = models.CharField(max_length=254, null=True, blank=True)
     path = models.CharField(max_length=254, null=True, blank=True)
-
     geom = gis_models.GeometryField(srid=4326)
 
     def __str__(self):
@@ -485,3 +473,93 @@ class Trijunction(models.Model):
     class Meta:
         managed = False
         db_table = "trijunction"
+
+# =========================
+# Square
+# =========================
+
+class Square(models.Model):
+
+    gid = models.AutoField(primary_key=True)
+
+    district = models.CharField(max_length=100, null=True, blank=True)
+    dist_id = models.FloatField(null=True, blank=True)
+
+    tehsil = models.CharField(max_length=100, null=True, blank=True)
+    tehsil_id = models.FloatField(null=True, blank=True)
+
+    kc = models.CharField(max_length=100, null=True, blank=True)
+    kc_id = models.FloatField(null=True, blank=True)
+
+    pc = models.CharField(max_length=100, null=True, blank=True)
+    pc_id = models.FloatField(null=True, blank=True)
+
+    mauza = models.CharField(max_length=100, null=True, blank=True)
+    mauza_id = models.FloatField(null=True, blank=True)
+
+    sq = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return f"{self.mauza} - SQ {self.sq}" if self.mauza else f"Square {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "square"
+
+# =========================
+# Acre
+# =========================
+
+class Acre(models.Model):
+
+    gid = models.AutoField(primary_key=True)
+
+    district = models.CharField(max_length=100, null=True, blank=True)
+    dist_id = models.FloatField(null=True, blank=True)
+
+    tehsil = models.CharField(max_length=100, null=True, blank=True)
+    tehsil_id = models.FloatField(null=True, blank=True)
+
+    mauza = models.CharField(max_length=100, null=True, blank=True)
+    mauza_id = models.FloatField(null=True, blank=True)
+
+    sq = models.FloatField(null=True, blank=True)
+    acre = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return f"{self.mauza} - {self.acre} Acre" if self.mauza else f"Acre {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "acre"
+
+# =========================
+# FieldPoints
+# =========================
+
+class FieldPoints(models.Model):
+
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=100, null=True, blank=True)
+
+    layer = models.CharField(max_length=50, null=True, blank=True)
+    gm_type = models.CharField(max_length=100, null=True, blank=True)
+
+    pid = models.IntegerField(null=True, blank=True)
+    code = models.CharField(max_length=50, null=True, blank=True)
+
+    elevation = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.PointField(srid=4326)
+
+    def __str__(self):
+        return self.name if self.name else f"FieldPoint {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "fieldpoints"

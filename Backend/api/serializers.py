@@ -404,3 +404,76 @@ class TrijunctionSerializer(GeoFeatureModelSerializer):
             "path",
             "geom",
         )
+# --------------------------------------------------------
+# Square Serializer
+
+# --------------------------------------------------------
+
+class SquareSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Square
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "dist_id",
+            "tehsil",
+            "tehsil_id",
+            "kc",
+            "kc_id",
+            "pc",
+            "pc_id",
+            "mauza",
+            "mauza_id",
+            "sq",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# Acre Serializer
+
+# --------------------------------------------------------
+
+class AcreSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Acre
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "dist_id",
+            "tehsil",
+            "tehsil_id",
+            "mauza",
+            "mauza_id",
+            "sq",
+            "acre",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# FieldPoints Serializer
+
+class FieldPointsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = FieldPoints
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "layer",
+            "gm_type",
+            "pid",
+            "code",
+            "elevation",
+            "geom",
+        )

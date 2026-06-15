@@ -61,7 +61,6 @@ const BUFFER_FILL_LAYER = "buffer-fill-layer";
 const BUFFER_LINE_LAYER = "buffer-line-layer";
 const BUFFER_CENTER_LAYER = "buffer-center-layer";
 
-
 const SNAP_SOURCE = "snap-source";
 const SNAP_LAYER = "snap-layer";
 const SNAP_LINE_LAYER = "snap-line-layer";
@@ -1223,12 +1222,15 @@ export default function MapView({
     const dtmVisible = getLayerVisible(layers, "dtm", false);
     const orthoVisible = getLayerVisible(layers, "orthoImage", false);
 
-    const shouldFlyTo = (orthoVisible && !prevOrthoVisible.current) || (demVisible && !prevDemVisible.current) || (dtmVisible && !prevDtmVisible.current);
+    const shouldFlyTo =
+      (orthoVisible && !prevOrthoVisible.current) ||
+      (demVisible && !prevDemVisible.current) ||
+      (dtmVisible && !prevDtmVisible.current);
 
     if (shouldFlyTo) {
       const bounds = [
         [74.42562653088396, 31.60509230706726],
-        [74.43545280361002, 31.61121654113590]
+        [74.43545280361002, 31.6112165411359],
       ];
       map.fitBounds(bounds, { padding: 50, duration: 1500 });
     }
@@ -1244,26 +1246,28 @@ export default function MapView({
       if (orthoVisible) {
         if (!map.getSource(ORTHO_SOURCE)) {
           map.addSource(ORTHO_SOURCE, {
-              type: 'raster',
-              tiles: ['http://localhost:8080/data/Chaharbagh_Ortho/{z}/{x}/{y}.png'],
-              tileSize: 256
+            type: "raster",
+            tiles: [
+              "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+            ],
+            tileSize: 256,
           });
         }
         if (!map.getLayer(ORTHO_LAYER)) {
           map.addLayer({
-              id: ORTHO_LAYER,
-              type: 'raster',
-              source: ORTHO_SOURCE,
-              paint: { 'raster-opacity': orthoOpacity },
-              layout: { 'visibility': 'visible' }
+            id: ORTHO_LAYER,
+            type: "raster",
+            source: ORTHO_SOURCE,
+            paint: { "raster-opacity": orthoOpacity },
+            layout: { visibility: "visible" },
           });
         } else {
-          map.setLayoutProperty(ORTHO_LAYER, 'visibility', 'visible');
-          map.setPaintProperty(ORTHO_LAYER, 'raster-opacity', orthoOpacity);
+          map.setLayoutProperty(ORTHO_LAYER, "visibility", "visible");
+          map.setPaintProperty(ORTHO_LAYER, "raster-opacity", orthoOpacity);
         }
       } else {
         if (map.getLayer(ORTHO_LAYER)) {
-          map.setLayoutProperty(ORTHO_LAYER, 'visibility', 'none');
+          map.setLayoutProperty(ORTHO_LAYER, "visibility", "none");
         }
       }
 
@@ -1273,26 +1277,28 @@ export default function MapView({
       if (demVisible) {
         if (!map.getSource(DSM_SOURCE)) {
           map.addSource(DSM_SOURCE, {
-              type: 'raster',
-              tiles: ['http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png'],
-              tileSize: 256
+            type: "raster",
+            tiles: [
+              "http://localhost:8081/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
+            ],
+            tileSize: 256,
           });
         }
         if (!map.getLayer(DSM_LAYER)) {
           map.addLayer({
-              id: DSM_LAYER,
-              type: 'raster',
-              source: DSM_SOURCE,
-              paint: { 'raster-opacity': dsmOpacity },
-              layout: { 'visibility': 'visible' }
+            id: DSM_LAYER,
+            type: "raster",
+            source: DSM_SOURCE,
+            paint: { "raster-opacity": dsmOpacity },
+            layout: { visibility: "visible" },
           });
         } else {
-          map.setLayoutProperty(DSM_LAYER, 'visibility', 'visible');
-          map.setPaintProperty(DSM_LAYER, 'raster-opacity', dsmOpacity);
+          map.setLayoutProperty(DSM_LAYER, "visibility", "visible");
+          map.setPaintProperty(DSM_LAYER, "raster-opacity", dsmOpacity);
         }
       } else {
         if (map.getLayer(DSM_LAYER)) {
-          map.setLayoutProperty(DSM_LAYER, 'visibility', 'none');
+          map.setLayoutProperty(DSM_LAYER, "visibility", "none");
         }
       }
 
@@ -1302,36 +1308,38 @@ export default function MapView({
       if (dtmVisible) {
         if (!map.getSource(DTM_SOURCE)) {
           map.addSource(DTM_SOURCE, {
-              type: 'raster',
-              tiles: ['http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png'],
-              tileSize: 256
+            type: "raster",
+            tiles: [
+              "http://localhost:8081/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
+            ],
+            tileSize: 256,
           });
         }
         if (!map.getLayer(DTM_LAYER)) {
           map.addLayer({
-              id: DTM_LAYER,
-              type: 'raster',
-              source: DTM_SOURCE,
-              paint: { 'raster-opacity': dtmOpacity },
-              layout: { 'visibility': 'visible' }
+            id: DTM_LAYER,
+            type: "raster",
+            source: DTM_SOURCE,
+            paint: { "raster-opacity": dtmOpacity },
+            layout: { visibility: "visible" },
           });
         } else {
-          map.setLayoutProperty(DTM_LAYER, 'visibility', 'visible');
-          map.setPaintProperty(DTM_LAYER, 'raster-opacity', dtmOpacity);
+          map.setLayoutProperty(DTM_LAYER, "visibility", "visible");
+          map.setPaintProperty(DTM_LAYER, "raster-opacity", dtmOpacity);
         }
       } else {
         if (map.getLayer(DTM_LAYER)) {
-          map.setLayoutProperty(DTM_LAYER, 'visibility', 'none');
+          map.setLayoutProperty(DTM_LAYER, "visibility", "none");
         }
       }
     };
 
     restoreRasters();
-    
+
     // Attempt to restore if style changes
-    map.on('style.load', restoreRasters);
+    map.on("style.load", restoreRasters);
     return () => {
-      map.off('style.load', restoreRasters);
+      map.off("style.load", restoreRasters);
     };
   }, [layers?.dem, layers?.dtm, layers?.orthoImage, isMapReady]);
 
@@ -1454,9 +1462,10 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const measureVisible = typeof layers?.measure === "object"
-      ? layers.measure.visible
-      : !!layers?.measure;
+    const measureVisible =
+      typeof layers?.measure === "object"
+        ? layers.measure.visible
+        : !!layers?.measure;
 
     const updateMeasureSource = () => {
       const coords = measureCoordsRef.current;
@@ -1489,23 +1498,57 @@ export default function MapView({
     if (measureVisible) {
       map.getCanvas().style.cursor = "crosshair";
       if (!map.getSource(MEASURE_SOURCE)) {
-        map.addSource(MEASURE_SOURCE, { type: "geojson", data: turf.featureCollection([]) });
+        map.addSource(MEASURE_SOURCE, {
+          type: "geojson",
+          data: turf.featureCollection([]),
+        });
       }
       if (!map.getLayer(MEASURE_LINE_LAYER)) {
-        map.addLayer({ id: MEASURE_LINE_LAYER, type: "line", source: MEASURE_SOURCE,
+        map.addLayer({
+          id: MEASURE_LINE_LAYER,
+          type: "line",
+          source: MEASURE_SOURCE,
           filter: ["==", "$type", "LineString"],
-          paint: { "line-color": "#ff0000", "line-width": 3, "line-dasharray": [2, 2] } });
+          paint: {
+            "line-color": "#ff0000",
+            "line-width": 3,
+            "line-dasharray": [2, 2],
+          },
+        });
       }
       if (!map.getLayer(MEASURE_POINTS_LAYER)) {
-        map.addLayer({ id: MEASURE_POINTS_LAYER, type: "circle", source: MEASURE_SOURCE,
+        map.addLayer({
+          id: MEASURE_POINTS_LAYER,
+          type: "circle",
+          source: MEASURE_SOURCE,
           filter: ["==", "$type", "Point"],
-          paint: { "circle-radius": 5, "circle-color": "#ffffff", "circle-stroke-width": 2, "circle-stroke-color": "#ff0000" } });
+          paint: {
+            "circle-radius": 5,
+            "circle-color": "#ffffff",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#ff0000",
+          },
+        });
       }
       if (!map.getLayer(MEASURE_LABELS_LAYER)) {
-        map.addLayer({ id: MEASURE_LABELS_LAYER, type: "symbol", source: MEASURE_SOURCE,
+        map.addLayer({
+          id: MEASURE_LABELS_LAYER,
+          type: "symbol",
+          source: MEASURE_SOURCE,
           filter: ["has", "distance"],
-          layout: { "text-field": ["get", "distance"], "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"], "text-size": 14, "text-anchor": "bottom", "text-offset": [0, -1] },
-          paint: { "text-color": "#ff0000", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+          layout: {
+            "text-field": ["get", "distance"],
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-size": 14,
+            "text-anchor": "bottom",
+            "text-offset": [0, -1],
+          },
+          paint: {
+            "text-color": "#ff0000",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 2,
+          },
+        });
       }
       map.on("click", handleClick);
       map.on("contextmenu", handleRightClick);
@@ -1514,11 +1557,16 @@ export default function MapView({
       map.getCanvas().style.cursor = "";
       measureCoordsRef.current = [];
       try {
-        if (map.getLayer(MEASURE_LABELS_LAYER)) map.removeLayer(MEASURE_LABELS_LAYER);
-        if (map.getLayer(MEASURE_POINTS_LAYER)) map.removeLayer(MEASURE_POINTS_LAYER);
-        if (map.getLayer(MEASURE_LINE_LAYER)) map.removeLayer(MEASURE_LINE_LAYER);
+        if (map.getLayer(MEASURE_LABELS_LAYER))
+          map.removeLayer(MEASURE_LABELS_LAYER);
+        if (map.getLayer(MEASURE_POINTS_LAYER))
+          map.removeLayer(MEASURE_POINTS_LAYER);
+        if (map.getLayer(MEASURE_LINE_LAYER))
+          map.removeLayer(MEASURE_LINE_LAYER);
         if (map.getSource(MEASURE_SOURCE)) map.removeSource(MEASURE_SOURCE);
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
       map.off("click", handleClick);
       map.off("contextmenu", handleRightClick);
     }
@@ -1535,18 +1583,26 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const areaVisible = typeof layers?.measureArea === "object"
-      ? layers.measureArea.visible
-      : !!layers?.measureArea;
+    const areaVisible =
+      typeof layers?.measureArea === "object"
+        ? layers.measureArea.visible
+        : !!layers?.measureArea;
 
     const clearAreaLayers = () => {
       try {
-        if (map.getLayer(MEASURE_AREA_LABEL_LAYER)) map.removeLayer(MEASURE_AREA_LABEL_LAYER);
-        if (map.getLayer(MEASURE_AREA_FILL_LAYER)) map.removeLayer(MEASURE_AREA_FILL_LAYER);
-        if (map.getLayer(MEASURE_AREA_LINE_LAYER)) map.removeLayer(MEASURE_AREA_LINE_LAYER);
-        if (map.getLayer(MEASURE_AREA_POINTS_LAYER)) map.removeLayer(MEASURE_AREA_POINTS_LAYER);
-        if (map.getSource(MEASURE_AREA_SOURCE)) map.removeSource(MEASURE_AREA_SOURCE);
-      } catch (e) { /* ignore */ }
+        if (map.getLayer(MEASURE_AREA_LABEL_LAYER))
+          map.removeLayer(MEASURE_AREA_LABEL_LAYER);
+        if (map.getLayer(MEASURE_AREA_FILL_LAYER))
+          map.removeLayer(MEASURE_AREA_FILL_LAYER);
+        if (map.getLayer(MEASURE_AREA_LINE_LAYER))
+          map.removeLayer(MEASURE_AREA_LINE_LAYER);
+        if (map.getLayer(MEASURE_AREA_POINTS_LAYER))
+          map.removeLayer(MEASURE_AREA_POINTS_LAYER);
+        if (map.getSource(MEASURE_AREA_SOURCE))
+          map.removeSource(MEASURE_AREA_SOURCE);
+      } catch (e) {
+        /* ignore */
+      }
     };
 
     const updateAreaSource = (closed = false) => {
@@ -1554,7 +1610,9 @@ export default function MapView({
       const features = [];
       coords.forEach((c) => features.push(turf.point(c)));
       if (coords.length >= 2) {
-        features.push(turf.lineString(closed ? [...coords, coords[0]] : coords));
+        features.push(
+          turf.lineString(closed ? [...coords, coords[0]] : coords),
+        );
       }
       if (closed && coords.length >= 3) {
         const poly = turf.polygon([[...coords, coords[0]]]);
@@ -1569,7 +1627,9 @@ export default function MapView({
         features.push(centroid);
       }
       if (map.getSource(MEASURE_AREA_SOURCE)) {
-        map.getSource(MEASURE_AREA_SOURCE).setData(turf.featureCollection(features));
+        map
+          .getSource(MEASURE_AREA_SOURCE)
+          .setData(turf.featureCollection(features));
       }
     };
 
@@ -1590,28 +1650,69 @@ export default function MapView({
     if (areaVisible) {
       map.getCanvas().style.cursor = "crosshair";
       if (!map.getSource(MEASURE_AREA_SOURCE)) {
-        map.addSource(MEASURE_AREA_SOURCE, { type: "geojson", data: turf.featureCollection([]) });
+        map.addSource(MEASURE_AREA_SOURCE, {
+          type: "geojson",
+          data: turf.featureCollection([]),
+        });
       }
       if (!map.getLayer(MEASURE_AREA_FILL_LAYER)) {
-        map.addLayer({ id: MEASURE_AREA_FILL_LAYER, type: "fill", source: MEASURE_AREA_SOURCE,
+        map.addLayer({
+          id: MEASURE_AREA_FILL_LAYER,
+          type: "fill",
+          source: MEASURE_AREA_SOURCE,
           filter: ["==", "$type", "Polygon"],
-          paint: { "fill-color": "#0066ff", "fill-opacity": 0.15 } });
+          paint: { "fill-color": "#0066ff", "fill-opacity": 0.15 },
+        });
       }
       if (!map.getLayer(MEASURE_AREA_LINE_LAYER)) {
-        map.addLayer({ id: MEASURE_AREA_LINE_LAYER, type: "line", source: MEASURE_AREA_SOURCE,
-          filter: ["any", ["==", "$type", "LineString"], ["==", "$type", "Polygon"]],
-          paint: { "line-color": "#0066ff", "line-width": 2, "line-dasharray": [2, 2] } });
+        map.addLayer({
+          id: MEASURE_AREA_LINE_LAYER,
+          type: "line",
+          source: MEASURE_AREA_SOURCE,
+          filter: [
+            "any",
+            ["==", "$type", "LineString"],
+            ["==", "$type", "Polygon"],
+          ],
+          paint: {
+            "line-color": "#0066ff",
+            "line-width": 2,
+            "line-dasharray": [2, 2],
+          },
+        });
       }
       if (!map.getLayer(MEASURE_AREA_POINTS_LAYER)) {
-        map.addLayer({ id: MEASURE_AREA_POINTS_LAYER, type: "circle", source: MEASURE_AREA_SOURCE,
+        map.addLayer({
+          id: MEASURE_AREA_POINTS_LAYER,
+          type: "circle",
+          source: MEASURE_AREA_SOURCE,
           filter: ["==", "$type", "Point"],
-          paint: { "circle-radius": 5, "circle-color": "#ffffff", "circle-stroke-width": 2, "circle-stroke-color": "#0066ff" } });
+          paint: {
+            "circle-radius": 5,
+            "circle-color": "#ffffff",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#0066ff",
+          },
+        });
       }
       if (!map.getLayer(MEASURE_AREA_LABEL_LAYER)) {
-        map.addLayer({ id: MEASURE_AREA_LABEL_LAYER, type: "symbol", source: MEASURE_AREA_SOURCE,
+        map.addLayer({
+          id: MEASURE_AREA_LABEL_LAYER,
+          type: "symbol",
+          source: MEASURE_AREA_SOURCE,
           filter: ["has", "areaLabel"],
-          layout: { "text-field": ["get", "areaLabel"], "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"], "text-size": 12, "text-anchor": "center" },
-          paint: { "text-color": "#003399", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+          layout: {
+            "text-field": ["get", "areaLabel"],
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-size": 12,
+            "text-anchor": "center",
+          },
+          paint: {
+            "text-color": "#003399",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 2,
+          },
+        });
       }
       map.on("click", handleClick);
       map.on("contextmenu", handleRightClick);
@@ -1635,17 +1736,23 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const bearingVisible = typeof layers?.measureBearing === "object"
-      ? layers.measureBearing.visible
-      : !!layers?.measureBearing;
+    const bearingVisible =
+      typeof layers?.measureBearing === "object"
+        ? layers.measureBearing.visible
+        : !!layers?.measureBearing;
 
     const clearBearingLayers = () => {
       try {
-        if (map.getLayer(BEARING_LABEL_LAYER)) map.removeLayer(BEARING_LABEL_LAYER);
-        if (map.getLayer(BEARING_LINE_LAYER)) map.removeLayer(BEARING_LINE_LAYER);
-        if (map.getLayer(BEARING_POINTS_LAYER)) map.removeLayer(BEARING_POINTS_LAYER);
+        if (map.getLayer(BEARING_LABEL_LAYER))
+          map.removeLayer(BEARING_LABEL_LAYER);
+        if (map.getLayer(BEARING_LINE_LAYER))
+          map.removeLayer(BEARING_LINE_LAYER);
+        if (map.getLayer(BEARING_POINTS_LAYER))
+          map.removeLayer(BEARING_POINTS_LAYER);
         if (map.getSource(BEARING_SOURCE)) map.removeSource(BEARING_SOURCE);
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     };
 
     const updateBearingSource = () => {
@@ -1654,10 +1761,22 @@ export default function MapView({
       coords.forEach((c) => features.push(turf.point(c)));
       if (coords.length === 2) {
         features.push(turf.lineString(coords));
-        const bearing = turf.bearing(turf.point(coords[0]), turf.point(coords[1]));
-        const dist = turf.distance(turf.point(coords[0]), turf.point(coords[1]), { units: "meters" });
-        const midpoint = turf.midpoint(turf.point(coords[0]), turf.point(coords[1]));
-        midpoint.properties = { bearingLabel: `${bearing.toFixed(1)}°  ·  ${dist.toFixed(1)} m` };
+        const bearing = turf.bearing(
+          turf.point(coords[0]),
+          turf.point(coords[1]),
+        );
+        const dist = turf.distance(
+          turf.point(coords[0]),
+          turf.point(coords[1]),
+          { units: "meters" },
+        );
+        const midpoint = turf.midpoint(
+          turf.point(coords[0]),
+          turf.point(coords[1]),
+        );
+        midpoint.properties = {
+          bearingLabel: `${bearing.toFixed(1)}°  ·  ${dist.toFixed(1)} m`,
+        };
         features.push(midpoint);
       }
       if (map.getSource(BEARING_SOURCE)) {
@@ -1682,23 +1801,53 @@ export default function MapView({
     if (bearingVisible) {
       map.getCanvas().style.cursor = "crosshair";
       if (!map.getSource(BEARING_SOURCE)) {
-        map.addSource(BEARING_SOURCE, { type: "geojson", data: turf.featureCollection([]) });
+        map.addSource(BEARING_SOURCE, {
+          type: "geojson",
+          data: turf.featureCollection([]),
+        });
       }
       if (!map.getLayer(BEARING_LINE_LAYER)) {
-        map.addLayer({ id: BEARING_LINE_LAYER, type: "line", source: BEARING_SOURCE,
+        map.addLayer({
+          id: BEARING_LINE_LAYER,
+          type: "line",
+          source: BEARING_SOURCE,
           filter: ["==", "$type", "LineString"],
-          paint: { "line-color": "#e67e00", "line-width": 2 } });
+          paint: { "line-color": "#e67e00", "line-width": 2 },
+        });
       }
       if (!map.getLayer(BEARING_POINTS_LAYER)) {
-        map.addLayer({ id: BEARING_POINTS_LAYER, type: "circle", source: BEARING_SOURCE,
+        map.addLayer({
+          id: BEARING_POINTS_LAYER,
+          type: "circle",
+          source: BEARING_SOURCE,
           filter: ["==", "$type", "Point"],
-          paint: { "circle-radius": 6, "circle-color": "#ffffff", "circle-stroke-width": 2, "circle-stroke-color": "#e67e00" } });
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "#ffffff",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#e67e00",
+          },
+        });
       }
       if (!map.getLayer(BEARING_LABEL_LAYER)) {
-        map.addLayer({ id: BEARING_LABEL_LAYER, type: "symbol", source: BEARING_SOURCE,
+        map.addLayer({
+          id: BEARING_LABEL_LAYER,
+          type: "symbol",
+          source: BEARING_SOURCE,
           filter: ["has", "bearingLabel"],
-          layout: { "text-field": ["get", "bearingLabel"], "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"], "text-size": 13, "text-anchor": "bottom", "text-offset": [0, -1] },
-          paint: { "text-color": "#b35000", "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+          layout: {
+            "text-field": ["get", "bearingLabel"],
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-size": 13,
+            "text-anchor": "bottom",
+            "text-offset": [0, -1],
+          },
+          paint: {
+            "text-color": "#b35000",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 2,
+          },
+        });
       }
       map.on("click", handleClick);
       map.on("contextmenu", handleRightClick);
@@ -1722,9 +1871,10 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const coordVisible = typeof layers?.coordPicker === "object"
-      ? layers.coordPicker.visible
-      : !!layers?.coordPicker;
+    const coordVisible =
+      typeof layers?.coordPicker === "object"
+        ? layers.coordPicker.visible
+        : !!layers?.coordPicker;
 
     const handleClick = (e) => {
       const { lng, lat } = e.lngLat;
@@ -1735,9 +1885,15 @@ export default function MapView({
         coordPickerPopupRef.current = null;
       }
       navigator.clipboard?.writeText(`${latStr}, ${lngStr}`).catch(() => {});
-      const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, closeOnClick: false, maxWidth: "260px" })
+      const popup = new mapboxgl.Popup({
+        offset: 10,
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: "260px",
+      })
         .setLngLat([lng, lat])
-        .setHTML(`
+        .setHTML(
+          `
           <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#1f2937;min-width:190px">
             <div style="font-weight:700;color:#0f3d2e;margin-bottom:6px;font-size:13px;">📍 Coordinates</div>
             <div><span style="font-weight:600">Latitude:</span> ${latStr}</div>
@@ -1746,10 +1902,13 @@ export default function MapView({
               ✓ Copied to clipboard
             </div>
           </div>
-        `)
+        `,
+        )
         .addTo(map);
       coordPickerPopupRef.current = popup;
-      popup.on("close", () => { coordPickerPopupRef.current = null; });
+      popup.on("close", () => {
+        coordPickerPopupRef.current = null;
+      });
     };
 
     if (coordVisible) {
@@ -1777,19 +1936,26 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const locationVisible = typeof layers?.myLocation === "object"
-      ? layers.myLocation.visible
-      : !!layers?.myLocation;
+    const locationVisible =
+      typeof layers?.myLocation === "object"
+        ? layers.myLocation.visible
+        : !!layers?.myLocation;
 
     if (!locationVisible) return;
 
     if (!navigator.geolocation) {
       const center = map.getCenter();
-      new mapboxgl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "240px" })
+      new mapboxgl.Popup({
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: "240px",
+      })
         .setLngLat([center.lng, center.lat])
-        .setHTML(`<div style="font-family:Arial,sans-serif;font-size:12px;color:#b91c1c">
+        .setHTML(
+          `<div style="font-family:Arial,sans-serif;font-size:12px;color:#b91c1c">
           Geolocation is not supported by your browser.
-        </div>`)
+        </div>`,
+        )
         .addTo(map);
       return;
     }
@@ -1849,23 +2015,39 @@ export default function MapView({
           locationMarkerRef.current = null;
         }
 
-        locationMarkerRef.current = new mapboxgl.Marker({ element: buildPulseEl(), anchor: "center" })
+        locationMarkerRef.current = new mapboxgl.Marker({
+          element: buildPulseEl(),
+          anchor: "center",
+        })
           .setLngLat([lng, lat])
           .addTo(map);
 
-        map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 1200, essential: true });
+        map.flyTo({
+          center: [lng, lat],
+          zoom: Math.max(map.getZoom(), 14),
+          duration: 1200,
+          essential: true,
+        });
 
-        navigator.clipboard?.writeText(`${lat.toFixed(6)}, ${lng.toFixed(6)}`).catch(() => {});
+        navigator.clipboard
+          ?.writeText(`${lat.toFixed(6)}, ${lng.toFixed(6)}`)
+          .catch(() => {});
       },
       (err) => {
         console.warn("Geolocation error:", err.message);
         const center = map.getCenter();
-        new mapboxgl.Popup({ closeButton: true, closeOnClick: false, maxWidth: "260px" })
+        new mapboxgl.Popup({
+          closeButton: true,
+          closeOnClick: false,
+          maxWidth: "260px",
+        })
           .setLngLat([center.lng, center.lat])
-          .setHTML(`<div style="font-family:Arial,sans-serif;font-size:12px;color:#b91c1c;padding:2px">
+          .setHTML(
+            `<div style="font-family:Arial,sans-serif;font-size:12px;color:#b91c1c;padding:2px">
             ⚠️ Could not get your location.<br/>
             <span style="color:#6b7280;font-size:11px">${err.message}</span>
-          </div>`)
+          </div>`,
+          )
           .addTo(map);
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
@@ -1880,9 +2062,10 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const snapVisible = typeof layers?.snapToFeature === "object"
-      ? layers.snapToFeature.visible
-      : !!layers?.snapToFeature;
+    const snapVisible =
+      typeof layers?.snapToFeature === "object"
+        ? layers.snapToFeature.visible
+        : !!layers?.snapToFeature;
 
     const clearSnapLayers = () => {
       try {
@@ -1890,7 +2073,9 @@ export default function MapView({
         if (map.getLayer(SNAP_LINE_LAYER)) map.removeLayer(SNAP_LINE_LAYER);
         if (map.getLayer(SNAP_LAYER)) map.removeLayer(SNAP_LAYER);
         if (map.getSource(SNAP_SOURCE)) map.removeSource(SNAP_SOURCE);
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     };
 
     // Collect all vertices from every loaded GeoJSON layer
@@ -1926,11 +2111,18 @@ export default function MapView({
       const vertices = getAllVertices();
       if (!vertices.length) {
         // No loaded layers to snap to — show info popup
-        const popup = new mapboxgl.Popup({ offset: 10, closeButton: true, closeOnClick: true, maxWidth: "240px" })
+        const popup = new mapboxgl.Popup({
+          offset: 10,
+          closeButton: true,
+          closeOnClick: true,
+          maxWidth: "240px",
+        })
           .setLngLat([lng, lat])
-          .setHTML(`<div style="font-family:Arial,sans-serif;font-size:12px;color:#92400e;padding:4px">
+          .setHTML(
+            `<div style="font-family:Arial,sans-serif;font-size:12px;color:#92400e;padding:4px">
             🧲 No loaded layers to snap to.<br/>Load a boundary or society layer first.
-          </div>`)
+          </div>`,
+          )
           .addTo(map);
         return;
       }
@@ -1947,18 +2139,28 @@ export default function MapView({
           snapLabel: `${snapLat.toFixed(6)}, ${snapLng.toFixed(6)}\n↔ ${distM.toFixed(1)} m`,
         }),
         // Dashed line from click to snap point
-        turf.lineString([[lng, lat], [snapLng, snapLat]]),
+        turf.lineString([
+          [lng, lat],
+          [snapLng, snapLat],
+        ]),
       ];
 
       if (!map.getSource(SNAP_SOURCE)) {
-        map.addSource(SNAP_SOURCE, { type: "geojson", data: turf.featureCollection(snapFeatures) });
+        map.addSource(SNAP_SOURCE, {
+          type: "geojson",
+          data: turf.featureCollection(snapFeatures),
+        });
 
         map.addLayer({
           id: SNAP_LINE_LAYER,
           type: "line",
           source: SNAP_SOURCE,
           filter: ["==", "$type", "LineString"],
-          paint: { "line-color": "#0ea5e9", "line-width": 1.5, "line-dasharray": [2, 2] },
+          paint: {
+            "line-color": "#0ea5e9",
+            "line-width": 1.5,
+            "line-dasharray": [2, 2],
+          },
         });
 
         map.addLayer({
@@ -1993,11 +2195,15 @@ export default function MapView({
           },
         });
       } else {
-        map.getSource(SNAP_SOURCE).setData(turf.featureCollection(snapFeatures));
+        map
+          .getSource(SNAP_SOURCE)
+          .setData(turf.featureCollection(snapFeatures));
       }
 
       // Copy snapped coords to clipboard
-      navigator.clipboard?.writeText(`${snapLat.toFixed(6)}, ${snapLng.toFixed(6)}`).catch(() => {});
+      navigator.clipboard
+        ?.writeText(`${snapLat.toFixed(6)}, ${snapLng.toFixed(6)}`)
+        .catch(() => {});
     };
 
     const handleRightClick = (e) => {
