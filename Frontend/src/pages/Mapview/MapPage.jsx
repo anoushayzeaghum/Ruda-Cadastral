@@ -334,6 +334,12 @@ console.log("filters =", outletContext?.filters);
     setMapboxMap(map || null);
   }, []);
 
+  const handleParcelPanelClose = useCallback(() => {
+    setParcelPanelOpen(false);
+    setSelectedParcel(null);
+    setSelectedParcelNumber("");
+  }, []);
+
   // Reset the printMap flag immediately after it fires so it can be triggered again
   useEffect(() => {
     const isPrint = typeof layers?.printMap === "object"
@@ -420,7 +426,7 @@ console.log("filters =", outletContext?.filters);
         <ParcelPanel
           parcel={selectedParcel}
           isOpen={parcelPanelOpen}
-          onClose={() => setParcelPanelOpen(false)}
+          onClose={handleParcelPanelClose}
         />
       </div>
     </div>

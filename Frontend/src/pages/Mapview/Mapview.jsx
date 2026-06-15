@@ -1621,6 +1621,25 @@ export default function MapView({
   }, [selectedMauza, viewBy]);
 
   useEffect(() => {
+    if (!isMapReady || selectedFeatureNumber) return;
+
+    const map = mapInstance.current;
+    if (!map) return;
+
+    try {
+      const selectedSource = map.getSource(SELECTED_SOURCE);
+      if (selectedSource) {
+        selectedSource.setData(emptyFeatureCollection());
+      }
+
+      clearCornerMarkers();
+      lastSyncedSelectionRef.current = "";
+    } catch (e) {
+      console.warn("Could not clear selected parcel", e);
+    }
+  }, [selectedFeatureNumber, isMapReady]);
+
+  useEffect(() => {
     if (!isMapReady || !selectedFeatureNumber) return;
 
     const map = mapInstance.current;
