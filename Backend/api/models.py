@@ -454,21 +454,24 @@ class RudaBoundary(models.Model):
 class Trijunction(models.Model):
 
     gid = models.AutoField(primary_key=True)
-    type = models.CharField(max_length=20, null=True, blank=True)
-    m1 = models.CharField(max_length=50, null=True, blank=True)
-    m1_id = models.FloatField(null=True, blank=True)
-    m2 = models.CharField(max_length=50, null=True, blank=True)
-    m2_id = models.FloatField(null=True, blank=True)
-    m3 = models.CharField(max_length=50, null=True, blank=True)
-    m3_id = models.FloatField(null=True, blank=True)
-    layer = models.CharField(max_length=254, null=True, blank=True)
-    path = models.CharField(max_length=254, null=True, blank=True)
+
+    # Your trijunction point table has point-style fields, not m1/m2/m3 mauza fields.
+    # Keep these mappings aligned with the actual DB columns so /api/trijunction/ does not return 500.
+    sr = models.FloatField(db_column="sr_", null=True, blank=True)
+    x = models.FloatField(null=True, blank=True)
+    y = models.FloatField(null=True, blank=True)
+    elevation = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    layer = models.CharField(max_length=50, null=True, blank=True)
+    gm_type = models.CharField(max_length=100, null=True, blank=True)
+    pid = models.IntegerField(null=True, blank=True)
+    code = models.CharField(max_length=50, null=True, blank=True)
+    path = models.CharField(max_length=500, null=True, blank=True)
+
     geom = gis_models.GeometryField(srid=4326)
 
     def __str__(self):
-        names = [self.m1, self.m2, self.m3]
-        names = [n for n in names if n]
-        return " - ".join(names) if names else f"Trijunction {self.gid}"
+        return self.name if self.name else f"Trijunction {self.gid}"
 
     class Meta:
         managed = False
@@ -522,11 +525,16 @@ class Acre(models.Model):
     tehsil = models.CharField(max_length=100, null=True, blank=True)
     tehsil_id = models.FloatField(null=True, blank=True)
 
+    # Your acre table uses mauza / mauza_id directly.
     mauza = models.CharField(max_length=100, null=True, blank=True)
     mauza_id = models.FloatField(null=True, blank=True)
 
     sq = models.FloatField(null=True, blank=True)
     acre = models.FloatField(null=True, blank=True)
+    m = models.FloatField(null=True, blank=True)
+    a = models.FloatField(null=True, blank=True)
+    layer = models.CharField(max_length=100, null=True, blank=True)
+    path = models.CharField(max_length=500, null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(srid=4326)
 
@@ -573,6 +581,8 @@ class GeodeticNetwork(models.Model):
 
     name = models.CharField(max_length=100, null=True, blank=True)
 
+    # Actual DB columns are easting_(m and northing_(
+    # Keep Python/API field names clean as easting_m / northing_m.
     easting_m = models.FloatField(db_column="easting_m", null=True, blank=True)
     northing_m = models.FloatField(db_column="northing_m", null=True, blank=True)
 

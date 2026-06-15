@@ -393,17 +393,19 @@ class TrijunctionSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "type",
-            "m1",
-            "m1_id",
-            "m2",
-            "m2_id",
-            "m3",
-            "m3_id",
+            "sr",
+            "x",
+            "y",
+            "elevation",
+            "name",
             "layer",
+            "gm_type",
+            "pid",
+            "code",
             "path",
             "geom",
         )
+
 # --------------------------------------------------------
 # Square Serializer
 
@@ -454,6 +456,10 @@ class AcreSerializer(GeoFeatureModelSerializer):
             "mauza_id",
             "sq",
             "acre",
+            "m",
+            "a",
+            "layer",
+            "path",
             "geom",
         )
 
@@ -480,7 +486,7 @@ class FieldPointsSerializer(GeoFeatureModelSerializer):
 
 # --------------------------------------------------------
 # GeodeticNetwork Serializer
-
+# --------------------------------------------------------
 class GeodeticNetworkSerializer(GeoFeatureModelSerializer):
 
     class Meta:
