@@ -1,12 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
+import commercialPlot12Pdf from "../../assets/Commercial Plot-12.pdf";
+import commercialPlot13Pdf from "../../assets/Commercial Plot-13.pdf";
+import commercialPlot14Pdf from "../../assets/Commercial Plot-14.pdf";
+
+const officialDemarcationPdfs = {
+  12: commercialPlot12Pdf,
+  13: commercialPlot13Pdf,
+  14: commercialPlot14Pdf,
+};
+
 const safeValue = (...values) => {
   for (const value of values) {
-    if (value !== undefined && value !== null && String(value).trim() !== "") return String(value);
+    if (value !== undefined && value !== null && String(value).trim() !== "")
+      return String(value);
   }
   return "-";
+};
+
+const getPlotPdfKey = (plotNo) => {
+  const match = String(plotNo || "").match(/\d+/);
+  return match ? match[0] : "";
 };
 
 const getCornerCoordinates = (geometry) => {
@@ -19,7 +35,8 @@ const getCornerCoordinates = (geometry) => {
   if (coords.length > 1) {
     const first = coords[0];
     const last = coords[coords.length - 1];
-    if (first?.[0] === last?.[0] && first?.[1] === last?.[1]) coords = coords.slice(0, -1);
+    if (first?.[0] === last?.[0] && first?.[1] === last?.[1])
+      coords = coords.slice(0, -1);
   }
 
   return coords.slice(0, 4).map((coord, index) => ({
@@ -47,6 +64,7 @@ const loadFirstAvailableImage = async (sources = []) => {
 };
 
 export default function PlotDetails({ parcel = null, filters = {} }) {
+  const [showPrintOptions, setShowPrintOptions] = useState(false);
   const p = parcel?.properties || {};
 
   const details = {
@@ -96,11 +114,57 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
     ["Remarks", details.remarks],
   ];
 
+  const handlePrintOfficialDemarcation = () => {
+    const plotKey = getPlotPdfKey(details.plotNo);
+    const pdfUrl = officialDemarcationPdfs[plotKey];
+
+    if (!pdfUrl) {
+      alert("Official demarcation is not available for this plot.");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      alert("Please allow popups to print official demarcation.");
+      return;
+    }
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Official Demarcation Plot ${plotKey}</title>
+          <style>
+            html, body {
+              margin: 0;
+              padding: 0;
+              width: 100%;
+              height: 100%;
+              overflow: hidden;
+            }
+            iframe {
+              width: 100%;
+              height: 100%;
+              border: none;
+            }
+          </style>
+        </head>
+        <body>
+          <iframe src="${pdfUrl}" onload="setTimeout(() => { window.focus(); window.print(); }, 800)"></iframe>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+  };
+
   const handlePrintReport = async () => {
+    setShowPrintOptions(false);
     if (!parcel) return;
 
     const mapCanvas = document.querySelector(".mapboxgl-canvas");
-    const mapElement = mapCanvas || document.querySelector(".mapboxgl-map") || document.querySelector("canvas");
+    const mapElement =
+      mapCanvas || document.querySelector(".mapboxgl-map") || document.querySelector("canvas");
 
     if (!mapElement) {
       alert("Unable to find the map area for report generation.");
@@ -109,8 +173,8 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
 
     const controls = Array.from(
       document.querySelectorAll(
-        ".mapboxgl-ctrl, .mapboxgl-ctrl-top-left, .mapboxgl-ctrl-top-right, .mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-right",
-      ),
+        ".mapboxgl-ctrl, .mapboxgl-ctrl-top-left, .mapboxgl-ctrl-top-right, .mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-bottom-right"
+      )
     );
 
     controls.forEach((ctrl) => {
@@ -150,7 +214,13 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
       ]);
 
       const cornerCoords = getCornerCoordinates(parcel.geometry);
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+        compress: true,
+      });
+
       const pageWidth = doc.internal.pageSize.getWidth();
       const marginX = 8;
       const contentWidth = pageWidth - marginX * 2;
@@ -172,13 +242,19 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
         doc.setFontSize(8.2);
         doc.setTextColor(35, 35, 35);
         const lines = doc.splitTextToSize(String(text || "-"), w - 3);
-        doc.text(lines, align === "center" ? x + w / 2 : x + 1.5, rowY + 4.2, align === "center" ? { align: "center" } : undefined);
+        doc.text(
+          lines,
+          align === "center" ? x + w / 2 : x + 1.5,
+          rowY + 4.2,
+          align === "center" ? { align: "center" } : undefined
+        );
       };
 
       doc.setDrawColor(120, 120, 120);
       doc.setLineWidth(0.25);
 
       if (gopLogo) doc.addImage(gopLogo, "PNG", marginX + 2, y + 1, 24, 24, undefined, "FAST");
+
       if (rudaLogo) {
         try {
           doc.addImage(rudaLogo, "PNG", marginX + contentWidth - 28, y + 1, 24, 24, undefined, "FAST");
@@ -201,32 +277,14 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
       const detailLabelW = 30;
       const detailValueW = contentWidth / 2 - detailLabelW;
       const detailRowH = 8;
-      const detailLabelFont = 7.7;
-      const detailValueFont = 7.5;
 
-      const drawTableCell = ({ x, rowY, w, h, text, isLabel = false, align = "left" }) => {
+      const drawTableCell = ({ x, rowY, w, h, text, isLabel = false }) => {
         doc.rect(x, rowY, w, h);
         doc.setFont("helvetica", isLabel ? "bold" : "normal");
-        doc.setFontSize(isLabel ? detailLabelFont : detailValueFont);
-        doc.setTextColor(isLabel ? 20 : 35, isLabel ? 20 : 35, isLabel ? 20 : 35);
-
-        const value = String(text || "-");
-        const lines = doc.splitTextToSize(value, w - 3);
-        const maxLines = Math.max(1, Math.floor((h - 2.6) / 3.15));
-        const visibleLines = lines.slice(0, maxLines);
-
-        if (lines.length > maxLines && visibleLines.length) {
-          const lastIndex = visibleLines.length - 1;
-          const last = visibleLines[lastIndex];
-          visibleLines[lastIndex] = last.length > 3 ? `${last.slice(0, -3)}...` : "...";
-        }
-
-        doc.text(
-          visibleLines,
-          align === "center" ? x + w / 2 : x + 1.5,
-          rowY + 4.8,
-          align === "center" ? { align: "center" } : undefined,
-        );
+        doc.setFontSize(isLabel ? 7.7 : 7.5);
+        doc.setTextColor(35, 35, 35);
+        const lines = doc.splitTextToSize(String(text || "-"), w - 3);
+        doc.text(lines.slice(0, 2), x + 1.5, rowY + 4.8);
       };
 
       const drawDetailRow = (leftLabel, leftValue, rightLabel, rightValue, rowH = detailRowH) => {
@@ -267,62 +325,48 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
       doc.rect(marginX, y, leftW, lowerBodyH);
       doc.rect(marginX + leftW, y, rightW, lowerBodyH);
 
-      if (imageData) doc.addImage(imageData, "PNG", marginX + 1.2, y + 1.2, leftW - 2.4, lowerBodyH - 2.4, undefined, "FAST");
+      if (imageData)
+        doc.addImage(imageData, "PNG", marginX + 1.2, y + 1.2, leftW - 2.4, lowerBodyH - 2.4, undefined, "FAST");
 
       const coordX = marginX + leftW;
       let cy = y;
       const coordRowH = 8;
-      const coordCols = [16, 34, rightW - 50];
+
       const drawCoordRow = (rowY, point, lat, lng) => {
-        let cx = coordX;
-        drawSimpleCell(cx, rowY, coordCols[0], coordRowH, point, "center");
-        cx += coordCols[0];
-        drawSimpleCell(cx, rowY, coordCols[1], coordRowH, lat);
-        cx += coordCols[1];
-        drawSimpleCell(cx, rowY, coordCols[2], coordRowH, lng);
+        drawSimpleCell(coordX, rowY, 16, coordRowH, point, "center");
+        drawSimpleCell(coordX + 16, rowY, 34, coordRowH, lat);
+        drawSimpleCell(coordX + 50, rowY, rightW - 50, coordRowH, lng);
       };
 
       drawCoordRow(cy, "Point", "Latitude", "Longitude");
       cy += coordRowH;
 
-      if (cornerCoords.length) {
-        cornerCoords.forEach((item) => {
-          drawCoordRow(
-            cy,
-            item.label,
-            Number.isFinite(item.lat) ? item.lat.toFixed(6) : "-",
-            Number.isFinite(item.lng) ? item.lng.toFixed(6) : "-",
-          );
-          cy += coordRowH;
-        });
-      } else {
-        drawSimpleCell(coordX, cy, rightW, coordRowH, "No demarcation coordinates available.");
+      cornerCoords.forEach((item) => {
+        drawCoordRow(
+          cy,
+          item.label,
+          Number.isFinite(item.lat) ? item.lat.toFixed(6) : "-",
+          Number.isFinite(item.lng) ? item.lng.toFixed(6) : "-"
+        );
         cy += coordRowH;
-      }
-
-      [["Coordinate System", "WGS 84 (EPSG:4326)"], ["Units", "Decimal Degrees"], ["Shape Area", details.shapeArea], ["Shape Length", details.shapeLength], ["Note", "Subject to field verification"]].forEach(([label, value]) => {
-        if (cy + coordRowH <= y + lowerBodyH) {
-          drawSimpleCell(coordX, cy, 34, coordRowH, label);
-          drawSimpleCell(coordX + 34, cy, rightW - 34, coordRowH, value);
-          cy += coordRowH;
-        }
       });
 
       y += lowerBodyH + 4;
       drawSectionHeader(marginX, y, contentWidth, 8, "Disclaimer");
       y += 8;
+
       doc.rect(marginX, y, contentWidth, 26);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.2);
       doc.setTextColor(35, 35, 35);
-      const disclaimer = "This plot demarcation report is generated from plot boundary data and is subject to field verification, official record validation, and applicable RUDA rules and regulations.";
-      doc.text(doc.splitTextToSize(disclaimer, contentWidth - 4), marginX + 2, y + 6);
-      y += 26;
-      doc.rect(marginX, y, contentWidth / 2, 12);
-      doc.rect(marginX + contentWidth / 2, y, contentWidth / 2, 12);
-      doc.setFontSize(10);
-      doc.text("Signature", marginX + 2, y + 8);
-      doc.text("Date", marginX + contentWidth / 2 + 2, y + 8);
+      doc.text(
+        doc.splitTextToSize(
+          "This plot demarcation report is generated from plot boundary data and is subject to field verification, official record validation, and applicable RUDA rules and regulations.",
+          contentWidth - 4
+        ),
+        marginX + 2,
+        y + 6
+      );
 
       const reportId = safeValue(details.plotNo, parcel?.id, "plot").replace(/\s+/g, "_");
       doc.save(`Plot_Report_${reportId}.pdf`);
@@ -340,22 +384,51 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
   return (
     <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] flex flex-col min-h-0 max-h-[355px]">
       <div className="h-[62px] border-b border-[#d4dbe2] px-4 flex items-center justify-between gap-3">
-        <h2 className="text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">Plot Details</h2>
+        <h2 className="text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
+          Plot Details
+        </h2>
 
         {parcel && (
-          <button
-            onClick={handlePrintReport}
-            className="text-[12px] font-semibold tracking-wider text-white bg-green-700 px-2 py-2 rounded hover:bg-[#165c2d] transition"
-            type="button"
-          >
-            Print Report
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowPrintOptions((prev) => !prev)}
+              className="text-[12px] font-semibold tracking-wider text-white bg-green-700 px-3 py-2 rounded hover:bg-[#165c2d] transition"
+              type="button"
+            >
+              Print
+            </button>
+
+            {showPrintOptions && (
+              <div className="absolute right-0 top-[38px] z-50 w-[210px] bg-white border border-gray-300 rounded shadow-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={handlePrintReport}
+                  className="w-full text-left px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100"
+                >
+                  Print Report
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPrintOptions(false);
+                    handlePrintOfficialDemarcation();
+                  }}
+                  className="w-full text-left px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100"
+                >
+                  Print Official Demarcation
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       <div className="p-4 h-full overflow-auto">
         {!parcel ? (
-          <div className="flex h-full items-center justify-center text-gray-400 text-sm">No plot selected.</div>
+          <div className="flex h-full items-center justify-center text-gray-400 text-sm">
+            No plot selected.
+          </div>
         ) : (
           <div className="space-y-3">
             {fields.map(([label, value]) => (
