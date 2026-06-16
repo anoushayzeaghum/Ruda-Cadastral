@@ -28,7 +28,15 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-const HERO_SLIDES = ["/s1.png", "/s2.png", "/s3.png", "/s4.png", "/s5.png", "/s6.png", "/s7.png"];
+const HERO_SLIDES = [
+  "/s1.png",
+  "/s2.png",
+  "/s3.png",
+  "/s4.png",
+  "/s5.png",
+  "/s6.png",
+  "/s7.png",
+];
 
 const NAV_LINKS = [
   { href: "#home", label: "Home" },
@@ -60,7 +68,7 @@ const GIS_APPS = [
     title: "GIS Metaverse",
     desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
     img: "/s2.png",
-    route: "/society-map",
+    route: "/gis-metaverse",
     color: "from-[#0B7A3B] to-[#004225]",
   },
   {
@@ -143,9 +151,21 @@ const FEATURES = [
 
 const TEAM = [
   { name: "Project Director", role: "RUDA Cadastral Project", featured: true },
-  { name: "Director GIS", role: "GIS & Spatial Data Management", featured: false },
-  { name: "Cadastral Lead", role: "Parcel Mapping & Land Records", featured: false },
-  { name: "Survey Manager", role: "Field Operations & GPS Control", featured: false },
+  {
+    name: "Director GIS",
+    role: "GIS & Spatial Data Management",
+    featured: false,
+  },
+  {
+    name: "Cadastral Lead",
+    role: "Parcel Mapping & Land Records",
+    featured: false,
+  },
+  {
+    name: "Survey Manager",
+    role: "Field Operations & GPS Control",
+    featured: false,
+  },
 ];
 
 function Avatar({ name, size = "md" }) {
@@ -295,7 +315,9 @@ export default function LandingPage() {
 
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolled ? "bg-white shadow-lg" : "bg-white/95 backdrop-blur-sm shadow-sm"
+          scrolled
+            ? "bg-white shadow-lg"
+            : "bg-white/95 backdrop-blur-sm shadow-sm"
         }`}
       >
         <div className="max-w-6xl mx-auto px-5 flex items-center justify-between h-20">
@@ -414,8 +436,10 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.07] mb-8 tracking-tight">
-            RUDA Cadastral
-            <span className="block text-[#49B84A] mt-1">GIS Portal</span>
+            RUDA GIS METAVERSE
+            <span className="block text-[#49B84A] mt-1 text-7xl">
+              Cadastral Portal
+            </span>
           </h1>
 
           <p className="max-w-2xl mx-auto text-lg sm:text-xl text-white/85 leading-relaxed mb-12">
