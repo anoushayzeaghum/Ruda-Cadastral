@@ -2424,7 +2424,7 @@ export default function MapView({
 
     const handuGujranOrthoOpacity =
       typeof layers?.handuGujranOrtho === "object" &&
-      Number.isFinite(Number(layers.handuGujranOrtho.opacity))
+        Number.isFinite(Number(layers.handuGujranOrtho.opacity))
         ? Number(layers.handuGujranOrtho.opacity) / 100
         : 1.0;
 
