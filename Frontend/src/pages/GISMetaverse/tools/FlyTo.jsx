@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { Loader2, Send } from "lucide-react";
 import { getProjects } from "../../../services/metaverseApi";
 
 export default function FlyTo({
@@ -10,7 +10,7 @@ export default function FlyTo({
 }) {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(
-    filters?.projectId || "",
+    filters?.projectId || ""
   );
   const [loading, setLoading] = useState(false);
 
@@ -36,10 +36,14 @@ export default function FlyTo({
     };
   }, []);
 
+  useEffect(() => {
+    setSelectedProjectId(filters?.projectId || "");
+  }, [filters?.projectId]);
+
   const handleFlyToProject = () => {
     if (!selectedProjectId) return;
 
-    setFilters((prev) => ({
+    setFilters?.((prev) => ({
       ...prev,
       projectId: selectedProjectId,
       block: "",
@@ -48,7 +52,7 @@ export default function FlyTo({
       area: "",
     }));
 
-    setLayerVisibility((prev) => ({
+    setLayerVisibility?.((prev) => ({
       ...prev,
       boundary: true,
       masterPlan: true,
@@ -59,40 +63,40 @@ export default function FlyTo({
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-3 text-[12px] font-bold">
-        <span>Fly To</span>
-        <ChevronRight size={15} />
+    <div className="flex items-center gap-2 rounded-md border border-[#344055] bg-[#111827] px-2 py-1.5 text-white shadow-lg">
+      <div className="flex items-center gap-1 text-[12px] font-bold whitespace-nowrap">
+        <Send size={15} />
+        Fly to :
       </div>
 
-      <div className="space-y-3 p-4">
-        <label className="text-[11px] font-semibold text-white/70">
-          Project
-        </label>
+      <select
+        value={selectedProjectId}
+        onChange={(e) => setSelectedProjectId(e.target.value)}
+        className="h-7 w-[160px] rounded bg-white px-2 text-[12px] text-[#111827] outline-none"
+      >
+        <option value="">Select Project</option>
 
-        <select
-          value={selectedProjectId}
-          onChange={(e) => setSelectedProjectId(e.target.value)}
-          className="w-full rounded-md border border-[#3a4354] bg-[#111827] px-3 py-2 text-[12px] text-white outline-none"
-        >
-          <option value="">Select Project</option>
-          {projects.map((project) => (
-            <option key={project.gid || project.id} value={project.gid || project.id}>
-              {project.name || project.project_name || `Project ${project.gid || project.id}`}
-            </option>
-          ))}
-        </select>
+        {projects.map((project) => (
+          <option
+            key={project.gid || project.id}
+            value={project.gid || project.id}
+          >
+            {project.name ||
+              project.project_name ||
+              `Project ${project.gid || project.id}`}
+          </option>
+        ))}
+      </select>
 
-        <button
-          type="button"
-          onClick={handleFlyToProject}
-          disabled={!selectedProjectId || loading}
-          className="flex w-full items-center justify-center gap-2 rounded-md bg-[#65c96b] px-3 py-2 text-[12px] font-bold text-[#111827] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {loading && <Loader2 size={14} className="animate-spin" />}
-          Fly To Project
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={handleFlyToProject}
+        disabled={!selectedProjectId || loading}
+        className="flex h-7 items-center justify-center gap-1 rounded bg-white px-5 text-[12px] font-bold text-[#111827] disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {loading ? <Loader2 size={13} className="animate-spin" /> : null}
+        Fly
+      </button>
     </div>
   );
 }
