@@ -17,6 +17,9 @@ import Basemaps from "./tools/Basemaps";
 import LayersPanel from "./tools/Layers";
 import DroneImagery from "./tools/DroneImagery";
 import TimeLapse from "./tools/TimeLapse";
+import ChangeDetection from "./tools/ChangeDetection";
+import Import from "./tools/Import";
+import Measurement from "./tools/Measurement";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
@@ -84,7 +87,13 @@ export default function MetaverseLeftToolbar({
                     ? "w-[320px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                     : activeTool === "timeLapse"
                       ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                      : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                      : activeTool === "changeDetection"
+                        ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                        : activeTool === "import"
+                          ? "w-[340px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                          : activeTool === "measurement"
+                            ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                            : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
           }`}
           style={{ top: `${panelTop}px` }}
         >
@@ -100,11 +109,19 @@ export default function MetaverseLeftToolbar({
 
           {activeTool === "timeLapse" && <TimeLapse map={map} />}
 
+          {activeTool === "changeDetection" && <ChangeDetection map={map} />}
+          {activeTool === "import" && <Import map={map} onClose={() => setActiveTool(null)} />}
+
+          {activeTool === "measurement" && <Measurement map={map} />}
+
           {activeTool !== "layers" &&
             activeTool !== "filter" &&
             activeTool !== "basemaps" &&
             activeTool !== "droneImagery" &&
-            activeTool !== "timeLapse" && (
+            activeTool !== "timeLapse" &&
+            activeTool !== "changeDetection" &&
+            activeTool !== "import" &&
+            activeTool !== "measurement" && (
               <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
             )}
         </div>
