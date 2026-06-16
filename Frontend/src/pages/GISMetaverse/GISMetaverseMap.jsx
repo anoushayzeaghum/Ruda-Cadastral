@@ -322,6 +322,218 @@ function setLayerVisibility(map, layerIds, visible) {
   });
 }
 
+function setLayerPaintProperty(map, layerId, property, value) {
+  if (map.getLayer(layerId)) {
+    map.setPaintProperty(layerId, property, value);
+  }
+}
+
+function applyMetaverseLayerOpacities(
+  map,
+  layerVisibility = {},
+  adminBoundaryVisibility = {},
+) {
+  const getOpacity = (source, key, fallback = 100) =>
+    Number(source?.[key] ?? fallback) / 100;
+
+  const boundaryOpacity = getOpacity(layerVisibility, "boundaryOpacity");
+  const masterPlanOpacity = getOpacity(layerVisibility, "masterPlanOpacity");
+  const spotLevelOpacity = getOpacity(layerVisibility, "spotLevelOpacity");
+  const contoursOpacity = getOpacity(layerVisibility, "contoursOpacity");
+  const roadsOpacity = getOpacity(layerVisibility, "roadsOpacity");
+
+  const waterSupplyPointsOpacity = getOpacity(
+    layerVisibility,
+    "waterSupplyPointsOpacity",
+  );
+  const waterSupplyLinesOpacity = getOpacity(
+    layerVisibility,
+    "waterSupplyLinesOpacity",
+  );
+  const sewagePointsOpacity = getOpacity(layerVisibility, "sewagePointsOpacity");
+  const cameraLocationsOpacity = getOpacity(
+    layerVisibility,
+    "cameraLocationsOpacity",
+  );
+
+  const rudaBoundaryOpacity = getOpacity(
+    adminBoundaryVisibility,
+    "rudaBoundaryOpacity",
+  );
+  const geodeticNetworkOpacity = getOpacity(
+    adminBoundaryVisibility,
+    "geodeticNetworkOpacity",
+  );
+  const proposedRoadsOpacity = getOpacity(
+    adminBoundaryVisibility,
+    "proposedRoadsOpacity",
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.boundaryFill,
+    "fill-opacity",
+    0.12 * boundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.boundaryLine,
+    "line-opacity",
+    boundaryOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.masterPlanFill,
+    "fill-opacity",
+    0.45 * masterPlanOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.masterPlanLine,
+    "line-opacity",
+    masterPlanOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.masterPlanLabel,
+    "text-opacity",
+    masterPlanOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.spotLevelCircle,
+    "circle-opacity",
+    spotLevelOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.spotLevelCircle,
+    "circle-stroke-opacity",
+    spotLevelOpacity,
+  );
+
+  setLayerPaintProperty(map, LAYERS.contoursLine, "line-opacity", contoursOpacity);
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.roadsFill,
+    "fill-opacity",
+    0.35 * roadsOpacity,
+  );
+  setLayerPaintProperty(map, LAYERS.roadsLine, "line-opacity", roadsOpacity);
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.waterSupplyPointsCircle,
+    "circle-opacity",
+    waterSupplyPointsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.waterSupplyPointsCircle,
+    "circle-stroke-opacity",
+    waterSupplyPointsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.waterSupplyPointsLabel,
+    "text-opacity",
+    waterSupplyPointsOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.waterSupplyLinesLine,
+    "line-opacity",
+    waterSupplyLinesOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.sewagePointsCircle,
+    "circle-opacity",
+    sewagePointsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.sewagePointsCircle,
+    "circle-stroke-opacity",
+    sewagePointsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.sewagePointsLabel,
+    "text-opacity",
+    sewagePointsOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.cameraLocationsCircle,
+    "circle-opacity",
+    cameraLocationsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.cameraLocationsCircle,
+    "circle-stroke-opacity",
+    cameraLocationsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.cameraLocationsLabel,
+    "text-opacity",
+    cameraLocationsOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaBoundaryFill,
+    "fill-opacity",
+    0.5 * rudaBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaBoundaryLine,
+    "line-opacity",
+    0.95 * rudaBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaBoundaryDashLine,
+    "line-opacity",
+    0.9 * rudaBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaBoundaryLabel,
+    "text-opacity",
+    rudaBoundaryOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.proposedRoadsLine,
+    "line-opacity",
+    proposedRoadsOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.geodeticNetworkCircle,
+    "circle-opacity",
+    geodeticNetworkOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.geodeticNetworkCircle,
+    "circle-stroke-opacity",
+    geodeticNetworkOpacity,
+  );
+}
+
 function addIntroBoundaryLayer(map, data, label) {
   ensureSource(map, SOURCES.introBoundary, data);
   ensureSource(map, SOURCES.introLabel, makeLabelGeoJSON(label, data));
@@ -1083,6 +1295,8 @@ export default function GISMetaverseMap({
         true,
       );
 
+      applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+
       if (hasPlotFilter || layerVisibility.masterPlan) {
         fitGeoJSON(map, plotGeoJSON);
       }
@@ -1104,6 +1318,9 @@ export default function GISMetaverseMap({
     filters.tr_own,
     filters.site_plan,
     layerVisibility.masterPlan,
+    layerVisibility.boundaryOpacity,
+    layerVisibility.masterPlanOpacity,
+    adminBoundaryVisibility,
     mapRef,
   ]);
 
@@ -1163,11 +1380,13 @@ export default function GISMetaverseMap({
         [LAYERS.geodeticNetworkCircle],
         adminBoundaryVisibility.geodeticNetwork,
       );
+
+      applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
     else map.once("load", run);
-  }, [adminBoundaryVisibility, mapRef]);
+  }, [adminBoundaryVisibility, layerVisibility, mapRef]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1222,7 +1441,9 @@ export default function GISMetaverseMap({
       [LAYERS.cameraLocationsCircle, LAYERS.cameraLocationsLabel],
       layerVisibility.cameraLocations,
     );
-  }, [layerVisibility, mapRef]);
+
+    applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+  }, [layerVisibility, adminBoundaryVisibility, mapRef]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1268,6 +1489,8 @@ export default function GISMetaverseMap({
         const data = await getCameraLocationsGeoJSON(filters.projectId);
         addCameraLocationsLayer(map, data);
       }
+
+      applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
@@ -1283,6 +1506,14 @@ export default function GISMetaverseMap({
     layerVisibility.waterSupplyLines,
     layerVisibility.sewagePoints,
     layerVisibility.cameraLocations,
+    layerVisibility.spotLevelOpacity,
+    layerVisibility.contoursOpacity,
+    layerVisibility.roadsOpacity,
+    layerVisibility.waterSupplyPointsOpacity,
+    layerVisibility.waterSupplyLinesOpacity,
+    layerVisibility.sewagePointsOpacity,
+    layerVisibility.cameraLocationsOpacity,
+    adminBoundaryVisibility,
     mapRef,
   ]);
 

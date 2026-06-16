@@ -12,13 +12,7 @@ export default function MetaverseDashboard() {
   const [activeTool, setActiveTool] = useState(false);
   const [showMetaverseLegend, setShowMetaverseLegend] = useState(false);
 
-  const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState({
-    rudaBoundary: false,
-    geodeticNetwork: false,
-    proposedRoads: false,
-  });
-
-  const [metaverseFilters, setMetaverseFilters] = useState({
+  const defaultFilters = {
     projectId: "",
     block: "",
     plotType: "",
@@ -31,34 +25,56 @@ export default function MetaverseDashboard() {
     tr_cate: "",
     tr_own: "",
     site_plan: "",
-  });
+  };
 
-  const [layerVisibility, setLayerVisibility] = useState({
+  const defaultLayerVisibility = {
     boundary: false,
     masterPlan: false,
     spotLevel: false,
     contours: false,
     roads: false,
+
+    boundaryOpacity: 100,
+    masterPlanOpacity: 100,
+    spotLevelOpacity: 100,
+    contoursOpacity: 100,
+    roadsOpacity: 100,
+
     waterSupplyPoints: false,
     waterSupplyLines: false,
     sewagePoints: false,
     cameraLocations: false,
-  });
+
+    waterSupplyPointsOpacity: 100,
+    waterSupplyLinesOpacity: 100,
+    sewagePointsOpacity: 100,
+    cameraLocationsOpacity: 100,
+  };
+
+  const defaultAdminBoundaryVisibility = {
+    rudaBoundary: false,
+    geodeticNetwork: false,
+    proposedRoads: false,
+
+    rudaBoundaryOpacity: 100,
+    geodeticNetworkOpacity: 100,
+    proposedRoadsOpacity: 100,
+  };
+
+  const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState(
+    defaultAdminBoundaryVisibility
+  );
+
+  const [metaverseFilters, setMetaverseFilters] = useState(defaultFilters);
+
+  const [layerVisibility, setLayerVisibility] = useState(
+    defaultLayerVisibility
+  );
 
   const handleIntroComplete = useCallback(() => {
     setMetaverseFilters({
+      ...defaultFilters,
       projectId: "5",
-      block: "",
-      plotType: "",
-      plotNo: "",
-      area: "",
-      parkfront: "",
-      rd_facing: "",
-      poss_st: "",
-      plotStatus: "",
-      tr_cate: "",
-      tr_own: "",
-      site_plan: "",
     });
 
     setLayerVisibility((prev) => ({
@@ -66,49 +82,18 @@ export default function MetaverseDashboard() {
       boundary: true,
       masterPlan: true,
       roads: true,
+
+      boundaryOpacity: prev.boundaryOpacity ?? 100,
+      masterPlanOpacity: prev.masterPlanOpacity ?? 100,
+      roadsOpacity: prev.roadsOpacity ?? 100,
     }));
   }, []);
 
   const handleReset = () => {
-    setMetaverseFilters({
-      projectId: "",
-      block: "",
-      plotType: "",
-      plotNo: "",
-      area: "",
-      parkfront: "",
-      rd_facing: "",
-      poss_st: "",
-      plotStatus: "",
-      tr_cate: "",
-      tr_own: "",
-      site_plan: "",
-    });
-
-    setLayerVisibility({
-      boundary: false,
-      masterPlan: false,
-      spotLevel: false,
-      contours: false,
-      roads: false,
-      waterSupplyPoints: false,
-      waterSupplyLines: false,
-      sewagePoints: false,
-      cameraLocations: false,
-    });
-
+    setMetaverseFilters(defaultFilters);
+    setLayerVisibility(defaultLayerVisibility);
+    setAdminBoundaryVisibility(defaultAdminBoundaryVisibility);
     setShowMetaverseLegend(false);
-  };
-
-  const handleFilterChange = (key, value) => {
-    setMetaverseFilters((prev) => {
-      const updated = {
-        ...prev,
-        [key]: value,
-      };
-
-      return updated;
-    });
   };
 
   return (
