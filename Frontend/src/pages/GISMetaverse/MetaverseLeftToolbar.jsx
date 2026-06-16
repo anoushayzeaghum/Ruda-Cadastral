@@ -15,6 +15,7 @@ import {
 import Filter from "./tools/Filter";
 import Basemaps from "./tools/Basemaps";
 import LayersPanel from "./tools/Layers";
+import FlyTo from "./tools/FlyTo";
 import DroneImagery from "./tools/DroneImagery";
 import TimeLapse from "./tools/TimeLapse";
 import ChangeDetection from "./tools/ChangeDetection";
@@ -91,15 +92,17 @@ export default function MetaverseLeftToolbar({
                   ? "w-[380px] max-h-[340px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                   : activeTool === "droneImagery"
                     ? "w-[320px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                    : activeTool === "timeLapse"
-                      ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                      : activeTool === "changeDetection"
+                    : activeTool === "flyTo"
+                      ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                      : activeTool === "timeLapse"
                         ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                        : activeTool === "import"
-                          ? "w-[340px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                          : activeTool === "measurement"
-                            ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                            : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                        : activeTool === "changeDetection"
+                          ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                          : activeTool === "import"
+                            ? "w-[340px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                            : activeTool === "measurement"
+                              ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                              : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
           }`}
           style={{ top: `${panelTop}px` }}
         >
@@ -143,13 +146,16 @@ export default function MetaverseLeftToolbar({
           {activeTool === "timeLapse" && <TimeLapse map={map} />}
 
           {activeTool === "changeDetection" && <ChangeDetection map={map} />}
-          {activeTool === "import" && <Import map={map} onClose={() => setActiveTool(null)} />}
+          {activeTool === "import" && (
+            <Import map={map} onClose={() => setActiveTool(null)} />
+          )}
 
           {activeTool === "measurement" && <Measurement map={map} />}
 
           {activeTool !== "layers" &&
             activeTool !== "filter" &&
             activeTool !== "basemaps" &&
+            activeTool !== "flyTo" &&
             activeTool !== "droneImagery" &&
             activeTool !== "timeLapse" &&
             activeTool !== "changeDetection" &&
