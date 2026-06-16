@@ -53,12 +53,9 @@ export default function Header({
 
         <div className="flex items-center gap-2 min-w-0">
           <h1 className="text-2xl md:text-3xl font-normal text-white whitespace-nowrap">
-            RCMS
+            Administration Portal
           </h1>
-          <span className="text-gray-300 hidden sm:inline">|</span>
-          <span className="text-sm md:text-lg font-normal text-white/90 dark:text-gray-300 truncate hidden sm:inline">
-            RUDA Cadastral Management System
-          </span>
+         
         </div>
       </div>
 

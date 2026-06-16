@@ -56,7 +56,7 @@ export default function MetaverseDashboard() {
     geodeticNetwork: false,
     proposedRoads: false,
 
-    rudaBoundaryOpacity: 100,
+    rudaBoundaryOpacity: 50,
     geodeticNetworkOpacity: 100,
     proposedRoadsOpacity: 100,
   };

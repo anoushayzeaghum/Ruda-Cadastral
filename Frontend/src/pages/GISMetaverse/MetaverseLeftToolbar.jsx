@@ -1,28 +1,30 @@
+// MetaverseLeftToolbar.jsx
+import { useEffect, useState } from "react";
 import {
   Layers,
   Drone,
   Filter as FilterIcon,
   MousePointerClick,
   Hourglass,
-  Send,
   Ruler,
   Box,
   Globe2,
   FileInput,
   ChevronRight,
+  Send,
 } from "lucide-react";
-
-import { useNavigate } from "react-router-dom"; // ✅ ADD THIS
+import { useNavigate } from "react-router-dom";
 
 import Filter from "./tools/Filter";
 import Basemaps from "./tools/Basemaps";
 import LayersPanel from "./tools/Layers";
-import FlyTo from "./tools/FlyTo";
 import DroneImagery from "./tools/DroneImagery";
 import TimeLapse from "./tools/TimeLapse";
 import ChangeDetection from "./tools/ChangeDetection";
 import Import from "./tools/Import";
 import Measurement from "./tools/Measurement";
+import SegmentMeasurement from "./tools/SegmentMeasurement";
+import FlyTo from "./tools/FlyTo";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
@@ -30,10 +32,8 @@ const tools = [
   { id: "filter", label: "Filter", icon: FilterIcon },
   { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
   { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
-  { id: "flyTo", label: "Fly To", icon: Send },
   { id: "measurement", label: "Measurement", icon: Ruler },
   { id: "threeD", label: "3D View", icon: Box },
-  { id: "basemaps", label: "Basemaps", icon: Globe2 },
   { id: "import", label: "Import", icon: FileInput },
 ];
 
@@ -51,7 +51,27 @@ export default function MetaverseLeftToolbar({
   adminBoundaryVisibility,
   setAdminBoundaryVisibility,
 }) {
-  const navigate = useNavigate(); // ✅ ADD THIS
+  const navigate = useNavigate();
+  const [bottomPanel, setBottomPanel] = useState(null);
+  const [followEnabled, setFollowEnabled] = useState(false);
+
+  useEffect(() => {
+    if (!followEnabled || !map || !navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        map.flyTo({
+          center: [pos.coords.longitude, pos.coords.latitude],
+          zoom: 16,
+          duration: 900,
+        });
+      },
+      (err) => console.error("Follow location error:", err),
+      { enableHighAccuracy: true },
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [followEnabled, map]);
 
   const activeToolIndex = tools.findIndex((tool) => tool.id === activeTool);
 
@@ -61,14 +81,18 @@ export default function MetaverseLeftToolbar({
       : 12;
 
   const handleToolClick = (toolId) => {
-    // ✅ SPECIAL CASE: 3D VIEW
     if (toolId === "threeD") {
-      navigate("/society-3d");   // 🚀 ROUTE CHANGE
+      navigate("/society-3d");
       return;
     }
 
-    // normal behavior
+    setBottomPanel(null);
     setActiveTool((prev) => (prev === toolId ? null : toolId));
+  };
+
+  const handleBottomPanel = (panel) => {
+    setActiveTool(null);
+    setBottomPanel((prev) => (prev === panel ? null : panel));
   };
 
   return (
@@ -83,7 +107,7 @@ export default function MetaverseLeftToolbar({
               key={tool.id}
               type="button"
               title={tool.label}
-              onClick={() => handleToolClick(tool.id)}   // ✅ CHANGED
+              onClick={() => handleToolClick(tool.id)}
               className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
                 isActive
                   ? "border-[#8bd66f] bg-[#243041] text-white"
@@ -103,21 +127,17 @@ export default function MetaverseLeftToolbar({
               ? "w-[320px] overflow-visible"
               : activeTool === "layers"
                 ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                : activeTool === "basemaps"
-                  ? "w-[380px] max-h-[340px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                  : activeTool === "droneImagery"
-                    ? "w-[320px] max-h-[calc(100vh-90px)] overflow-y-auto"
-                    : activeTool === "flyTo"
-                      ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto"
-                      : activeTool === "timeLapse"
-                        ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                        : activeTool === "changeDetection"
-                          ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                          : activeTool === "import"
-                            ? "w-[340px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                            : activeTool === "measurement"
-                              ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                              : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                : activeTool === "droneImagery"
+                  ? "w-[320px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                  : activeTool === "timeLapse"
+                    ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                    : activeTool === "changeDetection"
+                      ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                      : activeTool === "import"
+                        ? "w-[340px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                        : activeTool === "measurement"
+                          ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                          : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
           }`}
           style={{ top: `${panelTop}px` }}
         >
@@ -138,40 +158,23 @@ export default function MetaverseLeftToolbar({
               projectId={filters?.projectId}
               setLayerVisibility={setLayerVisibility}
               onApply={(appliedFilters) => {
-                setFilters?.((prev) => ({
-                  ...prev,
-                  ...appliedFilters,
-                }));
+                setFilters?.((prev) => ({ ...prev, ...appliedFilters }));
                 setActiveTool("layers");
               }}
               onClose={() => setActiveTool(null)}
             />
           )}
 
-          {activeTool === "flyTo" && (
-            <FlyTo
-              filters={filters}
-              setFilters={setFilters}
-              setLayerVisibility={setLayerVisibility}
-              onClose={() => setActiveTool("layers")}
-            />
-          )}
-
-          {activeTool === "basemaps" && <Basemaps map={map} />}
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
           {activeTool === "timeLapse" && <TimeLapse map={map} />}
-
           {activeTool === "changeDetection" && <ChangeDetection map={map} />}
           {activeTool === "import" && (
             <Import map={map} onClose={() => setActiveTool(null)} />
           )}
-
           {activeTool === "measurement" && <Measurement map={map} />}
 
           {activeTool !== "layers" &&
             activeTool !== "filter" &&
-            activeTool !== "basemaps" &&
-            activeTool !== "flyTo" &&
             activeTool !== "droneImagery" &&
             activeTool !== "timeLapse" &&
             activeTool !== "changeDetection" &&
@@ -181,6 +184,41 @@ export default function MetaverseLeftToolbar({
             )}
         </div>
       )}
+
+      <div className="absolute bottom-4 left-2 z-40 flex flex-col items-start gap-2">
+        {bottomPanel === "basemaps" && (
+          <div className="mb-1 w-[380px] max-h-[340px] overflow-y-auto rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <Basemaps map={map} />
+          </div>
+        )}
+
+        {bottomPanel === "flyTo" && (
+          <div className="mb-1 w-[300px] rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+            <FlyTo
+              filters={filters}
+              setFilters={setFilters}
+              setLayerVisibility={setLayerVisibility}
+              onClose={() => setBottomPanel(null)}
+            />
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => handleBottomPanel("basemaps")}
+          className="flex h-9 w-9 items-center justify-center rounded-md border border-[#344055] bg-[#1d2533] text-white shadow-md transition hover:bg-[#293445]"
+          title="Basemaps"
+        >
+          <Globe2 size={20} strokeWidth={2.2} />
+        </button>
+        <FlyTo
+          filters={filters}
+          setFilters={setFilters}
+          setLayerVisibility={setLayerVisibility}
+        />
+
+        <SegmentMeasurement map={map} />
+      </div>
     </>
   );
 }

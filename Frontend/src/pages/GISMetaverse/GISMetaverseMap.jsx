@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { setupPlotClickPopup } from "./PlotPopup";
 import {
   getBlocksGeoJSON,
   getContourGeoJSON,
@@ -72,7 +73,7 @@ const LAYERS = {
 const emptyFC = { type: "FeatureCollection", features: [] };
 
 const ROAD_LEGEND_ITEMS = [
-  { label: "Primary Roads (300'-Wide)", color: "#19598d", width: 3 },
+  { label: "Primary Roads (300'-Wide)", color: "#c92020", width: 2 },
   { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 3 },
   { label: "Tertiary Roads", color: "#ff9800", width: 3 },
   { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
@@ -134,7 +135,9 @@ const getRudaPhaseColor = (phaseId) => {
 
 const getRudaFeatureId = (feature = {}) => {
   const props = feature?.properties || {};
-  return props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid ?? "ruda";
+  return (
+    props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid ?? "ruda"
+  );
 };
 
 const getRudaPhaseLabel = (props = {}, phaseId = "") => {
@@ -350,7 +353,10 @@ function applyMetaverseLayerOpacities(
     layerVisibility,
     "waterSupplyLinesOpacity",
   );
-  const sewagePointsOpacity = getOpacity(layerVisibility, "sewagePointsOpacity");
+  const sewagePointsOpacity = getOpacity(
+    layerVisibility,
+    "sewagePointsOpacity",
+  );
   const cameraLocationsOpacity = getOpacity(
     layerVisibility,
     "cameraLocationsOpacity",
@@ -414,7 +420,12 @@ function applyMetaverseLayerOpacities(
     spotLevelOpacity,
   );
 
-  setLayerPaintProperty(map, LAYERS.contoursLine, "line-opacity", contoursOpacity);
+  setLayerPaintProperty(
+    map,
+    LAYERS.contoursLine,
+    "line-opacity",
+    contoursOpacity,
+  );
 
   setLayerPaintProperty(
     map,
@@ -1028,7 +1039,11 @@ function addRudaBoundaryLayer(map, data) {
 }
 
 function addProposedRoadsLayer(map, data) {
-  ensureSource(map, SOURCES.proposedRoads, prepareProposedRoadsGeoJSONForDisplay(data));
+  ensureSource(
+    map,
+    SOURCES.proposedRoads,
+    prepareProposedRoadsGeoJSONForDisplay(data),
+  );
 
   if (!map.getLayer(LAYERS.proposedRoadsLine)) {
     map.addLayer({
@@ -1048,60 +1063,6 @@ function addProposedRoadsLayer(map, data) {
   }
 }
 
-// NEW: Helper to build popup HTML content from plot properties
-const buildPlotPopupHTML = (props) => {
-  const fields = [
-    { key: "name", label: "Name" },
-    { key: "type", label: "Type" },
-    { key: "remarks", label: "Remarks" },
-    { key: "block", label: "Block" },
-    { key: "plot_area", label: "Plot Area" },
-    { key: "dimension", label: "Dimension" },
-    { key: "parkfront", label: "Park Front" },
-    { key: "rd_ft", label: "Road Front" },
-    { key: "storey", label: "Storey" },
-    { key: "rd_facing", label: "Road Facing" },
-    { key: "h", label: "Height" },
-    { key: "demar", label: "Demarcation" },
-    { key: "possession", label: "Possession" },
-    { key: "poss_st", label: "Possession Status" },
-    { key: "canceled", label: "Status" },
-    { key: "site_plan", label: "Site Plan" },
-    { key: "tr_own", label: "Owner" },
-    { key: "tr_cate", label: "Category" },
-    { key: "tr_p_no", label: "Transfer Plot No" },
-    { key: "shape_leng", label: "Shape Length" },
-    { key: "shape_area", label: "Shape Area" },
-  ];
-
-  const plotNo = props.plot_no || props.gid || "N/A";
-
-  const rows = fields
-    .filter((f) => props[f.key] !== null && props[f.key] !== undefined && props[f.key] !== "")
-    .map((f) => {
-      const val = props[f.key];
-      const displayVal = typeof val === "number" ? val.toFixed(2) : String(val);
-      return `
-        <div class="plot-popup-row">
-          <span class="plot-popup-label">${f.label}:</span>
-          <span class="plot-popup-value">${displayVal}</span>
-        </div>
-      `;
-    })
-    .join("");
-
-  return `
-    <div class="plot-popup-container">
-      <div class="plot-popup-header">
-        <div class="plot-popup-plot-no">Plot No: ${plotNo}</div>
-      </div>
-      <div class="plot-popup-body">
-        ${rows || '<div class="plot-popup-row"><span class="plot-popup-value">No additional details</span></div>'}
-      </div>
-    </div>
-  `;
-};
-
 export default function GISMetaverseMap({
   mapRef,
   setIsMapReady,
@@ -1113,10 +1074,6 @@ export default function GISMetaverseMap({
 }) {
   const mapContainerRef = useRef(null);
   const introHasRunRef = useRef(false);
-  // NEW: Refs for hover handlers and popup
-  const popupRef = useRef(null);
-  const hoveredFeatureIdRef = useRef(null);
-
   useEffect(() => {
     if (mapRef.current) return;
 
@@ -1295,7 +1252,11 @@ export default function GISMetaverseMap({
         true,
       );
 
-      applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+      applyMetaverseLayerOpacities(
+        map,
+        layerVisibility,
+        adminBoundaryVisibility,
+      );
 
       if (hasPlotFilter || layerVisibility.masterPlan) {
         fitGeoJSON(map, plotGeoJSON);
@@ -1381,7 +1342,11 @@ export default function GISMetaverseMap({
         adminBoundaryVisibility.geodeticNetwork,
       );
 
-      applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+      applyMetaverseLayerOpacities(
+        map,
+        layerVisibility,
+        adminBoundaryVisibility,
+      );
     };
 
     if (map.isStyleLoaded()) run();
@@ -1490,7 +1455,11 @@ export default function GISMetaverseMap({
         addCameraLocationsLayer(map, data);
       }
 
-      applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+      applyMetaverseLayerOpacities(
+        map,
+        layerVisibility,
+        adminBoundaryVisibility,
+      );
     };
 
     if (map.isStyleLoaded()) run();
@@ -1517,93 +1486,18 @@ export default function GISMetaverseMap({
     mapRef,
   ]);
 
-  // NEW: Setup plot hover interaction
+  // Plot click popup interaction is handled in PlotPopup.jsx
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Create popup instance
-    popupRef.current = new mapboxgl.Popup({
-      closeButton: false,
-      closeOnClick: false,
-      offset: 15,
-      className: "plot-hover-popup",
+    return setupPlotClickPopup({
+      map,
+      plotLayerId: LAYERS.masterPlanFill,
+      highlightLayerId: LAYERS.masterPlanHover,
+      highlightFilterKey: "gid",
+      autoCloseMs: 10000,
     });
-
-    const handleMouseMove = (e) => {
-      const features = e.features;
-      if (!features || features.length === 0) {
-        // Clear hover state
-        if (hoveredFeatureIdRef.current !== null) {
-          map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
-          map.setFilter(LAYERS.masterPlanHover, ["==", ["get", "gid"], ""]);
-          hoveredFeatureIdRef.current = null;
-          popupRef.current.remove();
-          map.getCanvas().style.cursor = "";
-        }
-        return;
-      }
-
-      const feature = features[0];
-      const props = feature.properties || {};
-      const featureId = props.gid || feature.id;
-
-      // Update hover highlight
-      if (hoveredFeatureIdRef.current !== featureId) {
-        hoveredFeatureIdRef.current = featureId;
-        map.setFilter(LAYERS.masterPlanHover, ["==", ["get", "gid"], featureId]);
-        map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 1);
-      }
-
-      // Show popup
-      map.getCanvas().style.cursor = "pointer";
-      popupRef.current
-        .setLngLat(e.lngLat)
-        .setHTML(buildPlotPopupHTML(props))
-        .addTo(map);
-    };
-
-    const handleMouseLeave = () => {
-      if (hoveredFeatureIdRef.current !== null) {
-        map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
-        map.setFilter(LAYERS.masterPlanHover, ["==", ["get", "gid"], ""]);
-        hoveredFeatureIdRef.current = null;
-        popupRef.current.remove();
-        map.getCanvas().style.cursor = "";
-      }
-    };
-
-    // Add event listeners when master plan layer is available
-    const attachHoverListeners = () => {
-      if (!map.getLayer(LAYERS.masterPlanFill)) return;
-
-      map.on("mousemove", LAYERS.masterPlanFill, handleMouseMove);
-      map.on("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
-    };
-
-    if (map.isStyleLoaded()) {
-      attachHoverListeners();
-    } else {
-      map.once("load", attachHoverListeners);
-    }
-
-    // Also re-attach when style changes (layers might be recreated)
-    map.on("styledata", () => {
-      if (map.getLayer(LAYERS.masterPlanFill)) {
-        // Remove old listeners first to avoid duplicates
-        map.off("mousemove", LAYERS.masterPlanFill, handleMouseMove);
-        map.off("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
-        map.on("mousemove", LAYERS.masterPlanFill, handleMouseMove);
-        map.on("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
-      }
-    });
-
-    return () => {
-      map.off("mousemove", LAYERS.masterPlanFill, handleMouseMove);
-      map.off("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
-      popupRef.current?.remove();
-      popupRef.current = null;
-    };
   }, [mapRef]);
 
   return <div ref={mapContainerRef} className="h-full w-full" />;
