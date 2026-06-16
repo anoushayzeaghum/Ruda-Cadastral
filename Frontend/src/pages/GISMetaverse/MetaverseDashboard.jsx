@@ -9,7 +9,7 @@ import MetaverseLegend from "./tools/Layers/MetaverseLegend";
 export default function MetaverseDashboard() {
   const mapRef = useRef(null);
   const [isMapReady, setIsMapReady] = useState(false);
-  const [activeTool, setActiveTool] = useState("layers");
+  const [activeTool, setActiveTool] = useState(false);
   const [showMetaverseLegend, setShowMetaverseLegend] = useState(false);
 
   const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState({
