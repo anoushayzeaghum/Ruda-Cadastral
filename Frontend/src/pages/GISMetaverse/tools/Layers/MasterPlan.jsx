@@ -32,7 +32,7 @@ useEffect(() => {
   } else {
     setLayerVisibility({
       boundary: true,
-      masterPlan: true,   // ✅ THIS WAS MISSING
+      masterPlan: true,   
       spotLevel: false,
       contours: false,
       roads: true,
