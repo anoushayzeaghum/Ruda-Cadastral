@@ -59,12 +59,6 @@ const VECTOR_BOUNDARY_LAYERS = [
 ];
 
 const RASTER_DATA_LAYERS = [
-  { key: "dsm", label: "Chaharbagh DSM" },
-  { key: "dtm", label: "Chaharbagh DTM" },
-  { key: "ortho", label: "Chaharbagh Ortho" },
-  { key: "asBuiltJan2023", label: "AsBuilt Jan 2023" },
-  { key: "orthoJune2023", label: "Ortho June 2023" },
-  { key: "orthoNov2024", label: "Ortho Nov 2024" },
   { key: "handuGujranOrtho", label: "Handu Gujran Massavi" },
 ];
 
