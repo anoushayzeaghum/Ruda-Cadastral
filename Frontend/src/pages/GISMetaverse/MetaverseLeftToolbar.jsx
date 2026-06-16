@@ -6,13 +6,12 @@ import {
   Filter as FilterIcon,
   MousePointerClick,
   Hourglass,
-  Send,
   Ruler,
   Box,
   Globe2,
   FileInput,
   ChevronRight,
-  LocateFixed,
+  Send,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -25,7 +24,7 @@ import ChangeDetection from "./tools/ChangeDetection";
 import Import from "./tools/Import";
 import Measurement from "./tools/Measurement";
 import SegmentMeasurement from "./tools/SegmentMeasurement";
-import { getProjects } from "../../services/metaverseApi";
+import FlyTo from "./tools/FlyTo";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
@@ -53,34 +52,8 @@ export default function MetaverseLeftToolbar({
   setAdminBoundaryVisibility,
 }) {
   const navigate = useNavigate();
-
   const [bottomPanel, setBottomPanel] = useState(null);
-  const [projects, setProjects] = useState([]);
-  const [flyProjectId, setFlyProjectId] = useState(filters?.projectId || "");
   const [followEnabled, setFollowEnabled] = useState(false);
-
-  useEffect(() => {
-    let ignore = false;
-
-    const loadProjects = async () => {
-      try {
-        const data = await getProjects();
-        if (!ignore) setProjects(data || []);
-      } catch (error) {
-        console.error("Failed to load fly-to projects:", error);
-      }
-    };
-
-    loadProjects();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    setFlyProjectId(filters?.projectId || "");
-  }, [filters?.projectId]);
 
   useEffect(() => {
     if (!followEnabled || !map || !navigator.geolocation) return;
@@ -94,7 +67,7 @@ export default function MetaverseLeftToolbar({
         });
       },
       (err) => console.error("Follow location error:", err),
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true },
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
@@ -120,42 +93,6 @@ export default function MetaverseLeftToolbar({
   const handleBottomPanel = (panel) => {
     setActiveTool(null);
     setBottomPanel((prev) => (prev === panel ? null : panel));
-  };
-
-  const handleFlyToProject = () => {
-    if (!flyProjectId) return;
-
-    setFilters?.((prev) => ({
-      ...prev,
-      projectId: flyProjectId,
-      block: "",
-      plotType: "",
-      plotNo: "",
-      area: "",
-    }));
-
-    setLayerVisibility?.((prev) => ({
-      ...prev,
-      boundary: true,
-      masterPlan: true,
-      roads: true,
-    }));
-  };
-
-  const handleLocateMe = () => {
-    if (!map || !navigator.geolocation) return;
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        map.flyTo({
-          center: [pos.coords.longitude, pos.coords.latitude],
-          zoom: 16,
-          duration: 1000,
-        });
-      },
-      (err) => console.error("Locate me error:", err),
-      { enableHighAccuracy: true }
-    );
   };
 
   return (
@@ -231,11 +168,9 @@ export default function MetaverseLeftToolbar({
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
           {activeTool === "timeLapse" && <TimeLapse map={map} />}
           {activeTool === "changeDetection" && <ChangeDetection map={map} />}
-
           {activeTool === "import" && (
             <Import map={map} onClose={() => setActiveTool(null)} />
           )}
-
           {activeTool === "measurement" && <Measurement map={map} />}
 
           {activeTool !== "layers" &&
@@ -257,6 +192,17 @@ export default function MetaverseLeftToolbar({
           </div>
         )}
 
+        {bottomPanel === "flyTo" && (
+          <div className="mb-1 w-[300px] rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+            <FlyTo
+              filters={filters}
+              setFilters={setFilters}
+              setLayerVisibility={setLayerVisibility}
+              onClose={() => setBottomPanel(null)}
+            />
+          </div>
+        )}
+
         <button
           type="button"
           onClick={() => handleBottomPanel("basemaps")}
@@ -265,48 +211,11 @@ export default function MetaverseLeftToolbar({
         >
           <Globe2 size={20} strokeWidth={2.2} />
         </button>
-
-        <div className="flex items-center gap-2 rounded-md bg-[#111827] px-2 py-1.5 text-white shadow-lg">
-          <button
-            type="button"
-            onClick={handleFlyToProject}
-            className="flex items-center gap-1 text-[12px] font-bold"
-            title="Fly To"
-          >
-            <Send size={15} />
-            Fly to :
-          </button>
-
-          <select
-            value={flyProjectId}
-            onChange={(e) => setFlyProjectId(e.target.value)}
-            className="h-7 w-[105px] rounded bg-white px-2 text-[12px] text-[#111827] outline-none"
-          >
-            <option value="">Select</option>
-            {projects.map((project) => (
-              <option key={project.gid || project.id} value={project.gid || project.id}>
-                {project.name ||
-                  project.project_name ||
-                  `Project ${project.gid || project.id}`}
-              </option>
-            ))}
-          </select>
-
-          <label className="flex items-center gap-1 text-[12px] font-bold">
-            <input type="checkbox" onChange={handleLocateMe} />
-            <LocateFixed size={13} />
-            Locate me
-          </label>
-
-          <label className="flex items-center gap-1 text-[12px] font-bold">
-            <input
-              type="checkbox"
-              checked={followEnabled}
-              onChange={(e) => setFollowEnabled(e.target.checked)}
-            />
-            Follow
-          </label>
-        </div>
+        <FlyTo
+          filters={filters}
+          setFilters={setFilters}
+          setLayerVisibility={setLayerVisibility}
+        />
 
         <SegmentMeasurement map={map} />
       </div>
