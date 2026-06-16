@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
 export default function MasterPlan({
@@ -9,16 +9,36 @@ export default function MasterPlan({
   const [open, setOpen] = useState(true);
 
   const toggleLayer = (key) => {
-    if (!selectedProjectId) {
-      alert("Please select a project first.");
-      return;
-    }
+  if (!selectedProjectId) return;
 
-    setLayerVisibility((prev) => ({
+  setLayerVisibility((prev) => {
+    const updated = {
       ...prev,
       [key]: !prev[key],
-    }));
-  };
+    };
+
+    return updated;
+  });
+};
+useEffect(() => {
+  if (!selectedProjectId) {
+    setLayerVisibility({
+      boundary: false,
+      masterPlan: false,
+      spotLevel: false,
+      contours: false,
+      roads: false,
+    });
+  } else {
+    setLayerVisibility({
+      boundary: true,
+      masterPlan: true,   // ✅ THIS WAS MISSING
+      spotLevel: false,
+      contours: false,
+      roads: true,
+    });
+  }
+}, [selectedProjectId]);
 
   return (
     <div className="border-b border-[#343c4c]">
@@ -34,6 +54,7 @@ export default function MasterPlan({
       {open && (
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
           <LayerItem
+            disabled={!selectedProjectId}
             checked={layerVisibility.boundary}
             color="#ff8b24"
             label="Boundary"
@@ -41,6 +62,7 @@ export default function MasterPlan({
           />
 
           <LayerItem
+          disabled={!selectedProjectId}
             checked={layerVisibility.masterPlan}
             color="#42a5f5"
             label="Master Plan Boundary"
@@ -73,7 +95,7 @@ export default function MasterPlan({
   );
 }
 
-function LayerItem({ checked, color, label, onChange }) {
+function LayerItem({ checked, color, label, onChange, disabled }) {
   return (
     <div className="mt-3 first:mt-1">
       <div className="flex items-center justify-between">
