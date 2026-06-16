@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ChevronRight,
   Grid3X3,
@@ -9,6 +9,7 @@ import {
   Volume2,
   VolumeX,
   Maximize2,
+  Minimize2,
   RotateCcw,
 } from "lucide-react";
 
@@ -42,6 +43,7 @@ export default function DroneImagery({ map }) {
   const [currentTime,  setCurrentTime]  = useState(0);
   const [duration,     setDuration]     = useState(0);
   const [dragging,     setDragging]     = useState(false);
+  const [expanded,     setExpanded]     = useState(false); // overlay expand mode
   const videoRef = useRef(null);
 
   // ── Map source / layer IDs ────────────────────────────────────────────────
@@ -201,11 +203,13 @@ export default function DroneImagery({ map }) {
     setPlaying(false);
     setProgress(0);
     setCurrentTime(0);
+    setExpanded(false);
   };
 
   const closeVideo = () => {
     setActiveVideo(null);
     setPlaying(false);
+    setExpanded(false);
   };
 
   const activeVid = DRONE_VIDEOS.find((v) => v.id === activeVideo);
@@ -339,25 +343,64 @@ export default function DroneImagery({ map }) {
 
           {/* ── Inline video player (shown when a video is selected) ── */}
           {activeVid && (
-            <div className="mt-2 rounded-lg border border-[#3b4558] bg-[#111827] overflow-hidden shadow-xl">
+            <>
+              {/* ── Expanded overlay backdrop ── */}
+              {expanded && (
+                <div
+                  className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm"
+                  onClick={() => setExpanded(false)}
+                />
+              )}
 
-              {/* Player header */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a3548]">
-                <div className="flex items-center gap-2">
-                  <Video size={12} className="text-[#65c96b]" />
-                  <span className="text-[11px] font-semibold text-white/80 truncate max-w-[180px]">
-                    {activeVid.title}
-                  </span>
+              {/* ── Player ── */}
+              <div
+                className={`bg-[#111827] shadow-xl transition-all duration-300 ${
+                  expanded
+                    ? "fixed z-[70] rounded-xl border border-[#3b4558] overflow-hidden"
+                    : "mt-2 rounded-lg border border-[#3b4558] overflow-hidden"
+                }`}
+                style={
+                  expanded
+                    ? {
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        width: "min(820px, 90vw)",
+                      }
+                    : {}
+                }
+              >
+                {/* Player header */}
+                <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a3548]">
+                  <div className="flex items-center gap-2">
+                    <Video size={12} className="text-[#65c96b]" />
+                    <span className="text-[11px] font-semibold text-white/80 truncate max-w-[180px]">
+                      {activeVid.title}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {/* Expand / shrink toggle */}
+                    <button
+                      type="button"
+                      title={expanded ? "Shrink player" : "Expand player"}
+                      onClick={() => setExpanded((e) => !e)}
+                      className="flex h-6 w-6 items-center justify-center rounded text-white/50 hover:text-white hover:bg-[#2a3548] transition"
+                    >
+                      {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                    </button>
+
+                    {/* Close */}
+                    <button
+                      type="button"
+                      onClick={closeVideo}
+                      className="flex h-6 w-6 items-center justify-center rounded text-white/40 hover:text-white hover:bg-[#2a3548] transition text-[18px] leading-none"
+                      title="Close player"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={closeVideo}
-                  className="text-white/40 hover:text-white text-[18px] leading-none transition"
-                  title="Close player"
-                >
-                  ×
-                </button>
-              </div>
 
               {/* Video element */}
               <div className="relative bg-black" style={{ aspectRatio: "16/9" }}>
@@ -460,13 +503,14 @@ export default function DroneImagery({ map }) {
                       />
                     </div>
 
-                    <CtrlBtn title="Fullscreen" onClick={handleFullscreen}>
+                    <CtrlBtn title="Fullscreen (OS)" onClick={handleFullscreen}>
                       <Maximize2 size={14} />
                     </CtrlBtn>
                   </div>
                 </div>
               </div>
             </div>
+            </>
           )}
         </div>
       </div>
