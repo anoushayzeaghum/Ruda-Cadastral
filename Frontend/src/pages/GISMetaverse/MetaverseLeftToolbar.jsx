@@ -108,7 +108,19 @@ export default function MetaverseLeftToolbar({
             />
           )}
           {activeTool === "filter" && (
-            <Filter onClose={() => setActiveTool(null)} />
+            <Filter
+              filters={filters}
+              projectId={filters?.projectId}
+              setLayerVisibility={setLayerVisibility}
+              onApply={(appliedFilters) => {
+                setFilters?.((prev) => ({
+                  ...prev,
+                  ...appliedFilters,
+                }));
+                setActiveTool("layers");
+              }}
+              onClose={() => setActiveTool(null)}
+            />
           )}
           {activeTool === "flyTo" && (
             <FlyTo

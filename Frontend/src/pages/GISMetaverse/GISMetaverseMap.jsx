@@ -4,7 +4,6 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import {
   getBlocksGeoJSON,
   getContourGeoJSON,
-  getPlotOptions,
   getPlotsGeoJSON,
   getProjectGeoJSON,
   getRoadsGeoJSON,
@@ -123,7 +122,6 @@ function normalizeGeometryCollections(data) {
   };
 }
 
-
 function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -144,9 +142,11 @@ function getGeoJSONCenter(geojson) {
     if (geom.type === "Point") addCoord(geom.coordinates);
     if (geom.type === "MultiPoint") geom.coordinates.forEach(addCoord);
     if (geom.type === "LineString") geom.coordinates.forEach(addCoord);
-    if (geom.type === "MultiLineString") geom.coordinates.flat(1).forEach(addCoord);
+    if (geom.type === "MultiLineString")
+      geom.coordinates.flat(1).forEach(addCoord);
     if (geom.type === "Polygon") geom.coordinates.flat(1).forEach(addCoord);
-    if (geom.type === "MultiPolygon") geom.coordinates.flat(2).forEach(addCoord);
+    if (geom.type === "MultiPolygon")
+      geom.coordinates.flat(2).forEach(addCoord);
   });
 
   if (bounds.isEmpty()) return [69.3451, 30.3753];
@@ -175,6 +175,25 @@ async function loadAssetGeoJSON(path) {
   const res = await fetch(path);
   if (!res.ok) throw new Error(`Failed to load ${path}`);
   return res.json();
+}
+
+function ensureSource(map, sourceId, data = emptyFC) {
+  if (!map.getSource(sourceId)) {
+    map.addSource(sourceId, {
+      type: "geojson",
+      data,
+    });
+  } else {
+    map.getSource(sourceId).setData(data);
+  }
+}
+
+function setLayerVisibility(map, layerIds, visible) {
+  layerIds.forEach((id) => {
+    if (map.getLayer(id)) {
+      map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+    }
+  });
 }
 
 function addIntroBoundaryLayer(map, data, label) {
@@ -239,30 +258,12 @@ function clearIntroBoundaryLayer(map) {
   if (map.getSource(SOURCES.introLabel)) {
     map.getSource(SOURCES.introLabel).setData(emptyFC);
   }
+
   setLayerVisibility(
     map,
     [LAYERS.introBoundaryFill, LAYERS.introBoundaryLine, LAYERS.introLabel],
     false,
   );
-}
-
-function ensureSource(map, sourceId, data = emptyFC) {
-  if (!map.getSource(sourceId)) {
-    map.addSource(sourceId, {
-      type: "geojson",
-      data,
-    });
-  } else {
-    map.getSource(sourceId).setData(data);
-  }
-}
-
-function setLayerVisibility(map, layerIds, visible) {
-  layerIds.forEach((id) => {
-    if (map.getLayer(id)) {
-      map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
-    }
-  });
 }
 
 function addProjectBoundaryLayer(map, data) {
@@ -415,6 +416,34 @@ function addContourLayer(map, data) {
       source: SOURCES.contours,
       paint: {
         "line-color": "#615514",
+        "line-width": 1.5,
+      },
+    });
+  }
+}
+
+function addRoadLayer(map, data) {
+  ensureSource(map, SOURCES.roads, data);
+
+  if (!map.getLayer(LAYERS.roadsFill)) {
+    map.addLayer({
+      id: LAYERS.roadsFill,
+      type: "fill",
+      source: SOURCES.roads,
+      paint: {
+        "fill-color": "#d01f1f",
+        "fill-opacity": 0.35,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.roadsLine)) {
+    map.addLayer({
+      id: LAYERS.roadsLine,
+      type: "line",
+      source: SOURCES.roads,
+      paint: {
+        "line-color": "#991b1b",
         "line-width": 1.5,
       },
     });
@@ -581,34 +610,6 @@ function addCameraLocationsLayer(map, data) {
   }
 }
 
-function addRoadLayer(map, data) {
-  ensureSource(map, SOURCES.roads, data);
-
-  if (!map.getLayer(LAYERS.roadsFill)) {
-    map.addLayer({
-      id: LAYERS.roadsFill,
-      type: "fill",
-      source: SOURCES.roads,
-      paint: {
-        "fill-color": "#d01f1f",
-        "fill-opacity": 0.35,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.roadsLine)) {
-    map.addLayer({
-      id: LAYERS.roadsLine,
-      type: "line",
-      source: SOURCES.roads,
-      paint: {
-        "line-color": "#991b1b",
-        "line-width": 1.5,
-      },
-    });
-  }
-}
-
 export default function GISMetaverseMap({
   mapRef,
   setIsMapReady,
@@ -741,6 +742,7 @@ export default function GISMetaverseMap({
         filters.projectId,
         filters.block,
       );
+
       addBlockLayer(map, blockGeoJSON);
       setLayerVisibility(map, [LAYERS.blockFill, LAYERS.blockLine], true);
       fitGeoJSON(map, blockGeoJSON);
@@ -756,7 +758,17 @@ export default function GISMetaverseMap({
 
     const run = async () => {
       const hasPlotFilter =
-        !!filters.plotType || !!filters.plotNo || !!filters.area;
+        !!filters.block ||
+        !!filters.plotType ||
+        !!filters.plotNo ||
+        !!filters.area ||
+        !!filters.parkfront ||
+        !!filters.rd_facing ||
+        !!filters.poss_st ||
+        !!filters.plotStatus ||
+        !!filters.tr_cate ||
+        !!filters.tr_own ||
+        !!filters.site_plan;
 
       if (!hasPlotFilter && !layerVisibility.masterPlan) {
         if (map.getSource(SOURCES.masterPlan)) {
@@ -766,23 +778,31 @@ export default function GISMetaverseMap({
       }
 
       const plotGeoJSON = await getPlotsGeoJSON({
-        // project_id: filters.projectId,
-        // block: filters.block || undefined,
-        // type: filters.plotType || undefined,
-        // plot_no: filters.plotNo || undefined,
-        // plot_area: filters.area || undefined,
         project_id: filters.projectId,
         block: filters.block || undefined,
+        type: filters.plotType || undefined,
+        plot_no: filters.plotNo || undefined,
+        plot_area: filters.area || undefined,
+        parkfront: filters.parkfront || undefined,
+        rd_facing: filters.rd_facing || undefined,
+        poss_st: filters.poss_st || undefined,
+        canceled: filters.plotStatus || undefined,
+        tr_cate: filters.tr_cate || undefined,
+        tr_own: filters.tr_own || undefined,
+        site_plan: filters.site_plan || undefined,
       });
 
       addMasterPlanLayer(map, plotGeoJSON);
+
       setLayerVisibility(
         map,
         [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
         true,
       );
 
-      if (hasPlotFilter) fitGeoJSON(map, plotGeoJSON);
+      if (hasPlotFilter || layerVisibility.masterPlan) {
+        fitGeoJSON(map, plotGeoJSON);
+      }
     };
 
     if (map.isStyleLoaded()) run();
@@ -793,6 +813,13 @@ export default function GISMetaverseMap({
     filters.plotType,
     filters.plotNo,
     filters.area,
+    filters.parkfront,
+    filters.rd_facing,
+    filters.poss_st,
+    filters.plotStatus,
+    filters.tr_cate,
+    filters.tr_own,
+    filters.site_plan,
     layerVisibility.masterPlan,
     mapRef,
   ]);
@@ -887,37 +914,45 @@ export default function GISMetaverseMap({
       [LAYERS.boundaryFill, LAYERS.boundaryLine],
       layerVisibility.boundary,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
       layerVisibility.masterPlan,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.spotLevelCircle],
       layerVisibility.spotLevel,
     );
+
     setLayerVisibility(map, [LAYERS.contoursLine], layerVisibility.contours);
+
     setLayerVisibility(
       map,
       [LAYERS.roadsFill, LAYERS.roadsLine],
       layerVisibility.roads,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.waterSupplyPointsCircle, LAYERS.waterSupplyPointsLabel],
       layerVisibility.waterSupplyPoints,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.waterSupplyLinesLine],
       layerVisibility.waterSupplyLines,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.sewagePointsCircle, LAYERS.sewagePointsLabel],
       layerVisibility.sewagePoints,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.cameraLocationsCircle, LAYERS.cameraLocationsLabel],
@@ -941,7 +976,12 @@ export default function GISMetaverseMap({
       }
 
       if (layerVisibility.roads) {
-        const data = await getRoadsGeoJSON(filters.projectId);
+        const data = await getRoadsGeoJSON({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+          type: filters.plotType || undefined,
+        });
+
         addRoadLayer(map, data);
       }
 
@@ -970,6 +1010,8 @@ export default function GISMetaverseMap({
     else map.once("load", run);
   }, [
     filters.projectId,
+    filters.block,
+    filters.plotType,
     layerVisibility.spotLevel,
     layerVisibility.contours,
     layerVisibility.roads,

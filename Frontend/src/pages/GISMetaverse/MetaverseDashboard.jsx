@@ -22,6 +22,13 @@ export default function MetaverseDashboard() {
     plotType: "",
     plotNo: "",
     area: "",
+    parkfront: "",
+    rd_facing: "",
+    poss_st: "",
+    plotStatus: "",
+    tr_cate: "",
+    tr_own: "",
+    site_plan: "",
   });
 
   const [layerVisibility, setLayerVisibility] = useState({
