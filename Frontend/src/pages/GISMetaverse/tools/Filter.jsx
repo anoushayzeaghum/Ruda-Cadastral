@@ -11,6 +11,7 @@ const initialSelectedFilters = {
   block: "",
   plotNo: "",
   plotType: "",
+  area: "",
   parkfront: "",
   rd_facing: "",
   poss_st: "",
@@ -31,9 +32,11 @@ export default function Filter({
 
   const [projects, setProjects] = useState([]);
   const [blocks, setBlocks] = useState([]);
+
   const [plotOptions, setPlotOptions] = useState({
     plotTypes: [],
     plotNos: [],
+    areas: [],
     parkFronts: [],
     roadFacing: [],
     possessionStatus: [],
@@ -49,6 +52,14 @@ export default function Filter({
     block: filters?.block || "",
     plotNo: filters?.plotNo || "",
     plotType: filters?.plotType || "",
+    area: filters?.area || "",
+    parkfront: filters?.parkfront || "",
+    rd_facing: filters?.rd_facing || "",
+    poss_st: filters?.poss_st || "",
+    plotStatus: filters?.plotStatus || "",
+    tr_cate: filters?.tr_cate || "",
+    tr_own: filters?.tr_own || "",
+    site_plan: filters?.site_plan || "",
   });
 
   const selectedProjectId = useMemo(
@@ -76,8 +87,29 @@ export default function Filter({
       block: filters?.block || prev.block || "",
       plotNo: filters?.plotNo || prev.plotNo || "",
       plotType: filters?.plotType || prev.plotType || "",
+      area: filters?.area || prev.area || "",
+      parkfront: filters?.parkfront || prev.parkfront || "",
+      rd_facing: filters?.rd_facing || prev.rd_facing || "",
+      poss_st: filters?.poss_st || prev.poss_st || "",
+      plotStatus: filters?.plotStatus || prev.plotStatus || "",
+      tr_cate: filters?.tr_cate || prev.tr_cate || "",
+      tr_own: filters?.tr_own || prev.tr_own || "",
+      site_plan: filters?.site_plan || prev.site_plan || "",
     }));
-  }, [activeProjectId, filters?.block, filters?.plotNo, filters?.plotType]);
+  }, [
+    activeProjectId,
+    filters?.block,
+    filters?.plotNo,
+    filters?.plotType,
+    filters?.area,
+    filters?.parkfront,
+    filters?.rd_facing,
+    filters?.poss_st,
+    filters?.plotStatus,
+    filters?.tr_cate,
+    filters?.tr_own,
+    filters?.site_plan,
+  ]);
 
   useEffect(() => {
     const loadFilterData = async () => {
@@ -87,6 +119,7 @@ export default function Filter({
           setPlotOptions({
             plotTypes: [],
             plotNos: [],
+            areas: [],
             parkFronts: [],
             roadFacing: [],
             possessionStatus: [],
@@ -104,7 +137,19 @@ export default function Filter({
         ]);
 
         setBlocks(blockRes || []);
-        setPlotOptions(plotRes || {});
+
+        setPlotOptions({
+          plotTypes: plotRes?.plotTypes || [],
+          plotNos: plotRes?.plotNos || [],
+          areas: plotRes?.areas || plotRes?.plotAreas || [],
+          parkFronts: plotRes?.parkFronts || [],
+          roadFacing: plotRes?.roadFacing || [],
+          possessionStatus: plotRes?.possessionStatus || [],
+          plotStatus: plotRes?.plotStatus || [],
+          categories: plotRes?.categories || [],
+          owners: plotRes?.owners || [],
+          sitePlans: plotRes?.sitePlans || [],
+        });
       } catch (err) {
         console.error("Filter API error:", err);
       }
@@ -124,6 +169,7 @@ export default function Filter({
         updated.block = "";
         updated.plotNo = "";
         updated.plotType = "";
+        updated.area = "";
         updated.parkfront = "";
         updated.rd_facing = "";
         updated.poss_st = "";
@@ -143,6 +189,7 @@ export default function Filter({
       block: selectedFilters.block || "",
       plotNo: selectedFilters.plotNo || "",
       plotType: selectedFilters.plotType || "",
+      area: selectedFilters.area || "",
       parkfront: selectedFilters.parkfront || "",
       rd_facing: selectedFilters.rd_facing || "",
       poss_st: selectedFilters.poss_st || "",
@@ -152,8 +199,6 @@ export default function Filter({
       site_plan: selectedFilters.site_plan || "",
     };
 
-    onApply?.(cleanedFilters);
-
     if (cleanedFilters.projectId) {
       setLayerVisibility?.((prev) => ({
         ...prev,
@@ -162,13 +207,27 @@ export default function Filter({
         roads: true,
       }));
     }
+
+    onApply?.(cleanedFilters);
   };
 
   const handleReset = () => {
-    setSelectedFilters({
+    const resetFilters = {
       ...initialSelectedFilters,
-      projectId: activeProjectId,
-    });
+      projectId: activeProjectId || "",
+    };
+
+    setSelectedFilters(resetFilters);
+    onApply?.(resetFilters);
+
+    if (resetFilters.projectId) {
+      setLayerVisibility?.((prev) => ({
+        ...prev,
+        boundary: true,
+        masterPlan: true,
+        roads: true,
+      }));
+    }
   };
 
   return (
@@ -225,7 +284,7 @@ export default function Filter({
 
               {blocks.map((b) => (
                 <option
-                  key={b.gid || b.id}
+                  key={b.gid || b.id || b.block || b.name || b.block_name}
                   value={b.block || b.name || b.block_name}
                 >
                   {b.block || b.name || b.block_name}
@@ -248,7 +307,7 @@ export default function Filter({
               <option value="">Select Plot No</option>
 
               {(plotOptions.plotNos || []).map((p, i) => (
-                <option key={i} value={p}>
+                <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
               ))}
@@ -269,8 +328,29 @@ export default function Filter({
               <option value="">Select Type</option>
 
               {(plotOptions.plotTypes || []).map((t, i) => (
-                <option key={i} value={t}>
+                <option key={`${t}-${i}`} value={t}>
                   {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-white/80">
+              Area
+            </label>
+
+            <select
+              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              value={selectedFilters.area || ""}
+              onChange={(e) => handleChange("area", e.target.value)}
+              disabled={!selectedProjectId}
+            >
+              <option value="">Select Area</option>
+
+              {(plotOptions.areas || []).map((a, i) => (
+                <option key={`${a}-${i}`} value={a}>
+                  {a}
                 </option>
               ))}
             </select>
@@ -288,8 +368,9 @@ export default function Filter({
               disabled={!selectedProjectId}
             >
               <option value="">Select Park Front</option>
+
               {(plotOptions.parkFronts || []).map((p, i) => (
-                <option key={i} value={p}>
+                <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
               ))}
@@ -308,8 +389,9 @@ export default function Filter({
               disabled={!selectedProjectId}
             >
               <option value="">Select Road Facing</option>
+
               {(plotOptions.roadFacing || []).map((p, i) => (
-                <option key={i} value={p}>
+                <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
               ))}
@@ -328,8 +410,9 @@ export default function Filter({
               disabled={!selectedProjectId}
             >
               <option value="">Select Status</option>
+
               {(plotOptions.possessionStatus || []).map((p, i) => (
-                <option key={i} value={p}>
+                <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
               ))}
@@ -348,8 +431,9 @@ export default function Filter({
               disabled={!selectedProjectId}
             >
               <option value="">Select Plot Status</option>
+
               {(plotOptions.plotStatus || []).map((p, i) => (
-                <option key={i} value={p}>
+                <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
               ))}
@@ -368,8 +452,9 @@ export default function Filter({
               disabled={!selectedProjectId}
             >
               <option value="">Select Category</option>
+
               {(plotOptions.categories || []).map((p, i) => (
-                <option key={i} value={p}>
+                <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
               ))}
@@ -388,8 +473,9 @@ export default function Filter({
               disabled={!selectedProjectId}
             >
               <option value="">Select Owner</option>
+
               {(plotOptions.owners || []).map((p, i) => (
-                <option key={i} value={p}>
+                <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
               ))}
@@ -408,8 +494,9 @@ export default function Filter({
               disabled={!selectedProjectId}
             >
               <option value="">Select Site Plan</option>
+
               {(plotOptions.sitePlans || []).map((p, i) => (
-                <option key={i} value={p}>
+                <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
               ))}
