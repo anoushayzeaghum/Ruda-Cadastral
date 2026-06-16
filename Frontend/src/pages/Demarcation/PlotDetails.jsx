@@ -198,31 +198,62 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
       drawSectionHeader(marginX, y, contentWidth, 8, "Plot Boundary Details");
       y += 8;
 
-      const colWidths = [28, 72, 26, 32, 24, contentWidth - (28 + 72 + 26 + 32 + 24)];
-      const rows = [
-        ["Project", details.project, "Block", details.block, "Plot No.", details.plotNo],
-        ["Landuse", details.landUse, "Plot Area", details.plotArea, "Dimension", details.dimension],
-        ["Road Ft", details.roadFt, "Road Facing", details.roadFacing, "Park Front", details.parkFront],
-        ["Storey", details.storey, "Possession", details.possession, "Poss. Status", details.possessionStatus],
-        ["Canceled", details.canceled, "Site Plan", details.sitePlan, "Unique ID", details.uniqueId],
-        ["TR Sr No", details.transferSrNo, "TR Plot No", details.transferPlotNo, "TR Category", details.transferCategory],
-      ];
+      const detailLabelW = 30;
+      const detailValueW = contentWidth / 2 - detailLabelW;
+      const detailRowH = 8;
+      const detailLabelFont = 7.7;
+      const detailValueFont = 7.5;
 
-      rows.forEach((row) => {
-        let x = marginX;
-        row.forEach((cell, index) => {
-          drawSimpleCell(x, y, colWidths[index], 8, cell);
-          x += colWidths[index];
-        });
-        y += 8;
-      });
+      const drawTableCell = ({ x, rowY, w, h, text, isLabel = false, align = "left" }) => {
+        doc.rect(x, rowY, w, h);
+        doc.setFont("helvetica", isLabel ? "bold" : "normal");
+        doc.setFontSize(isLabel ? detailLabelFont : detailValueFont);
+        doc.setTextColor(isLabel ? 20 : 35, isLabel ? 20 : 35, isLabel ? 20 : 35);
 
-      drawSimpleCell(marginX, y, 28, 14, "Owner");
-      drawSimpleCell(marginX + 28, y, contentWidth - 28, 14, details.owner);
-      y += 14;
-      drawSimpleCell(marginX, y, 28, 10, "Remarks");
-      drawSimpleCell(marginX + 28, y, contentWidth - 28, 10, details.remarks);
-      y += 14;
+        const value = String(text || "-");
+        const lines = doc.splitTextToSize(value, w - 3);
+        const maxLines = Math.max(1, Math.floor((h - 2.6) / 3.15));
+        const visibleLines = lines.slice(0, maxLines);
+
+        if (lines.length > maxLines && visibleLines.length) {
+          const lastIndex = visibleLines.length - 1;
+          const last = visibleLines[lastIndex];
+          visibleLines[lastIndex] = last.length > 3 ? `${last.slice(0, -3)}...` : "...";
+        }
+
+        doc.text(
+          visibleLines,
+          align === "center" ? x + w / 2 : x + 1.5,
+          rowY + 4.8,
+          align === "center" ? { align: "center" } : undefined,
+        );
+      };
+
+      const drawDetailRow = (leftLabel, leftValue, rightLabel, rightValue, rowH = detailRowH) => {
+        drawTableCell({ x: marginX, rowY: y, w: detailLabelW, h: rowH, text: leftLabel, isLabel: true });
+        drawTableCell({ x: marginX + detailLabelW, rowY: y, w: detailValueW, h: rowH, text: leftValue });
+        drawTableCell({ x: marginX + detailLabelW + detailValueW, rowY: y, w: detailLabelW, h: rowH, text: rightLabel, isLabel: true });
+        drawTableCell({ x: marginX + detailLabelW * 2 + detailValueW, rowY: y, w: detailValueW, h: rowH, text: rightValue });
+        y += rowH;
+      };
+
+      const drawFullDetailRow = (label, value, rowH = detailRowH) => {
+        drawTableCell({ x: marginX, rowY: y, w: detailLabelW, h: rowH, text: label, isLabel: true });
+        drawTableCell({ x: marginX + detailLabelW, rowY: y, w: contentWidth - detailLabelW, h: rowH, text: value });
+        y += rowH;
+      };
+
+      drawDetailRow("Project", details.project, "Block", details.block);
+      drawDetailRow("Plot No.", details.plotNo, "Landuse", details.landUse);
+      drawDetailRow("Plot Area", details.plotArea, "Dimension", details.dimension);
+      drawDetailRow("Road Ft", details.roadFt, "Road Facing", details.roadFacing);
+      drawDetailRow("Park Front", details.parkFront, "Storey", details.storey);
+      drawDetailRow("Possession", details.possession, "Poss. Status", details.possessionStatus);
+      drawDetailRow("Canceled", details.canceled, "Site Plan", details.sitePlan);
+      drawDetailRow("Unique ID", details.uniqueId, "TR Sr No", details.transferSrNo);
+      drawDetailRow("TR Plot No", details.transferPlotNo, "TR Category", details.transferCategory, 10);
+      drawFullDetailRow("Owner", details.owner, 12);
+      drawFullDetailRow("Remarks", details.remarks, 9);
 
       const leftW = contentWidth * 0.53;
       const rightW = contentWidth - leftW;
