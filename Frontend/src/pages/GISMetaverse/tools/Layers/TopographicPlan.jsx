@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import LayerRow from "./_LayerRow";
 
 // ── Source / Layer IDs ────────────────────────────────────────────────────────
 const DSM_SOURCE  = "gis-dsm-source";
@@ -228,7 +229,7 @@ export default function TopographicPlan({ map }) {
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2 space-y-0">
 
           {/* Topo boundary */}
-          <RasterLayerRow
+          <LayerRow
             label={
               <span className="flex items-center gap-1.5">
                 Topo Boundary — CB1
@@ -247,7 +248,7 @@ export default function TopographicPlan({ map }) {
           <div className="border-t border-[#344055] my-2" />
 
           {/* DSM */}
-          <RasterLayerRow
+          <LayerRow
             label="Chaharbagh DSM"
             color="#ff8b24"
             checked={dsmVisible}
@@ -257,7 +258,7 @@ export default function TopographicPlan({ map }) {
           />
 
           {/* DTM */}
-          <RasterLayerRow
+          <LayerRow
             label="Chaharbagh DTM"
             color="#42a5f5"
             checked={dtmVisible}
@@ -267,35 +268,6 @@ export default function TopographicPlan({ map }) {
           />
         </div>
       )}
-    </div>
-  );
-}
-
-function RasterLayerRow({ label, color, checked, opacity, onCheckedChange, onOpacityChange }) {
-  return (
-    <div className="mt-3 first:mt-1">
-      <div className="flex items-center justify-between">
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={(e) => onCheckedChange(e.target.checked)}
-            className="accent-[#65c96b]"
-          />
-          <span className="h-4 w-4 rounded-sm border-2" style={{ borderColor: color }} />
-          <span className="text-[11px]">{label}</span>
-        </label>
-        <Grid3X3 size={14} className="text-white/60" />
-      </div>
-
-      <div className="mt-2 flex items-center gap-2 pl-6">
-        <input
-          type="range" min="0" max="100" value={opacity}
-          onChange={(e) => onOpacityChange(Number(e.target.value))}
-          className="h-[3px] flex-1 rounded-full bg-[#8fd36f] accent-[#65c96b]"
-        />
-        <span className="w-7 text-right text-[11px] text-white/90">{opacity}%</span>
-      </div>
     </div>
   );
 }

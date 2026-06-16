@@ -1,31 +1,82 @@
-import { useState } from "react";
-import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import LayerRow from "./_LayerRow";
 
-export default function MasterPlan({
-  selectedProjectId,
-  layerVisibility,
-  setLayerVisibility,
-}) {
+// ── Source / layer ID constants ───────────────────────────────────────────────
+const IDS = {
+  boundary:   { src: "gism-mp-boundary-src",   fill: "gism-mp-boundary-fill",   line: "gism-mp-boundary-line"   },
+  masterPlan: { src: "gism-mp-plan-src",        fill: "gism-mp-plan-fill",        line: "gism-mp-plan-line"        },
+  spotLevel:  { src: "gism-mp-spotlevel-src",   circle: "gism-mp-spotlevel-cir"                                    },
+  contours:   { src: "gism-mp-contours-src",    line: "gism-mp-contours-line"                                      },
+  roads:      { src: "gism-mp-roads-src",       line: "gism-mp-roads-line"                                         },
+};
+
+const LAYER_DEFS = [
+  { key: "boundary",   label: "Boundary",             color: "#ff8b24", type: "polygon" },
+  { key: "masterPlan", label: "Master Plan Boundary",  color: "#42a5f5", type: "polygon" },
+  { key: "spotLevel",  label: "Spot Level",            color: "#65c96b", type: "point"   },
+  { key: "contours",   label: "Contours",              color: "#d7bf32", type: "line"    },
+  { key: "roads",      label: "Roads",                 color: "#ef4444", type: "line"    },
+];
+
+// ── Helper: update opacity on existing Mapbox layers ─────────────────────────
+function setLayerOpacity(map, key, opacity) {
+  if (!map) return;
+  const o = opacity / 100;
+  const ids = IDS[key];
+  if (!ids) return;
+
+  try {
+    if (ids.fill   && map.getLayer(ids.fill))   map.setPaintProperty(ids.fill,   "fill-opacity",   o * 0.4);
+    if (ids.line   && map.getLayer(ids.line))   map.setPaintProperty(ids.line,   "line-opacity",   o);
+    if (ids.circle && map.getLayer(ids.circle)) map.setPaintProperty(ids.circle, "circle-opacity", o);
+  } catch (_) {}
+}
+
+// ── Helper: show/hide layers ──────────────────────────────────────────────────
+function setLayerVisibility(map, key, visible) {
+  if (!map) return;
+  const ids = IDS[key];
+  if (!ids) return;
+  const vis = visible ? "visible" : "none";
+  try {
+    if (ids.fill   && map.getLayer(ids.fill))   map.setLayoutProperty(ids.fill,   "visibility", vis);
+    if (ids.line   && map.getLayer(ids.line))   map.setLayoutProperty(ids.line,   "visibility", vis);
+    if (ids.circle && map.getLayer(ids.circle)) map.setLayoutProperty(ids.circle, "visibility", vis);
+  } catch (_) {}
+}
+
+export default function MasterPlan({ map }) {
   const [open, setOpen] = useState(true);
 
-  const toggleLayer = (key) => {
-    if (!selectedProjectId) {
-      alert("Please select a project first.");
-      return;
-    }
+  // Per-layer state: { visible, opacity }
+  const [layers, setLayers] = useState(() =>
+    Object.fromEntries(LAYER_DEFS.map((d) => [d.key, { visible: false, opacity: 100 }]))
+  );
 
-    setLayerVisibility((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
+  const setVisible = (key, v) =>
+    setLayers((prev) => ({ ...prev, [key]: { ...prev[key], visible: v } }));
+  const setOpacity = (key, o) =>
+    setLayers((prev) => ({ ...prev, [key]: { ...prev[key], opacity: o } }));
+
+  // Sync visibility to map
+  useEffect(() => {
+    LAYER_DEFS.forEach(({ key }) => setLayerVisibility(map, key, layers[key].visible));
+  }, [map, layers]);
+
+  // Sync opacity to map (runs on any opacity change)
+  useEffect(() => {
+    LAYER_DEFS.forEach(({ key }) => {
+      if (layers[key].visible) setLayerOpacity(map, key, layers[key].opacity);
+    });
+  }, [map, layers]);
 
   return (
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
         className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => setOpen((p) => !p)}
       >
         <span>MASTER PLAN</span>
         {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
@@ -33,72 +84,19 @@ export default function MasterPlan({
 
       {open && (
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
-          <LayerItem
-            checked={layerVisibility.boundary}
-            color="#ff8b24"
-            label="Boundary"
-            onChange={() => toggleLayer("boundary")}
-          />
-
-          <LayerItem
-            checked={layerVisibility.masterPlan}
-            color="#42a5f5"
-            label="Master Plan Boundary"
-            onChange={() => toggleLayer("masterPlan")}
-          />
-
-          <LayerItem
-            checked={layerVisibility.spotLevel}
-            color="#65c96b"
-            label="Spot Level"
-            onChange={() => toggleLayer("spotLevel")}
-          />
-
-          <LayerItem
-            checked={layerVisibility.contours}
-            color="#d7bf32"
-            label="Contours"
-            onChange={() => toggleLayer("contours")}
-          />
-
-          <LayerItem
-            checked={layerVisibility.roads}
-            color="#ef4444"
-            label="Roads"
-            onChange={() => toggleLayer("roads")}
-          />
+          {LAYER_DEFS.map(({ key, label, color }) => (
+            <LayerRow
+              key={key}
+              label={label}
+              color={color}
+              checked={layers[key].visible}
+              opacity={layers[key].opacity}
+              onCheckedChange={(v) => setVisible(key, v)}
+              onOpacityChange={(o) => setOpacity(key, o)}
+            />
+          ))}
         </div>
       )}
-    </div>
-  );
-}
-
-function LayerItem({ checked, color, label, onChange }) {
-  return (
-    <div className="mt-3 first:mt-1">
-      <div className="flex items-center justify-between">
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={onChange}
-            className="accent-[#65c96b]"
-          />
-          <span
-            className="h-4 w-4 rounded-sm border-2"
-            style={{ borderColor: color }}
-          />
-          <span>{label}</span>
-        </label>
-
-        <Grid3X3 size={14} className="text-white/60" />
-      </div>
-
-      <div className="mt-2 flex items-center gap-2 pl-6">
-        <div className="h-[3px] flex-1 rounded-full bg-[#8fd36f]" />
-        <div className="h-4 w-4 rounded-full border-2 border-white bg-[#65c96b]" />
-        <span className="text-[11px] text-white/90">100%</span>
-      </div>
     </div>
   );
 }
