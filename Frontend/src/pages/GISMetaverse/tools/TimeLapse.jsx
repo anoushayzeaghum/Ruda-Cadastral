@@ -1,13 +1,14 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
-  ChevronLeft,
   ChevronRight,
   Play,
   Pause,
   SkipBack,
   SkipForward,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 
 const BOUNDS = [
@@ -43,14 +44,16 @@ const TIMELINE = [
 ];
 
 export default function TimeLapse({ map }) {
-  const miniMapRef = useRef(null);
-  const containerRef = useRef(null);
-  const mapLoadedRef = useRef(false);
-  const [current, setCurrent] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(2000);
+  const miniMapRef    = useRef(null);
+  const containerRef  = useRef(null);
+  const mapLoadedRef  = useRef(false);
 
-  // Show the correct layer on the mini map
+  const [current,  setCurrent]  = useState(0);
+  const [playing,  setPlaying]  = useState(false);
+  const [speed,    setSpeed]    = useState(2000);
+  const [expanded, setExpanded] = useState(false);
+
+  // ── Show the correct raster layer ────────────────────────────────────────
   const showLayer = useCallback((index) => {
     const mm = miniMapRef.current;
     if (!mm || !mapLoadedRef.current) return;
@@ -63,13 +66,11 @@ export default function TimeLapse({ map }) {
             i === index ? "visible" : "none",
           );
         }
-      } catch (e) {
-        // layer not ready yet, safe to ignore
-      }
+      } catch (_) {}
     });
   }, []);
 
-  // Initialize mini map
+  // ── Init mini-map ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current || miniMapRef.current) return;
 
@@ -80,13 +81,12 @@ export default function TimeLapse({ map }) {
       style: "mapbox://styles/mapbox/satellite-streets-v12",
       center: [74.43, 31.608],
       zoom: 14,
-      interactive: false,
+      interactive: true,          // allow pan/zoom when expanded
       attributionControl: false,
     });
 
     mm.on("load", () => {
       mapLoadedRef.current = true;
-
       TIMELINE.forEach((item, i) => {
         mm.addSource(item.sourceId, {
           type: "raster",
@@ -100,7 +100,6 @@ export default function TimeLapse({ map }) {
           layout: { visibility: i === 0 ? "visible" : "none" },
         });
       });
-
       mm.fitBounds(BOUNDS, { padding: 10, duration: 0 });
     });
 
@@ -113,169 +112,238 @@ export default function TimeLapse({ map }) {
     };
   }, []);
 
-  // Update visibility when current changes
+  // Trigger resize whenever the panel expands/collapses so Mapbox repaints.
+  // We use a ResizeObserver on the map container div so the resize fires
+  // exactly when the element's pixel size actually changes, not on a fixed delay.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const ro = new ResizeObserver(() => {
+      miniMapRef.current?.resize();
+    });
+    ro.observe(el);
+
+    // Belt-and-suspenders: also fire after a short frame delay
+    const t1 = setTimeout(() => miniMapRef.current?.resize(), 50);
+    const t2 = setTimeout(() => miniMapRef.current?.resize(), 200);
+
+    return () => {
+      ro.disconnect();
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [expanded]);
+
+  // ── Layer visibility ──────────────────────────────────────────────────────
   useEffect(() => {
     showLayer(current);
   }, [current, showLayer]);
 
-  // Auto-play timer
+  // ── Auto-play ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!playing) return;
-    const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % TIMELINE.length);
-    }, speed);
+    const interval = setInterval(
+      () => setCurrent((prev) => (prev + 1) % TIMELINE.length),
+      speed,
+    );
     return () => clearInterval(interval);
   }, [playing, speed]);
 
-  const goPrev = () =>
-    setCurrent((c) => (c - 1 + TIMELINE.length) % TIMELINE.length);
+  const goPrev = () => setCurrent((c) => (c - 1 + TIMELINE.length) % TIMELINE.length);
   const goNext = () => setCurrent((c) => (c + 1) % TIMELINE.length);
 
-  return (
-    <div className="text-[12px]">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-3 font-bold">
-        <span>Time Lapse</span>
-        <ChevronRight size={15} />
+  // ── Map height: compact vs expanded ──────────────────────────────────────
+  const mapHeight = expanded ? "500px" : "200px";
+
+  // ── Inner content (shared between inline & overlay) ───────────────────────
+  const content = (
+    <div className="p-3">
+      <p className="text-white/60 mb-3 text-[11px]">
+        View the construction progress of Chahar Bagh Phase 1 through drone
+        imagery captured at three different time periods.
+      </p>
+
+      {/* Mini Map */}
+      <div
+        className="relative rounded-md overflow-hidden border border-[#3b4558] mb-3 transition-all duration-300"
+        style={{ height: mapHeight }}
+      >
+        <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+
+        {/* Date badge */}
+        <div
+          className="absolute top-2 left-2 px-2 py-1 rounded text-[11px] font-bold text-white shadow-lg z-10"
+          style={{ backgroundColor: TIMELINE[current].color + "cc" }}
+        >
+          {TIMELINE[current].date}
+        </div>
       </div>
 
-      <div className="p-3">
-        <p className="text-white/60 mb-3 text-[11px]">
-          View the construction progress of Chahar Bagh Phase 1 through drone
-          imagery captured at three different time periods.
-        </p>
-
-        {/* Mini Map */}
-        <div className="relative rounded-md overflow-hidden border border-[#3b4558] mb-3">
-          <div ref={containerRef} style={{ width: "100%", height: "200px" }} />
-          {/* Date Badge */}
-          <div
-            className="absolute top-2 left-2 px-2 py-1 rounded text-[11px] font-bold text-white shadow-lg"
-            style={{ backgroundColor: TIMELINE[current].color + "cc" }}
+      {/* Timeline dots */}
+      <div className="flex items-center justify-center gap-1 mb-3">
+        {TIMELINE.map((item, i) => (
+          <button
+            key={item.layerId}
+            onClick={() => setCurrent(i)}
+            className="flex flex-col items-center gap-1 px-2 py-1 rounded transition"
+            style={{
+              backgroundColor: i === current ? item.color + "22" : "transparent",
+              border: i === current ? `1px solid ${item.color}` : "1px solid transparent",
+            }}
           >
-            {TIMELINE[current].date}
-          </div>
-        </div>
-
-        {/* Timeline dots */}
-        <div className="flex items-center justify-center gap-1 mb-3">
-          {TIMELINE.map((item, i) => (
-            <button
-              key={item.layerId}
-              onClick={() => setCurrent(i)}
-              className="flex flex-col items-center gap-1 px-2 py-1 rounded transition"
+            <div
+              className="w-3 h-3 rounded-full transition-transform"
               style={{
-                backgroundColor:
-                  i === current ? item.color + "22" : "transparent",
-                border:
-                  i === current
-                    ? `1px solid ${item.color}`
-                    : "1px solid transparent",
+                backgroundColor: item.color,
+                transform: i === current ? "scale(1.3)" : "scale(1)",
               }}
+            />
+            <span
+              className="text-[10px]"
+              style={{ color: i === current ? "#fff" : "rgba(255,255,255,0.5)" }}
             >
-              <div
-                className="w-3 h-3 rounded-full transition-transform"
-                style={{
-                  backgroundColor: item.color,
-                  transform: i === current ? "scale(1.3)" : "scale(1)",
-                }}
-              />
-              <span
-                className="text-[10px]"
-                style={{
-                  color: i === current ? "#fff" : "rgba(255,255,255,0.5)",
-                }}
-              >
-                {item.date}
-              </span>
-            </button>
-          ))}
-        </div>
+              {item.date}
+            </span>
+          </button>
+        ))}
+      </div>
 
-        {/* Playback controls */}
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <button
-            onClick={goPrev}
-            className="p-1.5 rounded-md border border-[#3b4558] bg-[#232b3a] hover:bg-[#2c3648] text-white/80 hover:text-white transition"
-            title="Previous"
-          >
-            <SkipBack size={14} />
-          </button>
-          <button
-            onClick={() => setPlaying((p) => !p)}
-            className="p-2 rounded-full border-2 transition"
-            style={{
-              borderColor: TIMELINE[current].color,
-              backgroundColor: playing
-                ? TIMELINE[current].color + "33"
-                : "#232b3a",
-              color: playing ? TIMELINE[current].color : "#fff",
-            }}
-            title={playing ? "Pause" : "Play"}
-          >
-            {playing ? <Pause size={16} /> : <Play size={16} />}
-          </button>
-          <button
-            onClick={goNext}
-            className="p-1.5 rounded-md border border-[#3b4558] bg-[#232b3a] hover:bg-[#2c3648] text-white/80 hover:text-white transition"
-            title="Next"
-          >
-            <SkipForward size={14} />
-          </button>
-        </div>
+      {/* Playback controls */}
+      <div className="flex items-center justify-center gap-3 mb-2">
+        <button
+          onClick={goPrev}
+          className="p-1.5 rounded-md border border-[#3b4558] bg-[#232b3a] hover:bg-[#2c3648] text-white/80 hover:text-white transition"
+          title="Previous"
+        >
+          <SkipBack size={14} />
+        </button>
 
-        {/* Speed control */}
-        <div className="flex items-center justify-center gap-2 text-[11px] text-white/50">
-          <span>Speed:</span>
-          {[3000, 2000, 1000].map((s) => (
-            <button
-              key={s}
-              onClick={() => setSpeed(s)}
-              className={`px-2 py-0.5 rounded text-[10px] transition ${
-                speed === s
-                  ? "bg-[#8fd36f] text-[#1a1f2e] font-bold"
-                  : "bg-[#2c3648] text-white/60 hover:bg-[#344055]"
-              }`}
+        <button
+          onClick={() => setPlaying((p) => !p)}
+          className="p-2 rounded-full border-2 transition"
+          style={{
+            borderColor: TIMELINE[current].color,
+            backgroundColor: playing ? TIMELINE[current].color + "33" : "#232b3a",
+            color: playing ? TIMELINE[current].color : "#fff",
+          }}
+          title={playing ? "Pause" : "Play"}
+        >
+          {playing ? <Pause size={16} /> : <Play size={16} />}
+        </button>
+
+        <button
+          onClick={goNext}
+          className="p-1.5 rounded-md border border-[#3b4558] bg-[#232b3a] hover:bg-[#2c3648] text-white/80 hover:text-white transition"
+          title="Next"
+        >
+          <SkipForward size={14} />
+        </button>
+      </div>
+
+      {/* Speed control */}
+      <div className="flex items-center justify-center gap-2 text-[11px] text-white/50">
+        <span>Speed:</span>
+        {[3000, 2000, 1000].map((s) => (
+          <button
+            key={s}
+            onClick={() => setSpeed(s)}
+            className={`px-2 py-0.5 rounded text-[10px] transition ${
+              speed === s
+                ? "bg-[#8fd36f] text-[#1a1f2e] font-bold"
+                : "bg-[#2c3648] text-white/60 hover:bg-[#344055]"
+            }`}
+          >
+            {s === 3000 ? "Slow" : s === 2000 ? "Normal" : "Fast"}
+          </button>
+        ))}
+      </div>
+
+      {/* Date Slider */}
+      <div className="mt-4 border-t border-[#343c4c] pt-3">
+        <div className="text-[11px] text-white/50 mb-2 font-semibold">Slide to Date</div>
+        <input
+          type="range"
+          min="0"
+          max={TIMELINE.length - 1}
+          step="1"
+          value={current}
+          onChange={(e) => setCurrent(Number(e.target.value))}
+          className="w-full h-[5px] rounded-full appearance-none cursor-pointer"
+          style={{
+            background: `linear-gradient(to right, ${TIMELINE.map(
+              (t, i) => `${t.color} ${(i / (TIMELINE.length - 1)) * 100}%`,
+            ).join(", ")})`,
+          }}
+        />
+        <div className="flex justify-between mt-1">
+          {TIMELINE.map((item, i) => (
+            <span
+              key={item.layerId}
+              className="text-[10px] font-semibold cursor-pointer transition"
+              style={{ color: i === current ? item.color : "rgba(255,255,255,0.4)" }}
+              onClick={() => setCurrent(i)}
             >
-              {s === 3000 ? "Slow" : s === 2000 ? "Normal" : "Fast"}
-            </button>
+              {item.date}
+            </span>
           ))}
-        </div>
-
-        {/* Date Slider */}
-        <div className="mt-4 border-t border-[#343c4c] pt-3">
-          <div className="text-[11px] text-white/50 mb-2 font-semibold">Slide to Date</div>
-          <input
-            type="range"
-            min="0"
-            max={TIMELINE.length - 1}
-            step="1"
-            value={current}
-            onChange={(e) => setCurrent(Number(e.target.value))}
-            className="w-full h-[5px] rounded-full appearance-none cursor-pointer"
-            style={{
-              background: `linear-gradient(to right, ${TIMELINE.map(
-                (t, i) =>
-                  `${t.color} ${(i / (TIMELINE.length - 1)) * 100}%`
-              ).join(", ")})`,
-            }}
-          />
-          <div className="flex justify-between mt-1">
-            {TIMELINE.map((item, i) => (
-              <span
-                key={item.layerId}
-                className="text-[10px] font-semibold cursor-pointer transition"
-                style={{
-                  color: i === current ? item.color : "rgba(255,255,255,0.4)",
-                }}
-                onClick={() => setCurrent(i)}
-              >
-                {item.date}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
     </div>
+  );
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <>
+      {/* Backdrop when expanded */}
+      {expanded && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm"
+          onClick={() => setExpanded(false)}
+        />
+      )}
+
+      {/* Panel — inline or fixed overlay */}
+      <div
+        className={`text-[12px] ${
+          expanded
+            ? "fixed z-[70] rounded-xl border border-[#3a4354] bg-[#202736] shadow-2xl overflow-hidden"
+            : ""
+        }`}
+        style={
+          expanded
+            ? {
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "min(820px, 92vw)",
+                maxHeight: "92vh",
+                overflowY: "auto",
+              }
+            : {}
+        }
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-3 font-bold">
+          <span>Time Lapse</span>
+
+          <div className="flex items-center gap-1">
+            {/* Expand / shrink toggle */}
+            <button
+              type="button"
+              title={expanded ? "Shrink viewer" : "Expand viewer"}
+              onClick={() => setExpanded((e) => !e)}
+              className="flex h-6 w-6 items-center justify-center rounded text-white/50 hover:text-white hover:bg-[#2a3548] transition"
+            >
+              {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            </button>
+
+            <ChevronRight size={15} className="text-white/40 ml-1" />
+          </div>
+        </div>
+
+        {content}
+      </div>
+    </>
   );
 }
