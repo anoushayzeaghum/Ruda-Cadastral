@@ -56,7 +56,10 @@ const LAYERS = {
   sewagePointsLabel: "metaverse-sewage-points-label",
   cameraLocationsCircle: "metaverse-camera-locations-circle",
   cameraLocationsLabel: "metaverse-camera-locations-label",
+  rudaBoundaryFill: "metaverse-ruda-boundary-fill",
   rudaBoundaryLine: "metaverse-ruda-boundary-line",
+  rudaBoundaryDashLine: "metaverse-ruda-boundary-dash-line",
+  rudaBoundaryLabel: "metaverse-ruda-boundary-label",
   proposedRoadsLine: "metaverse-proposed-roads-line",
   geodeticNetworkCircle: "metaverse-geodetic-network-circle",
   introBoundaryFill: "metaverse-intro-boundary-fill",
@@ -65,6 +68,127 @@ const LAYERS = {
 };
 
 const emptyFC = { type: "FeatureCollection", features: [] };
+
+const ROAD_LEGEND_ITEMS = [
+  { label: "Primary Roads (300'-Wide)", color: "#19598d", width: 3 },
+  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 3 },
+  { label: "Tertiary Roads", color: "#ff9800", width: 3 },
+  { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
+  { label: "Uti Walk Cycle", color: "#8bc34a", width: 2 },
+  { label: "Bridge", color: "#75008a", width: 5 },
+  { label: "300' CL", color: "#9b2400", width: 2 },
+  { label: "300' ROW", color: "#00bcd4", width: 2.5 },
+];
+
+const ROAD_COLOR_EXPRESSION = [
+  "match",
+  ["get", "layer"],
+  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.color]),
+  "#555555",
+];
+
+const ROAD_WIDTH_EXPRESSION = [
+  "match",
+  ["get", "layer"],
+  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.width]),
+  2.5,
+];
+
+const RUDA_PHASE_COLORS = [
+  "#6bb7e8",
+  "#f8d56b",
+  "#6bd69a",
+  "#f59e72",
+  "#b99cf3",
+  "#78d6d0",
+  "#f3a6c8",
+  "#a7d77b",
+  "#f4b860",
+  "#86a8e7",
+  "#d7b377",
+  "#8dd3c7",
+];
+
+const hashString = (value = "") => {
+  const text = String(value || "");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+const stripHtml = (value = "") =>
+  String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getRudaPhaseColor = (phaseId) => {
+  const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
+  return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
+};
+
+const getRudaFeatureId = (feature = {}) => {
+  const props = feature?.properties || {};
+  return props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid ?? "ruda";
+};
+
+const getRudaPhaseLabel = (props = {}, phaseId = "") => {
+  const candidates = [
+    props.phase,
+    props.phase_name,
+    props.name,
+    props.folderpath,
+    props.popupinfo,
+    props.snippet,
+  ];
+
+  for (const value of candidates) {
+    const clean = stripHtml(value);
+    if (!clean) continue;
+
+    const phaseMatch = clean.match(/phase\s*[-_:]?\s*([a-z0-9]+)/i);
+    if (phaseMatch?.[1]) return `Phase ${phaseMatch[1]}`;
+
+    if (clean.length <= 28) return clean;
+    return clean.slice(0, 28);
+  }
+
+  return phaseId ? `Phase ${phaseId}` : "RUDA Phase";
+};
+
+const prepareRudaGeoJSONForDisplay = (geojson = emptyFC) => ({
+  type: "FeatureCollection",
+  features: (geojson?.features || []).map((feature) => {
+    const props = feature?.properties || {};
+    const phaseId = getRudaFeatureId(feature);
+
+    return {
+      ...feature,
+      properties: {
+        ...props,
+        _ruda_phase_id: phaseId,
+        _ruda_phase_color: getRudaPhaseColor(phaseId),
+        _ruda_phase_label: getRudaPhaseLabel(props, phaseId),
+      },
+    };
+  }),
+});
+
+const normalizeRoadLayerName = (value) => String(value ?? "").trim();
+
+const prepareProposedRoadsGeoJSONForDisplay = (geojson = emptyFC) => ({
+  type: "FeatureCollection",
+  features: (geojson?.features || []).map((feature) => ({
+    ...feature,
+    properties: {
+      ...(feature?.properties || {}),
+      layer: normalizeRoadLayerName(feature?.properties?.layer),
+    },
+  })),
+});
 
 function fitGeoJSON(map, geojson) {
   if (!geojson?.features?.length) return;
@@ -610,6 +734,91 @@ function addCameraLocationsLayer(map, data) {
   }
 }
 
+function addRudaBoundaryLayer(map, data) {
+  ensureSource(map, SOURCES.rudaBoundary, prepareRudaGeoJSONForDisplay(data));
+
+  if (!map.getLayer(LAYERS.rudaBoundaryFill)) {
+    map.addLayer({
+      id: LAYERS.rudaBoundaryFill,
+      type: "fill",
+      source: SOURCES.rudaBoundary,
+      paint: {
+        "fill-color": ["coalesce", ["get", "_ruda_phase_color"], "#3d7cc4"],
+        "fill-opacity": 0.5,
+        "fill-outline-color": "#1f2937",
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.rudaBoundaryLine)) {
+    map.addLayer({
+      id: LAYERS.rudaBoundaryLine,
+      type: "line",
+      source: SOURCES.rudaBoundary,
+      paint: {
+        "line-color": "#111827",
+        "line-width": 2,
+        "line-opacity": 0.95,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.rudaBoundaryDashLine)) {
+    map.addLayer({
+      id: LAYERS.rudaBoundaryDashLine,
+      type: "line",
+      source: SOURCES.rudaBoundary,
+      paint: {
+        "line-color": "#111827",
+        "line-width": 1.2,
+        "line-dasharray": [1.4, 1.2],
+        "line-opacity": 0.9,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.rudaBoundaryLabel)) {
+    map.addLayer({
+      id: LAYERS.rudaBoundaryLabel,
+      type: "symbol",
+      source: SOURCES.rudaBoundary,
+      layout: {
+        "text-field": ["coalesce", ["get", "_ruda_phase_label"], "RUDA Phase"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 10, 10, 15, 13],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+      },
+      paint: {
+        "text-color": "#111827",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.4,
+      },
+    });
+  }
+}
+
+function addProposedRoadsLayer(map, data) {
+  ensureSource(map, SOURCES.proposedRoads, prepareProposedRoadsGeoJSONForDisplay(data));
+
+  if (!map.getLayer(LAYERS.proposedRoadsLine)) {
+    map.addLayer({
+      id: LAYERS.proposedRoadsLine,
+      type: "line",
+      source: SOURCES.proposedRoads,
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
+      paint: {
+        "line-color": ROAD_COLOR_EXPRESSION,
+        "line-width": ROAD_WIDTH_EXPRESSION,
+        "line-opacity": 1,
+      },
+    });
+  }
+}
+
 export default function GISMetaverseMap({
   mapRef,
   setIsMapReady,
@@ -831,36 +1040,12 @@ export default function GISMetaverseMap({
     const run = async () => {
       if (adminBoundaryVisibility.rudaBoundary) {
         const data = await getRudaGeoJSON();
-        ensureSource(map, SOURCES.rudaBoundary, data);
-
-        if (!map.getLayer(LAYERS.rudaBoundaryLine)) {
-          map.addLayer({
-            id: LAYERS.rudaBoundaryLine,
-            type: "line",
-            source: SOURCES.rudaBoundary,
-            paint: {
-              "line-color": "#6B7280",
-              "line-width": 2.5,
-            },
-          });
-        }
+        addRudaBoundaryLayer(map, data);
       }
 
       if (adminBoundaryVisibility.proposedRoads) {
         const data = await getRudaProposedRoadsGeoJSON();
-        ensureSource(map, SOURCES.proposedRoads, data);
-
-        if (!map.getLayer(LAYERS.proposedRoadsLine)) {
-          map.addLayer({
-            id: LAYERS.proposedRoadsLine,
-            type: "line",
-            source: SOURCES.proposedRoads,
-            paint: {
-              "line-color": "#f97316",
-              "line-width": 3,
-            },
-          });
-        }
+        addProposedRoadsLayer(map, data);
       }
 
       if (adminBoundaryVisibility.geodeticNetwork) {
@@ -884,7 +1069,12 @@ export default function GISMetaverseMap({
 
       setLayerVisibility(
         map,
-        [LAYERS.rudaBoundaryLine],
+        [
+          LAYERS.rudaBoundaryFill,
+          LAYERS.rudaBoundaryLine,
+          LAYERS.rudaBoundaryDashLine,
+          LAYERS.rudaBoundaryLabel,
+        ],
         adminBoundaryVisibility.rudaBoundary,
       );
 

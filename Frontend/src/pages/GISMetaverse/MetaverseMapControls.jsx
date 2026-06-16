@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import MetaverseLegend from "./tools/Layers/MetaverseLegend";
 import mapboxgl from "mapbox-gl";
 import {
   Maximize2,
@@ -9,11 +10,14 @@ import {
   List,
 } from "lucide-react";
 
-// import Legend from "./Legend";
-
-export default function MetaverseMapControls({ map }) {
+export default function MetaverseMapControls({
+  map,
+  adminBoundaryVisibility,
+  metaverseLegendData,
+}) {
   const [coords, setCoords] = useState({ lng: 74.3402, lat: 31.5025 });
   const [zoom, setZoom] = useState(12);
+  const [showLegend, setShowLegend] = useState(false);
 
   useEffect(() => {
     if (!map) return;
@@ -143,7 +147,7 @@ export default function MetaverseMapControls({ map }) {
           <div className="mt-10">
             <ControlButton
               title="Legend"
-              onClick={() => console.log("Legend clicked")}
+              onClick={() => setShowLegend((prev) => !prev)}
             >
               <List size={20} />
             </ControlButton>
@@ -151,8 +155,12 @@ export default function MetaverseMapControls({ map }) {
         </div>
       </div>
 
-      {/* Later when Legend.jsx is ready */}
-      {/* <Legend map={map} /> */}
+      {showLegend && (
+        <MetaverseLegend
+          adminBoundaryVisibility={adminBoundaryVisibility}
+          rudaPhases={metaverseLegendData?.rudaPhases || []}
+        />
+      )}
     </>
   );
 }

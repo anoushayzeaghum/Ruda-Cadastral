@@ -29,7 +29,7 @@ export default function AdministrativeBoundaries({
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
           <LayerItem
             checked={adminBoundaryVisibility.rudaBoundary}
-            color="#6B7280"
+            color="#6bb7e8"
             label="Ruda Boundary"
             onChange={() => toggleLayer("rudaBoundary")}
           />
@@ -43,7 +43,7 @@ export default function AdministrativeBoundaries({
 
           <LayerItem
             checked={adminBoundaryVisibility.proposedRoads}
-            color="#f97316"
+            color="#19598d"
             label="Proposed Roads Layer"
             onChange={() => toggleLayer("proposedRoads")}
           />
