@@ -16,6 +16,7 @@ import {
   getRudaGeoJSON,
   getRudaProposedRoadsGeoJSON,
   getGeodeticNetworkGeoJSON,
+  getProjects,
 } from "../../services/metaverseApi";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -68,6 +69,58 @@ const LAYERS = {
   introLabel: "metaverse-intro-label",
   // NEW: Hover highlight layer
   masterPlanHover: "metaverse-masterplan-hover",
+};
+
+const INTRO_STEPS = [
+  {
+    label: "Pakistan",
+    assetPaths: ["/Pakistan.geojson"],
+  },
+  {
+    label: "Punjab",
+    assetPaths: ["/Punjab.geojson"],
+  },
+  {
+    label: "RUDA",
+    assetPaths: ["/Ruda.geojson"],
+  },
+];
+
+const INTRO_CLEAR_SOURCES = [
+  SOURCES.boundary,
+  SOURCES.block,
+  SOURCES.masterPlan,
+  SOURCES.spotLevel,
+  SOURCES.contours,
+  SOURCES.roads,
+  SOURCES.waterSupplyPoints,
+  SOURCES.waterSupplyLines,
+  SOURCES.sewagePoints,
+  SOURCES.cameraLocations,
+  SOURCES.rudaBoundary,
+  SOURCES.proposedRoads,
+  SOURCES.geodeticNetwork,
+];
+
+const findChaharBaghProjectId = async () => {
+  const projects = await getProjects();
+
+  const match = projects.find((project) => {
+    const text = `${project.brief_name || ""} ${project.name || ""} ${
+      project.project_name || ""
+    }`.toLowerCase();
+
+    return (
+      text.includes("chahar") ||
+      text.includes("chahaar") ||
+      text.includes("charbagh") ||
+      text.includes("char bagh") ||
+      text.includes("chaharbagh") ||
+      text.includes("chahar bagh")
+    );
+  });
+
+  return String(match?.gid || match?.id || "5");
 };
 
 const emptyFC = { type: "FeatureCollection", features: [] };
@@ -255,6 +308,21 @@ function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function waitForMapMove(map, fallbackMs = 1200) {
+  return new Promise((resolve) => {
+    let done = false;
+
+    const finish = () => {
+      if (done) return;
+      done = true;
+      resolve();
+    };
+
+    map.once("moveend", finish);
+    window.setTimeout(finish, fallbackMs);
+  });
+}
+
 function getGeoJSONCenter(geojson) {
   if (!geojson?.features?.length) return [69.3451, 30.3753];
 
@@ -300,10 +368,28 @@ function makeLabelGeoJSON(label, geojson) {
   };
 }
 
-async function loadAssetGeoJSON(path) {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error(`Failed to load ${path}`);
-  return res.json();
+async function loadAssetGeoJSON(paths = []) {
+  const candidates = Array.isArray(paths) ? paths : [paths];
+  let lastError = null;
+
+  for (const path of candidates) {
+    try {
+      const res = await fetch(path, { cache: "no-cache" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      if (!data?.features?.length) {
+        throw new Error("GeoJSON has no features");
+      }
+
+      return data;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Intro GeoJSON failed from ${path}:`, err);
+    }
+  }
+
+  throw lastError || new Error("Intro GeoJSON could not be loaded");
 }
 
 function ensureSource(map, sourceId, data = emptyFC) {
@@ -1094,58 +1180,142 @@ export default function GISMetaverseMap({
       setIsMapReady(false);
     };
   }, [mapRef, setIsMapReady]);
-
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || introHasRunRef.current) return;
+
+    console.log("INTRO EFFECT CALLED", {
+      hasMap: !!map,
+      introAlreadyCompleted: introHasRunRef.current,
+      mapLoaded: map?.loaded?.(),
+      styleLoaded: map?.isStyleLoaded?.(),
+    });
+
+    if (!map) {
+      console.warn("INTRO STOPPED EARLY", {
+        reason: "mapRef.current is missing",
+      });
+      return;
+    }
+
+    if (introHasRunRef.current) {
+      console.warn("INTRO STOPPED EARLY", {
+        reason: "intro already completed",
+      });
+      return;
+    }
 
     let cancelled = false;
-    introHasRunRef.current = true;
 
     const runIntro = async () => {
+      if (cancelled) {
+        console.warn("INTRO NOT STARTED because effect was cleaned up");
+        return;
+      }
+
+      if (introHasRunRef.current) {
+        console.warn("INTRO NOT STARTED because it already completed");
+        return;
+      }
+
+      console.log("INTRO STARTED");
+
       try {
-        const steps = [
-          {
-            label: "Pakistan",
-            path: new URL("../../assets/Pakistan.geojson", import.meta.url),
-          },
-          {
-            label: "Punjab",
-            path: new URL("../../assets/Punjab.geojson", import.meta.url),
-          },
-          {
-            label: "RUDA",
-            path: new URL("../../assets/Ruda.geojson", import.meta.url),
-          },
-        ];
+        const steps = INTRO_STEPS;
+
+        console.log("INTRO STEPS", steps);
 
         for (const step of steps) {
-          if (cancelled) return;
+          if (cancelled) {
+            console.warn("INTRO CANCELLED before step", step.label);
+            return;
+          }
 
-          const data = await loadAssetGeoJSON(step.path);
-          if (cancelled) return;
+          console.log(`LOADING ${step.label}`, step.assetPaths);
 
+          const data = await loadAssetGeoJSON(step.assetPaths);
+
+          console.log(`LOADED ${step.label}`, {
+            type: data?.type,
+            featureCount: data?.features?.length,
+            firstFeature: data?.features?.[0],
+            firstGeometryType: data?.features?.[0]?.geometry?.type,
+            firstCoordinates:
+              data?.features?.[0]?.geometry?.coordinates?.[0]?.[0] ||
+              data?.features?.[0]?.geometry?.coordinates?.[0],
+          });
+
+          if (cancelled) {
+            console.warn("INTRO CANCELLED after loading", step.label);
+            return;
+          }
+
+          console.log(`ADDING LAYER ${step.label}`);
           addIntroBoundaryLayer(map, data, step.label);
+
+          console.log(`FITTING ${step.label}`);
           fitGeoJSON(map, data);
-          await wait(1600);
+
+          console.log(`WAITING FOR MAP MOVE ${step.label}`);
+          await waitForMapMove(map, 2200);
+
+          console.log(`STEP DONE ${step.label}`);
+          await wait(1500);
         }
+
+        if (cancelled) {
+          console.warn("INTRO CANCELLED before project auto-select");
+          return;
+        }
+
+        console.log("FINDING CHAHAR BAGH PROJECT ID");
+        const projectId = await findChaharBaghProjectId();
+
+        console.log("CHAHAR BAGH PROJECT ID FOUND", projectId);
 
         if (cancelled) return;
 
+        console.log("CLEARING INTRO LAYER");
         clearIntroBoundaryLayer(map);
-        onIntroComplete?.();
+
+        introHasRunRef.current = true;
+
+        console.log("CALLING onIntroComplete", projectId);
+        onIntroComplete?.(projectId);
+
+        console.log("INTRO FINISHED SUCCESSFULLY");
       } catch (err) {
         console.error("Metaverse intro animation error:", err);
+
+        const projectId = await findChaharBaghProjectId().catch(
+          (projectErr) => {
+            console.error("Fallback Chahar Bagh lookup failed:", projectErr);
+            return "5";
+          },
+        );
+
+        if (cancelled) return;
+
+        console.log("INTRO FAILED, USING FALLBACK PROJECT ID", projectId);
+
         clearIntroBoundaryLayer(map);
-        onIntroComplete?.();
+
+        introHasRunRef.current = true;
+        onIntroComplete?.(projectId);
       }
     };
 
-    if (map.isStyleLoaded()) runIntro();
-    else map.once("load", runIntro);
+    if (map.isStyleLoaded()) {
+      console.log("MAP STYLE ALREADY LOADED, RUNNING INTRO NOW");
+      runIntro();
+    } else {
+      console.log("MAP STYLE NOT LOADED, WAITING FOR LOAD EVENT");
+      map.once("load", runIntro);
+    }
 
     return () => {
+      console.warn("INTRO EFFECT CLEANUP RUNNING");
       cancelled = true;
+      map.off("load", runIntro);
     };
   }, [mapRef, onIntroComplete]);
 
@@ -1155,7 +1325,7 @@ export default function GISMetaverseMap({
 
     const run = async () => {
       if (!filters?.projectId) {
-        Object.values(SOURCES).forEach((sourceId) => {
+        INTRO_CLEAR_SOURCES.forEach((sourceId) => {
           if (map.getSource(sourceId)) {
             map.getSource(sourceId).setData(emptyFC);
           }
