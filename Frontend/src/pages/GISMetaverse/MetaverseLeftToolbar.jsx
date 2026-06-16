@@ -50,6 +50,7 @@ export default function MetaverseLeftToolbar({
   setLayerVisibility,
   adminBoundaryVisibility,
   setAdminBoundaryVisibility,
+  rebuildAllLayers,
 }) {
   const navigate = useNavigate(); // ✅ ADD THIS
 
@@ -157,7 +158,12 @@ export default function MetaverseLeftToolbar({
             />
           )}
 
-          {activeTool === "basemaps" && <Basemaps map={map} />}
+          {activeTool === "basemaps" && (
+            <Basemaps
+              map={map}
+              rebuildAllLayers={rebuildAllLayers}
+            />
+          )}
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
           {activeTool === "timeLapse" && <TimeLapse map={map} />}
 

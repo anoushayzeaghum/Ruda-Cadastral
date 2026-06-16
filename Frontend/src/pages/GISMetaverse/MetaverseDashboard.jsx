@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import Header from "./Header";
 import GISMetaverseMap from "./GISMetaverseMap";
+import Basemaps from "./tools/Basemaps";
 import MetaverseLeftToolbar from "./MetaverseLeftToolbar";
 import MetaverseSubHeader from "./MetaverseSubHeader";
 import MetaverseMapControls from "./MetaverseMapControls";
@@ -69,6 +70,14 @@ export default function MetaverseDashboard() {
     }));
   }, []);
 
+  const rebuildAllLayers = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // trigger re-run of GISMetaverseMap logic safely
+    map.fire("rebuild-layers");
+  }, []);
+
   const handleReset = () => {
     setMetaverseFilters({
       projectId: "",
@@ -125,6 +134,12 @@ export default function MetaverseDashboard() {
           adminBoundaryVisibility={adminBoundaryVisibility}
           onIntroComplete={handleIntroComplete}
         />
+        <Basemaps
+          map={mapRef.current}
+          rebuildAllLayers={() => {
+            mapRef.current?.fire("rebuild-layers");
+          }}
+        />
 
         <MetaverseSubHeader
           filters={metaverseFilters}
@@ -144,6 +159,7 @@ export default function MetaverseDashboard() {
           setLayerVisibility={setLayerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}
           setAdminBoundaryVisibility={setAdminBoundaryVisibility}
+          rebuildAllLayers={rebuildAllLayers}
         />
 
         {showMetaverseLegend && (
