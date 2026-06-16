@@ -21,7 +21,11 @@ const initialLayers = {
 };
 
 export default function Society3DMapPage() {
-  const filters = useSociety3DFilters();
+  const filters = useSociety3DFilters({
+  selectedDistrict: "18",   // Lahore ID
+  selectedTehsil: "16",     // Shalimar ID
+  selectedMauza: "1",       // Handu Gujran ID
+});
 
   const [societies, setSocieties] = useState([]);
   const [selectedSocietyId, setSelectedSocietyId] = useState("");
@@ -34,6 +38,15 @@ export default function Society3DMapPage() {
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
 
+  const filtersReady =
+  filters.selectedDistrict &&
+  filters.selectedTehsil &&
+  filters.selectedMauza;
+
+if (!filtersReady) {
+  return <div>Loading map filters...</div>;
+}
+
   const [extrusion, setExtrusion] = useState({
     heightFeet: 100,
     color: "#22d3ee",
@@ -41,47 +54,86 @@ export default function Society3DMapPage() {
   });
   const [appliedExtrusions, setAppliedExtrusions] = useState({});
 
-  useEffect(() => {
-    let mounted = true;
 
-    const loadSocieties = async () => {
-      setSelectedSocietyId("");
-      setSelectedFeature(null);
-      setInfoPanelOpen(false);
-      setClearSelectionSignal((prev) => prev + 1);
-      setSocietyError("");
-      setSocieties([]);
-      setLayers(initialLayers);
-      setAppliedExtrusions({});
+useEffect(() => {
+  let mounted = true;
 
-      if (!filters.selectedMauza) return;
+  const loadSocieties = async () => {
+    // ❌ STOP EARLY UNTIL EVERYTHING IS READY
+    if (
+      !filters.selectedDistrict ||
+      !filters.selectedTehsil ||
+      !filters.selectedMauza
+    ) return;
 
-      try {
-        setSocietyLoading(true);
-        const selectedMauzaObject = filters.mauzas.find(
-          (mauza) => String(getMauzaId(mauza)) === String(filters.selectedMauza),
-        );
-        const mauzaName = getLabel(selectedMauzaObject, ["mauza", "name", "mauza_name"], "");
-        const data = await getSocieties({ mauza_id: filters.selectedMauza, mauza: mauzaName });
+    setSelectedSocietyId("");
+    setSelectedFeature(null);
+    setInfoPanelOpen(false);
+    setClearSelectionSignal((prev) => prev + 1);
+    setSocietyError("");
+    setSocieties([]);
+    setLayers(initialLayers);
+    setAppliedExtrusions({});
 
-        if (mounted) setSocieties(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Failed to load 3D societies", error);
-        if (mounted) {
-          setSocieties([]);
-          setSocietyError("Failed to load societies for selected mauza.");
-        }
-      } finally {
-        if (mounted) setSocietyLoading(false);
+    try {
+      setSocietyLoading(true);
+
+      const selectedMauzaObject = filters.mauzas.find(
+        (mauza) =>
+          String(getMauzaId(mauza)) === String(filters.selectedMauza)
+      );
+
+      const mauzaName = getLabel(
+        selectedMauzaObject,
+        ["mauza", "name", "mauza_name"],
+        ""
+      );
+
+      const data = await getSocieties({
+        mauza_id: filters.selectedMauza,
+        mauza: mauzaName,
+      });
+
+      if (!mounted) return;
+
+      const societyList = Array.isArray(data) ? data : [];
+      setSocieties(societyList);
+
+      // =========================
+      // AUTO SELECT SOCIETY (FIXED)
+      // =========================
+      const defaultSociety =
+        societyList.find(
+          (s) =>
+            String(getSocietyId(s)) === "1" ||
+            String(s.society_id) === "1" ||
+            s.society === "Chaharbagh Phase 1"
+        ) || societyList[0]; // fallback FIRST item
+
+      if (defaultSociety) {
+        setSelectedSocietyId(String(getSocietyId(defaultSociety)));
       }
-    };
+    } catch (error) {
+      console.error("Failed to load societies", error);
+      if (mounted) {
+        setSocieties([]);
+        setSocietyError("Failed to load societies.");
+      }
+    } finally {
+      if (mounted) setSocietyLoading(false);
+    }
+  };
 
-    loadSocieties();
+  loadSocieties();
 
-    return () => {
-      mounted = false;
-    };
-  }, [filters.selectedMauza]);
+  return () => {
+    mounted = false;
+  };
+}, [
+  filters.selectedDistrict,
+  filters.selectedTehsil,
+  filters.selectedMauza,
+]);
 
   const selectedSociety = useMemo(() => {
     if (!selectedSocietyId) return null;
@@ -201,14 +253,14 @@ export default function Society3DMapPage() {
   );
 }
 
-function useSociety3DFilters() {
+function useSociety3DFilters(initialValues = {}) {
   const [districts, setDistricts] = useState([]);
   const [tehsils, setTehsils] = useState([]);
   const [mauzas, setMauzas] = useState([]);
 
-  const [selectedDistrict, setSelectedDistrictValue] = useState("");
-  const [selectedTehsil, setSelectedTehsilValue] = useState("");
-  const [selectedMauza, setSelectedMauzaValue] = useState("");
+  const [selectedDistrict, setSelectedDistrictValue] = useState(initialValues.selectedDistrict || "");
+  const [selectedTehsil, setSelectedTehsilValue] = useState(initialValues.selectedTehsil || "");
+  const [selectedMauza, setSelectedMauzaValue] = useState(initialValues.selectedMauza || "");
 
   const [loading, setLoading] = useState({
     districts: false,
@@ -216,90 +268,87 @@ function useSociety3DFilters() {
     mauzas: false,
   });
 
+  // =========================
+  // 1. LOAD DISTRICTS FIRST
+  // =========================
   useEffect(() => {
     let mounted = true;
 
-    const loadDistricts = async () => {
+    const load = async () => {
+      setLoading((p) => ({ ...p, districts: true }));
+
       try {
-        setLoading((prev) => ({ ...prev, districts: true }));
         const data = await getDistricts();
-        if (mounted) setDistricts(data);
-      } catch (error) {
-        console.error("Failed to load 3D districts", error);
-        if (mounted) setDistricts([]);
+        if (!mounted) return;
+
+        setDistricts(data || []);
+
+        const lahore = data?.find((d) => String(getItemId(d)) === "18");
+        if (lahore) setSelectedDistrictValue("18");
       } finally {
-        if (mounted) setLoading((prev) => ({ ...prev, districts: false }));
+        if (mounted) setLoading((p) => ({ ...p, districts: false }));
       }
     };
 
-    loadDistricts();
-
-    return () => {
-      mounted = false;
-    };
+    load();
+    return () => (mounted = false);
   }, []);
 
+  // =========================
+  // 2. LOAD TEHSIL AFTER DISTRICT
+  // =========================
   useEffect(() => {
+    if (!selectedDistrict) return;
+
     let mounted = true;
 
-    const loadTehsils = async () => {
-      setTehsils([]);
-      setMauzas([]);
-      setSelectedTehsilValue("");
-      setSelectedMauzaValue("");
-
-      if (!selectedDistrict) return;
+    const load = async () => {
+      setLoading((p) => ({ ...p, tehsils: true }));
 
       try {
-        setLoading((prev) => ({ ...prev, tehsils: true }));
         const data = await getTehsils(selectedDistrict);
-        if (mounted) setTehsils(data);
-      } catch (error) {
-        console.error("Failed to load 3D tehsils", error);
-        if (mounted) setTehsils([]);
+        if (!mounted) return;
+
+        setTehsils(data || []);
+
+        const shalimar = data?.find((t) => String(getItemId(t)) === "16");
+        if (shalimar) setSelectedTehsilValue("16");
       } finally {
-        if (mounted) setLoading((prev) => ({ ...prev, tehsils: false }));
+        if (mounted) setLoading((p) => ({ ...p, tehsils: false }));
       }
     };
 
-    loadTehsils();
-
-    return () => {
-      mounted = false;
-    };
+    load();
+    return () => (mounted = false);
   }, [selectedDistrict]);
 
+  // =========================
+  // 3. LOAD MAUZA AFTER TEHSIL
+  // =========================
   useEffect(() => {
+    if (!selectedTehsil) return;
+
     let mounted = true;
 
-    const loadMauzas = async () => {
-      setMauzas([]);
-      setSelectedMauzaValue("");
-
-      if (!selectedTehsil) return;
+    const load = async () => {
+      setLoading((p) => ({ ...p, mauzas: true }));
 
       try {
-        setLoading((prev) => ({ ...prev, mauzas: true }));
         const data = await getMauzas(selectedTehsil);
-        if (mounted) setMauzas(data);
-      } catch (error) {
-        console.error("Failed to load 3D mauzas", error);
-        if (mounted) setMauzas([]);
+        if (!mounted) return;
+
+        setMauzas(data || []);
+
+        const defaultMauza = data?.find((m) => String(getItemId(m)) === "1");
+        if (defaultMauza) setSelectedMauzaValue("1");
       } finally {
-        if (mounted) setLoading((prev) => ({ ...prev, mauzas: false }));
+        if (mounted) setLoading((p) => ({ ...p, mauzas: false }));
       }
     };
 
-    loadMauzas();
-
-    return () => {
-      mounted = false;
-    };
+    load();
+    return () => (mounted = false);
   }, [selectedTehsil]);
-
-  const setSelectedDistrict = (value) => setSelectedDistrictValue(value);
-  const setSelectedTehsil = (value) => setSelectedTehsilValue(value);
-  const setSelectedMauza = (value) => setSelectedMauzaValue(value);
 
   return {
     districts,
@@ -309,8 +358,8 @@ function useSociety3DFilters() {
     selectedTehsil,
     selectedMauza,
     loading,
-    setSelectedDistrict,
-    setSelectedTehsil,
-    setSelectedMauza,
+    setSelectedDistrict: setSelectedDistrictValue,
+    setSelectedTehsil: setSelectedTehsilValue,
+    setSelectedMauza: setSelectedMauzaValue,
   };
 }

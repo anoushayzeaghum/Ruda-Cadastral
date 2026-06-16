@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import MetaverseLegend from "./tools/Layers/MetaverseLegend";
 import mapboxgl from "mapbox-gl";
 import {
   Maximize2,
@@ -9,11 +10,14 @@ import {
   List,
 } from "lucide-react";
 
-// import Legend from "./Legend";
-
-export default function MetaverseMapControls({ map }) {
+export default function MetaverseMapControls({
+  map,
+  adminBoundaryVisibility,
+  metaverseLegendData,
+}) {
   const [coords, setCoords] = useState({ lng: 74.3402, lat: 31.5025 });
   const [zoom, setZoom] = useState(12);
+  const [showLegend, setShowLegend] = useState(false);
 
   useEffect(() => {
     if (!map) return;
@@ -39,15 +43,19 @@ export default function MetaverseMapControls({ map }) {
   }, [map]);
 
   const handleFullscreen = () => {
-    const mapElement = map?.getContainer?.();
-    if (!mapElement) return;
+  const mapElement = map?.getContainer?.();
+  if (!mapElement) return;
 
-    if (!document.fullscreenElement) {
-      mapElement.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
-    }
-  };
+  if (!document.fullscreenElement) {
+    mapElement.requestFullscreen?.().then?.(() => {
+      setTimeout(() => map.resize(), 100);
+    });
+  } else {
+    document.exitFullscreen?.().then?.(() => {
+      setTimeout(() => map.resize(), 100);
+    });
+  }
+};
 
   const handlePan = () => {
     if (!map) return;
@@ -78,6 +86,23 @@ export default function MetaverseMapControls({ map }) {
       { enableHighAccuracy: true }
     );
   };
+
+  useEffect(() => {
+  if (!map) return;
+
+  const handleFullscreenChange = () => {
+    // important: wait a tick so layout settles
+    setTimeout(() => {
+      map.resize();
+    }, 100);
+  };
+
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+  return () => {
+    document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  };
+}, [map]);
 
   return (
     <>
@@ -122,7 +147,7 @@ export default function MetaverseMapControls({ map }) {
           <div className="mt-10">
             <ControlButton
               title="Legend"
-              onClick={() => console.log("Legend clicked")}
+              onClick={() => setShowLegend((prev) => !prev)}
             >
               <List size={20} />
             </ControlButton>
@@ -130,8 +155,12 @@ export default function MetaverseMapControls({ map }) {
         </div>
       </div>
 
-      {/* Later when Legend.jsx is ready */}
-      {/* <Legend map={map} /> */}
+      {showLegend && (
+        <MetaverseLegend
+          adminBoundaryVisibility={adminBoundaryVisibility}
+          rudaPhases={metaverseLegendData?.rudaPhases || []}
+        />
+      )}
     </>
   );
 }

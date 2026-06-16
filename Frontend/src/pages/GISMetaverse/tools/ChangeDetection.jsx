@@ -15,7 +15,7 @@ const IMAGERY = [
     short: "Jan 2023",
     sourceId: "cd-jan2023-src",
     layerId: "cd-jan2023-lyr",
-    url: "http://localhost:8080/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+    url: "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
     color: "#a855f7",
   },
   {
@@ -24,7 +24,7 @@ const IMAGERY = [
     short: "Jun 2023",
     sourceId: "cd-june2023-src",
     layerId: "cd-june2023-lyr",
-    url: "http://localhost:8080/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+    url: "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
     color: "#3b82f6",
   },
   {
@@ -33,7 +33,7 @@ const IMAGERY = [
     short: "Nov 2024",
     sourceId: "cd-nov2024-src",
     layerId: "cd-nov2024-lyr",
-    url: "http://localhost:8080/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+    url: "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
     color: "#ef4444",
   },
 ];
@@ -137,7 +137,11 @@ export default function ChangeDetection({ map }) {
           layout: { visibility: "none" },
         });
       });
-      mLeft.setLayoutProperty(IMAGERY[leftIdx].layerId, "visibility", "visible");
+      mLeft.setLayoutProperty(
+        IMAGERY[leftIdx].layerId,
+        "visibility",
+        "visible",
+      );
       mLeft.fitBounds(BOUNDS, { padding: 10, duration: 0 });
     });
 
@@ -156,7 +160,11 @@ export default function ChangeDetection({ map }) {
           layout: { visibility: "none" },
         });
       });
-      mRight.setLayoutProperty(IMAGERY[rightIdx].layerId, "visibility", "visible");
+      mRight.setLayoutProperty(
+        IMAGERY[rightIdx].layerId,
+        "visibility",
+        "visible",
+      );
       mRight.fitBounds(BOUNDS, { padding: 10, duration: 0 });
     });
 
@@ -407,4 +415,3 @@ export default function ChangeDetection({ map }) {
     </>
   );
 }
-

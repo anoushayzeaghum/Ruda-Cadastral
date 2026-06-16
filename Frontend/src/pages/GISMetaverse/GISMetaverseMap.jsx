@@ -4,7 +4,6 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import {
   getBlocksGeoJSON,
   getContourGeoJSON,
-  getPlotOptions,
   getPlotsGeoJSON,
   getProjectGeoJSON,
   getRoadsGeoJSON,
@@ -34,6 +33,8 @@ const SOURCES = {
   rudaBoundary: "metaverse-ruda-boundary-source",
   proposedRoads: "metaverse-proposed-roads-source",
   geodeticNetwork: "metaverse-geodetic-network-source",
+  introBoundary: "metaverse-intro-boundary-source",
+  introLabel: "metaverse-intro-label-source",
 };
 
 const LAYERS = {
@@ -55,12 +56,141 @@ const LAYERS = {
   sewagePointsLabel: "metaverse-sewage-points-label",
   cameraLocationsCircle: "metaverse-camera-locations-circle",
   cameraLocationsLabel: "metaverse-camera-locations-label",
+  rudaBoundaryFill: "metaverse-ruda-boundary-fill",
   rudaBoundaryLine: "metaverse-ruda-boundary-line",
+  rudaBoundaryDashLine: "metaverse-ruda-boundary-dash-line",
+  rudaBoundaryLabel: "metaverse-ruda-boundary-label",
   proposedRoadsLine: "metaverse-proposed-roads-line",
   geodeticNetworkCircle: "metaverse-geodetic-network-circle",
+  introBoundaryFill: "metaverse-intro-boundary-fill",
+  introBoundaryLine: "metaverse-intro-boundary-line",
+  introLabel: "metaverse-intro-label",
+  // NEW: Hover highlight layer
+  masterPlanHover: "metaverse-masterplan-hover",
 };
 
 const emptyFC = { type: "FeatureCollection", features: [] };
+
+const ROAD_LEGEND_ITEMS = [
+  { label: "Primary Roads (300'-Wide)", color: "#19598d", width: 3 },
+  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 3 },
+  { label: "Tertiary Roads", color: "#ff9800", width: 3 },
+  { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
+  { label: "Uti Walk Cycle", color: "#8bc34a", width: 2 },
+  { label: "Bridge", color: "#75008a", width: 5 },
+  { label: "300' CL", color: "#9b2400", width: 2 },
+  { label: "300' ROW", color: "#00bcd4", width: 2.5 },
+];
+
+const ROAD_COLOR_EXPRESSION = [
+  "match",
+  ["get", "layer"],
+  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.color]),
+  "#555555",
+];
+
+const ROAD_WIDTH_EXPRESSION = [
+  "match",
+  ["get", "layer"],
+  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.width]),
+  2.5,
+];
+
+const RUDA_PHASE_COLORS = [
+  "#6bb7e8",
+  "#f8d56b",
+  "#6bd69a",
+  "#f59e72",
+  "#b99cf3",
+  "#78d6d0",
+  "#f3a6c8",
+  "#a7d77b",
+  "#f4b860",
+  "#86a8e7",
+  "#d7b377",
+  "#8dd3c7",
+];
+
+const hashString = (value = "") => {
+  const text = String(value || "");
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+};
+
+const stripHtml = (value = "") =>
+  String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getRudaPhaseColor = (phaseId) => {
+  const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
+  return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
+};
+
+const getRudaFeatureId = (feature = {}) => {
+  const props = feature?.properties || {};
+  return props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid ?? "ruda";
+};
+
+const getRudaPhaseLabel = (props = {}, phaseId = "") => {
+  const candidates = [
+    props.phase,
+    props.phase_name,
+    props.name,
+    props.folderpath,
+    props.popupinfo,
+    props.snippet,
+  ];
+
+  for (const value of candidates) {
+    const clean = stripHtml(value);
+    if (!clean) continue;
+
+    const phaseMatch = clean.match(/phase\s*[-_:]?\s*([a-z0-9]+)/i);
+    if (phaseMatch?.[1]) return `Phase ${phaseMatch[1]}`;
+
+    if (clean.length <= 28) return clean;
+    return clean.slice(0, 28);
+  }
+
+  return phaseId ? `Phase ${phaseId}` : "RUDA Phase";
+};
+
+const prepareRudaGeoJSONForDisplay = (geojson = emptyFC) => ({
+  type: "FeatureCollection",
+  features: (geojson?.features || []).map((feature) => {
+    const props = feature?.properties || {};
+    const phaseId = getRudaFeatureId(feature);
+
+    return {
+      ...feature,
+      properties: {
+        ...props,
+        _ruda_phase_id: phaseId,
+        _ruda_phase_color: getRudaPhaseColor(phaseId),
+        _ruda_phase_label: getRudaPhaseLabel(props, phaseId),
+      },
+    };
+  }),
+});
+
+const normalizeRoadLayerName = (value) => String(value ?? "").trim();
+
+const prepareProposedRoadsGeoJSONForDisplay = (geojson = emptyFC) => ({
+  type: "FeatureCollection",
+  features: (geojson?.features || []).map((feature) => ({
+    ...feature,
+    properties: {
+      ...(feature?.properties || {}),
+      layer: normalizeRoadLayerName(feature?.properties?.layer),
+    },
+  })),
+});
 
 function fitGeoJSON(map, geojson) {
   if (!geojson?.features?.length) return;
@@ -118,6 +248,61 @@ function normalizeGeometryCollections(data) {
   };
 }
 
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function getGeoJSONCenter(geojson) {
+  if (!geojson?.features?.length) return [69.3451, 30.3753];
+
+  const bounds = new mapboxgl.LngLatBounds();
+
+  geojson.features.forEach((feature) => {
+    const geom = feature.geometry;
+    if (!geom) return;
+
+    const addCoord = (coord) => {
+      if (Array.isArray(coord) && coord.length >= 2) bounds.extend(coord);
+    };
+
+    if (geom.type === "Point") addCoord(geom.coordinates);
+    if (geom.type === "MultiPoint") geom.coordinates.forEach(addCoord);
+    if (geom.type === "LineString") geom.coordinates.forEach(addCoord);
+    if (geom.type === "MultiLineString")
+      geom.coordinates.flat(1).forEach(addCoord);
+    if (geom.type === "Polygon") geom.coordinates.flat(1).forEach(addCoord);
+    if (geom.type === "MultiPolygon")
+      geom.coordinates.flat(2).forEach(addCoord);
+  });
+
+  if (bounds.isEmpty()) return [69.3451, 30.3753];
+
+  const center = bounds.getCenter();
+  return [center.lng, center.lat];
+}
+
+function makeLabelGeoJSON(label, geojson) {
+  return {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: { label },
+        geometry: {
+          type: "Point",
+          coordinates: getGeoJSONCenter(geojson),
+        },
+      },
+    ],
+  };
+}
+
+async function loadAssetGeoJSON(path) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`Failed to load ${path}`);
+  return res.json();
+}
+
 function ensureSource(map, sourceId, data = emptyFC) {
   if (!map.getSource(sourceId)) {
     map.addSource(sourceId, {
@@ -135,6 +320,288 @@ function setLayerVisibility(map, layerIds, visible) {
       map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
     }
   });
+}
+
+function setLayerPaintProperty(map, layerId, property, value) {
+  if (map.getLayer(layerId)) {
+    map.setPaintProperty(layerId, property, value);
+  }
+}
+
+function applyMetaverseLayerOpacities(
+  map,
+  layerVisibility = {},
+  adminBoundaryVisibility = {},
+) {
+  const getOpacity = (source, key, fallback = 100) =>
+    Number(source?.[key] ?? fallback) / 100;
+
+  const boundaryOpacity = getOpacity(layerVisibility, "boundaryOpacity");
+  const masterPlanOpacity = getOpacity(layerVisibility, "masterPlanOpacity");
+  const spotLevelOpacity = getOpacity(layerVisibility, "spotLevelOpacity");
+  const contoursOpacity = getOpacity(layerVisibility, "contoursOpacity");
+  const roadsOpacity = getOpacity(layerVisibility, "roadsOpacity");
+
+  const waterSupplyPointsOpacity = getOpacity(
+    layerVisibility,
+    "waterSupplyPointsOpacity",
+  );
+  const waterSupplyLinesOpacity = getOpacity(
+    layerVisibility,
+    "waterSupplyLinesOpacity",
+  );
+  const sewagePointsOpacity = getOpacity(layerVisibility, "sewagePointsOpacity");
+  const cameraLocationsOpacity = getOpacity(
+    layerVisibility,
+    "cameraLocationsOpacity",
+  );
+
+  const rudaBoundaryOpacity = getOpacity(
+    adminBoundaryVisibility,
+    "rudaBoundaryOpacity",
+  );
+  const geodeticNetworkOpacity = getOpacity(
+    adminBoundaryVisibility,
+    "geodeticNetworkOpacity",
+  );
+  const proposedRoadsOpacity = getOpacity(
+    adminBoundaryVisibility,
+    "proposedRoadsOpacity",
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.boundaryFill,
+    "fill-opacity",
+    0.12 * boundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.boundaryLine,
+    "line-opacity",
+    boundaryOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.masterPlanFill,
+    "fill-opacity",
+    0.45 * masterPlanOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.masterPlanLine,
+    "line-opacity",
+    masterPlanOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.masterPlanLabel,
+    "text-opacity",
+    masterPlanOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.spotLevelCircle,
+    "circle-opacity",
+    spotLevelOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.spotLevelCircle,
+    "circle-stroke-opacity",
+    spotLevelOpacity,
+  );
+
+  setLayerPaintProperty(map, LAYERS.contoursLine, "line-opacity", contoursOpacity);
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.roadsFill,
+    "fill-opacity",
+    0.35 * roadsOpacity,
+  );
+  setLayerPaintProperty(map, LAYERS.roadsLine, "line-opacity", roadsOpacity);
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.waterSupplyPointsCircle,
+    "circle-opacity",
+    waterSupplyPointsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.waterSupplyPointsCircle,
+    "circle-stroke-opacity",
+    waterSupplyPointsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.waterSupplyPointsLabel,
+    "text-opacity",
+    waterSupplyPointsOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.waterSupplyLinesLine,
+    "line-opacity",
+    waterSupplyLinesOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.sewagePointsCircle,
+    "circle-opacity",
+    sewagePointsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.sewagePointsCircle,
+    "circle-stroke-opacity",
+    sewagePointsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.sewagePointsLabel,
+    "text-opacity",
+    sewagePointsOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.cameraLocationsCircle,
+    "circle-opacity",
+    cameraLocationsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.cameraLocationsCircle,
+    "circle-stroke-opacity",
+    cameraLocationsOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.cameraLocationsLabel,
+    "text-opacity",
+    cameraLocationsOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaBoundaryFill,
+    "fill-opacity",
+    0.5 * rudaBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaBoundaryLine,
+    "line-opacity",
+    0.95 * rudaBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaBoundaryDashLine,
+    "line-opacity",
+    0.9 * rudaBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaBoundaryLabel,
+    "text-opacity",
+    rudaBoundaryOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.proposedRoadsLine,
+    "line-opacity",
+    proposedRoadsOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.geodeticNetworkCircle,
+    "circle-opacity",
+    geodeticNetworkOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.geodeticNetworkCircle,
+    "circle-stroke-opacity",
+    geodeticNetworkOpacity,
+  );
+}
+
+function addIntroBoundaryLayer(map, data, label) {
+  ensureSource(map, SOURCES.introBoundary, data);
+  ensureSource(map, SOURCES.introLabel, makeLabelGeoJSON(label, data));
+
+  if (!map.getLayer(LAYERS.introBoundaryFill)) {
+    map.addLayer({
+      id: LAYERS.introBoundaryFill,
+      type: "fill",
+      source: SOURCES.introBoundary,
+      paint: {
+        "fill-color": "#16a34a",
+        "fill-opacity": 0.12,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.introBoundaryLine)) {
+    map.addLayer({
+      id: LAYERS.introBoundaryLine,
+      type: "line",
+      source: SOURCES.introBoundary,
+      paint: {
+        "line-color": "#16a34a",
+        "line-width": 3,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.introLabel)) {
+    map.addLayer({
+      id: LAYERS.introLabel,
+      type: "symbol",
+      source: SOURCES.introLabel,
+      layout: {
+        "text-field": ["get", "label"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 4, 18, 10, 30],
+        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": "#111827",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 2,
+      },
+    });
+  }
+
+  setLayerVisibility(
+    map,
+    [LAYERS.introBoundaryFill, LAYERS.introBoundaryLine, LAYERS.introLabel],
+    true,
+  );
+}
+
+function clearIntroBoundaryLayer(map) {
+  if (map.getSource(SOURCES.introBoundary)) {
+    map.getSource(SOURCES.introBoundary).setData(emptyFC);
+  }
+  if (map.getSource(SOURCES.introLabel)) {
+    map.getSource(SOURCES.introLabel).setData(emptyFC);
+  }
+
+  setLayerVisibility(
+    map,
+    [LAYERS.introBoundaryFill, LAYERS.introBoundaryLine, LAYERS.introLabel],
+    false,
+  );
 }
 
 function addProjectBoundaryLayer(map, data) {
@@ -257,6 +724,21 @@ function addMasterPlanLayer(map, data) {
       },
     });
   }
+
+  // NEW: Add hover highlight layer (initially empty)
+  if (!map.getLayer(LAYERS.masterPlanHover)) {
+    map.addLayer({
+      id: LAYERS.masterPlanHover,
+      type: "line",
+      source: SOURCES.masterPlan,
+      paint: {
+        "line-color": "#ffffff",
+        "line-width": 4,
+        "line-opacity": 0,
+      },
+      filter: ["==", ["get", "gid"], ""],
+    });
+  }
 }
 
 function addSpotLevelLayer(map, data) {
@@ -287,6 +769,34 @@ function addContourLayer(map, data) {
       source: SOURCES.contours,
       paint: {
         "line-color": "#615514",
+        "line-width": 1.5,
+      },
+    });
+  }
+}
+
+function addRoadLayer(map, data) {
+  ensureSource(map, SOURCES.roads, data);
+
+  if (!map.getLayer(LAYERS.roadsFill)) {
+    map.addLayer({
+      id: LAYERS.roadsFill,
+      type: "fill",
+      source: SOURCES.roads,
+      paint: {
+        "fill-color": "#d01f1f",
+        "fill-opacity": 0.35,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.roadsLine)) {
+    map.addLayer({
+      id: LAYERS.roadsLine,
+      type: "line",
+      source: SOURCES.roads,
+      paint: {
+        "line-color": "#991b1b",
         "line-width": 1.5,
       },
     });
@@ -453,33 +963,144 @@ function addCameraLocationsLayer(map, data) {
   }
 }
 
-function addRoadLayer(map, data) {
-  ensureSource(map, SOURCES.roads, data);
+function addRudaBoundaryLayer(map, data) {
+  ensureSource(map, SOURCES.rudaBoundary, prepareRudaGeoJSONForDisplay(data));
 
-  if (!map.getLayer(LAYERS.roadsFill)) {
+  if (!map.getLayer(LAYERS.rudaBoundaryFill)) {
     map.addLayer({
-      id: LAYERS.roadsFill,
+      id: LAYERS.rudaBoundaryFill,
       type: "fill",
-      source: SOURCES.roads,
+      source: SOURCES.rudaBoundary,
       paint: {
-        "fill-color": "#d01f1f",
-        "fill-opacity": 0.35,
+        "fill-color": ["coalesce", ["get", "_ruda_phase_color"], "#3d7cc4"],
+        "fill-opacity": 0.5,
+        "fill-outline-color": "#1f2937",
       },
     });
   }
 
-  if (!map.getLayer(LAYERS.roadsLine)) {
+  if (!map.getLayer(LAYERS.rudaBoundaryLine)) {
     map.addLayer({
-      id: LAYERS.roadsLine,
+      id: LAYERS.rudaBoundaryLine,
       type: "line",
-      source: SOURCES.roads,
+      source: SOURCES.rudaBoundary,
       paint: {
-        "line-color": "#991b1b",
-        "line-width": 1.5,
+        "line-color": "#111827",
+        "line-width": 2,
+        "line-opacity": 0.95,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.rudaBoundaryDashLine)) {
+    map.addLayer({
+      id: LAYERS.rudaBoundaryDashLine,
+      type: "line",
+      source: SOURCES.rudaBoundary,
+      paint: {
+        "line-color": "#111827",
+        "line-width": 1.2,
+        "line-dasharray": [1.4, 1.2],
+        "line-opacity": 0.9,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.rudaBoundaryLabel)) {
+    map.addLayer({
+      id: LAYERS.rudaBoundaryLabel,
+      type: "symbol",
+      source: SOURCES.rudaBoundary,
+      layout: {
+        "text-field": ["coalesce", ["get", "_ruda_phase_label"], "RUDA Phase"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 10, 10, 15, 13],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+      },
+      paint: {
+        "text-color": "#111827",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.4,
       },
     });
   }
 }
+
+function addProposedRoadsLayer(map, data) {
+  ensureSource(map, SOURCES.proposedRoads, prepareProposedRoadsGeoJSONForDisplay(data));
+
+  if (!map.getLayer(LAYERS.proposedRoadsLine)) {
+    map.addLayer({
+      id: LAYERS.proposedRoadsLine,
+      type: "line",
+      source: SOURCES.proposedRoads,
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
+      paint: {
+        "line-color": ROAD_COLOR_EXPRESSION,
+        "line-width": ROAD_WIDTH_EXPRESSION,
+        "line-opacity": 1,
+      },
+    });
+  }
+}
+
+// NEW: Helper to build popup HTML content from plot properties
+const buildPlotPopupHTML = (props) => {
+  const fields = [
+    { key: "name", label: "Name" },
+    { key: "type", label: "Type" },
+    { key: "remarks", label: "Remarks" },
+    { key: "block", label: "Block" },
+    { key: "plot_area", label: "Plot Area" },
+    { key: "dimension", label: "Dimension" },
+    { key: "parkfront", label: "Park Front" },
+    { key: "rd_ft", label: "Road Front" },
+    { key: "storey", label: "Storey" },
+    { key: "rd_facing", label: "Road Facing" },
+    { key: "h", label: "Height" },
+    { key: "demar", label: "Demarcation" },
+    { key: "possession", label: "Possession" },
+    { key: "poss_st", label: "Possession Status" },
+    { key: "canceled", label: "Status" },
+    { key: "site_plan", label: "Site Plan" },
+    { key: "tr_own", label: "Owner" },
+    { key: "tr_cate", label: "Category" },
+    { key: "tr_p_no", label: "Transfer Plot No" },
+    { key: "shape_leng", label: "Shape Length" },
+    { key: "shape_area", label: "Shape Area" },
+  ];
+
+  const plotNo = props.plot_no || props.gid || "N/A";
+
+  const rows = fields
+    .filter((f) => props[f.key] !== null && props[f.key] !== undefined && props[f.key] !== "")
+    .map((f) => {
+      const val = props[f.key];
+      const displayVal = typeof val === "number" ? val.toFixed(2) : String(val);
+      return `
+        <div class="plot-popup-row">
+          <span class="plot-popup-label">${f.label}:</span>
+          <span class="plot-popup-value">${displayVal}</span>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="plot-popup-container">
+      <div class="plot-popup-header">
+        <div class="plot-popup-plot-no">Plot No: ${plotNo}</div>
+      </div>
+      <div class="plot-popup-body">
+        ${rows || '<div class="plot-popup-row"><span class="plot-popup-value">No additional details</span></div>'}
+      </div>
+    </div>
+  `;
+};
 
 export default function GISMetaverseMap({
   mapRef,
@@ -488,8 +1109,13 @@ export default function GISMetaverseMap({
   layerVisibility,
   adminBoundaryVisibility,
   setLayerVisibility: updateLayerVisibility,
+  onIntroComplete,
 }) {
   const mapContainerRef = useRef(null);
+  const introHasRunRef = useRef(false);
+  // NEW: Refs for hover handlers and popup
+  const popupRef = useRef(null);
+  const hoveredFeatureIdRef = useRef(null);
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -497,8 +1123,8 @@ export default function GISMetaverseMap({
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v12",
-      center: [74.3587, 31.5204],
-      zoom: 12,
+      center: [69.3451, 30.3753],
+      zoom: 4.4,
     });
 
     mapRef.current.on("load", () => {
@@ -511,6 +1137,60 @@ export default function GISMetaverseMap({
       setIsMapReady(false);
     };
   }, [mapRef, setIsMapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || introHasRunRef.current) return;
+
+    let cancelled = false;
+    introHasRunRef.current = true;
+
+    const runIntro = async () => {
+      try {
+        const steps = [
+          {
+            label: "Pakistan",
+            path: new URL("../../assets/Pakistan.geojson", import.meta.url),
+          },
+          {
+            label: "Punjab",
+            path: new URL("../../assets/Punjab.geojson", import.meta.url),
+          },
+          {
+            label: "RUDA",
+            path: new URL("../../assets/Ruda.geojson", import.meta.url),
+          },
+        ];
+
+        for (const step of steps) {
+          if (cancelled) return;
+
+          const data = await loadAssetGeoJSON(step.path);
+          if (cancelled) return;
+
+          addIntroBoundaryLayer(map, data, step.label);
+          fitGeoJSON(map, data);
+          await wait(1600);
+        }
+
+        if (cancelled) return;
+
+        clearIntroBoundaryLayer(map);
+        onIntroComplete?.();
+      } catch (err) {
+        console.error("Metaverse intro animation error:", err);
+        clearIntroBoundaryLayer(map);
+        onIntroComplete?.();
+      }
+    };
+
+    if (map.isStyleLoaded()) runIntro();
+    else map.once("load", runIntro);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mapRef, onIntroComplete]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -557,6 +1237,7 @@ export default function GISMetaverseMap({
         filters.projectId,
         filters.block,
       );
+
       addBlockLayer(map, blockGeoJSON);
       setLayerVisibility(map, [LAYERS.blockFill, LAYERS.blockLine], true);
       fitGeoJSON(map, blockGeoJSON);
@@ -572,7 +1253,17 @@ export default function GISMetaverseMap({
 
     const run = async () => {
       const hasPlotFilter =
-        !!filters.plotType || !!filters.plotNo || !!filters.area;
+        !!filters.block ||
+        !!filters.plotType ||
+        !!filters.plotNo ||
+        !!filters.area ||
+        !!filters.parkfront ||
+        !!filters.rd_facing ||
+        !!filters.poss_st ||
+        !!filters.plotStatus ||
+        !!filters.tr_cate ||
+        !!filters.tr_own ||
+        !!filters.site_plan;
 
       if (!hasPlotFilter && !layerVisibility.masterPlan) {
         if (map.getSource(SOURCES.masterPlan)) {
@@ -587,16 +1278,28 @@ export default function GISMetaverseMap({
         type: filters.plotType || undefined,
         plot_no: filters.plotNo || undefined,
         plot_area: filters.area || undefined,
+        parkfront: filters.parkfront || undefined,
+        rd_facing: filters.rd_facing || undefined,
+        poss_st: filters.poss_st || undefined,
+        canceled: filters.plotStatus || undefined,
+        tr_cate: filters.tr_cate || undefined,
+        tr_own: filters.tr_own || undefined,
+        site_plan: filters.site_plan || undefined,
       });
 
       addMasterPlanLayer(map, plotGeoJSON);
+
       setLayerVisibility(
         map,
         [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
         true,
       );
 
-      if (hasPlotFilter) fitGeoJSON(map, plotGeoJSON);
+      applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+
+      if (hasPlotFilter || layerVisibility.masterPlan) {
+        fitGeoJSON(map, plotGeoJSON);
+      }
     };
 
     if (map.isStyleLoaded()) run();
@@ -607,7 +1310,17 @@ export default function GISMetaverseMap({
     filters.plotType,
     filters.plotNo,
     filters.area,
+    filters.parkfront,
+    filters.rd_facing,
+    filters.poss_st,
+    filters.plotStatus,
+    filters.tr_cate,
+    filters.tr_own,
+    filters.site_plan,
     layerVisibility.masterPlan,
+    layerVisibility.boundaryOpacity,
+    layerVisibility.masterPlanOpacity,
+    adminBoundaryVisibility,
     mapRef,
   ]);
 
@@ -618,36 +1331,12 @@ export default function GISMetaverseMap({
     const run = async () => {
       if (adminBoundaryVisibility.rudaBoundary) {
         const data = await getRudaGeoJSON();
-        ensureSource(map, SOURCES.rudaBoundary, data);
-
-        if (!map.getLayer(LAYERS.rudaBoundaryLine)) {
-          map.addLayer({
-            id: LAYERS.rudaBoundaryLine,
-            type: "line",
-            source: SOURCES.rudaBoundary,
-            paint: {
-              "line-color": "#6B7280",
-              "line-width": 2.5,
-            },
-          });
-        }
+        addRudaBoundaryLayer(map, data);
       }
 
       if (adminBoundaryVisibility.proposedRoads) {
         const data = await getRudaProposedRoadsGeoJSON();
-        ensureSource(map, SOURCES.proposedRoads, data);
-
-        if (!map.getLayer(LAYERS.proposedRoadsLine)) {
-          map.addLayer({
-            id: LAYERS.proposedRoadsLine,
-            type: "line",
-            source: SOURCES.proposedRoads,
-            paint: {
-              "line-color": "#f97316",
-              "line-width": 3,
-            },
-          });
-        }
+        addProposedRoadsLayer(map, data);
       }
 
       if (adminBoundaryVisibility.geodeticNetwork) {
@@ -671,7 +1360,12 @@ export default function GISMetaverseMap({
 
       setLayerVisibility(
         map,
-        [LAYERS.rudaBoundaryLine],
+        [
+          LAYERS.rudaBoundaryFill,
+          LAYERS.rudaBoundaryLine,
+          LAYERS.rudaBoundaryDashLine,
+          LAYERS.rudaBoundaryLabel,
+        ],
         adminBoundaryVisibility.rudaBoundary,
       );
 
@@ -686,11 +1380,13 @@ export default function GISMetaverseMap({
         [LAYERS.geodeticNetworkCircle],
         adminBoundaryVisibility.geodeticNetwork,
       );
+
+      applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
     else map.once("load", run);
-  }, [adminBoundaryVisibility, mapRef]);
+  }, [adminBoundaryVisibility, layerVisibility, mapRef]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -701,43 +1397,53 @@ export default function GISMetaverseMap({
       [LAYERS.boundaryFill, LAYERS.boundaryLine],
       layerVisibility.boundary,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
       layerVisibility.masterPlan,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.spotLevelCircle],
       layerVisibility.spotLevel,
     );
+
     setLayerVisibility(map, [LAYERS.contoursLine], layerVisibility.contours);
+
     setLayerVisibility(
       map,
       [LAYERS.roadsFill, LAYERS.roadsLine],
       layerVisibility.roads,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.waterSupplyPointsCircle, LAYERS.waterSupplyPointsLabel],
       layerVisibility.waterSupplyPoints,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.waterSupplyLinesLine],
       layerVisibility.waterSupplyLines,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.sewagePointsCircle, LAYERS.sewagePointsLabel],
       layerVisibility.sewagePoints,
     );
+
     setLayerVisibility(
       map,
       [LAYERS.cameraLocationsCircle, LAYERS.cameraLocationsLabel],
       layerVisibility.cameraLocations,
     );
-  }, [layerVisibility, mapRef]);
+
+    applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+  }, [layerVisibility, adminBoundaryVisibility, mapRef]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -755,7 +1461,12 @@ export default function GISMetaverseMap({
       }
 
       if (layerVisibility.roads) {
-        const data = await getRoadsGeoJSON(filters.projectId);
+        const data = await getRoadsGeoJSON({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+          type: filters.plotType || undefined,
+        });
+
         addRoadLayer(map, data);
       }
 
@@ -778,12 +1489,16 @@ export default function GISMetaverseMap({
         const data = await getCameraLocationsGeoJSON(filters.projectId);
         addCameraLocationsLayer(map, data);
       }
+
+      applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
     else map.once("load", run);
   }, [
     filters.projectId,
+    filters.block,
+    filters.plotType,
     layerVisibility.spotLevel,
     layerVisibility.contours,
     layerVisibility.roads,
@@ -791,8 +1506,105 @@ export default function GISMetaverseMap({
     layerVisibility.waterSupplyLines,
     layerVisibility.sewagePoints,
     layerVisibility.cameraLocations,
+    layerVisibility.spotLevelOpacity,
+    layerVisibility.contoursOpacity,
+    layerVisibility.roadsOpacity,
+    layerVisibility.waterSupplyPointsOpacity,
+    layerVisibility.waterSupplyLinesOpacity,
+    layerVisibility.sewagePointsOpacity,
+    layerVisibility.cameraLocationsOpacity,
+    adminBoundaryVisibility,
     mapRef,
   ]);
+
+  // NEW: Setup plot hover interaction
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Create popup instance
+    popupRef.current = new mapboxgl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      offset: 15,
+      className: "plot-hover-popup",
+    });
+
+    const handleMouseMove = (e) => {
+      const features = e.features;
+      if (!features || features.length === 0) {
+        // Clear hover state
+        if (hoveredFeatureIdRef.current !== null) {
+          map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
+          map.setFilter(LAYERS.masterPlanHover, ["==", ["get", "gid"], ""]);
+          hoveredFeatureIdRef.current = null;
+          popupRef.current.remove();
+          map.getCanvas().style.cursor = "";
+        }
+        return;
+      }
+
+      const feature = features[0];
+      const props = feature.properties || {};
+      const featureId = props.gid || feature.id;
+
+      // Update hover highlight
+      if (hoveredFeatureIdRef.current !== featureId) {
+        hoveredFeatureIdRef.current = featureId;
+        map.setFilter(LAYERS.masterPlanHover, ["==", ["get", "gid"], featureId]);
+        map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 1);
+      }
+
+      // Show popup
+      map.getCanvas().style.cursor = "pointer";
+      popupRef.current
+        .setLngLat(e.lngLat)
+        .setHTML(buildPlotPopupHTML(props))
+        .addTo(map);
+    };
+
+    const handleMouseLeave = () => {
+      if (hoveredFeatureIdRef.current !== null) {
+        map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
+        map.setFilter(LAYERS.masterPlanHover, ["==", ["get", "gid"], ""]);
+        hoveredFeatureIdRef.current = null;
+        popupRef.current.remove();
+        map.getCanvas().style.cursor = "";
+      }
+    };
+
+    // Add event listeners when master plan layer is available
+    const attachHoverListeners = () => {
+      if (!map.getLayer(LAYERS.masterPlanFill)) return;
+
+      map.on("mousemove", LAYERS.masterPlanFill, handleMouseMove);
+      map.on("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
+    };
+
+    if (map.isStyleLoaded()) {
+      attachHoverListeners();
+    } else {
+      map.once("load", attachHoverListeners);
+    }
+
+    // Also re-attach when style changes (layers might be recreated)
+    map.on("styledata", () => {
+      if (map.getLayer(LAYERS.masterPlanFill)) {
+        // Remove old listeners first to avoid duplicates
+        map.off("mousemove", LAYERS.masterPlanFill, handleMouseMove);
+        map.off("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
+        map.on("mousemove", LAYERS.masterPlanFill, handleMouseMove);
+        map.on("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
+      }
+    });
+
+    return () => {
+      map.off("mousemove", LAYERS.masterPlanFill, handleMouseMove);
+      map.off("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
+      popupRef.current?.remove();
+      popupRef.current = null;
+    };
+  }, [mapRef]);
 
   return <div ref={mapContainerRef} className="h-full w-full" />;
 }

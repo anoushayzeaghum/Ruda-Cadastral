@@ -12,9 +12,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+import { useNavigate } from "react-router-dom"; // ✅ ADD THIS
+
 import Filter from "./tools/Filter";
 import Basemaps from "./tools/Basemaps";
 import LayersPanel from "./tools/Layers";
+import FlyTo from "./tools/FlyTo";
 import DroneImagery from "./tools/DroneImagery";
 import TimeLapse from "./tools/TimeLapse";
 import ChangeDetection from "./tools/ChangeDetection";
@@ -42,17 +45,31 @@ export default function MetaverseLeftToolbar({
   setActiveTool,
   map,
   filters,
+  setFilters,
   layerVisibility,
   setLayerVisibility,
   adminBoundaryVisibility,
   setAdminBoundaryVisibility,
 }) {
+  const navigate = useNavigate(); // ✅ ADD THIS
+
   const activeToolIndex = tools.findIndex((tool) => tool.id === activeTool);
 
   const panelTop =
     activeToolIndex >= 0
       ? 12 + activeToolIndex * (TOOL_BUTTON_SIZE + TOOL_GAP)
       : 12;
+
+  const handleToolClick = (toolId) => {
+    // ✅ SPECIAL CASE: 3D VIEW
+    if (toolId === "threeD") {
+      navigate("/society-3d");   // 🚀 ROUTE CHANGE
+      return;
+    }
+
+    // normal behavior
+    setActiveTool((prev) => (prev === toolId ? null : toolId));
+  };
 
   return (
     <>
@@ -66,7 +83,7 @@ export default function MetaverseLeftToolbar({
               key={tool.id}
               type="button"
               title={tool.label}
-              onClick={() => setActiveTool(isActive ? null : tool.id)}
+              onClick={() => handleToolClick(tool.id)}   // ✅ CHANGED
               className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
                 isActive
                   ? "border-[#8bd66f] bg-[#243041] text-white"
@@ -89,16 +106,18 @@ export default function MetaverseLeftToolbar({
                 : activeTool === "basemaps"
                   ? "w-[380px] max-h-[340px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                   : activeTool === "droneImagery"
-                    ? "w-[320px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                    : activeTool === "timeLapse"
-                      ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                      : activeTool === "changeDetection"
+                    ? "w-[320px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                    : activeTool === "flyTo"
+                      ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                      : activeTool === "timeLapse"
                         ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                        : activeTool === "import"
-                          ? "w-[340px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                          : activeTool === "measurement"
-                            ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                            : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                        : activeTool === "changeDetection"
+                          ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                          : activeTool === "import"
+                            ? "w-[340px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                            : activeTool === "measurement"
+                              ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                              : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
           }`}
           style={{ top: `${panelTop}px` }}
         >
@@ -112,24 +131,47 @@ export default function MetaverseLeftToolbar({
               setAdminBoundaryVisibility={setAdminBoundaryVisibility}
             />
           )}
+
           {activeTool === "filter" && (
-            <Filter onClose={() => setActiveTool(null)} />
+            <Filter
+              filters={filters}
+              projectId={filters?.projectId}
+              setLayerVisibility={setLayerVisibility}
+              onApply={(appliedFilters) => {
+                setFilters?.((prev) => ({
+                  ...prev,
+                  ...appliedFilters,
+                }));
+                setActiveTool("layers");
+              }}
+              onClose={() => setActiveTool(null)}
+            />
+          )}
+
+          {activeTool === "flyTo" && (
+            <FlyTo
+              filters={filters}
+              setFilters={setFilters}
+              setLayerVisibility={setLayerVisibility}
+              onClose={() => setActiveTool("layers")}
+            />
           )}
 
           {activeTool === "basemaps" && <Basemaps map={map} />}
-
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
-
           {activeTool === "timeLapse" && <TimeLapse map={map} />}
 
           {activeTool === "changeDetection" && <ChangeDetection map={map} />}
-          {activeTool === "import" && <Import map={map} onClose={() => setActiveTool(null)} />}
+          {activeTool === "import" && (
+            <Import map={map} onClose={() => setActiveTool(null)} />
+          )}
 
           {activeTool === "measurement" && <Measurement map={map} />}
 
           {activeTool !== "layers" &&
             activeTool !== "filter" &&
             activeTool !== "basemaps" &&
+            activeTool !== "flyTo" &&
             activeTool !== "droneImagery" &&
             activeTool !== "timeLapse" &&
             activeTool !== "changeDetection" &&

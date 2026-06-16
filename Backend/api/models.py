@@ -677,49 +677,31 @@ class BlockLevel(models.Model):
 
 class Plot(models.Model):
     gid = models.AutoField(primary_key=True)
-
     name = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=255, null=True, blank=True)
     remarks = models.TextField(null=True, blank=True)
-
     project_id = models.IntegerField(null=True, blank=True)
-
     block_id = models.IntegerField(null=True, blank=True)
-
     plot_no = models.CharField(max_length=100, null=True, blank=True)
     plot_area = models.CharField(max_length=100, null=True, blank=True)
-
     block = models.CharField(max_length=255, null=True, blank=True)
-
     shape_leng = models.FloatField(null=True, blank=True)
     shape_area = models.FloatField(null=True, blank=True)
-
     dimension = models.CharField(max_length=255, null=True, blank=True)
-
     parkfront = models.CharField(max_length=50, null=True, blank=True)
     rd_ft = models.CharField(max_length=50, null=True, blank=True)
     storey = models.CharField(max_length=50, null=True, blank=True)
     rd_facing = models.CharField(max_length=50, null=True, blank=True)
-
     h = models.IntegerField(null=True, blank=True)
-
     demar = models.CharField(max_length=255, null=True, blank=True)
-
     possession = models.CharField(max_length=255, null=True, blank=True)
     poss_st = models.CharField(max_length=255, null=True, blank=True)
-
     canceled = models.CharField(max_length=50, null=True, blank=True)
-
     site_plan = models.CharField(max_length=255, null=True, blank=True)
-
     unique_id = models.IntegerField(null=True, blank=True)
-
     tr_srno = models.IntegerField(null=True, blank=True)
-
     tr_own = models.TextField(null=True, blank=True)
-
     tr_p_no = models.CharField(max_length=255, null=True, blank=True)
-
     tr_cate = models.CharField(max_length=255, null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(
@@ -775,6 +757,8 @@ class CameraLocation(models.Model):
     project = models.CharField(max_length=255, null=True, blank=True)
 
     camera = models.CharField(max_length=255, null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
 
     y = models.FloatField(null=True, blank=True)
 

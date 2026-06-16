@@ -66,8 +66,15 @@ export default function DroneImagery({ map }) {
   useEffect(() => {
     if (!map) return;
     if (jan2023Visible) {
-      if (!map.getSource(JAN2023_SOURCE))
-        map.addSource(JAN2023_SOURCE, { type: "raster", tiles: ["http://localhost:8080/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png"], tileSize: 256 });
+      if (!map.getSource(JAN2023_SOURCE)) {
+        map.addSource(JAN2023_SOURCE, {
+          type: "raster",
+          tiles: [
+            "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+          ],
+          tileSize: 256,
+        });
+      }
       if (!map.getLayer(JAN2023_LAYER)) {
         map.addLayer({ id: JAN2023_LAYER, type: "raster", source: JAN2023_SOURCE, paint: { "raster-opacity": jan2023Opacity / 100 }, layout: { visibility: "visible" } });
         flyToChaharbagh();
@@ -83,8 +90,15 @@ export default function DroneImagery({ map }) {
   useEffect(() => {
     if (!map) return;
     if (june2023Visible) {
-      if (!map.getSource(JUNE2023_SOURCE))
-        map.addSource(JUNE2023_SOURCE, { type: "raster", tiles: ["http://localhost:8080/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png"], tileSize: 256 });
+      if (!map.getSource(JUNE2023_SOURCE)) {
+        map.addSource(JUNE2023_SOURCE, {
+          type: "raster",
+          tiles: [
+            "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+          ],
+          tileSize: 256,
+        });
+      }
       if (!map.getLayer(JUNE2023_LAYER)) {
         map.addLayer({ id: JUNE2023_LAYER, type: "raster", source: JUNE2023_SOURCE, paint: { "raster-opacity": june2023Opacity / 100 }, layout: { visibility: "visible" } });
         flyToChaharbagh();
@@ -100,8 +114,15 @@ export default function DroneImagery({ map }) {
   useEffect(() => {
     if (!map) return;
     if (nov2024Visible) {
-      if (!map.getSource(NOV2024_SOURCE))
-        map.addSource(NOV2024_SOURCE, { type: "raster", tiles: ["http://localhost:8080/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png"], tileSize: 256 });
+      if (!map.getSource(NOV2024_SOURCE)) {
+        map.addSource(NOV2024_SOURCE, {
+          type: "raster",
+          tiles: [
+            "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+          ],
+          tileSize: 256,
+        });
+      }
       if (!map.getLayer(NOV2024_LAYER)) {
         map.addLayer({ id: NOV2024_LAYER, type: "raster", source: NOV2024_SOURCE, paint: { "raster-opacity": nov2024Opacity / 100 }, layout: { visibility: "visible" } });
         flyToChaharbagh();

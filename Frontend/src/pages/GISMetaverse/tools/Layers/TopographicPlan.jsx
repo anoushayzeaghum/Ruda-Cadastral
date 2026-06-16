@@ -92,7 +92,7 @@ export default function TopographicPlan({ map }) {
       if (!map.getSource(DSM_SOURCE))
         map.addSource(DSM_SOURCE, {
           type: "raster",
-          tiles: ["http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png"],
+          tiles: ["http://localhost:8081/data/Chaharbagh_DSM/{z}/{x}/{y}.png"],
           tileSize: 256,
         });
       if (!map.getLayer(DSM_LAYER)) {
@@ -115,7 +115,7 @@ export default function TopographicPlan({ map }) {
       if (!map.getSource(DTM_SOURCE))
         map.addSource(DTM_SOURCE, {
           type: "raster",
-          tiles: ["http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png"],
+          tiles: ["http://localhost:8081/data/Chaharbagh_DTM/{z}/{x}/{y}.png"],
           tileSize: 256,
         });
       if (!map.getLayer(DTM_LAYER)) {

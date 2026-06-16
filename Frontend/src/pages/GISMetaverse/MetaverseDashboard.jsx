@@ -1,61 +1,99 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Header from "./Header";
 import GISMetaverseMap from "./GISMetaverseMap";
 import MetaverseLeftToolbar from "./MetaverseLeftToolbar";
 import MetaverseSubHeader from "./MetaverseSubHeader";
 import MetaverseMapControls from "./MetaverseMapControls";
+import MetaverseLegend from "./tools/Layers/MetaverseLegend";
 
 export default function MetaverseDashboard() {
   const mapRef = useRef(null);
   const [isMapReady, setIsMapReady] = useState(false);
-  const [activeTool, setActiveTool] = useState("layers");
+  const [activeTool, setActiveTool] = useState(false);
+  const [showMetaverseLegend, setShowMetaverseLegend] = useState(false);
 
-  const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState({
-    rudaBoundary: false,
-    geodeticNetwork: false,
-    proposedRoads: false,
-  });
-
-  const [metaverseFilters, setMetaverseFilters] = useState({
+  const defaultFilters = {
     projectId: "",
     block: "",
     plotType: "",
     plotNo: "",
     area: "",
-  });
+    parkfront: "",
+    rd_facing: "",
+    poss_st: "",
+    plotStatus: "",
+    tr_cate: "",
+    tr_own: "",
+    site_plan: "",
+  };
 
-  const [layerVisibility, setLayerVisibility] = useState({
+  const defaultLayerVisibility = {
     boundary: false,
     masterPlan: false,
     spotLevel: false,
     contours: false,
     roads: false,
+
+    boundaryOpacity: 100,
+    masterPlanOpacity: 100,
+    spotLevelOpacity: 100,
+    contoursOpacity: 100,
+    roadsOpacity: 100,
+
     waterSupplyPoints: false,
     waterSupplyLines: false,
     sewagePoints: false,
     cameraLocations: false,
-  });
+
+    waterSupplyPointsOpacity: 100,
+    waterSupplyLinesOpacity: 100,
+    sewagePointsOpacity: 100,
+    cameraLocationsOpacity: 100,
+  };
+
+  const defaultAdminBoundaryVisibility = {
+    rudaBoundary: false,
+    geodeticNetwork: false,
+    proposedRoads: false,
+
+    rudaBoundaryOpacity: 100,
+    geodeticNetworkOpacity: 100,
+    proposedRoadsOpacity: 100,
+  };
+
+  const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState(
+    defaultAdminBoundaryVisibility
+  );
+
+  const [metaverseFilters, setMetaverseFilters] = useState(defaultFilters);
+
+  const [layerVisibility, setLayerVisibility] = useState(
+    defaultLayerVisibility
+  );
+
+  const handleIntroComplete = useCallback(() => {
+    setMetaverseFilters({
+      ...defaultFilters,
+      projectId: "5",
+    });
+
+    setLayerVisibility((prev) => ({
+      ...prev,
+      boundary: true,
+      masterPlan: true,
+      roads: true,
+
+      boundaryOpacity: prev.boundaryOpacity ?? 100,
+      masterPlanOpacity: prev.masterPlanOpacity ?? 100,
+      roadsOpacity: prev.roadsOpacity ?? 100,
+    }));
+  }, []);
 
   const handleReset = () => {
-    setMetaverseFilters({
-      projectId: "",
-      block: "",
-      plotType: "",
-      plotNo: "",
-      area: "",
-    });
-
-    setLayerVisibility({
-      boundary: false,
-      masterPlan: false,
-      spotLevel: false,
-      contours: false,
-      roads: false,
-      waterSupplyPoints: false,
-      waterSupplyLines: false,
-      sewagePoints: false,
-      cameraLocations: false,
-    });
+    setMetaverseFilters(defaultFilters);
+    setLayerVisibility(defaultLayerVisibility);
+    setAdminBoundaryVisibility(defaultAdminBoundaryVisibility);
+    setShowMetaverseLegend(false);
   };
 
   return (
@@ -70,6 +108,7 @@ export default function MetaverseDashboard() {
           layerVisibility={layerVisibility}
           setLayerVisibility={setLayerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}
+          onIntroComplete={handleIntroComplete}
         />
 
         <MetaverseSubHeader
@@ -85,13 +124,23 @@ export default function MetaverseDashboard() {
           setActiveTool={setActiveTool}
           map={isMapReady ? mapRef.current : null}
           filters={metaverseFilters}
+          setFilters={setMetaverseFilters}
           layerVisibility={layerVisibility}
           setLayerVisibility={setLayerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}
           setAdminBoundaryVisibility={setAdminBoundaryVisibility}
         />
 
-        <MetaverseMapControls map={isMapReady ? mapRef.current : null} />
+        {showMetaverseLegend && (
+          <MetaverseLegend adminBoundaryVisibility={adminBoundaryVisibility} />
+        )}
+
+        <MetaverseMapControls
+          map={isMapReady ? mapRef.current : null}
+          showMetaverseLegend={showMetaverseLegend}
+          setShowMetaverseLegend={setShowMetaverseLegend}
+          adminBoundaryVisibility={adminBoundaryVisibility}
+        />
       </div>
     </div>
   );
