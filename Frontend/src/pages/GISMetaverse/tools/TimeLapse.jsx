@@ -21,7 +21,7 @@ const TIMELINE = [
     date: "January 2023",
     sourceId: "tl-jan2023-src",
     layerId: "tl-jan2023-lyr",
-    url: "http://localhost:8080/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+    url: "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
     color: "#a855f7",
   },
   {
@@ -29,7 +29,7 @@ const TIMELINE = [
     date: "June 2023",
     sourceId: "tl-june2023-src",
     layerId: "tl-june2023-lyr",
-    url: "http://localhost:8080/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+    url: "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
     color: "#3b82f6",
   },
   {
@@ -37,7 +37,7 @@ const TIMELINE = [
     date: "November 2024",
     sourceId: "tl-nov2024-src",
     layerId: "tl-nov2024-lyr",
-    url: "http://localhost:8080/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+    url: "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
     color: "#ef4444",
   },
 ];

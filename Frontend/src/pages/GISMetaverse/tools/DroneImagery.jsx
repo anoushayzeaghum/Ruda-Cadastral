@@ -36,7 +36,7 @@ export default function DroneImagery({ map }) {
         map.addSource(JAN2023_SOURCE, {
           type: "raster",
           tiles: [
-            "http://localhost:8080/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+            "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
           ],
           tileSize: 256,
         });
@@ -74,7 +74,7 @@ export default function DroneImagery({ map }) {
         map.addSource(JUNE2023_SOURCE, {
           type: "raster",
           tiles: [
-            "http://localhost:8080/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+            "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
           ],
           tileSize: 256,
         });
@@ -112,7 +112,7 @@ export default function DroneImagery({ map }) {
         map.addSource(NOV2024_SOURCE, {
           type: "raster",
           tiles: [
-            "http://localhost:8080/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+            "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
           ],
           tileSize: 256,
         });

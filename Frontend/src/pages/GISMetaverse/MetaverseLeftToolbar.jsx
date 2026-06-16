@@ -17,6 +17,7 @@ import Basemaps from "./tools/Basemaps";
 import LayersPanel from "./tools/Layers";
 import DroneImagery from "./tools/DroneImagery";
 import TimeLapse from "./tools/TimeLapse";
+import FlyTo from "./tools/FlyTo";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
@@ -39,6 +40,7 @@ export default function MetaverseLeftToolbar({
   setActiveTool,
   map,
   filters,
+  setFilters,
   layerVisibility,
   setLayerVisibility,
   adminBoundaryVisibility,
@@ -87,9 +89,11 @@ export default function MetaverseLeftToolbar({
                   ? "w-[380px] max-h-[340px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                   : activeTool === "droneImagery"
                     ? "w-[320px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                    : activeTool === "timeLapse"
-                      ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                      : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                    : activeTool === "flyTo"
+                      ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                      : activeTool === "timeLapse"
+                        ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                        : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
           }`}
           style={{ top: `${panelTop}px` }}
         >
@@ -106,7 +110,14 @@ export default function MetaverseLeftToolbar({
           {activeTool === "filter" && (
             <Filter onClose={() => setActiveTool(null)} />
           )}
-
+          {activeTool === "flyTo" && (
+            <FlyTo
+              filters={filters}
+              setFilters={setFilters}
+              setLayerVisibility={setLayerVisibility}
+              onClose={() => setActiveTool("layers")}
+            />
+          )}
           {activeTool === "basemaps" && <Basemaps map={map} />}
 
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
@@ -117,6 +128,7 @@ export default function MetaverseLeftToolbar({
             activeTool !== "filter" &&
             activeTool !== "basemaps" &&
             activeTool !== "droneImagery" &&
+            activeTool !== "flyTo" &&
             activeTool !== "timeLapse" && (
               <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
             )}

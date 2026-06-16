@@ -2470,7 +2470,7 @@ if (!map.getLayer(SELECTED_LINE)) {
         if (!map.getSource(ORTHO_SOURCE)) {
           map.addSource(ORTHO_SOURCE, {
               type: 'raster',
-              tiles: ['http://localhost:8080/data/Chaharbagh_Ortho/{z}/{x}/{y}.png'],
+              tiles: ['http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png'],
               tileSize: 256
           });
         }
@@ -2499,7 +2499,7 @@ if (!map.getLayer(SELECTED_LINE)) {
         if (!map.getSource(DSM_SOURCE)) {
           map.addSource(DSM_SOURCE, {
               type: 'raster',
-              tiles: ['http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png'],
+              tiles: ['http://localhost:8081/data/Chaharbagh_DSM/{z}/{x}/{y}.png'],
               tileSize: 256
           });
         }
@@ -2529,7 +2529,7 @@ if (!map.getLayer(SELECTED_LINE)) {
         if (!map.getSource(DTM_SOURCE)) {
           map.addSource(DTM_SOURCE, {
               type: 'raster',
-              tiles: ['http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png'],
+              tiles: ['http://localhost:8081/data/Chaharbagh_DTM/{z}/{x}/{y}.png'],
               tileSize: 256
           });
         }
@@ -2558,7 +2558,7 @@ if (!map.getLayer(SELECTED_LINE)) {
         if (!map.getSource(AS_BUILT_JAN_2023_SOURCE)) {
           map.addSource(AS_BUILT_JAN_2023_SOURCE, {
               type: 'raster',
-              tiles: ['http://localhost:8080/data/Chahar_Bagh_AsBuilt_Jan2023/{z}/{x}/{y}.png'],
+              tiles: ['http://localhost:8081/data/Chahar_Bagh_AsBuilt_Jan2023/{z}/{x}/{y}.png'],
               tileSize: 256
           });
         }
@@ -2587,7 +2587,7 @@ if (!map.getLayer(SELECTED_LINE)) {
         if (!map.getSource(ORTHO_JUNE_2023_SOURCE)) {
           map.addSource(ORTHO_JUNE_2023_SOURCE, {
               type: 'raster',
-              tiles: ['http://localhost:8080/data/Chahar_Bagh_Ortho_June2023/{z}/{x}/{y}.png'],
+              tiles: ['http://localhost:8081/data/Chahar_Bagh_Ortho_June2023/{z}/{x}/{y}.png'],
               tileSize: 256
           });
         }
@@ -2616,7 +2616,7 @@ if (!map.getLayer(SELECTED_LINE)) {
         if (!map.getSource(ORTHO_NOV_2024_SOURCE)) {
           map.addSource(ORTHO_NOV_2024_SOURCE, {
               type: 'raster',
-              tiles: ['http://localhost:8080/data/Chahar_Bagh_Ortho_Nov2024/{z}/{x}/{y}.png'],
+              tiles: ['http://localhost:8081/data/Chahar_Bagh_Ortho_Nov2024/{z}/{x}/{y}.png'],
               tileSize: 256
           });
         }
@@ -2645,7 +2645,7 @@ if (!map.getLayer(SELECTED_LINE)) {
         if (!map.getSource(HANDU_GUJRAN_ORTHO_SOURCE)) {
           map.addSource(HANDU_GUJRAN_ORTHO_SOURCE, {
               type: 'raster',
-              tiles: ['http://localhost:8080/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png'],
+              tiles: ['http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png'],
               tileSize: 256
           });
         }

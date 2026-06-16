@@ -34,6 +34,8 @@ const SOURCES = {
   rudaBoundary: "metaverse-ruda-boundary-source",
   proposedRoads: "metaverse-proposed-roads-source",
   geodeticNetwork: "metaverse-geodetic-network-source",
+  introBoundary: "metaverse-intro-boundary-source",
+  introLabel: "metaverse-intro-label-source",
 };
 
 const LAYERS = {
@@ -58,6 +60,9 @@ const LAYERS = {
   rudaBoundaryLine: "metaverse-ruda-boundary-line",
   proposedRoadsLine: "metaverse-proposed-roads-line",
   geodeticNetworkCircle: "metaverse-geodetic-network-circle",
+  introBoundaryFill: "metaverse-intro-boundary-fill",
+  introBoundaryLine: "metaverse-intro-boundary-line",
+  introLabel: "metaverse-intro-label",
 };
 
 const emptyFC = { type: "FeatureCollection", features: [] };
@@ -116,6 +121,129 @@ function normalizeGeometryCollections(data) {
       return geometry ? { ...feature, geometry } : feature;
     }),
   };
+}
+
+
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function getGeoJSONCenter(geojson) {
+  if (!geojson?.features?.length) return [69.3451, 30.3753];
+
+  const bounds = new mapboxgl.LngLatBounds();
+
+  geojson.features.forEach((feature) => {
+    const geom = feature.geometry;
+    if (!geom) return;
+
+    const addCoord = (coord) => {
+      if (Array.isArray(coord) && coord.length >= 2) bounds.extend(coord);
+    };
+
+    if (geom.type === "Point") addCoord(geom.coordinates);
+    if (geom.type === "MultiPoint") geom.coordinates.forEach(addCoord);
+    if (geom.type === "LineString") geom.coordinates.forEach(addCoord);
+    if (geom.type === "MultiLineString") geom.coordinates.flat(1).forEach(addCoord);
+    if (geom.type === "Polygon") geom.coordinates.flat(1).forEach(addCoord);
+    if (geom.type === "MultiPolygon") geom.coordinates.flat(2).forEach(addCoord);
+  });
+
+  if (bounds.isEmpty()) return [69.3451, 30.3753];
+
+  const center = bounds.getCenter();
+  return [center.lng, center.lat];
+}
+
+function makeLabelGeoJSON(label, geojson) {
+  return {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: { label },
+        geometry: {
+          type: "Point",
+          coordinates: getGeoJSONCenter(geojson),
+        },
+      },
+    ],
+  };
+}
+
+async function loadAssetGeoJSON(path) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`Failed to load ${path}`);
+  return res.json();
+}
+
+function addIntroBoundaryLayer(map, data, label) {
+  ensureSource(map, SOURCES.introBoundary, data);
+  ensureSource(map, SOURCES.introLabel, makeLabelGeoJSON(label, data));
+
+  if (!map.getLayer(LAYERS.introBoundaryFill)) {
+    map.addLayer({
+      id: LAYERS.introBoundaryFill,
+      type: "fill",
+      source: SOURCES.introBoundary,
+      paint: {
+        "fill-color": "#16a34a",
+        "fill-opacity": 0.12,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.introBoundaryLine)) {
+    map.addLayer({
+      id: LAYERS.introBoundaryLine,
+      type: "line",
+      source: SOURCES.introBoundary,
+      paint: {
+        "line-color": "#16a34a",
+        "line-width": 3,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.introLabel)) {
+    map.addLayer({
+      id: LAYERS.introLabel,
+      type: "symbol",
+      source: SOURCES.introLabel,
+      layout: {
+        "text-field": ["get", "label"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 4, 18, 10, 30],
+        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": "#111827",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 2,
+      },
+    });
+  }
+
+  setLayerVisibility(
+    map,
+    [LAYERS.introBoundaryFill, LAYERS.introBoundaryLine, LAYERS.introLabel],
+    true,
+  );
+}
+
+function clearIntroBoundaryLayer(map) {
+  if (map.getSource(SOURCES.introBoundary)) {
+    map.getSource(SOURCES.introBoundary).setData(emptyFC);
+  }
+  if (map.getSource(SOURCES.introLabel)) {
+    map.getSource(SOURCES.introLabel).setData(emptyFC);
+  }
+  setLayerVisibility(
+    map,
+    [LAYERS.introBoundaryFill, LAYERS.introBoundaryLine, LAYERS.introLabel],
+    false,
+  );
 }
 
 function ensureSource(map, sourceId, data = emptyFC) {
@@ -488,8 +616,10 @@ export default function GISMetaverseMap({
   layerVisibility,
   adminBoundaryVisibility,
   setLayerVisibility: updateLayerVisibility,
+  onIntroComplete,
 }) {
   const mapContainerRef = useRef(null);
+  const introHasRunRef = useRef(false);
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -497,8 +627,8 @@ export default function GISMetaverseMap({
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v12",
-      center: [74.3587, 31.5204],
-      zoom: 12,
+      center: [69.3451, 30.3753],
+      zoom: 4.4,
     });
 
     mapRef.current.on("load", () => {
@@ -511,6 +641,60 @@ export default function GISMetaverseMap({
       setIsMapReady(false);
     };
   }, [mapRef, setIsMapReady]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || introHasRunRef.current) return;
+
+    let cancelled = false;
+    introHasRunRef.current = true;
+
+    const runIntro = async () => {
+      try {
+        const steps = [
+          {
+            label: "Pakistan",
+            path: new URL("../../assets/Pakistan.geojson", import.meta.url),
+          },
+          {
+            label: "Punjab",
+            path: new URL("../../assets/Punjab.geojson", import.meta.url),
+          },
+          {
+            label: "RUDA",
+            path: new URL("../../assets/Ruda.geojson", import.meta.url),
+          },
+        ];
+
+        for (const step of steps) {
+          if (cancelled) return;
+
+          const data = await loadAssetGeoJSON(step.path);
+          if (cancelled) return;
+
+          addIntroBoundaryLayer(map, data, step.label);
+          fitGeoJSON(map, data);
+          await wait(1600);
+        }
+
+        if (cancelled) return;
+
+        clearIntroBoundaryLayer(map);
+        onIntroComplete?.();
+      } catch (err) {
+        console.error("Metaverse intro animation error:", err);
+        clearIntroBoundaryLayer(map);
+        onIntroComplete?.();
+      }
+    };
+
+    if (map.isStyleLoaded()) runIntro();
+    else map.once("load", runIntro);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mapRef, onIntroComplete]);
 
   useEffect(() => {
     const map = mapRef.current;
