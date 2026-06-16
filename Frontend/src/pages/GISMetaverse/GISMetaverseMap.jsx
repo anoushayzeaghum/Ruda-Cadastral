@@ -65,6 +65,8 @@ const LAYERS = {
   introBoundaryFill: "metaverse-intro-boundary-fill",
   introBoundaryLine: "metaverse-intro-boundary-line",
   introLabel: "metaverse-intro-label",
+  // NEW: Hover highlight layer
+  masterPlanHover: "metaverse-masterplan-hover",
 };
 
 const emptyFC = { type: "FeatureCollection", features: [] };
@@ -510,6 +512,21 @@ function addMasterPlanLayer(map, data) {
       },
     });
   }
+
+  // NEW: Add hover highlight layer (initially empty)
+  if (!map.getLayer(LAYERS.masterPlanHover)) {
+    map.addLayer({
+      id: LAYERS.masterPlanHover,
+      type: "line",
+      source: SOURCES.masterPlan,
+      paint: {
+        "line-color": "#ffffff",
+        "line-width": 4,
+        "line-opacity": 0,
+      },
+      filter: ["==", ["get", "gid"], ""],
+    });
+  }
 }
 
 function addSpotLevelLayer(map, data) {
@@ -819,6 +836,60 @@ function addProposedRoadsLayer(map, data) {
   }
 }
 
+// NEW: Helper to build popup HTML content from plot properties
+const buildPlotPopupHTML = (props) => {
+  const fields = [
+    { key: "name", label: "Name" },
+    { key: "type", label: "Type" },
+    { key: "remarks", label: "Remarks" },
+    { key: "block", label: "Block" },
+    { key: "plot_area", label: "Plot Area" },
+    { key: "dimension", label: "Dimension" },
+    { key: "parkfront", label: "Park Front" },
+    { key: "rd_ft", label: "Road Front" },
+    { key: "storey", label: "Storey" },
+    { key: "rd_facing", label: "Road Facing" },
+    { key: "h", label: "Height" },
+    { key: "demar", label: "Demarcation" },
+    { key: "possession", label: "Possession" },
+    { key: "poss_st", label: "Possession Status" },
+    { key: "canceled", label: "Status" },
+    { key: "site_plan", label: "Site Plan" },
+    { key: "tr_own", label: "Owner" },
+    { key: "tr_cate", label: "Category" },
+    { key: "tr_p_no", label: "Transfer Plot No" },
+    { key: "shape_leng", label: "Shape Length" },
+    { key: "shape_area", label: "Shape Area" },
+  ];
+
+  const plotNo = props.plot_no || props.gid || "N/A";
+
+  const rows = fields
+    .filter((f) => props[f.key] !== null && props[f.key] !== undefined && props[f.key] !== "")
+    .map((f) => {
+      const val = props[f.key];
+      const displayVal = typeof val === "number" ? val.toFixed(2) : String(val);
+      return `
+        <div class="plot-popup-row">
+          <span class="plot-popup-label">${f.label}:</span>
+          <span class="plot-popup-value">${displayVal}</span>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="plot-popup-container">
+      <div class="plot-popup-header">
+        <div class="plot-popup-plot-no">Plot No: ${plotNo}</div>
+      </div>
+      <div class="plot-popup-body">
+        ${rows || '<div class="plot-popup-row"><span class="plot-popup-value">No additional details</span></div>'}
+      </div>
+    </div>
+  `;
+};
+
 export default function GISMetaverseMap({
   mapRef,
   setIsMapReady,
@@ -830,6 +901,9 @@ export default function GISMetaverseMap({
 }) {
   const mapContainerRef = useRef(null);
   const introHasRunRef = useRef(false);
+  // NEW: Refs for hover handlers and popup
+  const popupRef = useRef(null);
+  const hoveredFeatureIdRef = useRef(null);
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -1211,6 +1285,95 @@ export default function GISMetaverseMap({
     layerVisibility.cameraLocations,
     mapRef,
   ]);
+
+  // NEW: Setup plot hover interaction
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Create popup instance
+    popupRef.current = new mapboxgl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      offset: 15,
+      className: "plot-hover-popup",
+    });
+
+    const handleMouseMove = (e) => {
+      const features = e.features;
+      if (!features || features.length === 0) {
+        // Clear hover state
+        if (hoveredFeatureIdRef.current !== null) {
+          map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
+          map.setFilter(LAYERS.masterPlanHover, ["==", ["get", "gid"], ""]);
+          hoveredFeatureIdRef.current = null;
+          popupRef.current.remove();
+          map.getCanvas().style.cursor = "";
+        }
+        return;
+      }
+
+      const feature = features[0];
+      const props = feature.properties || {};
+      const featureId = props.gid || feature.id;
+
+      // Update hover highlight
+      if (hoveredFeatureIdRef.current !== featureId) {
+        hoveredFeatureIdRef.current = featureId;
+        map.setFilter(LAYERS.masterPlanHover, ["==", ["get", "gid"], featureId]);
+        map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 1);
+      }
+
+      // Show popup
+      map.getCanvas().style.cursor = "pointer";
+      popupRef.current
+        .setLngLat(e.lngLat)
+        .setHTML(buildPlotPopupHTML(props))
+        .addTo(map);
+    };
+
+    const handleMouseLeave = () => {
+      if (hoveredFeatureIdRef.current !== null) {
+        map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
+        map.setFilter(LAYERS.masterPlanHover, ["==", ["get", "gid"], ""]);
+        hoveredFeatureIdRef.current = null;
+        popupRef.current.remove();
+        map.getCanvas().style.cursor = "";
+      }
+    };
+
+    // Add event listeners when master plan layer is available
+    const attachHoverListeners = () => {
+      if (!map.getLayer(LAYERS.masterPlanFill)) return;
+
+      map.on("mousemove", LAYERS.masterPlanFill, handleMouseMove);
+      map.on("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
+    };
+
+    if (map.isStyleLoaded()) {
+      attachHoverListeners();
+    } else {
+      map.once("load", attachHoverListeners);
+    }
+
+    // Also re-attach when style changes (layers might be recreated)
+    map.on("styledata", () => {
+      if (map.getLayer(LAYERS.masterPlanFill)) {
+        // Remove old listeners first to avoid duplicates
+        map.off("mousemove", LAYERS.masterPlanFill, handleMouseMove);
+        map.off("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
+        map.on("mousemove", LAYERS.masterPlanFill, handleMouseMove);
+        map.on("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
+      }
+    });
+
+    return () => {
+      map.off("mousemove", LAYERS.masterPlanFill, handleMouseMove);
+      map.off("mouseleave", LAYERS.masterPlanFill, handleMouseLeave);
+      popupRef.current?.remove();
+      popupRef.current = null;
+    };
+  }, [mapRef]);
 
   return <div ref={mapContainerRef} className="h-full w-full" />;
 }
