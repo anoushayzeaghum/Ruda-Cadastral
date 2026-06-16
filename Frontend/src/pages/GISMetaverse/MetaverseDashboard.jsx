@@ -10,12 +10,30 @@ export default function MetaverseDashboard() {
   const [isMapReady, setIsMapReady] = useState(false);
   const [activeTool, setActiveTool] = useState("layers");
 
+  const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState({
+    rudaBoundary: false,
+    geodeticNetwork: false,
+    proposedRoads: false,
+  });
+
   const [metaverseFilters, setMetaverseFilters] = useState({
     projectId: "",
     block: "",
     plotType: "",
     plotNo: "",
     area: "",
+  });
+
+  const [layerVisibility, setLayerVisibility] = useState({
+    boundary: false,
+    masterPlan: false,
+    spotLevel: false,
+    contours: false,
+    roads: false,
+    waterSupplyPoints: false,
+    waterSupplyLines: false,
+    sewagePoints: false,
+    cameraLocations: false,
   });
 
   const handleReset = () => {
@@ -25,6 +43,18 @@ export default function MetaverseDashboard() {
       plotType: "",
       plotNo: "",
       area: "",
+    });
+
+    setLayerVisibility({
+      boundary: false,
+      masterPlan: false,
+      spotLevel: false,
+      contours: false,
+      roads: false,
+      waterSupplyPoints: false,
+      waterSupplyLines: false,
+      sewagePoints: false,
+      cameraLocations: false,
     });
   };
 
@@ -37,11 +67,15 @@ export default function MetaverseDashboard() {
           mapRef={mapRef}
           setIsMapReady={setIsMapReady}
           filters={metaverseFilters}
+          layerVisibility={layerVisibility}
+          setLayerVisibility={setLayerVisibility}
+          adminBoundaryVisibility={adminBoundaryVisibility}
         />
 
         <MetaverseSubHeader
           filters={metaverseFilters}
           setFilters={setMetaverseFilters}
+          setLayerVisibility={setLayerVisibility}
           onReset={handleReset}
           onCalendarClick={() => console.log("Calendar clicked")}
         />
@@ -50,6 +84,11 @@ export default function MetaverseDashboard() {
           activeTool={activeTool}
           setActiveTool={setActiveTool}
           map={isMapReady ? mapRef.current : null}
+          filters={metaverseFilters}
+          layerVisibility={layerVisibility}
+          setLayerVisibility={setLayerVisibility}
+          adminBoundaryVisibility={adminBoundaryVisibility}
+          setAdminBoundaryVisibility={setAdminBoundaryVisibility}
         />
 
         <MetaverseMapControls map={isMapReady ? mapRef.current : null} />

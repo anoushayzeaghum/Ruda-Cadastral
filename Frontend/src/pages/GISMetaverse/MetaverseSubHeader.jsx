@@ -9,6 +9,7 @@ import {
 export default function MetaverseSubHeader({
   filters,
   setFilters,
+  setLayerVisibility,
   onReset,
   onCalendarClick,
 }) {
@@ -74,6 +75,18 @@ export default function MetaverseSubHeader({
         next.plotType = "";
         next.plotNo = "";
         next.area = "";
+
+        setLayerVisibility({
+          boundary: !!value,
+          masterPlan: false,
+          spotLevel: false,
+          contours: false,
+          roads: false,
+          waterSupplyPoints: false,
+          waterSupplyLines: false,
+          sewagePoints: false,
+          cameraLocations: false,
+        });
       }
 
       if (key === "block") {
@@ -107,7 +120,7 @@ export default function MetaverseSubHeader({
           value={filters.block}
           disabled={!filters.projectId}
           onChange={(e) => updateFilter("block", e.target.value)}
-          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none disabled:opacity-60"
+          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none "
         >
           <option value="">Block No</option>
           {blocks.map((b) => (
@@ -121,7 +134,7 @@ export default function MetaverseSubHeader({
           value={filters.plotType}
           disabled={!filters.projectId}
           onChange={(e) => updateFilter("plotType", e.target.value)}
-          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none disabled:opacity-60"
+          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none "
         >
           <option value="">Plot Type</option>
           {options.plotTypes?.map((type) => (
@@ -135,7 +148,7 @@ export default function MetaverseSubHeader({
           value={filters.plotNo}
           disabled={!filters.projectId}
           onChange={(e) => updateFilter("plotNo", e.target.value)}
-          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none disabled:opacity-60"
+          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none "
         >
           <option value="">Plot No</option>
           {options.plotNos?.map((plotNo) => (
@@ -149,7 +162,7 @@ export default function MetaverseSubHeader({
           value={filters.area}
           disabled={!filters.projectId}
           onChange={(e) => updateFilter("area", e.target.value)}
-          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none disabled:opacity-60"
+          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none "
         >
           <option value="">Area</option>
           {options.areas?.map((area) => (

@@ -1,31 +1,39 @@
-import { ChevronRight } from "lucide-react";
 import MasterPlan from "./Layers/MasterPlan";
 import TopographicPlan from "./Layers/TopographicPlan";
 import ServiceUtilities from "./Layers/ServiceUtilities";
 import LandRevenueRecord from "./Layers/LandRevenueRecord";
 import Miscellaneous from "./Layers/Miscellaneous";
 import NotifiedBoundaries from "./Layers/NotifiedBoundaries";
+import AdministrativeBoundaries from "./Layers/AdministrativeBoundaries";
 
-export default function LayersPanel({ map }) {
+export default function LayersPanel({
+  map,
+  filters,
+  layerVisibility,
+  setLayerVisibility,
+  adminBoundaryVisibility,
+  setAdminBoundaryVisibility,
+}) {
   return (
     <div className="text-[12px] font-semibold">
-      <MasterPlan />
+      <AdministrativeBoundaries
+        adminBoundaryVisibility={adminBoundaryVisibility}
+        setAdminBoundaryVisibility={setAdminBoundaryVisibility}
+      />
+      <MasterPlan
+        selectedProjectId={filters?.projectId}
+        layerVisibility={layerVisibility}
+        setLayerVisibility={setLayerVisibility}
+      />
       <TopographicPlan map={map} />
-      <ServiceUtilities />
+      <ServiceUtilities
+        selectedProjectId={filters?.projectId}
+        layerVisibility={layerVisibility}
+        setLayerVisibility={setLayerVisibility}
+      />
       <LandRevenueRecord />
       <Miscellaneous />
       <NotifiedBoundaries />
-    </div>
-  );
-}
-
-function LayerSection({ title }) {
-  return (
-    <div className="border-b border-[#343c4c]">
-      <div className="flex items-center justify-between px-4 py-3 text-white">
-        <span>{title}</span>
-        <ChevronRight size={15} />
-      </div>
     </div>
   );
 }

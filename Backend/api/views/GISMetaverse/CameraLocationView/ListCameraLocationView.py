@@ -11,6 +11,7 @@ class ListCameraLocationView(viewsets.ViewSet):
         try:
             gid = request.query_params.get("gid")
             project = request.query_params.get("project")
+            project_id = request.query_params.get("project_id")
             camera = request.query_params.get("camera")
 
             if gid:
@@ -34,6 +35,9 @@ class ListCameraLocationView(viewsets.ViewSet):
 
             if project:
                 queryset = queryset.filter(project__icontains=project)
+
+            if project_id:
+                queryset = queryset.filter(project_id=project_id)
 
             if camera:
                 queryset = queryset.filter(camera__icontains=camera)

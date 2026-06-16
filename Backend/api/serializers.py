@@ -303,6 +303,7 @@ class SpotLevelSerializer(GeoFeatureModelSerializer):
             "mauza_id",
             "dist_id",
             "tehsil_id",
+            "project_id",
             "geom",
         )
 
@@ -324,6 +325,7 @@ class ContourSerializer(GeoFeatureModelSerializer):
             "mauza_id",
             "dist_id",
             "tehsil_id",
+            "project_id",
             "geom",
         )
 
@@ -590,14 +592,18 @@ class RoadSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = Road
         geo_field = "geom"
+        id_field = "gid"
 
         fields = (
             "gid",
             "name",
             "block",
-            "width",
-            "road_type",
-            "description", "project_id", "block_id",
+            "dimension",
+            "type",
+            "row",
+            "project_id",
+            "block_id",
+            "geom",
         )
 
 # --------------------------------------------------------
@@ -608,16 +614,19 @@ class CameraLocationSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = CameraLocation
         geo_field = "geom"
+        id_field = "gid"
 
         fields = (
             "gid",
-            "sr_no_",
+            "sr_no",
             "project",
             "camera",
             "y",
             "x",
             "coordinate",
-            "iframe_lin", "project_id"
+            "iframe_lin",
+            "project_id",
+            "geom",
         )
 
 # --------------------------------------------------------
@@ -628,11 +637,14 @@ class SWPointSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = SWPoint
         geo_field = "geom"
+        id_field = "gid"
 
         fields = (
             "gid",
             "type",
             "name",
+            "project_id",
+            "geom",
         )
 
 # --------------------------------------------------------
@@ -642,6 +654,7 @@ class WSLSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = WSL
         geo_field = "geom"
+        id_field = "gid"
 
         fields = (
             "gid",
@@ -649,6 +662,8 @@ class WSLSerializer(GeoFeatureModelSerializer):
             "dia",
             "type",
             "name",
+            "project_id",
+            "geom",
         )
 
 # --------------------------------------------------------
@@ -659,9 +674,12 @@ class WSPointSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = WSPoint
         geo_field = "geom"
+        id_field = "gid"
 
         fields = (
             "gid",
             "type",
             "name",
+            "project_id",
+            "geom",
         )
