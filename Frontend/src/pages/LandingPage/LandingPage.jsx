@@ -29,11 +29,11 @@ import {
 } from "lucide-react";
 
 const HERO_SLIDES = [
-  "/s1.png",
-  "/s2.png",
-  "/s3.png",
-  "/s4.png",
-  "/s5.png",
+  "/s11.png",
+  "/s22.png",
+  "/s33.png",
+  "/s44.png",
+  "/s55.png",
   "/s6.png",
   "/s7.png",
 ];

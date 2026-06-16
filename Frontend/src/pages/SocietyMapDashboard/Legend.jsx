@@ -8,7 +8,7 @@ const RUDA_PHASE_COLORS = [
 ];
 
 const roadLegendItems = [
-  { label: "Primary Roads (300'-Wide)", color: "#19598d", width: 5 },
+  { label: "Primary Roads (300'-Wide)", color: "#c92020", width: 3 },
   { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 4 },
   { label: "Tertiary Roads", color: "#ff9800", width: 3 },
   { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
