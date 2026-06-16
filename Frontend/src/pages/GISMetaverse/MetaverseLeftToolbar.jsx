@@ -152,7 +152,12 @@ export default function MetaverseLeftToolbar({
               setAdminBoundaryVisibility={setAdminBoundaryVisibility}
             />
           )}
-
+          {activeTool === "basemaps" && (
+            <Basemaps
+              map={map}
+              rebuildAllLayers={rebuildAllLayers}
+            />
+          )}
           {activeTool === "filter" && (
             <Filter
               filters={filters}
