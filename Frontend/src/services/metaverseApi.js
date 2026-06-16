@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 const unwrapApiData = (data) => data?.data || data?.results || data;
 
@@ -104,11 +105,21 @@ export const getContourGeoJSON = async (projectId) => {
   return unwrapGeoJSON(res.data);
 };
 
-export const getRoadsGeoJSON = async (projectId) => {
-  if (!projectId) return emptyFC();
+export const getRoadsGeoJSON = async (filters = {}) => {
+  const params =
+    typeof filters === "object" && filters !== null
+      ? filters
+      : { project_id: filters };
+
+  if (!params.project_id) return emptyFC();
 
   const res = await axios.get(`${API_BASE}/road/`, {
-    params: { project_id: projectId },
+    params: {
+      project_id: params.project_id,
+      block_id: params.block_id || undefined,
+      block: params.block || undefined,
+      type: params.type || undefined,
+    },
   });
 
   return unwrapGeoJSON(res.data);
@@ -167,4 +178,25 @@ export const getRudaProposedRoadsGeoJSON = async () => {
 export const getGeodeticNetworkGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/geodeticnetwork/`);
   return unwrapGeoJSON(res.data);
+};
+
+export const getPlotLandUseBreakdown = async (filters = {}) => {
+  const geojson = await getPlotsGeoJSON(filters);
+  const counts = new Map();
+
+  (geojson.features || []).forEach((feature) => {
+    const props = feature.properties || {};
+    const label = props.type || props.land_use || props.name || "Other";
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+
+  const total = [...counts.values()].reduce((sum, value) => sum + value, 0);
+
+  return [...counts.entries()]
+    .map(([label, count]) => ({
+      label,
+      count,
+      percentage: total ? Math.round((count / total) * 100) : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
 };
