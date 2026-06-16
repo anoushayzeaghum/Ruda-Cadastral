@@ -36,7 +36,6 @@ export default function MetaverseDashboard() {
     cameraLocations: false,
   });
 
-
   const handleIntroComplete = useCallback(() => {
     setMetaverseFilters({
       projectId: "5",
@@ -114,6 +113,7 @@ export default function MetaverseDashboard() {
           setActiveTool={setActiveTool}
           map={isMapReady ? mapRef.current : null}
           filters={metaverseFilters}
+          setFilters={setMetaverseFilters}
           layerVisibility={layerVisibility}
           setLayerVisibility={setLayerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}

@@ -96,21 +96,32 @@ const ROAD_LEGEND_ITEMS = [
 ];
 
 const ROAD_COLOR_EXPRESSION = [
-  "match", ["get", "layer"],
+  "match",
+  ["get", "layer"],
   ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.color]),
   "#555555",
 ];
 
 const ROAD_WIDTH_EXPRESSION = [
-  "match", ["get", "layer"],
+  "match",
+  ["get", "layer"],
   ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.width]),
   2.5,
 ];
 
 const RUDA_PHASE_COLORS = [
-  "#6bb7e8", "#f8d56b", "#6bd69a", "#f59e72", "#b99cf3",
-  "#78d6d0", "#f3a6c8", "#a7d77b", "#f4b860", "#86a8e7",
-  "#d7b377", "#8dd3c7",
+  "#6bb7e8",
+  "#f8d56b",
+  "#6bd69a",
+  "#f59e72",
+  "#b99cf3",
+  "#78d6d0",
+  "#f3a6c8",
+  "#a7d77b",
+  "#f4b860",
+  "#86a8e7",
+  "#d7b377",
+  "#8dd3c7",
 ];
 
 const hashString = (value = "") => {
@@ -141,8 +152,12 @@ const getRudaPhaseIdFromLevel = (level = "") => {
 
 const getRudaPhaseLabel = (props = {}, phaseId = "") => {
   const candidates = [
-    props.phase, props.phase_name, props.name,
-    props.folderpath, props.popupinfo, props.snippet,
+    props.phase,
+    props.phase_name,
+    props.name,
+    props.folderpath,
+    props.popupinfo,
+    props.snippet,
   ];
   for (const value of candidates) {
     const clean = stripHtml(value);
@@ -364,11 +379,11 @@ export default function MapView({
   // ── RUDA/Roads boundary helpers (identical pattern to Cadastral Mapview) ──
 
   const getBoundaryIds = (level) => ({
-    source:   `${level}-boundary-source`,
-    fill:     `${level}-boundary-fill`,
-    line:     `${level}-boundary-line`,
+    source: `${level}-boundary-source`,
+    fill: `${level}-boundary-fill`,
+    line: `${level}-boundary-line`,
     dashLine: `${level}-boundary-dash-line`,
-    label:    `${level}-boundary-label`,
+    label: `${level}-boundary-label`,
   });
 
   const clearBoundaryLevel = (level) => {
@@ -376,11 +391,11 @@ export default function MapView({
     if (!map) return;
     const ids = getBoundaryIds(level);
     try {
-      if (map.getLayer(ids.label))    map.removeLayer(ids.label);
+      if (map.getLayer(ids.label)) map.removeLayer(ids.label);
       if (map.getLayer(ids.dashLine)) map.removeLayer(ids.dashLine);
-      if (map.getLayer(ids.line))     map.removeLayer(ids.line);
-      if (map.getLayer(ids.fill))     map.removeLayer(ids.fill);
-      if (map.getSource(ids.source))  map.removeSource(ids.source);
+      if (map.getLayer(ids.line)) map.removeLayer(ids.line);
+      if (map.getLayer(ids.fill)) map.removeLayer(ids.fill);
+      if (map.getSource(ids.source)) map.removeSource(ids.source);
     } catch (e) {
       console.warn(`Error clearing boundary level ${level}`, e);
     }
@@ -393,7 +408,7 @@ export default function MapView({
     const ids = getBoundaryIds(level);
     clearBoundaryLevel(level);
 
-    const isRudaLayer         = level.startsWith("ruda");
+    const isRudaLayer = level.startsWith("ruda");
     const isProposedRoadLayer = level.startsWith("proposed-road");
 
     const opacity =
@@ -470,7 +485,11 @@ export default function MapView({
           type: "symbol",
           source: ids.source,
           layout: {
-            "text-field": ["coalesce", ["get", "_ruda_phase_label"], "RUDA Phase"],
+            "text-field": [
+              "coalesce",
+              ["get", "_ruda_phase_label"],
+              "RUDA Phase",
+            ],
             "text-size": ["interpolate", ["linear"], ["zoom"], 10, 10, 15, 13],
             "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
             "text-allow-overlap": false,
@@ -498,7 +517,9 @@ export default function MapView({
           clearBoundaryLevel(level);
           delete currentGeojson.current[level];
         });
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   };
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -664,8 +685,12 @@ export default function MapView({
     });
 
     if (typeof onPointClick === "function") {
-      map.on("mouseenter", ids.circle, () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", ids.circle, () => { map.getCanvas().style.cursor = ""; });
+      map.on("mouseenter", ids.circle, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", ids.circle, () => {
+        map.getCanvas().style.cursor = "";
+      });
       map.on("click", ids.circle, onPointClick);
     }
 
@@ -673,50 +698,50 @@ export default function MapView({
   };
 
   const drawGeodeticLayer = (geojson, opacity = 1) => {
-  const map = mapInstance.current;
-  if (!map) return;
+    const map = mapInstance.current;
+    if (!map) return;
 
-  try {
-    if (map.getLayer(GEODETIC_NETWORK_LAYER)) {
-      map.removeLayer(GEODETIC_NETWORK_LAYER);
+    try {
+      if (map.getLayer(GEODETIC_NETWORK_LAYER)) {
+        map.removeLayer(GEODETIC_NETWORK_LAYER);
+      }
+
+      if (map.getSource(GEODETIC_NETWORK_SOURCE)) {
+        map.removeSource(GEODETIC_NETWORK_SOURCE);
+      }
+
+      map.addSource(GEODETIC_NETWORK_SOURCE, {
+        type: "geojson",
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: GEODETIC_NETWORK_LAYER,
+        type: "circle",
+        source: GEODETIC_NETWORK_SOURCE,
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#ff0000",
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "#ffffff",
+          "circle-opacity": opacity,
+        },
+      });
+
+      currentGeojson.current.geodeticNetwork = geojson;
+    } catch (err) {
+      console.error("Geodetic layer error:", err);
     }
-
-    if (map.getSource(GEODETIC_NETWORK_SOURCE)) {
-      map.removeSource(GEODETIC_NETWORK_SOURCE);
-    }
-
-    map.addSource(GEODETIC_NETWORK_SOURCE, {
-      type: "geojson",
-      data: geojson,
-    });
-
-    map.addLayer({
-      id: GEODETIC_NETWORK_LAYER,
-      type: "circle",
-      source: GEODETIC_NETWORK_SOURCE,
-      paint: {
-        "circle-radius": 5,
-        "circle-color": "#ff0000",
-        "circle-stroke-width": 1,
-        "circle-stroke-color": "#ffffff",
-        "circle-opacity": opacity,
-      },
-    });
-
-    currentGeojson.current.geodeticNetwork = geojson;
-  } catch (err) {
-    console.error("Geodetic layer error:", err);
-  }
-};
+  };
 
   // ── Land-use colour map for Master Plan ──────────────────────────────────
   const LAND_USE_COLORS = {
-    "Residential Plot": "#f59e0b",   // amber
-    "Commercial Plot":  "#ef4444",   // red
-    "Green Belt":       "#16a34a",   // green
-    "Barren Land":      "#a8a29e",   // stone
-    "Road":             "#374151",   // dark grey
-    "Park":             "#065f46",   // dark green
+    "Residential Plot": "#f59e0b", // amber
+    "Commercial Plot": "#ef4444", // red
+    "Green Belt": "#16a34a", // green
+    "Barren Land": "#a8a29e", // stone
+    Road: "#374151", // dark grey
+    Park: "#065f46", // dark green
   };
   const LAND_USE_DEFAULT_COLOR = "#6366f1"; // indigo fallback
 
@@ -780,8 +805,12 @@ export default function MapView({
       }
     });
 
-    map.on("mouseenter", ids.fill, () => { map.getCanvas().style.cursor = "pointer"; });
-    map.on("mouseleave", ids.fill, () => { map.getCanvas().style.cursor = ""; });
+    map.on("mouseenter", ids.fill, () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", ids.fill, () => {
+      map.getCanvas().style.cursor = "";
+    });
 
     currentGeojson.current.masterPlan = geojson;
   };
@@ -838,7 +867,9 @@ export default function MapView({
             try {
               if (map.getLayer(ids.fill)) map.moveLayer(ids.fill);
               if (map.getLayer(ids.line)) map.moveLayer(ids.line);
-            } catch (e) { /* ignore */ }
+            } catch (e) {
+              /* ignore */
+            }
           }
         }
       } else if (key === "masterPlan") {
@@ -858,21 +889,38 @@ export default function MapView({
             const feature = e.features[0];
             const p = feature.properties ?? {};
             const coords = feature.geometry?.coordinates;
-            const lng = e.lngLat?.lng ?? (Array.isArray(coords) ? coords[0] : null);
-            const lat = e.lngLat?.lat ?? (Array.isArray(coords) ? coords[1] : null);
-            const elevation = p.elevation ?? p.level ?? p.z ?? p.height ?? p.spot_level ?? p.rl ?? null;
-            const elevHtml = elevation !== null
-              ? `<div><span style="font-weight:600">Elevation:</span> ${Number(elevation).toFixed(3)} m</div>`
-              : "";
-            new mapboxgl.Popup({ offset: 8, closeButton: true, closeOnClick: true, maxWidth: "240px" })
+            const lng =
+              e.lngLat?.lng ?? (Array.isArray(coords) ? coords[0] : null);
+            const lat =
+              e.lngLat?.lat ?? (Array.isArray(coords) ? coords[1] : null);
+            const elevation =
+              p.elevation ??
+              p.level ??
+              p.z ??
+              p.height ??
+              p.spot_level ??
+              p.rl ??
+              null;
+            const elevHtml =
+              elevation !== null
+                ? `<div><span style="font-weight:600">Elevation:</span> ${Number(elevation).toFixed(3)} m</div>`
+                : "";
+            new mapboxgl.Popup({
+              offset: 8,
+              closeButton: true,
+              closeOnClick: true,
+              maxWidth: "240px",
+            })
               .setLngLat([lng, lat])
-              .setHTML(`
+              .setHTML(
+                `
                 <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.65;color:#1f2937;min-width:160px">
                   <div style="font-weight:700;color:#0f3d2e;margin-bottom:5px;font-size:13px;">📍 Spot Level</div>
                   <div><span style="font-weight:600">Latitude:</span> ${lat !== null ? Number(lat).toFixed(6) : "—"}</div>
                   <div><span style="font-weight:600">Longitude:</span> ${lng !== null ? Number(lng).toFixed(6) : "—"}</div>
                   ${elevHtml}
-                </div>`)
+                </div>`,
+              )
               .addTo(map);
           },
         });
@@ -884,11 +932,10 @@ export default function MapView({
           opacity: getLayerOpacity(layers, "contours", 100) / 100,
         });
         // contours are visual-only — no click handler
-      }
-      else if (key === "geodeticNetwork") {
+      } else if (key === "geodeticNetwork") {
         drawGeodeticLayer(
           geojson,
-          getLayerOpacity(layers, "geodeticNetwork", 100) / 100
+          getLayerOpacity(layers, "geodeticNetwork", 100) / 100,
         );
       }
     });
@@ -1122,10 +1169,12 @@ export default function MapView({
       if (!map) return;
       const ids = getIds(key);
       try {
-        if (map.getLayer(ids.fill))   map.moveLayer(ids.fill);
-        if (map.getLayer(ids.line))   map.moveLayer(ids.line);
+        if (map.getLayer(ids.fill)) map.moveLayer(ids.fill);
+        if (map.getLayer(ids.line)) map.moveLayer(ids.line);
         if (map.getLayer(ids.circle)) map.moveLayer(ids.circle);
-      } catch (e) { /* ignore race conditions */ }
+      } catch (e) {
+        /* ignore race conditions */
+      }
     };
 
     const loadOptionalLayers = async () => {
@@ -1143,7 +1192,10 @@ export default function MapView({
         if (getLayerVisible(layers, "masterPlan", false)) {
           const geojson = await getMasterPlanGeoJSON(params);
           if (!cancelled && geojson?.features?.length) {
-            drawMasterPlanLayer(geojson, getLayerOpacity(layers, "masterPlan", 70) / 100);
+            drawMasterPlanLayer(
+              geojson,
+              getLayerOpacity(layers, "masterPlan", 70) / 100,
+            );
             bringLayerToTop("masterPlan");
             // Zoom to this layer's own extent, not Mouza
             zoomToGeoJSON(geojson, { padding: 60, duration: 450 });
@@ -1169,8 +1221,10 @@ export default function MapView({
               const coords = feature.geometry?.coordinates;
 
               // Resolve lng/lat from click event (most accurate) or geometry
-              const lng = e.lngLat?.lng ?? (Array.isArray(coords) ? coords[0] : null);
-              const lat = e.lngLat?.lat ?? (Array.isArray(coords) ? coords[1] : null);
+              const lng =
+                e.lngLat?.lng ?? (Array.isArray(coords) ? coords[0] : null);
+              const lat =
+                e.lngLat?.lat ?? (Array.isArray(coords) ? coords[1] : null);
 
               // Try all known elevation field names
               const elevation =
@@ -1182,9 +1236,10 @@ export default function MapView({
                 p.rl ??
                 null;
 
-              const elevHtml = elevation !== null
-                ? `<div><span style="font-weight:600">Elevation:</span> ${Number(elevation).toFixed(3)} m</div>`
-                : "";
+              const elevHtml =
+                elevation !== null
+                  ? `<div><span style="font-weight:600">Elevation:</span> ${Number(elevation).toFixed(3)} m</div>`
+                  : "";
 
               const html = `
                 <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.65;color:#1f2937;min-width:160px">
@@ -1260,50 +1315,50 @@ export default function MapView({
     layers?.spotLevel,
     layers?.contours,
   ]);
-useEffect(() => {
-  if (!isMapReady) return;
+  useEffect(() => {
+    if (!isMapReady) return;
 
-  let cancelled = false;
+    let cancelled = false;
 
-  const loadGeodeticNetwork = async () => {
-    const map = mapInstance.current;
+    const loadGeodeticNetwork = async () => {
+      const map = mapInstance.current;
 
-    try {
-      if (map?.getLayer(GEODETIC_NETWORK_LAYER)) {
-        map.removeLayer(GEODETIC_NETWORK_LAYER);
+      try {
+        if (map?.getLayer(GEODETIC_NETWORK_LAYER)) {
+          map.removeLayer(GEODETIC_NETWORK_LAYER);
+        }
+
+        if (map?.getSource(GEODETIC_NETWORK_SOURCE)) {
+          map.removeSource(GEODETIC_NETWORK_SOURCE);
+        }
+
+        delete currentGeojson.current.geodeticNetwork;
+
+        if (!getLayerVisible(layers, "geodeticNetwork", false)) {
+          return;
+        }
+
+        const geojson = await getGeodeticNetworkGeoJSON();
+
+        if (cancelled) return;
+
+        if (geojson?.features?.length) {
+          drawGeodeticLayer(
+            geojson,
+            getLayerOpacity(layers, "geodeticNetwork", 100) / 100,
+          );
+        }
+      } catch (err) {
+        console.error("Geodetic Network load error:", err);
       }
+    };
 
-      if (map?.getSource(GEODETIC_NETWORK_SOURCE)) {
-        map.removeSource(GEODETIC_NETWORK_SOURCE);
-      }
+    loadGeodeticNetwork();
 
-      delete currentGeojson.current.geodeticNetwork;
-
-      if (!getLayerVisible(layers, "geodeticNetwork", false)) {
-        return;
-      }
-
-      const geojson = await getGeodeticNetworkGeoJSON();
-
-      if (cancelled) return;
-
-      if (geojson?.features?.length) {
-        drawGeodeticLayer(
-          geojson,
-          getLayerOpacity(layers, "geodeticNetwork", 100) / 100
-        );
-      }
-    } catch (err) {
-      console.error("Geodetic Network load error:", err);
-    }
-  };
-
-  loadGeodeticNetwork();
-
-  return () => {
-    cancelled = true;
-  };
-}, [isMapReady, layers?.geodeticNetwork]);
+    return () => {
+      cancelled = true;
+    };
+  }, [isMapReady, layers?.geodeticNetwork]);
   useEffect(() => {
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
@@ -1338,7 +1393,7 @@ useEffect(() => {
           map.addSource(ORTHO_SOURCE, {
             type: "raster",
             tiles: [
-              "http://localhost:8080/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+              "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
           });
@@ -1360,7 +1415,7 @@ useEffect(() => {
           map.setLayoutProperty(ORTHO_LAYER, "visibility", "none");
         }
       }
-      
+
       // DSM (DEM) Layer
       const dsmOpacity = getLayerOpacity(layers, "dem", 85) / 100;
 
@@ -1369,7 +1424,7 @@ useEffect(() => {
           map.addSource(DSM_SOURCE, {
             type: "raster",
             tiles: [
-              "http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
+              "http://localhost:8081/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
           });
@@ -1400,7 +1455,7 @@ useEffect(() => {
           map.addSource(DTM_SOURCE, {
             type: "raster",
             tiles: [
-              "http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
+              "http://localhost:8081/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
           });
@@ -1445,7 +1500,9 @@ useEffect(() => {
             clearBoundaryLevel(level);
             delete currentGeojson.current[level];
           });
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     };
 
     if (!getLayerVisible(layers, "rudaBoundary", false)) {
