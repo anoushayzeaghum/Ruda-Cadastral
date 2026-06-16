@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Header from "./Header";
 import GISMetaverseMap from "./GISMetaverseMap";
 import MetaverseLeftToolbar from "./MetaverseLeftToolbar";
@@ -35,6 +35,24 @@ export default function MetaverseDashboard() {
     sewagePoints: false,
     cameraLocations: false,
   });
+
+
+  const handleIntroComplete = useCallback(() => {
+    setMetaverseFilters({
+      projectId: "5",
+      block: "",
+      plotType: "",
+      plotNo: "",
+      area: "",
+    });
+
+    setLayerVisibility((prev) => ({
+      ...prev,
+      boundary: true,
+      masterPlan: true,
+      roads: true,
+    }));
+  }, []);
 
   const handleReset = () => {
     setMetaverseFilters({
@@ -80,6 +98,7 @@ export default function MetaverseDashboard() {
           layerVisibility={layerVisibility}
           setLayerVisibility={setLayerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}
+          onIntroComplete={handleIntroComplete}
         />
 
         <MetaverseSubHeader
