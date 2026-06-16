@@ -1063,6 +1063,48 @@ function addProposedRoadsLayer(map, data) {
   }
 }
 
+// const rebuildAllLayersOnMap = async () => {
+//   const map = mapRef.current;
+//   if (!map) return;
+
+//   const projectId = filters.projectId;
+//   if (!projectId) return;
+
+//   const projectGeoJSON = await getProjectGeoJSON(projectId);
+//   addProjectBoundaryLayer(map, projectGeoJSON);
+
+//   if (filters.block) {
+//     const blockGeoJSON = await getBlocksGeoJSON(projectId, filters.block);
+//     addBlockLayer(map, blockGeoJSON);
+//   }
+
+//   const plotGeoJSON = await getPlotsGeoJSON({
+//     project_id: projectId,
+//   });
+
+//   addMasterPlanLayer(map, plotGeoJSON);
+
+//   setLayerVisibility(map, [LAYERS.boundaryFill, LAYERS.boundaryLine], true);
+//   setLayerVisibility(map, [LAYERS.masterPlanFill, LAYERS.masterPlanLine], true);
+// };
+
+//   useEffect(() => {
+//     const map = mapRef.current;
+//     if (!map) return;
+
+//     const handler = () => {
+//       console.log("REBUILD EVENT RECEIVED");
+//       rebuildAllLayersOnMap();
+//     };
+
+//     map.on("rebuild-layers", handler);
+
+//     return () => {
+//       map.off("rebuild-layers", handler);
+//     };
+//   }, [filters.projectId, filters.block]);
+
+
 export default function GISMetaverseMap({
   mapRef,
   setIsMapReady,
@@ -1072,6 +1114,57 @@ export default function GISMetaverseMap({
   setLayerVisibility: updateLayerVisibility,
   onIntroComplete,
 }) {
+
+  const rebuildAllLayersOnMap = async () => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const projectId = filters?.projectId;
+    if (!projectId) return;
+
+    const projectGeoJSON = await getProjectGeoJSON(projectId);
+    addProjectBoundaryLayer(map, projectGeoJSON);
+
+    if (filters?.block) {
+      const blockGeoJSON = await getBlocksGeoJSON(projectId, filters.block);
+      addBlockLayer(map, blockGeoJSON);
+    }
+
+    const plotGeoJSON = await getPlotsGeoJSON({
+      project_id: projectId,
+    });
+
+    addMasterPlanLayer(map, plotGeoJSON);
+
+    setLayerVisibility(
+      map,
+      [LAYERS.boundaryFill, LAYERS.boundaryLine],
+      true
+    );
+
+    setLayerVisibility(
+      map,
+      [LAYERS.masterPlanFill, LAYERS.masterPlanLine],
+      true
+    );
+  };
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const handler = () => {
+      console.log("REBUILD EVENT RECEIVED");
+      rebuildAllLayersOnMap();
+    };
+
+    map.on("rebuild-layers", handler);
+
+    return () => {
+      map.off("rebuild-layers", handler);
+    };
+  }, [filters.projectId, filters.block]);
+
   const mapContainerRef = useRef(null);
   const introHasRunRef = useRef(false);
   useEffect(() => {
@@ -1099,6 +1192,8 @@ export default function GISMetaverseMap({
   if (!mapRef.current) return;
 
   const map = mapRef.current;
+
+  
 
   const addProjectLayers = async () => {
     // 🔥 IMPORTANT: re-fetch or re-use stored data
@@ -1138,7 +1233,7 @@ export default function GISMetaverseMap({
   map.addProjectLayers?.();
 });
 
-}, [mapRef.current]);
+}, [filters.projectId, filters.block]);
 
   useEffect(() => {
     const map = mapRef.current;
