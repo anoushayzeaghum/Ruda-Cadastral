@@ -138,7 +138,6 @@ export default function Society3DMapview({
   layers,
   basemap,
   extrusion,
-  appliedExtrusions,
   onFeatureSelect,
   clearSelectionSignal,
 }) {
@@ -363,8 +362,10 @@ export default function Society3DMapview({
           drawLayer(key, geojson, {
             ...SOCIETY_LAYER_CONFIG[key],
             opacity: layerOpacity(layers, key, SOCIETY_LAYER_CONFIG[key].opacity * 100),
-            defaultHeightFeet: extrusion.heightFeet,
-            extrusionOverrides: appliedExtrusions,
+            defaultHeightFeet: 35,
+            heightBoostFeet: extrusion?.appliedHeightFeet || 0,
+            smoothExtrusion: key === "plots3d",
+            smoothDuration: 850,
           });
         }
 
@@ -388,7 +389,7 @@ export default function Society3DMapview({
     return () => {
       cancelled = true;
     };
-  }, [selectedSocietyId, layers, isReady, extrusion.heightFeet, appliedExtrusions]);
+  }, [selectedSocietyId, layers, isReady, extrusion?.appliedHeightFeet]);
 
   const drawLayer = (key, geojson, config) => {
     const viewer = viewerRef.current;
@@ -408,6 +409,9 @@ export default function Society3DMapview({
       extrude: config.extrude,
       defaultHeightFeet: config.defaultHeightFeet,
       extrusionOverrides: config.extrusionOverrides,
+      heightBoostFeet: config.heightBoostFeet,
+      smoothExtrusion: config.smoothExtrusion,
+      smoothDuration: config.smoothDuration,
       smartStyle: config.smartStyle,
     });
 

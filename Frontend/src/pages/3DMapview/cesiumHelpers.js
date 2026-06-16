@@ -675,13 +675,29 @@ function createPolygonEntity(
 
   const shouldExtrude =
     Boolean(options.extrude) && smartStyle?.extrude !== false;
-  const extrudedHeight = shouldExtrude
+
+  const baseExtrudedHeight = shouldExtrude
     ? Number(
         override?.heightMeters ??
           smartStyle?.heightMeters ??
           getHeightMeters(feature, options.defaultHeightFeet),
       )
     : undefined;
+
+  const heightBoostFeet = Number(options.heightBoostFeet || 0);
+  const heightBoostMeters =
+    Number.isFinite(heightBoostFeet) && heightBoostFeet > 0
+      ? heightBoostFeet * 0.3048
+      : 0;
+
+  const extrudedHeight = shouldExtrude
+    ? Math.max(Number(baseExtrudedHeight || 0) + heightBoostMeters, 0)
+    : undefined;
+
+  const initialExtrudedHeight =
+    shouldExtrude && options.smoothExtrusion && heightBoostMeters > 0
+      ? Math.max(Number(baseExtrudedHeight || 0), 0)
+      : extrudedHeight;
 
   const entity = viewer.entities.add({
     name: smartStyle?.label || options.name,
@@ -692,7 +708,7 @@ function createPolygonEntity(
       outlineColor,
       outlineWidth: options.outlineWidth || 1,
       height: 0,
-      extrudedHeight,
+      extrudedHeight: initialExtrudedHeight,
       closeTop: true,
       closeBottom: true,
       shadows: Cesium.ShadowMode.DISABLED,
@@ -705,6 +721,8 @@ function createPolygonEntity(
       ...(feature.properties || {}),
       _visualCategory: smartStyle?.category,
       _visualHeightMeters: extrudedHeight ?? 0,
+      _baseHeightMeters: baseExtrudedHeight ?? 0,
+      _heightBoostFeet: heightBoostFeet,
     },
   };
   entity.featureId = featureId;
@@ -712,7 +730,46 @@ function createPolygonEntity(
   entity.originalMaterial = material;
   entity.originalOutlineColor = outlineColor;
 
+  if (
+    entity.polygon &&
+    shouldExtrude &&
+    options.smoothExtrusion &&
+    heightBoostMeters > 0 &&
+    Number.isFinite(extrudedHeight)
+  ) {
+    animatePolygonExtrusion(entity, initialExtrudedHeight || 0, extrudedHeight, options.smoothDuration || 700);
+  }
+
   return entity;
+}
+
+export function animatePolygonExtrusion(entity, fromHeight = 0, toHeight = 0, duration = 700) {
+  if (!entity?.polygon) return;
+
+  const startHeight = Number(fromHeight || 0);
+  const endHeight = Number(toHeight || 0);
+  const animationDuration = Math.max(Number(duration || 700), 120);
+  const startedAt = performance.now();
+
+  const easeOutCubic = (value) => 1 - Math.pow(1 - value, 3);
+
+  const step = (now) => {
+    if (!entity?.polygon) return;
+
+    const progress = Math.min((now - startedAt) / animationDuration, 1);
+    const eased = easeOutCubic(progress);
+    const currentHeight = startHeight + (endHeight - startHeight) * eased;
+
+    entity.polygon.extrudedHeight = currentHeight;
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      entity.polygon.extrudedHeight = endHeight;
+    }
+  };
+
+  requestAnimationFrame(step);
 }
 
 function createLineEntity(
