@@ -1,8 +1,26 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
-export default function ServiceUtilities() {
+export default function ServiceUtilities({
+  selectedProjectId,
+  layerVisibility = {},
+  setLayerVisibility,
+}) {
   const [open, setOpen] = useState(false);
+
+  const toggleLayer = (key) => {
+    if (!selectedProjectId) {
+      alert("Please select a project first.");
+      return;
+    }
+
+    if (!setLayerVisibility) return;
+
+    setLayerVisibility((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   return (
     <div className="border-b border-[#343c4c]">
@@ -17,24 +35,48 @@ export default function ServiceUtilities() {
 
       {open && (
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
-          <LayerItem checked color="#42a5f5" label="Water Supply Points" />
-          <LayerItem color="#1e88e5" label="Water Supply Levels" />
-          <LayerItem color="#8e44ad" label="Sewage Points" />
-          <LayerItem color="#6d4c41" label="Sewage Levels" />
+          <LayerItem
+            checked={!!layerVisibility.waterSupplyPoints}
+            color="#42a5f5"
+            label="Water Supply Points"
+            onChange={() => toggleLayer("waterSupplyPoints")}
+          />
+
+          <LayerItem
+            checked={!!layerVisibility.waterSupplyLines}
+            color="#1e88e5"
+            label="Water Supply Levels"
+            onChange={() => toggleLayer("waterSupplyLines")}
+          />
+
+          <LayerItem
+            checked={!!layerVisibility.sewagePoints}
+            color="#8e44ad"
+            label="Sewage Points"
+            onChange={() => toggleLayer("sewagePoints")}
+          />
+
+          <LayerItem
+            checked={!!layerVisibility.cameraLocations}
+            color="#f97316"
+            label="Camera Locations"
+            onChange={() => toggleLayer("cameraLocations")}
+          />
         </div>
       )}
     </div>
   );
 }
 
-function LayerItem({ checked = false, color, label }) {
+function LayerItem({ checked = false, color, label, onChange }) {
   return (
     <div className="mt-3 first:mt-1">
       <div className="flex items-center justify-between">
         <label className="flex cursor-pointer items-center gap-2">
           <input
             type="checkbox"
-            defaultChecked={checked}
+            checked={checked}
+            onChange={onChange}
             className="accent-[#65c96b]"
           />
           <span

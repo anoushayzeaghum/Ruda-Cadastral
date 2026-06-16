@@ -10,6 +10,7 @@ class ListContourView(viewsets.ViewSet):
         try:
             gid = request.query_params.get("gid") or request.query_params.get("id")
             society_id = request.query_params.get("society_id")
+            project_id = request.query_params.get("project_id")
             mauza_id = request.query_params.get("mauza_id")
             dist_id = request.query_params.get("dist_id")
             tehsil_id = request.query_params.get("tehsil_id")
@@ -32,7 +33,8 @@ class ListContourView(viewsets.ViewSet):
                 ).create_response()
 
             queryset = Contour.objects.all()
-
+            if project_id:
+                queryset = queryset.filter(project_id=project_id)
             if society_id:
                 queryset = queryset.filter(society_id=society_id)
             if mauza_id:

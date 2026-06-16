@@ -14,6 +14,7 @@ import {
   getContourGeoJSON,
   getRudaGeoJSON,
   getRudaProposedRoadsGeoJSON,
+  getGeodeticNetworkGeoJSON,
 } from "../../services/api";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -65,6 +66,9 @@ const SNAP_SOURCE = "snap-source";
 const SNAP_LAYER = "snap-layer";
 const SNAP_LINE_LAYER = "snap-line-layer";
 const SNAP_LABEL_LAYER = "snap-label-layer";
+
+const GEODETIC_NETWORK_SOURCE = "geodetic-network-source";
+const GEODETIC_NETWORK_LAYER = "geodetic-network-layer";
 
 const emptyFeatureCollection = () => ({
   type: "FeatureCollection",
@@ -668,6 +672,43 @@ export default function MapView({
     currentGeojson.current[key] = geojson;
   };
 
+  const drawGeodeticLayer = (geojson, opacity = 1) => {
+  const map = mapInstance.current;
+  if (!map) return;
+
+  try {
+    if (map.getLayer(GEODETIC_NETWORK_LAYER)) {
+      map.removeLayer(GEODETIC_NETWORK_LAYER);
+    }
+
+    if (map.getSource(GEODETIC_NETWORK_SOURCE)) {
+      map.removeSource(GEODETIC_NETWORK_SOURCE);
+    }
+
+    map.addSource(GEODETIC_NETWORK_SOURCE, {
+      type: "geojson",
+      data: geojson,
+    });
+
+    map.addLayer({
+      id: GEODETIC_NETWORK_LAYER,
+      type: "circle",
+      source: GEODETIC_NETWORK_SOURCE,
+      paint: {
+        "circle-radius": 5,
+        "circle-color": "#ff0000",
+        "circle-stroke-width": 1,
+        "circle-stroke-color": "#ffffff",
+        "circle-opacity": opacity,
+      },
+    });
+
+    currentGeojson.current.geodeticNetwork = geojson;
+  } catch (err) {
+    console.error("Geodetic layer error:", err);
+  }
+};
+
   // ── Land-use colour map for Master Plan ──────────────────────────────────
   const LAND_USE_COLORS = {
     "Residential Plot": "#f59e0b",   // amber
@@ -843,6 +884,12 @@ export default function MapView({
           opacity: getLayerOpacity(layers, "contours", 100) / 100,
         });
         // contours are visual-only — no click handler
+      }
+      else if (key === "geodeticNetwork") {
+        drawGeodeticLayer(
+          geojson,
+          getLayerOpacity(layers, "geodeticNetwork", 100) / 100
+        );
       }
     });
   };
@@ -1213,7 +1260,50 @@ export default function MapView({
     layers?.spotLevel,
     layers?.contours,
   ]);
+useEffect(() => {
+  if (!isMapReady) return;
 
+  let cancelled = false;
+
+  const loadGeodeticNetwork = async () => {
+    const map = mapInstance.current;
+
+    try {
+      if (map?.getLayer(GEODETIC_NETWORK_LAYER)) {
+        map.removeLayer(GEODETIC_NETWORK_LAYER);
+      }
+
+      if (map?.getSource(GEODETIC_NETWORK_SOURCE)) {
+        map.removeSource(GEODETIC_NETWORK_SOURCE);
+      }
+
+      delete currentGeojson.current.geodeticNetwork;
+
+      if (!getLayerVisible(layers, "geodeticNetwork", false)) {
+        return;
+      }
+
+      const geojson = await getGeodeticNetworkGeoJSON();
+
+      if (cancelled) return;
+
+      if (geojson?.features?.length) {
+        drawGeodeticLayer(
+          geojson,
+          getLayerOpacity(layers, "geodeticNetwork", 100) / 100
+        );
+      }
+    } catch (err) {
+      console.error("Geodetic Network load error:", err);
+    }
+  };
+
+  loadGeodeticNetwork();
+
+  return () => {
+    cancelled = true;
+  };
+}, [isMapReady, layers?.geodeticNetwork]);
   useEffect(() => {
     const map = mapInstance.current;
     if (!map || !isMapReady) return;

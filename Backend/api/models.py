@@ -356,6 +356,7 @@ class SpotLevel(models.Model):
     gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
     society_id = models.IntegerField(null=True, blank=True)
+    project_id = models.IntegerField(null=True, blank=True) 
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
@@ -376,6 +377,7 @@ class Contour(models.Model):
     gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
     society_id = models.IntegerField(null=True, blank=True)
+    project_id = models.IntegerField(null=True, blank=True) 
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
@@ -598,3 +600,268 @@ class GeodeticNetwork(models.Model):
     class Meta:
         managed = False
         db_table = "geodeticnetwork"
+
+
+# =========================
+# Project
+# =========================
+class Project(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    type = models.CharField(max_length=100, null=True, blank=True)
+
+    brief_name = models.CharField(max_length=100, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(srid=4326, null=True, blank=True)
+
+    def __str__(self):
+        return self.name or f"Project {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "project"
+
+# =========================
+# Block
+# =========================
+
+class Block(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    area = models.FloatField(null=True, blank=True)
+
+    block = models.CharField(max_length=100, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(srid=4326, null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.block or self.name or f"Block {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "block"
+
+
+
+# =========================
+# Block Level
+# =========================
+
+class BlockLevel(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    block = models.CharField(max_length=255, null=True, blank=True)
+
+    dimension = models.CharField(max_length=255, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(srid=4326, null=True, blank=True)
+
+    def __str__(self):
+        return self.name or f"BlockLevel {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "block_level"
+
+# =========================
+# Plot
+# =========================
+
+class Plot(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(max_length=255, null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
+
+    block_id = models.IntegerField(null=True, blank=True)
+
+    plot_no = models.CharField(max_length=100, null=True, blank=True)
+    plot_area = models.CharField(max_length=100, null=True, blank=True)
+
+    block = models.CharField(max_length=255, null=True, blank=True)
+
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_area = models.FloatField(null=True, blank=True)
+
+    dimension = models.CharField(max_length=255, null=True, blank=True)
+
+    parkfront = models.CharField(max_length=50, null=True, blank=True)
+    rd_ft = models.CharField(max_length=50, null=True, blank=True)
+    storey = models.CharField(max_length=50, null=True, blank=True)
+    rd_facing = models.CharField(max_length=50, null=True, blank=True)
+
+    h = models.IntegerField(null=True, blank=True)
+
+    demar = models.CharField(max_length=255, null=True, blank=True)
+
+    possession = models.CharField(max_length=255, null=True, blank=True)
+    poss_st = models.CharField(max_length=255, null=True, blank=True)
+
+    canceled = models.CharField(max_length=50, null=True, blank=True)
+
+    site_plan = models.CharField(max_length=255, null=True, blank=True)
+
+    unique_id = models.IntegerField(null=True, blank=True)
+
+    tr_srno = models.IntegerField(null=True, blank=True)
+
+    tr_own = models.TextField(null=True, blank=True)
+
+    tr_p_no = models.CharField(max_length=255, null=True, blank=True)
+
+    tr_cate = models.CharField(max_length=255, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return self.plot_no or self.name or f"Plot {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "plot"
+
+# =========================
+# Road
+# =========================
+class Road(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+    block = models.CharField(max_length=255, null=True, blank=True)
+
+    dimension = models.CharField(max_length=100, null=True, blank=True)
+    type = models.CharField(max_length=255, null=True, blank=True)
+    row = models.CharField(max_length=100, null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
+    block_id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return self.name or f"Road {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "road"
+
+# =========================
+# Camera Location
+# =========================
+class CameraLocation(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    sr_no = models.IntegerField(db_column="sr_no_", null=True, blank=True)
+
+    project = models.CharField(max_length=255, null=True, blank=True)
+
+    camera = models.CharField(max_length=255, null=True, blank=True)
+
+    y = models.FloatField(null=True, blank=True)
+
+    x = models.FloatField(null=True, blank=True)
+
+    coordinate = models.CharField(max_length=255, null=True, blank=True)
+
+    iframe_lin = models.TextField(null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return self.camera or f"Camera {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "cameralocation"
+
+# =========================
+# SWPoint
+# =========================
+class SWPoint(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    type = models.CharField(max_length=100, null=True, blank=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(srid=4326, null=True, blank=True)
+
+    def __str__(self):
+        return self.name or f"SWPoint {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "swpoint"
+
+# =========================
+# WSL
+# =========================
+class WSL(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    shape_leng = models.FloatField(null=True, blank=True)
+
+    dia = models.CharField(max_length=50, null=True, blank=True)
+
+    type = models.CharField(max_length=100, null=True, blank=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(srid=4326, null=True, blank=True)
+
+    def __str__(self):
+        return self.name or f"WSL {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "wsl"
+
+# =========================
+# WSPoint
+# =========================
+class WSPoint(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    type = models.CharField(max_length=100, null=True, blank=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    project_id = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(srid=4326, null=True, blank=True)
+
+    def __str__(self):
+        return self.name or f"WS Point {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "wspoint"

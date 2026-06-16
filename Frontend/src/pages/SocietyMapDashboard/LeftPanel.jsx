@@ -112,6 +112,7 @@ export default function LeftPanel({
       const rudaLayerDefaults = {
         rudaBoundary: 70,
         proposedRoads: 100,
+        geodeticNetwork: 100,
         societyBoundary: 25,
         masterPlan: 70,
         spotLevel: 100,
@@ -696,6 +697,7 @@ function RudaBoundaryLayers({
             </div>
           )}
 
+          
           <AdminLayerRow
             label="Proposed Roads"
             checked={getLayerVisible("proposedRoads")}
@@ -703,6 +705,14 @@ function RudaBoundaryLayers({
             isLast
             onToggle={toggleProposedRoadLayer}
             onOpacity={(value) => updateLayer("proposedRoads", { opacity: value })}
+          />
+
+          <RudaLayerRow
+            label="Geodetic Network"
+            checked={getLayerVisible("geodeticNetwork")}
+            opacity={getLayerOpacity("geodeticNetwork")}
+            onToggle={() => toggleLayer("geodeticNetwork")}
+            onOpacity={(value) => updateLayer("geodeticNetwork", { opacity: value })}
           />
       </div>
     </div>

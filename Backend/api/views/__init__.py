@@ -16,3 +16,14 @@ from .SquareView import *
 from .AcreView import *
 from .FieldPointsView import *
 from .GeodeticNetworkView import *
+
+from .GISMetaverse.ProjectView import *
+from .GISMetaverse.BlockView import *
+from .GISMetaverse.BlockLevelView import *
+from .GISMetaverse.PlotView import *
+from .GISMetaverse.RoadView import *
+from .GISMetaverse.CameraLocationView import *
+
+from .GISMetaverse.SWPointView import *
+from .GISMetaverse.WSLView import *
+from .GISMetaverse.WSPointView import *

@@ -1,92 +1,147 @@
-import React, { useEffect, useState } from "react";
-import { getDistricts, getTehsils, getMauzas } from "../../services/api";
+import React, { useEffect, useMemo, useState } from "react";
+import { getBlocks, getPlotOptions, getProjects } from "../../services/metaverseApi";
 
-export default function SpatialQuery({
-  filters = {},
-  onFiltersChange = () => {},
-  parcelOptions = [],
-}) {
-  const [districts, setDistricts] = useState([]);
-  const [tehsils, setTehsils] = useState([]);
-  const [mauzas, setMauzas] = useState([]);
+const toOption = (item, valueKeys = [], labelKeys = []) => {
+  const value = valueKeys.map((key) => item?.[key]).find((v) => v !== undefined && v !== null && v !== "");
+  const label = labelKeys.map((key) => item?.[key]).find((v) => v !== undefined && v !== null && v !== "");
+  return {
+    value,
+    label: label || String(value || "Select"),
+    raw: item,
+  };
+};
+
+export default function SpatialQuery({ filters = {}, onFiltersChange = () => {} }) {
+  const [projects, setProjects] = useState([]);
+  const [blocks, setBlocks] = useState([]);
+  const [plotTypes, setPlotTypes] = useState([]);
+  const [plotNos, setPlotNos] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const selectedProjectId = filters?.selectedProject?.value || filters?.projectId || "";
+  const selectedBlockId = filters?.selectedBlock?.raw?.gid || filters?.blockId || "";
+  const selectedBlockName = filters?.selectedBlock?.raw?.block || filters?.block || "";
 
   useEffect(() => {
-    async function loadDistricts() {
+    let mounted = true;
+
+    async function loadProjects() {
       try {
-        const res = await getDistricts();
-        setDistricts(
-          res.map((it) => ({
-            value: it.id ?? it.pk ?? it.district_i ?? it.i,
-            label: it.name ?? it.district_name ?? it.title ?? String(it.id),
-          })),
+        const res = await getProjects();
+        if (!mounted) return;
+        setProjects(
+          res
+            .map((item) => toOption(item, ["gid", "id", "project_id"], ["name", "brief_name", "type"]))
+            .filter((item) => item.value !== undefined && item.value !== null),
         );
-      } catch (e) {
-        setDistricts([]);
+      } catch (error) {
+        console.error("Failed to load projects", error);
+        if (mounted) setProjects([]);
       }
     }
-    loadDistricts();
+
+    loadProjects();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    async function loadTehsils() {
-      const id = filters?.selectedDistrictOptions?.value ?? null;
-      if (!id) {
-        setTehsils([]);
+    let mounted = true;
+
+    async function loadBlocks() {
+      if (!selectedProjectId) {
+        setBlocks([]);
         return;
       }
+
       try {
-        const res = await getTehsils(id);
-        setTehsils(
-          res.map((it) => ({
-            value: it.id ?? it.pk ?? it.tehsil_i ?? it.i,
-            label: it.name ?? it.tehsil_name ?? it.title ?? String(it.id),
-          })),
+        const res = await getBlocks(selectedProjectId);
+        if (!mounted) return;
+        setBlocks(
+          res
+            .map((item) => toOption(item, ["gid", "block_id", "id", "block"], ["block", "name"]))
+            .filter((item) => item.value !== undefined && item.value !== null),
         );
-      } catch (e) {
-        setTehsils([]);
+      } catch (error) {
+        console.error("Failed to load blocks", error);
+        if (mounted) setBlocks([]);
       }
     }
-    loadTehsils();
-  }, [filters?.selectedDistrictOptions]);
+
+    loadBlocks();
+    return () => {
+      mounted = false;
+    };
+  }, [selectedProjectId]);
 
   useEffect(() => {
-    async function loadMauzas() {
-      const id = filters?.selectedTehsilOptions?.value ?? null;
-      if (!id) {
-        setMauzas([]);
+    let mounted = true;
+
+    async function loadPlotOptions() {
+      if (!selectedProjectId) {
+        setPlotTypes([]);
+        setPlotNos([]);
         return;
       }
+
+      setLoading(true);
       try {
-        const fc = await getMauzas(id);
-        const list = (fc?.features || []).map((f) => ({
-          value: f.properties?.id ?? f.id ?? f.properties?.gid,
-          label:
-            f.properties?.mauza ||
-            f.properties?.mauza_name ||
-            f.properties?.name ||
-            String(f.properties?.id ?? f.id),
-          raw: f,
-        }));
-        setMauzas(list);
-      } catch (e) {
-        setMauzas([]);
+        const options = await getPlotOptions({
+          project_id: selectedProjectId,
+          block_id: selectedBlockId || undefined,
+          block: selectedBlockName || undefined,
+          type: filters?.plotType || undefined,
+        });
+
+        if (!mounted) return;
+        setPlotTypes(options.plotTypes || []);
+        setPlotNos(options.plotNos || []);
+      } catch (error) {
+        console.error("Failed to load plot options", error);
+        if (mounted) {
+          setPlotTypes([]);
+          setPlotNos([]);
+        }
+      } finally {
+        if (mounted) setLoading(false);
       }
     }
-    loadMauzas();
-  }, [filters?.selectedTehsilOptions]);
 
-  function handleChange(key, value) {
-    onFiltersChange({ [key]: value });
-  }
+    loadPlotOptions();
+    return () => {
+      mounted = false;
+    };
+  }, [selectedProjectId, selectedBlockId, selectedBlockName, filters?.plotType]);
 
-  function clearAll() {
-    onFiltersChange({
-      selectedDistrictOptions: null,
-      selectedTehsilOptions: null,
-      selectedMauzaDetails: null,
+  const canSearch = useMemo(() => Boolean(selectedProjectId), [selectedProjectId]);
+
+  const update = (patch) => onFiltersChange(patch);
+
+  const clearAll = () => {
+    update({
+      selectedProject: null,
+      selectedBlock: null,
+      projectId: "",
+      projectName: "",
+      blockId: "",
+      block: "",
+      plotType: "",
+      plotNo: "",
       selectedParcelNumber: "",
+      searchNonce: Date.now(),
     });
-  }
+  };
+
+  const handleSearch = () => {
+    update({
+      projectId: selectedProjectId,
+      blockId: selectedBlockId,
+      block: selectedBlockName,
+      selectedParcelNumber: filters?.plotNo || "",
+      searchNonce: Date.now(),
+    });
+  };
 
   return (
     <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] h-[460px]">
@@ -98,117 +153,95 @@ export default function SpatialQuery({
 
       <div className="p-4 h-[calc(100%-56px)]">
         <div className="space-y-3">
-
           <select
             className="inputStyle"
-            value={filters?.selectedDistrictOptions?.value ?? ""}
+            value={selectedProjectId}
             onChange={(e) => {
-              const v = e.target.value;
-              const opt =
-                districts.find((d) => String(d.value) === String(v)) ?? null;
-              handleChange("selectedDistrictOptions", opt);
-              handleChange("selectedTehsilOptions", null);
-              handleChange("selectedMauzaDetails", null);
+              const opt = projects.find((item) => String(item.value) === String(e.target.value)) || null;
+              update({
+                selectedProject: opt,
+                projectId: opt?.value || "",
+                projectName: opt?.label || "",
+                selectedBlock: null,
+                blockId: "",
+                block: "",
+                plotType: "",
+                plotNo: "",
+                selectedParcelNumber: "",
+              });
             }}
-            disabled={!districts.length}
+            disabled={!projects.length}
           >
-            <option value="">Select District</option>
-            {districts.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
+            <option value="">Select Project</option>
+            {projects.map((project) => (
+              <option key={project.value} value={project.value}>
+                {project.label}
               </option>
             ))}
           </select>
 
           <select
             className="inputStyle"
-            value={filters?.selectedTehsilOptions?.value ?? ""}
+            value={filters?.selectedBlock?.value || selectedBlockName || ""}
             onChange={(e) => {
-              const v = e.target.value;
-              const opt =
-                tehsils.find((d) => String(d.value) === String(v)) ?? null;
-              handleChange("selectedTehsilOptions", opt);
-              handleChange("selectedMauzaDetails", null);
+              const opt = blocks.find((item) => String(item.value) === String(e.target.value)) || null;
+              update({
+                selectedBlock: opt,
+                blockId: opt?.raw?.gid || opt?.raw?.block_id || "",
+                block: opt?.raw?.block || opt?.label || "",
+                plotType: "",
+                plotNo: "",
+                selectedParcelNumber: "",
+              });
             }}
-            disabled={!tehsils.length}
+            disabled={!selectedProjectId || !blocks.length}
           >
-            <option value="">Select Tehsil</option>
-            {tehsils.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
+            <option value="">Select Block</option>
+            {blocks.map((block) => (
+              <option key={block.value} value={block.value}>
+                {block.label}
               </option>
             ))}
           </select>
 
           <select
             className="inputStyle"
-            value={filters?.selectedMauzaDetails?.value ?? ""}
+            value={filters?.plotType || ""}
             onChange={(e) => {
-              const v = e.target.value;
-              const opt =
-                mauzas.find((d) => String(d.value) === String(v)) ?? null;
-
-              const normalized = opt
-                ? {
-                    value: opt.value, // fixed
-                    label: opt.label, // fixed
-                    id: opt.value,
-                    mauza: opt.label,
-                    mauza_id: opt.value,
-                    raw: opt.raw,
-                  }
-                : null;
-
-              handleChange("selectedMauzaDetails", normalized);
+              update({ plotType: e.target.value, plotNo: "", selectedParcelNumber: "" });
             }}
-            disabled={!mauzas.length}
+            disabled={!selectedProjectId || loading || !plotTypes.length}
           >
-            <option value="">Select Mauza</option>
-            {mauzas.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
+            <option value="">Select Plot Type</option>
+            {plotTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
               </option>
             ))}
           </select>
 
           <select
             className="inputStyle"
-            value={filters?.viewBy ?? "khasra"}
-            onChange={(e) => {
-              handleChange("viewBy", e.target.value);
-              handleChange("selectedParcelNumber", "");
-            }}
+            value={filters?.plotNo || ""}
+            onChange={(e) => update({ plotNo: e.target.value, selectedParcelNumber: e.target.value })}
+            disabled={!selectedProjectId || loading || !plotNos.length}
           >
-            <option value="khasra">View By: Khasra</option>
-            <option value="murabba">View By: Murabba</option>
-            <option value="parcel">View By: Parcel ID</option>
+            <option value="">Select Plot No</option>
+            {plotNos.map((plotNo) => (
+              <option key={plotNo} value={plotNo}>
+                {plotNo}
+              </option>
+            ))}
           </select>
-
-          <div>
-            <input
-              list="parcel-suggestions"
-              className="inputStyle"
-              placeholder="Search khasra / murabba"
-              value={filters?.selectedParcelNumber ?? ""}
-              onChange={(e) =>
-                handleChange("selectedParcelNumber", e.target.value)
-              }
-            />
-            <datalist id="parcel-suggestions">
-              {parcelOptions.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </datalist>
-          </div>
 
           <div className="grid grid-cols-2 gap-3 pt-2">
             <button
               type="button"
-              className="h-9 rounded bg-green-700 text-white text-sm font-medium shadow-sm hover:bg-green-800"
+              disabled={!canSearch}
+              onClick={handleSearch}
+              className="h-9 rounded bg-green-700 text-white text-sm font-medium shadow-sm hover:bg-green-800 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              Show
+              Search
             </button>
 
             <button
