@@ -241,6 +241,40 @@ export default function TimeLapse({ map }) {
             </button>
           ))}
         </div>
+
+        {/* Date Slider */}
+        <div className="mt-4 border-t border-[#343c4c] pt-3">
+          <div className="text-[11px] text-white/50 mb-2 font-semibold">Slide to Date</div>
+          <input
+            type="range"
+            min="0"
+            max={TIMELINE.length - 1}
+            step="1"
+            value={current}
+            onChange={(e) => setCurrent(Number(e.target.value))}
+            className="w-full h-[5px] rounded-full appearance-none cursor-pointer"
+            style={{
+              background: `linear-gradient(to right, ${TIMELINE.map(
+                (t, i) =>
+                  `${t.color} ${(i / (TIMELINE.length - 1)) * 100}%`
+              ).join(", ")})`,
+            }}
+          />
+          <div className="flex justify-between mt-1">
+            {TIMELINE.map((item, i) => (
+              <span
+                key={item.layerId}
+                className="text-[10px] font-semibold cursor-pointer transition"
+                style={{
+                  color: i === current ? item.color : "rgba(255,255,255,0.4)",
+                }}
+                onClick={() => setCurrent(i)}
+              >
+                {item.date}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

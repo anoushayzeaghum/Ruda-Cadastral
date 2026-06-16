@@ -17,9 +17,12 @@ import { useNavigate } from "react-router-dom"; // ✅ ADD THIS
 import Filter from "./tools/Filter";
 import Basemaps from "./tools/Basemaps";
 import LayersPanel from "./tools/Layers";
+import FlyTo from "./tools/FlyTo";
 import DroneImagery from "./tools/DroneImagery";
 import TimeLapse from "./tools/TimeLapse";
-import FlyTo from "./tools/FlyTo";
+import ChangeDetection from "./tools/ChangeDetection";
+import Import from "./tools/Import";
+import Measurement from "./tools/Measurement";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
@@ -107,8 +110,14 @@ export default function MetaverseLeftToolbar({
                     : activeTool === "flyTo"
                       ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto"
                       : activeTool === "timeLapse"
-                        ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto"
-                        : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
+                        ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                        : activeTool === "changeDetection"
+                          ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                          : activeTool === "import"
+                            ? "w-[340px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                            : activeTool === "measurement"
+                              ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                              : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
           }`}
           style={{ top: `${panelTop}px` }}
         >
@@ -124,7 +133,19 @@ export default function MetaverseLeftToolbar({
           )}
 
           {activeTool === "filter" && (
-            <Filter onClose={() => setActiveTool(null)} />
+            <Filter
+              filters={filters}
+              projectId={filters?.projectId}
+              setLayerVisibility={setLayerVisibility}
+              onApply={(appliedFilters) => {
+                setFilters?.((prev) => ({
+                  ...prev,
+                  ...appliedFilters,
+                }));
+                setActiveTool("layers");
+              }}
+              onClose={() => setActiveTool(null)}
+            />
           )}
 
           {activeTool === "flyTo" && (
@@ -140,12 +161,22 @@ export default function MetaverseLeftToolbar({
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
           {activeTool === "timeLapse" && <TimeLapse map={map} />}
 
+          {activeTool === "changeDetection" && <ChangeDetection map={map} />}
+          {activeTool === "import" && (
+            <Import map={map} onClose={() => setActiveTool(null)} />
+          )}
+
+          {activeTool === "measurement" && <Measurement map={map} />}
+
           {activeTool !== "layers" &&
             activeTool !== "filter" &&
             activeTool !== "basemaps" &&
-            activeTool !== "droneImagery" &&
             activeTool !== "flyTo" &&
-            activeTool !== "timeLapse" && (
+            activeTool !== "droneImagery" &&
+            activeTool !== "timeLapse" &&
+            activeTool !== "changeDetection" &&
+            activeTool !== "import" &&
+            activeTool !== "measurement" && (
               <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
             )}
         </div>

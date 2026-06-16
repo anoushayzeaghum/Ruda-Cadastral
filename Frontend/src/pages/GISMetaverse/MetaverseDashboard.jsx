@@ -4,11 +4,13 @@ import GISMetaverseMap from "./GISMetaverseMap";
 import MetaverseLeftToolbar from "./MetaverseLeftToolbar";
 import MetaverseSubHeader from "./MetaverseSubHeader";
 import MetaverseMapControls from "./MetaverseMapControls";
+import MetaverseLegend from "./tools/Layers/MetaverseLegend";
 
 export default function MetaverseDashboard() {
   const mapRef = useRef(null);
   const [isMapReady, setIsMapReady] = useState(false);
-  const [activeTool, setActiveTool] = useState("layers");
+  const [activeTool, setActiveTool] = useState(false);
+  const [showMetaverseLegend, setShowMetaverseLegend] = useState(false);
 
   const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState({
     rudaBoundary: false,
@@ -22,6 +24,13 @@ export default function MetaverseDashboard() {
     plotType: "",
     plotNo: "",
     area: "",
+    parkfront: "",
+    rd_facing: "",
+    poss_st: "",
+    plotStatus: "",
+    tr_cate: "",
+    tr_own: "",
+    site_plan: "",
   });
 
   const [layerVisibility, setLayerVisibility] = useState({
@@ -43,6 +52,13 @@ export default function MetaverseDashboard() {
       plotType: "",
       plotNo: "",
       area: "",
+      parkfront: "",
+      rd_facing: "",
+      poss_st: "",
+      plotStatus: "",
+      tr_cate: "",
+      tr_own: "",
+      site_plan: "",
     });
 
     setLayerVisibility((prev) => ({
@@ -60,6 +76,13 @@ export default function MetaverseDashboard() {
       plotType: "",
       plotNo: "",
       area: "",
+      parkfront: "",
+      rd_facing: "",
+      poss_st: "",
+      plotStatus: "",
+      tr_cate: "",
+      tr_own: "",
+      site_plan: "",
     });
 
     setLayerVisibility({
@@ -73,6 +96,8 @@ export default function MetaverseDashboard() {
       sewagePoints: false,
       cameraLocations: false,
     });
+
+    setShowMetaverseLegend(false);
   };
 
   const handleFilterChange = (key, value) => {
@@ -85,6 +110,7 @@ export default function MetaverseDashboard() {
       return updated;
     });
   };
+
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#111827]">
       <Header />
@@ -120,7 +146,16 @@ export default function MetaverseDashboard() {
           setAdminBoundaryVisibility={setAdminBoundaryVisibility}
         />
 
-        <MetaverseMapControls map={isMapReady ? mapRef.current : null} />
+        {showMetaverseLegend && (
+          <MetaverseLegend adminBoundaryVisibility={adminBoundaryVisibility} />
+        )}
+
+        <MetaverseMapControls
+          map={isMapReady ? mapRef.current : null}
+          showMetaverseLegend={showMetaverseLegend}
+          setShowMetaverseLegend={setShowMetaverseLegend}
+          adminBoundaryVisibility={adminBoundaryVisibility}
+        />
       </div>
     </div>
   );
