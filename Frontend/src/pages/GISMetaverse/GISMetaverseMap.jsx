@@ -582,11 +582,13 @@ export default function GISMetaverseMap({
       }
 
       const plotGeoJSON = await getPlotsGeoJSON({
+        // project_id: filters.projectId,
+        // block: filters.block || undefined,
+        // type: filters.plotType || undefined,
+        // plot_no: filters.plotNo || undefined,
+        // plot_area: filters.area || undefined,
         project_id: filters.projectId,
         block: filters.block || undefined,
-        type: filters.plotType || undefined,
-        plot_no: filters.plotNo || undefined,
-        plot_area: filters.area || undefined,
       });
 
       addMasterPlanLayer(map, plotGeoJSON);

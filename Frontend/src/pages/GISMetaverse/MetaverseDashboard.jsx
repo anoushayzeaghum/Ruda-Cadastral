@@ -58,6 +58,16 @@ export default function MetaverseDashboard() {
     });
   };
 
+  const handleFilterChange = (key, value) => {
+    setMetaverseFilters((prev) => {
+      const updated = {
+        ...prev,
+        [key]: value,
+      };
+
+      return updated;
+    });
+  };
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#111827]">
       <Header />

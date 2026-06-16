@@ -84,6 +84,25 @@ export const getPlotOptions = async (filters = {}) => {
   };
 };
 
+export const getPlotOptionsAll = async () => {
+  const geojson = await getPlotsGeoJSON({});
+  const plots = normalizeFeatures(geojson);
+
+  return {
+    plotTypes: [...new Set(plots.map((p) => p.type).filter(Boolean))],
+    plotNos: [...new Set(plots.map((p) => p.plot_no).filter(Boolean))],
+
+    // NEW (ADD ALL MISSING FIELDS)
+    parkFronts: [...new Set(plots.map((p) => p.parkfront).filter(Boolean))],
+    roadFacing: [...new Set(plots.map((p) => p.rd_facing).filter(Boolean))],
+    possessionStatus: [...new Set(plots.map((p) => p.poss_st || p.possession).filter(Boolean))],
+    plotStatus: [...new Set(plots.map((p) => p.canceled).filter(Boolean))],
+    categories: [...new Set(plots.map((p) => p.tr_cate).filter(Boolean))],
+    owners: [...new Set(plots.map((p) => p.tr_own).filter(Boolean))],
+    sitePlans: [...new Set(plots.map((p) => p.site_plan).filter(Boolean))],
+  };
+};
+
 export const getSpotLevelGeoJSON = async (projectId) => {
   if (!projectId) return emptyFC();
 

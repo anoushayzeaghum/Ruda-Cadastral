@@ -52,18 +52,18 @@ export default function MetaverseSubHeader({
     getPlotOptions({
       project_id: filters.projectId,
       block: filters.block || undefined,
-      type: filters.plotType || undefined,
-      plot_no: filters.plotNo || undefined,
-      plot_area: filters.area || undefined,
+      // type: filters.plotType || undefined,
+      // plot_no: filters.plotNo || undefined,
+      // plot_area: filters.area || undefined,
     })
       .then(setOptions)
       .catch(console.error);
   }, [
     filters.projectId,
     filters.block,
-    filters.plotType,
-    filters.plotNo,
-    filters.area,
+    // filters.plotType,
+    // filters.plotNo,
+    // filters.area,
   ]);
 
   const updateFilter = (key, value) => {

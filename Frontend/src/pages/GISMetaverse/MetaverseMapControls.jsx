@@ -39,15 +39,19 @@ export default function MetaverseMapControls({ map }) {
   }, [map]);
 
   const handleFullscreen = () => {
-    const mapElement = map?.getContainer?.();
-    if (!mapElement) return;
+  const mapElement = map?.getContainer?.();
+  if (!mapElement) return;
 
-    if (!document.fullscreenElement) {
-      mapElement.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
-    }
-  };
+  if (!document.fullscreenElement) {
+    mapElement.requestFullscreen?.().then?.(() => {
+      setTimeout(() => map.resize(), 100);
+    });
+  } else {
+    document.exitFullscreen?.().then?.(() => {
+      setTimeout(() => map.resize(), 100);
+    });
+  }
+};
 
   const handlePan = () => {
     if (!map) return;
@@ -78,6 +82,23 @@ export default function MetaverseMapControls({ map }) {
       { enableHighAccuracy: true }
     );
   };
+
+  useEffect(() => {
+  if (!map) return;
+
+  const handleFullscreenChange = () => {
+    // important: wait a tick so layout settles
+    setTimeout(() => {
+      map.resize();
+    }, 100);
+  };
+
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+  return () => {
+    document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  };
+}, [map]);
 
   return (
     <>
