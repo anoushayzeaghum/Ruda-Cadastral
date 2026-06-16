@@ -15,7 +15,7 @@ const IMAGERY = [
     short: "Jan 2023",
     sourceId: "cd-jan2023-src",
     layerId: "cd-jan2023-lyr",
-    url: "http://localhost:8080/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+    url: "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
     color: "#a855f7",
   },
   {
@@ -24,7 +24,7 @@ const IMAGERY = [
     short: "Jun 2023",
     sourceId: "cd-june2023-src",
     layerId: "cd-june2023-lyr",
-    url: "http://localhost:8080/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+    url: "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
     color: "#3b82f6",
   },
   {
@@ -33,7 +33,7 @@ const IMAGERY = [
     short: "Nov 2024",
     sourceId: "cd-nov2024-src",
     layerId: "cd-nov2024-lyr",
-    url: "http://localhost:8080/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+    url: "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
     color: "#ef4444",
   },
 ];
@@ -110,7 +110,11 @@ export default function ChangeDetection({ map }) {
           layout: { visibility: "none" },
         });
       });
-      mLeft.setLayoutProperty(IMAGERY[leftIdx].layerId, "visibility", "visible");
+      mLeft.setLayoutProperty(
+        IMAGERY[leftIdx].layerId,
+        "visibility",
+        "visible",
+      );
       mLeft.fitBounds(BOUNDS, { padding: 10, duration: 0 });
     });
 
@@ -129,7 +133,11 @@ export default function ChangeDetection({ map }) {
           layout: { visibility: "none" },
         });
       });
-      mRight.setLayoutProperty(IMAGERY[rightIdx].layerId, "visibility", "visible");
+      mRight.setLayoutProperty(
+        IMAGERY[rightIdx].layerId,
+        "visibility",
+        "visible",
+      );
       mRight.fitBounds(BOUNDS, { padding: 10, duration: 0 });
     });
 
@@ -224,7 +232,9 @@ export default function ChangeDetection({ map }) {
         {/* Left / Right selectors */}
         <div className="flex gap-2 mb-3">
           <div className="flex-1">
-            <div className="text-[10px] text-white/40 mb-1 font-semibold">LEFT IMAGE</div>
+            <div className="text-[10px] text-white/40 mb-1 font-semibold">
+              LEFT IMAGE
+            </div>
             <select
               value={leftIdx}
               onChange={(e) => setLeftIdx(Number(e.target.value))}
@@ -238,7 +248,9 @@ export default function ChangeDetection({ map }) {
             </select>
           </div>
           <div className="flex-1">
-            <div className="text-[10px] text-white/40 mb-1 font-semibold">RIGHT IMAGE</div>
+            <div className="text-[10px] text-white/40 mb-1 font-semibold">
+              RIGHT IMAGE
+            </div>
             <select
               value={rightIdx}
               onChange={(e) => setRightIdx(Number(e.target.value))}
@@ -336,7 +348,9 @@ export default function ChangeDetection({ map }) {
 
         {/* Swipe slider control */}
         <div className="mb-2">
-          <div className="text-[10px] text-white/40 mb-1 font-semibold">SWIPE POSITION</div>
+          <div className="text-[10px] text-white/40 mb-1 font-semibold">
+            SWIPE POSITION
+          </div>
           <input
             type="range"
             min="0"
@@ -349,12 +363,15 @@ export default function ChangeDetection({ map }) {
             }}
           />
           <div className="flex justify-between text-[10px] text-white/40 mt-1">
-            <span style={{ color: IMAGERY[leftIdx].color }}>← {IMAGERY[leftIdx].short}</span>
-            <span style={{ color: IMAGERY[rightIdx].color }}>{IMAGERY[rightIdx].short} →</span>
+            <span style={{ color: IMAGERY[leftIdx].color }}>
+              ← {IMAGERY[leftIdx].short}
+            </span>
+            <span style={{ color: IMAGERY[rightIdx].color }}>
+              {IMAGERY[rightIdx].short} →
+            </span>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
