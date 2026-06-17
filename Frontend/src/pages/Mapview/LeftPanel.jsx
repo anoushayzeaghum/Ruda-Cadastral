@@ -59,13 +59,7 @@ const VECTOR_BOUNDARY_LAYERS = [
 ];
 
 const RASTER_DATA_LAYERS = [
-  { key: "dsm", label: "Chaharbagh DSM" },
-  { key: "dtm", label: "Chaharbagh DTM" },
-  { key: "ortho", label: "Chaharbagh Ortho" },
-  { key: "asBuiltJan2023", label: "AsBuilt Jan 2023" },
-  { key: "orthoJune2023", label: "Ortho June 2023" },
-  { key: "orthoNov2024", label: "Ortho Nov 2024" },
-  { key: "handuGujranOrtho", label: "Handu Gujran Ortho" },
+  { key: "handuGujranOrtho", label: "Handu Gujran Massavi" },
 ];
 
 const RUDA_PHASE_COLORS = [
@@ -411,7 +405,7 @@ export default function LeftPanel({
                   />
                 </div> */}
 
-               
+
               </div>
             </Panel>
           )}
@@ -529,19 +523,19 @@ export default function LeftPanel({
                 getLayerVisible("measureBearing") ||
                 getLayerVisible("coordPicker") ||
                 getLayerVisible("measureBuffer")) && (
-                <div className="mx-3 mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-700">
-                  {getLayerVisible("measure") &&
-                    "📏 Click points to measure distance. Right-click to clear."}
-                  {getLayerVisible("measureArea") &&
-                    "🔲 Click to draw polygon vertices. Right-click to close and calculate area."}
-                  {getLayerVisible("measureBearing") &&
-                    "🧭 Click the start point, then the end point to measure bearing."}
-                  {getLayerVisible("coordPicker") &&
-                    "📍 Click anywhere on the map to get precise coordinates."}
-                  {getLayerVisible("measureBuffer") &&
-                    "⭕ Click a location to draw a 500 m buffer zone around it."}
-                </div>
-              )}
+                  <div className="mx-3 mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-700">
+                    {getLayerVisible("measure") &&
+                      "📏 Click points to measure distance. Right-click to clear."}
+                    {getLayerVisible("measureArea") &&
+                      "🔲 Click to draw polygon vertices. Right-click to close and calculate area."}
+                    {getLayerVisible("measureBearing") &&
+                      "🧭 Click the start point, then the end point to measure bearing."}
+                    {getLayerVisible("coordPicker") &&
+                      "📍 Click anywhere on the map to get precise coordinates."}
+                    {getLayerVisible("measureBuffer") &&
+                      "⭕ Click a location to draw a 500 m buffer zone around it."}
+                  </div>
+                )}
             </Panel>
           )}
 
@@ -553,11 +547,10 @@ export default function LeftPanel({
                     key={item.name}
                     type="button"
                     onClick={() => setBasemap(item.name)}
-                    className={`overflow-hidden rounded-lg border text-left transition ${
-                      basemap === item.name
+                    className={`overflow-hidden rounded-lg border text-left transition ${basemap === item.name
                         ? "border-green-700 bg-green-50"
                         : "border-slate-200 bg-white hover:bg-slate-50"
-                    }`}
+                      }`}
                   >
                     <div className="relative h-16 w-full overflow-hidden">
                       <img
@@ -566,7 +559,7 @@ export default function LeftPanel({
                         className="h-full w-full object-cover"
                       />
 
-                      
+
                     </div>
                     <div className="flex items-center justify-between px-2 py-2 text-xs font-semibold text-slate-800">
                       <span className="flex items-center gap-1.5">
@@ -981,18 +974,18 @@ function SelectedAdministrativeLayers({
         </h4>
       </div>
 
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          {items.map((item, index) => (
-            <AdminLayerRow
-              key={item.key}
-              label={item.label}
-              checked={getLayerVisible(item.key)}
-              opacity={getLayerOpacity(item.key)}
-              isLast={index === items.length - 1}
-              onToggle={() => toggleLayer(item.key)}
-              onOpacity={(value) => updateLayer(item.key, { opacity: value })}
-            />
-          ))}
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        {items.map((item, index) => (
+          <AdminLayerRow
+            key={item.key}
+            label={item.label}
+            checked={getLayerVisible(item.key)}
+            opacity={getLayerOpacity(item.key)}
+            isLast={index === items.length - 1}
+            onToggle={() => toggleLayer(item.key)}
+            onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+          />
+        ))}
       </div>
     </div>
   );
@@ -1001,9 +994,8 @@ function SelectedAdministrativeLayers({
 function AdminLayerRow({ label, checked, opacity, isLast, onToggle, onOpacity }) {
   return (
     <div
-      className={`bg-white px-2.5 py-2 ${
-        isLast ? "" : "border-b border-slate-100"
-      }`}
+      className={`bg-white px-2.5 py-2 ${isLast ? "" : "border-b border-slate-100"
+        }`}
     >
       <div className="flex items-center gap-2">
         <input
@@ -1069,11 +1061,10 @@ function PanelIcon({ title, icon, active, onClick }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className={`flex h-10 w-10 items-center justify-center rounded-lg border shadow-lg transition ${
-        active
+      className={`flex h-10 w-10 items-center justify-center rounded-lg border shadow-lg transition ${active
           ? "border-green-300 bg-[#0f3d2e] text-white"
           : "border-slate-300 bg-white text-[#0f3d2e] hover:border-green-700 hover:bg-green-50"
-      }`}
+        }`}
     >
       {icon}
     </button>
@@ -1165,11 +1156,10 @@ function ToolboxButton({ icon, label, active, onClick, description }) {
       onClick={onClick}
       title={description || label}
       aria-label={label}
-      className={`flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition ${
-        active
+      className={`flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition ${active
           ? "border-green-700 bg-green-50 text-green-800 shadow-inner"
           : "border-slate-200 bg-white text-slate-800 hover:border-green-700 hover:bg-green-50"
-      }`}
+        }`}
     >
       <span className={active ? "text-green-800" : "text-green-700"}>{icon}</span>
       <span className="text-center text-[10px] font-medium leading-tight">
