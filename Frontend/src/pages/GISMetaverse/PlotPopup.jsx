@@ -155,16 +155,27 @@ const applyTailwindToMapboxPopupShell = (popup) => {
 export function setupPlotClickPopup({
   map,
   plotLayerId,
+  plotLayerIds,
   highlightLayerId,
   highlightFilterKey = "gid",
   autoCloseMs = 10000,
 }) {
-  if (!isUsableMap(map) || !plotLayerId) return () => {};
+  if (!isUsableMap(map)) return () => {};
+
+  const clickableLayerIds = Array.from(
+    new Set(
+      [
+        ...(Array.isArray(plotLayerIds) ? plotLayerIds : []),
+        ...(plotLayerId ? [plotLayerId] : []),
+      ].filter(Boolean),
+    ),
+  );
+
+  if (!clickableLayerIds.length) return () => {};
 
   let popup = null;
   let closeTimer = null;
   let selectedFeatureId = null;
-  let isAttached = false;
   let isDestroyed = false;
 
   const clearCloseTimer = () => {
@@ -174,13 +185,16 @@ export function setupPlotClickPopup({
     }
   };
 
+  const getExistingClickableLayers = () =>
+    clickableLayerIds.filter((layerId) => safeHasLayer(map, layerId));
+
   const clearHighlight = () => {
     if (isDestroyed || !highlightLayerId) return;
 
     safeSetPaintProperty(map, highlightLayerId, "line-opacity", 0);
     safeSetFilter(map, highlightLayerId, [
       "==",
-      ["get", highlightFilterKey],
+      ["to-string", ["get", highlightFilterKey]],
       "",
     ]);
     selectedFeatureId = null;
@@ -202,25 +216,56 @@ export function setupPlotClickPopup({
     }
   };
 
-  const showPopup = (event) => {
-    if (isDestroyed || !isUsableMap(map)) return;
+  const getFeatureId = (feature) => {
+    const props = feature?.properties || {};
+    return props[highlightFilterKey] ?? props.gid ?? props.id ?? feature?.id ?? "";
+  };
 
-    const feature = event?.features?.[0];
-    if (!feature) return;
+  const highlightFeature = (feature) => {
+    if (!highlightLayerId || !safeHasLayer(map, highlightLayerId)) return;
+
+    const featureId = getFeatureId(feature);
+    selectedFeatureId = featureId;
+
+    safeSetFilter(map, highlightLayerId, [
+      "==",
+      ["to-string", ["get", highlightFilterKey]],
+      String(featureId),
+    ]);
+    safeSetPaintProperty(map, highlightLayerId, "line-opacity", 1);
+  };
+
+  const findClickedPlotFeature = (event) => {
+    const existingLayers = getExistingClickableLayers();
+    if (!existingLayers.length) return null;
+
+    const clickPoint = event?.point;
+    if (!clickPoint) return null;
+
+    // A small click box makes thin plot boundaries much easier to click.
+    const tolerance = 6;
+    const bbox = [
+      [clickPoint.x - tolerance, clickPoint.y - tolerance],
+      [clickPoint.x + tolerance, clickPoint.y + tolerance],
+    ];
+
+    const features = safeMapCall(
+      map,
+      () =>
+        map.queryRenderedFeatures(bbox, {
+          layers: existingLayers,
+        }),
+      [],
+    );
+
+    return features?.[0] || null;
+  };
+
+  const showPopup = (event, feature) => {
+    if (isDestroyed || !isUsableMap(map) || !feature) return;
 
     const props = feature.properties || {};
-    const featureId = props[highlightFilterKey] ?? props.gid ?? feature.id;
-
-    if (highlightLayerId && safeHasLayer(map, highlightLayerId)) {
-      selectedFeatureId = featureId;
-      safeSetFilter(map, highlightLayerId, [
-        "==",
-        ["get", highlightFilterKey],
-        featureId,
-      ]);
-      safeSetPaintProperty(map, highlightLayerId, "line-opacity", 1);
-    }
-
+    highlightFeature(feature);
     clearCloseTimer();
 
     try {
@@ -234,7 +279,8 @@ export function setupPlotClickPopup({
         .setLngLat(event.lngLat)
         .setHTML(buildPlotPopupHTML(props))
         .addTo(map);
-    } catch {
+    } catch (error) {
+      console.error("Plot popup error:", error);
       popup = null;
       return;
     }
@@ -253,122 +299,38 @@ export function setupPlotClickPopup({
     closeTimer = window.setTimeout(() => closePopup(), autoCloseMs);
   };
 
-  const handleMouseEnter = () => {
-    safeSetCursor(map, "pointer");
+  const handleMapClick = (event) => {
+    const feature = findClickedPlotFeature(event);
+    if (!feature) return;
+
+    event.preventDefault?.();
+    showPopup(event, feature);
+  };
+
+  const handleMouseMove = (event) => {
+    const feature = findClickedPlotFeature(event);
+    safeSetCursor(map, feature ? "pointer" : "");
   };
 
   const handleMouseLeave = () => {
     safeSetCursor(map, "");
   };
 
-  let attachRetryTimer = null;
-
-  const stopAttachRetry = () => {
-    if (attachRetryTimer) {
-      window.clearInterval(attachRetryTimer);
-      attachRetryTimer = null;
-    }
-  };
-
-  const attachListeners = () => {
-    if (isDestroyed || isAttached || !safeHasLayer(map, plotLayerId)) return;
-
-    safeMapCall(map, () => {
-      map.on("click", plotLayerId, showPopup);
-      map.on("mouseenter", plotLayerId, handleMouseEnter);
-      map.on("mouseleave", plotLayerId, handleMouseLeave);
-      isAttached = true;
-      stopAttachRetry();
-    });
-  };
-
-  const detachListeners = () => {
-    if (!isAttached) return;
-
-    safeMapCall(map, () => {
-      if (safeHasLayer(map, plotLayerId)) {
-        map.off("click", plotLayerId, showPopup);
-        map.off("mouseenter", plotLayerId, handleMouseEnter);
-        map.off("mouseleave", plotLayerId, handleMouseLeave);
-      }
-    });
-
-    isAttached = false;
-  };
-
-  const restoreSelectedHighlight = () => {
-    if (
-      isDestroyed ||
-      selectedFeatureId === null ||
-      !highlightLayerId ||
-      !safeHasLayer(map, highlightLayerId)
-    ) {
-      return;
-    }
-
-    safeSetFilter(map, highlightLayerId, [
-      "==",
-      ["get", highlightFilterKey],
-      selectedFeatureId,
-    ]);
-    safeSetPaintProperty(map, highlightLayerId, "line-opacity", 1);
-  };
-
-  const tryAttachListeners = () => {
-    if (isDestroyed || !isUsableMap(map)) return;
-
-    if (!safeHasLayer(map, plotLayerId)) {
-      isAttached = false;
-      return;
-    }
-
-    attachListeners();
-    restoreSelectedHighlight();
-  };
-
-  const startAttachRetry = () => {
-    if (attachRetryTimer || isDestroyed) return;
-
-    attachRetryTimer = window.setInterval(() => {
-      tryAttachListeners();
-    }, 300);
-  };
-
-  const handleMapChanged = () => {
-    tryAttachListeners();
-
-    if (!isAttached) {
-      startAttachRetry();
-    }
-  };
-
   safeMapCall(map, () => {
-    if (map.isStyleLoaded?.()) {
-      tryAttachListeners();
-    } else {
-      map.once("load", handleMapChanged);
-    }
-
-    map.on("styledata", handleMapChanged);
-    map.on("sourcedata", handleMapChanged);
-    map.on("idle", handleMapChanged);
+    map.on("click", handleMapClick);
+    map.on("mousemove", handleMouseMove);
+    map.on("mouseleave", handleMouseLeave);
   });
-
-  startAttachRetry();
 
   return () => {
     isDestroyed = true;
     clearCloseTimer();
-    stopAttachRetry();
 
     safeMapCall(map, () => {
-      map.off("styledata", handleMapChanged);
-      map.off("sourcedata", handleMapChanged);
-      map.off("idle", handleMapChanged);
-      map.off("load", handleMapChanged);
+      map.off("click", handleMapClick);
+      map.off("mousemove", handleMouseMove);
+      map.off("mouseleave", handleMouseLeave);
     });
-
-    detachListeners();
 
     try {
       popup?.remove();
