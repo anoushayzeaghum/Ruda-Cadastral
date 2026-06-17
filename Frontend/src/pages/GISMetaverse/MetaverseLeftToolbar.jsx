@@ -208,36 +208,47 @@ export default function MetaverseLeftToolbar({
       )}
 
       <div className="absolute bottom-4 left-2 z-40 flex flex-col items-start gap-2">
-        {bottomPanel === "basemaps" && (
-          <div className="mb-1 w-[calc(100vw-4rem)] max-h-[340px] overflow-y-auto rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:w-[380px]">
-            <Basemaps map={map} />
-          </div>
-        )}
+        {/* Basemaps button with panel opening above */}
+        <div className="relative">
+          {bottomPanel === "basemaps" && (
+            <div className="absolute bottom-0 left-10 mb-0 ml-1 w-[calc(100vw-4rem)] max-h-[340px] overflow-y-auto rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:w-[380px]">
+              <Basemaps map={map} />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => handleBottomPanel("basemaps")}
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-[#344055] bg-[#1d2533] text-white shadow-md transition hover:bg-[#293445]"
+            title="Basemaps"
+          >
+            <Globe2 size={20} strokeWidth={2.2} />
+          </button>
+        </div>
 
-        {bottomPanel === "flyTo" && (
-          <div className="mb-1 w-[300px] rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
-            <FlyTo
-              filters={filters}
-              setFilters={setFilters}
-              setLayerVisibility={setLayerVisibility}
-              onClose={() => setBottomPanel(null)}
-            />
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={() => handleBottomPanel("basemaps")}
-          className="flex h-9 w-9 items-center justify-center rounded-md border border-[#344055] bg-[#1d2533] text-white shadow-md transition hover:bg-[#293445]"
-          title="Basemaps"
-        >
-          <Globe2 size={20} strokeWidth={2.2} />
-        </button>
-        <FlyTo
-          filters={filters}
-          setFilters={setFilters}
-          setLayerVisibility={setLayerVisibility}
-        />
+        {/* Fly To button with panel opening to the right, vertically centered on the icon */}
+        <div className="relative">
+          {bottomPanel === "flyTo" && (
+            <div className="absolute left-10 top-1/2 -translate-y-1/2 ml-1">
+              <FlyTo
+                filters={filters}
+                setFilters={setFilters}
+                setLayerVisibility={setLayerVisibility}
+              />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => handleBottomPanel("flyTo")}
+            title="Fly To"
+            className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+              bottomPanel === "flyTo"
+                ? "border-[#8bd66f] bg-[#243041] text-white"
+                : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+            }`}
+          >
+            <Send size={20} strokeWidth={2.2} />
+          </button>
+        </div>
 
         {/* <SegmentMeasurement map={map} /> */}
       </div>
