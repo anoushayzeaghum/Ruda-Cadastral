@@ -16,7 +16,6 @@ import {
   getRudaGeoJSON,
   getRudaProposedRoadsGeoJSON,
   getGeodeticNetworkGeoJSON,
-  getProjects,
 } from "../../services/metaverseApi";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -106,27 +105,6 @@ const INTRO_CLEAR_SOURCES = [
   SOURCES.proposedRoads,
   SOURCES.geodeticNetwork,
 ];
-
-const findChaharBaghProjectId = async () => {
-  const projects = await getProjects();
-
-  const match = projects.find((project) => {
-    const text = `${project.brief_name || ""} ${project.name || ""} ${
-      project.project_name || ""
-    }`.toLowerCase();
-
-    return (
-      text.includes("chahar") ||
-      text.includes("chahaar") ||
-      text.includes("charbagh") ||
-      text.includes("char bagh") ||
-      text.includes("chaharbagh") ||
-      text.includes("chahar bagh")
-    );
-  });
-
-  return String(match?.gid || match?.id || "5");
-};
 
 const emptyFC = { type: "FeatureCollection", features: [] };
 
@@ -1500,44 +1478,30 @@ export default function GISMetaverseMap({
         }
 
         if (cancelled) {
-          console.warn("INTRO CANCELLED before project auto-select");
+          console.warn("INTRO CANCELLED before enabling RUDA boundary");
           return;
         }
-
-        console.log("FINDING CHAHAR BAGH PROJECT ID");
-        const projectId = await findChaharBaghProjectId();
-
-        console.log("CHAHAR BAGH PROJECT ID FOUND", projectId);
-
-        if (cancelled) return;
 
         console.log("CLEARING INTRO LAYER");
         clearIntroBoundaryLayer(map);
 
         introHasRunRef.current = true;
 
-        console.log("CALLING onIntroComplete", projectId);
-        onIntroComplete?.(projectId);
+        console.log("CALLING onIntroComplete to enable RUDA boundary");
+        onIntroComplete?.();
 
         console.log("INTRO FINISHED SUCCESSFULLY");
       } catch (err) {
         console.error("Metaverse intro animation error:", err);
 
-        const projectId = await findChaharBaghProjectId().catch(
-          (projectErr) => {
-            console.error("Fallback Chahar Bagh lookup failed:", projectErr);
-            return "5";
-          },
-        );
-
         if (cancelled) return;
 
-        console.log("INTRO FAILED, USING FALLBACK PROJECT ID", projectId);
+        console.log("INTRO FAILED, ENABLING RUDA BOUNDARY FALLBACK");
 
         clearIntroBoundaryLayer(map);
 
         introHasRunRef.current = true;
-        onIntroComplete?.(projectId);
+        onIntroComplete?.();
       }
     };
 

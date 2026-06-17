@@ -9,47 +9,81 @@ export default function AdministrativeBoundaries({
 }) {
   const [open, setOpen] = useState(false);
 
-  const zoomToBoundarySource = (sourceNamePart) => {
+  const ADMIN_SOURCE_IDS = {
+    rudaBoundary: "metaverse-ruda-boundary-source",
+    rudaMauzaBoundary: "metaverse-ruda-mauza-boundary-source",
+    geodeticNetwork: "metaverse-geodetic-network-source",
+    proposedRoads: "metaverse-proposed-roads-source",
+  };
+
+  const zoomToBoundarySource = (key) => {
     if (!map) return;
+
+    const sourceId = ADMIN_SOURCE_IDS[key];
+    if (!sourceId) return;
 
     const extendBounds = (bounds, coords) => {
       if (!Array.isArray(coords)) return;
-      if (typeof coords[0] === "number" && typeof coords[1] === "number") {
+
+      if (
+        coords.length >= 2 &&
+        typeof coords[0] === "number" &&
+        typeof coords[1] === "number"
+      ) {
         bounds.extend(coords);
         return;
       }
+
       coords.forEach((coord) => extendBounds(bounds, coord));
     };
 
     const tryZoom = () => {
       try {
-        const style = map.getStyle?.();
-        const sourceId = Object.keys(style?.sources || {}).find((id) =>
-          id.toLowerCase().includes(sourceNamePart),
-        );
-
-        if (!sourceId) return;
-
         const source = map.getSource(sourceId);
         const data = source?._data || source?.serialize?.()?.data;
-        if (!data?.features?.length) return;
+
+        if (!data?.features?.length) return false;
 
         const bounds = new mapboxgl.LngLatBounds();
-        data.features.forEach((feature) =>
-          extendBounds(bounds, feature.geometry?.coordinates),
-        );
 
-        if (!bounds.isEmpty()) {
-          map.fitBounds(bounds, { padding: 60, duration: 1200, maxZoom: 14 });
-        }
+        data.features.forEach((feature) => {
+          const geometry = feature.geometry;
+          if (!geometry) return;
+
+          if (geometry.type === "GeometryCollection") {
+            geometry.geometries?.forEach((geom) => {
+              extendBounds(bounds, geom.coordinates);
+            });
+            return;
+          }
+
+          extendBounds(bounds, geometry.coordinates);
+        });
+
+        if (bounds.isEmpty()) return false;
+
+        map.fitBounds(bounds, {
+          padding: 70,
+          duration: 1200,
+          maxZoom: key === "geodeticNetwork" ? 16 : 14,
+        });
+
+        return true;
       } catch (error) {
-        console.error("Boundary zoom error:", error);
+        console.error("Administrative boundary zoom error:", error);
+        return false;
       }
     };
 
-    tryZoom();
-    setTimeout(tryZoom, 350);
-    setTimeout(tryZoom, 900);
+    const zoomWhenReady = () => {
+      if (tryZoom()) return;
+      setTimeout(tryZoom, 350);
+      setTimeout(tryZoom, 900);
+      setTimeout(tryZoom, 1400);
+    };
+
+    if (map.isStyleLoaded?.()) zoomWhenReady();
+    else map.once("load", zoomWhenReady);
   };
 
   const toggleLayer = (key) => {
@@ -58,14 +92,16 @@ export default function AdministrativeBoundaries({
     setAdminBoundaryVisibility((prev) => ({
       ...prev,
       [key]: !prev[key],
+      ...(willBeVisible
+        ? {
+            _zoomTo: key,
+            _zoomToken: Date.now(),
+          }
+        : {}),
     }));
 
-    if (key === "rudaBoundary" && willBeVisible) {
-      zoomToBoundarySource("ruda-boundary");
-    }
-
-    if (key === "rudaMauzaBoundary" && willBeVisible) {
-      zoomToBoundarySource("ruda-mauza");
+    if (willBeVisible) {
+      zoomToBoundarySource(key);
     }
   };
 

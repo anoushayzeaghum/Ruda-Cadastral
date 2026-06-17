@@ -74,20 +74,14 @@ export default function MetaverseDashboard() {
   );
 
   const handleIntroComplete = useCallback(() => {
-    setMetaverseFilters({
-      ...defaultFilters,
-      projectId: "5",
-    });
+    setMetaverseFilters(defaultFilters);
 
-    setLayerVisibility((prev) => ({
+    setLayerVisibility(defaultLayerVisibility);
+
+    setAdminBoundaryVisibility((prev) => ({
       ...prev,
-      boundary: true,
-      masterPlan: true,
-      roads: true,
-
-      boundaryOpacity: prev.boundaryOpacity ?? 100,
-      masterPlanOpacity: prev.masterPlanOpacity ?? 100,
-      roadsOpacity: prev.roadsOpacity ?? 100,
+      rudaBoundary: true,
+      rudaBoundaryOpacity: prev.rudaBoundaryOpacity ?? 50,
     }));
   }, []);
 
