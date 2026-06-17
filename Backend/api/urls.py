@@ -158,6 +158,11 @@ router.register(r"wspoint-features-cb1/create", CreateWSPointView, basename="cre
 router.register(r"wspoint-features-cb1/update", UpdateWSPointView, basename="update-wspoint-features-cb1")
 router.register(r"wspoint-features-cb1/delete", DeleteWSPointView, basename="delete-wspoint-features-cb1")
 
+# ------------------------------ Project Mauza Views ------------------------------
+router.register(r"project-mauza", ListProjectMauzaView, basename="project-mauza")
+router.register(r"project-mauza/create", CreateProjectMauzaView, basename="create-project-mauza")
+router.register(r"project-mauza/delete", DeleteProjectMauzaView, basename="delete-project-mauza")
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),

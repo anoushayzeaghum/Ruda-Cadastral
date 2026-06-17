@@ -27,3 +27,5 @@ from .GISMetaverse.CameraLocationView import *
 from .GISMetaverse.SWPointView import *
 from .GISMetaverse.WSLView import *
 from .GISMetaverse.WSPointView import *
+
+from .GISMetaverse.ProjectMauzaView import *

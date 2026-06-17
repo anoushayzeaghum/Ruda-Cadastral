@@ -50,6 +50,7 @@ export default function MetaverseLeftToolbar({
   setLayerVisibility,
   adminBoundaryVisibility,
   setAdminBoundaryVisibility,
+  rebuildAllLayers,
 }) {
   const navigate = useNavigate();
   const [bottomPanel, setBottomPanel] = useState(null);
@@ -167,7 +168,12 @@ export default function MetaverseLeftToolbar({
               setAdminBoundaryVisibility={setAdminBoundaryVisibility}
             />
           )}
-
+          {activeTool === "basemaps" && (
+            <Basemaps
+              map={map}
+              rebuildAllLayers={rebuildAllLayers}
+            />
+          )}
           {activeTool === "filter" && (
             <Filter
               filters={filters}
