@@ -683,3 +683,21 @@ class WSPointSerializer(GeoFeatureModelSerializer):
             "project_id",
             "geom",
         )
+
+# --------------------------------------------------------
+# ProjectMauza Serializer
+# --------------------------------------------------------
+class ProjectMauzaSerializer(serializers.ModelSerializer):
+
+    mauza_detail = MauzaSerializer(source="mauza", read_only=True)
+
+    class Meta:
+        model = ProjectMauza
+        fields = (
+            "id",
+            "project",
+            "mauza",
+            "mauza_detail",
+        )
+
+    

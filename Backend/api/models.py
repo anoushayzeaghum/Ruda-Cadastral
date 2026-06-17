@@ -849,3 +849,32 @@ class WSPoint(models.Model):
     class Meta:
         managed = False
         db_table = "wspoint"
+
+
+# =========================
+# Project Mauza
+# =========================
+class ProjectMauza(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        db_column="project_id",
+        related_name="project_mauzas"
+    )
+
+    mauza = models.ForeignKey(
+        Mauza,
+        on_delete=models.CASCADE,
+        db_column="mauza_id",
+        related_name="mauza_projects"
+    )
+
+    class Meta:
+        db_table = "project_mauza"
+        managed = True
+        unique_together = ("project", "mauza")
+
+    def __str__(self):
+        return f"{self.project_id} - {self.mauza_id}"
