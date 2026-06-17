@@ -219,3 +219,22 @@ export const getPlotLandUseBreakdown = async (filters = {}) => {
     }))
     .sort((a, b) => b.count - a.count);
 };
+
+////////////////////// Project Mauzas //////////////////////////////
+
+export const getProjectMauzas = async (projectId) => {
+  const res = await axios.get(`${API_BASE}/project-mauza/`, {
+    params: { project_id: projectId },
+  });
+
+  return unwrapGeoJSON(res.data);
+};
+
+export const saveProjectMauzas = async (projectId, mauzaIds) => {
+  const res = await axios.post(`${API_BASE}/project-mauza/create/`, {
+    project_id: projectId,
+    mauza_ids: mauzaIds,
+  });
+
+  return res.data;
+};
