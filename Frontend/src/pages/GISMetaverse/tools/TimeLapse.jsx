@@ -9,6 +9,8 @@ import {
   SkipForward,
   Maximize2,
   Minimize2,
+  Download,
+  Loader2,
 } from "lucide-react";
 
 const BOUNDS = [
@@ -43,15 +45,48 @@ const TIMELINE = [
   },
 ];
 
-export default function TimeLapse({ map }) {
-  const miniMapRef    = useRef(null);
-  const containerRef  = useRef(null);
-  const mapLoadedRef  = useRef(false);
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-  const [current,  setCurrent]  = useState(0);
-  const [playing,  setPlaying]  = useState(false);
-  const [speed,    setSpeed]    = useState(2000);
-  const [expanded, setExpanded] = useState(false);
+/** Wait for the map to reach a fully idle (non-moving, non-rendering) state. */
+function waitIdle(mm) {
+  return new Promise((resolve) => {
+    if (!mm.isMoving() && !mm.isZooming() && !mm.isRotating()) {
+      // already idle — wait two rAF ticks for WebGL to flush
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    } else {
+      mm.once("idle", () => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }
+  });
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Read a Mapbox canvas into a regular HTMLImageElement via toDataURL.
+ *  Works even when preserveDrawingBuffer = true. */
+function canvasToImage(canvas) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    // toDataURL only works when preserveDrawingBuffer:true
+    img.src = canvas.toDataURL("image/png");
+  });
+}
+
+export default function TimeLapse({ map }) {
+  const miniMapRef   = useRef(null);
+  const containerRef = useRef(null);
+  const mapLoadedRef = useRef(false);
+  // Hidden canvas used as the MediaRecorder source
+  const recCanvasRef = useRef(null);
+
+  const [current,        setCurrent]        = useState(0);
+  const [playing,        setPlaying]        = useState(false);
+  const [speed,          setSpeed]          = useState(2000);
+  const [expanded,       setExpanded]       = useState(false);
+  const [recording,      setRecording]      = useState(false);
+  const [recordProgress, setRecordProgress] = useState(0);
+  const [recordError,    setRecordError]    = useState("");
 
   // ── Show the correct raster layer ────────────────────────────────────────
   const showLayer = useCallback((index) => {
@@ -70,7 +105,7 @@ export default function TimeLapse({ map }) {
     });
   }, []);
 
-  // ── Init mini-map ─────────────────────────────────────────────────────────
+  // ── Init mini-map (preserveDrawingBuffer: true is REQUIRED for toDataURL) ─
   useEffect(() => {
     if (!containerRef.current || miniMapRef.current) return;
 
@@ -81,8 +116,9 @@ export default function TimeLapse({ map }) {
       style: "mapbox://styles/mapbox/satellite-streets-v12",
       center: [74.43, 31.608],
       zoom: 14,
-      interactive: true,          // allow pan/zoom when expanded
+      interactive: true,
       attributionControl: false,
+      preserveDrawingBuffer: true,   // ← makes toDataURL work
     });
 
     mm.on("load", () => {
@@ -112,33 +148,19 @@ export default function TimeLapse({ map }) {
     };
   }, []);
 
-  // Trigger resize whenever the panel expands/collapses so Mapbox repaints.
-  // We use a ResizeObserver on the map container div so the resize fires
-  // exactly when the element's pixel size actually changes, not on a fixed delay.
+  // Resize mini-map when panel expands/collapses
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
-    const ro = new ResizeObserver(() => {
-      miniMapRef.current?.resize();
-    });
+    const ro = new ResizeObserver(() => miniMapRef.current?.resize());
     ro.observe(el);
-
-    // Belt-and-suspenders: also fire after a short frame delay
     const t1 = setTimeout(() => miniMapRef.current?.resize(), 50);
     const t2 = setTimeout(() => miniMapRef.current?.resize(), 200);
-
-    return () => {
-      ro.disconnect();
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    return () => { ro.disconnect(); clearTimeout(t1); clearTimeout(t2); };
   }, [expanded]);
 
   // ── Layer visibility ──────────────────────────────────────────────────────
-  useEffect(() => {
-    showLayer(current);
-  }, [current, showLayer]);
+  useEffect(() => { showLayer(current); }, [current, showLayer]);
 
   // ── Auto-play ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -153,10 +175,137 @@ export default function TimeLapse({ map }) {
   const goPrev = () => setCurrent((c) => (c - 1 + TIMELINE.length) % TIMELINE.length);
   const goNext = () => setCurrent((c) => (c + 1) % TIMELINE.length);
 
-  // ── Map height: compact vs expanded ──────────────────────────────────────
+  // ── Download as MP4 / WebM ────────────────────────────────────────────────
+  const downloadMp4 = useCallback(async () => {
+    const mm = miniMapRef.current;
+    if (!mm || !mapLoadedRef.current || recording) return;
+
+    setRecordError("");
+
+    // Check MediaRecorder support
+    if (typeof MediaRecorder === "undefined") {
+      setRecordError("MediaRecorder is not supported in this browser.");
+      return;
+    }
+
+    // Pick the best supported MIME — prefer mp4, fall back to webm
+    const mimeType =
+      ["video/mp4", "video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"]
+        .find((m) => MediaRecorder.isTypeSupported(m)) ?? "";
+
+    if (!mimeType) {
+      setRecordError("No supported video format found in this browser.");
+      return;
+    }
+
+    setRecording(true);
+    setRecordProgress(0);
+
+    try {
+      // Pause playback while recording
+      setPlaying(false);
+
+      const FPS = 10; // lower = smaller file, still smooth enough for timelapse
+      // seconds each slide is held in the video
+      const slideSecs = speed / 1000;
+      const framesPerSlide = Math.max(2, Math.round(slideSecs * FPS));
+
+      // Use a visible HTMLCanvasElement — OffscreenCanvas.captureStream is not
+      // universally supported, but HTMLCanvasElement.captureStream() is fine.
+      const recCanvas = recCanvasRef.current;
+      const mapCanvas = mm.getCanvas();
+      recCanvas.width  = mapCanvas.width;
+      recCanvas.height = mapCanvas.height;
+      const ctx = recCanvas.getContext("2d");
+
+      const stream = recCanvas.captureStream(FPS);
+      const chunks = [];
+      const recorder = new MediaRecorder(stream, {
+        mimeType,
+        videoBitsPerSecond: 6_000_000,
+      });
+      recorder.ondataavailable = (e) => { if (e.data?.size > 0) chunks.push(e.data); };
+      recorder.start(100); // collect data every 100 ms
+
+      const totalSteps = TIMELINE.length * framesPerSlide;
+      let stepsDone = 0;
+
+      for (let i = 0; i < TIMELINE.length; i++) {
+        // Switch to this layer
+        TIMELINE.forEach((item, j) => {
+          try {
+            if (mm.getLayer(item.layerId)) {
+              mm.setLayoutProperty(
+                item.layerId,
+                "visibility",
+                j === i ? "visible" : "none",
+              );
+            }
+          } catch (_) {}
+        });
+
+        // Wait for Mapbox to finish rendering this layer
+        await waitIdle(mm);
+        // Extra settle time so tile textures upload to GPU
+        await sleep(300);
+
+        // Capture one snapshot via toDataURL (needs preserveDrawingBuffer: true)
+        let frameImg;
+        try {
+          frameImg = await canvasToImage(mapCanvas);
+        } catch {
+          // If toDataURL fails for any reason, skip this frame
+          stepsDone += framesPerSlide;
+          setRecordProgress(Math.round((stepsDone / totalSteps) * 100));
+          continue;
+        }
+
+        // Paint that snapshot for `framesPerSlide` video frames
+        for (let f = 0; f < framesPerSlide; f++) {
+          ctx.drawImage(frameImg, 0, 0, recCanvas.width, recCanvas.height);
+          stepsDone++;
+          setRecordProgress(Math.round((stepsDone / totalSteps) * 100));
+          await sleep(1000 / FPS);
+        }
+      }
+
+      // Finalise
+      await new Promise((resolve) => {
+        recorder.onstop = resolve;
+        recorder.stop();
+      });
+
+      const ext = mimeType.startsWith("video/mp4") ? "mp4" : "webm";
+      const blob = new Blob(chunks, { type: mimeType });
+
+      if (blob.size === 0) {
+        setRecordError("Recording produced an empty file. Try a different browser.");
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `timelapse_chahar_bagh.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+    } catch (err) {
+      console.error("TimeLapse recording error:", err);
+      setRecordError(`Recording failed: ${err.message}`);
+    } finally {
+      showLayer(current);
+      setRecording(false);
+      setRecordProgress(0);
+    }
+  }, [recording, speed, current, showLayer]);
+
+  // ── Map height ────────────────────────────────────────────────────────────
   const mapHeight = expanded ? "500px" : "200px";
 
-  // ── Inner content (shared between inline & overlay) ───────────────────────
+  // ── Content ───────────────────────────────────────────────────────────────
   const content = (
     <div className="p-3">
       <p className="text-white/60 mb-3 text-[11px]">
@@ -259,6 +408,44 @@ export default function TimeLapse({ map }) {
         ))}
       </div>
 
+      {/* Recording progress */}
+      {recording && (
+        <div className="mt-3 px-1">
+          <div className="flex items-center justify-between mb-1 text-[10px] text-white/50">
+            <span className="flex items-center gap-1">
+              <Loader2 size={10} className="animate-spin text-[#8fd36f]" />
+              Capturing frames… please wait
+            </span>
+            <span className="text-[#8fd36f] font-bold">{recordProgress}%</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-[#2c3648] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[#8fd36f] transition-all duration-200"
+              style={{ width: `${recordProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Error */}
+      {recordError && (
+        <div className="mt-2 px-1 text-[10px] text-red-400">{recordError}</div>
+      )}
+
+      {/* Download button */}
+      <div className="mt-3 px-1">
+        <button
+          type="button"
+          onClick={downloadMp4}
+          disabled={recording}
+          className="w-full flex items-center justify-center gap-2 rounded-md border border-[#3b4558] bg-[#232b3a] px-3 py-2 text-[11px] font-semibold text-white/80 hover:bg-[#2c3648] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {recording
+            ? <><Loader2 size={13} className="animate-spin" /> Recording… {recordProgress}%</>
+            : <><Download size={13} /> Download Timelapse (.mp4)</>}
+        </button>
+      </div>
+
       {/* Date Slider */}
       <div className="mt-4 border-t border-[#343c4c] pt-3">
         <div className="text-[11px] text-white/50 mb-2 font-semibold">Slide to Date</div>
@@ -292,9 +479,12 @@ export default function TimeLapse({ map }) {
     </div>
   );
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
+      {/* Hidden canvas used purely as MediaRecorder source — never visible */}
+      <canvas ref={recCanvasRef} style={{ display: "none" }} />
+
       {/* Backdrop when expanded */}
       {expanded && (
         <div
@@ -303,7 +493,7 @@ export default function TimeLapse({ map }) {
         />
       )}
 
-      {/* Panel — inline or fixed overlay */}
+      {/* Panel */}
       <div
         className={`text-[12px] ${
           expanded
@@ -328,7 +518,20 @@ export default function TimeLapse({ map }) {
           <span>Time Lapse</span>
 
           <div className="flex items-center gap-1">
-            {/* Expand / shrink toggle */}
+            {/* Quick download icon in header */}
+            <button
+              type="button"
+              title={recording ? `Recording… ${recordProgress}%` : "Download as MP4"}
+              onClick={downloadMp4}
+              disabled={recording}
+              className="flex h-6 w-6 items-center justify-center rounded text-white/50 hover:text-white hover:bg-[#2a3548] transition disabled:cursor-not-allowed"
+            >
+              {recording
+                ? <Loader2 size={13} className="animate-spin text-[#8fd36f]" />
+                : <Download size={13} />}
+            </button>
+
+            {/* Expand / shrink */}
             <button
               type="button"
               title={expanded ? "Shrink viewer" : "Expand viewer"}
@@ -347,3 +550,4 @@ export default function TimeLapse({ map }) {
     </>
   );
 }
+

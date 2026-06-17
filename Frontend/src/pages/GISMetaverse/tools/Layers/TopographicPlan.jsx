@@ -90,7 +90,7 @@ function reprojectGeoJSON(geojson) {
   };
 }
 
-export default function TopographicPlan({ map }) {
+export default function TopographicPlan({ map, selectedProjectId }) {
   const [open, setOpen] = useState(false);
 
   const [orthoVisible, setOrthoVisible] = useState(false);
@@ -105,6 +105,16 @@ export default function TopographicPlan({ map }) {
   const [topoVisible, setTopoVisible] = useState(false);
   const [topoOpacity, setTopoOpacity] = useState(80);
   const [topoLoading, setTopoLoading] = useState(false);
+
+  // ── Lock all layers off when no project is selected ───────────────────────
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setOrthoVisible(false);
+      setDsmVisible(false);
+      setDtmVisible(false);
+      setTopoVisible(false);
+    }
+  }, [selectedProjectId]);
 
   // Cache reprojected GeoJSON so we don't re-fetch on every opacity change
   const topoDataRef = useRef(null);
@@ -352,7 +362,8 @@ export default function TopographicPlan({ map }) {
             color="#84cc16"
             checked={orthoVisible}
             opacity={orthoOpacity}
-            onCheckedChange={setOrthoVisible}
+            disabled={!selectedProjectId}
+            onCheckedChange={(v) => { if (!selectedProjectId) return; setOrthoVisible(v); }}
             onOpacityChange={setOrthoOpacity}
           />
 
@@ -373,7 +384,8 @@ export default function TopographicPlan({ map }) {
             color="#22c55e"
             checked={topoVisible}
             opacity={topoOpacity}
-            onCheckedChange={setTopoVisible}
+            disabled={!selectedProjectId}
+            onCheckedChange={(v) => { if (!selectedProjectId) return; setTopoVisible(v); }}
             onOpacityChange={setTopoOpacity}
           />
 
@@ -385,7 +397,8 @@ export default function TopographicPlan({ map }) {
             color="#ff8b24"
             checked={dsmVisible}
             opacity={dsmOpacity}
-            onCheckedChange={setDsmVisible}
+            disabled={!selectedProjectId}
+            onCheckedChange={(v) => { if (!selectedProjectId) return; setDsmVisible(v); }}
             onOpacityChange={setDsmOpacity}
           />
 
@@ -395,7 +408,8 @@ export default function TopographicPlan({ map }) {
             color="#42a5f5"
             checked={dtmVisible}
             opacity={dtmOpacity}
-            onCheckedChange={setDtmVisible}
+            disabled={!selectedProjectId}
+            onCheckedChange={(v) => { if (!selectedProjectId) return; setDtmVisible(v); }}
             onOpacityChange={setDtmOpacity}
           />
         </div>

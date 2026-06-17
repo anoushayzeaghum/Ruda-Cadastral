@@ -100,17 +100,16 @@ export default function MetaverseSubHeader({
   };
 
   return (
-    <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2">
-      <div className="flex items-center gap-1.5 rounded-lg bg-[#111827] px-2 py-1.5 shadow-xl">
+    <div className="absolute left-1/2 top-3 z-20 w-[calc(100vw-4.5rem)] max-w-[720px] -translate-x-1/2">
+      <div className="flex items-center gap-1.5 overflow-x-auto rounded-lg bg-[#111827] px-2 py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <select
           value={filters.projectId}
           onChange={(e) => updateFilter("projectId", e.target.value)}
-          className="h-8 min-w-[145px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
+          className="h-8 w-[130px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
         >
           <option value="">Projects</option>
           {projects.map((p) => (
             <option key={p.gid || p.id} value={p.gid || p.id}>
-              {" "}
               {p.brief_name || p.name}
             </option>
           ))}
@@ -120,7 +119,7 @@ export default function MetaverseSubHeader({
           value={filters.block}
           disabled={!filters.projectId}
           onChange={(e) => updateFilter("block", e.target.value)}
-          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none "
+          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
         >
           <option value="">Block No</option>
           {blocks.map((b) => (
@@ -134,7 +133,7 @@ export default function MetaverseSubHeader({
           value={filters.plotType}
           disabled={!filters.projectId}
           onChange={(e) => updateFilter("plotType", e.target.value)}
-          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none "
+          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
         >
           <option value="">Plot Type</option>
           {options.plotTypes?.map((type) => (
@@ -148,7 +147,7 @@ export default function MetaverseSubHeader({
           value={filters.plotNo}
           disabled={!filters.projectId}
           onChange={(e) => updateFilter("plotNo", e.target.value)}
-          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none "
+          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
         >
           <option value="">Plot No</option>
           {options.plotNos?.map((plotNo) => (
@@ -162,7 +161,7 @@ export default function MetaverseSubHeader({
           value={filters.area}
           disabled={!filters.projectId}
           onChange={(e) => updateFilter("area", e.target.value)}
-          className="h-8 min-w-[118px] rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none "
+          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
         >
           <option value="">Area</option>
           {options.areas?.map((area) => (
@@ -176,7 +175,7 @@ export default function MetaverseSubHeader({
           type="button"
           onClick={onCalendarClick}
           title="Calendar"
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#111827] hover:bg-[#b6bdc8]"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#111827] hover:bg-[#b6bdc8]"
         >
           <CalendarDays size={16} strokeWidth={2.4} />
         </button>
@@ -185,7 +184,7 @@ export default function MetaverseSubHeader({
           type="button"
           onClick={onReset}
           title="Reset"
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#111827] hover:bg-[#b6bdc8]"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#111827] hover:bg-[#b6bdc8]"
         >
           <RotateCcw size={16} strokeWidth={2.4} />
         </button>

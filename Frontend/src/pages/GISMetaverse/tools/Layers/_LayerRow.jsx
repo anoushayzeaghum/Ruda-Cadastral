@@ -12,17 +12,19 @@ export default function LayerRow({
   opacity,
   onCheckedChange,
   onOpacityChange,
+  disabled = false,
 }) {
   return (
-    <div className="mt-3 first:mt-1">
+    <div className={`mt-3 first:mt-1 ${disabled ? "opacity-50" : ""}`}>
       {/* Row: checkbox + swatch + label + grid icon */}
       <div className="flex items-center justify-between">
-        <label className="flex cursor-pointer items-center gap-2">
+        <label className={`flex items-center gap-2 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}>
           <input
             type="checkbox"
             checked={!!checked}
+            disabled={disabled}
             onChange={(e) => onCheckedChange?.(e.target.checked)}
-            className="accent-[#65c96b]"
+            className="accent-[#65c96b] disabled:cursor-not-allowed"
           />
           <span
             className="h-4 w-4 shrink-0 rounded-sm border-2"
@@ -41,8 +43,9 @@ export default function LayerRow({
           min="0"
           max="100"
           value={opacity ?? 100}
+          disabled={disabled}
           onChange={(e) => onOpacityChange?.(Number(e.target.value))}
-          className="h-[3px] flex-1 rounded-full accent-[#65c96b]"
+          className="h-[3px] flex-1 rounded-full accent-[#65c96b] disabled:cursor-not-allowed"
           style={{
             background: `linear-gradient(to right, ${color} ${opacity ?? 100}%, #344055 ${opacity ?? 100}%)`,
           }}
