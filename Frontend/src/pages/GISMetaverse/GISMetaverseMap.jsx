@@ -68,6 +68,9 @@ const LAYERS = {
   rudaMauzaBoundaryLabel: "metaverse-ruda-mauza-boundary-label",
   proposedRoadsLine: "metaverse-proposed-roads-line",
   geodeticNetworkCircle: "metaverse-geodetic-network-circle",
+  geodeticNetworkLabel: "metaverse-geodetic-network-label",
+  contoursLabel: "metaverse-contours-label",
+  waterSupplyLinesLabel: "metaverse-water-supply-lines-label",
   introBoundaryFill: "metaverse-intro-boundary-fill",
   introBoundaryLine: "metaverse-intro-boundary-line",
   introLabel: "metaverse-intro-label",
@@ -515,6 +518,12 @@ function applyMetaverseLayerOpacities(
     "line-opacity",
     contoursOpacity,
   );
+  setLayerPaintProperty(
+    map,
+    LAYERS.contoursLabel,
+    "text-opacity",
+    contoursOpacity,
+  );
 
   setLayerPaintProperty(
     map,
@@ -547,6 +556,12 @@ function applyMetaverseLayerOpacities(
     map,
     LAYERS.waterSupplyLinesLine,
     "line-opacity",
+    waterSupplyLinesOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.waterSupplyLinesLabel,
+    "text-opacity",
     waterSupplyLinesOpacity,
   );
 
@@ -649,6 +664,12 @@ function applyMetaverseLayerOpacities(
     map,
     LAYERS.geodeticNetworkCircle,
     "circle-stroke-opacity",
+    geodeticNetworkOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.geodeticNetworkLabel,
+    "text-opacity",
     geodeticNetworkOpacity,
   );
 }
@@ -918,6 +939,34 @@ function addContourLayer(map, data) {
       },
     });
   }
+
+  if (!map.getLayer(LAYERS.contoursLabel)) {
+    map.addLayer({
+      id: LAYERS.contoursLabel,
+      type: "symbol",
+      source: SOURCES.contours,
+      minzoom: 15,
+      layout: {
+        "symbol-placement": "line",
+        "text-field": [
+          "coalesce",
+          ["to-string", ["get", "elevation"]],
+          ["to-string", ["get", "ELEVATION"]],
+          ["to-string", ["get", "Elevation"]],
+          "",
+        ],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 15, 10, 18, 12],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+      },
+      paint: {
+        "text-color": "#3f370f",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2,
+      },
+    });
+  }
 }
 
 function addRoadLayer(map, data) {
@@ -979,7 +1028,7 @@ function addWaterSupplyPointsLayer(map, data) {
         "text-field": [
           "coalesce",
           ["to-string", ["get", "name"]],
-          ["to-string", ["get", "type"]],
+          ["to-string", ["get", "Name"]],
           "",
         ],
         "text-size": 10,
@@ -1014,6 +1063,34 @@ function addWaterSupplyLinesLayer(map, data) {
       },
     });
   }
+
+  if (!map.getLayer(LAYERS.waterSupplyLinesLabel)) {
+    map.addLayer({
+      id: LAYERS.waterSupplyLinesLabel,
+      type: "symbol",
+      source: SOURCES.waterSupplyLines,
+      minzoom: 16,
+      layout: {
+        "symbol-placement": "line",
+        "text-field": [
+          "coalesce",
+          ["to-string", ["get", "dia"]],
+          ["to-string", ["get", "DIA"]],
+          ["to-string", ["get", "Dia"]],
+          "",
+        ],
+        "text-size": 10,
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+      },
+      paint: {
+        "text-color": "#0f172a",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2,
+      },
+    });
+  }
 }
 
 function addSewagePointsLayer(map, data) {
@@ -1042,8 +1119,9 @@ function addSewagePointsLayer(map, data) {
       layout: {
         "text-field": [
           "coalesce",
-          ["to-string", ["get", "name"]],
           ["to-string", ["get", "type"]],
+          ["to-string", ["get", "TYPE"]],
+          ["to-string", ["get", "Type"]],
           "",
         ],
         "text-size": 10,
@@ -1253,6 +1331,51 @@ function addProposedRoadsLayer(map, data) {
         "line-color": ROAD_COLOR_EXPRESSION,
         "line-width": ROAD_WIDTH_EXPRESSION,
         "line-opacity": 1,
+      },
+    });
+  }
+}
+
+function addGeodeticNetworkLayer(map, data) {
+  ensureSource(map, SOURCES.geodeticNetwork, data);
+
+  if (!map.getLayer(LAYERS.geodeticNetworkCircle)) {
+    map.addLayer({
+      id: LAYERS.geodeticNetworkCircle,
+      type: "circle",
+      source: SOURCES.geodeticNetwork,
+      paint: {
+        "circle-radius": 5,
+        "circle-color": "#22c55e",
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.geodeticNetworkLabel)) {
+    map.addLayer({
+      id: LAYERS.geodeticNetworkLabel,
+      type: "symbol",
+      source: SOURCES.geodeticNetwork,
+      minzoom: 15,
+      layout: {
+        "text-field": [
+          "coalesce",
+          ["to-string", ["get", "name"]],
+          ["to-string", ["get", "Name"]],
+          "",
+        ],
+        "text-size": 10,
+        "text-offset": [0, 1.2],
+        "text-anchor": "top",
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": "#064e3b",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2,
       },
     });
   }
@@ -1804,21 +1927,7 @@ export default function GISMetaverseMap({
 
       if (adminBoundaryVisibility.geodeticNetwork) {
         const data = await getGeodeticNetworkGeoJSON();
-        ensureSource(map, SOURCES.geodeticNetwork, data);
-
-        if (!map.getLayer(LAYERS.geodeticNetworkCircle)) {
-          map.addLayer({
-            id: LAYERS.geodeticNetworkCircle,
-            type: "circle",
-            source: SOURCES.geodeticNetwork,
-            paint: {
-              "circle-radius": 5,
-              "circle-color": "#22c55e",
-              "circle-stroke-color": "#ffffff",
-              "circle-stroke-width": 1,
-            },
-          });
-        }
+        addGeodeticNetworkLayer(map, data);
       }
 
       setLayerVisibility(
@@ -1850,7 +1959,7 @@ export default function GISMetaverseMap({
 
       setLayerVisibility(
         map,
-        [LAYERS.geodeticNetworkCircle],
+        [LAYERS.geodeticNetworkCircle, LAYERS.geodeticNetworkLabel],
         adminBoundaryVisibility.geodeticNetwork,
       );
 
@@ -1893,7 +2002,7 @@ export default function GISMetaverseMap({
       layerVisibility.spotLevel,
     );
 
-    setLayerVisibility(map, [LAYERS.contoursLine], layerVisibility.contours);
+    setLayerVisibility(map, [LAYERS.contoursLine, LAYERS.contoursLabel], layerVisibility.contours);
 
     setLayerVisibility(
       map,
@@ -1909,7 +2018,7 @@ export default function GISMetaverseMap({
 
     setLayerVisibility(
       map,
-      [LAYERS.waterSupplyLinesLine],
+      [LAYERS.waterSupplyLinesLine, LAYERS.waterSupplyLinesLabel],
       layerVisibility.waterSupplyLines,
     );
 
