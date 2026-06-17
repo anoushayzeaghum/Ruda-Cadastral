@@ -1485,6 +1485,28 @@ export default function GISMetaverseMap({
         console.log("CLEARING INTRO LAYER");
         clearIntroBoundaryLayer(map);
 
+        // Show the real Administrative Boundaries RUDA layer immediately.
+        // Do not wait for the Layers panel to open. The panel checkbox is
+        // synced by onIntroComplete below.
+        const realRudaBoundary = await getRudaGeoJSON();
+        addRudaBoundaryLayer(map, realRudaBoundary);
+        setLayerVisibility(
+          map,
+          [
+            LAYERS.rudaBoundaryFill,
+            LAYERS.rudaBoundaryLine,
+            LAYERS.rudaBoundaryDashLine,
+            LAYERS.rudaBoundaryLabel,
+          ],
+          true,
+        );
+        applyMetaverseLayerOpacities(map, layerVisibility, {
+          ...adminBoundaryVisibility,
+          rudaBoundary: true,
+          rudaBoundaryOpacity:
+            adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
+        });
+
         introHasRunRef.current = true;
 
         console.log("CALLING onIntroComplete to enable RUDA boundary");
@@ -1499,6 +1521,29 @@ export default function GISMetaverseMap({
         console.log("INTRO FAILED, ENABLING RUDA BOUNDARY FALLBACK");
 
         clearIntroBoundaryLayer(map);
+
+        try {
+          const realRudaBoundary = await getRudaGeoJSON();
+          addRudaBoundaryLayer(map, realRudaBoundary);
+          setLayerVisibility(
+            map,
+            [
+              LAYERS.rudaBoundaryFill,
+              LAYERS.rudaBoundaryLine,
+              LAYERS.rudaBoundaryDashLine,
+              LAYERS.rudaBoundaryLabel,
+            ],
+            true,
+          );
+          applyMetaverseLayerOpacities(map, layerVisibility, {
+            ...adminBoundaryVisibility,
+            rudaBoundary: true,
+            rudaBoundaryOpacity:
+              adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
+          });
+        } catch (rudaError) {
+          console.error("RUDA boundary fallback load error:", rudaError);
+        }
 
         introHasRunRef.current = true;
         onIntroComplete?.();

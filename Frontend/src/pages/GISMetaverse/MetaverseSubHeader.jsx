@@ -33,38 +33,80 @@ export default function MetaverseSubHeader({
   }, []);
 
   useEffect(() => {
-    if (!filters.projectId) {
-      setBlocks([]);
-      setOptions({ plotTypes: [], plotNos: [], areas: [] });
-      return;
-    }
+    let cancelled = false;
 
-    getBlocks(filters.projectId).then(setBlocks).catch(console.error);
+    const loadBlocks = async () => {
+      if (!filters.projectId) {
+        setBlocks([]);
+        return;
+      }
 
-    getPlotOptions({ project_id: filters.projectId })
-      .then(setOptions)
-      .catch(console.error);
+      try {
+        const data = await getBlocks(filters.projectId);
+        if (!cancelled) setBlocks(data);
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setBlocks([]);
+      }
+    };
+
+    loadBlocks();
+
+    return () => {
+      cancelled = true;
+    };
   }, [filters.projectId]);
 
   useEffect(() => {
-    if (!filters.projectId) return;
+    let cancelled = false;
 
-    getPlotOptions({
-      project_id: filters.projectId,
-      block: filters.block || undefined,
-      // type: filters.plotType || undefined,
-      // plot_no: filters.plotNo || undefined,
-      // plot_area: filters.area || undefined,
-    })
-      .then(setOptions)
-      .catch(console.error);
-  }, [
-    filters.projectId,
-    filters.block,
-    // filters.plotType,
-    // filters.plotNo,
-    // filters.area,
-  ]);
+    const loadCascadingOptions = async () => {
+      if (!filters.projectId) {
+        setOptions({ plotTypes: [], plotNos: [], areas: [] });
+        return;
+      }
+
+      try {
+        // Plot Type depends on Project + Block only.
+        const plotTypeOptions = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+        });
+
+        // Plot No depends on Project + Block + Plot Type.
+        const plotNoOptions = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+          type: filters.plotType || undefined,
+        });
+
+        // Area depends on Project + Block + Plot Type + Plot No.
+        const areaOptions = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+          type: filters.plotType || undefined,
+          plot_no: filters.plotNo || undefined,
+        });
+
+        if (cancelled) return;
+
+        setOptions({
+          plotTypes: plotTypeOptions.plotTypes || [],
+          plotNos: plotNoOptions.plotNos || [],
+          areas: areaOptions.areas || [],
+        });
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setOptions({ plotTypes: [], plotNos: [], areas: [] });
+      }
+    };
+
+    loadCascadingOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters.projectId, filters.block, filters.plotType, filters.plotNo]);
 
   const updateFilter = (key, value) => {
     setFilters((prev) => {
@@ -92,6 +134,15 @@ export default function MetaverseSubHeader({
       if (key === "block") {
         next.plotType = "";
         next.plotNo = "";
+        next.area = "";
+      }
+
+      if (key === "plotType") {
+        next.plotNo = "";
+        next.area = "";
+      }
+
+      if (key === "plotNo") {
         next.area = "";
       }
 
@@ -123,7 +174,7 @@ export default function MetaverseSubHeader({
         >
           <option value="">Block No</option>
           {blocks.map((b) => (
-            <option key={b.gid} value={b.block}>
+            <option key={b.gid || b.id || b.block} value={b.block}>
               {b.block}
             </option>
           ))}
