@@ -31,8 +31,8 @@ const naturalSort = (items = [], getValue = (item) => item) =>
     });
   });
 
-const uniqueSorted = (items = []) => naturalSort([...new Set(items.filter(Boolean))]);
-
+const uniqueSorted = (items = []) =>
+  naturalSort([...new Set(items.filter(Boolean))]);
 
 export default function MetaverseSubHeader({
   filters,
@@ -52,8 +52,13 @@ export default function MetaverseSubHeader({
   useEffect(() => {
     getProjects()
       .then((data) => {
-        console.log("PROJECTS DATA:", data);
-        setProjects(naturalSort(data, (project) => project.brief_name || project.name || project.gid || project.id));
+        setProjects(
+          naturalSort(
+            data,
+            (project) =>
+              project.brief_name || project.name || project.gid || project.id,
+          ),
+        );
       })
       .catch((err) => {
         console.error("PROJECTS ERROR:", err);
@@ -71,7 +76,10 @@ export default function MetaverseSubHeader({
 
       try {
         const data = await getBlocks(filters.projectId);
-        if (!cancelled) setBlocks(naturalSort(data, (block) => block.block || block.gid || block.id));
+        if (!cancelled)
+          setBlocks(
+            naturalSort(data, (block) => block.block || block.gid || block.id),
+          );
       } catch (err) {
         console.error(err);
         if (!cancelled) setBlocks([]);
@@ -95,25 +103,25 @@ export default function MetaverseSubHeader({
       }
 
       try {
-        // Plot Type depends on Project + Block only.
-        const plotTypeOptions = await getPlotOptions({
-          project_id: filters.projectId,
-          block: filters.block || undefined,
-        });
-
-        // Plot No depends on Project + Block + Plot Type.
-        const plotNoOptions = await getPlotOptions({
-          project_id: filters.projectId,
-          block: filters.block || undefined,
-          type: filters.plotType || undefined,
-        });
-
-        // Area depends on Project + Block + Plot Type + Plot No.
+        // Area depends on Project + Block only.
         const areaOptions = await getPlotOptions({
           project_id: filters.projectId,
           block: filters.block || undefined,
+        });
+
+        // Plot Type depends on Project + Block + Area.
+        const plotTypeOptions = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+          plot_area: filters.area || undefined,
+        });
+
+        // Plot No depends on Project + Block + Area + Plot Type.
+        const plotNoOptions = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+          plot_area: filters.area || undefined,
           type: filters.plotType || undefined,
-          plot_no: filters.plotNo || undefined,
         });
 
         if (cancelled) return;
@@ -134,7 +142,7 @@ export default function MetaverseSubHeader({
     return () => {
       cancelled = true;
     };
-  }, [filters.projectId, filters.block, filters.plotType, filters.plotNo]);
+  }, [filters.projectId, filters.block, filters.area, filters.plotType]);
 
   const updateFilter = (key, value) => {
     setFilters((prev) => {
@@ -162,18 +170,18 @@ export default function MetaverseSubHeader({
       }
 
       if (key === "block") {
+        next.area = "";
         next.plotType = "";
         next.plotNo = "";
-        next.area = "";
+      }
+
+      if (key === "area") {
+        next.plotType = "";
+        next.plotNo = "";
       }
 
       if (key === "plotType") {
         next.plotNo = "";
-        next.area = "";
-      }
-
-      if (key === "plotNo") {
-        next.area = "";
       }
 
       return next;
@@ -211,6 +219,20 @@ export default function MetaverseSubHeader({
         </select>
 
         <select
+          value={filters.area}
+          disabled={!filters.projectId}
+          onChange={(e) => updateFilter("area", e.target.value)}
+          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
+        >
+          <option value="">Area</option>
+          {options.areas?.map((area) => (
+            <option key={area} value={area}>
+              {area}
+            </option>
+          ))}
+        </select>
+
+        <select
           value={filters.plotType}
           disabled={!filters.projectId}
           onChange={(e) => updateFilter("plotType", e.target.value)}
@@ -234,20 +256,6 @@ export default function MetaverseSubHeader({
           {options.plotNos?.map((plotNo) => (
             <option key={plotNo} value={plotNo}>
               {plotNo}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={filters.area}
-          disabled={!filters.projectId}
-          onChange={(e) => updateFilter("area", e.target.value)}
-          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
-        >
-          <option value="">Area</option>
-          {options.areas?.map((area) => (
-            <option key={area} value={area}>
-              {area}
             </option>
           ))}
         </select>
