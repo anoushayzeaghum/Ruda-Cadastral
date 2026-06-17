@@ -303,7 +303,7 @@ export default function TimeLapse({ map }) {
   }, [recording, speed, current, showLayer]);
 
   // ── Map height ────────────────────────────────────────────────────────────
-  const mapHeight = expanded ? "500px" : "180px";
+  const mapHeight = expanded ? "500px" : "170px";
 
   // ── Content ───────────────────────────────────────────────────────────────
   const content = (
@@ -447,7 +447,7 @@ export default function TimeLapse({ map }) {
       </div>
 
       {/* Date Slider */}
-      <div className="mt-4 border-t border-[#343c4c] pt-3">
+      {/* <div className="mt-4 border-t border-[#343c4c] pt-3">
         <div className="text-[11px] text-white/50 mb-2 font-semibold">Slide to Date</div>
         <input
           type="range"
@@ -475,7 +475,7 @@ export default function TimeLapse({ map }) {
             </span>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 
