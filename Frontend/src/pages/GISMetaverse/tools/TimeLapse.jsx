@@ -303,14 +303,14 @@ export default function TimeLapse({ map }) {
   }, [recording, speed, current, showLayer]);
 
   // ── Map height ────────────────────────────────────────────────────────────
-  const mapHeight = expanded ? "500px" : "200px";
+  const mapHeight = expanded ? "500px" : "180px";
 
   // ── Content ───────────────────────────────────────────────────────────────
   const content = (
     <div className="p-3">
       <p className="text-white/60 mb-3 text-[11px]">
-        View the construction progress of Chahar Bagh Phase 1 through drone
-        imagery captured at three different time periods.
+        View the construction captured progress through drone
+        imagery. 
       </p>
 
       {/* Mini Map */}

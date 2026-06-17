@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { ChevronRight, GripVertical, Maximize2, Minimize2, Download, Loader2 } from "lucide-react";
+import {
+  ChevronRight,
+  GripVertical,
+  Maximize2,
+  Minimize2,
+  Download,
+  Loader2,
+} from "lucide-react";
 import { jsPDF } from "jspdf";
 
 const BOUNDS = [
@@ -52,10 +59,10 @@ export default function ChangeDetection({ map }) {
   const swipeRef = useRef(null);
   const isDraggingRef = useRef(false);
 
-  const [leftIdx,   setLeftIdx]   = useState(0);
-  const [rightIdx,  setRightIdx]  = useState(2);
-  const [swipePos,  setSwipePos]  = useState(50);
-  const [expanded,  setExpanded]  = useState(false);
+  const [leftIdx, setLeftIdx] = useState(0);
+  const [rightIdx, setRightIdx] = useState(2);
+  const [swipePos, setSwipePos] = useState(50);
+  const [expanded, setExpanded] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [reportErr, setReportErr] = useState("");
 
@@ -87,7 +94,10 @@ export default function ChangeDetection({ map }) {
   const captureMapSnapshot = (mapRef, loadedRef) =>
     new Promise((resolve) => {
       const mm = mapRef.current;
-      if (!mm || !loadedRef.current) { resolve(null); return; }
+      if (!mm || !loadedRef.current) {
+        resolve(null);
+        return;
+      }
       const done = () => {
         try {
           resolve(mm.getCanvas().toDataURL("image/jpeg", 0.85));
@@ -109,14 +119,17 @@ export default function ChangeDetection({ map }) {
     setReportErr("");
 
     try {
-      const leftItem  = IMAGERY[leftIdx];
+      const leftItem = IMAGERY[leftIdx];
       const rightItem = IMAGERY[rightIdx];
-      const now       = new Date();
-      const dateStr   = now.toLocaleDateString("en-GB", {
-        year: "numeric", month: "long", day: "numeric",
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-GB", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
       const timeStr = now.toLocaleTimeString("en-GB", {
-        hour: "2-digit", minute: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
       });
 
       // Load assets in parallel
@@ -126,25 +139,29 @@ export default function ChangeDetection({ map }) {
         captureMapSnapshot(mapRightRef, mapRightLoadedRef),
       ]);
 
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const PW = doc.internal.pageSize.getWidth();   // 210
-      const PH = doc.internal.pageSize.getHeight();  // 297
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      const PW = doc.internal.pageSize.getWidth(); // 210
+      const PH = doc.internal.pageSize.getHeight(); // 297
 
       // ── Colour palette ────────────────────────────────────────────────────
-      const DARK  = [17,  24,  39];
+      const DARK = [17, 24, 39];
       const GREEN = [141, 211, 111];
-      const MID   = [32,  39,  54];
+      const MID = [32, 39, 54];
       const WHITE = [255, 255, 255];
       const MUTED = [160, 175, 200];
 
       // ── Layout constants ──────────────────────────────────────────────────
-      const MARGIN   = 10;          // left/right page margin
-      const COL_W    = PW - MARGIN * 2;   // usable width  (190 mm)
-      const LABEL_X  = MARGIN + 4;        // row label x
-      const VALUE_X  = MARGIN + 55;       // row value x  (wider gap)
-      const ROW_H    = 6.5;               // height per data row
-      const BOX_PAD  = { top: 8, bottom: 6 }; // inner padding top/bottom
-      const SEC_GAP  = 7;                 // gap between sections
+      const MARGIN = 10; // left/right page margin
+      const COL_W = PW - MARGIN * 2; // usable width  (190 mm)
+      const LABEL_X = MARGIN + 4; // row label x
+      const VALUE_X = MARGIN + 55; // row value x  (wider gap)
+      const ROW_H = 6.5; // height per data row
+      const BOX_PAD = { top: 8, bottom: 6 }; // inner padding top/bottom
+      const SEC_GAP = 7; // gap between sections
 
       // ── Helper: draw a labelled info box ─────────────────────────────────
       // rows: [[label, value], ...]
@@ -203,14 +220,18 @@ export default function ChangeDetection({ map }) {
       let curY = 42;
 
       // ── COMPARISON SUMMARY ────────────────────────────────────────────────
-      curY = drawInfoBox("COMPARISON SUMMARY", [
-        ["Project",         "Chahar Bagh Phase 1, Lahore"],
-        ["Left Image",      leftItem.label],
-        ["Right Image",     rightItem.label],
-        ["Analysis Type",   "Visual Drone Imagery Comparison"],
-        ["Swipe Position",  Math.round(swipePos) + "% from left"],
-        ["Report Date",     dateStr],
-      ], curY);
+      curY = drawInfoBox(
+        "COMPARISON SUMMARY",
+        [
+          ["Project", "Chahar Bagh Phase 1, Lahore"],
+          ["Left Image", leftItem.label],
+          ["Right Image", rightItem.label],
+          ["Analysis Type", "Visual Drone Imagery Comparison"],
+          ["Swipe Position", Math.round(swipePos) + "% from left"],
+          ["Report Date", dateStr],
+        ],
+        curY,
+      );
 
       // ── IMAGERY SNAPSHOTS HEADING ─────────────────────────────────────────
       doc.setTextColor(...GREEN);
@@ -220,9 +241,9 @@ export default function ChangeDetection({ map }) {
       curY += 10;
 
       // Two side-by-side snapshot panels
-      const panelW   = (COL_W - 4) / 2;          // width of each panel
-      const snapH    = panelW * 0.62;             // height of snapshot image
-      const panelH   = 8 + snapH;                 // total panel height (badge + image)
+      const panelW = (COL_W - 4) / 2; // width of each panel
+      const snapH = panelW * 0.62; // height of snapshot image
+      const panelH = 8 + snapH; // total panel height (badge + image)
 
       // ── Left panel ──
       doc.setFillColor(...MID);
@@ -233,20 +254,30 @@ export default function ChangeDetection({ map }) {
       doc.setTextColor(...WHITE);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.5);
-      doc.text(
-        "LEFT: " + leftItem.label,
-        MARGIN + panelW / 2, curY + 5.8,
-        { align: "center" },
-      );
+      doc.text("LEFT: " + leftItem.label, MARGIN + panelW / 2, curY + 5.8, {
+        align: "center",
+      });
 
       if (leftSnapshot) {
-        doc.addImage(leftSnapshot, "JPEG", MARGIN + 2, curY + 8, panelW - 4, snapH);
+        doc.addImage(
+          leftSnapshot,
+          "JPEG",
+          MARGIN + 2,
+          curY + 8,
+          panelW - 4,
+          snapH,
+        );
       } else {
         doc.setFillColor(25, 35, 50);
         doc.rect(MARGIN + 2, curY + 8, panelW - 4, snapH, "F");
         doc.setTextColor(...MUTED);
         doc.setFontSize(7);
-        doc.text("No snapshot available", MARGIN + panelW / 2, curY + 8 + snapH / 2, { align: "center" });
+        doc.text(
+          "No snapshot available",
+          MARGIN + panelW / 2,
+          curY + 8 + snapH / 2,
+          { align: "center" },
+        );
       }
 
       // ── Right panel ──
@@ -259,30 +290,46 @@ export default function ChangeDetection({ map }) {
       doc.setTextColor(...WHITE);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.5);
-      doc.text(
-        "RIGHT: " + rightItem.label,
-        rX + panelW / 2, curY + 5.8,
-        { align: "center" },
-      );
+      doc.text("RIGHT: " + rightItem.label, rX + panelW / 2, curY + 5.8, {
+        align: "center",
+      });
 
       if (rightSnapshot) {
-        doc.addImage(rightSnapshot, "JPEG", rX + 2, curY + 8, panelW - 4, snapH);
+        doc.addImage(
+          rightSnapshot,
+          "JPEG",
+          rX + 2,
+          curY + 8,
+          panelW - 4,
+          snapH,
+        );
       } else {
         doc.setFillColor(25, 35, 50);
         doc.rect(rX + 2, curY + 8, panelW - 4, snapH, "F");
         doc.setTextColor(...MUTED);
         doc.setFontSize(7);
-        doc.text("No snapshot available", rX + panelW / 2, curY + 8 + snapH / 2, { align: "center" });
+        doc.text(
+          "No snapshot available",
+          rX + panelW / 2,
+          curY + 8 + snapH / 2,
+          { align: "center" },
+        );
       }
 
       curY += panelH + SEC_GAP;
 
       // ── OBSERVATIONS ──────────────────────────────────────────────────────
       const obsLines = [
-        "Comparison between " + leftItem.label + " (left) and " + rightItem.label + " (right).",
+        "Comparison between " +
+          leftItem.label +
+          " (left) and " +
+          rightItem.label +
+          " (right).",
         "Visual inspection reveals changes in site development, earthwork, construction",
         "activity and vegetation coverage across the surveyed time periods.",
-        "The swipe comparison tool was positioned at " + Math.round(swipePos) + "% from the left",
+        "The swipe comparison tool was positioned at " +
+          Math.round(swipePos) +
+          "% from the left",
         "edge for a balanced side-by-side visual analysis.",
         "Further quantitative analysis (NDVI, pixel differencing) may be conducted",
         "using dedicated GIS or remote sensing software.",
@@ -312,13 +359,17 @@ export default function ChangeDetection({ map }) {
 
       // ── SITE INFORMATION ──────────────────────────────────────────────────
       // Use ASCII-safe characters: no degree symbol, no en-dash
-      curY = drawInfoBox("SITE INFORMATION", [
-        ["Site Name",   "Chahar Bagh Phase 1"],
-        ["Location",    "Lahore, Punjab, Pakistan"],
-        ["Bounds (E)",  "74.4256 E - 74.4355 E"],
-        ["Bounds (N)",  "31.6051 N - 31.6112 N"],
-        ["Data Source", "RUDA Drone Survey Programme"],
-      ], curY);
+      curY = drawInfoBox(
+        "SITE INFORMATION",
+        [
+          ["Site Name", "Chahar Bagh Phase 1"],
+          ["Location", "Lahore, Punjab, Pakistan"],
+          ["Bounds (E)", "74.4256 E - 74.4355 E"],
+          ["Bounds (N)", "31.6051 N - 31.6112 N"],
+          ["Data Source", "RUDA Drone Survey Programme"],
+        ],
+        curY,
+      );
 
       // ── FOOTER ────────────────────────────────────────────────────────────
       doc.setFillColor(...DARK);
@@ -330,19 +381,24 @@ export default function ChangeDetection({ map }) {
       doc.setFontSize(7);
       doc.text(
         "Ravi Urban Development Authority (RUDA)  |  GIS Metaverse Platform  |  Confidential",
-        PW / 2, PH - 5.5,
+        PW / 2,
+        PH - 5.5,
         { align: "center" },
       );
       doc.text("Page 1 of 1", PW - MARGIN, PH - 5.5, { align: "right" });
 
       // ── SAVE ─────────────────────────────────────────────────────────────
-      const safeName = (s) => s.replace(/\s+/g, "").replace(/[^a-zA-Z0-9_-]/g, "");
+      const safeName = (s) =>
+        s.replace(/\s+/g, "").replace(/[^a-zA-Z0-9_-]/g, "");
       doc.save(
-        "RUDA_ChangeDetection_" + safeName(leftItem.short) +
-        "_vs_" + safeName(rightItem.short) +
-        "_" + now.getFullYear() + ".pdf",
+        "RUDA_ChangeDetection_" +
+          safeName(leftItem.short) +
+          "_vs_" +
+          safeName(rightItem.short) +
+          "_" +
+          now.getFullYear() +
+          ".pdf",
       );
-
     } catch (err) {
       console.error("Report generation error:", err);
       setReportErr("Report failed: " + (err?.message || String(err)));
@@ -579,9 +635,11 @@ export default function ChangeDetection({ map }) {
               disabled={reporting}
               className="flex h-6 w-6 items-center justify-center rounded text-white/50 hover:text-white hover:bg-[#2a3548] transition disabled:cursor-not-allowed"
             >
-              {reporting
-                ? <Loader2 size={13} className="animate-spin text-[#8fd36f]" />
-                : <Download size={13} />}
+              {reporting ? (
+                <Loader2 size={13} className="animate-spin text-[#8fd36f]" />
+              ) : (
+                <Download size={13} />
+              )}
             </button>
             {/* Expand / shrink */}
             <button
@@ -598,14 +656,16 @@ export default function ChangeDetection({ map }) {
 
         <div className="p-3">
           <p className="text-white/60 mb-3 text-[11px]">
-            Compare two drone images side-by-side. Drag the swipe handle to reveal
-            changes between time periods.
+            Compare two drone images side-by-side.
+            {/* Drag the swipe handle to reveal changes between time periods. */}
           </p>
 
           {/* Left / Right selectors */}
           <div className="flex gap-2 mb-3">
             <div className="flex-1">
-              <div className="text-[10px] text-white/40 mb-1 font-semibold">LEFT IMAGE</div>
+              <div className="text-[10px] text-white/40 mb-1 font-semibold">
+                LEFT IMAGE
+              </div>
               <select
                 value={leftIdx}
                 onChange={(e) => setLeftIdx(Number(e.target.value))}
@@ -619,7 +679,9 @@ export default function ChangeDetection({ map }) {
               </select>
             </div>
             <div className="flex-1">
-              <div className="text-[10px] text-white/40 mb-1 font-semibold">RIGHT IMAGE</div>
+              <div className="text-[10px] text-white/40 mb-1 font-semibold">
+                RIGHT IMAGE
+              </div>
               <select
                 value={rightIdx}
                 onChange={(e) => setRightIdx(Number(e.target.value))}
@@ -638,10 +700,13 @@ export default function ChangeDetection({ map }) {
           <div
             ref={containerRef}
             className="relative rounded-md overflow-hidden border border-[#3b4558] mb-3 select-none transition-all duration-300"
-            style={{ height: expanded ? "480px" : "220px", width: "100%" }}
+            style={{ height: expanded ? "460px" : "200px", width: "100%" }}
           >
             {/* Map A (Left image) */}
-            <div ref={containerLeftRef} style={{ position: "absolute", inset: 0 }} />
+            <div
+              ref={containerLeftRef}
+              style={{ position: "absolute", inset: 0 }}
+            />
 
             {/* Map B (Right image) — clipped */}
             <div
@@ -705,9 +770,14 @@ export default function ChangeDetection({ map }) {
 
           {/* Swipe slider control */}
           <div className="mb-2">
-            <div className="text-[10px] text-white/40 mb-1 font-semibold">SWIPE POSITION</div>
+            <div className="text-[10px] text-white/40 mb-1 font-semibold">
+              SWIPE POSITION
+            </div>
             <input
-              type="range" min="0" max="100" value={swipePos}
+              type="range"
+              min="0"
+              max="100"
+              value={swipePos}
               onChange={(e) => setSwipePos(Number(e.target.value))}
               className="w-full h-[4px] rounded-full appearance-none cursor-pointer accent-[#8fd36f]"
               style={{
@@ -715,14 +785,20 @@ export default function ChangeDetection({ map }) {
               }}
             />
             <div className="flex justify-between text-[10px] text-white/40 mt-1">
-              <span style={{ color: IMAGERY[leftIdx].color }}>← {IMAGERY[leftIdx].short}</span>
-              <span style={{ color: IMAGERY[rightIdx].color }}>{IMAGERY[rightIdx].short} →</span>
+              <span style={{ color: IMAGERY[leftIdx].color }}>
+                ← {IMAGERY[leftIdx].short}
+              </span>
+              <span style={{ color: IMAGERY[rightIdx].color }}>
+                {IMAGERY[rightIdx].short} →
+              </span>
             </div>
           </div>
 
           {/* Error */}
           {reportErr && (
-            <div className="mb-2 text-[10px] text-red-400 px-1">{reportErr}</div>
+            <div className="mb-2 text-[10px] text-red-400 px-1">
+              {reportErr}
+            </div>
           )}
 
           {/* Download report button */}
@@ -732,9 +808,16 @@ export default function ChangeDetection({ map }) {
             disabled={reporting}
             className="w-full flex items-center justify-center gap-2 rounded-md border border-[#3b4558] bg-[#232b3a] px-3 py-2 text-[11px] font-semibold text-white/80 hover:bg-[#2c3648] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {reporting
-              ? <><Loader2 size={13} className="animate-spin" /> Generating Report…</>
-              : <><Download size={13} /> Download Change Detection Report (PDF)</>}
+            {reporting ? (
+              <>
+                <Loader2 size={13} className="animate-spin" /> Generating
+                Report…
+              </>
+            ) : (
+              <>
+                <Download size={13} /> Download Change Detection Report (PDF)
+              </>
+            )}
           </button>
         </div>
       </div>

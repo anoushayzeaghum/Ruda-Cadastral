@@ -129,15 +129,15 @@ export default function MetaverseLeftToolbar({
             sm:bottom-auto sm:left-14 sm:right-auto sm:rounded-b-md
             ${
               activeTool === "filter"
-                ? "sm:w-[320px] sm:overflow-visible"
+                ? "sm:w-[300px] sm:max-h-[400px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 : activeTool === "layers"
-                  ? "sm:w-[300px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  ? "sm:w-[300px] sm:max-h-[500px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                   : activeTool === "droneImagery"
                     ? "sm:w-[320px] sm:max-h-[calc(100vh-90px)]"
                     : activeTool === "timeLapse"
                       ? "sm:w-[360px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                       : activeTool === "changeDetection"
-                        ? "sm:w-[360px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                        ? "sm:w-[360px] sm:max-h-[500px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                         : activeTool === "import"
                           ? "sm:w-[340px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                           : activeTool === "measurement"
@@ -233,7 +233,7 @@ export default function MetaverseLeftToolbar({
           setLayerVisibility={setLayerVisibility}
         />
 
-        <SegmentMeasurement map={map} />
+        {/* <SegmentMeasurement map={map} /> */}
       </div>
     </>
   );

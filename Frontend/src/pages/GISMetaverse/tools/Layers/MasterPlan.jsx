@@ -6,7 +6,7 @@ export default function MasterPlan({
   layerVisibility,
   setLayerVisibility,
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const toggleLayer = (key) => {
     if (!selectedProjectId) return;

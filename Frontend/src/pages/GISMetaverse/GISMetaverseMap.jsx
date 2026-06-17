@@ -1256,10 +1256,10 @@ export default function GISMetaverseMap({
           fitGeoJSON(map, data);
 
           console.log(`WAITING FOR MAP MOVE ${step.label}`);
-          await waitForMapMove(map, 2200);
+          await waitForMapMove(map, 800);
 
           console.log(`STEP DONE ${step.label}`);
-          await wait(1500);
+          await wait(500);
         }
 
         if (cancelled) {
