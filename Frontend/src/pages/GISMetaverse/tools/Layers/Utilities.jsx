@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
-export default function ServiceUtilities({
+export default function Utilities({
   selectedProjectId,
   layerVisibility = {},
   setLayerVisibility,
@@ -38,7 +38,7 @@ export default function ServiceUtilities({
         className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span>SERVICES - UTILITIES</span>
+        <span>UTILITIES</span>
         {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
       </button>
 
@@ -76,16 +76,6 @@ export default function ServiceUtilities({
             opacity={layerVisibility.sewagePointsOpacity ?? 100}
             onChange={() => toggleLayer("sewagePoints")}
             onOpacityChange={(value) => updateOpacity("sewagePoints", value)}
-          />
-
-          <LayerItem
-            disabled={!selectedProjectId}
-            checked={!!layerVisibility.cameraLocations}
-            color="#f97316"
-            label="Camera Locations"
-            opacity={layerVisibility.cameraLocationsOpacity ?? 100}
-            onChange={() => toggleLayer("cameraLocations")}
-            onOpacityChange={(value) => updateOpacity("cameraLocations", value)}
           />
         </div>
       )}

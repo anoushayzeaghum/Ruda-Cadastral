@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
-export default function NotifiedBoundaries({
+export default function Services({
   selectedProjectId,
   layerVisibility = {},
   setLayerVisibility,
 }) {
   const [open, setOpen] = useState(false);
 
-  const toggleLayer = () => {
+  const toggleLayer = (key) => {
     if (!selectedProjectId) {
       alert("Please select a project first.");
       return;
@@ -18,16 +18,16 @@ export default function NotifiedBoundaries({
 
     setLayerVisibility((prev) => ({
       ...prev,
-      notifiedBoundary: !prev.notifiedBoundary,
+      [key]: !prev[key],
     }));
   };
 
-  const updateOpacity = (value) => {
+  const updateOpacity = (key, value) => {
     if (!setLayerVisibility) return;
 
     setLayerVisibility((prev) => ({
       ...prev,
-      notifiedBoundaryOpacity: value,
+      [`${key}Opacity`]: value,
     }));
   };
 
@@ -38,7 +38,7 @@ export default function NotifiedBoundaries({
         className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span>NOTIFIED BOUNDARIES</span>
+        <span>SERVICES</span>
         {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
       </button>
 
@@ -46,12 +46,12 @@ export default function NotifiedBoundaries({
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
           <LayerItem
             disabled={!selectedProjectId}
-            checked={!!layerVisibility.notifiedBoundary}
-            color="#ef4444"
-            label="Notified Boundary"
-            opacity={layerVisibility.notifiedBoundaryOpacity ?? 100}
-            onChange={toggleLayer}
-            onOpacityChange={updateOpacity}
+            checked={!!layerVisibility.cameraLocations}
+            color="#f97316"
+            label="Camera Locations"
+            opacity={layerVisibility.cameraLocationsOpacity ?? 100}
+            onChange={() => toggleLayer("cameraLocations")}
+            onOpacityChange={(value) => updateOpacity("cameraLocations", value)}
           />
         </div>
       )}

@@ -37,11 +37,15 @@ export default function MasterPlan({
     } else {
       setLayerVisibility((prev) => ({
         ...prev,
+
+        // Project selection should open ONLY the project boundary.
+        // Plot/master plan boundary and roads remain off until the user
+        // manually enables them from the layer panel.
         boundary: true,
-        masterPlan: true,
+        masterPlan: false,
         spotLevel: false,
         contours: false,
-        roads: true,
+        roads: false,
 
         boundaryOpacity: prev.boundaryOpacity ?? 100,
         masterPlanOpacity: prev.masterPlanOpacity ?? 100,

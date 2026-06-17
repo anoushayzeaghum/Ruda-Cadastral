@@ -86,11 +86,19 @@ export default function MetaverseLegend({
 
   const showRudaLegend = !!adminBoundaryVisibility.rudaBoundary;
   const showRoadLegend = !!adminBoundaryVisibility.proposedRoads;
+  const legendRudaPhases = rudaPhases?.length
+    ? rudaPhases
+    : adminBoundaryVisibility?.rudaPhases || [];
 
   const rudaLegendItems = useMemo(() => {
     const unique = new Map();
+    const selected = new Set(
+      (adminBoundaryVisibility?.selectedRudaPhaseIds || []).map((id) =>
+        String(id),
+      ),
+    );
 
-    (rudaPhases || []).forEach((phase) => {
+    (legendRudaPhases || []).forEach((phase) => {
       const id =
         phase?._ruda_phase_id ??
         phase?.gid ??
@@ -99,6 +107,8 @@ export default function MetaverseLegend({
         phase?.fid;
 
       const key = String(id ?? getRudaPhaseLabel(phase));
+
+      if (selected.size && !selected.has(key)) return;
 
       if (!unique.has(key)) {
         unique.set(key, {
@@ -110,7 +120,7 @@ export default function MetaverseLegend({
     });
 
     return [...unique.values()];
-  }, [rudaPhases]);
+  }, [legendRudaPhases, adminBoundaryVisibility?.selectedRudaPhaseIds]);
 
   return (
     <aside className="pointer-events-auto w-[310px] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">

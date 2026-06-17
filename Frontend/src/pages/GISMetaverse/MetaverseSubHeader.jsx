@@ -6,6 +6,34 @@ import {
   getProjects,
 } from "../../services/metaverseApi";
 
+const normalizeSortValue = (value) => String(value ?? "").trim();
+
+const getFirstNumber = (value) => {
+  const match = normalizeSortValue(value).match(/\d+/);
+  return match ? Number(match[0]) : null;
+};
+
+const naturalSort = (items = [], getValue = (item) => item) =>
+  [...items].sort((a, b) => {
+    const av = normalizeSortValue(getValue(a));
+    const bv = normalizeSortValue(getValue(b));
+
+    const an = getFirstNumber(av);
+    const bn = getFirstNumber(bv);
+
+    if (an !== null && bn !== null && an !== bn) return an - bn;
+    if (an !== null && bn === null) return -1;
+    if (an === null && bn !== null) return 1;
+
+    return av.localeCompare(bv, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+
+const uniqueSorted = (items = []) => naturalSort([...new Set(items.filter(Boolean))]);
+
+
 export default function MetaverseSubHeader({
   filters,
   setFilters,
@@ -25,7 +53,7 @@ export default function MetaverseSubHeader({
     getProjects()
       .then((data) => {
         console.log("PROJECTS DATA:", data);
-        setProjects(data);
+        setProjects(naturalSort(data, (project) => project.brief_name || project.name || project.gid || project.id));
       })
       .catch((err) => {
         console.error("PROJECTS ERROR:", err);
@@ -43,7 +71,7 @@ export default function MetaverseSubHeader({
 
       try {
         const data = await getBlocks(filters.projectId);
-        if (!cancelled) setBlocks(data);
+        if (!cancelled) setBlocks(naturalSort(data, (block) => block.block || block.gid || block.id));
       } catch (err) {
         console.error(err);
         if (!cancelled) setBlocks([]);
@@ -91,9 +119,9 @@ export default function MetaverseSubHeader({
         if (cancelled) return;
 
         setOptions({
-          plotTypes: plotTypeOptions.plotTypes || [],
-          plotNos: plotNoOptions.plotNos || [],
-          areas: areaOptions.areas || [],
+          plotTypes: uniqueSorted(plotTypeOptions.plotTypes || []),
+          plotNos: uniqueSorted(plotNoOptions.plotNos || []),
+          areas: uniqueSorted(areaOptions.areas || []),
         });
       } catch (err) {
         console.error(err);
@@ -118,7 +146,8 @@ export default function MetaverseSubHeader({
         next.plotNo = "";
         next.area = "";
 
-        setLayerVisibility({
+        setLayerVisibility((prev) => ({
+          ...prev,
           boundary: !!value,
           masterPlan: false,
           spotLevel: false,
@@ -128,7 +157,8 @@ export default function MetaverseSubHeader({
           waterSupplyLines: false,
           sewagePoints: false,
           cameraLocations: false,
-        });
+          notifiedBoundary: false,
+        }));
       }
 
       if (key === "block") {
