@@ -113,6 +113,7 @@ export default function MetaverseDashboard() {
       <div className="relative h-[calc(100vh-56px)] w-full">
         <GISMetaverseMap
           mapRef={mapRef}
+          isMapReady={isMapReady}
           setIsMapReady={setIsMapReady}
           filters={metaverseFilters}
           layerVisibility={layerVisibility}

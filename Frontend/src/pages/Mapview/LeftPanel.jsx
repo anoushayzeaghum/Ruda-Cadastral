@@ -310,7 +310,7 @@ export default function LeftPanel({
           }
           icon={<Layers size={18} />}
         />
-        {/* <PanelIcon
+        <PanelIcon
           title="Vector Boundaries"
           active={activePanel === "vectorBoundaries"}
           onClick={() =>
@@ -319,7 +319,7 @@ export default function LeftPanel({
             )
           }
           icon={<Map size={18} />}
-        /> */}
+        />
         <PanelIcon
           title="Toolbox"
           active={activePanel === "toolbox"}
