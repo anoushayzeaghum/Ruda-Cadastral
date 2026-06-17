@@ -17,347 +17,46 @@ import {
   getRudaProposedRoadsGeoJSON,
   getGeodeticNetworkGeoJSON,
 } from "../../services/metaverseApi";
+import {
+  SOURCES,
+  LAYERS,
+  INTRO_STEPS,
+  INTRO_CLEAR_SOURCES,
+  RUDA_MAUZA_ASSET_PATHS,
+  emptyFC,
+  fitGeoJSON,
+  wait,
+  waitForMapMove,
+  setLayerVisibility,
+  applyMetaverseLayerOpacities,
+} from "./LayerManager/MetaverseLayerConfig";
+import {
+  addIntroBoundaryLayer,
+  clearIntroBoundaryLayer,
+} from "./LayerManager/IntroBoundaryLayer";
+import {
+  addProjectBoundaryLayer,
+  addNotifiedBoundaryLayer,
+} from "./LayerManager/ProjectBoundaryLayer";
+import { addBlockLayer } from "./LayerManager/BlockLayer";
+import { addMasterPlanLayer } from "./LayerManager/MasterPlanLayer";
+import { addSpotLevelLayer } from "./LayerManager/SpotLevelLayer";
+import { addContourLayer } from "./LayerManager/ContourLayer";
+import { addRoadLayer } from "./LayerManager/RoadLayer";
+import {
+  addWaterSupplyPointsLayer,
+  addWaterSupplyLinesLayer,
+  addSewagePointsLayer,
+  addCameraLocationsLayer,
+} from "./LayerManager/UtilitiesLayer";
+import {
+  addRudaBoundaryLayer,
+  addRudaMauzaBoundaryLayer,
+  addProposedRoadsLayer,
+} from "./LayerManager/AdministrativeBoundaryLayer";
+import { addGeodeticNetworkLayer } from "./LayerManager/GeodeticLayer";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-
-const SOURCES = {
-  boundary: "metaverse-project-boundary-source",
-  block: "metaverse-block-source",
-  masterPlan: "metaverse-masterplan-source",
-  spotLevel: "metaverse-spot-level-source",
-  contours: "metaverse-contours-source",
-  roads: "metaverse-roads-source",
-  waterSupplyPoints: "metaverse-water-supply-points-source",
-  waterSupplyLines: "metaverse-water-supply-lines-source",
-  sewagePoints: "metaverse-sewage-points-source",
-  cameraLocations: "metaverse-camera-locations-source",
-  rudaBoundary: "metaverse-ruda-boundary-source",
-  rudaMauzaBoundary: "metaverse-ruda-mauza-boundary-source",
-  proposedRoads: "metaverse-proposed-roads-source",
-  geodeticNetwork: "metaverse-geodetic-network-source",
-  introBoundary: "metaverse-intro-boundary-source",
-  introLabel: "metaverse-intro-label-source",
-  notifiedBoundary: "metaverse-notified-boundary-source",
-};
-
-const LAYERS = {
-  boundaryFill: "metaverse-project-boundary-fill",
-  boundaryLine: "metaverse-project-boundary-line",
-  blockFill: "metaverse-block-fill",
-  blockLine: "metaverse-block-line",
-  masterPlanFill: "metaverse-masterplan-fill",
-  masterPlanLine: "metaverse-masterplan-line",
-  masterPlanLabel: "metaverse-masterplan-label",
-  spotLevelCircle: "metaverse-spot-level-circle",
-  contoursLine: "metaverse-contours-line",
-  roadsFill: "metaverse-roads-fill",
-  roadsLine: "metaverse-roads-line",
-  waterSupplyPointsCircle: "metaverse-water-supply-points-circle",
-  waterSupplyPointsLabel: "metaverse-water-supply-points-label",
-  waterSupplyLinesLine: "metaverse-water-supply-lines-line",
-  sewagePointsCircle: "metaverse-sewage-points-circle",
-  sewagePointsLabel: "metaverse-sewage-points-label",
-  cameraLocationsCircle: "metaverse-camera-locations-circle",
-  cameraLocationsLabel: "metaverse-camera-locations-label",
-  rudaBoundaryFill: "metaverse-ruda-boundary-fill",
-  rudaBoundaryLine: "metaverse-ruda-boundary-line",
-  rudaBoundaryDashLine: "metaverse-ruda-boundary-dash-line",
-  rudaBoundaryLabel: "metaverse-ruda-boundary-label",
-  rudaMauzaBoundaryFill: "metaverse-ruda-mauza-boundary-fill",
-  rudaMauzaBoundaryLine: "metaverse-ruda-mauza-boundary-line",
-  rudaMauzaBoundaryLabel: "metaverse-ruda-mauza-boundary-label",
-  proposedRoadsLine: "metaverse-proposed-roads-line",
-  geodeticNetworkCircle: "metaverse-geodetic-network-circle",
-  geodeticNetworkLabel: "metaverse-geodetic-network-label",
-  contoursLabel: "metaverse-contours-label",
-  waterSupplyLinesLabel: "metaverse-water-supply-lines-label",
-  introBoundaryFill: "metaverse-intro-boundary-fill",
-  introBoundaryLine: "metaverse-intro-boundary-line",
-  introLabel: "metaverse-intro-label",
-  // NEW: Hover highlight layer
-  masterPlanHover: "metaverse-masterplan-hover",
-  notifiedBoundaryLine: "metaverse-notified-boundary-line",
-};
-
-const INTRO_STEPS = [
-  {
-    label: "Pakistan",
-    assetPaths: ["/Pakistan.geojson"],
-  },
-  {
-    label: "Punjab",
-    assetPaths: ["/Punjab.geojson"],
-  },
-  {
-    label: "RUDA",
-    assetPaths: ["/Ruda.geojson"],
-  },
-];
-
-const INTRO_CLEAR_SOURCES = [
-  SOURCES.boundary,
-  SOURCES.block,
-  SOURCES.masterPlan,
-  SOURCES.spotLevel,
-  SOURCES.contours,
-  SOURCES.roads,
-  SOURCES.waterSupplyPoints,
-  SOURCES.waterSupplyLines,
-  SOURCES.sewagePoints,
-  SOURCES.cameraLocations,
-  SOURCES.rudaBoundary,
-  SOURCES.rudaMauzaBoundary,
-  SOURCES.proposedRoads,
-  SOURCES.geodeticNetwork,
-  SOURCES.notifiedBoundary,
-];
-
-const emptyFC = { type: "FeatureCollection", features: [] };
-
-const ROAD_LEGEND_ITEMS = [
-  { label: "Primary Roads (300'-Wide)", color: "#c92020", width: 2 },
-  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 3 },
-  { label: "Tertiary Roads", color: "#ff9800", width: 3 },
-  { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
-  { label: "Uti Walk Cycle", color: "#8bc34a", width: 2 },
-  { label: "Bridge", color: "#75008a", width: 5 },
-  { label: "300' CL", color: "#9b2400", width: 2 },
-  { label: "300' ROW", color: "#00bcd4", width: 2.5 },
-];
-
-const ROAD_COLOR_EXPRESSION = [
-  "match",
-  ["get", "layer"],
-  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.color]),
-  "#555555",
-];
-
-const ROAD_WIDTH_EXPRESSION = [
-  "match",
-  ["get", "layer"],
-  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.width]),
-  2.5,
-];
-
-const RUDA_PHASE_COLORS = [
-  "#6bb7e8",
-  "#f8d56b",
-  "#6bd69a",
-  "#f59e72",
-  "#b99cf3",
-  "#78d6d0",
-  "#f3a6c8",
-  "#a7d77b",
-  "#f4b860",
-  "#86a8e7",
-  "#d7b377",
-  "#8dd3c7",
-];
-
-const hashString = (value = "") => {
-  const text = String(value || "");
-  let hash = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-};
-
-const stripHtml = (value = "") =>
-  String(value || "")
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-const getRudaPhaseColor = (phaseId) => {
-  const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
-  return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
-};
-
-const getRudaFeatureId = (feature = {}) => {
-  const props = feature?.properties || {};
-  return (
-    props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid ?? "ruda"
-  );
-};
-
-const getRudaPhaseLabel = (props = {}, phaseId = "") => {
-  const candidates = [
-    props.phase,
-    props.phase_name,
-    props.name,
-    props.folderpath,
-    props.popupinfo,
-    props.snippet,
-  ];
-
-  for (const value of candidates) {
-    const clean = stripHtml(value);
-    if (!clean) continue;
-
-    const phaseMatch = clean.match(/phase\s*[-_:]?\s*([a-z0-9]+)/i);
-    if (phaseMatch?.[1]) return `Phase ${phaseMatch[1]}`;
-
-    if (clean.length <= 28) return clean;
-    return clean.slice(0, 28);
-  }
-
-  return phaseId ? `Phase ${phaseId}` : "RUDA Phase";
-};
-
-const prepareRudaGeoJSONForDisplay = (geojson = emptyFC) => ({
-  type: "FeatureCollection",
-  features: (geojson?.features || []).map((feature) => {
-    const props = feature?.properties || {};
-    const phaseId = getRudaFeatureId(feature);
-
-    return {
-      ...feature,
-      properties: {
-        ...props,
-        _ruda_phase_id: phaseId,
-        _ruda_phase_color: getRudaPhaseColor(phaseId),
-        _ruda_phase_label: getRudaPhaseLabel(props, phaseId),
-      },
-    };
-  }),
-});
-
-const normalizeRoadLayerName = (value) => String(value ?? "").trim();
-
-const prepareProposedRoadsGeoJSONForDisplay = (geojson = emptyFC) => ({
-  type: "FeatureCollection",
-  features: (geojson?.features || []).map((feature) => ({
-    ...feature,
-    properties: {
-      ...(feature?.properties || {}),
-      layer: normalizeRoadLayerName(feature?.properties?.layer),
-    },
-  })),
-});
-
-function fitGeoJSON(map, geojson) {
-  if (!geojson?.features?.length) return;
-
-  const bounds = new mapboxgl.LngLatBounds();
-
-  geojson.features.forEach((feature) => {
-    const geom = feature.geometry;
-    if (!geom) return;
-
-    const addCoord = (coord) => {
-      if (Array.isArray(coord) && coord.length >= 2) bounds.extend(coord);
-    };
-
-    if (geom.type === "Point") addCoord(geom.coordinates);
-    if (geom.type === "MultiPoint") geom.coordinates.forEach(addCoord);
-    if (geom.type === "LineString") geom.coordinates.forEach(addCoord);
-    if (geom.type === "MultiLineString")
-      geom.coordinates.flat(1).forEach(addCoord);
-    if (geom.type === "Polygon") geom.coordinates.flat(1).forEach(addCoord);
-    if (geom.type === "MultiPolygon")
-      geom.coordinates.flat(2).forEach(addCoord);
-  });
-
-  if (!bounds.isEmpty()) {
-    map.fitBounds(bounds, {
-      padding: 80,
-      duration: 900,
-      maxZoom: 17,
-    });
-  }
-}
-
-function normalizeGeometryCollections(data) {
-  if (!data?.features?.length) return data || emptyFC;
-
-  return {
-    ...data,
-    features: data.features.map((feature) => {
-      if (feature.geometry?.type !== "GeometryCollection") return feature;
-
-      const geometry = feature.geometry.geometries?.find((geom) =>
-        [
-          "Point",
-          "MultiPoint",
-          "LineString",
-          "MultiLineString",
-          "Polygon",
-          "MultiPolygon",
-        ].includes(geom.type),
-      );
-
-      return geometry ? { ...feature, geometry } : feature;
-    }),
-  };
-}
-
-function wait(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
-
-function waitForMapMove(map, fallbackMs = 1200) {
-  return new Promise((resolve) => {
-    let done = false;
-
-    const finish = () => {
-      if (done) return;
-      done = true;
-      resolve();
-    };
-
-    map.once("moveend", finish);
-    window.setTimeout(finish, fallbackMs);
-  });
-}
-
-function getGeoJSONCenter(geojson) {
-  if (!geojson?.features?.length) return [69.3451, 30.3753];
-
-  const bounds = new mapboxgl.LngLatBounds();
-
-  geojson.features.forEach((feature) => {
-    const geom = feature.geometry;
-    if (!geom) return;
-
-    const addCoord = (coord) => {
-      if (Array.isArray(coord) && coord.length >= 2) bounds.extend(coord);
-    };
-
-    if (geom.type === "Point") addCoord(geom.coordinates);
-    if (geom.type === "MultiPoint") geom.coordinates.forEach(addCoord);
-    if (geom.type === "LineString") geom.coordinates.forEach(addCoord);
-    if (geom.type === "MultiLineString")
-      geom.coordinates.flat(1).forEach(addCoord);
-    if (geom.type === "Polygon") geom.coordinates.flat(1).forEach(addCoord);
-    if (geom.type === "MultiPolygon")
-      geom.coordinates.flat(2).forEach(addCoord);
-  });
-
-  if (bounds.isEmpty()) return [69.3451, 30.3753];
-
-  const center = bounds.getCenter();
-  return [center.lng, center.lat];
-}
-
-function makeLabelGeoJSON(label, geojson) {
-  return {
-    type: "FeatureCollection",
-    features: [
-      {
-        type: "Feature",
-        properties: { label },
-        geometry: {
-          type: "Point",
-          coordinates: getGeoJSONCenter(geojson),
-        },
-      },
-    ],
-  };
-}
-
-const RUDA_MAUZA_ASSET_PATHS = ["/RUDA_Mauza.geojson", "/RUDA_Mauza.geosjon"];
 
 async function loadAssetGeoJSON(paths = []) {
   const candidates = Array.isArray(paths) ? paths : [paths];
@@ -376,1051 +75,11 @@ async function loadAssetGeoJSON(paths = []) {
       return data;
     } catch (err) {
       lastError = err;
-      console.warn(`Intro GeoJSON failed from ${path}:`, err);
     }
   }
 
   throw lastError || new Error("Intro GeoJSON could not be loaded");
 }
-
-function ensureSource(map, sourceId, data = emptyFC) {
-  if (!map.getSource(sourceId)) {
-    map.addSource(sourceId, {
-      type: "geojson",
-      data,
-    });
-  } else {
-    map.getSource(sourceId).setData(data);
-  }
-}
-
-function setLayerVisibility(map, layerIds, visible) {
-  layerIds.forEach((id) => {
-    if (map.getLayer(id)) {
-      map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
-    }
-  });
-}
-
-function setLayerPaintProperty(map, layerId, property, value) {
-  if (map.getLayer(layerId)) {
-    map.setPaintProperty(layerId, property, value);
-  }
-}
-
-function applyMetaverseLayerOpacities(
-  map,
-  layerVisibility = {},
-  adminBoundaryVisibility = {},
-) {
-  const getOpacity = (source, key, fallback = 100) =>
-    Number(source?.[key] ?? fallback) / 100;
-
-  const boundaryOpacity = getOpacity(layerVisibility, "boundaryOpacity");
-  const masterPlanOpacity = getOpacity(layerVisibility, "masterPlanOpacity");
-  const spotLevelOpacity = getOpacity(layerVisibility, "spotLevelOpacity");
-  const contoursOpacity = getOpacity(layerVisibility, "contoursOpacity");
-  const roadsOpacity = getOpacity(layerVisibility, "roadsOpacity");
-  const notifiedBoundaryOpacity = getOpacity(
-    layerVisibility,
-    "notifiedBoundaryOpacity",
-  );
-
-  const waterSupplyPointsOpacity = getOpacity(
-    layerVisibility,
-    "waterSupplyPointsOpacity",
-  );
-  const waterSupplyLinesOpacity = getOpacity(
-    layerVisibility,
-    "waterSupplyLinesOpacity",
-  );
-  const sewagePointsOpacity = getOpacity(
-    layerVisibility,
-    "sewagePointsOpacity",
-  );
-  const cameraLocationsOpacity = getOpacity(
-    layerVisibility,
-    "cameraLocationsOpacity",
-  );
-
-  const rudaBoundaryOpacity = getOpacity(
-    adminBoundaryVisibility,
-    "rudaBoundaryOpacity",
-  );
-  const rudaMauzaBoundaryOpacity = getOpacity(
-    adminBoundaryVisibility,
-    "rudaMauzaBoundaryOpacity",
-  );
-  const geodeticNetworkOpacity = getOpacity(
-    adminBoundaryVisibility,
-    "geodeticNetworkOpacity",
-  );
-  const proposedRoadsOpacity = getOpacity(
-    adminBoundaryVisibility,
-    "proposedRoadsOpacity",
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.boundaryFill,
-    "fill-opacity",
-    0.12 * boundaryOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.boundaryLine,
-    "line-opacity",
-    boundaryOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.notifiedBoundaryLine,
-    "line-opacity",
-    notifiedBoundaryOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.masterPlanFill,
-    "fill-opacity",
-    0.45 * masterPlanOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.masterPlanLine,
-    "line-opacity",
-    masterPlanOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.masterPlanLabel,
-    "text-opacity",
-    masterPlanOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.spotLevelCircle,
-    "circle-opacity",
-    spotLevelOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.spotLevelCircle,
-    "circle-stroke-opacity",
-    spotLevelOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.contoursLine,
-    "line-opacity",
-    contoursOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.contoursLabel,
-    "text-opacity",
-    contoursOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.roadsFill,
-    "fill-opacity",
-    0.35 * roadsOpacity,
-  );
-  setLayerPaintProperty(map, LAYERS.roadsLine, "line-opacity", roadsOpacity);
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.waterSupplyPointsCircle,
-    "circle-opacity",
-    waterSupplyPointsOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.waterSupplyPointsCircle,
-    "circle-stroke-opacity",
-    waterSupplyPointsOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.waterSupplyPointsLabel,
-    "text-opacity",
-    waterSupplyPointsOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.waterSupplyLinesLine,
-    "line-opacity",
-    waterSupplyLinesOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.waterSupplyLinesLabel,
-    "text-opacity",
-    waterSupplyLinesOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.sewagePointsCircle,
-    "circle-opacity",
-    sewagePointsOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.sewagePointsCircle,
-    "circle-stroke-opacity",
-    sewagePointsOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.sewagePointsLabel,
-    "text-opacity",
-    sewagePointsOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.cameraLocationsCircle,
-    "circle-opacity",
-    cameraLocationsOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.cameraLocationsCircle,
-    "circle-stroke-opacity",
-    cameraLocationsOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.cameraLocationsLabel,
-    "text-opacity",
-    cameraLocationsOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.rudaBoundaryFill,
-    "fill-opacity",
-    0.5 * rudaBoundaryOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.rudaBoundaryLine,
-    "line-opacity",
-    0.95 * rudaBoundaryOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.rudaBoundaryDashLine,
-    "line-opacity",
-    0.9 * rudaBoundaryOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.rudaBoundaryLabel,
-    "text-opacity",
-    rudaBoundaryOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.rudaMauzaBoundaryFill,
-    "fill-opacity",
-    0.12 * rudaMauzaBoundaryOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.rudaMauzaBoundaryLine,
-    "line-opacity",
-    rudaMauzaBoundaryOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.rudaMauzaBoundaryLabel,
-    "text-opacity",
-    rudaMauzaBoundaryOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.proposedRoadsLine,
-    "line-opacity",
-    proposedRoadsOpacity,
-  );
-
-  setLayerPaintProperty(
-    map,
-    LAYERS.geodeticNetworkCircle,
-    "circle-opacity",
-    geodeticNetworkOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.geodeticNetworkCircle,
-    "circle-stroke-opacity",
-    geodeticNetworkOpacity,
-  );
-  setLayerPaintProperty(
-    map,
-    LAYERS.geodeticNetworkLabel,
-    "text-opacity",
-    geodeticNetworkOpacity,
-  );
-}
-
-function addIntroBoundaryLayer(map, data, label) {
-  ensureSource(map, SOURCES.introBoundary, data);
-  ensureSource(map, SOURCES.introLabel, makeLabelGeoJSON(label, data));
-
-  if (!map.getLayer(LAYERS.introBoundaryFill)) {
-    map.addLayer({
-      id: LAYERS.introBoundaryFill,
-      type: "fill",
-      source: SOURCES.introBoundary,
-      paint: {
-        "fill-color": "#16a34a",
-        "fill-opacity": 0.12,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.introBoundaryLine)) {
-    map.addLayer({
-      id: LAYERS.introBoundaryLine,
-      type: "line",
-      source: SOURCES.introBoundary,
-      paint: {
-        "line-color": "#16a34a",
-        "line-width": 3,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.introLabel)) {
-    map.addLayer({
-      id: LAYERS.introLabel,
-      type: "symbol",
-      source: SOURCES.introLabel,
-      layout: {
-        "text-field": ["get", "label"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 4, 18, 10, 30],
-        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": true,
-        "text-ignore-placement": true,
-      },
-      paint: {
-        "text-color": "#111827",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 2,
-      },
-    });
-  }
-
-  setLayerVisibility(
-    map,
-    [LAYERS.introBoundaryFill, LAYERS.introBoundaryLine, LAYERS.introLabel],
-    true,
-  );
-}
-
-function clearIntroBoundaryLayer(map) {
-  if (map.getSource(SOURCES.introBoundary)) {
-    map.getSource(SOURCES.introBoundary).setData(emptyFC);
-  }
-  if (map.getSource(SOURCES.introLabel)) {
-    map.getSource(SOURCES.introLabel).setData(emptyFC);
-  }
-
-  setLayerVisibility(
-    map,
-    [LAYERS.introBoundaryFill, LAYERS.introBoundaryLine, LAYERS.introLabel],
-    false,
-  );
-}
-
-function addProjectBoundaryLayer(map, data) {
-  ensureSource(map, SOURCES.boundary, data);
-
-  if (!map.getLayer(LAYERS.boundaryFill)) {
-    map.addLayer({
-      id: LAYERS.boundaryFill,
-      type: "fill",
-      source: SOURCES.boundary,
-      paint: {
-        "fill-color": "#ff8b24",
-        "fill-opacity": 0.12,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.boundaryLine)) {
-    map.addLayer({
-      id: LAYERS.boundaryLine,
-      type: "line",
-      source: SOURCES.boundary,
-      paint: {
-        "line-color": "#ff8b24",
-        "line-width": 3,
-      },
-    });
-  }
-}
-
-function addNotifiedBoundaryLayer(map, data) {
-  ensureSource(map, SOURCES.notifiedBoundary, data);
-
-  if (!map.getLayer(LAYERS.notifiedBoundaryLine)) {
-    map.addLayer({
-      id: LAYERS.notifiedBoundaryLine,
-      type: "line",
-      source: SOURCES.notifiedBoundary,
-      paint: {
-        "line-color": "#ef4444",
-        "line-width": 5,
-        "line-opacity": 1,
-      },
-      layout: {
-        visibility: "none",
-      },
-    });
-  }
-}
-
-function addBlockLayer(map, data) {
-  ensureSource(map, SOURCES.block, data);
-
-  if (!map.getLayer(LAYERS.blockFill)) {
-    map.addLayer({
-      id: LAYERS.blockFill,
-      type: "fill",
-      source: SOURCES.block,
-      paint: {
-        "fill-color": "#7c3aed",
-        "fill-opacity": 0.18,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.blockLine)) {
-    map.addLayer({
-      id: LAYERS.blockLine,
-      type: "line",
-      source: SOURCES.block,
-      paint: {
-        "line-color": "#7c3aed",
-        "line-width": 2.5,
-      },
-    });
-  }
-}
-
-function addMasterPlanLayer(map, data) {
-  ensureSource(map, SOURCES.masterPlan, data);
-
-  if (!map.getLayer(LAYERS.masterPlanFill)) {
-    map.addLayer({
-      id: LAYERS.masterPlanFill,
-      type: "fill",
-      source: SOURCES.masterPlan,
-      paint: {
-        "fill-color": [
-          "match",
-          ["get", "type"],
-          "Residential",
-          "#2563eb",
-          "Commercial",
-          "#facc15",
-          "Park",
-          "#15803d",
-          "Road",
-          "#ef4444",
-          "#9ca3af",
-        ],
-        "fill-opacity": 0.45,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.masterPlanLine)) {
-    map.addLayer({
-      id: LAYERS.masterPlanLine,
-      type: "line",
-      source: SOURCES.masterPlan,
-      paint: {
-        "line-color": "#111827",
-        "line-width": 1,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.masterPlanLabel)) {
-    map.addLayer({
-      id: LAYERS.masterPlanLabel,
-      type: "symbol",
-      source: SOURCES.masterPlan,
-      minzoom: 16,
-      layout: {
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "plot_no"]],
-          ["to-string", ["get", "name"]],
-          "",
-        ],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 16, 10, 18, 13],
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": false,
-        "text-ignore-placement": false,
-      },
-      paint: {
-        "text-color": "#111827",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.5,
-      },
-    });
-  }
-
-  // Highlight layer — rendered on top of fill/line so the selection outline
-  // is always visible. The filter uses ["to-string", ["get", "gid"]] so it
-  // exactly matches the expression that PlotPopup sets at runtime.
-  // Starts hidden (line-opacity: 0) and matching nothing (__none__).
-  if (!map.getLayer(LAYERS.masterPlanHover)) {
-    map.addLayer({
-      id: LAYERS.masterPlanHover,
-      type: "line",
-      source: SOURCES.masterPlan,
-      paint: {
-        "line-color": "#ffffff",
-        "line-width": 4,
-        "line-opacity": 0,
-      },
-      // Use the same expression type that PlotPopup will set dynamically.
-      // A plain string comparison ["==", ["get", "gid"], ""] would type-mismatch
-      // when gid is a number, so we cast both sides to string.
-      filter: ["==", ["to-string", ["get", "gid"]], "__none__"],
-    });
-  }
-}
-
-function addSpotLevelLayer(map, data) {
-  ensureSource(map, SOURCES.spotLevel, data);
-
-  if (!map.getLayer(LAYERS.spotLevelCircle)) {
-    map.addLayer({
-      id: LAYERS.spotLevelCircle,
-      type: "circle",
-      source: SOURCES.spotLevel,
-      paint: {
-        "circle-radius": 4,
-        "circle-color": "#65c96b",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1,
-      },
-    });
-  }
-}
-
-function addContourLayer(map, data) {
-  ensureSource(map, SOURCES.contours, data);
-
-  if (!map.getLayer(LAYERS.contoursLine)) {
-    map.addLayer({
-      id: LAYERS.contoursLine,
-      type: "line",
-      source: SOURCES.contours,
-      paint: {
-        "line-color": "#615514",
-        "line-width": 1.5,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.contoursLabel)) {
-    map.addLayer({
-      id: LAYERS.contoursLabel,
-      type: "symbol",
-      source: SOURCES.contours,
-      minzoom: 15,
-      layout: {
-        "symbol-placement": "line",
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "elevation"]],
-          ["to-string", ["get", "ELEVATION"]],
-          ["to-string", ["get", "Elevation"]],
-          "",
-        ],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 15, 10, 18, 12],
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": false,
-        "text-ignore-placement": false,
-      },
-      paint: {
-        "text-color": "#3f370f",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-      },
-    });
-  }
-}
-
-function addRoadLayer(map, data) {
-  ensureSource(map, SOURCES.roads, data);
-
-  if (!map.getLayer(LAYERS.roadsFill)) {
-    map.addLayer({
-      id: LAYERS.roadsFill,
-      type: "fill",
-      source: SOURCES.roads,
-      paint: {
-        "fill-color": "#d01f1f",
-        "fill-opacity": 0.35,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.roadsLine)) {
-    map.addLayer({
-      id: LAYERS.roadsLine,
-      type: "line",
-      source: SOURCES.roads,
-      paint: {
-        "line-color": "#991b1b",
-        "line-width": 1.5,
-      },
-    });
-  }
-}
-
-function addWaterSupplyPointsLayer(map, data) {
-  ensureSource(
-    map,
-    SOURCES.waterSupplyPoints,
-    normalizeGeometryCollections(data),
-  );
-
-  if (!map.getLayer(LAYERS.waterSupplyPointsCircle)) {
-    map.addLayer({
-      id: LAYERS.waterSupplyPointsCircle,
-      type: "circle",
-      source: SOURCES.waterSupplyPoints,
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 4, 18, 7],
-        "circle-color": "#42a5f5",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.5,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.waterSupplyPointsLabel)) {
-    map.addLayer({
-      id: LAYERS.waterSupplyPointsLabel,
-      type: "symbol",
-      source: SOURCES.waterSupplyPoints,
-      minzoom: 16,
-      layout: {
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "name"]],
-          ["to-string", ["get", "Name"]],
-          "",
-        ],
-        "text-size": 10,
-        "text-offset": [0, 1.2],
-        "text-anchor": "top",
-        "text-allow-overlap": false,
-      },
-      paint: {
-        "text-color": "#0f172a",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-      },
-    });
-  }
-}
-
-function addWaterSupplyLinesLayer(map, data) {
-  ensureSource(
-    map,
-    SOURCES.waterSupplyLines,
-    normalizeGeometryCollections(data),
-  );
-
-  if (!map.getLayer(LAYERS.waterSupplyLinesLine)) {
-    map.addLayer({
-      id: LAYERS.waterSupplyLinesLine,
-      type: "line",
-      source: SOURCES.waterSupplyLines,
-      paint: {
-        "line-color": "#00386a",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 10, 2, 18, 4],
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.waterSupplyLinesLabel)) {
-    map.addLayer({
-      id: LAYERS.waterSupplyLinesLabel,
-      type: "symbol",
-      source: SOURCES.waterSupplyLines,
-      minzoom: 16,
-      layout: {
-        "symbol-placement": "line",
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "dia"]],
-          ["to-string", ["get", "DIA"]],
-          ["to-string", ["get", "Dia"]],
-          "",
-        ],
-        "text-size": 10,
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": false,
-        "text-ignore-placement": false,
-      },
-      paint: {
-        "text-color": "#0f172a",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-      },
-    });
-  }
-}
-
-function addSewagePointsLayer(map, data) {
-  ensureSource(map, SOURCES.sewagePoints, normalizeGeometryCollections(data));
-
-  if (!map.getLayer(LAYERS.sewagePointsCircle)) {
-    map.addLayer({
-      id: LAYERS.sewagePointsCircle,
-      type: "circle",
-      source: SOURCES.sewagePoints,
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 4, 18, 7],
-        "circle-color": "#8e44ad",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.5,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.sewagePointsLabel)) {
-    map.addLayer({
-      id: LAYERS.sewagePointsLabel,
-      type: "symbol",
-      source: SOURCES.sewagePoints,
-      minzoom: 16,
-      layout: {
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "type"]],
-          ["to-string", ["get", "TYPE"]],
-          ["to-string", ["get", "Type"]],
-          "",
-        ],
-        "text-size": 10,
-        "text-offset": [0, 1.2],
-        "text-anchor": "top",
-        "text-allow-overlap": false,
-      },
-      paint: {
-        "text-color": "#0f172a",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-      },
-    });
-  }
-}
-
-function addCameraLocationsLayer(map, data) {
-  ensureSource(
-    map,
-    SOURCES.cameraLocations,
-    normalizeGeometryCollections(data),
-  );
-
-  if (!map.getLayer(LAYERS.cameraLocationsCircle)) {
-    map.addLayer({
-      id: LAYERS.cameraLocationsCircle,
-      type: "circle",
-      source: SOURCES.cameraLocations,
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 5, 18, 8],
-        "circle-color": "#f97316",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.5,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.cameraLocationsLabel)) {
-    map.addLayer({
-      id: LAYERS.cameraLocationsLabel,
-      type: "symbol",
-      source: SOURCES.cameraLocations,
-      minzoom: 15,
-      layout: {
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "camera"]],
-          ["to-string", ["get", "name"]],
-          "",
-        ],
-        "text-size": 10,
-        "text-offset": [0, 1.2],
-        "text-anchor": "top",
-        "text-allow-overlap": false,
-      },
-      paint: {
-        "text-color": "#0f172a",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-      },
-    });
-  }
-}
-
-function addRudaBoundaryLayer(map, data) {
-  ensureSource(map, SOURCES.rudaBoundary, prepareRudaGeoJSONForDisplay(data));
-
-  if (!map.getLayer(LAYERS.rudaBoundaryFill)) {
-    map.addLayer({
-      id: LAYERS.rudaBoundaryFill,
-      type: "fill",
-      source: SOURCES.rudaBoundary,
-      paint: {
-        "fill-color": ["coalesce", ["get", "_ruda_phase_color"], "#3d7cc4"],
-        "fill-opacity": 0.5,
-        "fill-outline-color": "#1f2937",
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.rudaBoundaryLine)) {
-    map.addLayer({
-      id: LAYERS.rudaBoundaryLine,
-      type: "line",
-      source: SOURCES.rudaBoundary,
-      paint: {
-        "line-color": "#111827",
-        "line-width": 2,
-        "line-opacity": 0.95,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.rudaBoundaryDashLine)) {
-    map.addLayer({
-      id: LAYERS.rudaBoundaryDashLine,
-      type: "line",
-      source: SOURCES.rudaBoundary,
-      paint: {
-        "line-color": "#111827",
-        "line-width": 1.2,
-        "line-dasharray": [1.4, 1.2],
-        "line-opacity": 0.9,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.rudaBoundaryLabel)) {
-    map.addLayer({
-      id: LAYERS.rudaBoundaryLabel,
-      type: "symbol",
-      source: SOURCES.rudaBoundary,
-      layout: {
-        "text-field": ["coalesce", ["get", "_ruda_phase_label"], "RUDA Phase"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 10, 10, 15, 13],
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": false,
-        "text-ignore-placement": false,
-      },
-      paint: {
-        "text-color": "#111827",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.4,
-      },
-    });
-  }
-}
-
-function addRudaMauzaBoundaryLayer(map, data) {
-  ensureSource(
-    map,
-    SOURCES.rudaMauzaBoundary,
-    normalizeGeometryCollections(data),
-  );
-
-  if (!map.getLayer(LAYERS.rudaMauzaBoundaryFill)) {
-    map.addLayer({
-      id: LAYERS.rudaMauzaBoundaryFill,
-      type: "fill",
-      source: SOURCES.rudaMauzaBoundary,
-      paint: {
-        "fill-color": "#22c55e",
-        "fill-opacity": 0.12,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.rudaMauzaBoundaryLine)) {
-    map.addLayer({
-      id: LAYERS.rudaMauzaBoundaryLine,
-      type: "line",
-      source: SOURCES.rudaMauzaBoundary,
-      paint: {
-        "line-color": "#22c55e",
-        "line-width": 1.5,
-        "line-opacity": 1,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.rudaMauzaBoundaryLabel)) {
-    map.addLayer({
-      id: LAYERS.rudaMauzaBoundaryLabel,
-      type: "symbol",
-      source: SOURCES.rudaMauzaBoundary,
-      minzoom: 11,
-      layout: {
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "Mouza"]],
-          ["to-string", ["get", "mouza"]],
-          ["to-string", ["get", "name"]],
-          ["to-string", ["get", "Name"]],
-          "",
-        ],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 15, 12],
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": false,
-        "text-ignore-placement": false,
-      },
-      paint: {
-        "text-color": "#064e3b",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-      },
-    });
-  }
-}
-
-function addProposedRoadsLayer(map, data) {
-  ensureSource(
-    map,
-    SOURCES.proposedRoads,
-    prepareProposedRoadsGeoJSONForDisplay(data),
-  );
-
-  if (!map.getLayer(LAYERS.proposedRoadsLine)) {
-    map.addLayer({
-      id: LAYERS.proposedRoadsLine,
-      type: "line",
-      source: SOURCES.proposedRoads,
-      layout: {
-        "line-cap": "round",
-        "line-join": "round",
-      },
-      paint: {
-        "line-color": ROAD_COLOR_EXPRESSION,
-        "line-width": ROAD_WIDTH_EXPRESSION,
-        "line-opacity": 1,
-      },
-    });
-  }
-}
-
-function addGeodeticNetworkLayer(map, data) {
-  ensureSource(map, SOURCES.geodeticNetwork, data);
-
-  if (!map.getLayer(LAYERS.geodeticNetworkCircle)) {
-    map.addLayer({
-      id: LAYERS.geodeticNetworkCircle,
-      type: "circle",
-      source: SOURCES.geodeticNetwork,
-      paint: {
-        "circle-radius": 5,
-        "circle-color": "#22c55e",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1,
-      },
-    });
-  }
-
-  if (!map.getLayer(LAYERS.geodeticNetworkLabel)) {
-    map.addLayer({
-      id: LAYERS.geodeticNetworkLabel,
-      type: "symbol",
-      source: SOURCES.geodeticNetwork,
-      minzoom: 15,
-      layout: {
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "name"]],
-          ["to-string", ["get", "Name"]],
-          "",
-        ],
-        "text-size": 10,
-        "text-offset": [0, 1.2],
-        "text-anchor": "top",
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": false,
-      },
-      paint: {
-        "text-color": "#064e3b",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-      },
-    });
-  }
-}
-
-// const rebuildAllLayersOnMap = async () => {
-//   const map = mapRef.current;
-//   if (!map) return;
-
-//   const projectId = filters.projectId;
-//   if (!projectId) return;
-
-//   const projectGeoJSON = await getProjectGeoJSON(projectId);
-//   addProjectBoundaryLayer(map, projectGeoJSON);
-
-//   if (filters.block) {
-//     const blockGeoJSON = await getBlocksGeoJSON(projectId, filters.block);
-//     addBlockLayer(map, blockGeoJSON);
-//   }
-
-//   const plotGeoJSON = await getPlotsGeoJSON({
-//     project_id: projectId,
-//   });
-
-//   addMasterPlanLayer(map, plotGeoJSON);
-
-//   setLayerVisibility(map, [LAYERS.boundaryFill, LAYERS.boundaryLine], true);
-//   setLayerVisibility(map, [LAYERS.masterPlanFill, LAYERS.masterPlanLine], true);
-// };
-
-//   useEffect(() => {
-//     const map = mapRef.current;
-//     if (!map) return;
-
-//     const handler = () => {
-//       console.log("REBUILD EVENT RECEIVED");
-//       rebuildAllLayersOnMap();
-//     };
-
-//     map.on("rebuild-layers", handler);
-
-//     return () => {
-//       map.off("rebuild-layers", handler);
-//     };
-//   }, [filters.projectId, filters.block, layerVisibility]);
 
 export default function GISMetaverseMap({
   mapRef,
@@ -1481,7 +140,6 @@ export default function GISMetaverseMap({
     if (!map) return;
 
     const handler = () => {
-      console.log("REBUILD EVENT RECEIVED");
       rebuildAllLayersOnMap();
     };
 
@@ -1561,24 +219,11 @@ export default function GISMetaverseMap({
   useEffect(() => {
     const map = mapRef.current;
 
-    console.log("INTRO EFFECT CALLED", {
-      hasMap: !!map,
-      introAlreadyCompleted: introHasRunRef.current,
-      mapLoaded: map?.loaded?.(),
-      styleLoaded: map?.isStyleLoaded?.(),
-    });
-
     if (!map) {
-      console.warn("INTRO STOPPED EARLY", {
-        reason: "mapRef.current is missing",
-      });
       return;
     }
 
     if (introHasRunRef.current) {
-      console.warn("INTRO STOPPED EARLY", {
-        reason: "intro already completed",
-      });
       return;
     }
 
@@ -1586,66 +231,40 @@ export default function GISMetaverseMap({
 
     const runIntro = async () => {
       if (cancelled) {
-        console.warn("INTRO NOT STARTED because effect was cleaned up");
         return;
       }
 
       if (introHasRunRef.current) {
-        console.warn("INTRO NOT STARTED because it already completed");
         return;
       }
-
-      console.log("INTRO STARTED");
 
       try {
         const steps = INTRO_STEPS;
 
-        console.log("INTRO STEPS", steps);
-
         for (const step of steps) {
           if (cancelled) {
-            console.warn("INTRO CANCELLED before step", step.label);
             return;
           }
-
-          console.log(`LOADING ${step.label}`, step.assetPaths);
 
           const data = await loadAssetGeoJSON(step.assetPaths);
 
-          console.log(`LOADED ${step.label}`, {
-            type: data?.type,
-            featureCount: data?.features?.length,
-            firstFeature: data?.features?.[0],
-            firstGeometryType: data?.features?.[0]?.geometry?.type,
-            firstCoordinates:
-              data?.features?.[0]?.geometry?.coordinates?.[0]?.[0] ||
-              data?.features?.[0]?.geometry?.coordinates?.[0],
-          });
-
           if (cancelled) {
-            console.warn("INTRO CANCELLED after loading", step.label);
             return;
           }
 
-          console.log(`ADDING LAYER ${step.label}`);
           addIntroBoundaryLayer(map, data, step.label);
 
-          console.log(`FITTING ${step.label}`);
           fitGeoJSON(map, data);
 
-          console.log(`WAITING FOR MAP MOVE ${step.label}`);
           await waitForMapMove(map, 800);
 
-          console.log(`STEP DONE ${step.label}`);
           await wait(500);
         }
 
         if (cancelled) {
-          console.warn("INTRO CANCELLED before enabling RUDA boundary");
           return;
         }
 
-        console.log("CLEARING INTRO LAYER");
         clearIntroBoundaryLayer(map);
 
         // Show the real Administrative Boundaries RUDA layer immediately.
@@ -1672,16 +291,9 @@ export default function GISMetaverseMap({
 
         introHasRunRef.current = true;
 
-        console.log("CALLING onIntroComplete to enable RUDA boundary");
         onIntroComplete?.();
-
-        console.log("INTRO FINISHED SUCCESSFULLY");
       } catch (err) {
-        console.error("Metaverse intro animation error:", err);
-
         if (cancelled) return;
-
-        console.log("INTRO FAILED, ENABLING RUDA BOUNDARY FALLBACK");
 
         clearIntroBoundaryLayer(map);
 
@@ -1704,9 +316,7 @@ export default function GISMetaverseMap({
             rudaBoundaryOpacity:
               adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
           });
-        } catch (rudaError) {
-          console.error("RUDA boundary fallback load error:", rudaError);
-        }
+        } catch (rudaError) {}
 
         introHasRunRef.current = true;
         onIntroComplete?.();
@@ -1714,15 +324,12 @@ export default function GISMetaverseMap({
     };
 
     if (map.isStyleLoaded()) {
-      console.log("MAP STYLE ALREADY LOADED, RUNNING INTRO NOW");
       runIntro();
     } else {
-      console.log("MAP STYLE NOT LOADED, WAITING FOR LOAD EVENT");
       map.once("load", runIntro);
     }
 
     return () => {
-      console.warn("INTRO EFFECT CLEANUP RUNNING");
       cancelled = true;
       map.off("load", runIntro);
     };
@@ -2002,7 +609,11 @@ export default function GISMetaverseMap({
       layerVisibility.spotLevel,
     );
 
-    setLayerVisibility(map, [LAYERS.contoursLine, LAYERS.contoursLabel], layerVisibility.contours);
+    setLayerVisibility(
+      map,
+      [LAYERS.contoursLine, LAYERS.contoursLabel],
+      layerVisibility.contours,
+    );
 
     setLayerVisibility(
       map,
