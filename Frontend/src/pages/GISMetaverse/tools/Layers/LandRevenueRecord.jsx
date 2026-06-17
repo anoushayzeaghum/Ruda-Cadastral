@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import LayerRow from "./_LayerRow";
 import {
   getProjectMauzasGeoJSON,
   getMurabbasGeoJSON,
   getKhasrasGeoJSON,
 } from "../../../../services/api";
-import { ChevronDown, ChevronRight, Grid } from "lucide-react";
+import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
 const MASAWI_SOURCE = "gis-handu-gujran-ortho-source";
 const MASAWI_LAYER = "gis-handu-gujran-ortho-layer";
@@ -250,11 +249,8 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   };
 
   const activeMauzaFeatures = useMemo(() => {
-    if (selectedMauzas.length) {
-      return mauzas.filter((feature) => selectedMauzas.includes(getMauzaId(feature)));
-    }
-
-    return mauzas;
+    if (!mauzas.length) return [];
+    return mauzas.filter((feature) => selectedMauzas.includes(getMauzaId(feature)));
   }, [mauzas, selectedMauzas]);
 
   const activeMauzaIds = useMemo(() => getMauzaIdsFromFeatures(activeMauzaFeatures), [activeMauzaFeatures]);
@@ -284,8 +280,9 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       const projectGeojson = { type: "FeatureCollection", features: projectMauzas };
 
       cachedData.current.moza = projectGeojson;
+      const allProjectMauzaIds = getMauzaIdsFromFeatures(projectMauzas);
       setMauzas(projectMauzas);
-      setSelectedMauzas([]);
+      setSelectedMauzas(allProjectMauzaIds);
       addOrUpdatePolygonLayer(map, "moza", projectGeojson, layers.moza.opacity);
       if (zoom) fitToGeojson(map, projectGeojson);
       setVisible("moza", true);
@@ -428,57 +425,25 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     const isKhasra = key === "khasra";
 
     return (
-      <div key={key} className="mb-2 rounded-sm border border-[#344055] bg-[#1b2230] text-xs text-white">
-        <div className="flex items-center justify-between px-3 py-2">
-          <label className="flex min-w-0 cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              checked={layers[key].visible}
-              onChange={(event) => handleVisible(key, event.target.checked)}
-            />
-
-            <span className="h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: color }} />
-
-            <span className="truncate font-semibold">
-              {layers[key].loading ? (
-                <span className="flex items-center gap-1">
-                  {label}
-                  <span className="text-[9px] text-white/40 animate-pulse">loading…</span>
-                </span>
-              ) : (
-                label
-              )}
-            </span>
-          </label>
-
-          {dropdown && (
-            <button
-              type="button"
-              className="flex items-center gap-1 rounded px-1.5 py-1 text-white/80 hover:bg-white/10 hover:text-white"
-              onClick={() => setKhasraPanelOpen((prev) => !prev)}
-              title="Show khasra mauza names"
-            >
-              <Grid size={15} />
-              {khasraPanelOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            </button>
-          )}
-        </div>
-
-        {layers[key].visible && (
-          <div className="border-t border-white/10 px-3 pb-2">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={layers[key].opacity}
-              onChange={(event) => setOpacity(key, Number(event.target.value))}
-              className="h-1.5 w-full accent-[#8bd66f]"
-            />
-          </div>
-        )}
-
+      <LayerItem
+        key={key}
+        checked={layers[key].visible}
+        color={color}
+        label={label}
+        loading={layers[key].loading}
+        opacity={layers[key].opacity}
+        hasDropdown={dropdown}
+        dropdownOpen={isKhasra && khasraPanelOpen}
+        dropdownTitle="Show khasra mauza names"
+        onChange={(checked) => handleVisible(key, checked)}
+        onOpacityChange={(opacity) => setOpacity(key, opacity)}
+        onDropdownToggle={() => setKhasraPanelOpen((prev) => !prev)}
+      >
         {isKhasra && khasraPanelOpen && (
-          <div className="max-h-48 overflow-y-auto border-t border-white/10 px-3 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div
+            className="max-h-32 overflow-y-auto border-t border-white/10 px-3 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            onClick={(event) => event.stopPropagation()}
+          >
             {!layers.khasra.visible && (
               <div className="py-1 text-[11px] text-white/45">
                 Turn on Khasra Boundary to view linked mauza names.
@@ -496,15 +461,18 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
               const name = getMauzaName(mauza);
 
               return (
-                <div key={`khasra-${id}-${name}`} className="flex items-center gap-2 py-1 text-[11px] text-white/85">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#65c96b]" />
+                <div
+                  key={`khasra-${id}-${name}`}
+                  className="flex items-center gap-2 py-1 text-[11px] text-white/85"
+                >
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#65c96b]" />
                   <span className="truncate">{name}</span>
                 </div>
               );
             })}
           </div>
         )}
-      </div>
+      </LayerItem>
     );
   };
 
@@ -521,55 +489,24 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
 
       {open && (
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
-          <div className="mb-2 rounded-sm border border-[#344055] bg-[#1b2230] text-xs text-white">
-            <div className="flex items-center justify-between px-3 py-2">
-              <label className="flex min-w-0 cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={layers.moza.visible}
-                  onChange={(event) => handleVisible("moza", event.target.checked)}
-                />
-
-                <span className="h-3 w-3 shrink-0 rounded-sm" style={{ backgroundColor: MAUZA_DEF.color }} />
-
-                <span className="truncate font-semibold">
-                  {layers.moza.loading ? (
-                    <span className="flex items-center gap-1">
-                      Mauza Boundary
-                      <span className="text-[9px] text-white/40 animate-pulse">loading…</span>
-                    </span>
-                  ) : (
-                    "Mauza Boundary"
-                  )}
-                </span>
-              </label>
-
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded px-1.5 py-1 text-white/80 hover:bg-white/10 hover:text-white"
-                onClick={() => setMauzaPanelOpen((prev) => !prev)}
-                title="Show mauza names"
-              >
-                <Grid size={15} />
-                {mauzaPanelOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              </button>
-            </div>
-
-            {layers.moza.visible && (
-              <div className="border-t border-white/10 px-3 pb-2">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={layers.moza.opacity}
-                  onChange={(event) => setOpacity("moza", Number(event.target.value))}
-                  className="h-1.5 w-full accent-[#8bd66f]"
-                />
-              </div>
-            )}
-
+          <LayerItem
+            checked={layers.moza.visible}
+            color={MAUZA_DEF.color}
+            label="Mauza Boundary"
+            loading={layers.moza.loading}
+            opacity={layers.moza.opacity}
+            hasDropdown
+            dropdownOpen={mauzaPanelOpen}
+            dropdownTitle="Show mauza names"
+            onChange={(checked) => handleVisible("moza", checked)}
+            onOpacityChange={(opacity) => setOpacity("moza", opacity)}
+            onDropdownToggle={() => setMauzaPanelOpen((prev) => !prev)}
+          >
             {mauzaPanelOpen && (
-              <div className="max-h-48 overflow-y-auto border-t border-white/10 px-3 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div
+                className="max-h-32 overflow-y-auto border-t border-white/10 px-3 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                onClick={(event) => event.stopPropagation()}
+              >
                 {!selectedProjectId && (
                   <div className="py-1 text-[11px] text-white/45">
                     Select a project first to load linked mauzas.
@@ -596,17 +533,21 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                     <label
                       key={`${id}-${name}`}
                       className="flex cursor-pointer items-center gap-2 py-1 text-[11px] text-white/85 hover:text-white"
+                      onClick={(event) => event.stopPropagation()}
                     >
                       <input
                         type="checkbox"
                         checked={selectedMauzas.includes(id)}
+                        onClick={(event) => event.stopPropagation()}
                         onChange={(event) => {
+                          const checked = event.target.checked;
                           setSelectedMauzas((prev) =>
-                            event.target.checked
-                              ? [...prev, id]
-                              : prev.filter((selectedId) => selectedId !== id)
+                            checked
+                              ? [...new Set([...prev, id])]
+                              : prev.filter((selectedId) => selectedId !== id),
                           );
                         }}
+                        className="accent-[#65c96b]"
                       />
                       <span className="truncate">{name}</span>
                     </label>
@@ -614,36 +555,91 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                 })}
               </div>
             )}
-          </div>
+          </LayerItem>
 
-          {LAYER_DEFS.map((definition) =>
-            definition.dropdown
-              ? renderBoundaryRow(definition)
-              : definition.key === "masawi"
-                ? (
-                  <LayerRow
-                    key={definition.key}
-                    label={
-                      layers[definition.key].loading ? (
-                        <span className="flex items-center gap-1">
-                          {definition.label}
-                          <span className="text-[9px] text-white/40 animate-pulse">loading…</span>
-                        </span>
-                      ) : (
-                        definition.label
-                      )
-                    }
-                    color={definition.color}
-                    checked={layers[definition.key].visible}
-                    opacity={layers[definition.key].opacity}
-                    onCheckedChange={(value) => handleVisible(definition.key, value)}
-                    onOpacityChange={(opacity) => setOpacity(definition.key, opacity)}
-                  />
-                )
-                : renderBoundaryRow(definition)
-          )}
+          {LAYER_DEFS.map((definition) => renderBoundaryRow(definition))}
         </div>
       )}
+    </div>
+  );
+}
+
+function LayerItem({
+  checked,
+  color,
+  label,
+  loading,
+  opacity,
+  hasDropdown = false,
+  dropdownOpen = false,
+  dropdownTitle,
+  onChange,
+  onOpacityChange,
+  onDropdownToggle,
+  children,
+}) {
+  return (
+    <div className="mt-3 first:mt-1 text-white">
+      <div className="flex items-center justify-between">
+        <label className="flex min-w-0 cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(event) => onChange(event.target.checked)}
+            className="accent-[#65c96b]"
+          />
+
+          <span
+            className="h-4 w-4 shrink-0 rounded-sm border-2"
+            style={{ borderColor: color }}
+          />
+
+          <span className="truncate text-[11px]">
+            {loading ? (
+              <span className="flex items-center gap-1">
+                {label}
+                <span className="text-[9px] text-white/40 animate-pulse">loading…</span>
+              </span>
+            ) : (
+              label
+            )}
+          </span>
+        </label>
+
+        {hasDropdown ? (
+          <button
+            type="button"
+            className="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDropdownToggle?.();
+            }}
+            title={dropdownTitle}
+          >
+            <Grid3X3 size={14} />
+            {dropdownOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </button>
+        ) : (
+          <Grid3X3 size={14} className="shrink-0 text-white/60" />
+        )}
+      </div>
+
+      <div className="mt-2 flex items-center gap-2 pl-6">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={opacity}
+          onChange={(event) => onOpacityChange(Number(event.target.value))}
+          className="h-[3px] flex-1 cursor-pointer rounded-full bg-[#8fd36f] accent-[#65c96b]"
+        />
+
+        <span className="w-7 text-right text-[11px] text-white/90">
+          {opacity}%
+        </span>
+      </div>
+
+      {children}
     </div>
   );
 }
