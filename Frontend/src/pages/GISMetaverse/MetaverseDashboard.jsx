@@ -53,6 +53,7 @@ export default function MetaverseDashboard() {
 
   const defaultAdminBoundaryVisibility = {
     rudaBoundary: false,
+    rudaMauzaBoundary: false,
     geodeticNetwork: false,
     proposedRoads: false,
 
@@ -62,13 +63,13 @@ export default function MetaverseDashboard() {
   };
 
   const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState(
-    defaultAdminBoundaryVisibility
+    defaultAdminBoundaryVisibility,
   );
 
   const [metaverseFilters, setMetaverseFilters] = useState(defaultFilters);
 
   const [layerVisibility, setLayerVisibility] = useState(
-    defaultLayerVisibility
+    defaultLayerVisibility,
   );
 
   const handleIntroComplete = useCallback(() => {

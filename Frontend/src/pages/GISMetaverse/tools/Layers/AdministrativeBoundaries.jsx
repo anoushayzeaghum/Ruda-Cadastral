@@ -9,7 +9,7 @@ export default function AdministrativeBoundaries({
 }) {
   const [open, setOpen] = useState(false);
 
-  const zoomToRudaBoundary = () => {
+  const zoomToBoundarySource = (sourceNamePart) => {
     if (!map) return;
 
     const extendBounds = (bounds, coords) => {
@@ -24,24 +24,26 @@ export default function AdministrativeBoundaries({
     const tryZoom = () => {
       try {
         const style = map.getStyle?.();
-        const rudaSourceId = Object.keys(style?.sources || {}).find((sourceId) =>
-          sourceId.toLowerCase().includes("ruda"),
+        const sourceId = Object.keys(style?.sources || {}).find((id) =>
+          id.toLowerCase().includes(sourceNamePart),
         );
 
-        if (!rudaSourceId) return;
+        if (!sourceId) return;
 
-        const source = map.getSource(rudaSourceId);
+        const source = map.getSource(sourceId);
         const data = source?._data || source?.serialize?.()?.data;
         if (!data?.features?.length) return;
 
         const bounds = new mapboxgl.LngLatBounds();
-        data.features.forEach((feature) => extendBounds(bounds, feature.geometry?.coordinates));
+        data.features.forEach((feature) =>
+          extendBounds(bounds, feature.geometry?.coordinates),
+        );
 
         if (!bounds.isEmpty()) {
           map.fitBounds(bounds, { padding: 60, duration: 1200, maxZoom: 14 });
         }
       } catch (error) {
-        console.error("RUDA boundary zoom error:", error);
+        console.error("Boundary zoom error:", error);
       }
     };
 
@@ -59,7 +61,11 @@ export default function AdministrativeBoundaries({
     }));
 
     if (key === "rudaBoundary" && willBeVisible) {
-      zoomToRudaBoundary();
+      zoomToBoundarySource("ruda-boundary");
+    }
+
+    if (key === "rudaMauzaBoundary" && willBeVisible) {
+      zoomToBoundarySource("ruda-mauza");
     }
   };
 
@@ -90,6 +96,17 @@ export default function AdministrativeBoundaries({
             opacity={adminBoundaryVisibility.rudaBoundaryOpacity ?? 100}
             onChange={() => toggleLayer("rudaBoundary")}
             onOpacityChange={(value) => updateOpacity("rudaBoundary", value)}
+          />
+
+          <LayerItem
+            checked={adminBoundaryVisibility.rudaMauzaBoundary}
+            color="#22c55e"
+            label="Ruda Mauza Boundary"
+            opacity={adminBoundaryVisibility.rudaMauzaBoundaryOpacity ?? 100}
+            onChange={() => toggleLayer("rudaMauzaBoundary")}
+            onOpacityChange={(value) =>
+              updateOpacity("rudaMauzaBoundary", value)
+            }
           />
 
           <LayerItem

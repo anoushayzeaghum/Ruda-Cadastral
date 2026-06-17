@@ -33,6 +33,7 @@ const SOURCES = {
   sewagePoints: "metaverse-sewage-points-source",
   cameraLocations: "metaverse-camera-locations-source",
   rudaBoundary: "metaverse-ruda-boundary-source",
+  rudaMauzaBoundary: "metaverse-ruda-mauza-boundary-source",
   proposedRoads: "metaverse-proposed-roads-source",
   geodeticNetwork: "metaverse-geodetic-network-source",
   introBoundary: "metaverse-intro-boundary-source",
@@ -62,6 +63,9 @@ const LAYERS = {
   rudaBoundaryLine: "metaverse-ruda-boundary-line",
   rudaBoundaryDashLine: "metaverse-ruda-boundary-dash-line",
   rudaBoundaryLabel: "metaverse-ruda-boundary-label",
+  rudaMauzaBoundaryFill: "metaverse-ruda-mauza-boundary-fill",
+  rudaMauzaBoundaryLine: "metaverse-ruda-mauza-boundary-line",
+  rudaMauzaBoundaryLabel: "metaverse-ruda-mauza-boundary-label",
   proposedRoadsLine: "metaverse-proposed-roads-line",
   geodeticNetworkCircle: "metaverse-geodetic-network-circle",
   introBoundaryFill: "metaverse-intro-boundary-fill",
@@ -98,6 +102,7 @@ const INTRO_CLEAR_SOURCES = [
   SOURCES.sewagePoints,
   SOURCES.cameraLocations,
   SOURCES.rudaBoundary,
+  SOURCES.rudaMauzaBoundary,
   SOURCES.proposedRoads,
   SOURCES.geodeticNetwork,
 ];
@@ -368,6 +373,11 @@ function makeLabelGeoJSON(label, geojson) {
   };
 }
 
+const RUDA_MAUZA_ASSET_PATHS = [
+  "/RUDA_Mauza.geojson",
+  "/RUDA_Mauza.geosjon",
+];
+
 async function loadAssetGeoJSON(paths = []) {
   const candidates = Array.isArray(paths) ? paths : [paths];
   let lastError = null;
@@ -451,6 +461,10 @@ function applyMetaverseLayerOpacities(
   const rudaBoundaryOpacity = getOpacity(
     adminBoundaryVisibility,
     "rudaBoundaryOpacity",
+  );
+  const rudaMauzaBoundaryOpacity = getOpacity(
+    adminBoundaryVisibility,
+    "rudaMauzaBoundaryOpacity",
   );
   const geodeticNetworkOpacity = getOpacity(
     adminBoundaryVisibility,
@@ -608,6 +622,25 @@ function applyMetaverseLayerOpacities(
     LAYERS.rudaBoundaryLabel,
     "text-opacity",
     rudaBoundaryOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaMauzaBoundaryFill,
+    "fill-opacity",
+    0.12 * rudaMauzaBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaMauzaBoundaryLine,
+    "line-opacity",
+    rudaMauzaBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.rudaMauzaBoundaryLabel,
+    "text-opacity",
+    rudaMauzaBoundaryOpacity,
   );
 
   setLayerPaintProperty(
@@ -1124,6 +1157,63 @@ function addRudaBoundaryLayer(map, data) {
   }
 }
 
+function addRudaMauzaBoundaryLayer(map, data) {
+  ensureSource(map, SOURCES.rudaMauzaBoundary, normalizeGeometryCollections(data));
+
+  if (!map.getLayer(LAYERS.rudaMauzaBoundaryFill)) {
+    map.addLayer({
+      id: LAYERS.rudaMauzaBoundaryFill,
+      type: "fill",
+      source: SOURCES.rudaMauzaBoundary,
+      paint: {
+        "fill-color": "#22c55e",
+        "fill-opacity": 0.12,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.rudaMauzaBoundaryLine)) {
+    map.addLayer({
+      id: LAYERS.rudaMauzaBoundaryLine,
+      type: "line",
+      source: SOURCES.rudaMauzaBoundary,
+      paint: {
+        "line-color": "#22c55e",
+        "line-width": 1.5,
+        "line-opacity": 1,
+      },
+    });
+  }
+
+  if (!map.getLayer(LAYERS.rudaMauzaBoundaryLabel)) {
+    map.addLayer({
+      id: LAYERS.rudaMauzaBoundaryLabel,
+      type: "symbol",
+      source: SOURCES.rudaMauzaBoundary,
+      minzoom: 11,
+      layout: {
+        "text-field": [
+          "coalesce",
+          ["to-string", ["get", "Mouza"]],
+          ["to-string", ["get", "mouza"]],
+          ["to-string", ["get", "name"]],
+          ["to-string", ["get", "Name"]],
+          "",
+        ],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 15, 12],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+      },
+      paint: {
+        "text-color": "#064e3b",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2,
+      },
+    });
+  }
+}
+
 function addProposedRoadsLayer(map, data) {
   ensureSource(
     map,
@@ -1465,6 +1555,11 @@ export default function GISMetaverseMap({
         addRudaBoundaryLayer(map, data);
       }
 
+      if (adminBoundaryVisibility.rudaMauzaBoundary) {
+        const data = await loadAssetGeoJSON(RUDA_MAUZA_ASSET_PATHS);
+        addRudaMauzaBoundaryLayer(map, data);
+      }
+
       if (adminBoundaryVisibility.proposedRoads) {
         const data = await getRudaProposedRoadsGeoJSON();
         addProposedRoadsLayer(map, data);
@@ -1498,6 +1593,16 @@ export default function GISMetaverseMap({
           LAYERS.rudaBoundaryLabel,
         ],
         adminBoundaryVisibility.rudaBoundary,
+      );
+
+      setLayerVisibility(
+        map,
+        [
+          LAYERS.rudaMauzaBoundaryFill,
+          LAYERS.rudaMauzaBoundaryLine,
+          LAYERS.rudaMauzaBoundaryLabel,
+        ],
+        adminBoundaryVisibility.rudaMauzaBoundary,
       );
 
       setLayerVisibility(
