@@ -404,3 +404,56 @@ export const importMauzaShapefile = async ({ file }) => {
 
   return res.data;
 };
+
+export const getProjectMauzas = async (projectId) => {
+  if (!projectId) return [];
+
+  const res = await API.get("/project-mauza/", {
+    params: { project_id: projectId },
+  });
+
+  return extractPayload(res);
+};
+
+export const getProjectMauzasGeoJSON = async (projectId) => {
+  if (!projectId) {
+    return { type: "FeatureCollection", features: [] };
+  }
+
+  const rows = await getProjectMauzas(projectId);
+
+  return {
+    type: "FeatureCollection",
+    features: (rows || [])
+      .map((row) => row?.mauza_detail)
+      .filter(Boolean)
+      .map((feature) => ({
+        ...feature,
+        properties: feature.properties || {},
+      })),
+  };
+};
+
+export const getMurabbasGeoJSON = async (filters = {}) => {
+  const params = {
+    ...filters,
+    mauza_ids: Array.isArray(filters.mauza_ids)
+      ? filters.mauza_ids.join(",")
+      : filters.mauza_ids,
+  };
+
+  const res = await API.get("/murabba/", { params });
+  return normalizeGeoJson(res);
+};
+
+export const getKhasrasGeoJSON = async (filters = {}) => {
+  const params = {
+    ...filters,
+    mauza_ids: Array.isArray(filters.mauza_ids)
+      ? filters.mauza_ids.join(",")
+      : filters.mauza_ids,
+  };
+
+  const res = await API.get("/khasra/", { params });
+  return normalizeGeoJson(res);
+};
