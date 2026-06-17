@@ -1796,14 +1796,16 @@ export default function GISMetaverseMap({
     mapRef,
   ]);
 
-  // Plot click popup interaction is handled in PlotPopup.jsx
+  // Plot click popup interaction is handled in PlotPopup.jsx.
+  // This uses one global map click listener and queries both plot fill + plot line,
+  // so popup works even when the user clicks exactly on the plot boundary.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     return setupPlotClickPopup({
       map,
-      plotLayerId: LAYERS.masterPlanFill,
+      plotLayerIds: [LAYERS.masterPlanFill, LAYERS.masterPlanLine],
       highlightLayerId: LAYERS.masterPlanHover,
       highlightFilterKey: "gid",
       autoCloseMs: 10000,

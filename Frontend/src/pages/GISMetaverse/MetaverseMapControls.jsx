@@ -58,7 +58,10 @@ export default function MetaverseMapControls({
     map.dragPan.enable();
     map.scrollZoom.enable();
     map.doubleClickZoom.enable();
-    map.getCanvas().style.cursor = "grab";
+
+    // Do not keep the canvas cursor as grab, otherwise plot hover/click feels stuck in pan mode.
+    const canvas = map.getCanvas?.();
+    if (canvas?.style) canvas.style.cursor = "";
   };
 
   const handleLocateMe = () => {

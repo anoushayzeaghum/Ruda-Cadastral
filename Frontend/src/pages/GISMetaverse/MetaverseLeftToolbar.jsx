@@ -142,8 +142,8 @@ export default function MetaverseLeftToolbar({
                         : activeTool === "import"
                           ? "sm:w-[340px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                           : activeTool === "measurement"
-                            ? "sm:w-[300px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                            : "sm:w-[270px] sm:max-h-[calc(100vh-90px)]"
+                            ? "sm:w-[350px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                            : "sm:w-[3050px] sm:max-h-[calc(100vh-90px)]"
             }`}
           style={{ top: window.innerWidth >= 640 ? `${panelTop}px` : undefined }}
         >
