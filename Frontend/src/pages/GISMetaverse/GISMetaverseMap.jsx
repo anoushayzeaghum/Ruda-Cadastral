@@ -822,7 +822,10 @@ function addMasterPlanLayer(map, data) {
     });
   }
 
-  // NEW: Add hover highlight layer (initially empty)
+  // Highlight layer — rendered on top of fill/line so the selection outline
+  // is always visible. The filter uses ["to-string", ["get", "gid"]] so it
+  // exactly matches the expression that PlotPopup sets at runtime.
+  // Starts hidden (line-opacity: 0) and matching nothing (__none__).
   if (!map.getLayer(LAYERS.masterPlanHover)) {
     map.addLayer({
       id: LAYERS.masterPlanHover,
@@ -833,7 +836,10 @@ function addMasterPlanLayer(map, data) {
         "line-width": 4,
         "line-opacity": 0,
       },
-      filter: ["==", ["get", "gid"], ""],
+      // Use the same expression type that PlotPopup will set dynamically.
+      // A plain string comparison ["==", ["get", "gid"], ""] would type-mismatch
+      // when gid is a number, so we cast both sides to string.
+      filter: ["==", ["to-string", ["get", "gid"]], "__none__"],
     });
   }
 }
@@ -1151,6 +1157,7 @@ function addProposedRoadsLayer(map, data) {
 
 export default function GISMetaverseMap({
   mapRef,
+  isMapReady,
   setIsMapReady,
   filters,
   layerVisibility,
@@ -1656,21 +1663,31 @@ export default function GISMetaverseMap({
     mapRef,
   ]);
 
-  // Plot click popup interaction is handled in PlotPopup.jsx.
-  // This uses one global map click listener and queries both plot fill + plot line,
-  // so popup works even when the user clicks exactly on the plot boundary.
+  // ---------------------------------------------------------------------------
+  // Plot click popup
+  // ---------------------------------------------------------------------------
+  // We depend on `isMapReady` (set to true inside the map "load" event) so
+  // this effect only fires once the map and its style are fully initialised.
+  // That guarantees the masterPlanHover layer already exists when we wire up
+  // the click handler, and we get a clean teardown on unmount.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    // Guard: map must exist and be fully loaded before wiring up interactions.
+    if (!map || !isMapReady) return;
 
     return setupPlotClickPopup({
       map,
+      // Query both fill and line layers so clicks on thin plot borders register.
       plotLayerIds: [LAYERS.masterPlanFill, LAYERS.masterPlanLine],
+      // The highlight outline layer — driven by filter + opacity in PlotPopup.
       highlightLayerId: LAYERS.masterPlanHover,
+      // Must match the property used in the masterPlanHover filter expression.
       highlightFilterKey: "gid",
+      // Auto-close the popup after 10 seconds of inactivity.
       autoCloseMs: 10000,
     });
-  }, [mapRef]);
+    // Re-run whenever the map instance is swapped out or readiness changes.
+  }, [mapRef, isMapReady]);
 
   return <div ref={mapContainerRef} className="h-full w-full" />;
 }
