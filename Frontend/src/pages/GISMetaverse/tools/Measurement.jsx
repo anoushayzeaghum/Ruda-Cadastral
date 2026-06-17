@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import * as turf from "@turf/turf";
 import {
   Ruler, Pentagon, Compass, MapPin,
-  ChevronRight, Trash2, Info,
+  ChevronRight, Trash2, Info, Check, X,
 } from "lucide-react";
 
 // ── Mapbox layer / source IDs ─────────────────────────────────────────────────
@@ -35,12 +35,12 @@ const DISTANCE_UNITS = [
 ];
 
 const AREA_UNITS = [
-  { id: "m2",      label: "m²",     convert: (m2) => m2,                fmt: (v) => Number(v.toFixed(2)).toLocaleString() },
-  { id: "km2",     label: "km²",    convert: (m2) => m2 / 1_000_000,    fmt: (v) => v.toFixed(6) },
-  { id: "acres",   label: "Acres",  convert: (m2) => m2 / 4046.8564224, fmt: (v) => v.toFixed(4) },
-  { id: "hectare", label: "ha",     convert: (m2) => m2 / 10_000,       fmt: (v) => v.toFixed(4) },
-  { id: "kanal",   label: "Kanal",  convert: (m2) => m2 / 505.857,      fmt: (v) => v.toFixed(3) },
-  { id: "marla",   label: "Marla",  convert: (m2) => m2 / 25.2929,      fmt: (v) => v.toFixed(2) },
+  { id: "m2",      label: "m²",    convert: (m2) => m2,                fmt: (v) => Number(v.toFixed(2)).toLocaleString() },
+  { id: "km2",     label: "km²",   convert: (m2) => m2 / 1_000_000,    fmt: (v) => v.toFixed(6) },
+  { id: "acres",   label: "Acres", convert: (m2) => m2 / 4046.8564224, fmt: (v) => v.toFixed(4) },
+  { id: "hectare", label: "ha",    convert: (m2) => m2 / 10_000,       fmt: (v) => v.toFixed(4) },
+  { id: "kanal",   label: "Kanal", convert: (m2) => m2 / 505.857,      fmt: (v) => v.toFixed(3) },
+  { id: "marla",   label: "Marla", convert: (m2) => m2 / 25.2929,      fmt: (v) => v.toFixed(2) },
 ];
 
 const BEARING_DIST_UNITS = [
@@ -55,10 +55,10 @@ const COORD_FORMATS = [
 ];
 
 const TOOLS = [
-  { id: "distance",   label: "Distance",   icon: Ruler,    color: "#ef4444", hint: "Click to add points. Right-click to clear." },
-  { id: "area",       label: "Area",       icon: Pentagon, color: "#3b82f6", hint: "Click to draw polygon. Right-click to close & calculate." },
+  { id: "distance",   label: "Distance",   icon: Ruler,    color: "#ef4444", hint: "Click to add points. Apply to save, Close to discard." },
+  { id: "area",       label: "Area",       icon: Pentagon, color: "#3b82f6", hint: "Click to place vertices, right-click to close polygon." },
   { id: "bearing",    label: "Bearing",    icon: Compass,  color: "#f97316", hint: "Click two points to measure bearing & distance." },
-  { id: "coordinate", label: "Coordinate", icon: MapPin,   color: "#8b5cf6", hint: "Click anywhere to copy coordinates to clipboard." },
+  { id: "coordinate", label: "Coordinate", icon: MapPin,   color: "#8b5cf6", hint: "Click anywhere to pick coordinates." },
 ];
 
 // ── Pure helpers ──────────────────────────────────────────────────────────────
@@ -131,6 +131,61 @@ function EmptyHint({ children }) {
   return <p className="text-center text-[10px] text-white/40 py-1">{children}</p>;
 }
 
+// ── Applied result card (shown after Apply is clicked) ───────────────────────
+function AppliedResultCard({ result, onDismiss }) {
+  const toolDef = TOOLS.find((t) => t.id === result.tool);
+  const Icon = toolDef?.icon;
+  return (
+    <div
+      className="rounded-md border overflow-hidden"
+      style={{ borderColor: toolDef?.color + "55", backgroundColor: "#1a2233" }}
+    >
+      {/* Card header */}
+      <div
+        className="flex items-center justify-between px-3 py-2 border-b"
+        style={{ borderColor: toolDef?.color + "33", backgroundColor: toolDef?.color + "11" }}
+      >
+        <div className="flex items-center gap-2">
+          {Icon && <Icon size={12} style={{ color: toolDef.color }} />}
+          <span className="text-[11px] font-semibold" style={{ color: toolDef?.color }}>
+            {toolDef?.label} Result
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="text-white/30 hover:text-red-400 transition"
+          title="Remove from map"
+        >
+          <X size={12} />
+        </button>
+      </div>
+
+      {/* Card body */}
+      <div className="px-3 py-2 space-y-1.5">
+        {result.tool === "distance" && (
+          <ResultRow label="Total Distance" value={result.display} color={toolDef.color} />
+        )}
+        {result.tool === "area" && (
+          <ResultRow label="Total Area" value={result.display} color={toolDef.color} />
+        )}
+        {result.tool === "bearing" && (
+          <>
+            <ResultRow label="Bearing"  value={`${Number(result.bearing).toFixed(2)}°`} color={toolDef.color} />
+            <ResultRow label="Distance" value={result.display}                          color={toolDef.color} />
+          </>
+        )}
+        {result.tool === "coordinate" && (
+          <>
+            <ResultRow label="Latitude"  value={result.lat} color={toolDef.color} />
+            <ResultRow label="Longitude" value={result.lng} color={toolDef.color} />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Measurement({ map }) {
   const [activeTool, setActiveTool] = useState(null);
@@ -142,14 +197,18 @@ export default function Measurement({ map }) {
   const [coordFormat, setCoordFormat] = useState("dd");
 
   // Raw SI values stored after each measurement
-  const [distKm,       setDistKm]       = useState(null); // km
-  const [areaM2,       setAreaM2]       = useState(null); // m²
-  const [bearingDeg,   setBearingDeg]   = useState(null); // degrees
-  const [bearingDistM, setBearingDistM] = useState(null); // metres
-  const [coordRaw,     setCoordRaw]     = useState(null); // { lat, lng } (numbers)
+  const [distKm,       setDistKm]       = useState(null);
+  const [areaM2,       setAreaM2]       = useState(null);
+  const [bearingDeg,   setBearingDeg]   = useState(null);
+  const [bearingDistM, setBearingDistM] = useState(null);
+  const [coordRaw,     setCoordRaw]     = useState(null);
   const [coordCopied,  setCoordCopied]  = useState(false);
 
-  // Click-coordinate refs (avoid re-renders on every click)
+  // Applied results that persist on the map after "Apply"
+  // Each entry: { id, tool, display, ...extra }
+  const [appliedResults, setAppliedResults] = useState([]);
+
+  // Click-coordinate refs
   const distCoordsRef    = useRef([]);
   const areaCoordsRef    = useRef([]);
   const bearingCoordsRef = useRef([]);
@@ -170,7 +229,14 @@ export default function Measurement({ map }) {
       : { lat: coordRaw.lat.toFixed(6),   lng: coordRaw.lng.toFixed(6)   }
     : null;
 
-  // ── Refresh map labels when unit changes (no re-click needed) ─────────────
+  // ── Can the current tool be Applied? ──────────────────────────────────────
+  const canApply =
+    (activeTool === "distance"   && distKm != null) ||
+    (activeTool === "area"       && areaM2 != null) ||
+    (activeTool === "bearing"    && bearingDeg != null) ||
+    (activeTool === "coordinate" && coordRaw != null);
+
+  // ── Refresh map labels when unit changes ───────────────────────────────────
   useEffect(() => {
     if (!map || distKm == null || activeTool !== "distance") return;
     const coords = distCoordsRef.current;
@@ -272,7 +338,6 @@ export default function Measurement({ map }) {
       setSourceData(map, M_DISTANCE_SOURCE, turf.featureCollection(features));
     };
 
-    // Capture current unit inside closure via ref trick
     const unitRef = { current: distUnitDef };
     const onClick = (e) => {
       distCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
@@ -292,9 +357,7 @@ export default function Measurement({ map }) {
       map.off("click", onClick);
       map.off("contextmenu", onRightClick);
       if (map.getCanvas()) map.getCanvas().style.cursor = "";
-      cleanupLayers(map, [M_DISTANCE_LINE, M_DISTANCE_POINTS, M_DISTANCE_LABELS], [M_DISTANCE_SOURCE]);
-      distCoordsRef.current = [];
-      setDistKm(null);
+      // NOTE: we do NOT remove layers/source here so Applied results stay visible
     };
   }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -369,9 +432,6 @@ export default function Measurement({ map }) {
       map.off("click", onClick);
       map.off("contextmenu", onRightClick);
       if (map.getCanvas()) map.getCanvas().style.cursor = "";
-      cleanupLayers(map, [M_AREA_FILL, M_AREA_LINE, M_AREA_POINTS, M_AREA_LABEL], [M_AREA_SOURCE]);
-      areaCoordsRef.current = [];
-      setAreaM2(null);
     };
   }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -443,9 +503,6 @@ export default function Measurement({ map }) {
       map.off("click", onClick);
       map.off("contextmenu", onRightClick);
       if (map.getCanvas()) map.getCanvas().style.cursor = "";
-      cleanupLayers(map, [M_BEARING_LINE, M_BEARING_POINTS, M_BEARING_LABEL], [M_BEARING_SOURCE]);
-      bearingCoordsRef.current = [];
-      setBearingDeg(null); setBearingDistM(null);
     };
   }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -460,20 +517,16 @@ export default function Measurement({ map }) {
       map.addLayer({
         id: M_COORD_POINT, type: "circle", source: M_COORD_SOURCE,
         filter: ["==", "$type", "Point"],
-        paint: {
-          "circle-radius": 7, "circle-color": "#8b5cf6",
-          "circle-stroke-width": 2.5, "circle-stroke-color": "#fff",
-        },
+        paint: { "circle-radius": 7, "circle-color": "#8b5cf6",
+                 "circle-stroke-width": 2.5, "circle-stroke-color": "#fff" },
       });
     if (!map.getLayer(M_COORD_LABEL))
       map.addLayer({
         id: M_COORD_LABEL, type: "symbol", source: M_COORD_SOURCE,
         filter: ["has", "coordLabel"],
-        layout: {
-          "text-field": ["get", "coordLabel"],
-          "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-          "text-size": 11, "text-anchor": "bottom", "text-offset": [0, -1.2],
-        },
+        layout: { "text-field": ["get", "coordLabel"],
+                  "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+                  "text-size": 11, "text-anchor": "bottom", "text-offset": [0, -1.2] },
         paint: { "text-color": "#6d28d9", "text-halo-color": "#fff", "text-halo-width": 2 },
       });
 
@@ -481,7 +534,6 @@ export default function Measurement({ map }) {
       const { lng, lat } = e.lngLat;
       setCoordRaw({ lat, lng });
       setCoordCopied(false);
-      // Label always shows DD on the map; panel format is controlled by coordFormat state
       const pt = turf.point([lng, lat], { coordLabel: `${lat.toFixed(6)}\n${lng.toFixed(6)}` });
       setSourceData(map, M_COORD_SOURCE, turf.featureCollection([pt]));
       navigator.clipboard?.writeText(`${lat.toFixed(6)}, ${lng.toFixed(6)}`)
@@ -502,18 +554,91 @@ export default function Measurement({ map }) {
       map.off("click", onClick);
       map.off("contextmenu", onRightClick);
       if (map.getCanvas()) map.getCanvas().style.cursor = "";
-      cleanupLayers(map, [M_COORD_POINT, M_COORD_LABEL], [M_COORD_SOURCE]);
-      setCoordRaw(null);
-      setCoordCopied(false);
     };
   }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── clear handler (resets active tool state) ───────────────────────────────
-  const handleClear = () => {
-    const current = activeTool;
+  // ── Apply: freeze result, deactivate tool (geometry stays on map) ──────────
+  const handleApply = () => {
+    if (!canApply) return;
+
+    let entry = null;
+
+    if (activeTool === "distance") {
+      entry = {
+        id: `dist-${Date.now()}`,
+        tool: "distance",
+        display: distDisplay,
+      };
+    } else if (activeTool === "area") {
+      entry = {
+        id: `area-${Date.now()}`,
+        tool: "area",
+        display: areaDisplay,
+      };
+    } else if (activeTool === "bearing") {
+      entry = {
+        id: `brg-${Date.now()}`,
+        tool: "bearing",
+        bearing: bearingDeg,
+        display: bearingDistDisplay,
+      };
+    } else if (activeTool === "coordinate") {
+      entry = {
+        id: `coord-${Date.now()}`,
+        tool: "coordinate",
+        lat: coordDisplay?.lat,
+        lng: coordDisplay?.lng,
+        display: null,
+      };
+    }
+
+    if (entry) setAppliedResults((prev) => [...prev, entry]);
+
+    // Stop the active tool — geometry layers stay because cleanup doesn't remove them
     setActiveTool(null);
-    // small delay so the cleanup effects run first, then re-enable the tool
-    setTimeout(() => setActiveTool(current), 0);
+    distCoordsRef.current    = [];
+    areaCoordsRef.current    = [];
+    bearingCoordsRef.current = [];
+    setDistKm(null); setAreaM2(null);
+    setBearingDeg(null); setBearingDistM(null);
+    setCoordRaw(null); setCoordCopied(false);
+    if (map?.getCanvas()) map.getCanvas().style.cursor = "";
+  };
+
+  // ── Close: discard drawing, remove geometry from map ──────────────────────
+  const handleClose = () => {
+    // Remove the active tool's layers from the map
+    if (activeTool === "distance")
+      cleanupLayers(map, [M_DISTANCE_LINE, M_DISTANCE_POINTS, M_DISTANCE_LABELS], [M_DISTANCE_SOURCE]);
+    else if (activeTool === "area")
+      cleanupLayers(map, [M_AREA_FILL, M_AREA_LINE, M_AREA_POINTS, M_AREA_LABEL], [M_AREA_SOURCE]);
+    else if (activeTool === "bearing")
+      cleanupLayers(map, [M_BEARING_LINE, M_BEARING_POINTS, M_BEARING_LABEL], [M_BEARING_SOURCE]);
+    else if (activeTool === "coordinate")
+      cleanupLayers(map, [M_COORD_POINT, M_COORD_LABEL], [M_COORD_SOURCE]);
+
+    distCoordsRef.current    = [];
+    areaCoordsRef.current    = [];
+    bearingCoordsRef.current = [];
+    setDistKm(null); setAreaM2(null);
+    setBearingDeg(null); setBearingDistM(null);
+    setCoordRaw(null); setCoordCopied(false);
+    if (map?.getCanvas()) map.getCanvas().style.cursor = "";
+    setActiveTool(null);
+  };
+
+  // ── Dismiss an applied result card + remove its map geometry ──────────────
+  const handleDismissResult = (result) => {
+    if (result.tool === "distance")
+      cleanupLayers(map, [M_DISTANCE_LINE, M_DISTANCE_POINTS, M_DISTANCE_LABELS], [M_DISTANCE_SOURCE]);
+    else if (result.tool === "area")
+      cleanupLayers(map, [M_AREA_FILL, M_AREA_LINE, M_AREA_POINTS, M_AREA_LABEL], [M_AREA_SOURCE]);
+    else if (result.tool === "bearing")
+      cleanupLayers(map, [M_BEARING_LINE, M_BEARING_POINTS, M_BEARING_LABEL], [M_BEARING_SOURCE]);
+    else if (result.tool === "coordinate")
+      cleanupLayers(map, [M_COORD_POINT, M_COORD_LABEL], [M_COORD_SOURCE]);
+
+    setAppliedResults((prev) => prev.filter((r) => r.id !== result.id));
   };
 
   const activeToolDef = TOOLS.find((t) => t.id === activeTool);
@@ -539,7 +664,11 @@ export default function Measurement({ map }) {
             <button
               key={tool.id}
               type="button"
-              onClick={() => setActiveTool((prev) => (prev === tool.id ? null : tool.id))}
+              onClick={() => {
+                // If another tool is active, close it cleanly first
+                if (activeTool && activeTool !== tool.id) handleClose();
+                setActiveTool((prev) => (prev === tool.id ? null : tool.id));
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md border transition text-left ${
                 isActive
                   ? "border-[#8bd66f] bg-[#243041] text-white"
@@ -566,7 +695,7 @@ export default function Measurement({ map }) {
           );
         })}
 
-        {/* Results + unit selector panel */}
+        {/* Active tool results + Apply / Close */}
         {activeTool && (
           <div className="mt-1 rounded-md border border-[#3a4354] bg-[#1a2233] overflow-hidden">
 
@@ -579,17 +708,10 @@ export default function Measurement({ map }) {
             {/* ── DISTANCE ─────────────────────────────────────────────── */}
             {activeTool === "distance" && (
               <div className="p-3 space-y-3">
-                {/* Unit selector */}
                 <div>
                   <p className="text-[10px] text-white/40 mb-1.5 font-semibold uppercase tracking-wide">Unit</p>
-                  <UnitSelector
-                    options={DISTANCE_UNITS}
-                    value={distUnit}
-                    onChange={setDistUnit}
-                    color="#ef4444"
-                  />
+                  <UnitSelector options={DISTANCE_UNITS} value={distUnit} onChange={setDistUnit} color="#ef4444" />
                 </div>
-                {/* Result */}
                 {distDisplay
                   ? <ResultRow label="Total Distance" value={distDisplay} color="#ef4444" />
                   : <EmptyHint>Click on the map to start measuring.</EmptyHint>
@@ -600,17 +722,10 @@ export default function Measurement({ map }) {
             {/* ── AREA ─────────────────────────────────────────────────── */}
             {activeTool === "area" && (
               <div className="p-3 space-y-3">
-                {/* Unit selector */}
                 <div>
                   <p className="text-[10px] text-white/40 mb-1.5 font-semibold uppercase tracking-wide">Unit</p>
-                  <UnitSelector
-                    options={AREA_UNITS}
-                    value={areaUnit}
-                    onChange={setAreaUnit}
-                    color="#3b82f6"
-                  />
+                  <UnitSelector options={AREA_UNITS} value={areaUnit} onChange={setAreaUnit} color="#3b82f6" />
                 </div>
-                {/* Result */}
                 {areaDisplay
                   ? <ResultRow label="Total Area" value={areaDisplay} color="#3b82f6" />
                   : <EmptyHint>Click to place vertices. Right-click to close polygon.</EmptyHint>
@@ -621,17 +736,10 @@ export default function Measurement({ map }) {
             {/* ── BEARING ──────────────────────────────────────────────── */}
             {activeTool === "bearing" && (
               <div className="p-3 space-y-3">
-                {/* Distance unit selector */}
                 <div>
                   <p className="text-[10px] text-white/40 mb-1.5 font-semibold uppercase tracking-wide">Distance Unit</p>
-                  <UnitSelector
-                    options={BEARING_DIST_UNITS}
-                    value={bearingUnit}
-                    onChange={setBearingUnit}
-                    color="#f97316"
-                  />
+                  <UnitSelector options={BEARING_DIST_UNITS} value={bearingUnit} onChange={setBearingUnit} color="#f97316" />
                 </div>
-                {/* Results */}
                 {bearingDeg != null ? (
                   <div className="space-y-1.5">
                     <ResultRow label="Bearing"  value={`${Number(bearingDeg).toFixed(2)}°`} color="#f97316" />
@@ -646,17 +754,10 @@ export default function Measurement({ map }) {
             {/* ── COORDINATE ───────────────────────────────────────────── */}
             {activeTool === "coordinate" && (
               <div className="p-3 space-y-3">
-                {/* Format selector */}
                 <div>
                   <p className="text-[10px] text-white/40 mb-1.5 font-semibold uppercase tracking-wide">Format</p>
-                  <UnitSelector
-                    options={COORD_FORMATS}
-                    value={coordFormat}
-                    onChange={setCoordFormat}
-                    color="#8b5cf6"
-                  />
+                  <UnitSelector options={COORD_FORMATS} value={coordFormat} onChange={setCoordFormat} color="#8b5cf6" />
                 </div>
-                {/* Results */}
                 {coordDisplay ? (
                   <div className="space-y-1.5">
                     <ResultRow label="Latitude"  value={coordDisplay.lat} color="#8b5cf6" />
@@ -673,15 +774,47 @@ export default function Measurement({ map }) {
               </div>
             )}
 
-            {/* Clear button */}
-            <button
-              type="button"
-              onClick={handleClear}
-              className="flex w-full items-center justify-center gap-1.5 border-t border-[#343c4c] py-2 text-[11px] text-white/40 transition hover:bg-[#1f2d3d] hover:text-red-400"
-            >
-              <Trash2 size={12} />
-              Clear measurement
-            </button>
+            {/* ── Apply / Close action bar ──────────────────────────────── */}
+            <div className="flex border-t border-[#343c4c]">
+              {/* Apply */}
+              <button
+                type="button"
+                onClick={handleApply}
+                disabled={!canApply}
+                className={`flex flex-1 items-center justify-center gap-1.5 py-2 text-[11px] font-semibold transition border-r border-[#343c4c]
+                  ${canApply
+                    ? "text-[#8bd66f] hover:bg-[#1f2d3d] cursor-pointer"
+                    : "text-white/20 cursor-not-allowed"
+                  }`}
+              >
+                <Check size={12} />
+                Apply
+              </button>
+
+              {/* Close */}
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex flex-1 items-center justify-center gap-1.5 py-2 text-[11px] text-white/40 transition hover:bg-[#1f2d3d] hover:text-red-400"
+              >
+                <X size={12} />
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Applied result cards */}
+        {appliedResults.length > 0 && (
+          <div className="mt-2 space-y-2">
+            <p className="text-[10px] text-white/30 font-semibold uppercase tracking-wide px-1">Saved Results</p>
+            {appliedResults.map((result) => (
+              <AppliedResultCard
+                key={result.id}
+                result={result}
+                onDismiss={() => handleDismissResult(result)}
+              />
+            ))}
           </div>
         )}
       </div>
