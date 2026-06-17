@@ -32,7 +32,7 @@ export default function LayersPanel({
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
-      <LandRevenueRecord map={map} sselectedProjectId={filters?.projectId} />{" "}
+      <LandRevenueRecord map={map} selectedProjectId={filters?.projectId} />
       <Miscellaneous map={map} />
       <NotifiedBoundaries />
     </div>

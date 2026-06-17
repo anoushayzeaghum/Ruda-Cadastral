@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import LayerRow from "./_LayerRow";
-import { getMauzas } from "../../../../services/api";
-import { ChevronDown, ChevronRight, Grid } from "lucide-react";
+import {
+  getProjectMauzasGeoJSON,
+  getMurabbasGeoJSON,
+  getKhasrasGeoJSON,
+} from "../../../../services/api";
+import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
 const MASAWI_SOURCE = "gis-handu-gujran-ortho-source";
 const MASAWI_LAYER = "gis-handu-gujran-ortho-layer";
@@ -21,22 +24,32 @@ const IDS = {
 const MAUZA_DEF = { key: "moza", label: "Mauza Boundary", color: "#ff8b24", type: "polygon" };
 
 const LAYER_DEFS = [
-  { key: "khasra", label: "Khasra Boundary", color: "#65c96b", type: "polygon" },
+  { key: "khasra", label: "Khasra Boundary", color: "#65c96b", type: "polygon", dropdown: true },
   { key: "murabba", label: "Murabba Boundary", color: "#d7bf32", type: "polygon" },
   { key: "masawi", label: "Masawi", color: "#84cc16", type: "raster" },
 ];
 
 const ALL_LAYER_DEFS = [MAUZA_DEF, ...LAYER_DEFS];
 
+function emptyFC() {
+  return { type: "FeatureCollection", features: [] };
+}
+
 function getLayerColor(key) {
   return ALL_LAYER_DEFS.find((d) => d.key === key)?.color || "#ffffff";
 }
 
+function toNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
 function getMauzaId(feature) {
-  return Number(
-    feature?.properties?.gid ??
+  return toNumber(
+    feature?.properties?.mauza_id ??
+      feature?.properties?.gid ??
       feature?.properties?.id ??
-      feature?.properties?.mauza_id ??
       feature?.properties?.moza_id
   );
 }
@@ -53,25 +66,22 @@ function getMauzaName(feature) {
   );
 }
 
-function getProjectId(feature) {
-  return String(
-    feature?.properties?.project_id ??
-      feature?.properties?.projectId ??
-      feature?.properties?.Project_ID ??
-      feature?.properties?.PROJECT_ID ??
-      ""
-  );
+function uniqueByMauza(features = []) {
+  const seen = new Set();
+
+  return features.filter((feature) => {
+    const id = getMauzaId(feature);
+    const name = getMauzaName(feature);
+    const key = id ?? name;
+
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
-function filterFeaturesByProject(features, selectedProjectId) {
-  if (!selectedProjectId) return features;
-
-  const selectedId = String(selectedProjectId);
-  const withProjectId = features.filter((feature) => getProjectId(feature));
-
-  if (!withProjectId.length) return features;
-
-  return features.filter((feature) => getProjectId(feature) === selectedId);
+function getMauzaIdsFromFeatures(features = []) {
+  return [...new Set(features.map(getMauzaId).filter((id) => id !== null))];
 }
 
 function fitToGeojson(map, geojson) {
@@ -214,6 +224,8 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   const [mauzas, setMauzas] = useState([]);
   const [selectedMauzas, setSelectedMauzas] = useState([]);
   const [mauzaPanelOpen, setMauzaPanelOpen] = useState(false);
+  const [khasraPanelOpen, setKhasraPanelOpen] = useState(false);
+  const [khasraMauzas, setKhasraMauzas] = useState([]);
   const [open, setOpen] = useState(false);
 
   const cachedData = useRef({});
@@ -222,7 +234,8 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     Object.fromEntries(ALL_LAYER_DEFS.map((d) => [d.key, { visible: false, opacity: 100, loading: false }]))
   );
 
-  const selectedProjectKey = selectedProjectId ? String(selectedProjectId) : "all";
+  const selectedProjectKey = selectedProjectId ? String(selectedProjectId) : "";
+  const hasSelectedProject = Boolean(selectedProjectKey);
 
   const setVisible = (key, visible) => {
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], visible } }));
@@ -236,39 +249,104 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], loading } }));
   };
 
-  const mauzaGeojson = useMemo(() => {
-    const features = selectedMauzas.length
-      ? mauzas.filter((feature) => selectedMauzas.includes(getMauzaId(feature)))
-      : mauzas;
-
-    return { type: "FeatureCollection", features };
+  const activeMauzaFeatures = useMemo(() => {
+    if (!mauzas.length) return [];
+    return mauzas.filter((feature) => selectedMauzas.includes(getMauzaId(feature)));
   }, [mauzas, selectedMauzas]);
 
-  const loadMauzas = async () => {
-    if (!map) return;
+  const activeMauzaIds = useMemo(() => getMauzaIdsFromFeatures(activeMauzaFeatures), [activeMauzaFeatures]);
+
+  const mauzaGeojson = useMemo(
+    () => ({ type: "FeatureCollection", features: activeMauzaFeatures }),
+    [activeMauzaFeatures]
+  );
+
+  const loadMauzas = async ({ zoom = true } = {}) => {
+    if (!map) return emptyFC();
+
+    if (!selectedProjectId) {
+      cachedData.current.moza = emptyFC();
+      setMauzas([]);
+      setSelectedMauzas([]);
+      addOrUpdatePolygonLayer(map, "moza", emptyFC(), layers.moza.opacity);
+      setVisible("moza", false);
+      return emptyFC();
+    }
 
     setLoading("moza", true);
 
     try {
-      const res = await getMauzas(selectedProjectId);
-      const allFeatures = res?.features || [];
-      const projectFeatures = filterFeaturesByProject(allFeatures, selectedProjectId);
-      const geojson = { type: "FeatureCollection", features: projectFeatures };
+      const geojson = await getProjectMauzasGeoJSON(selectedProjectId);
+      const projectMauzas = uniqueByMauza(geojson?.features || []);
+      const projectGeojson = { type: "FeatureCollection", features: projectMauzas };
 
-      cachedData.current.moza = geojson;
-      setMauzas(projectFeatures);
-      setSelectedMauzas([]);
-      addOrUpdatePolygonLayer(map, "moza", geojson, layers.moza.opacity);
-      fitToGeojson(map, geojson);
+      cachedData.current.moza = projectGeojson;
+      const allProjectMauzaIds = getMauzaIdsFromFeatures(projectMauzas);
+      setMauzas(projectMauzas);
+      setSelectedMauzas(allProjectMauzaIds);
+      addOrUpdatePolygonLayer(map, "moza", projectGeojson, layers.moza.opacity);
+      if (zoom) fitToGeojson(map, projectGeojson);
       setVisible("moza", true);
+      return projectGeojson;
     } catch (error) {
       console.error("Mauza boundary load error:", error);
+      return emptyFC();
     } finally {
       setLoading("moza", false);
     }
   };
 
+  const loadBoundaryByMauzas = async (key, mauzaIds, { zoom = true, mauzaFeatures = activeMauzaFeatures } = {}) => {
+    if (!map || !mauzaIds?.length) {
+      cachedData.current[key] = emptyFC();
+      addOrUpdatePolygonLayer(map, key, emptyFC(), layers[key].opacity);
+      setVisible(key, true);
+      return emptyFC();
+    }
+
+    setLoading(key, true);
+
+    try {
+      const geojson =
+        key === "khasra"
+          ? await getKhasrasGeoJSON({ mauza_ids: mauzaIds })
+          : await getMurabbasGeoJSON({ mauza_ids: mauzaIds });
+
+      cachedData.current[key] = geojson;
+      addOrUpdatePolygonLayer(map, key, geojson, layers[key].opacity);
+      if (zoom) fitToGeojson(map, geojson);
+      setVisible(key, true);
+
+      if (key === "khasra") {
+        const linkedMauzas = (mauzaFeatures || []).filter((feature) =>
+          mauzaIds.includes(getMauzaId(feature)),
+        );
+        setKhasraMauzas(linkedMauzas);
+        setKhasraPanelOpen(true);
+      }
+
+      return geojson;
+    } catch (error) {
+      console.error(`${key} boundary load error:`, error);
+      return emptyFC();
+    } finally {
+      setLoading(key, false);
+    }
+  };
+
+  const ensureProjectMauzas = async () => {
+    if (activeMauzaIds.length) {
+      return { ids: activeMauzaIds, features: activeMauzaFeatures };
+    }
+
+    const loaded = await loadMauzas({ zoom: false });
+    const features = loaded.features || [];
+    return { ids: getMauzaIdsFromFeatures(features), features };
+  };
+
   const handleVisible = async (key, visible) => {
+    if (!hasSelectedProject) return;
+
     if (!map) {
       setVisible(key, visible);
       return;
@@ -281,6 +359,11 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       if (key === "moza") {
         setSelectedMauzas([]);
         setMauzaPanelOpen(false);
+      }
+
+      if (key === "khasra") {
+        setKhasraPanelOpen(false);
+        setKhasraMauzas([]);
       }
 
       return;
@@ -297,35 +380,9 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       return;
     }
 
-    if (IDS[key] && map.getSource(IDS[key].src) && cachedData.current[key]) {
-      setVisible(key, true);
-      addOrUpdatePolygonLayer(map, key, cachedData.current[key], layers[key].opacity);
-      return;
-    }
-
-    setLoading(key, true);
-
-    try {
-      let geojson = null;
-
-      if (key === "murabba") {
-        geojson = await import("../../../../services/api").then((m) => m.getMurabbas());
-      }
-
-      if (key === "khasra") {
-        geojson = await import("../../../../services/api").then((m) => m.getKhasras());
-      }
-
-      if (geojson?.features?.length) {
-        cachedData.current[key] = geojson;
-        addOrUpdatePolygonLayer(map, key, geojson, layers[key].opacity);
-        fitToGeojson(map, geojson);
-        setVisible(key, true);
-      }
-    } catch (error) {
-      console.error("LandRevenue layer load error:", error);
-    } finally {
-      setLoading(key, false);
+    if (key === "murabba" || key === "khasra") {
+      const { ids, features } = await ensureProjectMauzas();
+      await loadBoundaryByMauzas(key, ids, { mauzaFeatures: features });
     }
   };
 
@@ -341,83 +398,161 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   }, [map, mauzaGeojson, layers.moza.visible, layers.moza.opacity]);
 
   useEffect(() => {
-    if (!map || !layers.moza.visible) return;
-    loadMauzas();
+    if (!map) return;
+
+    if (!layers.khasra.visible && !layers.murabba.visible) return;
+
+    const reloadDependentLayers = async () => {
+      if (layers.khasra.visible) {
+        await loadBoundaryByMauzas("khasra", activeMauzaIds, {
+          zoom: false,
+          mauzaFeatures: activeMauzaFeatures,
+        });
+      }
+      if (layers.murabba.visible) {
+        await loadBoundaryByMauzas("murabba", activeMauzaIds, {
+          zoom: false,
+          mauzaFeatures: activeMauzaFeatures,
+        });
+      }
+    };
+
+    reloadDependentLayers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProjectKey]);
+  }, [activeMauzaIds.join(",")]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    cachedData.current = {};
+    setMauzas([]);
+    setSelectedMauzas([]);
+    setKhasraMauzas([]);
+    setMauzaPanelOpen(false);
+    setKhasraPanelOpen(false);
+    setOpen(false);
+
+    ["moza", "murabba", "khasra", "masawi"].forEach((key) => hideLayer(map, key));
+
+    setLayers((prev) => ({
+      ...prev,
+      moza: { ...prev.moza, visible: false, loading: false },
+      murabba: { ...prev.murabba, visible: false, loading: false },
+      khasra: { ...prev.khasra, visible: false, loading: false },
+      masawi: { ...prev.masawi, visible: false, loading: false },
+    }));
+  }, [map, selectedProjectKey]);
+
+  const renderBoundaryRow = ({ key, label, color, dropdown }) => {
+    const isKhasra = key === "khasra";
+
+    return (
+      <LayerItem
+        key={key}
+        checked={layers[key].visible}
+        color={color}
+        label={label}
+        loading={layers[key].loading}
+        opacity={layers[key].opacity}
+        hasDropdown={dropdown}
+        dropdownOpen={isKhasra && khasraPanelOpen}
+        dropdownTitle="Show khasra mauza names"
+        onChange={(checked) => handleVisible(key, checked)}
+        onOpacityChange={(opacity) => setOpacity(key, opacity)}
+        disabled={!hasSelectedProject}
+        onDropdownToggle={() => setKhasraPanelOpen((prev) => !prev)}
+      >
+        {isKhasra && khasraPanelOpen && (
+          <div
+            className="max-h-32 overflow-y-auto border-t border-white/10 px-3 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {!layers.khasra.visible && (
+              <div className="py-1 text-[11px] text-white/45">
+                Turn on Khasra Boundary to view linked mauza names.
+              </div>
+            )}
+
+            {layers.khasra.visible && !khasraMauzas.length && !layers.khasra.loading && (
+              <div className="py-1 text-[11px] text-white/45">
+                No khasra boundary loaded for selected project mauzas.
+              </div>
+            )}
+
+            {khasraMauzas.map((mauza) => {
+              const id = getMauzaId(mauza);
+              const name = getMauzaName(mauza);
+
+              return (
+                <div
+                  key={`khasra-${id}-${name}`}
+                  className="flex items-center gap-2 py-1 text-[11px] text-white/85"
+                >
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#65c96b]" />
+                  <span className="truncate">{name}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </LayerItem>
+    );
+  };
 
   return (
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
-        onClick={() => setOpen((prev) => !prev)}
+        disabled={!hasSelectedProject}
+        className={`flex w-full items-center justify-between px-4 py-3 text-white ${
+          hasSelectedProject
+            ? "cursor-pointer hover:bg-[#293445]"
+            : "cursor-not-allowed opacity-45"
+        }`}
+        onClick={() => {
+          if (!hasSelectedProject) return;
+          setOpen((prev) => !prev);
+        }}
+        title={!hasSelectedProject ? "Select a project first" : undefined}
       >
         <span>LAND REVENUE RECORD</span>
         {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
       </button>
 
-      {open && (
+      {open && hasSelectedProject && (
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
-          <div className="mb-2 rounded-sm border border-[#344055] bg-[#1b2230] text-xs text-white">
-            <div className="flex items-center justify-between px-3 py-2">
-              <label className="flex min-w-0 cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={layers.moza.visible}
-                  onChange={(event) => handleVisible("moza", event.target.checked)}
-                />
-
-                <span
-                  className="h-3 w-3 shrink-0 rounded-sm"
-                  style={{ backgroundColor: MAUZA_DEF.color }}
-                />
-
-                <span className="truncate font-semibold">
-                  {layers.moza.loading ? (
-                    <span className="flex items-center gap-1">
-                      Mauza Boundary
-                      <span className="text-[9px] text-white/40 animate-pulse">loading…</span>
-                    </span>
-                  ) : (
-                    "Mauza Boundary"
-                  )}
-                </span>
-              </label>
-
-              <button
-                type="button"
-                className="flex items-center gap-1 rounded px-1.5 py-1 text-white/80 hover:bg-white/10 hover:text-white"
-                onClick={() => setMauzaPanelOpen((prev) => !prev)}
-                title="Show mauza names"
-              >
-                <Grid size={15} />
-                {mauzaPanelOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              </button>
-            </div>
-
-            {layers.moza.visible && (
-              <div className="border-t border-white/10 px-3 pb-2">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={layers.moza.opacity}
-                  onChange={(event) => setOpacity("moza", Number(event.target.value))}
-                  className="h-1.5 w-full accent-[#8bd66f]"
-                />
-              </div>
-            )}
-
+          <LayerItem
+            checked={layers.moza.visible}
+            color={MAUZA_DEF.color}
+            label="Mauza Boundary"
+            loading={layers.moza.loading}
+            opacity={layers.moza.opacity}
+            hasDropdown
+            dropdownOpen={mauzaPanelOpen}
+            dropdownTitle="Show mauza names"
+            disabled={!hasSelectedProject}
+            onChange={(checked) => handleVisible("moza", checked)}
+            onOpacityChange={(opacity) => setOpacity("moza", opacity)}
+            onDropdownToggle={() => setMauzaPanelOpen((prev) => !prev)}
+          >
             {mauzaPanelOpen && (
-              <div className="max-h-48 overflow-y-auto border-t border-white/10 px-3 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                {!layers.moza.visible && (
+              <div
+                className="max-h-32 overflow-y-auto border-t border-white/10 px-3 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {!selectedProjectId && (
+                  <div className="py-1 text-[11px] text-white/45">
+                    Select a project first to load linked mauzas.
+                  </div>
+                )}
+
+                {selectedProjectId && !layers.moza.visible && (
                   <div className="py-1 text-[11px] text-white/45">
                     Turn on Mauza Boundary to load project mauzas.
                   </div>
                 )}
 
-                {layers.moza.visible && !mauzas.length && !layers.moza.loading && (
+                {selectedProjectId && layers.moza.visible && !mauzas.length && !layers.moza.loading && (
                   <div className="py-1 text-[11px] text-white/45">
                     No mauza found for selected project.
                   </div>
@@ -428,17 +563,24 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                   const name = getMauzaName(mauza);
 
                   return (
-                    <label key={`${id}-${name}`} className="flex cursor-pointer items-center gap-2 py-1 text-[11px] text-white/85 hover:text-white">
+                    <label
+                      key={`${id}-${name}`}
+                      className="flex cursor-pointer items-center gap-2 py-1 text-[11px] text-white/85 hover:text-white"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <input
                         type="checkbox"
                         checked={selectedMauzas.includes(id)}
+                        onClick={(event) => event.stopPropagation()}
                         onChange={(event) => {
+                          const checked = event.target.checked;
                           setSelectedMauzas((prev) =>
-                            event.target.checked
-                              ? [...prev, id]
-                              : prev.filter((selectedId) => selectedId !== id)
+                            checked
+                              ? [...new Set([...prev, id])]
+                              : prev.filter((selectedId) => selectedId !== id),
                           );
                         }}
+                        className="accent-[#65c96b]"
                       />
                       <span className="truncate">{name}</span>
                     </label>
@@ -446,30 +588,102 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                 })}
               </div>
             )}
-          </div>
+          </LayerItem>
 
-          {LAYER_DEFS.map(({ key, label, color }) => (
-            <LayerRow
-              key={key}
-              label={
-                layers[key].loading ? (
-                  <span className="flex items-center gap-1">
-                    {label}
-                    <span className="text-[9px] text-white/40 animate-pulse">loading…</span>
-                  </span>
-                ) : (
-                  label
-                )
-              }
-              color={color}
-              checked={layers[key].visible}
-              opacity={layers[key].opacity}
-              onCheckedChange={(value) => handleVisible(key, value)}
-              onOpacityChange={(opacity) => setOpacity(key, opacity)}
-            />
-          ))}
+          {LAYER_DEFS.map((definition) => renderBoundaryRow(definition))}
         </div>
       )}
+    </div>
+  );
+}
+
+function LayerItem({
+  checked,
+  color,
+  label,
+  loading,
+  opacity,
+  hasDropdown = false,
+  dropdownOpen = false,
+  dropdownTitle,
+  onChange,
+  onOpacityChange,
+  onDropdownToggle,
+  disabled = false,
+  children,
+}) {
+  return (
+    <div className={`mt-3 first:mt-1 text-white ${disabled ? "opacity-45" : ""}`}>
+      <div className="flex items-center justify-between">
+        <label className={`flex min-w-0 items-center gap-2 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}>
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled={disabled}
+            onChange={(event) => {
+              if (disabled) return;
+              onChange(event.target.checked);
+            }}
+            className="accent-[#65c96b] disabled:cursor-not-allowed"
+          />
+
+          <span
+            className="h-4 w-4 shrink-0 rounded-sm border-2"
+            style={{ borderColor: color }}
+          />
+
+          <span className="truncate text-[11px]">
+            {loading ? (
+              <span className="flex items-center gap-1">
+                {label}
+                <span className="text-[9px] text-white/40 animate-pulse">loading…</span>
+              </span>
+            ) : (
+              label
+            )}
+          </span>
+        </label>
+
+        {hasDropdown ? (
+          <button
+            type="button"
+            disabled={disabled}
+            className="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-white/60"
+            onClick={(event) => {
+              event.stopPropagation();
+              if (disabled) return;
+              onDropdownToggle?.();
+            }}
+            title={dropdownTitle}
+          >
+            <Grid3X3 size={14} />
+            {dropdownOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </button>
+        ) : (
+          <Grid3X3 size={14} className="shrink-0 text-white/60" />
+        )}
+      </div>
+
+      <div className="mt-2 flex items-center gap-2 pl-6">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={opacity}
+          disabled={disabled}
+          onChange={(event) => {
+            if (disabled) return;
+            onOpacityChange(Number(event.target.value));
+          }}
+          className="h-[3px] flex-1 cursor-pointer rounded-full bg-[#8fd36f] accent-[#65c96b] disabled:cursor-not-allowed"
+        />
+
+        <span className="w-7 text-right text-[11px] text-white/90">
+          {opacity}%
+        </span>
+      </div>
+
+      {children}
     </div>
   );
 }

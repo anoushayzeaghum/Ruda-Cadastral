@@ -404,3 +404,126 @@ export const importMauzaShapefile = async ({ file }) => {
 
   return res.data;
 };
+
+
+const normalizeIdValue = (value) => {
+  if (value === null || value === undefined || value === "") return "";
+  return String(value).trim().toLowerCase();
+};
+
+const normalizeIdList = (value) => {
+  if (Array.isArray(value)) return value.map(normalizeIdValue).filter(Boolean);
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map(normalizeIdValue)
+      .filter(Boolean);
+  }
+
+  const single = normalizeIdValue(value);
+  return single ? [single] : [];
+};
+
+const getFeatureMauzaValues = (feature = {}) => {
+  const props = feature.properties || feature || {};
+
+  return [
+    props.mauza_id,
+    props.mauza,
+    props.Mauza,
+    props.moza_id,
+    props.moza,
+    props.Moza,
+    props.mauza_gid,
+    props.mouza_id,
+    props.mouza,
+    props.Mouza,
+  ]
+    .map(normalizeIdValue)
+    .filter(Boolean);
+};
+
+const filterGeoJSONByMauzaIds = (geojson, mauzaIds = []) => {
+  const allowedMauzas = new Set(normalizeIdList(mauzaIds));
+
+  if (!allowedMauzas.size) return geojson;
+
+  return {
+    type: "FeatureCollection",
+    features: (geojson.features || []).filter((feature) =>
+      getFeatureMauzaValues(feature).some((value) => allowedMauzas.has(value))
+    ),
+  };
+};
+
+export const getProjectMauzas = async (projectId) => {
+  if (!projectId) return [];
+
+  const res = await API.get("/project-mauza/", {
+    params: { project_id: projectId },
+  });
+
+  return extractPayload(res);
+};
+
+export const getProjectMauzasGeoJSON = async (projectId) => {
+  if (!projectId) {
+    return { type: "FeatureCollection", features: [] };
+  }
+
+  const rows = await getProjectMauzas(projectId);
+
+  return {
+    type: "FeatureCollection",
+    features: (rows || [])
+      .map((row) => row?.mauza_detail)
+      .filter(Boolean)
+      .map((feature) => ({
+        ...feature,
+        properties: feature.properties || {},
+      })),
+  };
+};
+
+export const getMurabbasGeoJSON = async (filters = {}) => {
+  const mauzaIds = filters.mauza_ids ?? filters.mauza_id;
+
+  const params = {
+    ...filters,
+    mauza_ids: Array.isArray(filters.mauza_ids)
+      ? filters.mauza_ids.join(",")
+      : filters.mauza_ids,
+    mauza_id: Array.isArray(filters.mauza_id)
+      ? filters.mauza_id.join(",")
+      : filters.mauza_id,
+  };
+
+  const res = await API.get("/murabba/", { params });
+  const geojson = normalizeGeoJson(res);
+
+  // Safety filter: if backend ignores mauza_ids and returns all records,
+  // keep only Murabbas belonging to the selected project Mauzas.
+  return filterGeoJSONByMauzaIds(geojson, mauzaIds);
+};
+
+export const getKhasrasGeoJSON = async (filters = {}) => {
+  const mauzaIds = filters.mauza_ids ?? filters.mauza_id;
+
+  const params = {
+    ...filters,
+    mauza_ids: Array.isArray(filters.mauza_ids)
+      ? filters.mauza_ids.join(",")
+      : filters.mauza_ids,
+    mauza_id: Array.isArray(filters.mauza_id)
+      ? filters.mauza_id.join(",")
+      : filters.mauza_id,
+  };
+
+  const res = await API.get("/khasra/", { params });
+  const geojson = normalizeGeoJson(res);
+
+  // Safety filter: if backend ignores mauza_ids and returns all Khasras,
+  // keep only Khasras belonging to the selected project Mauzas.
+  return filterGeoJSONByMauzaIds(geojson, mauzaIds);
+};

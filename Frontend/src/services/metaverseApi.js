@@ -96,7 +96,9 @@ export const getPlotOptionsAll = async () => {
     // NEW (ADD ALL MISSING FIELDS)
     parkFronts: [...new Set(plots.map((p) => p.parkfront).filter(Boolean))],
     roadFacing: [...new Set(plots.map((p) => p.rd_facing).filter(Boolean))],
-    possessionStatus: [...new Set(plots.map((p) => p.poss_st || p.possession).filter(Boolean))],
+    possessionStatus: [
+      ...new Set(plots.map((p) => p.poss_st || p.possession).filter(Boolean)),
+    ],
     plotStatus: [...new Set(plots.map((p) => p.canceled).filter(Boolean))],
     categories: [...new Set(plots.map((p) => p.tr_cate).filter(Boolean))],
     owners: [...new Set(plots.map((p) => p.tr_own).filter(Boolean))],
@@ -220,13 +222,104 @@ export const getPlotLandUseBreakdown = async (filters = {}) => {
     .sort((a, b) => b.count - a.count);
 };
 
-////////////////////// Project Mauzas //////////////////////////////
+////////////////////// Project Mauzas / Land Revenue Record //////////////////////////////
+
+const toFeatureCollection = (features = []) => ({
+  type: "FeatureCollection",
+  features: features.filter(Boolean),
+});
+
+const normalizeFeatureFromProjectMauza = (row) => {
+  const detail = row?.mauza_detail || row?.mauzaDetail || row?.mauza;
+
+  if (detail?.type === "Feature") {
+    return {
+      ...detail,
+      properties: {
+        ...(detail.properties || {}),
+        project_mauza_id: row?.id,
+        project_id: row?.project,
+      },
+    };
+  }
+
+  if (detail?.geometry && detail?.properties) {
+    return {
+      type: "Feature",
+      id: detail.id ?? detail.properties?.gid ?? detail.properties?.mauza_id,
+      geometry: detail.geometry,
+      properties: {
+        ...(detail.properties || {}),
+        project_mauza_id: row?.id,
+        project_id: row?.project,
+      },
+    };
+  }
+
+  if (detail?.geom || detail?.geometry) {
+    const { geom, geometry, ...properties } = detail;
+
+    return {
+      type: "Feature",
+      id: detail.gid ?? detail.id ?? detail.mauza_id,
+      geometry: geometry || geom,
+      properties: {
+        ...properties,
+        project_mauza_id: row?.id,
+        project_id: row?.project,
+      },
+    };
+  }
+
+  return null;
+};
 
 export const getProjectMauzas = async (projectId) => {
+  if (!projectId) return [];
+
   const res = await axios.get(`${API_BASE}/project-mauza/`, {
     params: { project_id: projectId },
   });
 
+  const raw = unwrapApiData(res.data);
+  return Array.isArray(raw) ? raw : raw?.results || [];
+};
+
+export const getProjectMauzasGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  const rows = await getProjectMauzas(projectId);
+  const features = rows.map(normalizeFeatureFromProjectMauza).filter(Boolean);
+
+  return toFeatureCollection(features);
+};
+
+export const getMauzasGeoJSON = async (filters = {}) => {
+  const res = await axios.get(`${API_BASE}/mauza/`, { params: filters });
+  return unwrapGeoJSON(res.data);
+};
+
+export const getMurabbasGeoJSON = async (filters = {}) => {
+  const params = {
+    ...filters,
+    mauza_ids: Array.isArray(filters.mauza_ids)
+      ? filters.mauza_ids.join(",")
+      : filters.mauza_ids,
+  };
+
+  const res = await axios.get(`${API_BASE}/murabba/`, { params });
+  return unwrapGeoJSON(res.data);
+};
+
+export const getKhasrasGeoJSON = async (filters = {}) => {
+  const params = {
+    ...filters,
+    mauza_ids: Array.isArray(filters.mauza_ids)
+      ? filters.mauza_ids.join(",")
+      : filters.mauza_ids,
+  };
+
+  const res = await axios.get(`${API_BASE}/khasra/`, { params });
   return unwrapGeoJSON(res.data);
 };
 

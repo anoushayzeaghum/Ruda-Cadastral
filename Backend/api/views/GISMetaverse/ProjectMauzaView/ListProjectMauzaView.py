@@ -1,5 +1,4 @@
 from ...common_imports import *
-from rest_framework.decorators import action
 
 
 class ListProjectMauzaView(viewsets.ViewSet):
@@ -11,7 +10,7 @@ class ListProjectMauzaView(viewsets.ViewSet):
         try:
             project_id = request.query_params.get("project_id")
 
-            qs = ProjectMauza.objects.all()
+            qs = ProjectMauza.objects.select_related("project", "mauza").all()
 
             if project_id:
                 qs = qs.filter(project_id=project_id)
