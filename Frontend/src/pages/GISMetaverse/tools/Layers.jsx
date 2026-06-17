@@ -25,7 +25,7 @@ export default function LayersPanel({
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
-      <TopographicPlan map={map} />
+      <TopographicPlan map={map} selectedProjectId={filters?.projectId} />
       <ServiceUtilities
         selectedProjectId={filters?.projectId}
         layerVisibility={layerVisibility}

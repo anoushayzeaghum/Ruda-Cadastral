@@ -99,7 +99,7 @@ export default function MetaverseMapControls({
   }, [map]);
 
   return (
-    <div className="absolute right-3 top-3 z-30 flex items-start gap-2">
+    <div className="absolute right-2 top-2 z-30 flex items-start gap-1.5 sm:right-3 sm:top-3 sm:gap-2">
       <CoordinateBox coords={coords} zoom={zoom} />
 
       <div className="flex flex-col items-center gap-1">
@@ -147,7 +147,7 @@ export default function MetaverseMapControls({
           </ControlButton>
 
           {showLegend && (
-            <div className="absolute right-11 top-0">
+            <div className="absolute right-11 top-0 max-w-[calc(100vw-4rem)] sm:max-w-none">
               <MetaverseLegend
                 adminBoundaryVisibility={adminBoundaryVisibility}
                 rudaPhases={metaverseLegendData?.rudaPhases || []}
@@ -162,7 +162,7 @@ export default function MetaverseMapControls({
 
 function CoordinateBox({ coords, zoom }) {
   return (
-    <div className="mt-0 rounded bg-[#111827] px-2 py-1 text-[10px] font-semibold text-white shadow-md">
+    <div className="hidden sm:block mt-0 rounded bg-[#111827] px-2 py-1 text-[10px] font-semibold text-white shadow-md">
       {coords.lng}, {coords.lat}
 
       <div className="mt-1 rounded bg-black/60 px-1 py-0.5 text-center text-[9px]">
