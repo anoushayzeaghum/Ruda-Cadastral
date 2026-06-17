@@ -35,10 +35,7 @@ const basemaps = [
 ];
 
 export default function Basemaps({ map, rebuildAllLayers }) {
-  console.log("BASEMAP PROPS", {
-    map,
-    rebuildAllLayers,
-  });
+ 
 
   const [activeBasemap, setActiveBasemap] = useState("streets");
 
