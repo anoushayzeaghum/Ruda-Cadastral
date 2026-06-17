@@ -82,9 +82,9 @@ function reprojectGeoJSON(geojson) {
       ...f,
       geometry: f.geometry
         ? {
-          ...f.geometry,
-          coordinates: reprojectCoordArray(f.geometry.coordinates),
-        }
+            ...f.geometry,
+            coordinates: reprojectCoordArray(f.geometry.coordinates),
+          }
         : f.geometry,
     })),
   };
@@ -355,25 +355,12 @@ export default function TopographicPlan({ map, selectedProjectId }) {
       </button>
 
       {open && (
-        <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2 space-y-0">
-          {/* Handu Gujran Ortho */}
-          <LayerRow
-            label="Handu Gujran Massavi"
-            color="#84cc16"
-            checked={orthoVisible}
-            opacity={orthoOpacity}
-            disabled={!selectedProjectId}
-            onCheckedChange={(v) => { if (!selectedProjectId) return; setOrthoVisible(v); }}
-            onOpacityChange={setOrthoOpacity}
-          />
-
-          <div className="border-t border-[#344055] my-2" />
-
+        <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
           {/* Topo boundary */}
           <LayerRow
             label={
               <span className="flex items-center gap-1.5">
-                Topo Boundary — CB1
+                Topo Boundary
                 {topoLoading && (
                   <span className="text-[9px] text-white/40 animate-pulse">
                     loading…
@@ -385,31 +372,38 @@ export default function TopographicPlan({ map, selectedProjectId }) {
             checked={topoVisible}
             opacity={topoOpacity}
             disabled={!selectedProjectId}
-            onCheckedChange={(v) => { if (!selectedProjectId) return; setTopoVisible(v); }}
+            onCheckedChange={(v) => {
+              if (!selectedProjectId) return;
+              setTopoVisible(v);
+            }}
             onOpacityChange={setTopoOpacity}
           />
 
-          <div className="border-t border-[#344055] my-2" />
-
           {/* DSM */}
           <LayerRow
-            label="Chaharbagh DSM"
+            label="DSM"
             color="#ff8b24"
             checked={dsmVisible}
             opacity={dsmOpacity}
             disabled={!selectedProjectId}
-            onCheckedChange={(v) => { if (!selectedProjectId) return; setDsmVisible(v); }}
+            onCheckedChange={(v) => {
+              if (!selectedProjectId) return;
+              setDsmVisible(v);
+            }}
             onOpacityChange={setDsmOpacity}
           />
 
           {/* DTM */}
           <LayerRow
-            label="Chaharbagh DTM"
+            label="DTM"
             color="#42a5f5"
             checked={dtmVisible}
             opacity={dtmOpacity}
             disabled={!selectedProjectId}
-            onCheckedChange={(v) => { if (!selectedProjectId) return; setDtmVisible(v); }}
+            onCheckedChange={(v) => {
+              if (!selectedProjectId) return;
+              setDtmVisible(v);
+            }}
             onOpacityChange={setDtmOpacity}
           />
         </div>
