@@ -235,6 +235,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   );
 
   const selectedProjectKey = selectedProjectId ? String(selectedProjectId) : "";
+  const hasSelectedProject = Boolean(selectedProjectKey);
 
   const setVisible = (key, visible) => {
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], visible } }));
@@ -268,7 +269,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       setMauzas([]);
       setSelectedMauzas([]);
       addOrUpdatePolygonLayer(map, "moza", emptyFC(), layers.moza.opacity);
-      setVisible("moza", true);
+      setVisible("moza", false);
       return emptyFC();
     }
 
@@ -295,7 +296,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     }
   };
 
-  const loadBoundaryByMauzas = async (key, mauzaIds, { zoom = true } = {}) => {
+  const loadBoundaryByMauzas = async (key, mauzaIds, { zoom = true, mauzaFeatures = activeMauzaFeatures } = {}) => {
     if (!map || !mauzaIds?.length) {
       cachedData.current[key] = emptyFC();
       addOrUpdatePolygonLayer(map, key, emptyFC(), layers[key].opacity);
@@ -317,7 +318,11 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       setVisible(key, true);
 
       if (key === "khasra") {
-        setKhasraMauzas(activeMauzaFeatures);
+        const linkedMauzas = (mauzaFeatures || []).filter((feature) =>
+          mauzaIds.includes(getMauzaId(feature)),
+        );
+        setKhasraMauzas(linkedMauzas);
+        setKhasraPanelOpen(true);
       }
 
       return geojson;
@@ -329,14 +334,19 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     }
   };
 
-  const ensureMauzas = async () => {
-    if (activeMauzaIds.length) return activeMauzaIds;
+  const ensureProjectMauzas = async () => {
+    if (activeMauzaIds.length) {
+      return { ids: activeMauzaIds, features: activeMauzaFeatures };
+    }
 
     const loaded = await loadMauzas({ zoom: false });
-    return getMauzaIdsFromFeatures(loaded.features || []);
+    const features = loaded.features || [];
+    return { ids: getMauzaIdsFromFeatures(features), features };
   };
 
   const handleVisible = async (key, visible) => {
+    if (!hasSelectedProject) return;
+
     if (!map) {
       setVisible(key, visible);
       return;
@@ -371,8 +381,8 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     }
 
     if (key === "murabba" || key === "khasra") {
-      const mauzaIds = await ensureMauzas();
-      await loadBoundaryByMauzas(key, mauzaIds);
+      const { ids, features } = await ensureProjectMauzas();
+      await loadBoundaryByMauzas(key, ids, { mauzaFeatures: features });
     }
   };
 
@@ -393,8 +403,18 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     if (!layers.khasra.visible && !layers.murabba.visible) return;
 
     const reloadDependentLayers = async () => {
-      if (layers.khasra.visible) await loadBoundaryByMauzas("khasra", activeMauzaIds, { zoom: false });
-      if (layers.murabba.visible) await loadBoundaryByMauzas("murabba", activeMauzaIds, { zoom: false });
+      if (layers.khasra.visible) {
+        await loadBoundaryByMauzas("khasra", activeMauzaIds, {
+          zoom: false,
+          mauzaFeatures: activeMauzaFeatures,
+        });
+      }
+      if (layers.murabba.visible) {
+        await loadBoundaryByMauzas("murabba", activeMauzaIds, {
+          zoom: false,
+          mauzaFeatures: activeMauzaFeatures,
+        });
+      }
     };
 
     reloadDependentLayers();
@@ -410,14 +430,16 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     setKhasraMauzas([]);
     setMauzaPanelOpen(false);
     setKhasraPanelOpen(false);
+    setOpen(false);
 
-    ["moza", "murabba", "khasra"].forEach((key) => hideLayer(map, key));
+    ["moza", "murabba", "khasra", "masawi"].forEach((key) => hideLayer(map, key));
 
     setLayers((prev) => ({
       ...prev,
       moza: { ...prev.moza, visible: false, loading: false },
       murabba: { ...prev.murabba, visible: false, loading: false },
       khasra: { ...prev.khasra, visible: false, loading: false },
+      masawi: { ...prev.masawi, visible: false, loading: false },
     }));
   }, [map, selectedProjectKey]);
 
@@ -437,6 +459,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
         dropdownTitle="Show khasra mauza names"
         onChange={(checked) => handleVisible(key, checked)}
         onOpacityChange={(opacity) => setOpacity(key, opacity)}
+        disabled={!hasSelectedProject}
         onDropdownToggle={() => setKhasraPanelOpen((prev) => !prev)}
       >
         {isKhasra && khasraPanelOpen && (
@@ -480,14 +503,23 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
-        onClick={() => setOpen((prev) => !prev)}
+        disabled={!hasSelectedProject}
+        className={`flex w-full items-center justify-between px-4 py-3 text-white ${
+          hasSelectedProject
+            ? "cursor-pointer hover:bg-[#293445]"
+            : "cursor-not-allowed opacity-45"
+        }`}
+        onClick={() => {
+          if (!hasSelectedProject) return;
+          setOpen((prev) => !prev);
+        }}
+        title={!hasSelectedProject ? "Select a project first" : undefined}
       >
         <span>LAND REVENUE RECORD</span>
         {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
       </button>
 
-      {open && (
+      {open && hasSelectedProject && (
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
           <LayerItem
             checked={layers.moza.visible}
@@ -498,6 +530,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
             hasDropdown
             dropdownOpen={mauzaPanelOpen}
             dropdownTitle="Show mauza names"
+            disabled={!hasSelectedProject}
             onChange={(checked) => handleVisible("moza", checked)}
             onOpacityChange={(opacity) => setOpacity("moza", opacity)}
             onDropdownToggle={() => setMauzaPanelOpen((prev) => !prev)}
@@ -576,17 +609,22 @@ function LayerItem({
   onChange,
   onOpacityChange,
   onDropdownToggle,
+  disabled = false,
   children,
 }) {
   return (
-    <div className="mt-3 first:mt-1 text-white">
+    <div className={`mt-3 first:mt-1 text-white ${disabled ? "opacity-45" : ""}`}>
       <div className="flex items-center justify-between">
-        <label className="flex min-w-0 cursor-pointer items-center gap-2">
+        <label className={`flex min-w-0 items-center gap-2 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}>
           <input
             type="checkbox"
             checked={checked}
-            onChange={(event) => onChange(event.target.checked)}
-            className="accent-[#65c96b]"
+            disabled={disabled}
+            onChange={(event) => {
+              if (disabled) return;
+              onChange(event.target.checked);
+            }}
+            className="accent-[#65c96b] disabled:cursor-not-allowed"
           />
 
           <span
@@ -609,9 +647,11 @@ function LayerItem({
         {hasDropdown ? (
           <button
             type="button"
-            className="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
+            disabled={disabled}
+            className="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-white/60"
             onClick={(event) => {
               event.stopPropagation();
+              if (disabled) return;
               onDropdownToggle?.();
             }}
             title={dropdownTitle}
@@ -630,8 +670,12 @@ function LayerItem({
           min="0"
           max="100"
           value={opacity}
-          onChange={(event) => onOpacityChange(Number(event.target.value))}
-          className="h-[3px] flex-1 cursor-pointer rounded-full bg-[#8fd36f] accent-[#65c96b]"
+          disabled={disabled}
+          onChange={(event) => {
+            if (disabled) return;
+            onOpacityChange(Number(event.target.value));
+          }}
+          className="h-[3px] flex-1 cursor-pointer rounded-full bg-[#8fd36f] accent-[#65c96b] disabled:cursor-not-allowed"
         />
 
         <span className="w-7 text-right text-[11px] text-white/90">
