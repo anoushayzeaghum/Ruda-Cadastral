@@ -123,27 +123,43 @@ export default function MetaverseLeftToolbar({
 
       {activeTool && (
         <div
-          className={`absolute left-14 z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl ${
-            activeTool === "filter"
-              ? "w-[320px] overflow-visible"
-              : activeTool === "layers"
-                ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                : activeTool === "droneImagery"
-                  ? "w-[320px] max-h-[calc(100vh-90px)] overflow-y-auto"
-                  : activeTool === "timeLapse"
-                    ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                    : activeTool === "changeDetection"
-                      ? "w-[360px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                      : activeTool === "import"
-                        ? "w-[340px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                        : activeTool === "measurement"
-                          ? "w-[300px] max-h-[calc(100vh-90px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                          : "w-[270px] max-h-[calc(100vh-90px)] overflow-y-auto"
-          }`}
-          style={{ top: `${panelTop}px` }}
+          className={`absolute z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl
+            /* Mobile: slide up from bottom as a sheet */
+            bottom-0 left-0 right-0 max-h-[70vh] overflow-y-auto rounded-b-none
+            /* sm+: restore left toolbar panel behaviour */
+            sm:bottom-auto sm:left-14 sm:right-auto sm:rounded-b-md
+            ${
+              activeTool === "filter"
+                ? "sm:w-[300px] sm:max-h-[400px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                : activeTool === "layers"
+                  ? "sm:w-[300px] sm:max-h-[500px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  : activeTool === "droneImagery"
+                    ? "sm:w-[320px] sm:max-h-[calc(100vh-90px)]"
+                    : activeTool === "timeLapse"
+                      ? "sm:w-[360px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                      : activeTool === "changeDetection"
+                        ? "sm:w-[360px] sm:max-h-[500px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                        : activeTool === "import"
+                          ? "sm:w-[340px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                          : activeTool === "measurement"
+                            ? "sm:w-[300px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                            : "sm:w-[270px] sm:max-h-[calc(100vh-90px)]"
+            }`}
+          style={{ top: window.innerWidth >= 640 ? `${panelTop}px` : undefined }}
         >
-          {activeTool === "layers" && (
-            <LayersPanel
+          {/* Mobile drag handle — hidden on sm+ */}
+          <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-2 sm:hidden">
+            <div className="mx-auto h-1 w-10 rounded-full bg-white/30" />
+            <button
+              type="button"
+              onClick={() => setActiveTool(null)}
+              className="ml-4 text-white/50 hover:text-white text-xs"
+            >
+              ✕
+            </button>
+          </div>
+
+          {activeTool === "layers" && (            <LayersPanel
               map={map}
               filters={filters}
               layerVisibility={layerVisibility}
@@ -193,7 +209,7 @@ export default function MetaverseLeftToolbar({
 
       <div className="absolute bottom-4 left-2 z-40 flex flex-col items-start gap-2">
         {bottomPanel === "basemaps" && (
-          <div className="mb-1 w-[380px] max-h-[340px] overflow-y-auto rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mb-1 w-[calc(100vw-4rem)] max-h-[340px] overflow-y-auto rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:w-[380px]">
             <Basemaps map={map} />
           </div>
         )}
@@ -223,7 +239,7 @@ export default function MetaverseLeftToolbar({
           setLayerVisibility={setLayerVisibility}
         />
 
-        <SegmentMeasurement map={map} />
+        {/* <SegmentMeasurement map={map} /> */}
       </div>
     </>
   );

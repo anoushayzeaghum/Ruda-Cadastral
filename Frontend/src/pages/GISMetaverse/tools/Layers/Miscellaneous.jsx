@@ -3,15 +3,13 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import LayerRow from "./_LayerRow";
 
 const IDS = {
-  trijunction: { src: "gism-misc-tri-src",   circle: "gism-misc-tri-cir"   },
-  fieldPoints:  { src: "gism-misc-fp-src",   circle: "gism-misc-fp-cir"    },
-  geodetic:     { src: "gism-misc-geo-src",  circle: "gism-misc-geo-cir"   },
+  trijunction: { src: "gism-misc-tri-src", circle: "gism-misc-tri-cir" },
+  fieldPoints: { src: "gism-misc-fp-src", circle: "gism-misc-fp-cir" },
 };
 
 const LAYER_DEFS = [
   { key: "trijunction", label: "Trijunction Points", color: "#f97316" },
-  { key: "fieldPoints",  label: "Field Points",       color: "#a855f7" },
-  { key: "geodetic",     label: "Geodetic Network",   color: "#06b6d4" },
+  { key: "fieldPoints", label: "Field Points", color: "#a855f7" },
 ];
 
 function applyVisibility(map, key, visible) {

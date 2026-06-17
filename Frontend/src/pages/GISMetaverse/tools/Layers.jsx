@@ -17,6 +17,7 @@ export default function LayersPanel({
   return (
     <div className="text-[12px] font-semibold">
       <AdministrativeBoundaries
+        map={map}
         adminBoundaryVisibility={adminBoundaryVisibility}
         setAdminBoundaryVisibility={setAdminBoundaryVisibility}
       />
@@ -25,14 +26,14 @@ export default function LayersPanel({
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
-      <TopographicPlan map={map} />
+      <TopographicPlan map={map} selectedProjectId={filters?.projectId} />
       <ServiceUtilities
         selectedProjectId={filters?.projectId}
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
-      <LandRevenueRecord />
-      <Miscellaneous />
+      <LandRevenueRecord map={map} />
+      <Miscellaneous map={map} />
       <NotifiedBoundaries />
     </div>
   );

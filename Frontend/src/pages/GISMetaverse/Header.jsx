@@ -24,23 +24,23 @@ export default function Header() {
   };
 
   return (
-    <div className="relative z-40 w-full bg-[#111827] px-5 py-2 text-white shadow-md">
+    <div className="relative z-40 w-full bg-[#111827] px-3 py-2 text-white shadow-md sm:px-5">
       <div className="relative z-10 flex items-center justify-between">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="flex shrink-0 items-center justify-center rounded-full bg-white p-1">
             <img
               src={rudaFirmLogo}
               alt="GIS Metaverse"
-              className="h-9 w-9 object-contain"
+              className="h-7 w-7 object-contain sm:h-9 sm:w-9"
             />
           </div>
 
-          <h1 className="shrink-0 text-2xl font-normal tracking-wide">
+          <h1 className="truncate text-sm font-normal tracking-wide sm:text-xl md:text-2xl">
             RUDA GIS METAVERSE
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <IconButton
             title="Home"
             onClick={() => navigate("/")}

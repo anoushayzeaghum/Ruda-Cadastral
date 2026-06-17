@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import LayerRow from "./_LayerRow";
-import { getMauzaBoundary, getMurabbaBoundary, getKhasraBoundary } from "../../../../services/api";
+const MASAWI_SOURCE = "gis-handu-gujran-ortho-source";
+const MASAWI_LAYER = "gis-handu-gujran-ortho-layer";
+const MASAWI_TILE_URL = "http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
+
+const MASAWI_BOUNDS = [
+  [74.42562653088396, 31.60509230706726],
+  [74.43545280361002, 31.6112165411359],
+];
 
 // ── Layer IDs ─────────────────────────────────────────────────────────────────
 const IDS = {
@@ -11,14 +18,16 @@ const IDS = {
 };
 
 const LAYER_DEFS = [
-  { key: "moza",    label: "Moza Boundary",    color: "#ff8b24" },
-  { key: "murabba", label: "Murabba Boundary",  color: "#d7bf32" },
-  { key: "khasra",  label: "Khasra Boundary",   color: "#65c96b" },
+  { key: "moza",    label: "Mauzed Boundary",   color: "#ff8b24", type: "polygon" },
+  { key: "khasra",  label: "Hasra Boundary",    color: "#65c96b", type: "polygon" },
+  { key: "murabba", label: "Murabba Boundary",  color: "#d7bf32", type: "polygon" },
+  { key: "masawi",  label: "Masawi",            color: "#84cc16", type: "raster" },
 ];
 
 // ── Map helpers ───────────────────────────────────────────────────────────────
 function addOrUpdatePolygonLayer(map, key, geojson, opacity) {
   const ids = IDS[key];
+  if (!ids) return;
   const o = opacity / 100;
 
   if (!map.getSource(ids.src)) {
@@ -51,7 +60,15 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity) {
 }
 
 function hideLayer(map, key) {
+  if (key === "masawi") {
+    try {
+      if (map?.getLayer(MASAWI_LAYER)) map.setLayoutProperty(MASAWI_LAYER, "visibility", "none");
+    } catch (_) {}
+    return;
+  }
+
   const ids = IDS[key];
+  if (!ids) return;
   try {
     if (map.getLayer(ids.fill)) map.setLayoutProperty(ids.fill, "visibility", "none");
     if (map.getLayer(ids.line)) map.setLayoutProperty(ids.line, "visibility", "none");
@@ -59,12 +76,52 @@ function hideLayer(map, key) {
 }
 
 function updateOpacity(map, key, opacity) {
-  const ids = IDS[key];
   const o = opacity / 100;
+
+  if (key === "masawi") {
+    try {
+      if (map?.getLayer(MASAWI_LAYER)) map.setPaintProperty(MASAWI_LAYER, "raster-opacity", o);
+    } catch (_) {}
+    return;
+  }
+
+  const ids = IDS[key];
+  if (!ids) return;
   try {
     if (map.getLayer(ids.fill)) map.setPaintProperty(ids.fill, "fill-opacity", o * 0.2);
     if (map.getLayer(ids.line)) map.setPaintProperty(ids.line, "line-opacity", o);
   } catch (_) {}
+}
+
+function addOrUpdateMasawiLayer(map, opacity) {
+  if (!map) return;
+
+  if (!map.getSource(MASAWI_SOURCE)) {
+    map.addSource(MASAWI_SOURCE, {
+      type: "raster",
+      tiles: [MASAWI_TILE_URL],
+      tileSize: 256,
+    });
+  }
+
+  if (!map.getLayer(MASAWI_LAYER)) {
+    map.addLayer({
+      id: MASAWI_LAYER,
+      type: "raster",
+      source: MASAWI_SOURCE,
+      paint: {
+        "raster-opacity": opacity / 100,
+      },
+      layout: {
+        visibility: "visible",
+      },
+    });
+  } else {
+    map.setLayoutProperty(MASAWI_LAYER, "visibility", "visible");
+    map.setPaintProperty(MASAWI_LAYER, "raster-opacity", opacity / 100);
+  }
+
+  map.fitBounds(MASAWI_BOUNDS, { padding: 50, duration: 1500 });
 }
 
 export default function LandRevenueRecord({ map }) {
@@ -89,8 +146,14 @@ export default function LandRevenueRecord({ map }) {
       return;
     }
 
+    if (key === "masawi") {
+      addOrUpdateMasawiLayer(map, layers[key].opacity);
+      setVisible(key, true);
+      return;
+    }
+
     // If source already on map just show it
-    if (map.getSource(IDS[key].src)) {
+    if (IDS[key] && map.getSource(IDS[key].src)) {
       setVisible(key, true);
       addOrUpdatePolygonLayer(map, key, cachedData[key], layers[key].opacity);
       return;

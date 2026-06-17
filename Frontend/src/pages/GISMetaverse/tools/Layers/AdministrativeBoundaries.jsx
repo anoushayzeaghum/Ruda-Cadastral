@@ -1,17 +1,66 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import mapboxgl from "mapbox-gl";
 
 export default function AdministrativeBoundaries({
+  map,
   adminBoundaryVisibility,
   setAdminBoundaryVisibility,
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
+
+  const zoomToRudaBoundary = () => {
+    if (!map) return;
+
+    const extendBounds = (bounds, coords) => {
+      if (!Array.isArray(coords)) return;
+      if (typeof coords[0] === "number" && typeof coords[1] === "number") {
+        bounds.extend(coords);
+        return;
+      }
+      coords.forEach((coord) => extendBounds(bounds, coord));
+    };
+
+    const tryZoom = () => {
+      try {
+        const style = map.getStyle?.();
+        const rudaSourceId = Object.keys(style?.sources || {}).find((sourceId) =>
+          sourceId.toLowerCase().includes("ruda"),
+        );
+
+        if (!rudaSourceId) return;
+
+        const source = map.getSource(rudaSourceId);
+        const data = source?._data || source?.serialize?.()?.data;
+        if (!data?.features?.length) return;
+
+        const bounds = new mapboxgl.LngLatBounds();
+        data.features.forEach((feature) => extendBounds(bounds, feature.geometry?.coordinates));
+
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds, { padding: 60, duration: 1200, maxZoom: 14 });
+        }
+      } catch (error) {
+        console.error("RUDA boundary zoom error:", error);
+      }
+    };
+
+    tryZoom();
+    setTimeout(tryZoom, 350);
+    setTimeout(tryZoom, 900);
+  };
 
   const toggleLayer = (key) => {
+    const willBeVisible = !adminBoundaryVisibility?.[key];
+
     setAdminBoundaryVisibility((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
+
+    if (key === "rudaBoundary" && willBeVisible) {
+      zoomToRudaBoundary();
+    }
   };
 
   const updateOpacity = (key, value) => {
