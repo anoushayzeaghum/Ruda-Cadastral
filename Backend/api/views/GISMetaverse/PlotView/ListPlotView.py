@@ -1,5 +1,5 @@
 from ...common_imports import *
-from rest_framework.decorators import action
+from django.db.models import Q, OuterRef, Subquery
 
 
 class ListPlotView(viewsets.ViewSet):
@@ -17,8 +17,33 @@ class ListPlotView(viewsets.ViewSet):
             plot_area = request.query_params.get("plot_area")
             plot_type = request.query_params.get("type")
 
+            # ⭐ GLOBAL SEARCH PARAM
+            search = request.query_params.get("search")
+
+            # ----------------------------
+            # BASE QUERYSET
+            # ----------------------------
             queryset = Plot.objects.all().order_by("gid")
 
+            # ----------------------------
+            # JOIN PROJECT NAME (Subquery)
+            # ----------------------------
+            project_name_qs = Project.objects.filter(
+                gid=OuterRef("project_id")
+            ).values("name")[:1]
+
+            block_name_qs = Block.objects.filter(
+                gid=OuterRef("block_id")
+            ).values("name")[:1]
+
+            queryset = queryset.annotate(
+                project_name=Subquery(project_name_qs),
+                block_name=Subquery(block_name_qs),
+            )
+
+            # ----------------------------
+            # EXISTING FILTERS
+            # ----------------------------
             if gid:
                 queryset = queryset.filter(gid=gid)
 
@@ -40,6 +65,23 @@ class ListPlotView(viewsets.ViewSet):
             if plot_type:
                 queryset = queryset.filter(type__iexact=plot_type)
 
+            # ----------------------------
+            # ⭐ GLOBAL SEARCH (ATTRIBUTE TABLE)
+            # ----------------------------
+            if search:
+                queryset = queryset.filter(
+                    Q(plot_no__icontains=search) |
+                    Q(name__icontains=search) |
+                    Q(type__icontains=search) |
+                    Q(block__icontains=search) |
+                    Q(plot_area__icontains=search) |
+                    Q(project_name__icontains=search) |
+                    Q(block_name__icontains=search)
+                )
+
+            # ----------------------------
+            # SERIALIZER
+            # ----------------------------
             serializer = PlotSerializer(queryset, many=True)
 
             return ApiResponse(
