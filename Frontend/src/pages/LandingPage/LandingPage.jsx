@@ -49,7 +49,7 @@ const NAV_LINKS = [
 
 const STATS = [
   { value: "2,400+", label: "Parcels Mapped" },
-  { value: "18", label: "Mauzas Covered" },
+  { value: "137", label: "Mauzas Covered" },
   { value: "340 km²", label: "Project Area" },
   { value: "99.8%", label: "Data Accuracy" },
 ];
@@ -97,8 +97,8 @@ const GIS_APPS = [
   },
   {
     icon: <Smartphone size={22} />,
-    title: "Mobile Field Data / ODK",
-    desc: "Collect, submit and manage mobile field survey data with GPS locations, parcel photos, verification notes and structured ODK-based cadastral forms.",
+    title: "Location Intelligence",
+    desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
     img: "/s6.png",
     color: "from-[#0B7A3B] to-[#004225]",
   },
@@ -150,10 +150,10 @@ const FEATURES = [
 ];
 
 const TEAM = [
-  { name: "Project Director", role: "RUDA Cadastral Project", featured: true },
+  { name: "IMRAN AMIN", role: "CEO", featured: true },
   {
-    name: "Director GIS",
-    role: "GIS & Spatial Data Management",
+    name: "Brig Bakhtiar Akram SI(M) (Retd)",
+    role: "Executive Director Land Aquisition and Estate Management",
     featured: false,
   },
   {
@@ -266,6 +266,27 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
         className={`h-0.5 w-0 group-hover:w-full bg-gradient-to-r ${color} transition-all duration-500`}
       />
     </article>
+  );
+}
+
+function MapStatCard({ value, label, positionClass }) {
+  return (
+    <div className={`absolute z-10 ${positionClass}`}>
+      <div className="relative overflow-hidden rounded-xl bg-white/97 px-3 py-2 shadow-[0_8px_24px_-8px_rgba(0,53,31,0.4)] ring-1 ring-[#004225]/10 backdrop-blur-md">
+        <div className="absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-[#49B84A] via-[#0B7A3B] to-[#004225]" />
+        <div className="pl-1.5">
+          <div className="text-lg font-black leading-none tracking-tight text-[#004225]">
+            {value}
+          </div>
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <span className="h-px flex-1 bg-gradient-to-r from-[#49B84A]/50 to-transparent" />
+            <span className="text-[8px] font-bold uppercase tracking-[0.14em] text-[#0B7A3B]">
+              {label}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -438,7 +459,7 @@ export default function LandingPage() {
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.07] mb-8 tracking-tight">
             RUDA GIS METAVERSE
             <span className="block text-[#49B84A] mt-1 text-7xl">
-              Cadastral Portal
+              & Cadastral Portal
             </span>
           </h1>
 
@@ -529,7 +550,7 @@ export default function LandingPage() {
           </div>
 
           <div className="relative">
-            <div className="rounded-3xl overflow-hidden shadow-2xl">
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl">
               <img
                 src="/ruda-lahore-map.webp"
                 alt="RUDA project map"
@@ -543,20 +564,18 @@ export default function LandingPage() {
               <div className="hidden w-full h-[420px] bg-gradient-to-br from-[#004225] to-[#00351f] items-center justify-center">
                 <Map size={80} className="text-white/30" />
               </div>
-            </div>
 
-            <div className="absolute -bottom-6 -left-6 bg-[#49B84A] text-white rounded-2xl p-5 shadow-xl">
-              <div className="text-3xl font-black">2026</div>
-              <div className="text-xs font-bold uppercase tracking-wide">
-                Active Platform
-              </div>
-            </div>
+              <MapStatCard
+                value="340 km²"
+                label="Coverage Area"
+                positionClass="top-2 left-2"
+              />
 
-            <div className="absolute -top-6 -right-6 bg-[#004225] text-white rounded-2xl px-5 py-4 shadow-xl">
-              <div className="text-2xl font-black">340 km²</div>
-              <div className="text-xs font-semibold opacity-80">
-                Coverage Area
-              </div>
+              <MapStatCard
+                value="2026"
+                label="Active Platform"
+                positionClass="bottom-2 right-2"
+              />
             </div>
           </div>
         </div>
@@ -678,7 +697,7 @@ export default function LandingPage() {
           <div className="lg:w-1/2 grid grid-cols-2 gap-3">
             {[
               ["2,400+", "Parcels Mapped"],
-              ["18", "Mauzas Covered"],
+              ["137", "Mauzas Covered"],
               ["340 km²", "Project Area"],
               ["99.8%", "Data Accuracy"],
             ].map(([val, lbl]) => (
@@ -855,7 +874,7 @@ export default function LandingPage() {
 
         <div className="border-t border-white/10 py-5 text-center text-white/50 text-xs">
           © 2026 Ravi Urban Development Authority (RUDA). All Rights Reserved.
-          &nbsp;|&nbsp; Powered by NESPAK Geomatics &amp; GIS Section
+          &nbsp;|&nbsp; Powered by NESPAK Construction Management Division
         </div>
       </footer>
 
