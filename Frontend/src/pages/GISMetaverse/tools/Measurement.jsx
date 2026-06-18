@@ -222,7 +222,10 @@ function EmptyHint({ children }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Measurement({ map }) {
+  // activeTool: set immediately when user clicks a tool icon → starts map drawing
   const [activeTool, setActiveTool] = useState(null);
+  // resultReady: true after user clicks Apply → shows the result panel
+  const [resultReady, setResultReady] = useState(false);
 
   // Per-tool unit state
   const [distUnit, setDistUnit] = useState("m");
@@ -242,6 +245,8 @@ export default function Measurement({ map }) {
   const distCoordsRef = useRef([]);
   const areaCoordsRef = useRef([]);
   const bearingCoordsRef = useRef([]);
+  // Ref to the area updateSource fn so Calculate can close the polygon
+  const areaUpdateSourceRef = useRef(null);
 
   // ── Derived display values ─────────────────────────────────────────────────
   const distUnitDef = DISTANCE_UNITS.find((u) => u.id === distUnit);
@@ -533,6 +538,9 @@ export default function Measurement({ map }) {
       setSourceData(map, M_AREA_SOURCE, turf.featureCollection(features));
     };
 
+    // Expose updateSource so the Calculate button can close the polygon
+    areaUpdateSourceRef.current = (unitDef) => updateSource(true, unitDef);
+
     const onClick = (e) => {
       areaCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
       updateSource(false, unitRef.current);
@@ -561,6 +569,7 @@ export default function Measurement({ map }) {
         [M_AREA_SOURCE],
       );
       areaCoordsRef.current = [];
+      areaUpdateSourceRef.current = null;
       setAreaM2(null);
     };
   }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -752,11 +761,28 @@ export default function Measurement({ map }) {
     };
   }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── clear handler (resets active tool state) ───────────────────────────────
+  // ── Apply: freeze current drawn data and show result ─────────────────────
+  const handleApply = () => {
+    // For Area tool: close the polygon first (same as right-click)
+    if (activeTool === "area" && areaUpdateSourceRef.current) {
+      const unitDef = AREA_UNITS.find((u) => u.id === areaUnit);
+      areaUpdateSourceRef.current(unitDef);
+    }
+    setResultReady(true);
+  };
+
+  // ── Cancel: stop the tool, clear map, hide everything ─────────────────────
+  const handleCancel = () => {
+    clearAll();
+    setActiveTool(null);
+    setResultReady(false);
+  };
+
+  // ── Clear measurement (reset drawn data, keep tool active) ────────────────
   const handleClear = () => {
     const current = activeTool;
+    setResultReady(false);
     setActiveTool(null);
-    // small delay so the cleanup effects run first, then re-enable the tool
     setTimeout(() => setActiveTool(current), 0);
   };
 
@@ -775,9 +801,8 @@ export default function Measurement({ map }) {
       </div>
 
       <div className="p-3 space-y-3">
-        {/* Tool buttons - compact single row */}
+        {/* Tool buttons */}
         <div className="grid grid-cols-4 gap-2">
-          {" "}
           {TOOLS.map((tool) => {
             const Icon = tool.icon;
             const isActive = activeTool === tool.id;
@@ -785,9 +810,12 @@ export default function Measurement({ map }) {
               <button
                 key={tool.id}
                 type="button"
-                onClick={() =>
-                  setActiveTool((prev) => (prev === tool.id ? null : tool.id))
-                }
+                onClick={() => {
+                  if (activeTool === tool.id) return; // already running this tool
+                  clearAll();
+                  setResultReady(false);
+                  setActiveTool(tool.id);
+                }}
                 className={`relative flex min-w-0 flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 transition ${
                   isActive
                     ? "border-[#8bd66f] bg-[#243041] text-white"
@@ -804,11 +832,9 @@ export default function Measurement({ map }) {
                 >
                   <Icon size={17} strokeWidth={2.2} />
                 </span>
-
-                <span className="w-full top-1 truncate text-center text-[10px] font-semibold leading-none">
+                <span className="w-full truncate text-center text-[10px] font-semibold leading-none">
                   {tool.label}
                 </span>
-
                 {isActive && (
                   <span
                     className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full"
@@ -820,8 +846,33 @@ export default function Measurement({ map }) {
           })}
         </div>
 
-        {/* Results + unit selector panel */}
+        {/* Apply / Cancel — shown as soon as a tool is active */}
         {activeTool && (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleApply}
+              className="flex-1 rounded-md py-1.5 text-[11px] font-semibold transition"
+              style={{
+                backgroundColor: activeToolDef.color + "22",
+                color: activeToolDef.color,
+                border: `1px solid ${activeToolDef.color}`,
+              }}
+            >
+              Calculate
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="flex-1 rounded-md border border-[#344055] bg-[#1a2233] py-1.5 text-[11px] font-semibold text-white/50 transition hover:border-red-500/40 hover:text-red-400"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {/* Result panel — only shown after Apply is clicked */}
+        {activeTool && resultReady && (
           <div className="mt-1 rounded-md border border-[#3a4354] bg-[#1a2233] overflow-hidden">
             {/* Hint bar */}
             <div className="flex items-center gap-2 border-b border-[#343c4c] px-3 py-2 text-[10px] text-white/50">

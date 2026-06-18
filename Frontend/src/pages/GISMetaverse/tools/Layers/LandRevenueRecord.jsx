@@ -768,24 +768,20 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
-        disabled={!hasSelectedProject}
-        className={`flex w-full items-center justify-between px-4 py-3 text-white ${
-          hasSelectedProject
-            ? "cursor-pointer hover:bg-[#293445]"
-            : "cursor-not-allowed opacity-45"
-        }`}
-        onClick={() => {
-          if (!hasSelectedProject) return;
-          setOpen((prev) => !prev);
-        }}
-        title={!hasSelectedProject ? "Select a project first" : undefined}
+        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
+        onClick={() => setOpen((prev) => !prev)}
       >
         <span>LAND REVENUE RECORD</span>
         {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
       </button>
 
-      {open && hasSelectedProject && (
+      {open && (
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
+          {!hasSelectedProject && (
+            <p className="mb-2 px-1 text-[11px] text-white/40">
+              Select a project to enable land revenue layers.
+            </p>
+          )}
           <LayerItem
             checked={layers.moza.visible}
             color={MAUZA_DEF.color}
