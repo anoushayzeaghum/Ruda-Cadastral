@@ -43,7 +43,6 @@ const NAV_LINKS = [
   { href: "#about", label: "About" },
   { href: "#apps", label: "GIS Apps" },
   { href: "#features", label: "Features" },
-  { href: "#team", label: "Our Team" },
   { href: "#contact", label: "Contact" },
 ];
 
@@ -100,6 +99,7 @@ const GIS_APPS = [
     title: "Location Intelligence",
     desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
     img: "/s6.png",
+    route: "/flyto-dashboard",
     color: "from-[#0B7A3B] to-[#004225]",
   },
 ];
@@ -148,42 +148,6 @@ const FEATURES = [
     iconBg: "bg-[#49B84A]",
   },
 ];
-
-const TEAM = [
-  { name: "IMRAN AMIN", role: "CEO", featured: true },
-  {
-    name: "Brig Bakhtiar Akram SI(M) (Retd)",
-    role: "Executive Director Land Aquisition and Estate Management",
-    featured: false,
-  },
-  {
-    name: "Cadastral Lead",
-    role: "Parcel Mapping & Land Records",
-    featured: false,
-  },
-  {
-    name: "Survey Manager",
-    role: "Field Operations & GPS Control",
-    featured: false,
-  },
-];
-
-function Avatar({ name, size = "md" }) {
-  const initials = name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2);
-  const sz = size === "lg" ? "w-24 h-24 text-2xl" : "w-16 h-16 text-lg";
-
-  return (
-    <div
-      className={`${sz} rounded-full bg-gradient-to-br from-[#49B84A] to-[#004225] flex items-center justify-center text-white font-bold shrink-0`}
-    >
-      {initials}
-    </div>
-  );
-}
 
 function useInView(options = {}) {
   const ref = useRef(null);
@@ -469,7 +433,7 @@ export default function LandingPage() {
             the RUDA project area.
           </p>
 
-          <div className="flex flex-wrap gap-4 justify-center">
+          <div className="flex flex-wrap gap-4 justify-center mb-10">
             <button
               onClick={() => {
                 document
@@ -506,7 +470,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="about" className="py-28 bg-white">
+      <section id="about" className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-5 grid lg:grid-cols-2 gap-16 items-center">
           <div>
             <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-6">
@@ -581,9 +545,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="apps" className="py-28 bg-slate-50">
+      <section id="apps" className="py-16 bg-slate-50">
         <div className="max-w-6xl mx-auto px-5">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
               GIS Applications
             </div>
@@ -618,52 +582,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="features" className="py-28 bg-white">
-        <div className="max-w-6xl mx-auto px-5">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
-              Platform Capabilities
-            </div>
-
-            <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-4">
-              Platform Features
-            </h2>
-
-            <div className="w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-6" />
-
-            <p className="max-w-xl mx-auto text-slate-500 text-base leading-relaxed">
-              Purpose-built GIS capabilities for cadastral operations, field
-              verification and land management decision support.
-            </p>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map(({ icon, title, desc, bg, iconBg }) => (
-              <div
-                key={title}
-                className={`${bg} rounded-2xl p-7 group hover:shadow-md transition-all`}
-              >
-                <div
-                  className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center text-white mb-5`}
-                >
-                  {icon}
-                </div>
-
-                <h3 className="font-black text-slate-900 text-base mb-2">
-                  {title}
-                </h3>
-
-                <p className="text-slate-500 text-[13px] leading-relaxed">
-                  {desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section
-        className="relative py-24 overflow-hidden"
+        className="relative py-16 overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(to right, rgba(0,53,31,0.94) 40%, rgba(0,66,37,0.78) 100%), url('/s3.png')`,
           backgroundSize: "cover",
@@ -718,46 +638,44 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="team" className="py-28 bg-slate-50">
-        <div className="max-w-5xl mx-auto px-5">
-          <div className="text-center mb-16">
+      <section id="features" className="py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-5">
+          <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-xs font-bold tracking-wider uppercase px-4 py-2 rounded-full mb-4">
-              The Team
+              Platform Capabilities
             </div>
 
             <h2 className="text-4xl lg:text-5xl font-black text-slate-900 mb-4">
-              Meet Our Team
+              Platform Features
             </h2>
 
-            <div className="w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto" />
+            <div className="w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-6" />
+
+            <p className="max-w-xl mx-auto text-slate-500 text-base leading-relaxed">
+              Purpose-built GIS capabilities for cadastral operations, field
+              verification and land management decision support.
+            </p>
           </div>
 
-          <div className="flex flex-col items-center mb-10">
-            <Avatar name="Project Director" size="lg" />
-
-            <div className="mt-4 text-center">
-              <div className="font-black text-slate-900 text-lg">
-                Project Director
-              </div>
-
-              <div className="text-sm text-[#0B7A3B] font-semibold mt-0.5">
-                RUDA Cadastral Project
-              </div>
-            </div>
-          </div>
-
-          <div className="grid sm:grid-cols-3 gap-6 max-w-2xl mx-auto">
-            {TEAM.filter((m) => !m.featured).map(({ name, role }) => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {FEATURES.map(({ icon, title, desc, bg, iconBg }) => (
               <div
-                key={name}
-                className="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100"
+                key={title}
+                className={`${bg} rounded-2xl p-7 group hover:shadow-md transition-all`}
               >
-                <Avatar name={name} />
-
-                <div className="mt-4">
-                  <div className="font-bold text-slate-900 text-sm">{name}</div>
-                  <div className="text-xs text-slate-500 mt-1">{role}</div>
+                <div
+                  className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center text-white mb-5`}
+                >
+                  {icon}
                 </div>
+
+                <h3 className="font-black text-slate-900 text-base mb-2">
+                  {title}
+                </h3>
+
+                <p className="text-slate-500 text-[13px] leading-relaxed">
+                  {desc}
+                </p>
               </div>
             ))}
           </div>

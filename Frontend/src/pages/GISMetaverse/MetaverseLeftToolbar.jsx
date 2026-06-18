@@ -189,8 +189,8 @@ export default function MetaverseLeftToolbar({
           )}
 
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
-          {activeTool === "timeLapse" && <TimeLapse map={map} />}
-          {activeTool === "changeDetection" && <ChangeDetection map={map} />}
+          {activeTool === "timeLapse" && <TimeLapse map={map} onClose={() => setActiveTool(null)} />}
+          {activeTool === "changeDetection" && <ChangeDetection map={map} onClose={() => setActiveTool(null)} />}
           {activeTool === "import" && (
             <Import map={map} onClose={() => setActiveTool(null)} />
           )}
