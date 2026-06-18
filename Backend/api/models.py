@@ -871,10 +871,26 @@ class ProjectMauza(models.Model):
         related_name="mauza_projects"
     )
 
+    khasra = models.ForeignKey(
+        Khasra,
+        on_delete=models.CASCADE,
+        db_column="khasra_id",
+        related_name="khasra_mauzas",
+        null = True,
+        blank = True
+    )
+
+    murabba = models.ForeignKey(
+        Murabba,
+        on_delete=models.CASCADE,
+        db_column="murabba_id",
+        related_name="murabba_mauzas", null=True, blank=True
+    )
+
     class Meta:
         db_table = "project_mauza"
         managed = True
-        unique_together = ("project", "mauza")
+        unique_together = ("project", "mauza", "khasra", "murabba")
 
     def __str__(self):
-        return f"{self.project_id} - {self.mauza_id}"
+        return f"{self.project_id} - {self.mauza_id} - {self.khasra_id} - {self.murabba_id}"

@@ -697,6 +697,8 @@ class WSPointSerializer(GeoFeatureModelSerializer):
 class ProjectMauzaSerializer(serializers.ModelSerializer):
 
     mauza_detail = MauzaSerializer(source="mauza", read_only=True)
+    khasra_detail = KhasraSerializer(source="khasra", read_only=True)
+    murabba_detail = MurabbaSerializer(source="murabba", read_only=True)
 
     class Meta:
         model = ProjectMauza
@@ -704,7 +706,7 @@ class ProjectMauzaSerializer(serializers.ModelSerializer):
             "id",
             "project",
             "mauza",
-            "mauza_detail",
+            "mauza_detail", "khasra", "khasra_detail", "murabba", "murabba_detail",
         )
 
     

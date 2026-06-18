@@ -323,10 +323,12 @@ export const getKhasrasGeoJSON = async (filters = {}) => {
   return unwrapGeoJSON(res.data);
 };
 
-export const saveProjectMauzas = async (projectId, mauzaIds) => {
+export const saveProjectMauzas = async (projectId, mauzaIds, khasraIds, murabbaIds) => {
   const res = await axios.post(`${API_BASE}/project-mauza/create/`, {
     project_id: projectId,
     mauza_ids: mauzaIds,
+    khasra_ids: khasraIds,
+    murabba_ids: murabbaIds
   });
 
   return res.data;

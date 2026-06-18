@@ -59,7 +59,7 @@ const VECTOR_BOUNDARY_LAYERS = [
 ];
 
 const RASTER_DATA_LAYERS = [
-  { key: "handuGujranOrtho", label: "Handu Gujran Massavi" },
+  { key: "handuGujranOrtho", label: "Massavi" },
 ];
 
 const RUDA_PHASE_COLORS = [
@@ -76,6 +76,7 @@ const RUDA_PHASE_COLORS = [
   "#d7b377",
   "#8dd3c7",
 ];
+
 
 const hashString = (value = "") => {
   const text = String(value || "");
@@ -112,6 +113,13 @@ export default function LeftPanel({
 
   const [rudaProposedRoads, setRudaProposedRoads] = useState([]);
   const [proposedDropdownOpen, setProposedDropdownOpen] = useState(false);
+
+  const [layerAvailability, setLayerAvailability] = useState({
+    khasra: false,
+    square: false,
+    acre: false,
+    murabba: false,
+  });
 
   const getDefaultOpacityForSelectedLayer = (item) => {
     const text = `${item?.key || ""} ${item?.label || ""}`.toLowerCase();
@@ -329,14 +337,6 @@ export default function LeftPanel({
           icon={<Wrench size={18} />}
         />
         <PanelIcon
-          title="Basemap"
-          active={activePanel === "basemap"}
-          onClick={() =>
-            setActivePanel(activePanel === "basemap" ? "" : "basemap")
-          }
-          icon={<Satellite size={18} />}
-        />
-        <PanelIcon
           title="Raster Data"
           active={activePanel === "rasterData"}
           onClick={() =>
@@ -344,6 +344,15 @@ export default function LeftPanel({
           }
           icon={<ImageIcon size={18} />}
         />
+        <PanelIcon
+          title="Basemap"
+          active={activePanel === "basemap"}
+          onClick={() =>
+            setActivePanel(activePanel === "basemap" ? "" : "basemap")
+          }
+          icon={<Satellite size={18} />}
+        />
+        
       </div>
 
       {activePanel && (
