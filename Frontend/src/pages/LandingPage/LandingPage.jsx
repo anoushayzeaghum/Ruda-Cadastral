@@ -100,6 +100,7 @@ const GIS_APPS = [
     title: "Location Intelligence",
     desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
     img: "/s6.png",
+    route: "/flyto-dashboard",
     color: "from-[#0B7A3B] to-[#004225]",
   },
 ];
