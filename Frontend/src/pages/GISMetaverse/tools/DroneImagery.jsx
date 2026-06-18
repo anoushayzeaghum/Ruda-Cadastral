@@ -12,6 +12,7 @@ import {
   Minimize2,
   RotateCcw,
 } from "lucide-react";
+import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
 
 // ── Video catalogue (add more entries here as needed) ─────────────────────────
 const DRONE_VIDEOS = [
@@ -250,7 +251,7 @@ export default function DroneImagery({ map }) {
         <ChevronRight size={15} />
       </div>
 
-      <div className="p-3 text-[12px]">
+      <div className={`p-3 text-[12px] max-h-[calc(70vh-3.5rem)] sm:max-h-[calc(100vh-90px)] ${LAYER_PANEL_SCROLL}`}>
         {/* Description */}
         <div className="mb-3 text-white/70">
           Toggle historical drone imagery of Chaharbagh Phase 1 to monitor

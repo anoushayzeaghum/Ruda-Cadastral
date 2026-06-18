@@ -124,25 +124,89 @@ export default function ChangeDetection({ map, onClose }) {
       img.src = src + "?v=" + Date.now();
     });
 
-  // ── Capture a Mapbox canvas snapshot (requires preserveDrawingBuffer) ─────
-  const captureMapSnapshot = (mapRef, loadedRef) =>
+  // ── Capture a Mapbox canvas snapshot ─────────────────────────────────────
+  // Renders a temporary off-screen Mapbox map at 640×400 so tiles have time
+  // to load before we call toDataURL. This avoids the tainted-canvas problem
+  // caused by capturing the live (tiny, possibly hidden) panel maps.
+  const captureMapSnapshot = (imageryItem) =>
     new Promise((resolve) => {
-      const mm = mapRef.current;
-      if (!mm || !loadedRef.current) {
-        resolve(null);
-        return;
-      }
-      const done = () => {
-        try {
-          resolve(mm.getCanvas().toDataURL("image/jpeg", 0.85));
-        } catch {
-          resolve(null);
-        }
+      // Create a temporary off-screen container
+      const host = document.createElement("div");
+      host.style.cssText =
+        "position:fixed;left:-9999px;top:-9999px;width:640px;height:400px;visibility:hidden;";
+      document.body.appendChild(host);
+
+      let mm;
+      let settled = false;
+      const cleanup = () => {
+        if (settled) return;
+        settled = true;
+        try { mm?.remove(); } catch (_) {}
+        try { document.body.removeChild(host); } catch (_) {}
       };
-      if (!mm.isMoving() && !mm.isZooming()) {
-        requestAnimationFrame(() => requestAnimationFrame(done));
-      } else {
-        mm.once("idle", () => requestAnimationFrame(done));
+
+      // Safety timeout — give up after 12 s
+      const bailout = setTimeout(() => {
+        cleanup();
+        resolve(null);
+      }, 12000);
+
+      try {
+        mm = new mapboxgl.Map({
+          container: host,
+          style: "mapbox://styles/mapbox/satellite-streets-v12",
+          center: [74.43, 31.608],
+          zoom: 15,
+          interactive: false,
+          attributionControl: false,
+          preserveDrawingBuffer: true,
+          fadeDuration: 0,
+          transformRequest: (url) => ({ url }),
+        });
+
+        mm.on("load", () => {
+          mm.addSource("snap-src", {
+            type: "raster",
+            tiles: [imageryItem.url],
+            tileSize: 256,
+          });
+          mm.addLayer({
+            id: "snap-lyr",
+            type: "raster",
+            source: "snap-src",
+            layout: { visibility: "visible" },
+          });
+          mm.fitBounds(BOUNDS, { padding: 12, maxZoom: 17.5, duration: 0 });
+        });
+
+        // Wait for the map + tiles to fully settle
+        const tryCapture = () => {
+          if (settled) return;
+          // Extra rAF ticks so WebGL flushes to the drawing buffer
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+              clearTimeout(bailout);
+              let dataURL = null;
+              try {
+                dataURL = mm.getCanvas().toDataURL("image/jpeg", 0.88);
+              } catch (_) {
+                dataURL = null;
+              }
+              cleanup();
+              resolve(dataURL);
+            }),
+          );
+        };
+
+        // idle fires when all tiles have been painted
+        mm.once("idle", () => {
+          // Give tile textures an extra 800 ms to upload to GPU
+          setTimeout(tryCapture, 800);
+        });
+      } catch (err) {
+        clearTimeout(bailout);
+        cleanup();
+        resolve(null);
       }
     });
 
@@ -169,8 +233,8 @@ export default function ChangeDetection({ map, onClose }) {
       // Load assets in parallel
       const [logoDataURL, leftSnapshot, rightSnapshot] = await Promise.all([
         loadImageAsDataURL("/Ruda_logo.jpg").catch(() => null),
-        captureMapSnapshot(mapLeftRef, mapLeftLoadedRef),
-        captureMapSnapshot(mapRightRef, mapRightLoadedRef),
+        captureMapSnapshot(leftItem),
+        captureMapSnapshot(rightItem),
       ]);
 
       const doc = new jsPDF({
