@@ -405,7 +405,6 @@ export const importMauzaShapefile = async ({ file }) => {
   return res.data;
 };
 
-
 const normalizeIdValue = (value) => {
   if (value === null || value === undefined || value === "") return "";
   return String(value).trim().toLowerCase();
@@ -415,10 +414,7 @@ const normalizeIdList = (value) => {
   if (Array.isArray(value)) return value.map(normalizeIdValue).filter(Boolean);
 
   if (typeof value === "string") {
-    return value
-      .split(",")
-      .map(normalizeIdValue)
-      .filter(Boolean);
+    return value.split(",").map(normalizeIdValue).filter(Boolean);
   }
 
   const single = normalizeIdValue(value);
@@ -452,7 +448,7 @@ const filterGeoJSONByMauzaIds = (geojson, mauzaIds = []) => {
   return {
     type: "FeatureCollection",
     features: (geojson.features || []).filter((feature) =>
-      getFeatureMauzaValues(feature).some((value) => allowedMauzas.has(value))
+      getFeatureMauzaValues(feature).some((value) => allowedMauzas.has(value)),
     ),
   };
 };

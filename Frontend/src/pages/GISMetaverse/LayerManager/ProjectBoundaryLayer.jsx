@@ -9,7 +9,7 @@ export function addProjectBoundaryLayer(map, data) {
       type: "fill",
       source: SOURCES.boundary,
       paint: {
-        "fill-color": "#ff8b24",
+        "fill-color": "#2474ff",
         "fill-opacity": 0.12,
       },
     });
@@ -21,7 +21,7 @@ export function addProjectBoundaryLayer(map, data) {
       type: "line",
       source: SOURCES.boundary,
       paint: {
-        "line-color": "#ff8b24",
+        "line-color": "#244cff",
         "line-width": 3,
       },
     });

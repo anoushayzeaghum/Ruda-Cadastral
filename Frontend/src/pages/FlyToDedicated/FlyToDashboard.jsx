@@ -76,9 +76,9 @@ export default function FlyToDashboard() {
   );
 
   const handleIntroComplete = useCallback(() => {
-    setMetaverseFilters(defaultFilters);
+    // setMetaverseFilters(defaultFilters);
 
-    setLayerVisibility(defaultLayerVisibility);
+    // setLayerVisibility(defaultLayerVisibility);
 
     setAdminBoundaryVisibility((prev) => ({
       ...prev,
@@ -124,13 +124,13 @@ export default function FlyToDashboard() {
           }}
         />
 
-        <FlyToSubHeader
+        {/* <FlyToSubHeader
           filters={metaverseFilters}
           setFilters={setMetaverseFilters}
           setLayerVisibility={setLayerVisibility}
           onReset={handleReset}
           onCalendarClick={() => console.log("Calendar clicked")}
-        />
+        /> */}
 
         <FlyToToolbar
           activeTool={activeTool}

@@ -9,7 +9,8 @@ import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
 const MASAWI_SOURCE = "gis-handu-gujran-ortho-source";
 const MASAWI_LAYER = "gis-handu-gujran-ortho-layer";
-const MASAWI_TILE_URL = "http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
+const MASAWI_TILE_URL =
+  "http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
 
 const MASAWI_BOUNDS = [
   [74.42562653088396, 31.60509230706726],
@@ -17,16 +18,46 @@ const MASAWI_BOUNDS = [
 ];
 
 const IDS = {
-  moza: { src: "gism-lrr-moza-src", fill: "gism-lrr-moza-fill", line: "gism-lrr-moza-line", label: "gism-lrr-moza-label" },
-  murabba: { src: "gism-lrr-murabba-src", fill: "gism-lrr-murabba-fill", line: "gism-lrr-murabba-line" },
-  khasra: { src: "gism-lrr-khasra-src", fill: "gism-lrr-khasra-fill", line: "gism-lrr-khasra-line", label: "gism-lrr-khasra-label" },
+  moza: {
+    src: "gism-lrr-moza-src",
+    fill: "gism-lrr-moza-fill",
+    line: "gism-lrr-moza-line",
+    label: "gism-lrr-moza-label",
+  },
+  murabba: {
+    src: "gism-lrr-murabba-src",
+    fill: "gism-lrr-murabba-fill",
+    line: "gism-lrr-murabba-line",
+  },
+  khasra: {
+    src: "gism-lrr-khasra-src",
+    fill: "gism-lrr-khasra-fill",
+    line: "gism-lrr-khasra-line",
+    label: "gism-lrr-khasra-label",
+  },
 };
 
-const MAUZA_DEF = { key: "moza", label: "Mauza Boundary", color: "#ff8b24", type: "polygon" };
+const MAUZA_DEF = {
+  key: "moza",
+  label: "Mauza Boundary",
+  color: "#ff8b24",
+  type: "polygon",
+};
 
 const LAYER_DEFS = [
-  { key: "khasra", label: "Khasra Boundary", color: "#65c96b", type: "polygon", dropdown: true },
-  { key: "murabba", label: "Murabba Boundary", color: "#d7bf32", type: "polygon" },
+  {
+    key: "khasra",
+    label: "Khasra Boundary",
+    color: "#1f7a3a",
+    type: "polygon",
+    dropdown: true,
+  },
+  {
+    key: "murabba",
+    label: "Murabba Boundary",
+    color: "#d7bf32",
+    type: "polygon",
+  },
   { key: "masawi", label: "Masawi", color: "#84cc16", type: "raster" },
 ];
 
@@ -38,6 +69,98 @@ function emptyFC() {
 
 function getLayerColor(key) {
   return ALL_LAYER_DEFS.find((d) => d.key === key)?.color || "#ffffff";
+}
+
+const POLYGON_STYLES = {
+  moza: {
+    fillColor: "#ff8b24",
+    lineColor: "#ff8b24",
+    fillOpacityMultiplier: 0.16,
+    lineWidth: 1.5,
+    labelColor: "#7c2d12",
+    labelMinZoom: 14,
+  },
+  murabba: {
+    fillColor: "#fff7cc",
+    lineColor: "#d7bf32",
+    fillOpacityMultiplier: 0.1,
+    lineWidth: 1.6,
+  },
+  khasra: {
+    fillColor: "#1f7a3a",
+    lineColor: "#1f7a3a",
+    fillOpacityMultiplier: 0,
+    lineWidth: 1.25,
+    labelColor: "#1f7a3a",
+    labelMinZoom: 14.6,
+  },
+};
+
+const LAND_REVENUE_LAYER_ORDER = [
+  IDS.moza.fill,
+  IDS.moza.line,
+  IDS.moza.label,
+  IDS.murabba.fill,
+  IDS.murabba.line,
+  IDS.khasra.fill,
+  IDS.khasra.line,
+  IDS.khasra.label,
+];
+
+const MASTER_PLAN_LAYER_CANDIDATES = [
+  "gism-master-plan-fill",
+  "gism-master-plan-line",
+  "gism-master-plan-label",
+  "master-plan-fill",
+  "master-plan-line",
+  "master-plan-label",
+  "masterPlanFill",
+  "masterPlanLine",
+  "masterPlanLabel",
+];
+
+function getFirstExistingLayer(map, layerIds = []) {
+  return layerIds.find((layerId) => layerId && map.getLayer(layerId));
+}
+
+function getLandRevenueBeforeId(map) {
+  const exactMatch = getFirstExistingLayer(map, MASTER_PLAN_LAYER_CANDIDATES);
+  if (exactMatch) return exactMatch;
+
+  const styleLayers = map.getStyle?.().layers || [];
+
+  return styleLayers.find((layer) => {
+    const id = String(layer?.id || "").toLowerCase();
+    return (
+      id.includes("master") &&
+      (id.includes("plan") || id.includes("plot")) &&
+      !id.includes("lrr") &&
+      !id.includes("land-revenue")
+    );
+  })?.id;
+}
+
+function moveLayerSafely(map, layerId, beforeId) {
+  if (!map || !layerId || !map.getLayer(layerId)) return;
+
+  try {
+    if (beforeId && beforeId !== layerId && map.getLayer(beforeId)) {
+      map.moveLayer(layerId, beforeId);
+      return;
+    }
+
+    map.moveLayer(layerId);
+  } catch (_) {}
+}
+
+function reorderLandRevenueLayers(map) {
+  if (!map) return;
+
+  const beforeMasterPlanLayerId = getLandRevenueBeforeId(map);
+
+  LAND_REVENUE_LAYER_ORDER.slice().reverse().forEach((layerId) => {
+    moveLayerSafely(map, layerId, beforeMasterPlanLayerId);
+  });
 }
 
 function getLabelExpression(key) {
@@ -79,7 +202,7 @@ function getMauzaId(feature) {
     feature?.properties?.mauza_id ??
       feature?.properties?.gid ??
       feature?.properties?.id ??
-      feature?.properties?.moza_id
+      feature?.properties?.moza_id,
   );
 }
 
@@ -122,7 +245,10 @@ function fitToGeojson(map, geojson) {
     geojson.features.forEach((feature) => {
       const traverse = (coords) => {
         if (!coords) return;
-        if (typeof coords?.[0] === "number" && typeof coords?.[1] === "number") {
+        if (
+          typeof coords?.[0] === "number" &&
+          typeof coords?.[1] === "number"
+        ) {
           bounds.extend(coords);
           return;
         }
@@ -132,7 +258,8 @@ function fitToGeojson(map, geojson) {
       traverse(feature.geometry?.coordinates);
     });
 
-    if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 40, duration: 900 });
+    if (!bounds.isEmpty())
+      map.fitBounds(bounds, { padding: 40, duration: 900 });
   });
 }
 
@@ -141,6 +268,14 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity) {
   if (!map || !ids || !geojson) return;
 
   const o = opacity / 100;
+  const style = POLYGON_STYLES[key] || {
+    fillColor: getLayerColor(key),
+    lineColor: getLayerColor(key),
+    fillOpacityMultiplier: 0.2,
+    lineWidth: 1.5,
+    labelColor: getLayerColor(key),
+    labelMinZoom: 14,
+  };
 
   if (!map.getSource(ids.src)) {
     map.addSource(ids.src, { type: "geojson", data: geojson });
@@ -148,64 +283,85 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity) {
     map.getSource(ids.src).setData(geojson);
   }
 
+  const beforeId = getLandRevenueBeforeId(map);
+
   if (!map.getLayer(ids.fill)) {
-    map.addLayer({
-      id: ids.fill,
-      type: "fill",
-      source: ids.src,
-      paint: {
-        "fill-color": getLayerColor(key),
-        "fill-opacity": o * 0.2,
+    map.addLayer(
+      {
+        id: ids.fill,
+        type: "fill",
+        source: ids.src,
+        paint: {
+          "fill-color": style.fillColor,
+          "fill-opacity": o * style.fillOpacityMultiplier,
+        },
+        layout: { visibility: "visible" },
       },
-      layout: { visibility: "visible" },
-    });
+      beforeId,
+    );
   } else {
     map.setLayoutProperty(ids.fill, "visibility", "visible");
-    map.setPaintProperty(ids.fill, "fill-opacity", o * 0.2);
+    map.setPaintProperty(ids.fill, "fill-color", style.fillColor);
+    map.setPaintProperty(
+      ids.fill,
+      "fill-opacity",
+      o * style.fillOpacityMultiplier,
+    );
   }
 
   if (!map.getLayer(ids.line)) {
-    map.addLayer({
-      id: ids.line,
-      type: "line",
-      source: ids.src,
-      paint: {
-        "line-color": getLayerColor(key),
-        "line-width": 1.5,
-        "line-opacity": o,
+    map.addLayer(
+      {
+        id: ids.line,
+        type: "line",
+        source: ids.src,
+        paint: {
+          "line-color": style.lineColor,
+          "line-width": style.lineWidth,
+          "line-opacity": o,
+        },
+        layout: { visibility: "visible" },
       },
-      layout: { visibility: "visible" },
-    });
+      beforeId,
+    );
   } else {
     map.setLayoutProperty(ids.line, "visibility", "visible");
+    map.setPaintProperty(ids.line, "line-color", style.lineColor);
+    map.setPaintProperty(ids.line, "line-width", style.lineWidth);
     map.setPaintProperty(ids.line, "line-opacity", o);
   }
 
   if (ids.label && !map.getLayer(ids.label)) {
-    map.addLayer({
-      id: ids.label,
-      type: "symbol",
-      source: ids.src,
-      minzoom: key === "khasra" ? 16 : 14,
-      paint: {
-        "text-color": key === "khasra" ? "#14532d" : "#7c2d12",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-        "text-opacity": o,
+    map.addLayer(
+      {
+        id: ids.label,
+        type: "symbol",
+        source: ids.src,
+        minzoom: style.labelMinZoom ?? 14,
+        paint: {
+          "text-color": style.labelColor || style.lineColor,
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.2,
+          "text-opacity": o,
+        },
+        layout: {
+          visibility: "visible",
+          "text-field": getLabelExpression(key),
+          "text-size": ["interpolate", ["linear"], ["zoom"], 14, 9, 18, 12],
+          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+        },
       },
-      layout: {
-        visibility: "visible",
-        "text-field": getLabelExpression(key),
-        "text-size": ["interpolate", ["linear"], ["zoom"], 14, 9, 18, 12],
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": false,
-        "text-ignore-placement": false,
-      },
-    });
+      beforeId,
+    );
   } else if (ids.label) {
     map.setLayoutProperty(ids.label, "visibility", "visible");
+    map.setPaintProperty(ids.label, "text-color", style.labelColor || style.lineColor);
     map.setPaintProperty(ids.label, "text-opacity", o);
   }
+
+  reorderLandRevenueLayers(map);
 }
 
 function hideLayer(map, key) {
@@ -213,7 +369,8 @@ function hideLayer(map, key) {
 
   if (key === "masawi") {
     try {
-      if (map.getLayer(MASAWI_LAYER)) map.setLayoutProperty(MASAWI_LAYER, "visibility", "none");
+      if (map.getLayer(MASAWI_LAYER))
+        map.setLayoutProperty(MASAWI_LAYER, "visibility", "none");
     } catch (_) {}
     return;
   }
@@ -222,9 +379,12 @@ function hideLayer(map, key) {
   if (!ids) return;
 
   try {
-    if (map.getLayer(ids.fill)) map.setLayoutProperty(ids.fill, "visibility", "none");
-    if (map.getLayer(ids.line)) map.setLayoutProperty(ids.line, "visibility", "none");
-    if (ids.label && map.getLayer(ids.label)) map.setLayoutProperty(ids.label, "visibility", "none");
+    if (map.getLayer(ids.fill))
+      map.setLayoutProperty(ids.fill, "visibility", "none");
+    if (map.getLayer(ids.line))
+      map.setLayoutProperty(ids.line, "visibility", "none");
+    if (ids.label && map.getLayer(ids.label))
+      map.setLayoutProperty(ids.label, "visibility", "none");
   } catch (_) {}
 }
 
@@ -235,18 +395,28 @@ function updateOpacity(map, key, opacity) {
 
   if (key === "masawi") {
     try {
-      if (map.getLayer(MASAWI_LAYER)) map.setPaintProperty(MASAWI_LAYER, "raster-opacity", o);
+      if (map.getLayer(MASAWI_LAYER))
+        map.setPaintProperty(MASAWI_LAYER, "raster-opacity", o);
     } catch (_) {}
     return;
   }
 
   const ids = IDS[key];
   if (!ids) return;
+  const style = POLYGON_STYLES[key] || { fillOpacityMultiplier: 0.2 };
 
   try {
-    if (map.getLayer(ids.fill)) map.setPaintProperty(ids.fill, "fill-opacity", o * 0.2);
-    if (map.getLayer(ids.line)) map.setPaintProperty(ids.line, "line-opacity", o);
-    if (ids.label && map.getLayer(ids.label)) map.setPaintProperty(ids.label, "text-opacity", o);
+    if (map.getLayer(ids.fill))
+      map.setPaintProperty(
+        ids.fill,
+        "fill-opacity",
+        o * style.fillOpacityMultiplier,
+      );
+    if (map.getLayer(ids.line))
+      map.setPaintProperty(ids.line, "line-opacity", o);
+    if (ids.label && map.getLayer(ids.label))
+      map.setPaintProperty(ids.label, "text-opacity", o);
+    reorderLandRevenueLayers(map);
   } catch (_) {}
 }
 
@@ -288,7 +458,12 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   const cachedData = useRef({});
 
   const [layers, setLayers] = useState(() =>
-    Object.fromEntries(ALL_LAYER_DEFS.map((d) => [d.key, { visible: false, opacity: 100, loading: false }]))
+    Object.fromEntries(
+      ALL_LAYER_DEFS.map((d) => [
+        d.key,
+        { visible: false, opacity: 100, loading: false },
+      ]),
+    ),
   );
 
   const selectedProjectKey = selectedProjectId ? String(selectedProjectId) : "";
@@ -308,14 +483,19 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
 
   const activeMauzaFeatures = useMemo(() => {
     if (!mauzas.length) return [];
-    return mauzas.filter((feature) => selectedMauzas.includes(getMauzaId(feature)));
+    return mauzas.filter((feature) =>
+      selectedMauzas.includes(getMauzaId(feature)),
+    );
   }, [mauzas, selectedMauzas]);
 
-  const activeMauzaIds = useMemo(() => getMauzaIdsFromFeatures(activeMauzaFeatures), [activeMauzaFeatures]);
+  const activeMauzaIds = useMemo(
+    () => getMauzaIdsFromFeatures(activeMauzaFeatures),
+    [activeMauzaFeatures],
+  );
 
   const mauzaGeojson = useMemo(
     () => ({ type: "FeatureCollection", features: activeMauzaFeatures }),
-    [activeMauzaFeatures]
+    [activeMauzaFeatures],
   );
 
   const loadMauzas = async ({ zoom = true } = {}) => {
@@ -335,7 +515,10 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     try {
       const geojson = await getProjectMauzasGeoJSON(selectedProjectId);
       const projectMauzas = uniqueByMauza(geojson?.features || []);
-      const projectGeojson = { type: "FeatureCollection", features: projectMauzas };
+      const projectGeojson = {
+        type: "FeatureCollection",
+        features: projectMauzas,
+      };
 
       cachedData.current.moza = projectGeojson;
       const allProjectMauzaIds = getMauzaIdsFromFeatures(projectMauzas);
@@ -353,7 +536,11 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     }
   };
 
-  const loadBoundaryByMauzas = async (key, mauzaIds, { zoom = true, mauzaFeatures = activeMauzaFeatures } = {}) => {
+  const loadBoundaryByMauzas = async (
+    key,
+    mauzaIds,
+    { zoom = true, mauzaFeatures = activeMauzaFeatures } = {},
+  ) => {
     if (!map || !mauzaIds?.length) {
       cachedData.current[key] = emptyFC();
       addOrUpdatePolygonLayer(map, key, emptyFC(), layers[key].opacity);
@@ -481,6 +668,23 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   useEffect(() => {
     if (!map) return;
 
+    const handleStyleData = () => {
+      reorderLandRevenueLayers(map);
+    };
+
+    map.on("styledata", handleStyleData);
+    map.on("sourcedata", handleStyleData);
+    reorderLandRevenueLayers(map);
+
+    return () => {
+      map.off("styledata", handleStyleData);
+      map.off("sourcedata", handleStyleData);
+    };
+  }, [map]);
+
+  useEffect(() => {
+    if (!map) return;
+
     cachedData.current = {};
     setMauzas([]);
     setSelectedMauzas([]);
@@ -489,7 +693,9 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     setKhasraPanelOpen(false);
     setOpen(false);
 
-    ["moza", "murabba", "khasra", "masawi"].forEach((key) => hideLayer(map, key));
+    ["moza", "murabba", "khasra", "masawi"].forEach((key) =>
+      hideLayer(map, key),
+    );
 
     setLayers((prev) => ({
       ...prev,
@@ -530,11 +736,13 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
               </div>
             )}
 
-            {layers.khasra.visible && !khasraMauzas.length && !layers.khasra.loading && (
-              <div className="py-1 text-[11px] text-white/45">
-                No khasra boundary loaded for selected project mauzas.
-              </div>
-            )}
+            {layers.khasra.visible &&
+              !khasraMauzas.length &&
+              !layers.khasra.loading && (
+                <div className="py-1 text-[11px] text-white/45">
+                  No khasra boundary loaded for selected project mauzas.
+                </div>
+              )}
 
             {khasraMauzas.map((mauza) => {
               const id = getMauzaId(mauza);
@@ -545,7 +753,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                   key={`khasra-${id}-${name}`}
                   className="flex items-center gap-2 py-1 text-[11px] text-white/85"
                 >
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#65c96b]" />
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#1f7a3a]" />
                   <span className="truncate">{name}</span>
                 </div>
               );
@@ -609,11 +817,14 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                   </div>
                 )}
 
-                {selectedProjectId && layers.moza.visible && !mauzas.length && !layers.moza.loading && (
-                  <div className="py-1 text-[11px] text-white/45">
-                    No mauza found for selected project.
-                  </div>
-                )}
+                {selectedProjectId &&
+                  layers.moza.visible &&
+                  !mauzas.length &&
+                  !layers.moza.loading && (
+                    <div className="py-1 text-[11px] text-white/45">
+                      No mauza found for selected project.
+                    </div>
+                  )}
 
                 {mauzas.map((mauza) => {
                   const id = getMauzaId(mauza);
@@ -637,7 +848,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                               : prev.filter((selectedId) => selectedId !== id),
                           );
                         }}
-                        className="accent-[#65c96b]"
+                        className="accent-[#1f7a3a]"
                       />
                       <span className="truncate">{name}</span>
                     </label>
@@ -670,9 +881,13 @@ function LayerItem({
   children,
 }) {
   return (
-    <div className={`mt-3 first:mt-1 text-white ${disabled ? "opacity-45" : ""}`}>
+    <div
+      className={`mt-3 first:mt-1 text-white ${disabled ? "opacity-45" : ""}`}
+    >
       <div className="flex items-center justify-between">
-        <label className={`flex min-w-0 items-center gap-2 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}>
+        <label
+          className={`flex min-w-0 items-center gap-2 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+        >
           <input
             type="checkbox"
             checked={checked}
@@ -693,7 +908,9 @@ function LayerItem({
             {loading ? (
               <span className="flex items-center gap-1">
                 {label}
-                <span className="text-[9px] text-white/40 animate-pulse">loading…</span>
+                <span className="text-[9px] text-white/40 animate-pulse">
+                  loading…
+                </span>
               </span>
             ) : (
               label
@@ -714,7 +931,11 @@ function LayerItem({
             title={dropdownTitle}
           >
             <Grid3X3 size={14} />
-            {dropdownOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {dropdownOpen ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronRight size={14} />
+            )}
           </button>
         ) : (
           <Grid3X3 size={14} className="shrink-0 text-white/60" />
