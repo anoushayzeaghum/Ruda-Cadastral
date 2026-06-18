@@ -16,6 +16,12 @@ const BOUNDS = [
   [74.43545280361002, 31.6112165411359],
 ];
 
+/** Keep the Chahar Bagh study site prominent — not the wider surroundings */
+const STUDY_FIT = { padding: 12, maxZoom: 17.5, duration: 0 };
+
+const EXPANDED_PANEL_CLASS =
+  "fixed z-[70] top-1/2 left-1/2 flex max-h-[min(90vh,720px)] w-[min(680px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-[#3a4354] bg-[#202736] shadow-2xl";
+
 const IMAGERY = [
   {
     id: "jan2023",
@@ -427,8 +433,11 @@ export default function ChangeDetection({ map, onClose }) {
   }, [reporting, leftIdx, rightIdx, swipePos]);
 
   // ── Resize both Mapbox instances when the container size changes ───────────
-  // This fires both when expanded toggles AND when the CSS transition finishes,
-  // so the canvas always fills its container correctly.
+  const applyStudyFocus = useCallback(() => {
+    mapLeftRef.current?.fitBounds(BOUNDS, STUDY_FIT);
+    mapRightRef.current?.fitBounds(BOUNDS, STUDY_FIT);
+  }, []);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -436,12 +445,12 @@ export default function ChangeDetection({ map, onClose }) {
     const resize = () => {
       mapLeftRef.current?.resize();
       mapRightRef.current?.resize();
+      applyStudyFocus();
     };
 
     const ro = new ResizeObserver(resize);
     ro.observe(el);
 
-    // Belt-and-suspenders: fire again after transition (300 ms) completes
     const t1 = setTimeout(resize, 50);
     const t2 = setTimeout(resize, 350);
 
@@ -450,7 +459,7 @@ export default function ChangeDetection({ map, onClose }) {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, [expanded]);
+  }, [expanded, applyStudyFocus]);
 
   // Initialize both maps
   useEffect(() => {
@@ -514,7 +523,7 @@ export default function ChangeDetection({ map, onClose }) {
         "visibility",
         "visible",
       );
-      mLeft.fitBounds(BOUNDS, { padding: 0, maxZoom: 16.8, duration: 0 });
+      mLeft.fitBounds(BOUNDS, STUDY_FIT);
     });
 
     mRight.on("load", () => {
@@ -537,7 +546,7 @@ export default function ChangeDetection({ map, onClose }) {
         "visibility",
         "visible",
       );
-      mRight.fitBounds(BOUNDS, { padding: 0, maxZoom: 16.8, duration: 0 });
+      mRight.fitBounds(BOUNDS, STUDY_FIT);
     });
 
     mapLeftRef.current = mLeft;
@@ -626,24 +635,10 @@ export default function ChangeDetection({ map, onClose }) {
 
       {/* ── Panel / overlay container ── */}
       <div
-        className={`text-[12px] ${
-          expanded
-            ? "fixed z-[70] rounded-xl border border-[#3a4354] bg-[#202736] shadow-2xl overflow-hidden"
-            : ""
-        }`}
-        style={
-          expanded
-            ? {
-                top: "54%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "min(760px, 86vw)",
-              }
-            : {}
-        }
+        className={`text-[12px] ${expanded ? EXPANDED_PANEL_CLASS : "flex flex-col"}`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-3 font-bold">
+        {/* Header — always visible */}
+        <div className="flex shrink-0 items-center justify-between border-b border-[#343c4c] px-4 py-3 font-bold">
           <span>Change Detection</span>
           <div className="flex items-center gap-1">
             {/* Download report */}
@@ -680,7 +675,9 @@ export default function ChangeDetection({ map, onClose }) {
           </div>
         </div>
 
-        <div className="p-3">
+        <div
+          className={`p-3 ${expanded ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : ""}`}
+        >
           <p className="text-white/60 mb-3 text-[11px]">
             Compare two drone images side-by-side.
             {/* Drag the swipe handle to reveal changes between time periods. */}
@@ -725,8 +722,11 @@ export default function ChangeDetection({ map, onClose }) {
           {/* Swipe comparison map — taller when expanded */}
           <div
             ref={containerRef}
-            className="relative rounded-md overflow-hidden border border-[#3b4558] mb-3 select-none transition-all duration-300"
-            style={{ height: expanded ? "350px" : "200px", width: "100%" }}
+            className="relative mb-3 shrink-0 select-none overflow-hidden rounded-md border border-[#3b4558] transition-all duration-300"
+            style={{
+              height: expanded ? "min(32vh, 260px)" : "200px",
+              width: "100%",
+            }}
           >
             {/* Map A (Left image) */}
             <div

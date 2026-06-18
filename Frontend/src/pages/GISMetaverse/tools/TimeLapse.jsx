@@ -18,6 +18,12 @@ const BOUNDS = [
   [74.43545280361002, 31.6112165411359],
 ];
 
+/** Keep the Chahar Bagh study site prominent — not the wider surroundings */
+const STUDY_FIT = { padding: 12, maxZoom: 17.5, duration: 0 };
+
+const EXPANDED_PANEL_CLASS =
+  "fixed z-[70] top-1/2 left-1/2 flex max-h-[min(90vh,720px)] w-[min(680px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-[#3a4354] bg-[#202736] shadow-2xl";
+
 const TIMELINE = [
   {
     label: "AsBuilt Jan 2023",
@@ -155,7 +161,7 @@ export default function TimeLapse({ map, onClose }) {
           layout: { visibility: i === 0 ? "visible" : "none" },
         });
       });
-      mm.fitBounds(BOUNDS, { padding: 10, duration: 0 });
+      mm.fitBounds(BOUNDS, STUDY_FIT);
     });
 
     miniMapRef.current = mm;
@@ -167,16 +173,31 @@ export default function TimeLapse({ map, onClose }) {
     };
   }, []);
 
-  // Resize mini-map when panel expands/collapses
+  const applyStudyFocus = useCallback(() => {
+    miniMapRef.current?.fitBounds(BOUNDS, STUDY_FIT);
+  }, []);
+
+  // Resize mini-map when panel expands/collapses and refit study area
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => miniMapRef.current?.resize());
+
+    const resize = () => {
+      miniMapRef.current?.resize();
+      applyStudyFocus();
+    };
+
+    const ro = new ResizeObserver(resize);
     ro.observe(el);
-    const t1 = setTimeout(() => miniMapRef.current?.resize(), 50);
-    const t2 = setTimeout(() => miniMapRef.current?.resize(), 200);
-    return () => { ro.disconnect(); clearTimeout(t1); clearTimeout(t2); };
-  }, [expanded]);
+    const t1 = setTimeout(resize, 50);
+    const t2 = setTimeout(resize, 350);
+
+    return () => {
+      ro.disconnect();
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [expanded, applyStudyFocus]);
 
   // ── Layer visibility ──────────────────────────────────────────────────────
   useEffect(() => { showLayer(current); }, [current, showLayer]);
@@ -322,11 +343,11 @@ export default function TimeLapse({ map, onClose }) {
   }, [recording, speed, current, showLayer]);
 
   // ── Map height ────────────────────────────────────────────────────────────
-  const mapHeight = expanded ? "350px" : "170px";
+  const mapHeight = expanded ? "min(32vh, 260px)" : "170px";
 
   // ── Content ───────────────────────────────────────────────────────────────
   const content = (
-    <div className="p-3">
+    <div className={`p-3 ${expanded ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : ""}`}>
       <p className="text-white/60 mb-3 text-[11px]">
         View the construction captured progress through drone
         imagery. 
@@ -334,7 +355,7 @@ export default function TimeLapse({ map, onClose }) {
 
       {/* Mini Map */}
       <div
-        className="relative rounded-md overflow-hidden border border-[#3b4558] mb-3 transition-all duration-300"
+        className="relative mb-3 shrink-0 overflow-hidden rounded-md border border-[#3b4558] transition-all duration-300"
         style={{ height: mapHeight }}
       >
         <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
@@ -514,26 +535,10 @@ export default function TimeLapse({ map, onClose }) {
 
       {/* Panel */}
       <div
-        className={`text-[12px] ${
-          expanded
-            ? "fixed z-[70] rounded-xl border border-[#3a4354] bg-[#202736] shadow-2xl overflow-hidden"
-            : ""
-        }`}
-        style={
-          expanded
-            ? {
-                top: "54%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "min(820px, 92vw)",
-                maxHeight: "92vh",
-                overflowY: "auto",
-              }
-            : {}
-        }
+        className={`text-[12px] ${expanded ? EXPANDED_PANEL_CLASS : "flex flex-col"}`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-3 font-bold">
+        {/* Header — always visible */}
+        <div className="flex shrink-0 items-center justify-between border-b border-[#343c4c] px-4 py-3 font-bold">
           <span>Time Lapse</span>
 
           <div className="flex items-center gap-1">

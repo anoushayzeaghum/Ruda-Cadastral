@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { setupPlotClickPopup } from "./PlotPopup";
+import { setupVectorClickPopups } from "./PlotPopup";
 import {
   getBlocksGeoJSON,
   getContourGeoJSON,
@@ -725,29 +725,18 @@ export default function GISMetaverseMap({
   ]);
 
   // ---------------------------------------------------------------------------
-  // Plot click popup
+  // Vector layer click popups (all toggled vector layers, click-only)
   // ---------------------------------------------------------------------------
-  // We depend on `isMapReady` (set to true inside the map "load" event) so
-  // this effect only fires once the map and its style are fully initialised.
-  // That guarantees the masterPlanHover layer already exists when we wire up
-  // the click handler, and we get a clean teardown on unmount.
   useEffect(() => {
     const map = mapRef.current;
-    // Guard: map must exist and be fully loaded before wiring up interactions.
     if (!map || !isMapReady) return;
 
-    return setupPlotClickPopup({
+    return setupVectorClickPopups({
       map,
-      // Query both fill and line layers so clicks on thin plot borders register.
-      plotLayerIds: [LAYERS.masterPlanFill, LAYERS.masterPlanLine],
-      // The highlight outline layer — driven by filter + opacity in PlotPopup.
-      highlightLayerId: LAYERS.masterPlanHover,
-      // Must match the property used in the masterPlanHover filter expression.
-      highlightFilterKey: "gid",
-      // Auto-close the popup after 10 seconds of inactivity.
       autoCloseMs: 10000,
+      minZoom: 16,
+      maxZoom: 18,
     });
-    // Re-run whenever the map instance is swapped out or readiness changes.
   }, [mapRef, isMapReady]);
 
   return <div ref={mapContainerRef} className="h-full w-full" />;

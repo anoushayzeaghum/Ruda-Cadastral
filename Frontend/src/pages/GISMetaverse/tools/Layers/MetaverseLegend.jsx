@@ -1,5 +1,6 @@
 import { ChevronDown, Map as MapIcon, Route } from "lucide-react";
 import { useMemo, useState } from "react";
+import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 
 const RUDA_PHASE_COLORS = [
   "#6bb7e8",
@@ -141,7 +142,7 @@ export default function MetaverseLegend({
       </button>
 
       {!collapsed && (
-        <div className="max-h-[380px] overflow-y-auto p-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className={`max-h-[380px] p-3 ${LAYER_PANEL_SCROLL}`}>
           {!showRudaLegend && !showRoadLegend && (
             <div className="rounded-sm border border-[#3b4558] bg-[#232b3a] p-3 text-[11px] text-white/70">
               No active legend layer. Turn on RUDA Boundary or Proposed Roads.

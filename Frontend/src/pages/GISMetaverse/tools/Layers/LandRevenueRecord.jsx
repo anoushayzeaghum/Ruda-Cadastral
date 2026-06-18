@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import {
   getProjectMauzasGeoJSON,
   getMurabbasGeoJSON,
@@ -520,7 +521,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       >
         {isKhasra && khasraPanelOpen && (
           <div
-            className="max-h-32 overflow-y-auto border-t border-white/10 px-3 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            className={`max-h-32 border-t border-white/10 px-3 py-1.5 ${LAYER_PANEL_SCROLL}`}
             onClick={(event) => event.stopPropagation()}
           >
             {!layers.khasra.visible && (
@@ -593,7 +594,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
           >
             {mauzaPanelOpen && (
               <div
-                className="max-h-32 overflow-y-auto border-t border-white/10 px-3 py-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                className={`max-h-32 border-t border-white/10 px-3 py-1.5 ${LAYER_PANEL_SCROLL}`}
                 onClick={(event) => event.stopPropagation()}
               >
                 {!selectedProjectId && (
