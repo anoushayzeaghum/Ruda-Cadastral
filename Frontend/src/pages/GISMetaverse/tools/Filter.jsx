@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Filter as FilterIcon, X } from "lucide-react";
+import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
 import {
   getBlocks,
   getPlotOptionsAll,
@@ -247,7 +248,9 @@ export default function Filter({
         </button>
       </div>
 
-      <div className="max-h-[410px] overflow-y-auto p-4">
+      <div
+        className={`max-h-[calc(70vh-6.5rem)] p-4 sm:max-h-[min(360px,calc(100vh-180px))] ${LAYER_PANEL_SCROLL}`}
+      >
         <div className="space-y-3">
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-white/80">

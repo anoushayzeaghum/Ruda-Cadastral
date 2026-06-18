@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import mapboxgl from "mapbox-gl";
 
@@ -375,7 +376,7 @@ export default function AdministrativeBoundaries({
                     </button>
                   </div>
 
-                  <div className="max-h-44 overflow-y-auto pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  <div className={`max-h-44 pr-1 ${LAYER_PANEL_SCROLL}`}>
                     {rudaPhases.map((phase) => {
                       const checked = selectedRudaPhaseSet.has(String(phase.id));
 

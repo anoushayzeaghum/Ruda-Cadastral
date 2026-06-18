@@ -6,6 +6,7 @@ import LandRevenueRecord from "./Layers/LandRevenueRecord";
 import Miscellaneous from "./Layers/Miscellaneous";
 import NotifiedBoundaries from "./Layers/NotifiedBoundaries";
 import AdministrativeBoundaries from "./Layers/AdministrativeBoundaries";
+import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
 
 export default function LayersPanel({
   map,
@@ -16,7 +17,9 @@ export default function LayersPanel({
   setAdminBoundaryVisibility,
 }) {
   return (
-    <div className="text-[12px] font-semibold">
+    <div
+      className={`max-h-[calc(70vh-2.5rem)] text-[12px] font-semibold sm:max-h-[min(500px,calc(100vh-120px))] ${LAYER_PANEL_SCROLL}`}
+    >
       <AdministrativeBoundaries
         map={map}
         adminBoundaryVisibility={adminBoundaryVisibility}

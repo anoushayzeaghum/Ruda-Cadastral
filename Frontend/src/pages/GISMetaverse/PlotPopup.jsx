@@ -184,6 +184,8 @@ export function setupVectorClickPopups({
   groups = VECTOR_POPUP_GROUPS,
   autoCloseMs = 10000,
   clickTolerance = 6,
+  minZoom = 16,
+  maxZoom = 18,
 }) {
   if (!isUsableMap(map)) return () => {};
 
@@ -194,6 +196,12 @@ export function setupVectorClickPopups({
   let closeTimer = null;
   let isDestroyed = false;
   let activeHighlightGroup = null;
+
+  const isZoomInPopupRange = () => {
+    const zoom = safeMapCall(map, () => map.getZoom(), null);
+    if (zoom === null) return false;
+    return zoom >= minZoom && zoom <= maxZoom;
+  };
 
   const clearCloseTimer = () => {
     if (closeTimer) {
@@ -290,6 +298,7 @@ export function setupVectorClickPopups({
 
   const showPopup = (event, feature, group) => {
     if (isDestroyed || !isUsableMap(map) || !feature || !group) return;
+    if (!isZoomInPopupRange()) return;
 
     clearHighlight();
     highlightFeature(feature, group);
@@ -331,6 +340,11 @@ export function setupVectorClickPopups({
   };
 
   const handleMapClick = (event) => {
+    if (!isZoomInPopupRange()) {
+      if (popup) closePopup();
+      return;
+    }
+
     const hit = findClickedFeature(event);
 
     if (!hit) {
@@ -342,8 +356,16 @@ export function setupVectorClickPopups({
     showPopup(event, hit.feature, hit.group);
   };
 
+  const handleZoomChange = () => {
+    if (!isZoomInPopupRange() && popup) {
+      closePopup();
+    }
+  };
+
   safeMapCall(map, () => {
     map.on("click", handleMapClick);
+    map.on("zoom", handleZoomChange);
+    map.on("zoomend", handleZoomChange);
   });
 
   clearHighlight();
@@ -354,6 +376,8 @@ export function setupVectorClickPopups({
 
     safeMapCall(map, () => {
       map.off("click", handleMapClick);
+      map.off("zoom", handleZoomChange);
+      map.off("zoomend", handleZoomChange);
     });
 
     try {

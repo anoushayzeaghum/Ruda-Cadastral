@@ -125,14 +125,15 @@ export default function MetaverseLeftToolbar({
         <div
           className={`absolute z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl
             /* Mobile: slide up from bottom as a sheet */
-            bottom-0 left-0 right-0 max-h-[70vh] overflow-y-auto rounded-b-none
+            bottom-0 left-0 right-0 max-h-[70vh] rounded-b-none
+            ${activeTool === "layers" || activeTool === "filter" ? "overflow-hidden" : "overflow-y-auto"}
             /* sm+: restore left toolbar panel behaviour */
             sm:bottom-auto sm:left-14 sm:right-auto sm:rounded-b-md
             ${
               activeTool === "filter"
-                ? "sm:w-[300px] sm:max-h-[400px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                ? "sm:w-[300px] sm:max-h-[min(400px,calc(100vh-90px))] overflow-hidden"
                 : activeTool === "layers"
-                  ? "sm:w-[300px] sm:max-h-[500px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  ? "sm:w-[300px] sm:max-h-[min(500px,calc(100vh-90px))] overflow-hidden"
                   : activeTool === "droneImagery"
                     ? "sm:w-[320px] sm:max-h-[calc(100vh-90px)]"
                     : activeTool === "timeLapse"
