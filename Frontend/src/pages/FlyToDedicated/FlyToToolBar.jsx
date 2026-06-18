@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { Globe2, Send } from "lucide-react";
+import { Globe2, Send, Layers } from "lucide-react";
 
 import Basemaps from "../../pages/GISMetaverse/tools/Basemaps";
 import FlyTo from "../../pages/GISMetaverse/tools/FlyTo";
-
-export default function MetaverseLeftToolbar({
-  map,
+import SegmentMeasurement from "../GISMetaverse/tools/SegmentMeasurement";
+import LayersPanel from "../../pages/GISMetaverse/tools/Layers/MasterPlan";
+export default function FlyToLeftToolbar({
+   map,
   filters,
   setFilters,
+  layerVisibility,
   setLayerVisibility,
+  adminBoundaryVisibility,
+  setAdminBoundaryVisibility,
   rebuildAllLayers,
 }) {
   const [bottomPanel, setBottomPanel] = useState(null);
@@ -45,31 +49,44 @@ export default function MetaverseLeftToolbar({
           </button>
         </div>
 
-        {/* Fly To */}
+        {/* Master Plan */}
         <div className="relative">
-          {bottomPanel === "flyTo" && (
-            <div className="absolute left-10 top-1/2 -translate-y-1/2 ml-1">
-              <FlyTo
+          {bottomPanel === "layers" && (
+            <div className="absolute bottom-0 left-10 ml-1 w-[300px] max-h-[500px] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+              <LayersPanel
+                map={map}
                 filters={filters}
-                setFilters={setFilters}
+                layerVisibility={layerVisibility}
                 setLayerVisibility={setLayerVisibility}
+                adminBoundaryVisibility={adminBoundaryVisibility}
+                setAdminBoundaryVisibility={setAdminBoundaryVisibility}
+                preserveLayers={true}
               />
             </div>
           )}
 
           <button
             type="button"
-            title="Fly To"
-            onClick={() => handleBottomPanel("flyTo")}
+            title="Master Plan"
+            onClick={() => handleBottomPanel("layers")}
             className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
-              bottomPanel === "flyTo"
+              bottomPanel === "layers"
                 ? "border-[#8bd66f] bg-[#243041] text-white"
                 : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
             }`}
           >
-            <Send size={20} strokeWidth={2.2} />
+            <Layers size={20} strokeWidth={2.2} />
           </button>
         </div>
+        {/* Fly To */}
+       <div className="relative">
+        <FlyTo
+          filters={filters}
+          setFilters={setFilters}
+          setLayerVisibility={setLayerVisibility}
+        />
+      </div>
+         <SegmentMeasurement map={map} />
       </div>
     </>
   );
