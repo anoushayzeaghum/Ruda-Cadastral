@@ -556,6 +556,8 @@ class BlockLevelSerializer(GeoFeatureModelSerializer):
 # Plot Serializer
 # --------------------------------------------------------
 class PlotSerializer(GeoFeatureModelSerializer):
+    project_name = serializers.CharField(read_only=True)
+    block_name = serializers.CharField(read_only=True)
     class Meta:
         model = Plot
         geo_field = "geom"
@@ -563,7 +565,7 @@ class PlotSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "name",
+            "name", "project_name", "block_name",
             "type",
             "remarks",
             "project_id",
