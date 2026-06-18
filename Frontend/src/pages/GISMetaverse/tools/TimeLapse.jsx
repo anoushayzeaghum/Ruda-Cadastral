@@ -49,6 +49,14 @@ const TIMELINE = [
     url: "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
     color: "#ef4444",
   },
+  {
+    label: "Ortho Apr 2026",
+    date: "April 2026",
+    sourceId: "tl-apr2026-src",
+    layerId: "tl-apr2026-lyr",
+    url: "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+    color: "#f59e0b",
+  },
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

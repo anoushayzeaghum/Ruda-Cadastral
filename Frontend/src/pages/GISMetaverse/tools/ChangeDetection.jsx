@@ -50,6 +50,15 @@ const IMAGERY = [
     url: "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
     color: "#ef4444",
   },
+  {
+    id: "apr2026",
+    label: "Ortho Apr 2026",
+    short: "Apr 2026",
+    sourceId: "cd-apr2026-src",
+    layerId: "cd-apr2026-lyr",
+    url: "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+    color: "#f59e0b",
+  },
 ];
 
 export default function ChangeDetection({ map, onClose }) {
@@ -66,7 +75,7 @@ export default function ChangeDetection({ map, onClose }) {
   const isDraggingRef = useRef(false);
 
   const [leftIdx, setLeftIdx] = useState(0);
-  const [rightIdx, setRightIdx] = useState(2);
+  const [rightIdx, setRightIdx] = useState(3);
   const [swipePos, setSwipePos] = useState(50);
   const [expanded, setExpanded] = useState(false);
   const [reporting, setReporting] = useState(false);

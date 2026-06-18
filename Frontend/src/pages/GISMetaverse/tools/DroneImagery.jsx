@@ -33,6 +33,8 @@ export default function DroneImagery({ map }) {
   const [june2023Opacity, setJune2023Opacity] = useState(100);
   const [nov2024Visible,  setNov2024Visible]  = useState(false);
   const [nov2024Opacity,  setNov2024Opacity]  = useState(100);
+  const [apr2026Visible,  setApr2026Visible]  = useState(false);
+  const [apr2026Opacity,  setApr2026Opacity]  = useState(100);
 
   // ── Video state ───────────────────────────────────────────────────────────
   const [activeVideo,  setActiveVideo]  = useState(null);   // video id or null
@@ -53,6 +55,8 @@ export default function DroneImagery({ map }) {
   const JUNE2023_LAYER  = "gis-june2023-layer";
   const NOV2024_SOURCE  = "gis-nov2024-source";
   const NOV2024_LAYER   = "gis-nov2024-layer";
+  const APR2026_SOURCE  = "gis-apr2026-source";
+  const APR2026_LAYER   = "gis-apr2026-layer";
 
   const flyToChaharbagh = () => {
     if (!map) return;
@@ -135,7 +139,30 @@ export default function DroneImagery({ map }) {
     }
   }, [map, nov2024Visible, nov2024Opacity]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Video helpers ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!map) return;
+    if (apr2026Visible) {
+      if (!map.getSource(APR2026_SOURCE)) {
+        map.addSource(APR2026_SOURCE, {
+          type: "raster",
+          tiles: [
+            "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+          ],
+          tileSize: 256,
+        });
+      }
+      if (!map.getLayer(APR2026_LAYER)) {
+        map.addLayer({ id: APR2026_LAYER, type: "raster", source: APR2026_SOURCE, paint: { "raster-opacity": apr2026Opacity / 100 }, layout: { visibility: "visible" } });
+        flyToChaharbagh();
+      } else {
+        map.setLayoutProperty(APR2026_LAYER, "visibility", "visible");
+        map.setPaintProperty(APR2026_LAYER, "raster-opacity", apr2026Opacity / 100);
+      }
+    } else if (map.getLayer(APR2026_LAYER)) {
+      map.setLayoutProperty(APR2026_LAYER, "visibility", "none");
+    }
+  }, [map, apr2026Visible, apr2026Opacity]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const formatTime = (s) => {
     if (!isFinite(s)) return "0:00";
     const m = Math.floor(s / 60);
@@ -290,6 +317,27 @@ export default function DroneImagery({ map }) {
                 onChange={(e) => setNov2024Opacity(Number(e.target.value))}
                 className="h-[3px] flex-1 rounded-full accent-[#65c96b] bg-[#8fd36f]" />
               <span className="text-[11px] text-white/90 w-8 text-right">{nov2024Opacity}%</span>
+            </div>
+          </div>
+
+          <div className="border-t border-[#394354]" />
+
+          {/* Apr 2026 */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={apr2026Visible}
+                  onChange={(e) => setApr2026Visible(e.target.checked)} className="accent-[#65c96b]" />
+                <Clock size={14} className="text-[#f59e0b]" />
+                <span className="font-semibold text-white/90">Apr 2026</span>
+              </label>
+              <Grid3X3 size={14} className="text-white/60" />
+            </div>
+            <div className="mt-2 flex items-center gap-2 pl-6">
+              <input type="range" min="0" max="100" value={apr2026Opacity}
+                onChange={(e) => setApr2026Opacity(Number(e.target.value))}
+                className="h-[3px] flex-1 rounded-full accent-[#65c96b] bg-[#8fd36f]" />
+              <span className="text-[11px] text-white/90 w-8 text-right">{apr2026Opacity}%</span>
             </div>
           </div>
         </div>
