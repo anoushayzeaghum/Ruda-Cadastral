@@ -1,6 +1,7 @@
 import MasterPlan from "./Layers/MasterPlan";
 import TopographicPlan from "./Layers/TopographicPlan";
-import ServiceUtilities from "./Layers/ServiceUtilities";
+import Utilities from "./Layers/Utilities";
+import Services from "./Layers/Services";
 import LandRevenueRecord from "./Layers/LandRevenueRecord";
 import Miscellaneous from "./Layers/Miscellaneous";
 import NotifiedBoundaries from "./Layers/NotifiedBoundaries";
@@ -27,14 +28,23 @@ export default function LayersPanel({
         setLayerVisibility={setLayerVisibility}
       />
       <TopographicPlan map={map} selectedProjectId={filters?.projectId} />
-      <ServiceUtilities
+      <Utilities
+        selectedProjectId={filters?.projectId}
+        layerVisibility={layerVisibility}
+        setLayerVisibility={setLayerVisibility}
+      />
+      <Services
         selectedProjectId={filters?.projectId}
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
       <LandRevenueRecord map={map} selectedProjectId={filters?.projectId} />
       <Miscellaneous map={map} />
-      <NotifiedBoundaries />
+      <NotifiedBoundaries
+        selectedProjectId={filters?.projectId}
+        layerVisibility={layerVisibility}
+        setLayerVisibility={setLayerVisibility}
+      />
     </div>
   );
 }

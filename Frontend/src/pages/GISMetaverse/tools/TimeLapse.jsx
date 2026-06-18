@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
-  ChevronRight,
+  X,
   Play,
   Pause,
   SkipBack,
@@ -73,7 +73,7 @@ function canvasToImage(canvas) {
   });
 }
 
-export default function TimeLapse({ map }) {
+export default function TimeLapse({ map, onClose }) {
   const miniMapRef   = useRef(null);
   const containerRef = useRef(null);
   const mapLoadedRef = useRef(false);
@@ -87,6 +87,25 @@ export default function TimeLapse({ map }) {
   const [recording,      setRecording]      = useState(false);
   const [recordProgress, setRecordProgress] = useState(0);
   const [recordError,    setRecordError]    = useState("");
+
+  const handleClose = useCallback(() => {
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+
+    if (typeof onClose === "function") {
+      onClose();
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("metaverse:close-tool", {
+        detail: { tool: "timeLapse" },
+      }),
+    );
+  }, [expanded, onClose]);
+
 
   // ── Show the correct raster layer ────────────────────────────────────────
   const showLayer = useCallback((index) => {
@@ -303,7 +322,7 @@ export default function TimeLapse({ map }) {
   }, [recording, speed, current, showLayer]);
 
   // ── Map height ────────────────────────────────────────────────────────────
-  const mapHeight = expanded ? "500px" : "170px";
+  const mapHeight = expanded ? "350px" : "170px";
 
   // ── Content ───────────────────────────────────────────────────────────────
   const content = (
@@ -503,7 +522,7 @@ export default function TimeLapse({ map }) {
         style={
           expanded
             ? {
-                top: "50%",
+                top: "54%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
                 width: "min(820px, 92vw)",
@@ -541,7 +560,14 @@ export default function TimeLapse({ map }) {
               {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
             </button>
 
-            <ChevronRight size={15} className="text-white/40 ml-1" />
+            <button
+              type="button"
+              title={expanded ? "Close expanded viewer" : "Close panel"}
+              onClick={handleClose}
+              className="flex h-6 w-6 items-center justify-center rounded text-white/50 hover:text-white hover:bg-[#2a3548] transition"
+            >
+              <X size={13} />
+            </button>
           </div>
         </div>
 

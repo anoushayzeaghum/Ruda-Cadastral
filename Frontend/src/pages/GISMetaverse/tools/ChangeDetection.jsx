@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
-  ChevronRight,
+  X,
   GripVertical,
   Maximize2,
   Minimize2,
@@ -46,7 +46,7 @@ const IMAGERY = [
   },
 ];
 
-export default function ChangeDetection({ map }) {
+export default function ChangeDetection({ map, onClose }) {
   const containerRef = useRef(null);
   const containerLeftRef = useRef(null);
   const containerRightRef = useRef(null);
@@ -65,6 +65,25 @@ export default function ChangeDetection({ map }) {
   const [expanded, setExpanded] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [reportErr, setReportErr] = useState("");
+
+  const handleClose = useCallback(() => {
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+
+    if (typeof onClose === "function") {
+      onClose();
+      return;
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("metaverse:close-tool", {
+        detail: { tool: "changeDetection" },
+      }),
+    );
+  }, [expanded, onClose]);
+
 
   // ── Helper: hex colour string → [r, g, b] ────────────────────────────────
   const hexToRgb = (hex) => [
@@ -495,7 +514,7 @@ export default function ChangeDetection({ map }) {
         "visibility",
         "visible",
       );
-      mLeft.fitBounds(BOUNDS, { padding: 10, duration: 0 });
+      mLeft.fitBounds(BOUNDS, { padding: 0, maxZoom: 16.8, duration: 0 });
     });
 
     mRight.on("load", () => {
@@ -518,7 +537,7 @@ export default function ChangeDetection({ map }) {
         "visibility",
         "visible",
       );
-      mRight.fitBounds(BOUNDS, { padding: 10, duration: 0 });
+      mRight.fitBounds(BOUNDS, { padding: 0, maxZoom: 16.8, duration: 0 });
     });
 
     mapLeftRef.current = mLeft;
@@ -615,10 +634,10 @@ export default function ChangeDetection({ map }) {
         style={
           expanded
             ? {
-                top: "50%",
+                top: "54%",
                 left: "50%",
                 transform: "translate(-50%, -50%)",
-                width: "min(860px, 92vw)",
+                width: "min(760px, 86vw)",
               }
             : {}
         }
@@ -650,7 +669,14 @@ export default function ChangeDetection({ map }) {
             >
               {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
             </button>
-            <ChevronRight size={15} className="text-white/40 ml-1" />
+            <button
+              type="button"
+              title={expanded ? "Close expanded viewer" : "Close panel"}
+              onClick={handleClose}
+              className="flex h-6 w-6 items-center justify-center rounded text-white/50 hover:text-white hover:bg-[#2a3548] transition"
+            >
+              <X size={13} />
+            </button>
           </div>
         </div>
 
@@ -700,7 +726,7 @@ export default function ChangeDetection({ map }) {
           <div
             ref={containerRef}
             className="relative rounded-md overflow-hidden border border-[#3b4558] mb-3 select-none transition-all duration-300"
-            style={{ height: expanded ? "460px" : "200px", width: "100%" }}
+            style={{ height: expanded ? "350px" : "200px", width: "100%" }}
           >
             {/* Map A (Left image) */}
             <div

@@ -16,9 +16,9 @@ const MASAWI_BOUNDS = [
 ];
 
 const IDS = {
-  moza: { src: "gism-lrr-moza-src", fill: "gism-lrr-moza-fill", line: "gism-lrr-moza-line" },
+  moza: { src: "gism-lrr-moza-src", fill: "gism-lrr-moza-fill", line: "gism-lrr-moza-line", label: "gism-lrr-moza-label" },
   murabba: { src: "gism-lrr-murabba-src", fill: "gism-lrr-murabba-fill", line: "gism-lrr-murabba-line" },
-  khasra: { src: "gism-lrr-khasra-src", fill: "gism-lrr-khasra-fill", line: "gism-lrr-khasra-line" },
+  khasra: { src: "gism-lrr-khasra-src", fill: "gism-lrr-khasra-fill", line: "gism-lrr-khasra-line", label: "gism-lrr-khasra-label" },
 };
 
 const MAUZA_DEF = { key: "moza", label: "Mauza Boundary", color: "#ff8b24", type: "polygon" };
@@ -37,6 +37,34 @@ function emptyFC() {
 
 function getLayerColor(key) {
   return ALL_LAYER_DEFS.find((d) => d.key === key)?.color || "#ffffff";
+}
+
+function getLabelExpression(key) {
+  if (key === "moza") {
+    return [
+      "coalesce",
+      ["to-string", ["get", "mauza"]],
+      ["to-string", ["get", "Mauza"]],
+      ["to-string", ["get", "moza"]],
+      ["to-string", ["get", "Moza"]],
+      ["to-string", ["get", "name"]],
+      ["to-string", ["get", "Name"]],
+      "",
+    ];
+  }
+
+  if (key === "khasra") {
+    return [
+      "coalesce",
+      ["to-string", ["get", "kh"]],
+      ["to-string", ["get", "KH"]],
+      ["to-string", ["get", "Kh"]],
+      ["to-string", ["get", "khasra_id"]],
+      "",
+    ];
+  }
+
+  return "";
 }
 
 function toNumber(value) {
@@ -151,6 +179,32 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity) {
     map.setLayoutProperty(ids.line, "visibility", "visible");
     map.setPaintProperty(ids.line, "line-opacity", o);
   }
+
+  if (ids.label && !map.getLayer(ids.label)) {
+    map.addLayer({
+      id: ids.label,
+      type: "symbol",
+      source: ids.src,
+      minzoom: key === "khasra" ? 16 : 14,
+      paint: {
+        "text-color": key === "khasra" ? "#14532d" : "#7c2d12",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2,
+        "text-opacity": o,
+      },
+      layout: {
+        visibility: "visible",
+        "text-field": getLabelExpression(key),
+        "text-size": ["interpolate", ["linear"], ["zoom"], 14, 9, 18, 12],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+      },
+    });
+  } else if (ids.label) {
+    map.setLayoutProperty(ids.label, "visibility", "visible");
+    map.setPaintProperty(ids.label, "text-opacity", o);
+  }
 }
 
 function hideLayer(map, key) {
@@ -169,6 +223,7 @@ function hideLayer(map, key) {
   try {
     if (map.getLayer(ids.fill)) map.setLayoutProperty(ids.fill, "visibility", "none");
     if (map.getLayer(ids.line)) map.setLayoutProperty(ids.line, "visibility", "none");
+    if (ids.label && map.getLayer(ids.label)) map.setLayoutProperty(ids.label, "visibility", "none");
   } catch (_) {}
 }
 
@@ -190,6 +245,7 @@ function updateOpacity(map, key, opacity) {
   try {
     if (map.getLayer(ids.fill)) map.setPaintProperty(ids.fill, "fill-opacity", o * 0.2);
     if (map.getLayer(ids.line)) map.setPaintProperty(ids.line, "line-opacity", o);
+    if (ids.label && map.getLayer(ids.label)) map.setPaintProperty(ids.label, "text-opacity", o);
   } catch (_) {}
 }
 

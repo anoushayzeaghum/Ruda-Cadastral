@@ -326,6 +326,7 @@ class ContourSerializer(GeoFeatureModelSerializer):
             "dist_id",
             "tehsil_id",
             "project_id",
+            "elevation",
             "geom",
         )
 
@@ -388,6 +389,8 @@ class RudaBoundarySerializer(GeoFeatureModelSerializer):
 
 class TrijunctionSerializer(GeoFeatureModelSerializer):
 
+    type = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Trijunction
         geo_field = "geom"
@@ -402,11 +405,15 @@ class TrijunctionSerializer(GeoFeatureModelSerializer):
             "name",
             "layer",
             "gm_type",
+            "type",
             "pid",
             "code",
             "path",
             "geom",
         )
+
+    def get_type(self, obj):
+        return obj.gm_type or obj.code or obj.layer
 
 # --------------------------------------------------------
 # Square Serializer

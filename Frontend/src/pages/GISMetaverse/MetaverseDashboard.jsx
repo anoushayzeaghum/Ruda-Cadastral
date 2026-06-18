@@ -45,11 +45,13 @@ export default function MetaverseDashboard() {
     waterSupplyLines: false,
     sewagePoints: false,
     cameraLocations: false,
+    notifiedBoundary: false,
 
     waterSupplyPointsOpacity: 100,
     waterSupplyLinesOpacity: 100,
     sewagePointsOpacity: 100,
     cameraLocationsOpacity: 100,
+    notifiedBoundaryOpacity: 100,
   };
 
   const defaultAdminBoundaryVisibility = {
