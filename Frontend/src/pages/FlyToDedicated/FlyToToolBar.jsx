@@ -2,13 +2,13 @@ import { useState } from "react";
 import { Globe2, Layers, Filter as FilterIcon, Search } from "lucide-react";
 
 import Basemaps from "../../pages/GISMetaverse/tools/Basemaps";
-import FlyTo from "../../pages/GISMetaverse/tools/FlyTo";
-import SegmentMeasurement from "../GISMetaverse/tools/SegmentMeasurement";
-import LayersPanel from "../../pages/GISMetaverse/tools/Layers/MasterPlan";
-import Filter from "../../pages/GISMetaverse/tools/Filter";
-import AttributeTable from "../FlyToDedicated/AttributeTable";
+import FlyTo from "./FlyTo";
+import SegmentMeasurement from "./Layers/SegmentMeasurement";
+import LayersPanel from "./FlyToLayer";
+import Filter from "./Layers/FlyToFilter";
+import AttributeTable from "./Layers/AttributeTable";
 
-import FlyToFilter from "../FlyToDedicated/FlyToFilter";
+import FlyToFilter from "./Layers/FlyToFilter";
 
 export default function FlyToLeftToolbar({
   map,
@@ -28,69 +28,66 @@ export default function FlyToLeftToolbar({
 
   return (
     <>
-    {/* ================= ATTRIBUTE TABLE ICON ================= */}
+      {/* ================= ATTRIBUTE TABLE ICON ================= */}
       {/* ================= TOP LEFT TOOL GROUP ================= */}
-<div className="absolute top-3 left-2 z-50 flex flex-col items-start gap-2">
+      <div className="absolute top-3 left-2 z-50 flex flex-col items-start gap-2">
+        {/* FILTER */}
+        <div className="relative">
+          {bottomPanel === "filter" && (
+            <div className="absolute top-10 left-0 w-[320px] max-h-[70vh] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+              <FlyToFilter
+                filters={filters}
+                onClose={() => setBottomPanel(null)}
+                onApply={(applied) => {
+                  setFilters((prev) => ({
+                    ...prev,
+                    ...applied,
+                  }));
+                  setBottomPanel(null);
+                }}
+              />
+            </div>
+          )}
 
-  {/* FILTER */}
-  <div className="relative">
-    {bottomPanel === "filter" && (
-      <div className="absolute top-10 left-0 w-[320px] max-h-[70vh] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
-        <FlyToFilter
-          filters={filters}
-          onClose={() => setBottomPanel(null)}
-          onApply={(applied) => {
-            setFilters((prev) => ({
-              ...prev,
-              ...applied,
-            }));
-            setBottomPanel(null);
-          }}
-        />
+          <button
+            type="button"
+            title="Filter"
+            onClick={() => handleBottomPanel("filter")}
+            className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+              bottomPanel === "filter"
+                ? "border-[#8bd66f] bg-[#243041] text-white"
+                : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+            }`}
+          >
+            <FilterIcon size={20} strokeWidth={2.2} />
+          </button>
+        </div>
+
+        {/* SEARCH (Attribute Table) */}
+        <div className="relative">
+          {bottomPanel === "attribute" && (
+            <div className="absolute top-10 left-0 z-50">
+              <AttributeTable onClose={() => setBottomPanel(null)} />
+            </div>
+          )}
+
+          <button
+            type="button"
+            title="Attribute Search"
+            onClick={() => handleBottomPanel("attribute")}
+            className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+              bottomPanel === "attribute"
+                ? "border-[#8bd66f] bg-[#243041] text-white"
+                : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+            }`}
+          >
+            <Search size={20} />
+          </button>
+        </div>
       </div>
-    )}
-
-    <button
-      type="button"
-      title="Filter"
-      onClick={() => handleBottomPanel("filter")}
-      className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
-        bottomPanel === "filter"
-          ? "border-[#8bd66f] bg-[#243041] text-white"
-          : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
-      }`}
-    >
-      <FilterIcon size={20} strokeWidth={2.2} />
-    </button>
-  </div>
-
-  {/* SEARCH (Attribute Table) */}
-  <div className="relative">
-    {bottomPanel === "attribute" && (
-      <div className="absolute top-10 left-0 z-50">
-        <AttributeTable onClose={() => setBottomPanel(null)} />
-      </div>
-    )}
-
-    <button
-      type="button"
-      title="Attribute Search"
-      onClick={() => handleBottomPanel("attribute")}
-      className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
-        bottomPanel === "attribute"
-          ? "border-[#8bd66f] bg-[#243041] text-white"
-          : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
-      }`}
-    >
-      <Search size={20} />
-    </button>
-  </div>
-
-</div>
 
       {/* ================= BOTTOM LEFT TOOLBAR ================= */}
       <div className="absolute bottom-4 left-2 z-40 flex flex-col items-start gap-2">
-
         {/* BASEMAPS */}
         <div className="relative">
           {bottomPanel === "basemaps" && (

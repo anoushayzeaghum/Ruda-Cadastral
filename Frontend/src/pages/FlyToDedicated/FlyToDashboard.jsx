@@ -34,12 +34,14 @@ export default function FlyToDashboard() {
     spotLevel: false,
     contours: false,
     roads: false,
+    plotLimits: false,
 
     boundaryOpacity: 100,
     masterPlanOpacity: 100,
     spotLevelOpacity: 100,
     contoursOpacity: 100,
     roadsOpacity: 100,
+    plotLimitsOpacity: 100,
 
     waterSupplyPoints: false,
     waterSupplyLines: false,
@@ -76,15 +78,7 @@ export default function FlyToDashboard() {
   );
 
   const handleIntroComplete = useCallback(() => {
-    // setMetaverseFilters(defaultFilters);
-
-    // setLayerVisibility(defaultLayerVisibility);
-
-    setAdminBoundaryVisibility((prev) => ({
-      ...prev,
-      rudaBoundary: true,
-      rudaBoundaryOpacity: prev.rudaBoundaryOpacity ?? 50,
-    }));
+    // RUDA boundary should not auto-open in this dashboard.
   }, []);
 
   const rebuildAllLayers = useCallback(() => {

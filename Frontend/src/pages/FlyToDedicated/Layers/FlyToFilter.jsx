@@ -4,7 +4,7 @@ import {
   getBlocks,
   getPlotOptionsAll,
   getProjects,
-} from "../../services/metaverseApi";
+} from "../../../services/metaverseApi";
 
 export default function FlyToFilter({ filters, onApply, onClose }) {
   const [projects, setProjects] = useState([]);

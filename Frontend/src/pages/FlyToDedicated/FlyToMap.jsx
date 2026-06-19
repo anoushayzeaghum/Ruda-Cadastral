@@ -108,12 +108,30 @@ export default function FlyToMap({
 
     addNotifiedBoundaryLayer(map, projectGeoJSON);
 
-    if (layerVisibility.masterPlan) {
+    if (layerVisibility.masterPlan || layerVisibility.plotLimits) {
       const plotGeoJSON = await getPlotsGeoJSON({
         project_id: projectId,
+        block: filters?.block || undefined,
+        type: filters?.plotType || undefined,
+        plot_no: filters?.plotNo || undefined,
+        plot_area: filters?.area || undefined,
       });
 
       addMasterPlanLayer(map, plotGeoJSON);
+    }
+
+    if (layerVisibility.contours) {
+      const contourGeoJSON = await getContourGeoJSON(projectId);
+      addContourLayer(map, contourGeoJSON);
+    }
+
+    if (layerVisibility.roads) {
+      const roadsGeoJSON = await getRoadsGeoJSON({
+        project_id: projectId,
+        block: filters?.block || undefined,
+        type: filters?.plotType || undefined,
+      });
+      addRoadLayer(map, roadsGeoJSON);
     }
 
     setLayerVisibility(
@@ -130,8 +148,26 @@ export default function FlyToMap({
 
     setLayerVisibility(
       map,
-      [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
+      [LAYERS.masterPlanFill, LAYERS.masterPlanLabel],
       !!layerVisibility.masterPlan,
+    );
+
+    setLayerVisibility(
+      map,
+      [LAYERS.masterPlanLine],
+      !!layerVisibility.masterPlan || !!layerVisibility.plotLimits,
+    );
+
+    setLayerVisibility(
+      map,
+      [LAYERS.contoursLine, LAYERS.contoursLabel],
+      !!layerVisibility.contours,
+    );
+
+    setLayerVisibility(
+      map,
+      [LAYERS.roadsFill, LAYERS.roadsLine],
+      !!layerVisibility.roads,
     );
   };
 
@@ -335,51 +371,7 @@ export default function FlyToMap({
 //     };
 //   }, [mapRef, onIntroComplete]);
 
-useEffect(() => {
-  const map = mapRef.current;
-  if (!map) return;
-
-  const showRudaBoundary = async () => {
-    try {
-      const data = await getRudaGeoJSON();
-
-      addRudaBoundaryLayer(map, data);
-
-      setLayerVisibility(
-        map,
-        [
-          LAYERS.rudaBoundaryFill,
-          LAYERS.rudaBoundaryLine,
-          LAYERS.rudaBoundaryDashLine,
-          LAYERS.rudaBoundaryLabel,
-        ],
-        true
-      );
-
-      applyMetaverseLayerOpacities(map, layerVisibility, {
-        ...adminBoundaryVisibility,
-        rudaBoundary: true,
-        rudaBoundaryOpacity:
-          adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
-      });
-
-      onIntroComplete?.();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  if (map.isStyleLoaded()) {
-    showRudaBoundary();
-  } else {
-    map.once("load", showRudaBoundary);
-  }
-
-  return () => {
-    map.off("load", showRudaBoundary);
-  };
-}, []);
-
+// RUDA boundary is intentionally not auto-opened in Fly-To dashboard.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -397,6 +389,14 @@ useEffect(() => {
 
   if (map.getSource(SOURCES.block)) {
     map.getSource(SOURCES.block).setData(emptyFC);
+  }
+
+  if (map.getSource(SOURCES.contours)) {
+    map.getSource(SOURCES.contours).setData(emptyFC);
+  }
+
+  if (map.getSource(SOURCES.roads)) {
+    map.getSource(SOURCES.roads).setData(emptyFC);
   }
 
   return;
@@ -418,8 +418,11 @@ useEffect(() => {
       updateLayerVisibility((prev) => ({
         ...prev,
         boundary: true,
-        // masterPlan: false,
-        // roads: false,
+        boundaryOpacity: prev.boundaryOpacity ?? 100,
+        masterPlanOpacity: prev.masterPlanOpacity ?? 100,
+        roadsOpacity: prev.roadsOpacity ?? 100,
+        contoursOpacity: prev.contoursOpacity ?? 100,
+        plotLimitsOpacity: prev.plotLimitsOpacity ?? 100,
       }));
     };
 
@@ -502,7 +505,7 @@ useEffect(() => {
         !!filters.tr_own ||
         !!filters.site_plan;
 
-      if (!hasPlotFilter && !layerVisibility.masterPlan) {
+      if (!hasPlotFilter && !layerVisibility.masterPlan && !layerVisibility.plotLimits) {
         if (map.getSource(SOURCES.masterPlan)) {
           map.getSource(SOURCES.masterPlan).setData(emptyFC);
         }
@@ -528,8 +531,14 @@ useEffect(() => {
 
       setLayerVisibility(
         map,
-        [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
-        true,
+        [LAYERS.masterPlanFill, LAYERS.masterPlanLabel],
+        !!layerVisibility.masterPlan,
+      );
+
+      setLayerVisibility(
+        map,
+        [LAYERS.masterPlanLine],
+        !!layerVisibility.masterPlan || !!layerVisibility.plotLimits,
       );
 
       applyMetaverseLayerOpacities(
@@ -538,7 +547,7 @@ useEffect(() => {
         adminBoundaryVisibility,
       );
 
-      if (hasPlotFilter || layerVisibility.masterPlan) {
+      if (hasPlotFilter || layerVisibility.masterPlan || layerVisibility.plotLimits) {
         fitGeoJSON(map, plotGeoJSON);
       }
     };
@@ -559,8 +568,10 @@ useEffect(() => {
     filters.tr_own,
     filters.site_plan,
     layerVisibility.masterPlan,
+    layerVisibility.plotLimits,
     layerVisibility.boundaryOpacity,
     layerVisibility.masterPlanOpacity,
+    layerVisibility.plotLimitsOpacity,
     adminBoundaryVisibility,
     mapRef,
   ]);
@@ -652,8 +663,14 @@ useEffect(() => {
 
     setLayerVisibility(
       map,
-      [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
+      [LAYERS.masterPlanFill, LAYERS.masterPlanLabel],
       layerVisibility.masterPlan,
+    );
+
+    setLayerVisibility(
+      map,
+      [LAYERS.masterPlanLine],
+      layerVisibility.masterPlan || layerVisibility.plotLimits,
     );
 
     setLayerVisibility(

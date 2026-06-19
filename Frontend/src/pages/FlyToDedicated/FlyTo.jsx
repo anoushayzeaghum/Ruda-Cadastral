@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Send } from "lucide-react";
-import { getProjects } from "../../../services/metaverseApi";
+import { getProjects } from "../../services/metaverseApi";
 
 export default function FlyTo({
   filters,
@@ -57,6 +57,8 @@ export default function FlyTo({
       boundary: true,
       masterPlan: true,
       roads: true,
+      contours: false,
+      plotLimits: false,
     }));
 
     onClose?.();
