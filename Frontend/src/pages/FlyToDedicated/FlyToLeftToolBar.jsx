@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Globe2, Layers, Filter as FilterIcon, Search } from "lucide-react";
 
-import Basemaps from "../../pages/GISMetaverse/tools/Basemaps";
-import FlyTo from "../../pages/GISMetaverse/tools/FlyTo";
-import SegmentMeasurement from "../GISMetaverse/tools/SegmentMeasurement";
-import LayersPanel from "../../pages/GISMetaverse/tools/Layers/MasterPlan";
-import Filter from "../../pages/GISMetaverse/tools/Filter";
-import AttributeTable from "../FlyToDedicated/AttributeTable";
+import Basemaps from "../FlyToDedicated/tools/Basemaps";
+import FlyTo from "../FlyToDedicated/tools/FlyTo";
+import SegmentMeasurement from "../FlyToDedicated/tools/SegmentMeasurement";
+import LayersPanel from "../FlyToDedicated/tools/Layers/MasterPlan";
+import FlyToFilter from "../FlyToDedicated/tools/Filter";
+import AttributeTable from "./AttributeTable";
 
-import FlyToFilter from "../FlyToDedicated/FlyToFilter";
+// import FlyToFilter from "./FlyToFilter";
 
 export default function FlyToLeftToolbar({
   map,
@@ -35,7 +35,7 @@ export default function FlyToLeftToolbar({
   {/* FILTER */}
   <div className="relative">
     {bottomPanel === "filter" && (
-      <div className="absolute top-10 left-0 w-[320px] max-h-[70vh] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+      <div className="absolute top-0 left-10 ml-2 w-[320px] max-h-[70vh] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
         <FlyToFilter
           filters={filters}
           onClose={() => setBottomPanel(null)}
@@ -67,7 +67,7 @@ export default function FlyToLeftToolbar({
   {/* SEARCH (Attribute Table) */}
   <div className="relative">
     {bottomPanel === "attribute" && (
-      <div className="absolute top-10 left-0 z-50">
+      <div className="absolute top-0 left-10 ml-2 z-50">
         <AttributeTable onClose={() => setBottomPanel(null)} />
       </div>
     )}
