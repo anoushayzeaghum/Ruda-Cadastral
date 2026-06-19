@@ -8,8 +8,6 @@ import LayersPanel from "../FlyToDedicated/tools/Layers/MasterPlan";
 import FlyToFilter from "../FlyToDedicated/tools/Filter";
 import AttributeTable from "./AttributeTable";
 
-// import FlyToFilter from "./FlyToFilter";
-
 export default function FlyToLeftToolbar({
   map,
   filters,
