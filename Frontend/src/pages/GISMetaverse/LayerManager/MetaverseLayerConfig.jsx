@@ -25,6 +25,7 @@ const LAYERS = {
   boundaryLine: "metaverse-project-boundary-line",
   blockFill: "metaverse-block-fill",
   blockLine: "metaverse-block-line",
+  blockLabel: "metaverse-block-label",
   masterPlanFill: "metaverse-masterplan-fill",
   masterPlanLine: "metaverse-masterplan-line",
   masterPlanLabel: "metaverse-masterplan-label",
@@ -398,6 +399,10 @@ function applyMetaverseLayerOpacities(
 
   const boundaryOpacity = getOpacity(layerVisibility, "boundaryOpacity");
   const masterPlanOpacity = getOpacity(layerVisibility, "masterPlanOpacity");
+  const blockBoundaryOpacity = getOpacity(
+    layerVisibility,
+    "blockBoundaryOpacity",
+  );
   const spotLevelOpacity = getOpacity(layerVisibility, "spotLevelOpacity");
   const contoursOpacity = getOpacity(layerVisibility, "contoursOpacity");
   const roadsOpacity = getOpacity(layerVisibility, "roadsOpacity");
@@ -458,6 +463,25 @@ function applyMetaverseLayerOpacities(
     LAYERS.notifiedBoundaryLine,
     "line-opacity",
     notifiedBoundaryOpacity,
+  );
+
+  setLayerPaintProperty(
+    map,
+    LAYERS.blockFill,
+    "fill-opacity",
+    0.28 * blockBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.blockLine,
+    "line-opacity",
+    blockBoundaryOpacity,
+  );
+  setLayerPaintProperty(
+    map,
+    LAYERS.blockLabel,
+    "text-opacity",
+    blockBoundaryOpacity,
   );
 
   setLayerPaintProperty(

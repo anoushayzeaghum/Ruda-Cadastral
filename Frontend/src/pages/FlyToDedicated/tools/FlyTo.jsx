@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Loader2, Send } from "lucide-react";
-import { getProjects } from "../../services/metaverseApi";
+import { getProjects } from "../../../services/metaverseApi";
 
 export default function FlyTo({
   filters,

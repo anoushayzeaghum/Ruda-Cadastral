@@ -31,6 +31,7 @@ export default function MasterPlan({
         boundary: false,
         masterPlan: false,
         spotLevel: false,
+        blockBoundary: false,
         contours: false,
         roads: false,
       }));
@@ -44,11 +45,13 @@ export default function MasterPlan({
         boundary: true,
         masterPlan: false,
         spotLevel: false,
+        blockBoundary: false,
         contours: false,
         roads: false,
 
         boundaryOpacity: prev.boundaryOpacity ?? 100,
         masterPlanOpacity: prev.masterPlanOpacity ?? 100,
+        blockBoundaryOpacity: prev.blockBoundaryOpacity ?? 100,
         spotLevelOpacity: prev.spotLevelOpacity ?? 100,
         contoursOpacity: prev.contoursOpacity ?? 100,
         roadsOpacity: prev.roadsOpacity ?? 100,
@@ -73,10 +76,20 @@ export default function MasterPlan({
             disabled={!selectedProjectId}
             checked={layerVisibility.boundary}
             color="#ff8b24"
-            label="Boundary"
+            label="Project Boundary"
             opacity={layerVisibility.boundaryOpacity ?? 100}
             onChange={() => toggleLayer("boundary")}
             onOpacityChange={(value) => updateOpacity("boundary", value)}
+          />
+
+          <LayerItem
+            disabled={!selectedProjectId}
+            checked={!!layerVisibility.blockBoundary}
+            color="#7c3aed"
+            label="Block Boundary"
+            opacity={layerVisibility.blockBoundaryOpacity ?? 100}
+            onChange={() => toggleLayer("blockBoundary")}
+            onOpacityChange={(value) => updateOpacity("blockBoundary", value)}
           />
 
           <LayerItem
