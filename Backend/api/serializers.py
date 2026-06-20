@@ -413,7 +413,6 @@ class TrijunctionSerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 
 class SquareSerializer(GeoFeatureModelSerializer):
-
     class Meta:
         model = Square
         geo_field = "geom"
@@ -432,6 +431,7 @@ class SquareSerializer(GeoFeatureModelSerializer):
             "mauza",
             "mauza_id",
             "sq",
+            "layer",
             "geom",
         )
 

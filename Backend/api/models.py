@@ -478,27 +478,20 @@ class Trijunction(models.Model):
 # =========================
 
 class Square(models.Model):
-
-    gid = models.AutoField(primary_key=True)
-
-    district = models.CharField(max_length=100, null=True, blank=True)
+    gid = models.IntegerField(primary_key=True)
+    district = models.CharField(max_length=254, null=True, blank=True)
     dist_id = models.FloatField(null=True, blank=True)
-
-    tehsil = models.CharField(max_length=100, null=True, blank=True)
+    tehsil = models.CharField(max_length=254, null=True, blank=True)
     tehsil_id = models.FloatField(null=True, blank=True)
-
-    kc = models.CharField(max_length=100, null=True, blank=True)
+    kc = models.CharField(max_length=254, null=True, blank=True)
     kc_id = models.FloatField(null=True, blank=True)
-
-    pc = models.CharField(max_length=100, null=True, blank=True)
+    pc = models.CharField(max_length=254, null=True, blank=True)
     pc_id = models.FloatField(null=True, blank=True)
-
-    mauza = models.CharField(max_length=100, null=True, blank=True)
+    mauza = models.CharField(max_length=254, null=True, blank=True)
     mauza_id = models.FloatField(null=True, blank=True)
-
     sq = models.FloatField(null=True, blank=True)
-
-    geom = gis_models.MultiPolygonField(srid=4326)
+    layer = models.CharField(max_length=254, null=True, blank=True)
+    geom = gis_models.MultiPolygonField(srid=4326, null=True, blank=True)
 
     def __str__(self):
         return f"{self.mauza} - SQ {self.sq}" if self.mauza else f"Square {self.gid}"
