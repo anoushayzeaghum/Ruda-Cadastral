@@ -388,9 +388,6 @@ class RudaBoundarySerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 
 class TrijunctionSerializer(GeoFeatureModelSerializer):
-
-    type = serializers.SerializerMethodField(read_only=True)
-
     class Meta:
         model = Trijunction
         geo_field = "geom"
@@ -398,22 +395,17 @@ class TrijunctionSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "sr",
-            "x",
-            "y",
-            "elevation",
-            "name",
-            "layer",
-            "gm_type",
             "type",
-            "pid",
-            "code",
-            "path",
+            "m1",
+            "m1_id",
+            "m2",
+            "m2_id",
+            "m3",
+            "m3_id",
+            "mauza_id",
+            "layer",
             "geom",
         )
-
-    def get_type(self, obj):
-        return obj.gm_type or obj.code or obj.layer
 
 # --------------------------------------------------------
 # Square Serializer

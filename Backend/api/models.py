@@ -454,30 +454,24 @@ class RudaBoundary(models.Model):
 # --------------------------------------------------------
 
 class Trijunction(models.Model):
-
-    gid = models.AutoField(primary_key=True)
-
-    # Your trijunction point table has point-style fields, not m1/m2/m3 mauza fields.
-    # Keep these mappings aligned with the actual DB columns so /api/trijunction/ does not return 500.
-    sr = models.FloatField(db_column="sr_", null=True, blank=True)
-    x = models.FloatField(null=True, blank=True)
-    y = models.FloatField(null=True, blank=True)
-    elevation = models.FloatField(null=True, blank=True)
-    name = models.CharField(max_length=100, null=True, blank=True)
-    layer = models.CharField(max_length=50, null=True, blank=True)
-    gm_type = models.CharField(max_length=100, null=True, blank=True)
-    pid = models.IntegerField(null=True, blank=True)
-    code = models.CharField(max_length=50, null=True, blank=True)
-    path = models.CharField(max_length=500, null=True, blank=True)
-
-    geom = gis_models.GeometryField(srid=4326)
+    gid = models.IntegerField(primary_key=True)
+    type = models.CharField(max_length=20, null=True, blank=True)
+    m1 = models.CharField(max_length=50, null=True, blank=True)
+    m1_id = models.FloatField(null=True, blank=True)
+    m2 = models.CharField(max_length=50, null=True, blank=True)
+    m2_id = models.FloatField(null=True, blank=True)
+    m3 = models.CharField(max_length=50, null=True, blank=True)
+    m3_id = models.FloatField(null=True, blank=True)
+    mauza_id = models.FloatField(null=True, blank=True)
+    layer = models.CharField(max_length=254, null=True, blank=True)
+    geom = gis_models.MultiPointField(srid=4326, null=True, blank=True)
 
     def __str__(self):
-        return self.name if self.name else f"Trijunction {self.gid}"
+        return f"Trijunction {self.gid}"
 
     class Meta:
         managed = False
-        db_table = "trijunction"
+        db_table = "trijuntion"
 
 # =========================
 # Square
