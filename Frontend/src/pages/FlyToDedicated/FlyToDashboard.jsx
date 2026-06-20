@@ -1,11 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import FlyToHeader from "./FlyToHeader";
 import FlyToMap from "./FlyToMap";
-import Basemaps from "../../pages/GISMetaverse/tools/Basemaps";
-import FlyToToolbar from "./FlyToToolbar";
+import Basemaps from "../../pages/FlyToDedicated/tools/Basemaps";
+import FlyToLeftToolbar from "./FlyToLeftToolbar";
 import FlyToSubHeader from "./FlyToSubHeader";
 import FlyToMapControls from "./FlyToMapControls";
-// import MetaverseLegend from "./tools/Layers/MetaverseLegend";
+import FlyToLegend from "./tools/Layers/FlyToLegend";
 
 export default function FlyToDashboard() {
   const mapRef = useRef(null);
@@ -126,7 +126,7 @@ export default function FlyToDashboard() {
           onCalendarClick={() => console.log("Calendar clicked")}
         /> */}
 
-        <FlyToToolbar
+        <FlyToLeftToolbar
           activeTool={activeTool}
           setActiveTool={setActiveTool}
           map={isMapReady ? mapRef.current : null}
@@ -145,8 +145,8 @@ export default function FlyToDashboard() {
 
         <FlyToMapControls
           map={isMapReady ? mapRef.current : null}
-        //   showMetaverseLegend={showMetaverseLegend}
-        //   setShowMetaverseLegend={setShowMetaverseLegend}
+          showMetaverseLegend={showMetaverseLegend}
+          setShowMetaverseLegend={setShowMetaverseLegend}
           adminBoundaryVisibility={adminBoundaryVisibility}
         />
       </div>

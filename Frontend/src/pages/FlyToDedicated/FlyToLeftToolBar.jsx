@@ -1,14 +1,12 @@
 import { useState } from "react";
 import { Globe2, Layers, Filter as FilterIcon, Search } from "lucide-react";
 
-import Basemaps from "../../pages/GISMetaverse/tools/Basemaps";
-import FlyTo from "./FlyTo";
-import SegmentMeasurement from "./Layers/SegmentMeasurement";
-import LayersPanel from "./FlyToLayer";
-import Filter from "./Layers/FlyToFilter";
-import AttributeTable from "./Layers/AttributeTable";
-
-import FlyToFilter from "./Layers/FlyToFilter";
+import Basemaps from "../FlyToDedicated/tools/Basemaps";
+import FlyTo from "../FlyToDedicated/tools/FlyTo";
+import SegmentMeasurement from "../FlyToDedicated/tools/SegmentMeasurement";
+import LayersPanel from "../FlyToDedicated/tools/Layers/MasterPlan";
+import FlyToFilter from "../FlyToDedicated/tools/Filter";
+import AttributeTable from "./AttributeTable";
 
 export default function FlyToLeftToolbar({
   map,
@@ -30,24 +28,25 @@ export default function FlyToLeftToolbar({
     <>
       {/* ================= ATTRIBUTE TABLE ICON ================= */}
       {/* ================= TOP LEFT TOOL GROUP ================= */}
-      <div className="absolute top-3 left-2 z-50 flex flex-col items-start gap-2">
-        {/* FILTER */}
-        <div className="relative">
-          {bottomPanel === "filter" && (
-            <div className="absolute top-10 left-0 w-[320px] max-h-[70vh] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
-              <FlyToFilter
-                filters={filters}
-                onClose={() => setBottomPanel(null)}
-                onApply={(applied) => {
-                  setFilters((prev) => ({
-                    ...prev,
-                    ...applied,
-                  }));
-                  setBottomPanel(null);
-                }}
-              />
-            </div>
-          )}
+<div className="absolute top-3 left-2 z-50 flex flex-col items-start gap-2">
+
+  {/* FILTER */}
+  <div className="relative">
+    {bottomPanel === "filter" && (
+      <div className="absolute top-0 left-10 ml-2 w-[320px] max-h-[70vh] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+        <FlyToFilter
+          filters={filters}
+          onClose={() => setBottomPanel(null)}
+          onApply={(applied) => {
+            setFilters((prev) => ({
+              ...prev,
+              ...applied,
+            }));
+            setBottomPanel(null);
+          }}
+        />
+      </div>
+    )}
 
           <button
             type="button"
@@ -63,13 +62,13 @@ export default function FlyToLeftToolbar({
           </button>
         </div>
 
-        {/* SEARCH (Attribute Table) */}
-        <div className="relative">
-          {bottomPanel === "attribute" && (
-            <div className="absolute top-10 left-0 z-50">
-              <AttributeTable onClose={() => setBottomPanel(null)} />
-            </div>
-          )}
+  {/* SEARCH (Attribute Table) */}
+  <div className="relative">
+    {bottomPanel === "attribute" && (
+      <div className="absolute top-0 left-10 ml-2 z-50">
+        <AttributeTable onClose={() => setBottomPanel(null)} />
+      </div>
+    )}
 
           <button
             type="button"

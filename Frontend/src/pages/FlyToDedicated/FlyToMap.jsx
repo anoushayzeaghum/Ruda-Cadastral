@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { setupPlotClickPopup } from "../../pages/GISMetaverse/PlotPopup";
+import { setupPlotClickPopup } from "../../pages/FlyToDedicated/PlotPopup";
 import {
   getBlocksGeoJSON,
   getContourGeoJSON,
@@ -28,8 +28,8 @@ import {
 //   wait,
 //   waitForMapMove,
   setLayerVisibility,
-  applyMetaverseLayerOpacities,
-} from "../GISMetaverse/LayerManager/MetaverseLayerConfig";
+  applyFlyToLayerOpacities,
+} from "../FlyToDedicated/LayerManager/FlyToLayerConfig";
 // import {
 //   addIntroBoundaryLayer,
 //   clearIntroBoundaryLayer,
@@ -39,10 +39,10 @@ import {
   addNotifiedBoundaryLayer,
 } from "../GISMetaverse/LayerManager/ProjectBoundaryLayer";
 import { addBlockLayer } from "../GISMetaverse/LayerManager/BlockLayer";
-import { addMasterPlanLayer } from "../GISMetaverse/LayerManager/MasterPlanLayer";
-import { addSpotLevelLayer } from "../GISMetaverse/LayerManager/SpotLevelLayer";
-import { addContourLayer } from "../GISMetaverse/LayerManager/ContourLayer";
-import { addRoadLayer } from "../GISMetaverse/LayerManager/RoadLayer";
+import { addMasterPlanLayer } from "../FlyToDedicated/LayerManager/MasterPlanLayer";
+import { addSpotLevelLayer } from "../FlyToDedicated/LayerManager/SpotLevelLayer";
+import { addContourLayer } from "../FlyToDedicated/LayerManager/ContourLayer";
+import { addRoadLayer } from "../FlyToDedicated/LayerManager/RoadLayer";
 import {
   addWaterSupplyPointsLayer,
   addWaterSupplyLinesLayer,
@@ -371,7 +371,51 @@ export default function FlyToMap({
 //     };
 //   }, [mapRef, onIntroComplete]);
 
-// RUDA boundary is intentionally not auto-opened in Fly-To dashboard.
+useEffect(() => {
+  const map = mapRef.current;
+  if (!map) return;
+
+  const showRudaBoundary = async () => {
+    try {
+      const data = await getRudaGeoJSON();
+
+      addRudaBoundaryLayer(map, data);
+
+      setLayerVisibility(
+        map,
+        [
+          LAYERS.rudaBoundaryFill,
+          LAYERS.rudaBoundaryLine,
+          LAYERS.rudaBoundaryDashLine,
+          LAYERS.rudaBoundaryLabel,
+        ],
+        true
+      );
+
+      applyFlyToLayerOpacities(map, layerVisibility, {
+        ...adminBoundaryVisibility,
+        rudaBoundary: true,
+        rudaBoundaryOpacity:
+          adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
+      });
+
+      onIntroComplete?.();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  if (map.isStyleLoaded()) {
+    showRudaBoundary();
+  } else {
+    map.once("load", showRudaBoundary);
+  }
+
+  return () => {
+    map.off("load", showRudaBoundary);
+  };
+}, []);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -444,7 +488,7 @@ export default function FlyToMap({
       addNotifiedBoundaryLayer(map, projectGeoJSON);
       setLayerVisibility(map, [LAYERS.notifiedBoundaryLine], true);
 
-      applyMetaverseLayerOpacities(
+      applyFlyToLayerOpacities(
         map,
         layerVisibility,
         adminBoundaryVisibility,
@@ -541,7 +585,7 @@ export default function FlyToMap({
         !!layerVisibility.masterPlan || !!layerVisibility.plotLimits,
       );
 
-      applyMetaverseLayerOpacities(
+      applyFlyToLayerOpacities(
         map,
         layerVisibility,
         adminBoundaryVisibility,
@@ -576,6 +620,7 @@ export default function FlyToMap({
     mapRef,
   ]);
 
+  
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -634,7 +679,7 @@ export default function FlyToMap({
         adminBoundaryVisibility.geodeticNetwork,
       );
 
-      applyMetaverseLayerOpacities(
+      applyFlyToLayerOpacities(
         map,
         layerVisibility,
         adminBoundaryVisibility,
@@ -715,7 +760,7 @@ export default function FlyToMap({
       layerVisibility.cameraLocations,
     );
 
-    applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+    applyFlyToLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
   }, [layerVisibility, adminBoundaryVisibility, mapRef]);
 
   useEffect(() => {
@@ -725,11 +770,13 @@ export default function FlyToMap({
     const run = async () => {
       if (layerVisibility.spotLevel) {
         const data = await getSpotLevelGeoJSON(filters.projectId);
+        console.log("SpotLevel data:", data);
         addSpotLevelLayer(map, data);
       }
 
       if (layerVisibility.contours) {
         const data = await getContourGeoJSON(filters.projectId);
+        console.log("Contours:", data);
         addContourLayer(map, data);
       }
 
@@ -763,7 +810,7 @@ export default function FlyToMap({
         addCameraLocationsLayer(map, data);
       }
 
-      applyMetaverseLayerOpacities(
+      applyFlyToLayerOpacities(
         map,
         layerVisibility,
         adminBoundaryVisibility,

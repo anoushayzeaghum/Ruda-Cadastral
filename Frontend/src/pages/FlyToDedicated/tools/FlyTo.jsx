@@ -40,29 +40,32 @@ export default function FlyTo({
     setSelectedProjectId(filters?.projectId || "");
   }, [filters?.projectId]);
 
-  const handleFlyToProject = () => {
-    if (!selectedProjectId) return;
+const handleFlyToProject = () => {
+  if (!selectedProjectId) return;
 
-    setFilters?.((prev) => ({
-      ...prev,
-      projectId: selectedProjectId,
-      block: "",
-      plotType: "",
-      plotNo: "",
-      area: "",
-    }));
+  setFilters?.((prev) => ({
+    ...prev,
+    projectId: selectedProjectId,
+    block: "",
+    plotType: "",
+    plotNo: "",
+    area: "",
+  }));
 
-    setLayerVisibility?.((prev) => ({
-      ...prev,
-      boundary: true,
-      masterPlan: true,
-      roads: true,
-      contours: false,
-      plotLimits: false,
-    }));
+  // Show only boundary layer
+  setLayerVisibility?.((prev) => ({
+    ...prev,
+    boundary: true,
 
-    onClose?.();
-  };
+    // hide everything else
+    masterPlan: false,
+    roads: false,
+    spotLevel: false,
+    contours: false,
+  }));
+
+  onClose?.();
+};
 
   return (
     <div className="flex items-center gap-2 rounded-md border border-[#344055] bg-[#111827] px-2 py-1.5 text-white shadow-lg">

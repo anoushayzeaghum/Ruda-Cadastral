@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-// import MetaverseLegend from "./tools/Layers/MetaverseLegend";
+import FlyToLegend from "./tools/Layers/FlyToLegend";
 import mapboxgl from "mapbox-gl";
 import { Maximize2, Hand, MapPin, Plus, Minus, List } from "lucide-react";
 
