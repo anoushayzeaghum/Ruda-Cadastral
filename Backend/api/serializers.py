@@ -463,12 +463,12 @@ class AcreSerializer(GeoFeatureModelSerializer):
             "path",
             "geom",
         )
-
+        
 # --------------------------------------------------------
-# FieldPoints Serializer
+# FieldPointsx Serializer
+# --------------------------------------------------------
 
 class FieldPointsSerializer(GeoFeatureModelSerializer):
-
     class Meta:
         model = FieldPoints
         geo_field = "geom"
@@ -477,14 +477,13 @@ class FieldPointsSerializer(GeoFeatureModelSerializer):
         fields = (
             "gid",
             "name",
-            "layer",
-            "gm_type",
-            "pid",
-            "code",
+            "easting",
+            "northing",
             "elevation",
+            "mauza_id",
+            "layer",
             "geom",
         )
-
 # --------------------------------------------------------
 # GeodeticNetwork Serializer
 # --------------------------------------------------------

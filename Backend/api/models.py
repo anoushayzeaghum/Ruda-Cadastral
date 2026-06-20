@@ -546,20 +546,24 @@ class Acre(models.Model):
 # =========================
 
 class FieldPoints(models.Model):
-
-    gid = models.AutoField(primary_key=True)
-
-    name = models.CharField(max_length=100, null=True, blank=True)
-
-    layer = models.CharField(max_length=50, null=True, blank=True)
-    gm_type = models.CharField(max_length=100, null=True, blank=True)
-
-    pid = models.IntegerField(null=True, blank=True)
-    code = models.CharField(max_length=50, null=True, blank=True)
-
-    elevation = models.FloatField(null=True, blank=True)
-
-    geom = gis_models.PointField(srid=4326)
+    gid = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=6, null=True, blank=True)
+    easting = models.DecimalField(
+        max_digits=20,
+        decimal_places=8,
+        null=True,
+        blank=True
+    )
+    northing = models.DecimalField(
+        max_digits=20,
+        decimal_places=8,
+        null=True,
+        blank=True
+    )
+    elevation = models.CharField(max_length=254, null=True, blank=True)
+    mauza_id = models.FloatField(null=True, blank=True)
+    layer = models.CharField(max_length=254, null=True, blank=True)
+    geom = gis_models.MultiPointField(srid=4326, null=True, blank=True)
 
     def __str__(self):
         return self.name if self.name else f"FieldPoint {self.gid}"
@@ -567,7 +571,7 @@ class FieldPoints(models.Model):
     class Meta:
         managed = False
         db_table = "fieldpoints"
-
+        
 # =========================
 # Geodetic Network
 # =========================
