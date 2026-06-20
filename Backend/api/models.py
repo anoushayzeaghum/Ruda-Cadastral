@@ -471,7 +471,7 @@ class Trijunction(models.Model):
 
     class Meta:
         managed = False
-        db_table = "trijuntion"
+        db_table = "trijunction"
 
 # =========================
 # Square
