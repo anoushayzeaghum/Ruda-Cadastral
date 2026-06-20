@@ -33,18 +33,15 @@ const BASEMAPS = [
   },
   {
     name: "Light",
-    preview:
-      "https://images.unsplash.com/photo-1501004318641-b39e6451bec6",
+    preview: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6",
   },
   {
     name: "Dark",
-    preview:
-      "https://images.unsplash.com/photo-1500375592092-40eb2168fd21",
+    preview: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21",
   },
   {
     name: "Outdoors",
-    preview:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+    preview: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
   },
 ];
 
@@ -52,15 +49,12 @@ const VECTOR_BOUNDARY_LAYERS = [
   { key: "khasraLayer", label: "Khasra Boundary" },
   { key: "squareLayer", label: "Square Boundary" },
   { key: "acreLayer", label: "Acre Boundary" },
-  { key: "murabbaLayer", label: "Murabba Boundary" },
   { key: "triJunctionPoints", label: "Tri Junction Points" },
   { key: "fieldPoints", label: "Field Points" },
   { key: "mussaviLayer", label: "Mussavi" },
 ];
 
-const RASTER_DATA_LAYERS = [
-  { key: "handuGujranOrtho", label: "Massavi" },
-];
+const RASTER_DATA_LAYERS = [{ key: "handuGujranOrtho", label: "Massavi" }];
 
 const RUDA_PHASE_COLORS = [
   "#6bb7e8",
@@ -76,7 +70,6 @@ const RUDA_PHASE_COLORS = [
   "#d7b377",
   "#8dd3c7",
 ];
-
 
 const hashString = (value = "") => {
   const text = String(value || "");
@@ -124,7 +117,11 @@ export default function LeftPanel({
   const getDefaultOpacityForSelectedLayer = (item) => {
     const text = `${item?.key || ""} ${item?.label || ""}`.toLowerCase();
 
-    if (text.includes("district") || text.includes("tehsil") || text.includes("mauza")) {
+    if (
+      text.includes("district") ||
+      text.includes("tehsil") ||
+      text.includes("mauza")
+    ) {
       return 0;
     }
 
@@ -134,7 +131,6 @@ export default function LeftPanel({
 
     return 100;
   };
-
 
   const selectedLayerItems = useMemo(
     () => selectedFilterLayers.filter((item) => item?.label && item?.key),
@@ -156,9 +152,7 @@ export default function LeftPanel({
 
         const current = next[key];
         next[key] = {
-          ...(typeof current === "object"
-            ? current
-            : { visible: !!current }),
+          ...(typeof current === "object" ? current : { visible: !!current }),
           opacity,
         };
         initializedOpacityKeysRef.current.add(key);
@@ -166,7 +160,8 @@ export default function LeftPanel({
       });
 
       selectedLayerItems.forEach((item) => {
-        if (!item?.key || initializedOpacityKeysRef.current.has(item.key)) return;
+        if (!item?.key || initializedOpacityKeysRef.current.has(item.key))
+          return;
 
         const current = next[item.key];
         next[item.key] = {
@@ -182,7 +177,6 @@ export default function LeftPanel({
       return changed ? next : prev;
     });
   }, [selectedLayerItems, setLayers]);
-
 
   const updateLayer = (layerKey, patch) => {
     setLayers((prev) => ({
@@ -212,7 +206,7 @@ export default function LeftPanel({
     updateLayer(layerKey, { visible: !getLayerVisible(layerKey) });
 
   const toggleVectorBoundaryLayer = (layerKey) => {
-    const forceLoadKeys = new Set(["khasraLayer", "murabbaLayer"]);
+    const forceLoadKeys = new Set(["khasraLayer"]);
     const nextVisible = !getLayerVisible(layerKey);
 
     updateLayer(layerKey, {
@@ -231,7 +225,10 @@ export default function LeftPanel({
   const toggleRudaBoundaryLayer = () => {
     const willOpen = !getLayerVisible("rudaBoundary");
 
-    if (willOpen && (!selectedRudaPhaseIds || selectedRudaPhaseIds.length === 0)) {
+    if (
+      willOpen &&
+      (!selectedRudaPhaseIds || selectedRudaPhaseIds.length === 0)
+    ) {
       setSelectedRudaPhaseIds(getAllRudaPhaseIds());
     }
 
@@ -274,9 +271,7 @@ export default function LeftPanel({
 
         if (!mounted) return;
 
-        const ids = (list || []).map(
-          (r) => r.gid ?? r.id ?? r.oid
-        );
+        const ids = (list || []).map((r) => r.gid ?? r.id ?? r.oid);
 
         setRudaProposedRoads(list || []);
         setSelectedProposedRoadIds(ids); // select all by default
@@ -323,7 +318,7 @@ export default function LeftPanel({
           active={activePanel === "vectorBoundaries"}
           onClick={() =>
             setActivePanel(
-              activePanel === "vectorBoundaries" ? "" : "vectorBoundaries"
+              activePanel === "vectorBoundaries" ? "" : "vectorBoundaries",
             )
           }
           icon={<Map size={18} />}
@@ -352,7 +347,6 @@ export default function LeftPanel({
           }
           icon={<Satellite size={18} />}
         />
-        
       </div>
 
       {activePanel && (
@@ -413,8 +407,6 @@ export default function LeftPanel({
                     showOpacity={false}
                   />
                 </div> */}
-
-
               </div>
             </Panel>
           )}
@@ -532,19 +524,19 @@ export default function LeftPanel({
                 getLayerVisible("measureBearing") ||
                 getLayerVisible("coordPicker") ||
                 getLayerVisible("measureBuffer")) && (
-                  <div className="mx-3 mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-700">
-                    {getLayerVisible("measure") &&
-                      "📏 Click points to measure distance. Right-click to clear."}
-                    {getLayerVisible("measureArea") &&
-                      "🔲 Click to draw polygon vertices. Right-click to close and calculate area."}
-                    {getLayerVisible("measureBearing") &&
-                      "🧭 Click the start point, then the end point to measure bearing."}
-                    {getLayerVisible("coordPicker") &&
-                      "📍 Click anywhere on the map to get precise coordinates."}
-                    {getLayerVisible("measureBuffer") &&
-                      "⭕ Click a location to draw a 500 m buffer zone around it."}
-                  </div>
-                )}
+                <div className="mx-3 mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-700">
+                  {getLayerVisible("measure") &&
+                    "📏 Click points to measure distance. Right-click to clear."}
+                  {getLayerVisible("measureArea") &&
+                    "🔲 Click to draw polygon vertices. Right-click to close and calculate area."}
+                  {getLayerVisible("measureBearing") &&
+                    "🧭 Click the start point, then the end point to measure bearing."}
+                  {getLayerVisible("coordPicker") &&
+                    "📍 Click anywhere on the map to get precise coordinates."}
+                  {getLayerVisible("measureBuffer") &&
+                    "⭕ Click a location to draw a 500 m buffer zone around it."}
+                </div>
+              )}
             </Panel>
           )}
 
@@ -556,10 +548,11 @@ export default function LeftPanel({
                     key={item.name}
                     type="button"
                     onClick={() => setBasemap(item.name)}
-                    className={`overflow-hidden rounded-lg border text-left transition ${basemap === item.name
+                    className={`overflow-hidden rounded-lg border text-left transition ${
+                      basemap === item.name
                         ? "border-green-700 bg-green-50"
                         : "border-slate-200 bg-white hover:bg-slate-50"
-                      }`}
+                    }`}
                   >
                     <div className="relative h-16 w-full overflow-hidden">
                       <img
@@ -567,8 +560,6 @@ export default function LeftPanel({
                         alt={item.name}
                         className="h-full w-full object-cover"
                       />
-
-
                     </div>
                     <div className="flex items-center justify-between px-2 py-2 text-xs font-semibold text-slate-800">
                       <span className="flex items-center gap-1.5">
@@ -635,7 +626,6 @@ function RasterDataLayers({
     </div>
   );
 }
-
 
 function RudaBoundaryLayers({
   rudaPhases,
@@ -729,9 +719,12 @@ function RudaBoundaryLayers({
 
                   {(rudaPhases || []).map((phase) => {
                     const id = phase.gid ?? phase.id ?? phase.oid;
-                    const name = phase.name ?? phase.folderpath ?? `Phase ${id}`;
+                    const name =
+                      phase.name ?? phase.folderpath ?? `Phase ${id}`;
                     const selectedIdSet = new Set(
-                      (selectedRudaPhaseIds || []).map((value) => String(value)),
+                      (selectedRudaPhaseIds || []).map((value) =>
+                        String(value),
+                      ),
                     );
                     const checked = selectedIdSet.has(String(id));
 
@@ -746,7 +739,9 @@ function RudaBoundaryLayers({
                           onChange={() => {
                             if (checked) {
                               setSelectedRudaPhaseIds((prev) =>
-                                (prev || []).filter((x) => String(x) !== String(id)),
+                                (prev || []).filter(
+                                  (x) => String(x) !== String(id),
+                                ),
                               );
                             } else {
                               setSelectedRudaPhaseIds((prev) => [
@@ -779,7 +774,9 @@ function RudaBoundaryLayers({
           opacity={getLayerOpacity("proposedRoads")}
           isOpen={proposedDropdownOpen}
           onToggle={toggleProposedRoadLayer}
-          onOpacity={(value) => updateLayer("proposedRoads", { opacity: value })}
+          onOpacity={(value) =>
+            updateLayer("proposedRoads", { opacity: value })
+          }
           onDropdownToggle={() => setProposedDropdownOpen((s) => !s)}
           dropdownTitle="Show proposed roads"
         />
@@ -827,7 +824,9 @@ function RudaBoundaryLayers({
                   {(rudaProposedRoads || []).map((road) => {
                     const id = road.gid ?? road.id ?? road.oid;
                     const name = road.name ?? `Road ${id}`;
-                    const checked = (selectedProposedRoadIds || []).includes(id);
+                    const checked = (selectedProposedRoadIds || []).includes(
+                      id,
+                    );
 
                     return (
                       <label
@@ -868,7 +867,9 @@ function RudaBoundaryLayers({
           checked={getLayerVisible("geodeticNetwork")}
           opacity={getLayerOpacity("geodeticNetwork")}
           onToggle={() => toggleLayer("geodeticNetwork")}
-          onOpacity={(value) => updateLayer("geodeticNetwork", { opacity: value })}
+          onOpacity={(value) =>
+            updateLayer("geodeticNetwork", { opacity: value })
+          }
         />
       </div>
     </div>
@@ -1000,11 +1001,19 @@ function SelectedAdministrativeLayers({
   );
 }
 
-function AdminLayerRow({ label, checked, opacity, isLast, onToggle, onOpacity }) {
+function AdminLayerRow({
+  label,
+  checked,
+  opacity,
+  isLast,
+  onToggle,
+  onOpacity,
+}) {
   return (
     <div
-      className={`bg-white px-2.5 py-2 ${isLast ? "" : "border-b border-slate-100"
-        }`}
+      className={`bg-white px-2.5 py-2 ${
+        isLast ? "" : "border-b border-slate-100"
+      }`}
     >
       <div className="flex items-center gap-2">
         <input
@@ -1070,10 +1079,11 @@ function PanelIcon({ title, icon, active, onClick }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className={`flex h-10 w-10 items-center justify-center rounded-lg border shadow-lg transition ${active
+      className={`flex h-10 w-10 items-center justify-center rounded-lg border shadow-lg transition ${
+        active
           ? "border-green-300 bg-[#0f3d2e] text-white"
           : "border-slate-300 bg-white text-[#0f3d2e] hover:border-green-700 hover:bg-green-50"
-        }`}
+      }`}
     >
       {icon}
     </button>
@@ -1165,12 +1175,15 @@ function ToolboxButton({ icon, label, active, onClick, description }) {
       onClick={onClick}
       title={description || label}
       aria-label={label}
-      className={`flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition ${active
+      className={`flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition ${
+        active
           ? "border-green-700 bg-green-50 text-green-800 shadow-inner"
           : "border-slate-200 bg-white text-slate-800 hover:border-green-700 hover:bg-green-50"
-        }`}
+      }`}
     >
-      <span className={active ? "text-green-800" : "text-green-700"}>{icon}</span>
+      <span className={active ? "text-green-800" : "text-green-700"}>
+        {icon}
+      </span>
       <span className="text-center text-[10px] font-medium leading-tight">
         {label}
       </span>

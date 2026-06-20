@@ -357,27 +357,127 @@ const boundaryLevelToLayerKey = (level) => {
   return null;
 };
 
+const normalizeComparableValue = (value) => {
+  if (value === null || value === undefined || value === "") return "";
 
+  const text = String(value).trim().toLowerCase();
+  if (!text) return "";
 
+  const numericValue = Number(text);
+  if (Number.isFinite(numericValue)) return String(numericValue);
+
+  return text;
+};
+
+const getSelectedMauzaId = (selectedMauza) => {
+  if (!selectedMauza) return "";
+
+  if (typeof selectedMauza === "object") {
+    return (
+      selectedMauza.mauza_id ??
+      selectedMauza.moza_id ??
+      selectedMauza.mouza_id ??
+      selectedMauza.id ??
+      selectedMauza.gid ??
+      ""
+    );
+  }
+
+  return selectedMauza;
+};
+
+const getFeatureMauzaValues = (feature = {}) => {
+  const props = feature.properties || feature || {};
+
+  return [
+    props.mauza_id,
+    props.MAUZA_ID,
+    props.moza_id,
+    props.mouza_id,
+    props.mauza_gid,
+    props.mauza,
+    props.Mauza,
+    props.moza,
+    props.Moza,
+    props.mouza,
+    props.Mouza,
+  ]
+    .map(normalizeComparableValue)
+    .filter(Boolean);
+};
+
+const featureMatchesSelectedMauza = (feature, selectedMauza) => {
+  const selectedValues = [
+    getSelectedMauzaId(selectedMauza),
+    typeof selectedMauza === "object" ? selectedMauza?.mauza : selectedMauza,
+    typeof selectedMauza === "object" ? selectedMauza?.name : "",
+  ]
+    .map(normalizeComparableValue)
+    .filter(Boolean);
+
+  if (!selectedValues.length) return false;
+
+  const selectedSet = new Set(selectedValues);
+  return getFeatureMauzaValues(feature).some((value) => selectedSet.has(value));
+};
+
+const explodePointGeoJSON = (pointGeojson) => ({
+  type: "FeatureCollection",
+  features: (pointGeojson?.features || []).flatMap((feature, featureIndex) => {
+    const geometry = feature?.geometry || {};
+    const props = feature?.properties || {};
+
+    if (geometry.type === "Point") {
+      return [feature];
+    }
+
+    if (geometry.type === "MultiPoint" && Array.isArray(geometry.coordinates)) {
+      return geometry.coordinates
+        .filter(
+          (coordinate) =>
+            Array.isArray(coordinate) &&
+            coordinate.length >= 2 &&
+            Number.isFinite(Number(coordinate[0])) &&
+            Number.isFinite(Number(coordinate[1])),
+        )
+        .map((coordinate, pointIndex) => ({
+          type: "Feature",
+          id: `${feature?.id ?? props.gid ?? featureIndex}-${pointIndex}`,
+          geometry: {
+            type: "Point",
+            coordinates: [Number(coordinate[0]), Number(coordinate[1])],
+          },
+          properties: {
+            ...props,
+            _pointIndex: pointIndex,
+          },
+        }));
+    }
+
+    return [];
+  }),
+});
 
 const pointBelongsToMauza = (feature, selectedMauza) => {
   if (!feature || !selectedMauza) return false;
 
   const props = feature.properties || {};
-  const mauzaName = String(
+
+  if (featureMatchesSelectedMauza(feature, selectedMauza)) return true;
+
+  const mauzaName = normalizeComparableValue(
     selectedMauza?.mauza || selectedMauza?.name || selectedMauza || "",
-  )
-    .trim()
-    .toLowerCase();
-  const mauzaId = selectedMauza?.mauza_id ?? selectedMauza?.id ?? null;
-  const mauzaIdText = mauzaId === null || mauzaId === undefined ? "" : String(mauzaId);
+  );
+  const mauzaIdText = normalizeComparableValue(
+    getSelectedMauzaId(selectedMauza),
+  );
 
   const names = [props.m1, props.m2, props.m3]
-    .map((value) => String(value || "").trim().toLowerCase())
+    .map(normalizeComparableValue)
     .filter(Boolean);
 
   const ids = [props.m1_id, props.m2_id, props.m3_id]
-    .map((value) => (value === null || value === undefined ? "" : String(value)))
+    .map(normalizeComparableValue)
     .filter(Boolean);
 
   return (
@@ -387,7 +487,7 @@ const pointBelongsToMauza = (feature, selectedMauza) => {
 };
 
 const filterPointGeoJSONByArea = (pointGeojson, areaGeojson) => {
-  const points = Array.isArray(pointGeojson?.features) ? pointGeojson.features : [];
+  const points = explodePointGeoJSON(pointGeojson).features;
   const polygons = (areaGeojson?.features || []).filter((feature) =>
     ["Polygon", "MultiPolygon"].includes(feature?.geometry?.type),
   );
@@ -481,7 +581,7 @@ export default function MapView({
           clearBoundaryLevel(level);
           delete currentGeojson.current[level];
         });
-    } catch (e) { }
+    } catch (e) {}
   };
 
   const movePointLayersToTop = () => {
@@ -501,7 +601,7 @@ export default function MapView({
         if (map.getLayer(layerId)) {
           map.moveLayer(layerId);
         }
-      } catch (e) { }
+      } catch (e) {}
     });
   };
 
@@ -528,7 +628,7 @@ export default function MapView({
     if (!selectedMauza) return null;
 
     try {
-      const mauzaId = selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
+      const mauzaId = getSelectedMauzaId(selectedMauza);
       const mauzaGeojson = await getMauzaBoundary(mauzaId);
 
       if (mauzaGeojson?.features?.length) {
@@ -574,10 +674,13 @@ export default function MapView({
           trackUserLocation: true,
           showUserHeading: true,
         }),
-        "top-right"
+        "top-right",
       );
       map.addControl(new mapboxgl.FullscreenControl(), "top-right");
-      map.addControl(new mapboxgl.ScaleControl({ maxWidth: 200, unit: "metric" }), "bottom-right");
+      map.addControl(
+        new mapboxgl.ScaleControl({ maxWidth: 200, unit: "metric" }),
+        "bottom-right",
+      );
       map.on("load", () => {
         setIsMapReady(true);
       });
@@ -1152,9 +1255,9 @@ export default function MapView({
     })
       .setLngLat(
         e.lngLat ||
-        (coordinates.lng != null && coordinates.lat != null
-          ? [coordinates.lng, coordinates.lat]
-          : [DEFAULT_CENTER[0], DEFAULT_CENTER[1]]),
+          (coordinates.lng != null && coordinates.lat != null
+            ? [coordinates.lng, coordinates.lat]
+            : [DEFAULT_CENTER[0], DEFAULT_CENTER[1]]),
       )
       .setHTML(html)
       .addTo(map);
@@ -1449,7 +1552,7 @@ export default function MapView({
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) { }
+      } catch (err) {}
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -1550,7 +1653,7 @@ export default function MapView({
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) { }
+      } catch (err) {}
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -1702,8 +1805,7 @@ export default function MapView({
         }
 
         if (selectedMauza) {
-          const mauzaId =
-            selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
+          const mauzaId = getSelectedMauzaId(selectedMauza);
 
           const geojson = await getMauzaBoundary(mauzaId);
           if (cancelled) return;
@@ -1869,8 +1971,8 @@ export default function MapView({
         : viewBy === "murabba"
           ? currentGeojson.current.murabba
           : currentGeojson.current.khasra ||
-          currentGeojson.current.murabba ||
-          {};
+            currentGeojson.current.murabba ||
+            {};
 
     const features = Array.isArray(current?.features) ? current.features : [];
 
@@ -1929,7 +2031,7 @@ export default function MapView({
               clearBoundaryLevel(level);
               delete currentGeojson.current[level];
             });
-        } catch (e) { }
+        } catch (e) {}
       };
 
       if (!getLayerVisible(layers, "rudaBoundary", false)) {
@@ -2038,7 +2140,11 @@ export default function MapView({
   }, [isMapReady, layers?.geodeticNetwork]);
 
   useEffect(() => {
-    if (!selectedMauza || !isMapReady || !getLayerVisible(layers, "squareLayer", false)) {
+    if (
+      !selectedMauza ||
+      !isMapReady ||
+      !getLayerVisible(layers, "squareLayer", false)
+    ) {
       clearBoundaryLevel(SQUARE_LEVEL);
       delete currentGeojson.current[SQUARE_LEVEL];
       return;
@@ -2047,7 +2153,7 @@ export default function MapView({
     const loadSquares = async () => {
       try {
         setIsLoading(true);
-        const mauzaId = selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
+        const mauzaId = getSelectedMauzaId(selectedMauza);
         const geojson = await getSquares(mauzaId);
 
         if (geojson?.features?.length) {
@@ -2074,7 +2180,11 @@ export default function MapView({
   }, [selectedMauza, isMapReady, layers?.squareLayer]);
 
   useEffect(() => {
-    if (!selectedMauza || !isMapReady || !getLayerVisible(layers, "acreLayer", false)) {
+    if (
+      !selectedMauza ||
+      !isMapReady ||
+      !getLayerVisible(layers, "acreLayer", false)
+    ) {
       clearBoundaryLevel(ACRE_LEVEL);
       delete currentGeojson.current[ACRE_LEVEL];
       return;
@@ -2083,7 +2193,7 @@ export default function MapView({
     const loadAcres = async () => {
       try {
         setIsLoading(true);
-        const mauzaId = selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
+        const mauzaId = getSelectedMauzaId(selectedMauza);
         const geojson = await getAcres(mauzaId);
 
         if (geojson?.features?.length) {
@@ -2154,25 +2264,43 @@ export default function MapView({
               layerId: TRI_JUNCTION_POINTS_LAYER,
               geojson: filteredTriJunctionGeojson,
             });
-            currentGeojson.current["tri-junction-points"] = filteredTriJunctionGeojson;
+            currentGeojson.current["tri-junction-points"] =
+              filteredTriJunctionGeojson;
             movePointLayersToTop();
           } else {
-            clearPointLayer(TRI_JUNCTION_POINTS_SOURCE, TRI_JUNCTION_POINTS_LAYER);
+            clearPointLayer(
+              TRI_JUNCTION_POINTS_SOURCE,
+              TRI_JUNCTION_POINTS_LAYER,
+            );
             delete currentGeojson.current["tri-junction-points"];
           }
         } else {
-          clearPointLayer(TRI_JUNCTION_POINTS_SOURCE, TRI_JUNCTION_POINTS_LAYER);
+          clearPointLayer(
+            TRI_JUNCTION_POINTS_SOURCE,
+            TRI_JUNCTION_POINTS_LAYER,
+          );
           delete currentGeojson.current["tri-junction-points"];
         }
 
         if (getLayerVisible(layers, "fieldPoints", false) && hasArea) {
-          const fieldPointsGeojson = await getFieldPoints();
+          const mauzaId = getSelectedMauzaId(selectedMauza);
+          const fieldPointsGeojson = await getFieldPoints(mauzaId);
           if (cancelled) return;
 
-          const filteredFieldPointsGeojson = filterPointGeoJSONByArea(
+          let filteredFieldPointsGeojson = filterPointGeoJSONByArea(
             fieldPointsGeojson,
             areaGeojson,
           );
+
+          if (!filteredFieldPointsGeojson.features.length && selectedMauza) {
+            filteredFieldPointsGeojson = {
+              type: "FeatureCollection",
+              features: explodePointGeoJSON(fieldPointsGeojson).features.filter(
+                (feature) =>
+                  featureMatchesSelectedMauza(feature, selectedMauza),
+              ),
+            };
+          }
 
           const preparedFieldPointsGeojson = {
             type: "FeatureCollection",
@@ -2244,8 +2372,7 @@ export default function MapView({
         setIsLoading(true);
         setError("");
 
-        const mauzaId =
-          selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
+        const mauzaId = getSelectedMauzaId(selectedMauza);
 
         const geojson = await getKhasras(mauzaId);
 
@@ -2285,8 +2412,7 @@ export default function MapView({
         setIsLoading(true);
         setError("");
 
-        const mauzaId =
-          selectedMauza.mauza_id || selectedMauza.id || selectedMauza;
+        const mauzaId = getSelectedMauzaId(selectedMauza);
 
         const geojson = await getMurabbas(mauzaId);
 
@@ -2424,7 +2550,7 @@ export default function MapView({
 
     const handuGujranOrthoOpacity =
       typeof layers?.handuGujranOrtho === "object" &&
-        Number.isFinite(Number(layers.handuGujranOrtho.opacity))
+      Number.isFinite(Number(layers.handuGujranOrtho.opacity))
         ? Number(layers.handuGujranOrtho.opacity) / 100
         : 1.0;
 
@@ -2496,14 +2622,17 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const measureVisible = typeof layers?.measure === 'object' ? layers.measure.visible : !!layers?.measure;
+    const measureVisible =
+      typeof layers?.measure === "object"
+        ? layers.measure.visible
+        : !!layers?.measure;
 
     const updateMeasureSource = () => {
       const coords = measureCoordsRef.current;
       const features = [];
 
       if (coords.length > 0) {
-        coords.forEach(coord => {
+        coords.forEach((coord) => {
           features.push(turf.point(coord));
         });
       }
@@ -2512,10 +2641,10 @@ export default function MapView({
         const line = turf.lineString(coords);
         features.push(line);
 
-        const distance = turf.length(line, { units: 'kilometers' });
+        const distance = turf.length(line, { units: "kilometers" });
         // Add a label point at the end
         const lastPoint = turf.point(coords[coords.length - 1], {
-          distance: `${distance.toFixed(2)} km`
+          distance: `${distance.toFixed(2)} km`,
         });
         features.push(lastPoint);
       }
@@ -2538,87 +2667,86 @@ export default function MapView({
     };
 
     if (measureVisible) {
-      map.getCanvas().style.cursor = 'crosshair';
+      map.getCanvas().style.cursor = "crosshair";
 
       if (!map.getSource(MEASURE_SOURCE)) {
         map.addSource(MEASURE_SOURCE, {
-          type: 'geojson',
-          data: emptyFeatureCollection()
+          type: "geojson",
+          data: emptyFeatureCollection(),
         });
       }
 
       if (!map.getLayer(MEASURE_LINE_LAYER)) {
         map.addLayer({
           id: MEASURE_LINE_LAYER,
-          type: 'line',
+          type: "line",
           source: MEASURE_SOURCE,
-          filter: ['==', '$type', 'LineString'],
+          filter: ["==", "$type", "LineString"],
           paint: {
-            'line-color': '#ff0000',
-            'line-width': 3,
-            'line-dasharray': [2, 2]
-          }
+            "line-color": "#ff0000",
+            "line-width": 3,
+            "line-dasharray": [2, 2],
+          },
         });
       }
 
       if (!map.getLayer(MEASURE_POINTS_LAYER)) {
         map.addLayer({
           id: MEASURE_POINTS_LAYER,
-          type: 'circle',
+          type: "circle",
           source: MEASURE_SOURCE,
-          filter: ['==', '$type', 'Point'],
+          filter: ["==", "$type", "Point"],
           paint: {
-            'circle-radius': 5,
-            'circle-color': '#ffffff',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ff0000'
-          }
+            "circle-radius": 5,
+            "circle-color": "#ffffff",
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#ff0000",
+          },
         });
       }
 
       if (!map.getLayer(MEASURE_LABELS_LAYER)) {
         map.addLayer({
           id: MEASURE_LABELS_LAYER,
-          type: 'symbol',
+          type: "symbol",
           source: MEASURE_SOURCE,
-          filter: ['has', 'distance'],
+          filter: ["has", "distance"],
           layout: {
-            'text-field': ['get', 'distance'],
-            'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-            'text-size': 14,
-            'text-anchor': 'bottom',
-            'text-offset': [0, -1]
+            "text-field": ["get", "distance"],
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-size": 14,
+            "text-anchor": "bottom",
+            "text-offset": [0, -1],
           },
           paint: {
-            'text-color': '#ff0000',
-            'text-halo-color': '#ffffff',
-            'text-halo-width': 2
-          }
+            "text-color": "#ff0000",
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 2,
+          },
         });
       }
 
-      map.on('click', handleMapClick);
-      map.on('contextmenu', handleMapRightClick);
+      map.on("click", handleMapClick);
+      map.on("contextmenu", handleMapRightClick);
 
       updateMeasureSource();
-
     } else {
-      map.getCanvas().style.cursor = '';
+      map.getCanvas().style.cursor = "";
       measureCoordsRef.current = [];
 
       if (map.getSource(MEASURE_SOURCE)) {
         map.getSource(MEASURE_SOURCE).setData(emptyFeatureCollection());
       }
 
-      map.off('click', handleMapClick);
-      map.off('contextmenu', handleMapRightClick);
+      map.off("click", handleMapClick);
+      map.off("contextmenu", handleMapRightClick);
     }
 
     return () => {
-      map.off('click', handleMapClick);
-      map.off('contextmenu', handleMapRightClick);
+      map.off("click", handleMapClick);
+      map.off("contextmenu", handleMapRightClick);
       if (map.getCanvas()) {
-        map.getCanvas().style.cursor = '';
+        map.getCanvas().style.cursor = "";
       }
     };
   }, [layers?.measure, isMapReady]);
@@ -2628,18 +2756,26 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const areaVisible = typeof layers?.measureArea === "object"
-      ? layers.measureArea.visible
-      : !!layers?.measureArea;
+    const areaVisible =
+      typeof layers?.measureArea === "object"
+        ? layers.measureArea.visible
+        : !!layers?.measureArea;
 
     const clearAreaLayers = () => {
       try {
-        if (map.getLayer(MEASURE_AREA_LABEL_LAYER)) map.removeLayer(MEASURE_AREA_LABEL_LAYER);
-        if (map.getLayer(MEASURE_AREA_FILL_LAYER)) map.removeLayer(MEASURE_AREA_FILL_LAYER);
-        if (map.getLayer(MEASURE_AREA_LINE_LAYER)) map.removeLayer(MEASURE_AREA_LINE_LAYER);
-        if (map.getLayer(MEASURE_AREA_POINTS_LAYER)) map.removeLayer(MEASURE_AREA_POINTS_LAYER);
-        if (map.getSource(MEASURE_AREA_SOURCE)) map.removeSource(MEASURE_AREA_SOURCE);
-      } catch (e) { /* ignore */ }
+        if (map.getLayer(MEASURE_AREA_LABEL_LAYER))
+          map.removeLayer(MEASURE_AREA_LABEL_LAYER);
+        if (map.getLayer(MEASURE_AREA_FILL_LAYER))
+          map.removeLayer(MEASURE_AREA_FILL_LAYER);
+        if (map.getLayer(MEASURE_AREA_LINE_LAYER))
+          map.removeLayer(MEASURE_AREA_LINE_LAYER);
+        if (map.getLayer(MEASURE_AREA_POINTS_LAYER))
+          map.removeLayer(MEASURE_AREA_POINTS_LAYER);
+        if (map.getSource(MEASURE_AREA_SOURCE))
+          map.removeSource(MEASURE_AREA_SOURCE);
+      } catch (e) {
+        /* ignore */
+      }
     };
 
     const updateAreaSource = (closed = false) => {
@@ -2667,7 +2803,9 @@ export default function MapView({
       }
 
       if (map.getSource(MEASURE_AREA_SOURCE)) {
-        map.getSource(MEASURE_AREA_SOURCE).setData(turf.featureCollection(features));
+        map
+          .getSource(MEASURE_AREA_SOURCE)
+          .setData(turf.featureCollection(features));
       }
     };
 
@@ -2711,8 +2849,16 @@ export default function MapView({
           id: MEASURE_AREA_LINE_LAYER,
           type: "line",
           source: MEASURE_AREA_SOURCE,
-          filter: ["any", ["==", "$type", "LineString"], ["==", "$type", "Polygon"]],
-          paint: { "line-color": "#0066ff", "line-width": 2, "line-dasharray": [2, 2] },
+          filter: [
+            "any",
+            ["==", "$type", "LineString"],
+            ["==", "$type", "Polygon"],
+          ],
+          paint: {
+            "line-color": "#0066ff",
+            "line-width": 2,
+            "line-dasharray": [2, 2],
+          },
         });
       }
 
@@ -2773,17 +2919,23 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const bearingVisible = typeof layers?.measureBearing === "object"
-      ? layers.measureBearing.visible
-      : !!layers?.measureBearing;
+    const bearingVisible =
+      typeof layers?.measureBearing === "object"
+        ? layers.measureBearing.visible
+        : !!layers?.measureBearing;
 
     const clearBearingLayers = () => {
       try {
-        if (map.getLayer(BEARING_LABEL_LAYER)) map.removeLayer(BEARING_LABEL_LAYER);
-        if (map.getLayer(BEARING_LINE_LAYER)) map.removeLayer(BEARING_LINE_LAYER);
-        if (map.getLayer(BEARING_POINTS_LAYER)) map.removeLayer(BEARING_POINTS_LAYER);
+        if (map.getLayer(BEARING_LABEL_LAYER))
+          map.removeLayer(BEARING_LABEL_LAYER);
+        if (map.getLayer(BEARING_LINE_LAYER))
+          map.removeLayer(BEARING_LINE_LAYER);
+        if (map.getLayer(BEARING_POINTS_LAYER))
+          map.removeLayer(BEARING_POINTS_LAYER);
         if (map.getSource(BEARING_SOURCE)) map.removeSource(BEARING_SOURCE);
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     };
 
     const updateBearingSource = () => {
@@ -2794,9 +2946,19 @@ export default function MapView({
 
       if (coords.length === 2) {
         features.push(turf.lineString(coords));
-        const bearing = turf.bearing(turf.point(coords[0]), turf.point(coords[1]));
-        const dist = turf.distance(turf.point(coords[0]), turf.point(coords[1]), { units: "meters" });
-        const midpoint = turf.midpoint(turf.point(coords[0]), turf.point(coords[1]));
+        const bearing = turf.bearing(
+          turf.point(coords[0]),
+          turf.point(coords[1]),
+        );
+        const dist = turf.distance(
+          turf.point(coords[0]),
+          turf.point(coords[1]),
+          { units: "meters" },
+        );
+        const midpoint = turf.midpoint(
+          turf.point(coords[0]),
+          turf.point(coords[1]),
+        );
         midpoint.properties = {
           bearingLabel: `${bearing.toFixed(1)}°  ·  ${dist.toFixed(1)} m`,
         };
@@ -2901,9 +3063,10 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const coordVisible = typeof layers?.coordPicker === "object"
-      ? layers.coordPicker.visible
-      : !!layers?.coordPicker;
+    const coordVisible =
+      typeof layers?.coordPicker === "object"
+        ? layers.coordPicker.visible
+        : !!layers?.coordPicker;
 
     const handleClick = (e) => {
       const { lng, lat } = e.lngLat;
@@ -2915,7 +3078,7 @@ export default function MapView({
         coordPickerPopupRef.current = null;
       }
 
-      navigator.clipboard?.writeText(`${latStr}, ${lngStr}`).catch(() => { });
+      navigator.clipboard?.writeText(`${latStr}, ${lngStr}`).catch(() => {});
 
       const popup = new mapboxgl.Popup({
         offset: 10,
@@ -2924,7 +3087,8 @@ export default function MapView({
         maxWidth: "260px",
       })
         .setLngLat([lng, lat])
-        .setHTML(`
+        .setHTML(
+          `
           <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#1f2937;min-width:190px">
             <div style="font-weight:700;color:#0f3d2e;margin-bottom:6px;font-size:13px;">📍 Coordinates</div>
             <div><span style="font-weight:600">Latitude:</span> ${latStr}</div>
@@ -2933,11 +3097,14 @@ export default function MapView({
               ✓ Copied to clipboard
             </div>
           </div>
-        `)
+        `,
+        )
         .addTo(map);
 
       coordPickerPopupRef.current = popup;
-      popup.on("close", () => { coordPickerPopupRef.current = null; });
+      popup.on("close", () => {
+        coordPickerPopupRef.current = null;
+      });
     };
 
     if (coordVisible) {
@@ -2963,17 +3130,21 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const bufferVisible = typeof layers?.measureBuffer === "object"
-      ? layers.measureBuffer.visible
-      : !!layers?.measureBuffer;
+    const bufferVisible =
+      typeof layers?.measureBuffer === "object"
+        ? layers.measureBuffer.visible
+        : !!layers?.measureBuffer;
 
     const clearBufferLayers = () => {
       try {
-        if (map.getLayer(BUFFER_CENTER_LAYER)) map.removeLayer(BUFFER_CENTER_LAYER);
+        if (map.getLayer(BUFFER_CENTER_LAYER))
+          map.removeLayer(BUFFER_CENTER_LAYER);
         if (map.getLayer(BUFFER_FILL_LAYER)) map.removeLayer(BUFFER_FILL_LAYER);
         if (map.getLayer(BUFFER_LINE_LAYER)) map.removeLayer(BUFFER_LINE_LAYER);
         if (map.getSource(BUFFER_SOURCE)) map.removeSource(BUFFER_SOURCE);
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     };
 
     const BUFFER_RADIUS_M = 500;
@@ -3052,9 +3223,10 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const printVisible = typeof layers?.printMap === "object"
-      ? layers.printMap.visible
-      : !!layers?.printMap;
+    const printVisible =
+      typeof layers?.printMap === "object"
+        ? layers.printMap.visible
+        : !!layers?.printMap;
 
     if (!printVisible) return;
 
@@ -3066,7 +3238,10 @@ export default function MapView({
       link.href = dataUrl;
       link.click();
     } catch (e) {
-      console.warn("Map export failed — ensure preserveDrawingBuffer is true", e);
+      console.warn(
+        "Map export failed — ensure preserveDrawingBuffer is true",
+        e,
+      );
     }
 
     // Notify parent to reset the flag so it doesn't re-trigger

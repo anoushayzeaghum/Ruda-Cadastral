@@ -174,7 +174,11 @@ export const getSquares = async (mauza_id) => {
   }
 
   const res = await API.get("/square/", { params });
-  return normalizeGeoJson(res);
+  const geojson = normalizeGeoJson(res);
+
+  // Safety filter: if the backend ignores mauza_id and returns all squares,
+  // draw only the squares that belong to the selected Mauza.
+  return filterGeoJSONByMauzaIds(geojson, mauza_id);
 };
 
 export const getAcres = async (mauza_id) => {
@@ -184,14 +188,25 @@ export const getAcres = async (mauza_id) => {
   }
 
   const res = await API.get("/acre/", { params });
-  return normalizeGeoJson(res);
+  const geojson = normalizeGeoJson(res);
+
+  // Safety filter: if the backend ignores mauza_id and returns all acres,
+  // draw only the acres that belong to the selected Mauza.
+  return filterGeoJSONByMauzaIds(geojson, mauza_id);
 };
 
-export const getFieldPoints = async () => {
-  // Field points table has no mauza_id. Mapview spatially filters/clips
-  // these points to the currently open Mauza/Khasra boundary.
-  const res = await API.get("/fieldpoints/");
-  return normalizeGeoJson(res);
+export const getFieldPoints = async (mauza_id) => {
+  const params = {};
+  if (mauza_id !== undefined && mauza_id !== null && mauza_id !== "") {
+    params.mauza_id = mauza_id;
+  }
+
+  const res = await API.get("/fieldpoints/", { params });
+  const geojson = normalizeGeoJson(res);
+
+  // FieldPoints has mauza_id in the model/serializer, so keep the map
+  // restricted to the selected Mauza even if the API returns extra records.
+  return filterGeoJSONByMauzaIds(geojson, mauza_id);
 };
 
 export const importMurabba = async ({ file }) => {
@@ -407,7 +422,14 @@ export const importMauzaShapefile = async ({ file }) => {
 
 const normalizeIdValue = (value) => {
   if (value === null || value === undefined || value === "") return "";
-  return String(value).trim().toLowerCase();
+
+  const text = String(value).trim().toLowerCase();
+  if (!text) return "";
+
+  const numericValue = Number(text);
+  if (Number.isFinite(numericValue)) return String(numericValue);
+
+  return text;
 };
 
 const normalizeIdList = (value) => {
@@ -426,13 +448,14 @@ const getFeatureMauzaValues = (feature = {}) => {
 
   return [
     props.mauza_id,
+    props.MAUZA_ID,
+    props.moza_id,
+    props.mouza_id,
+    props.mauza_gid,
     props.mauza,
     props.Mauza,
-    props.moza_id,
     props.moza,
     props.Moza,
-    props.mauza_gid,
-    props.mouza_id,
     props.mouza,
     props.Mouza,
   ]
