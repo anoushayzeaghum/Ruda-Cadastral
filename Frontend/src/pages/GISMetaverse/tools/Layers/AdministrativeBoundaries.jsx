@@ -75,7 +75,14 @@ const getRudaPhaseLabel = (properties = {}, phaseId = "") => {
 
 const getRudaPhaseId = (feature = {}) => {
   const props = feature?.properties || {};
-  return props?._ruda_phase_id ?? props?.gid ?? feature?.id ?? props?.id ?? props?.oid ?? props?.fid;
+  return (
+    props?._ruda_phase_id ??
+    props?.gid ??
+    feature?.id ??
+    props?.id ??
+    props?.oid ??
+    props?.fid
+  );
 };
 
 const getRudaPhaseItemsFromGeoJSON = (geojson = {}) => {
@@ -115,7 +122,8 @@ export default function AdministrativeBoundaries({
   };
 
   const rudaPhases = adminBoundaryVisibility?.rudaPhases || [];
-  const selectedRudaPhaseIds = adminBoundaryVisibility?.selectedRudaPhaseIds || [];
+  const selectedRudaPhaseIds =
+    adminBoundaryVisibility?.selectedRudaPhaseIds || [];
 
   const selectedRudaPhaseSet = useMemo(
     () => new Set(selectedRudaPhaseIds.map((id) => String(id))),
@@ -165,11 +173,19 @@ export default function AdministrativeBoundaries({
   useEffect(() => {
     if (!map) return;
 
-    const selected = (adminBoundaryVisibility?.selectedRudaPhaseIds || []).map((id) => String(id));
+    const selected = (adminBoundaryVisibility?.selectedRudaPhaseIds || []).map(
+      (id) => String(id),
+    );
     const hasPhases = (adminBoundaryVisibility?.rudaPhases || []).length > 0;
     const filter =
       adminBoundaryVisibility?.rudaBoundary && hasPhases
-        ? ["match", ["to-string", ["get", "_ruda_phase_id"]], selected, true, false]
+        ? [
+            "match",
+            ["to-string", ["get", "_ruda_phase_id"]],
+            selected,
+            true,
+            false,
+          ]
         : null;
 
     RUDA_BOUNDARY_LAYER_IDS.forEach((layerId) => {
@@ -179,7 +195,12 @@ export default function AdministrativeBoundaries({
         console.error("RUDA phase filter error:", error);
       }
     });
-  }, [map, adminBoundaryVisibility?.rudaBoundary, adminBoundaryVisibility?.rudaPhases, adminBoundaryVisibility?.selectedRudaPhaseIds]);
+  }, [
+    map,
+    adminBoundaryVisibility?.rudaBoundary,
+    adminBoundaryVisibility?.rudaPhases,
+    adminBoundaryVisibility?.selectedRudaPhaseIds,
+  ]);
 
   const zoomToBoundarySource = (key) => {
     if (!map) return;
@@ -284,7 +305,9 @@ export default function AdministrativeBoundaries({
 
   const toggleRudaPhase = (phaseId) => {
     setAdminBoundaryVisibility((prev) => {
-      const selected = new Set((prev?.selectedRudaPhaseIds || []).map((id) => String(id)));
+      const selected = new Set(
+        (prev?.selectedRudaPhaseIds || []).map((id) => String(id)),
+      );
       const stringId = String(phaseId);
 
       if (selected.has(stringId)) selected.delete(stringId);
@@ -364,7 +387,9 @@ export default function AdministrativeBoundaries({
                         }}
                         className="accent-[#65c96b]"
                       />
-                      <span className="text-[11px] text-white/90">Select All</span>
+                      <span className="text-[11px] text-white/90">
+                        Select All
+                      </span>
                     </label>
 
                     <button
@@ -378,7 +403,9 @@ export default function AdministrativeBoundaries({
 
                   <div className={`max-h-44 pr-1 ${LAYER_PANEL_SCROLL}`}>
                     {rudaPhases.map((phase) => {
-                      const checked = selectedRudaPhaseSet.has(String(phase.id));
+                      const checked = selectedRudaPhaseSet.has(
+                        String(phase.id),
+                      );
 
                       return (
                         <label
@@ -420,7 +447,7 @@ export default function AdministrativeBoundaries({
 
           <LayerItem
             checked={adminBoundaryVisibility.geodeticNetwork}
-            color="#22c55e"
+            color="#1d4ed8"
             label="Geodetic Network"
             opacity={adminBoundaryVisibility.geodeticNetworkOpacity ?? 100}
             onChange={() => toggleLayer("geodeticNetwork")}
@@ -478,7 +505,11 @@ function LayerItem({
             className="rounded p-0.5 text-white/70 hover:bg-[#293445] hover:text-white"
             title="Show RUDA phases"
           >
-            {dropdownOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {dropdownOpen ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronRight size={14} />
+            )}
           </button>
         ) : (
           <Grid3X3 size={14} className="text-white/60" />

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CalendarDays, RotateCcw } from "lucide-react";
 import {
   getBlocks,
@@ -33,6 +34,167 @@ const naturalSort = (items = [], getValue = (item) => item) =>
 
 const uniqueSorted = (items = []) =>
   naturalSort([...new Set(items.filter(Boolean))]);
+
+function SearchableSelect({
+  value,
+  placeholder,
+  disabled,
+  options = [],
+  onChange,
+  className,
+}) {
+  const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [dropdownPosition, setDropdownPosition] = useState(null);
+
+  const selectedOption = options.find(
+    (option) => String(option.value) === String(value),
+  );
+
+  const filteredOptions = options.filter((option) =>
+    String(option.label ?? "")
+      .toLowerCase()
+      .includes(search.trim().toLowerCase()),
+  );
+
+  const updateDropdownPosition = () => {
+    if (!buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownPosition({
+      left: rect.left,
+      top: rect.bottom + 4,
+      width: rect.width,
+    });
+  };
+
+  useEffect(() => {
+    if (!open) return;
+
+    updateDropdownPosition();
+
+    const handleOutsideClick = (event) => {
+      if (
+        buttonRef.current?.contains(event.target) ||
+        dropdownRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+
+      setOpen(false);
+      setSearch("");
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("scroll", updateDropdownPosition, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+      setSearch("");
+    }
+  }, [disabled]);
+
+  const handleToggle = () => {
+    if (disabled) return;
+
+    setOpen((prev) => {
+      const nextOpen = !prev;
+      if (nextOpen) setSearch("");
+      return nextOpen;
+    });
+  };
+
+  const handleSelect = (nextValue) => {
+    onChange(nextValue);
+    setOpen(false);
+    setSearch("");
+  };
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        disabled={disabled}
+        onClick={handleToggle}
+        className={`${className} flex items-center justify-between gap-1 disabled:cursor-not-allowed disabled:opacity-60`}
+      >
+        <span className="truncate">{selectedOption?.label || placeholder}</span>
+        <span className="text-[10px] leading-none">▾</span>
+      </button>
+
+      {open &&
+        dropdownPosition &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={{
+              left: dropdownPosition.left,
+              top: dropdownPosition.top,
+              width: dropdownPosition.width,
+            }}
+            className="fixed z-[9999] overflow-hidden rounded-md border border-[#2f3a4d] bg-white shadow-xl"
+          >
+            <div className="border-b border-gray-200 p-1">
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={`Search ${placeholder}`}
+                className="h-7 w-full rounded border border-gray-300 px-2 text-xs font-semibold text-[#111827] outline-none"
+              />
+            </div>
+
+            <div className="max-h-52 overflow-y-auto py-1">
+              <button
+                type="button"
+                onClick={() => handleSelect("")}
+                className={`block w-full px-2 py-1.5 text-left text-xs font-semibold text-[#111827] hover:bg-gray-100 ${
+                  value === "" ? "bg-gray-100" : ""
+                }`}
+              >
+                {placeholder}
+              </button>
+
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleSelect(option.value)}
+                    className={`block w-full px-2 py-1.5 text-left text-xs font-semibold text-[#111827] hover:bg-gray-100 ${
+                      String(option.value) === String(value)
+                        ? "bg-gray-100"
+                        : ""
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))
+              ) : (
+                <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                  No results found
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
 
 export default function MetaverseSubHeader({
   filters,
@@ -188,77 +350,80 @@ export default function MetaverseSubHeader({
     });
   };
 
+  const projectOptions = projects.map((p) => ({
+    value: String(p.gid || p.id),
+    label: p.brief_name || p.name,
+  }));
+
+  const blockOptions = blocks.map((b) => ({
+    value: String(b.block),
+    label: b.block,
+  }));
+
+  const areaOptions = options.areas?.map((area) => ({
+    value: String(area),
+    label: area,
+  }));
+
+  const plotTypeOptions = options.plotTypes?.map((type) => ({
+    value: String(type),
+    label: type,
+  }));
+
+  const plotNoOptions = options.plotNos?.map((plotNo) => ({
+    value: String(plotNo),
+    label: plotNo,
+  }));
+
+  const filterClassName =
+    "h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none";
+
   return (
     <div className="absolute left-1/2 top-3 z-20 w-[calc(100vw-4.5rem)] max-w-[720px] -translate-x-1/2">
       <div className="flex items-center gap-1.5 overflow-x-auto rounded-lg bg-[#111827] px-2 py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <select
+        <SearchableSelect
           value={filters.projectId}
-          onChange={(e) => updateFilter("projectId", e.target.value)}
+          placeholder="Projects"
+          options={projectOptions}
+          onChange={(value) => updateFilter("projectId", value)}
           className="h-8 w-[130px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
-        >
-          <option value="">Projects</option>
-          {projects.map((p) => (
-            <option key={p.gid || p.id} value={p.gid || p.id}>
-              {p.brief_name || p.name}
-            </option>
-          ))}
-        </select>
+        />
 
-        <select
+        <SearchableSelect
           value={filters.block}
+          placeholder="Block No"
           disabled={!filters.projectId}
-          onChange={(e) => updateFilter("block", e.target.value)}
-          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
-        >
-          <option value="">Block No</option>
-          {blocks.map((b) => (
-            <option key={b.gid || b.id || b.block} value={b.block}>
-              {b.block}
-            </option>
-          ))}
-        </select>
+          options={blockOptions}
+          onChange={(value) => updateFilter("block", value)}
+          className={filterClassName}
+        />
 
-        <select
+        <SearchableSelect
           value={filters.area}
+          placeholder="Area"
           disabled={!filters.projectId}
-          onChange={(e) => updateFilter("area", e.target.value)}
-          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
-        >
-          <option value="">Area</option>
-          {options.areas?.map((area) => (
-            <option key={area} value={area}>
-              {area}
-            </option>
-          ))}
-        </select>
+          options={areaOptions}
+          onChange={(value) => updateFilter("area", value)}
+          className={filterClassName}
+        />
 
-        <select
+        <SearchableSelect
           value={filters.plotType}
+          placeholder="Plot Type"
           disabled={!filters.projectId}
-          onChange={(e) => updateFilter("plotType", e.target.value)}
-          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
-        >
-          <option value="">Plot Type</option>
-          {options.plotTypes?.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
+          options={plotTypeOptions}
+          onChange={(value) => updateFilter("plotType", value)}
+          className={filterClassName}
+        />
 
-        <select
+        <SearchableSelect
           value={filters.plotNo}
+          placeholder="Plot No"
           disabled={!filters.projectId}
-          onChange={(e) => updateFilter("plotNo", e.target.value)}
-          className="h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
-        >
-          <option value="">Plot No</option>
-          {options.plotNos?.map((plotNo) => (
-            <option key={plotNo} value={plotNo}>
-              {plotNo}
-            </option>
-          ))}
-        </select>
+          options={plotNoOptions}
+          onChange={(value) => updateFilter("plotNo", value)}
+          className={filterClassName}
+        />
 
         <button
           type="button"

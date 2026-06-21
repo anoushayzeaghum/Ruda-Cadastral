@@ -73,7 +73,67 @@ export function addRudaBoundaryLayer(map, data) {
   }
 }
 
-export function addRudaMauzaBoundaryLayer(map, data) {
+const RUDA_MAUZA_FILL_COLOR = "#eef6ff";
+const RUDA_MAUZA_LINE_COLOR = "#2563eb";
+const RUDA_MAUZA_LABEL_COLOR = "#1e3a8a";
+const RUDA_MAUZA_BASE_FILL_OPACITY = 0.035;
+const RUDA_MAUZA_BASE_LINE_OPACITY = 0.75;
+
+const getOpacityRatio = (opacity = 100) => {
+  const value = Number(opacity);
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(Math.max(value, 0), 100) / 100;
+};
+
+const setPaintProperties = (map, layerId, paint = {}) => {
+  if (!map?.getLayer?.(layerId)) return;
+
+  Object.entries(paint).forEach(([property, value]) => {
+    map.setPaintProperty(layerId, property, value);
+  });
+};
+
+const setLayoutProperties = (map, layerId, layout = {}) => {
+  if (!map?.getLayer?.(layerId)) return;
+
+  Object.entries(layout).forEach(([property, value]) => {
+    map.setLayoutProperty(layerId, property, value);
+  });
+};
+
+export function applyRudaMauzaBoundaryStyle(map, opacity = 100) {
+  const opacityRatio = getOpacityRatio(opacity);
+
+  setPaintProperties(map, LAYERS.rudaMauzaBoundaryFill, {
+    "fill-color": RUDA_MAUZA_FILL_COLOR,
+    "fill-opacity": RUDA_MAUZA_BASE_FILL_OPACITY * opacityRatio,
+    "fill-outline-color": RUDA_MAUZA_LINE_COLOR,
+  });
+
+  setPaintProperties(map, LAYERS.rudaMauzaBoundaryLine, {
+    "line-color": RUDA_MAUZA_LINE_COLOR,
+    "line-width": [
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      8,
+      1.2,
+      13,
+      1.8,
+      16,
+      2.4,
+    ],
+    "line-opacity": RUDA_MAUZA_BASE_LINE_OPACITY * opacityRatio,
+  });
+
+  setPaintProperties(map, LAYERS.rudaMauzaBoundaryLabel, {
+    "text-color": RUDA_MAUZA_LABEL_COLOR,
+    "text-halo-color": "#ffffff",
+    "text-halo-width": 1.3,
+  });
+}
+
+export function addRudaMauzaBoundaryLayer(map, data, opacity = 100) {
   ensureSource(
     map,
     SOURCES.rudaMauzaBoundary,
@@ -86,8 +146,9 @@ export function addRudaMauzaBoundaryLayer(map, data) {
       type: "fill",
       source: SOURCES.rudaMauzaBoundary,
       paint: {
-        "fill-color": "#22c55e",
-        "fill-opacity": 0.12,
+        "fill-color": RUDA_MAUZA_FILL_COLOR,
+        "fill-opacity": RUDA_MAUZA_BASE_FILL_OPACITY,
+        "fill-outline-color": RUDA_MAUZA_LINE_COLOR,
       },
     });
   }
@@ -98,12 +159,37 @@ export function addRudaMauzaBoundaryLayer(map, data) {
       type: "line",
       source: SOURCES.rudaMauzaBoundary,
       paint: {
-        "line-color": "#22c55e",
-        "line-width": 1.5,
-        "line-opacity": 1,
+        "line-color": RUDA_MAUZA_LINE_COLOR,
+        "line-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          8,
+          1.2,
+          13,
+          1.8,
+          16,
+          2.4,
+        ],
+        "line-opacity": RUDA_MAUZA_BASE_LINE_OPACITY,
       },
     });
   }
+
+  const labelLayout = {
+    "text-field": [
+      "coalesce",
+      ["to-string", ["get", "Mouza"]],
+      ["to-string", ["get", "mouza"]],
+      ["to-string", ["get", "name"]],
+      ["to-string", ["get", "Name"]],
+      "",
+    ],
+    "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 15, 12],
+    "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+    "text-allow-overlap": false,
+    "text-ignore-placement": false,
+  };
 
   if (!map.getLayer(LAYERS.rudaMauzaBoundaryLabel)) {
     map.addLayer({
@@ -111,27 +197,18 @@ export function addRudaMauzaBoundaryLayer(map, data) {
       type: "symbol",
       source: SOURCES.rudaMauzaBoundary,
       minzoom: 11,
-      layout: {
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "Mouza"]],
-          ["to-string", ["get", "mouza"]],
-          ["to-string", ["get", "name"]],
-          ["to-string", ["get", "Name"]],
-          "",
-        ],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 15, 12],
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": false,
-        "text-ignore-placement": false,
-      },
+      layout: labelLayout,
       paint: {
-        "text-color": "#064e3b",
+        "text-color": RUDA_MAUZA_LABEL_COLOR,
         "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
+        "text-halo-width": 1.3,
       },
     });
+  } else {
+    setLayoutProperties(map, LAYERS.rudaMauzaBoundaryLabel, labelLayout);
   }
+
+  applyRudaMauzaBoundaryStyle(map, opacity);
 }
 
 export function addProposedRoadsLayer(map, data) {

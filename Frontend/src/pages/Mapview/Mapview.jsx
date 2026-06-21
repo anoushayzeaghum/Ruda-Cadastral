@@ -30,10 +30,12 @@ const DEFAULT_ZOOM = 5;
 const KHASRA_SOURCE = "khasra-source";
 const KHASRA_FILL = "khasra-fill";
 const KHASRA_LINE = "khasra-line";
+const KHASRA_LABEL = "khasra-label";
 
 const MURABBA_SOURCE = "murabba-source";
 const MURABBA_FILL = "murabba-fill";
 const MURABBA_LINE = "murabba-line";
+const MURABBA_LABEL = "murabba-label";
 
 const SQUARE_LEVEL = "square";
 const ACRE_LEVEL = "acre";
@@ -51,13 +53,16 @@ const CONTROL_POINTS_LAYER = "control-points-layer";
 
 const TRI_JUNCTION_POINTS_SOURCE = "tri-junction-points-source";
 const TRI_JUNCTION_POINTS_LAYER = "tri-junction-points-layer";
+const TRI_JUNCTION_POINTS_LABEL = "tri-junction-points-label";
 const TRI_JUNCTION_TRIANGLE_IMAGE = "tri-junction-triangle-marker";
 
 const FIELD_POINTS_SOURCE = "field-points-source";
 const FIELD_POINTS_LAYER = "field-points-layer";
+const FIELD_POINTS_LABEL = "field-points-label";
 
 const GEODETIC_NETWORK_SOURCE = "geodetic-network-source";
 const GEODETIC_NETWORK_LAYER = "geodetic-network-layer";
+const GEODETIC_NETWORK_LABEL = "geodetic-network-label";
 
 const HANDU_GUJRAN_ORTHO_SOURCE = "local-handugujran-ortho-source";
 const HANDU_GUJRAN_ORTHO_LAYER = "local-handugujran-ortho-layer";
@@ -88,6 +93,134 @@ const MAP_THEME = {
   fillOpacity: 0.2,
   lineColor: "#1e3a5f",
   lineWidth: 2,
+};
+
+const VECTOR_LAYER_THEME = {
+  mauza: {
+    fill: "#dbeafe",
+    fillOpacity: 0.12,
+    line: "#1d4ed8",
+    lineWidth: 2.2,
+    label: "#1e3a8a",
+    labelMinZoom: 11,
+  },
+  khasra: {
+    fill: "#fef3c7",
+    fillOpacity: 0.05,
+    line: "#d97706",
+    lineWidth: ["interpolate", ["linear"], ["zoom"], 12, 0.8, 16, 1.6, 19, 2.3],
+    label: "#92400e",
+    labelMinZoom: 16,
+  },
+  murabba: {
+    fill: "#dcfce7",
+    fillOpacity: 0.04,
+    line: "#059669",
+    lineWidth: ["interpolate", ["linear"], ["zoom"], 11, 1.0, 15, 1.8, 18, 2.4],
+    label: "#065f46",
+    labelMinZoom: 14,
+  },
+  square: {
+    fill: "#dcfce7",
+    fillOpacity: 0.04,
+    line: "#059669",
+    lineWidth: ["interpolate", ["linear"], ["zoom"], 11, 1.0, 15, 1.8, 18, 2.4],
+    label: "#065f46",
+    labelMinZoom: 14,
+  },
+  acre: {
+    fill: "#f3e8ff",
+    fillOpacity: 0.04,
+    line: "#7c3aed",
+    lineWidth: ["interpolate", ["linear"], ["zoom"], 12, 0.9, 16, 1.6, 19, 2.2],
+    label: "#581c87",
+    labelMinZoom: 15,
+  },
+  defaultBoundary: {
+    fill: "#e0f2fe",
+    fillOpacity: 0.06,
+    line: "#194c8e",
+    lineWidth: 2,
+    label: "#1e3a8a",
+    labelMinZoom: 12,
+  },
+  trijunction: {
+    circle: "#dc2626",
+    stroke: "#ffffff",
+    label: "#991b1b",
+  },
+  fieldPoints: {
+    circle: "#2563eb",
+    stroke: "#ffffff",
+    label: "#1e3a8a",
+  },
+  geodeticNetwork: {
+    circle: "#1d4ed8",
+    stroke: "#dbeafe",
+    label: "#0f2f5f",
+  },
+  controlPoints: {
+    circle: "#f59e0b",
+    stroke: "#78350f",
+    label: "#92400e",
+  },
+};
+
+const clampOpacity = (value, fallback = 100) => {
+  const number = Number(value);
+  const safeNumber = Number.isFinite(number) ? number : fallback;
+  return Math.max(0, Math.min(1, safeNumber / 100));
+};
+
+const getPointLabelLayerId = (layerId) => `${layerId}-label`;
+
+const makeLabelExpression = (fields = [], fallback = "") => [
+  "to-string",
+  ["coalesce", ...fields.map((field) => ["get", field]), fallback],
+];
+
+const VECTOR_LABEL_FIELDS = {
+  mauza: makeLabelExpression(["mauza", "Mauza", "MAUZA", "name", "Name"]),
+  khasra: makeLabelExpression(["kh", "KH", "k", "K", "khasra", "khasra_no", "khasra_id", "name"]),
+  murabba: makeLabelExpression(["m", "M", "mn", "murabba", "murabba_no", "murabba_id", "name"]),
+  square: makeLabelExpression(["sq", "SQ", "square", "square_no", "name", "gid"]),
+  acre: makeLabelExpression(["acre", "acre_no", "ac", "name", "gid"]),
+  trijunction: [
+    "to-string",
+    [
+      "coalesce",
+      ["get", "name"],
+      ["get", "code"],
+      ["get", "point_no"],
+      [
+        "concat",
+        ["coalesce", ["get", "m1"], ""],
+        " / ",
+        ["coalesce", ["get", "m2"], ""],
+        " / ",
+        ["coalesce", ["get", "m3"], ""],
+      ],
+      "",
+    ],
+  ],
+  fieldPoints: makeLabelExpression(["name", "Name", "code", "Code", "point_no", "gm_type", "gid"]),
+  geodeticNetwork: makeLabelExpression(["name", "Name", "NAME", "code", "Code", "CODE"]),
+};
+
+const getBoundaryTheme = (level) => {
+  if (level === "mauza") return VECTOR_LAYER_THEME.mauza;
+  if (level === "murabba") return VECTOR_LAYER_THEME.murabba;
+  if (level === SQUARE_LEVEL) return VECTOR_LAYER_THEME.square;
+  if (level === ACRE_LEVEL) return VECTOR_LAYER_THEME.acre;
+  return VECTOR_LAYER_THEME.defaultBoundary;
+};
+
+const getBoundaryLabelExpression = (level) => {
+  if (level === "mauza") return VECTOR_LABEL_FIELDS.mauza;
+  if (level === "murabba") return VECTOR_LABEL_FIELDS.murabba;
+  if (level === SQUARE_LEVEL) return VECTOR_LABEL_FIELDS.square;
+  if (level === ACRE_LEVEL) return VECTOR_LABEL_FIELDS.acre;
+  return null;
 };
 
 const ROAD_LEGEND_ITEMS = [
@@ -528,11 +661,11 @@ const ensureTriangleIcon = (map) => {
   ctx.lineTo(8, size - 8);
   ctx.closePath();
 
-  ctx.fillStyle = "#ef4444";
+  ctx.fillStyle = VECTOR_LAYER_THEME.trijunction.circle;
   ctx.fill();
 
   ctx.lineWidth = 4;
-  ctx.strokeStyle = "#890b0b";
+  ctx.strokeStyle = VECTOR_LAYER_THEME.trijunction.label;
   ctx.stroke();
 
   const imageData = ctx.getImageData(0, 0, size, size);
@@ -590,9 +723,13 @@ export default function MapView({
 
     [
       CONTROL_POINTS_LAYER,
+      getPointLabelLayerId(CONTROL_POINTS_LAYER),
       TRI_JUNCTION_POINTS_LAYER,
+      TRI_JUNCTION_POINTS_LABEL,
       FIELD_POINTS_LAYER,
+      FIELD_POINTS_LABEL,
       GEODETIC_NETWORK_LAYER,
+      GEODETIC_NETWORK_LABEL,
       SELECTED_CORNER_LAYER,
       SELECTED_CORNER_BOX_LAYER,
       SELECTED_CORNER_TEXT_LAYER,
@@ -703,8 +840,8 @@ export default function MapView({
                 sourceId: CONTROL_POINTS_SOURCE,
                 layerId: CONTROL_POINTS_LAYER,
                 geojson: g,
-                color: "#f59e0b",
-                strokeColor: "#78350f",
+                color: VECTOR_LAYER_THEME.controlPoints.circle,
+                strokeColor: VECTOR_LAYER_THEME.controlPoints.stroke,
                 radius: 5,
               });
             } else if (key === "tri-junction-points") {
@@ -718,20 +855,28 @@ export default function MapView({
                 sourceId: FIELD_POINTS_SOURCE,
                 layerId: FIELD_POINTS_LAYER,
                 geojson: g,
-                color: "#2563eb",
-                strokeColor: "#ffffff",
+                color: VECTOR_LAYER_THEME.fieldPoints.circle,
+                strokeColor: VECTOR_LAYER_THEME.fieldPoints.stroke,
                 radius: 4.5,
                 opacity: getLayerOpacity(layers, "fieldPoints", 100) / 100,
+                labelLayerId: FIELD_POINTS_LABEL,
+                labelExpression: VECTOR_LABEL_FIELDS.fieldPoints,
+                labelColor: VECTOR_LAYER_THEME.fieldPoints.label,
+                labelMinZoom: 15,
               });
             } else if (key === "geodetic-network") {
               drawPointLayer({
                 sourceId: GEODETIC_NETWORK_SOURCE,
                 layerId: GEODETIC_NETWORK_LAYER,
                 geojson: g,
-                color: "#dc2626",
-                strokeColor: "#ffffff",
+                color: VECTOR_LAYER_THEME.geodeticNetwork.circle,
+                strokeColor: VECTOR_LAYER_THEME.geodeticNetwork.stroke,
                 radius: 6,
                 opacity: getLayerOpacity(layers, "geodeticNetwork", 100) / 100,
+                labelLayerId: GEODETIC_NETWORK_LABEL,
+                labelExpression: VECTOR_LABEL_FIELDS.geodeticNetwork,
+                labelColor: VECTOR_LAYER_THEME.geodeticNetwork.label,
+                labelMinZoom: 13,
               });
             } else {
               const layerKey = boundaryLevelToLayerKey(key);
@@ -906,13 +1051,15 @@ export default function MapView({
 
     const isRudaLayer = level.startsWith("ruda");
     const isProposedRoadLayer = level.startsWith("proposed-road");
+    const theme = getBoundaryTheme(level);
 
-    const opacity =
+    const layerOpacity = clampOpacity(
       opacityOverride !== null && opacityOverride !== undefined
-        ? Number(opacityOverride) / 100
+        ? opacityOverride
         : isRudaLayer
-          ? getLayerOpacity(layers, "rudaBoundary", 50) / 100
-          : 0.2;
+          ? getLayerOpacity(layers, "rudaBoundary", 50)
+          : 100,
+    );
 
     const sourceGeojson = isRudaLayer
       ? prepareRudaGeojsonForDisplay(level, geojson)
@@ -936,7 +1083,7 @@ export default function MapView({
           paint: {
             "line-color": ROAD_COLOR_EXPRESSION,
             "line-width": ROAD_WIDTH_EXPRESSION,
-            "line-opacity": opacity,
+            "line-opacity": layerOpacity,
           },
         });
 
@@ -952,9 +1099,11 @@ export default function MapView({
         paint: {
           "fill-color": isRudaLayer
             ? ["coalesce", ["get", "_ruda_phase_color"], "#3d7cc4"]
-            : "#0b6a2e",
-          "fill-opacity": opacity,
-          "fill-outline-color": isRudaLayer ? "#1f2937" : "#194c8e",
+            : theme.fill,
+          "fill-opacity": isRudaLayer
+            ? layerOpacity
+            : (theme.fillOpacity ?? 0.04) * layerOpacity,
+          "fill-outline-color": isRudaLayer ? "#1f2937" : theme.line,
         },
       });
 
@@ -963,9 +1112,9 @@ export default function MapView({
         type: "line",
         source: ids.source,
         paint: {
-          "line-color": isRudaLayer ? "#111827" : "#194c8e",
-          "line-width": isRudaLayer ? 2 : MAP_THEME.lineWidth,
-          "line-opacity": 0.95,
+          "line-color": isRudaLayer ? "#111827" : theme.line,
+          "line-width": isRudaLayer ? 2 : theme.lineWidth,
+          "line-opacity": isRudaLayer ? 0.95 : 0.95,
         },
       });
 
@@ -1003,6 +1152,31 @@ export default function MapView({
             "text-halo-width": 1.4,
           },
         });
+      } else {
+        const labelExpression = getBoundaryLabelExpression(level);
+
+        if (labelExpression) {
+          map.addLayer({
+            id: ids.label,
+            type: "symbol",
+            source: ids.source,
+            minzoom: theme.labelMinZoom ?? 14,
+            layout: {
+              "text-field": labelExpression,
+              "text-size": ["interpolate", ["linear"], ["zoom"], 13, 10, 17, 12],
+              "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+              "text-allow-overlap": false,
+              "text-ignore-placement": false,
+              "text-optional": true,
+            },
+            paint: {
+              "text-color": theme.label,
+              "text-halo-color": "#ffffff",
+              "text-halo-width": 1.25,
+              "text-halo-blur": 0.15,
+            },
+          });
+        }
       }
 
       currentGeojson.current[level] = sourceGeojson;
@@ -1025,12 +1199,16 @@ export default function MapView({
     }
   };
 
-  const clearPointLayer = (sourceId, layerId) => {
+  const clearPointLayer = (sourceId, layerId, labelLayerId = getPointLabelLayerId(layerId)) => {
     const map = mapInstance.current;
     if (!map) return;
 
     try {
       closeActivePopup();
+
+      if (labelLayerId && map.getLayer(labelLayerId)) {
+        map.removeLayer(labelLayerId);
+      }
 
       if (map.getLayer(layerId)) {
         map.off("click", layerId, handlePointClick);
@@ -1085,11 +1263,19 @@ export default function MapView({
   };
 
   const clearKhasraLayers = () => {
+    const map = mapInstance.current;
+    try {
+      if (map?.getLayer(KHASRA_LABEL)) map.removeLayer(KHASRA_LABEL);
+    } catch (e) {}
     clearLayerAndSource(KHASRA_FILL, KHASRA_LINE, KHASRA_SOURCE);
     clearCornerMarkers();
   };
 
   const clearMurabbaLayers = () => {
+    const map = mapInstance.current;
+    try {
+      if (map?.getLayer(MURABBA_LABEL)) map.removeLayer(MURABBA_LABEL);
+    } catch (e) {}
     clearLayerAndSource(MURABBA_FILL, MURABBA_LINE, MURABBA_SOURCE);
     clearCornerMarkers();
   };
@@ -1291,11 +1477,17 @@ export default function MapView({
     strokeColor,
     radius,
     opacity = 0.95,
+    labelLayerId = getPointLabelLayerId(layerId),
+    labelExpression = null,
+    labelColor = "#1f2937",
+    labelMinZoom = 15,
+    labelSize = ["interpolate", ["linear"], ["zoom"], 14, 10, 17, 12],
+    labelOffset = [0, 1.15],
   }) => {
     const map = mapInstance.current;
     if (!map) return;
 
-    clearPointLayer(sourceId, layerId);
+    clearPointLayer(sourceId, layerId, labelLayerId);
 
     if (!geojson?.features || !Array.isArray(geojson.features)) return;
 
@@ -1310,13 +1502,38 @@ export default function MapView({
         type: "circle",
         source: sourceId,
         paint: {
-          "circle-radius": radius,
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, Math.max(radius - 1.5, 2), 17, radius],
           "circle-color": color,
-          "circle-stroke-width": 2,
+          "circle-stroke-width": 1.6,
           "circle-stroke-color": strokeColor,
           "circle-opacity": opacity,
         },
       });
+
+      if (labelExpression) {
+        map.addLayer({
+          id: labelLayerId,
+          type: "symbol",
+          source: sourceId,
+          minzoom: labelMinZoom,
+          layout: {
+            "text-field": labelExpression,
+            "text-size": labelSize,
+            "text-offset": labelOffset,
+            "text-anchor": "top",
+            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+            "text-allow-overlap": false,
+            "text-ignore-placement": false,
+            "text-optional": true,
+          },
+          paint: {
+            "text-color": labelColor,
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 1.25,
+            "text-halo-blur": 0.15,
+          },
+        });
+      }
 
       map.on("mouseenter", layerId, handlePointMouseEnter);
       map.on("mouseleave", layerId, handlePointMouseLeave);
@@ -1336,6 +1553,9 @@ export default function MapView({
       if (map.getLayer(TRI_JUNCTION_POINTS_LAYER)) {
         map.moveLayer(TRI_JUNCTION_POINTS_LAYER);
       }
+      if (map.getLayer(TRI_JUNCTION_POINTS_LABEL)) {
+        map.moveLayer(TRI_JUNCTION_POINTS_LABEL);
+      }
     } catch (e) {
       console.warn("Could not move tri-junction layer to top", e);
     }
@@ -1345,7 +1565,7 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map) return;
 
-    clearPointLayer(sourceId, layerId);
+    clearPointLayer(sourceId, layerId, TRI_JUNCTION_POINTS_LABEL);
 
     if (!geojson?.features || !Array.isArray(geojson.features)) return;
 
@@ -1369,7 +1589,30 @@ export default function MapView({
         },
       });
 
-      map.moveLayer(layerId);
+      map.addLayer({
+        id: TRI_JUNCTION_POINTS_LABEL,
+        type: "symbol",
+        source: sourceId,
+        minzoom: 15,
+        layout: {
+          "text-field": VECTOR_LABEL_FIELDS.trijunction,
+          "text-size": ["interpolate", ["linear"], ["zoom"], 14, 10, 17, 12],
+          "text-offset": [0, 1.35],
+          "text-anchor": "top",
+          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+          "text-optional": true,
+        },
+        paint: {
+          "text-color": VECTOR_LAYER_THEME.trijunction.label,
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.25,
+          "text-halo-blur": 0.15,
+        },
+      });
+
+      bringTriJunctionToTop();
       movePointLayersToTop();
 
       map.on("mouseenter", layerId, handlePointMouseEnter);
@@ -1564,13 +1807,17 @@ export default function MapView({
         data: geojson,
       });
 
+      const khasraTheme = VECTOR_LAYER_THEME.khasra;
+      const khasraOpacity = clampOpacity(getLayerOpacity(layers, "khasraLayer", 25));
+
       map.addLayer({
         id: KHASRA_FILL,
         type: "fill",
         source: KHASRA_SOURCE,
         paint: {
-          "fill-color": MAP_THEME.fillColor,
-          "fill-opacity": getLayerOpacity(layers, "khasraLayer", 100) / 100,
+          "fill-color": khasraTheme.fill,
+          "fill-opacity": khasraTheme.fillOpacity * khasraOpacity,
+          "fill-outline-color": khasraTheme.line,
         },
       });
 
@@ -1579,8 +1826,30 @@ export default function MapView({
         type: "line",
         source: KHASRA_SOURCE,
         paint: {
-          "line-color": MAP_THEME.lineColor,
-          "line-width": MAP_THEME.lineWidth,
+          "line-color": khasraTheme.line,
+          "line-width": khasraTheme.lineWidth,
+          "line-opacity": 0.95,
+        },
+      });
+
+      map.addLayer({
+        id: KHASRA_LABEL,
+        type: "symbol",
+        source: KHASRA_SOURCE,
+        minzoom: khasraTheme.labelMinZoom,
+        layout: {
+          "text-field": VECTOR_LABEL_FIELDS.khasra,
+          "text-size": ["interpolate", ["linear"], ["zoom"], 16, 9, 19, 12],
+          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+          "text-optional": true,
+        },
+        paint: {
+          "text-color": khasraTheme.label,
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.2,
+          "text-halo-blur": 0.15,
         },
       });
 
@@ -1665,13 +1934,17 @@ export default function MapView({
         data: geojson,
       });
 
+      const murabbaTheme = VECTOR_LAYER_THEME.murabba;
+      const murabbaOpacity = clampOpacity(getLayerOpacity(layers, "murabbaLayer", 25));
+
       map.addLayer({
         id: MURABBA_FILL,
         type: "fill",
         source: MURABBA_SOURCE,
         paint: {
-          "fill-color": MAP_THEME.fillColor,
-          "fill-opacity": getLayerOpacity(layers, "murabbaLayer", 100) / 100,
+          "fill-color": murabbaTheme.fill,
+          "fill-opacity": murabbaTheme.fillOpacity * murabbaOpacity,
+          "fill-outline-color": murabbaTheme.line,
         },
       });
 
@@ -1680,8 +1953,30 @@ export default function MapView({
         type: "line",
         source: MURABBA_SOURCE,
         paint: {
-          "line-color": MAP_THEME.lineColor,
-          "line-width": MAP_THEME.lineWidth,
+          "line-color": murabbaTheme.line,
+          "line-width": murabbaTheme.lineWidth,
+          "line-opacity": 0.95,
+        },
+      });
+
+      map.addLayer({
+        id: MURABBA_LABEL,
+        type: "symbol",
+        source: MURABBA_SOURCE,
+        minzoom: murabbaTheme.labelMinZoom,
+        layout: {
+          "text-field": VECTOR_LABEL_FIELDS.murabba,
+          "text-size": ["interpolate", ["linear"], ["zoom"], 14, 10, 18, 12],
+          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+          "text-optional": true,
+        },
+        paint: {
+          "text-color": murabbaTheme.label,
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.2,
+          "text-halo-blur": 0.15,
         },
       });
 
@@ -1881,8 +2176,8 @@ export default function MapView({
                 sourceId: CONTROL_POINTS_SOURCE,
                 layerId: CONTROL_POINTS_LAYER,
                 geojson: g,
-                color: "#f59e0b",
-                strokeColor: "#78350f",
+                color: VECTOR_LAYER_THEME.controlPoints.circle,
+                strokeColor: VECTOR_LAYER_THEME.controlPoints.stroke,
                 radius: 5,
               });
             } else if (key === "tri-junction-points") {
@@ -1896,20 +2191,28 @@ export default function MapView({
                 sourceId: FIELD_POINTS_SOURCE,
                 layerId: FIELD_POINTS_LAYER,
                 geojson: g,
-                color: "#2563eb",
-                strokeColor: "#ffffff",
+                color: VECTOR_LAYER_THEME.fieldPoints.circle,
+                strokeColor: VECTOR_LAYER_THEME.fieldPoints.stroke,
                 radius: 4.5,
                 opacity: getLayerOpacity(layers, "fieldPoints", 100) / 100,
+                labelLayerId: FIELD_POINTS_LABEL,
+                labelExpression: VECTOR_LABEL_FIELDS.fieldPoints,
+                labelColor: VECTOR_LAYER_THEME.fieldPoints.label,
+                labelMinZoom: 15,
               });
             } else if (key === "geodetic-network") {
               drawPointLayer({
                 sourceId: GEODETIC_NETWORK_SOURCE,
                 layerId: GEODETIC_NETWORK_LAYER,
                 geojson: g,
-                color: "#dc2626",
-                strokeColor: "#ffffff",
+                color: VECTOR_LAYER_THEME.geodeticNetwork.circle,
+                strokeColor: VECTOR_LAYER_THEME.geodeticNetwork.stroke,
                 radius: 6,
                 opacity: getLayerOpacity(layers, "geodeticNetwork", 100) / 100,
+                labelLayerId: GEODETIC_NETWORK_LABEL,
+                labelExpression: VECTOR_LABEL_FIELDS.geodeticNetwork,
+                labelColor: VECTOR_LAYER_THEME.geodeticNetwork.label,
+                labelMinZoom: 13,
               });
             } else {
               const layerKey = boundaryLevelToLayerKey(key);
@@ -2116,10 +2419,14 @@ export default function MapView({
             sourceId: GEODETIC_NETWORK_SOURCE,
             layerId: GEODETIC_NETWORK_LAYER,
             geojson: preparedGeojson,
-            color: "#dc2626",
-            strokeColor: "#ffffff",
+            color: VECTOR_LAYER_THEME.geodeticNetwork.circle,
+            strokeColor: VECTOR_LAYER_THEME.geodeticNetwork.stroke,
             radius: 6,
             opacity: getLayerOpacity(layers, "geodeticNetwork", 100) / 100,
+            labelLayerId: GEODETIC_NETWORK_LABEL,
+            labelExpression: VECTOR_LABEL_FIELDS.geodeticNetwork,
+            labelColor: VECTOR_LAYER_THEME.geodeticNetwork.label,
+            labelMinZoom: 13,
           });
           currentGeojson.current["geodetic-network"] = preparedGeojson;
           zoomToGeoJSON(preparedGeojson, { padding: 70, duration: 500 });
@@ -2318,10 +2625,14 @@ export default function MapView({
               sourceId: FIELD_POINTS_SOURCE,
               layerId: FIELD_POINTS_LAYER,
               geojson: preparedFieldPointsGeojson,
-              color: "#2563eb",
-              strokeColor: "#ffffff",
+              color: VECTOR_LAYER_THEME.fieldPoints.circle,
+              strokeColor: VECTOR_LAYER_THEME.fieldPoints.stroke,
               radius: 4.5,
               opacity: getLayerOpacity(layers, "fieldPoints", 100) / 100,
+              labelLayerId: FIELD_POINTS_LABEL,
+              labelExpression: VECTOR_LABEL_FIELDS.fieldPoints,
+              labelColor: VECTOR_LAYER_THEME.fieldPoints.label,
+              labelMinZoom: 15,
             });
             currentGeojson.current["field-points"] = preparedFieldPointsGeojson;
             movePointLayersToTop();
