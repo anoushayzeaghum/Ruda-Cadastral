@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import {
   getProjectMauzasGeoJSON,
-  getMurabbasGeoJSON,
+  getSquaresGeoJSON,
   getKhasrasGeoJSON,
 } from "../../../../services/api";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
@@ -24,10 +24,10 @@ const IDS = {
     line: "gism-lrr-moza-line",
     label: "gism-lrr-moza-label",
   },
-  murabba: {
-    src: "gism-lrr-murabba-src",
-    fill: "gism-lrr-murabba-fill",
-    line: "gism-lrr-murabba-line",
+  square: {
+    src: "gism-lrr-square-src",
+    fill: "gism-lrr-square-fill",
+    line: "gism-lrr-square-line",
   },
   khasra: {
     src: "gism-lrr-khasra-src",
@@ -53,8 +53,8 @@ const LAYER_DEFS = [
     dropdown: true,
   },
   {
-    key: "murabba",
-    label: "Murabba Boundary",
+    key: "square",
+    label: "Square Boundary",
     color: "#d7bf32",
     type: "polygon",
   },
@@ -80,7 +80,7 @@ const POLYGON_STYLES = {
     labelColor: "#7c2d12",
     labelMinZoom: 14,
   },
-  murabba: {
+  square: {
     fillColor: "#fff7cc",
     lineColor: "#d7bf32",
     fillOpacityMultiplier: 0.1,
@@ -100,8 +100,8 @@ const LAND_REVENUE_LAYER_ORDER = [
   IDS.moza.fill,
   IDS.moza.line,
   IDS.moza.label,
-  IDS.murabba.fill,
-  IDS.murabba.line,
+  IDS.square.fill,
+  IDS.square.line,
   IDS.khasra.fill,
   IDS.khasra.line,
   IDS.khasra.label,
@@ -498,16 +498,31 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     [activeMauzaFeatures],
   );
 
-  const loadMauzas = async ({ zoom = true } = {}) => {
+  const loadProjectMauzas = async ({ draw = false, zoom = false } = {}) => {
     if (!map) return emptyFC();
 
     if (!selectedProjectId) {
       cachedData.current.moza = emptyFC();
       setMauzas([]);
       setSelectedMauzas([]);
-      addOrUpdatePolygonLayer(map, "moza", emptyFC(), layers.moza.opacity);
-      setVisible("moza", false);
+      if (draw) {
+        addOrUpdatePolygonLayer(map, "moza", emptyFC(), layers.moza.opacity);
+        setVisible("moza", false);
+      }
       return emptyFC();
+    }
+
+    if (
+      cachedData.current.mozaProjectKey === selectedProjectKey &&
+      cachedData.current.moza?.features?.length
+    ) {
+      const cachedGeojson = cachedData.current.moza;
+      if (draw) {
+        addOrUpdatePolygonLayer(map, "moza", cachedGeojson, layers.moza.opacity);
+        if (zoom) fitToGeojson(map, cachedGeojson);
+        setVisible("moza", true);
+      }
+      return cachedGeojson;
     }
 
     setLoading("moza", true);
@@ -520,13 +535,22 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
         features: projectMauzas,
       };
 
+      cachedData.current.mozaProjectKey = selectedProjectKey;
       cachedData.current.moza = projectGeojson;
+
       const allProjectMauzaIds = getMauzaIdsFromFeatures(projectMauzas);
       setMauzas(projectMauzas);
-      setSelectedMauzas(allProjectMauzaIds);
-      addOrUpdatePolygonLayer(map, "moza", projectGeojson, layers.moza.opacity);
-      if (zoom) fitToGeojson(map, projectGeojson);
-      setVisible("moza", true);
+      setSelectedMauzas((prev) => {
+        const stillValid = prev.filter((id) => allProjectMauzaIds.includes(id));
+        return stillValid.length ? stillValid : allProjectMauzaIds;
+      });
+
+      if (draw) {
+        addOrUpdatePolygonLayer(map, "moza", projectGeojson, layers.moza.opacity);
+        if (zoom) fitToGeojson(map, projectGeojson);
+        setVisible("moza", true);
+      }
+
       return projectGeojson;
     } catch (error) {
       console.error("Mauza boundary load error:", error);
@@ -534,6 +558,10 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     } finally {
       setLoading("moza", false);
     }
+  };
+
+  const loadMauzas = async ({ zoom = true } = {}) => {
+    return loadProjectMauzas({ draw: true, zoom });
   };
 
   const loadBoundaryByMauzas = async (
@@ -553,8 +581,8 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     try {
       const geojson =
         key === "khasra"
-          ? await getKhasrasGeoJSON({ mauza_ids: mauzaIds })
-          : await getMurabbasGeoJSON({ mauza_ids: mauzaIds });
+          ? await getKhasrasGeoJSON({ mauza_id: mauzaIds })
+          : await getSquaresGeoJSON({ mauza_id: mauzaIds });
 
       cachedData.current[key] = geojson;
       addOrUpdatePolygonLayer(map, key, geojson, layers[key].opacity);
@@ -579,11 +607,11 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   };
 
   const ensureProjectMauzas = async () => {
-    if (activeMauzaIds.length) {
+    if (mauzas.length) {
       return { ids: activeMauzaIds, features: activeMauzaFeatures };
     }
 
-    const loaded = await loadMauzas({ zoom: false });
+    const loaded = await loadProjectMauzas({ draw: false, zoom: false });
     const features = loaded.features || [];
     return { ids: getMauzaIdsFromFeatures(features), features };
   };
@@ -601,7 +629,6 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       hideLayer(map, key);
 
       if (key === "moza") {
-        setSelectedMauzas([]);
         setMauzaPanelOpen(false);
       }
 
@@ -624,7 +651,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       return;
     }
 
-    if (key === "murabba" || key === "khasra") {
+    if (key === "square" || key === "khasra") {
       const { ids, features } = await ensureProjectMauzas();
       await loadBoundaryByMauzas(key, ids, { mauzaFeatures: features });
     }
@@ -644,7 +671,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   useEffect(() => {
     if (!map) return;
 
-    if (!layers.khasra.visible && !layers.murabba.visible) return;
+    if (!layers.khasra.visible && !layers.square.visible) return;
 
     const reloadDependentLayers = async () => {
       if (layers.khasra.visible) {
@@ -653,8 +680,8 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
           mauzaFeatures: activeMauzaFeatures,
         });
       }
-      if (layers.murabba.visible) {
-        await loadBoundaryByMauzas("murabba", activeMauzaIds, {
+      if (layers.square.visible) {
+        await loadBoundaryByMauzas("square", activeMauzaIds, {
           zoom: false,
           mauzaFeatures: activeMauzaFeatures,
         });
@@ -693,14 +720,14 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     setKhasraPanelOpen(false);
     setOpen(false);
 
-    ["moza", "murabba", "khasra", "masawi"].forEach((key) =>
+    ["moza", "square", "khasra", "masawi"].forEach((key) =>
       hideLayer(map, key),
     );
 
     setLayers((prev) => ({
       ...prev,
       moza: { ...prev.moza, visible: false, loading: false },
-      murabba: { ...prev.murabba, visible: false, loading: false },
+      square: { ...prev.square, visible: false, loading: false },
       khasra: { ...prev.khasra, visible: false, loading: false },
       masawi: { ...prev.masawi, visible: false, loading: false },
     }));
@@ -794,7 +821,15 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
             disabled={!hasSelectedProject}
             onChange={(checked) => handleVisible("moza", checked)}
             onOpacityChange={(opacity) => setOpacity("moza", opacity)}
-            onDropdownToggle={() => setMauzaPanelOpen((prev) => !prev)}
+            onDropdownToggle={() => {
+              setMauzaPanelOpen((prev) => {
+                const nextOpen = !prev;
+                if (nextOpen && !mauzas.length && selectedProjectId) {
+                  loadProjectMauzas({ draw: false, zoom: false });
+                }
+                return nextOpen;
+              });
+            }}
           >
             {mauzaPanelOpen && (
               <div
@@ -807,14 +842,13 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                   </div>
                 )}
 
-                {selectedProjectId && !layers.moza.visible && (
+                {selectedProjectId && !layers.moza.visible && !mauzas.length && layers.moza.loading && (
                   <div className="py-1 text-[11px] text-white/45">
-                    Turn on Mauza Boundary to load project mauzas.
+                    Loading linked mauza names for the selected project.
                   </div>
                 )}
 
                 {selectedProjectId &&
-                  layers.moza.visible &&
                   !mauzas.length &&
                   !layers.moza.loading && (
                     <div className="py-1 text-[11px] text-white/45">

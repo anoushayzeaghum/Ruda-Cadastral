@@ -10,7 +10,107 @@ const extractCollection = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.features)) return payload.features;
   if (Array.isArray(payload?.results)) return payload.results;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.features)) return payload.data.features;
+  if (Array.isArray(payload?.data?.results)) return payload.data.results;
   return [];
+};
+
+const isGeoJSONGeometry = (value) =>
+  Boolean(
+    value?.type &&
+      [
+        "Point",
+        "MultiPoint",
+        "LineString",
+        "MultiLineString",
+        "Polygon",
+        "MultiPolygon",
+        "GeometryCollection",
+      ].includes(value.type),
+  );
+
+const toGeoJSONFeature = (item, fallbackProperties = {}) => {
+  if (!item) return null;
+
+  if (item.type === "Feature") {
+    return {
+      ...item,
+      properties: {
+        ...fallbackProperties,
+        ...(item.properties || {}),
+      },
+    };
+  }
+
+  const properties = {
+    ...fallbackProperties,
+    ...item,
+  };
+
+  let geometry = null;
+
+  if (isGeoJSONGeometry(properties.geom)) {
+    geometry = properties.geom;
+    delete properties.geom;
+  } else if (isGeoJSONGeometry(properties.geometry)) {
+    geometry = properties.geometry;
+    delete properties.geometry;
+  }
+
+  if (!geometry) return null;
+
+  return {
+    type: "Feature",
+    id:
+      item.id ??
+      item.gid ??
+      item.mauza_id ??
+      item.khasra_id ??
+      item.sq ??
+      undefined,
+    geometry,
+    properties,
+  };
+};
+
+const toGeoJSONFeatures = (value, fallbackProperties = {}) => {
+  if (!value) return [];
+
+  if (value.type === "FeatureCollection") {
+    return (value.features || [])
+      .map((feature) => toGeoJSONFeature(feature, fallbackProperties))
+      .filter(Boolean);
+  }
+
+  if (value.type === "Feature") {
+    const feature = toGeoJSONFeature(value, fallbackProperties);
+    return feature ? [feature] : [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((item) => toGeoJSONFeatures(item, fallbackProperties))
+      .filter(Boolean);
+  }
+
+  if (Array.isArray(value.features)) {
+    return toGeoJSONFeatures(
+      { type: "FeatureCollection", features: value.features },
+      fallbackProperties,
+    );
+  }
+
+  if (Array.isArray(value.results)) {
+    return toGeoJSONFeatures(value.results, fallbackProperties);
+  }
+
+  if (Array.isArray(value.data)) {
+    return toGeoJSONFeatures(value.data, fallbackProperties);
+  }
+
+  const feature = toGeoJSONFeature(value, fallbackProperties);
+  return feature ? [feature] : [];
 };
 
 const normalizeData = (res) => {
@@ -30,60 +130,9 @@ const normalizeData = (res) => {
 const normalizeGeoJson = (res) => {
   const payload = extractPayload(res);
 
-  // Handle FeatureCollection
-  if (payload?.type === "FeatureCollection") {
-    return payload;
-  }
-
-  // Handle single Feature
-  if (payload?.type === "Feature") {
-    return {
-      type: "FeatureCollection",
-      features: [payload],
-    };
-  }
-
-  // Handle array of features
-  if (Array.isArray(payload)) {
-    // If array contains GeoJSON features already, use as-is
-    if (payload.length > 0 && payload[0]?.type === "Feature") {
-      return {
-        type: "FeatureCollection",
-        features: payload,
-      };
-    }
-
-    // If array contains plain model objects (fields at top-level), convert to features
-    const features = payload.map((item) => {
-      const properties = { ...item };
-      // if geometry exists as 'geom' or 'geometry', move it to geometry
-      let geometry = null;
-      if (properties.geom) {
-        geometry = properties.geom;
-        delete properties.geom;
-      } else if (properties.geometry) {
-        geometry = properties.geometry;
-        delete properties.geometry;
-      }
-
-      return {
-        type: "Feature",
-        id: item.mauza_id ?? item.gid ?? undefined,
-        geometry: geometry || null,
-        properties,
-      };
-    });
-
-    return {
-      type: "FeatureCollection",
-      features,
-    };
-  }
-
-  // Fallback: empty collection
   return {
     type: "FeatureCollection",
-    features: [],
+    features: toGeoJSONFeatures(payload),
   };
 };
 
@@ -168,17 +217,7 @@ export const getMurabbas = async (mauza_id) => {
 };
 
 export const getSquares = async (mauza_id) => {
-  const params = {};
-  if (mauza_id !== undefined && mauza_id !== null && mauza_id !== "") {
-    params.mauza_id = mauza_id;
-  }
-
-  const res = await API.get("/square/", { params });
-  const geojson = normalizeGeoJson(res);
-
-  // Safety filter: if the backend ignores mauza_id and returns all squares,
-  // draw only the squares that belong to the selected Mauza.
-  return filterGeoJSONByMauzaIds(geojson, mauza_id);
+  return getSquaresGeoJSON({ mauza_id });
 };
 
 export const getAcres = async (mauza_id) => {
@@ -447,6 +486,9 @@ const getFeatureMauzaValues = (feature = {}) => {
   const props = feature.properties || feature || {};
 
   return [
+    feature.id,
+    props.id,
+    props.gid,
     props.mauza_id,
     props.MAUZA_ID,
     props.moza_id,
@@ -476,6 +518,67 @@ const filterGeoJSONByMauzaIds = (geojson, mauzaIds = []) => {
   };
 };
 
+const buildMauzaFilterParams = (filters = {}) => ({
+  ...filters,
+  mauza_ids: Array.isArray(filters.mauza_ids)
+    ? filters.mauza_ids.join(",")
+    : filters.mauza_ids,
+  mauza_id: Array.isArray(filters.mauza_id)
+    ? filters.mauza_id.join(",")
+    : filters.mauza_id,
+});
+
+const getRequestedMauzaIds = (filters = {}) => filters.mauza_ids ?? filters.mauza_id;
+
+
+const mergeGeoJSONCollections = (collections = []) => ({
+  type: "FeatureCollection",
+  features: collections.flatMap((collection) => collection?.features || []),
+});
+
+const buildSingleMauzaRequestParams = (filters = {}, mauzaId) => {
+  const params = { ...filters };
+
+  // The backend supports one mauza_id at a time. Do not send mauza_ids=1,2
+  // because that can break the Django filter and return a 500 error.
+  delete params.mauza_ids;
+  delete params.mauza_id;
+
+  if (mauzaId !== undefined && mauzaId !== null && mauzaId !== "") {
+    params.mauza_id = mauzaId;
+  }
+
+  return params;
+};
+
+const getBoundaryGeoJSONByProjectMauzas = async (endpoint, filters = {}) => {
+  const requestedMauzaIds = [
+    ...new Set(normalizeIdList(getRequestedMauzaIds(filters))),
+  ];
+
+  if (!requestedMauzaIds.length) {
+    const res = await API.get(endpoint, {
+      params: buildSingleMauzaRequestParams(filters),
+    });
+    return normalizeGeoJson(res);
+  }
+
+  const collections = await Promise.all(
+    requestedMauzaIds.map(async (mauzaId) => {
+      const res = await API.get(endpoint, {
+        params: buildSingleMauzaRequestParams(filters, mauzaId),
+      });
+      return normalizeGeoJson(res);
+    }),
+  );
+
+  const mergedGeojson = mergeGeoJSONCollections(collections);
+
+  // Safety filter: if any endpoint ignores mauza_id and returns extra records,
+  // keep only records whose mauza_id belongs to the selected project Mauzas.
+  return filterGeoJSONByMauzaIds(mergedGeojson, requestedMauzaIds);
+};
+
 export const getProjectMauzas = async (projectId) => {
   if (!projectId) return [];
 
@@ -483,66 +586,76 @@ export const getProjectMauzas = async (projectId) => {
     params: { project_id: projectId },
   });
 
-  return extractPayload(res);
+  return extractCollection(extractPayload(res));
 };
 
 export const getProjectMauzasGeoJSON = async (projectId) => {
-  if (!projectId) {
-    return { type: "FeatureCollection", features: [] };
-  }
+  if (!projectId) return { type: "FeatureCollection", features: [] };
 
   const rows = await getProjectMauzas(projectId);
 
+  const features = (rows || [])
+    .flatMap((row) => {
+      const rowProperties = {
+        project_mauza_id: row?.id,
+        project_id: row?.project ?? row?.project_id ?? projectId,
+        linked_mauza_id: row?.mauza ?? row?.mauza_id,
+        linked_khasra_id: row?.khasra ?? row?.khasra_id,
+        linked_square_id: row?.square ?? row?.square_id,
+      };
+
+      const nestedMauza =
+        row?.mauza_detail ??
+        row?.mauza_geojson ??
+        row?.mauza_feature ??
+        row?.mauza_boundary;
+
+      const nestedFeatures = toGeoJSONFeatures(nestedMauza, rowProperties);
+
+      if (nestedFeatures.length) {
+        return nestedFeatures.map((feature) => ({
+          ...feature,
+          properties: {
+            ...rowProperties,
+            ...(feature.properties || {}),
+            mauza_id:
+              feature.properties?.mauza_id ??
+              feature.properties?.gid ??
+              rowProperties.linked_mauza_id,
+          },
+        }));
+      }
+
+      // Backward-compatible fallback: some APIs may already return Mauza
+      // features directly from /project-mauza/ instead of nested mauza_detail.
+      return toGeoJSONFeatures(row, rowProperties).map((feature) => ({
+        ...feature,
+        properties: {
+          ...rowProperties,
+          ...(feature.properties || {}),
+          mauza_id:
+            feature.properties?.mauza_id ??
+            feature.properties?.gid ??
+            rowProperties.linked_mauza_id,
+        },
+      }));
+    })
+    .filter((feature) => feature?.geometry);
+
   return {
     type: "FeatureCollection",
-    features: (rows || [])
-      .map((row) => row?.mauza_detail)
-      .filter(Boolean)
-      .map((feature) => ({
-        ...feature,
-        properties: feature.properties || {},
-      })),
+    features,
   };
+};
+
+export const getSquaresGeoJSON = async (filters = {}) => {
+  return getBoundaryGeoJSONByProjectMauzas("/square/", filters);
 };
 
 export const getMurabbasGeoJSON = async (filters = {}) => {
-  const mauzaIds = filters.mauza_ids ?? filters.mauza_id;
-
-  const params = {
-    ...filters,
-    mauza_ids: Array.isArray(filters.mauza_ids)
-      ? filters.mauza_ids.join(",")
-      : filters.mauza_ids,
-    mauza_id: Array.isArray(filters.mauza_id)
-      ? filters.mauza_id.join(",")
-      : filters.mauza_id,
-  };
-
-  const res = await API.get("/murabba/", { params });
-  const geojson = normalizeGeoJson(res);
-
-  // Safety filter: if backend ignores mauza_ids and returns all records,
-  // keep only Murabbas belonging to the selected project Mauzas.
-  return filterGeoJSONByMauzaIds(geojson, mauzaIds);
+  return getBoundaryGeoJSONByProjectMauzas("/murabba/", filters);
 };
 
 export const getKhasrasGeoJSON = async (filters = {}) => {
-  const mauzaIds = filters.mauza_ids ?? filters.mauza_id;
-
-  const params = {
-    ...filters,
-    mauza_ids: Array.isArray(filters.mauza_ids)
-      ? filters.mauza_ids.join(",")
-      : filters.mauza_ids,
-    mauza_id: Array.isArray(filters.mauza_id)
-      ? filters.mauza_id.join(",")
-      : filters.mauza_id,
-  };
-
-  const res = await API.get("/khasra/", { params });
-  const geojson = normalizeGeoJson(res);
-
-  // Safety filter: if backend ignores mauza_ids and returns all Khasras,
-  // keep only Khasras belonging to the selected project Mauzas.
-  return filterGeoJSONByMauzaIds(geojson, mauzaIds);
+  return getBoundaryGeoJSONByProjectMauzas("/khasra/", filters);
 };

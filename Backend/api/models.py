@@ -199,42 +199,6 @@ class Mauza(models.Model):
         db_table = "mauza"
 
 
-# --------------------------------------------------------
-# Murabba Administrative Boundary
-# District → Tehsil → Mauza → Murabba
-# --------------------------------------------------------
-
-class Murabba(models.Model):
-
-    gid = models.AutoField(primary_key=True)
-
-    district = models.CharField(max_length=50)
-    dist_id = models.FloatField()
-
-    tehsil = models.CharField(max_length=50)
-    tehsil_id = models.FloatField()
-
-    kc = models.CharField(max_length=50, null=True, blank=True)
-    kc_id = models.FloatField(null=True, blank=True)
-
-    pc = models.CharField(max_length=50, null=True, blank=True)
-    pc_id = models.FloatField(null=True, blank=True)
-
-    mauza = models.CharField(max_length=50)
-    mauza_id = models.FloatField()
-
-    murabba_no = models.IntegerField(db_column="m")
-    sheets = models.CharField(max_length=50)
-
-    geom = gis_models.MultiPolygonField(srid=4326)
-
-    def __str__(self):
-        return f"{self.mauza} - Murabba {self.murabba_no}"
-
-    class Meta:
-        managed = False
-        db_table = "murabba"
-
 
 # --------------------------------------------------------
 # Khasra Administrative Boundary - New Format
@@ -490,6 +454,7 @@ class Square(models.Model):
     mauza = models.CharField(max_length=254, null=True, blank=True)
     mauza_id = models.FloatField(null=True, blank=True)
     sq = models.FloatField(null=True, blank=True)
+    square_id = models.FloatField(null=True, blank=True)
     layer = models.CharField(max_length=254, null=True, blank=True)
     geom = gis_models.MultiPolygonField(srid=4326, null=True, blank=True)
 
@@ -867,21 +832,19 @@ class ProjectMauza(models.Model):
         on_delete=models.CASCADE,
         db_column="khasra_id",
         related_name="khasra_mauzas",
-        null = True,
-        blank = True
+        null=True,
+        blank=True
     )
 
-    murabba = models.ForeignKey(
-        Murabba,
-        on_delete=models.CASCADE,
-        db_column="murabba_id",
-        related_name="murabba_mauzas", null=True, blank=True
+    square_id = models.FloatField(
+        db_column="square_id",
+        null=True,
+        blank=True
     )
 
     class Meta:
         db_table = "project_mauza"
         managed = True
-        unique_together = ("project", "mauza", "khasra", "murabba")
 
     def __str__(self):
-        return f"{self.project_id} - {self.mauza_id} - {self.khasra_id} - {self.murabba_id}"
+        return f"{self.project_id} - {self.mauza_id} - {self.khasra_id} - {self.square_id}"
