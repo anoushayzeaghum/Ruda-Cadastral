@@ -3,7 +3,7 @@ import TopographicPlan from "./Layers/TopographicPlan";
 import Utilities from "./Layers/Utilities";
 import Services from "./Layers/Services";
 import LandRevenueRecord from "./Layers/LandRevenueRecord";
-import Miscellaneous from "./Layers/Miscellaneous";
+// import Miscellaneous from "./Layers/Miscellaneous";
 import NotifiedBoundaries from "./Layers/NotifiedBoundaries";
 import AdministrativeBoundaries from "./Layers/AdministrativeBoundaries";
 import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
@@ -42,7 +42,7 @@ export default function LayersPanel({
         setLayerVisibility={setLayerVisibility}
       />
       <LandRevenueRecord map={map} selectedProjectId={filters?.projectId} />
-      <Miscellaneous map={map} />
+      {/* <Miscellaneous map={map} /> */}
       <NotifiedBoundaries
         selectedProjectId={filters?.projectId}
         layerVisibility={layerVisibility}

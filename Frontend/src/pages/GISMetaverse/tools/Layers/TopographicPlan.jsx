@@ -39,56 +39,7 @@ const DTM_TILE_URL =
 const ORTHO_TILE_URL =
   "http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
 
-// ── Coordinate reprojection ───────────────────────────────────────────────────
-// Topo_CB_1.geojson is in a local Civil 3D / CAD coordinate system.
-// We use a linear affine transform derived from the known CAD bounding box
-// mapped to the known WGS84 bounds of the Chahar Bagh site.
-
-const CAD_X_MIN = 1461800;
-const CAD_X_MAX = 1464600;
-const CAD_Y_MIN = 11473100;
-const CAD_Y_MAX = 11474700;
-
-const WGS_LNG_MIN = 74.42562;
-const WGS_LNG_MAX = 74.43545;
-const WGS_LAT_MIN = 31.60509;
-const WGS_LAT_MAX = 31.61122;
-
-const SCALE_X = (WGS_LNG_MAX - WGS_LNG_MIN) / (CAD_X_MAX - CAD_X_MIN);
-const OFFSET_X = WGS_LNG_MIN - CAD_X_MIN * SCALE_X;
-
-const SCALE_Y = (WGS_LAT_MAX - WGS_LAT_MIN) / (CAD_Y_MAX - CAD_Y_MIN);
-const OFFSET_Y = WGS_LAT_MIN - CAD_Y_MIN * SCALE_Y;
-
-function cadToWGS84([x, y]) {
-  return [x * SCALE_X + OFFSET_X, y * SCALE_Y + OFFSET_Y];
-}
-
-function reprojectCoordArray(coords) {
-  if (!Array.isArray(coords)) return coords;
-
-  // Leaf node: [x, y] or [x, y, z]
-  if (typeof coords[0] === "number") return cadToWGS84(coords);
-
-  return coords.map(reprojectCoordArray);
-}
-
-function reprojectGeoJSON(geojson) {
-  if (!geojson?.features) return geojson;
-
-  return {
-    ...geojson,
-    features: geojson.features.map((f) => ({
-      ...f,
-      geometry: f.geometry
-        ? {
-            ...f.geometry,
-            coordinates: reprojectCoordArray(f.geometry.coordinates),
-          }
-        : f.geometry,
-    })),
-  };
-}
+// Topo_CB_1.geojson is already in WGS84 (CRS84) — no reprojection needed.
 
 export default function TopographicPlan({ map, selectedProjectId }) {
   const [open, setOpen] = useState(false);
@@ -317,9 +268,9 @@ export default function TopographicPlan({ map, selectedProjectId }) {
     fetch("/amenities/Topography CB_1/Topo_CB_1.geojson")
       .then((r) => r.json())
       .then((raw) => {
-        const reprojected = reprojectGeoJSON(raw);
-        topoDataRef.current = reprojected;
-        addToMap(reprojected);
+        // File is already in WGS84 — use directly without reprojection.
+        topoDataRef.current = raw;
+        addToMap(raw);
       })
       .catch((e) => console.error("Topo GeoJSON load error:", e))
       .finally(() => setTopoLoading(false));
