@@ -78,7 +78,7 @@ export const addTriJunctionLayerStyles = ({ map, sourceId, layerId, pointGeojson
     filter: TRI_JUNCTION_BURJI_FILTER,
     minzoom: 15,
     layout: {
-      "text-field": VECTOR_LABEL_FIELDS.trijunction,
+      "text-field": ["literal", ""],
       "text-size": ["interpolate", ["linear"], ["zoom"], 14, 10, 17, 12],
       "text-offset": [0, 1.15],
       "text-anchor": "top",
