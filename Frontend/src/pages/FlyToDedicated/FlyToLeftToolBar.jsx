@@ -6,6 +6,7 @@ import FlyTo from "../FlyToDedicated/tools/FlyTo";
 import SegmentMeasurement from "../FlyToDedicated/tools/SegmentMeasurement";
 import LayersPanel from "../FlyToDedicated/tools/Layers/MasterPlan";
 import FlyToFilter from "../FlyToDedicated/tools/Filter";
+import { LAYERS } from "./LayerManager/FlyToLayerConfig";
 import AttributeTable from "./AttributeTable";
 
 export default function FlyToLeftToolbar({
@@ -68,19 +69,32 @@ export default function FlyToLeftToolbar({
       <div className="absolute top-0 left-10 ml-2 z-50">
         <AttributeTable
           map={map}
+          filters={filters}
           onClose={() => setBottomPanel(null)}
-          onSelectPlot={(plotData) => {
-            setFilters((prev) => ({
-              ...prev,
-              projectId: plotData.projectId || prev.projectId,
-              block: "", // Clear block to avoid mismatches
-              plotType: "", // Clear plotType to avoid mismatches
-              area: "", // Clear area
-              plotNo: plotData.plotNo,
-            }));
-            // We do not close the table here so the user can see the marker drop 
-            // while the table remains open, or they can choose to close it manually.
-          }}
+            onSelectPlot={(plotData) => {
+              setFilters((prev) => ({
+                ...prev,
+                projectId: plotData.projectId || prev.projectId,
+                block: "", // Clear block to avoid mismatches
+                plotType: "", // Clear plotType to avoid mismatches
+                area: "", // Clear area
+                plotNo: plotData.plotNo,
+              }));
+
+              // Ensure master plan layers are visible so highlight and marker appear
+              if (map) {
+                setLayerVisibility(
+                  map,
+                  [
+                    LAYERS.masterPlanFill,
+                    LAYERS.masterPlanLine,
+                    LAYERS.masterPlanHover,
+                    LAYERS.masterPlanLabel,
+                  ],
+                  true,
+                );
+              }
+            }}
         />
       </div>
     )}
