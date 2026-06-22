@@ -8,7 +8,7 @@ import Society3DExtrusionPanel from "./Society3DExtrusionPanel";
 import Society3DInfoPanel from "./Society3DInfoPanel";
 import { getDistricts, getItemId, getLabel, getMauzaId, getMauzas, getSocieties, getSocietyId, getTehsils } from "./api";
 import { getFeatureId } from "./cesiumHelpers";
-
+import { getProjects } from "../../services/metaverseApi";
 const initialLayers = {
   societyBoundary: { visible: false, opacity: 35 },
   masterPlan: { visible: false, opacity: 15 },
@@ -32,11 +32,48 @@ export default function Society3DMapPage() {
   const [societyLoading, setSocietyLoading] = useState(false);
   const [societyError, setSocietyError] = useState("");
 
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState("");
+  const [projectLoading, setProjectLoading] = useState(false);
+
   const [layers, setLayers] = useState(initialLayers);
   const [basemap, setBasemap] = useState("Streets");
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
+
+  
+  useEffect(() => {
+  let mounted = true;
+
+  const loadProjects = async () => {
+    try {
+      setProjectLoading(true);
+
+      const data = await getProjects();
+
+      if (!mounted) return;
+
+      setProjects(data || []);
+
+      if (data?.length) {
+        setSelectedProject(String(data[0].gid ?? data[0].id));
+      }
+    } catch (err) {
+      console.error("Failed to load projects", err);
+    } finally {
+      if (mounted) {
+        setProjectLoading(false);
+      }
+    }
+  };
+
+  loadProjects();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
 
   const filtersReady =
   filters.selectedDistrict &&
@@ -209,7 +246,7 @@ useEffect(() => {
           clearSelectionSignal={clearSelectionSignal}
         />
 
-        <Society3DSubHeader
+        {/* <Society3DSubHeader
           districts={filters.districts}
           tehsils={filters.tehsils}
           mauzas={filters.mauzas}
@@ -223,7 +260,13 @@ useEffect(() => {
           onTehsilChange={filters.setSelectedTehsil}
           onMauzaChange={filters.setSelectedMauza}
           onSocietyChange={setSelectedSocietyId}
-        />
+        /> */}
+<Society3DSubHeader
+  projects={projects}
+  selectedProject={selectedProject}
+  onProjectChange={setSelectedProject}
+  loading={{ projects: projectLoading }}
+/>
 
         <Society3DExtrusionPanel
           extrusion={extrusion}
