@@ -540,6 +540,17 @@ export default function MapView({
         map.removeLayer(layerId);
       }
 
+      const attachedLayers = (map.getStyle()?.layers || [])
+        .filter((layer) => layer.source === sourceId)
+        .map((layer) => layer.id)
+        .reverse();
+
+      attachedLayers.forEach((attachedLayerId) => {
+        if (map.getLayer(attachedLayerId)) {
+          map.removeLayer(attachedLayerId);
+        }
+      });
+
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     } catch (e) {
       console.warn(`Error clearing point layer ${layerId}`, e);
@@ -547,42 +558,8 @@ export default function MapView({
   };
 
   const clearCornerMarkers = () => {
-    const map = mapInstance.current;
-    if (!map) return;
-
-    try {
-      if (map.getLayer(SELECTED_CORNER_TEXT_LAYER)) {
-        map.off("click", SELECTED_CORNER_TEXT_LAYER, handlePointClick);
-        map.off(
-          "mouseenter",
-          SELECTED_CORNER_TEXT_LAYER,
-          handlePointMouseEnter,
-        );
-        map.off(
-          "mouseleave",
-          SELECTED_CORNER_TEXT_LAYER,
-          handlePointMouseLeave,
-        );
-        map.removeLayer(SELECTED_CORNER_TEXT_LAYER);
-      }
-
-      if (map.getLayer(SELECTED_CORNER_BOX_LAYER)) {
-        map.removeLayer(SELECTED_CORNER_BOX_LAYER);
-      }
-
-      if (map.getLayer(SELECTED_CORNER_LAYER)) {
-        map.off("click", SELECTED_CORNER_LAYER, handlePointClick);
-        map.off("mouseenter", SELECTED_CORNER_LAYER, handlePointMouseEnter);
-        map.off("mouseleave", SELECTED_CORNER_LAYER, handlePointMouseLeave);
-        map.removeLayer(SELECTED_CORNER_LAYER);
-      }
-
-      if (map.getSource(SELECTED_CORNER_SOURCE)) {
-        map.removeSource(SELECTED_CORNER_SOURCE);
-      }
-    } catch (e) {
-      console.warn("Failed to clear corner markers", e);
-    }
+    // Corner marker functionality has been removed.
+    // Keep this as a safe no-op because existing layer cleanup flows still call it.
   };
 
   const clearKhasraLayers = () => {
