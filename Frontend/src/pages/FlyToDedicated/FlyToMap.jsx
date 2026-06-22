@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { setupPlotClickPopup } from "../../pages/FlyToDedicated/PlotPopup";
+import { setupVectorClickPopups } from "./PlotPopup";
 import {
   getBlocksGeoJSON,
   getContourGeoJSON,
@@ -20,43 +20,52 @@ import {
 import {
   SOURCES,
   LAYERS,
-//   INTRO_STEPS,
-//   INTRO_CLEAR_SOURCES,
+  INTRO_STEPS,
+  INTRO_CLEAR_SOURCES,
   RUDA_MAUZA_ASSET_PATHS,
   emptyFC,
   fitGeoJSON,
-//   wait,
-//   waitForMapMove,
+  wait,
+  waitForMapMove,
   setLayerVisibility,
   applyFlyToLayerOpacities,
-} from "../FlyToDedicated/LayerManager/FlyToLayerConfig";
+} from "./LayerManager/FlyToLayerConfig";
 // import {
 //   addIntroBoundaryLayer,
 //   clearIntroBoundaryLayer,
-// } from "../GISMetaverse/LayerManager/IntroBoundaryLayer";
+// } from "./LayerManager/IntroBoundaryLayer";
 import {
   addProjectBoundaryLayer,
   addNotifiedBoundaryLayer,
-} from "../GISMetaverse/LayerManager/ProjectBoundaryLayer";
-import { addBlockLayer } from "../GISMetaverse/LayerManager/BlockLayer";
-import { addMasterPlanLayer } from "../FlyToDedicated/LayerManager/MasterPlanLayer";
-import { addSpotLevelLayer } from "../FlyToDedicated/LayerManager/SpotLevelLayer";
-import { addContourLayer } from "../FlyToDedicated/LayerManager/ContourLayer";
-import { addRoadLayer } from "../FlyToDedicated/LayerManager/RoadLayer";
-import {
-  addWaterSupplyPointsLayer,
-  addWaterSupplyLinesLayer,
-  addSewagePointsLayer,
-  addCameraLocationsLayer,
-} from "../GISMetaverse/LayerManager/UtilitiesLayer";
-import {
-  addRudaBoundaryLayer,
-  addRudaMauzaBoundaryLayer,
-  addProposedRoadsLayer,
-} from "../GISMetaverse/LayerManager/AdministrativeBoundaryLayer";
-import { addGeodeticNetworkLayer } from "../GISMetaverse/LayerManager/GeodeticLayer";
+} from "./LayerManager/ProjectBoundaryLayer";
+import { addBlockLayer } from "./LayerManager/BlockLayer";
+import { addMasterPlanLayer } from "./LayerManager/MasterPlanLayer";
+import { addSpotLevelLayer } from "./LayerManager/SpotLevelLayer";
+import { addContourLayer } from "./LayerManager/ContourLayer";
+import { addRoadLayer } from "./LayerManager/RoadLayer";
+// import {
+//   addWaterSupplyPointsLayer,
+//   addWaterSupplyLinesLayer,
+//   addSewagePointsLayer,
+//   addCameraLocationsLayer,
+// } from "./LayerManager/UtilitiesLayer";
+// import {
+//   addRudaBoundaryLayer,
+//   addRudaMauzaBoundaryLayer,
+//   addProposedRoadsLayer,
+//   applyRudaMauzaBoundaryStyle,
+// } from "./LayerManager/AdministrativeBoundaryLayer";
+// import { addGeodeticNetworkLayer } from "./LayerManager/GeodeticLayer";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+function applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility) {
+  applyFlyToLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+  // applyRudaMauzaBoundaryStyle(
+  //   map,
+  //   adminBoundaryVisibility?.rudaMauzaBoundaryOpacity ?? 100,
+  // );
+}
 
 async function loadAssetGeoJSON(paths = []) {
   const candidates = Array.isArray(paths) ? paths : [paths];
@@ -81,7 +90,7 @@ async function loadAssetGeoJSON(paths = []) {
   throw lastError || new Error("Intro GeoJSON could not be loaded");
 }
 
-export default function FlyToMap({
+export default function GISMetaverseMap({
   mapRef,
   isMapReady,
   setIsMapReady,
@@ -101,37 +110,25 @@ export default function FlyToMap({
     const projectGeoJSON = await getProjectGeoJSON(projectId);
     addProjectBoundaryLayer(map, projectGeoJSON);
 
-    if (filters?.block) {
-      const blockGeoJSON = await getBlocksGeoJSON(projectId, filters.block);
+    const shouldShowBlockBoundary =
+      !!layerVisibility.blockBoundary || !!filters?.block;
+
+    if (shouldShowBlockBoundary) {
+      const blockGeoJSON = await getBlocksGeoJSON(
+        projectId,
+        filters.block || undefined,
+      );
       addBlockLayer(map, blockGeoJSON);
     }
 
     addNotifiedBoundaryLayer(map, projectGeoJSON);
 
-    if (layerVisibility.masterPlan || layerVisibility.plotLimits) {
+    if (layerVisibility.masterPlan) {
       const plotGeoJSON = await getPlotsGeoJSON({
         project_id: projectId,
-        block: filters?.block || undefined,
-        type: filters?.plotType || undefined,
-        plot_no: filters?.plotNo || undefined,
-        plot_area: filters?.area || undefined,
       });
 
       addMasterPlanLayer(map, plotGeoJSON);
-    }
-
-    if (layerVisibility.contours) {
-      const contourGeoJSON = await getContourGeoJSON(projectId);
-      addContourLayer(map, contourGeoJSON);
-    }
-
-    if (layerVisibility.roads) {
-      const roadsGeoJSON = await getRoadsGeoJSON({
-        project_id: projectId,
-        block: filters?.block || undefined,
-        type: filters?.plotType || undefined,
-      });
-      addRoadLayer(map, roadsGeoJSON);
     }
 
     setLayerVisibility(
@@ -148,26 +145,14 @@ export default function FlyToMap({
 
     setLayerVisibility(
       map,
-      [LAYERS.masterPlanFill, LAYERS.masterPlanLabel],
+      [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
       !!layerVisibility.masterPlan,
     );
 
     setLayerVisibility(
       map,
-      [LAYERS.masterPlanLine],
-      !!layerVisibility.masterPlan || !!layerVisibility.plotLimits,
-    );
-
-    setLayerVisibility(
-      map,
-      [LAYERS.contoursLine, LAYERS.contoursLabel],
-      !!layerVisibility.contours,
-    );
-
-    setLayerVisibility(
-      map,
-      [LAYERS.roadsFill, LAYERS.roadsLine],
-      !!layerVisibility.roads,
+      [LAYERS.blockFill, LAYERS.blockLine, LAYERS.blockLabel],
+      shouldShowBlockBoundary,
     );
   };
 
@@ -187,7 +172,7 @@ export default function FlyToMap({
   }, [filters.projectId, filters.block, layerVisibility]);
 
   const mapContainerRef = useRef(null);
-//   const introHasRunRef = useRef(false);
+  const introHasRunRef = useRef(false);
   useEffect(() => {
     if (mapRef.current) return;
 
@@ -252,169 +237,124 @@ export default function FlyToMap({
     });
   }, [filters.projectId, filters.block]);
 
-//   useEffect(() => {
-//     const map = mapRef.current;
+  useEffect(() => {
+    const map = mapRef.current;
 
-//     if (!map) {
-//       return;
-//     }
-
-//     if (introHasRunRef.current) {
-//       return;
-//     }
-
-//     let cancelled = false;
-
-//     const runIntro = async () => {
-//       if (cancelled) {
-//         return;
-//       }
-
-//       if (introHasRunRef.current) {
-//         return;
-//       }
-
-//       try {
-//         const steps = INTRO_STEPS;
-
-//         for (const step of steps) {
-//           if (cancelled) {
-//             return;
-//           }
-
-//           const data = await loadAssetGeoJSON(step.assetPaths);
-
-//           if (cancelled) {
-//             return;
-//           }
-
-//           addIntroBoundaryLayer(map, data, step.label);
-
-//           fitGeoJSON(map, data);
-
-//           await waitForMapMove(map, 800);
-
-//           await wait(500);
-//         }
-
-//         if (cancelled) {
-//           return;
-//         }
-
-//         clearIntroBoundaryLayer(map);
-
-//         // Show the real Administrative Boundaries RUDA layer immediately.
-//         // Do not wait for the Layers panel to open. The panel checkbox is
-//         // synced by onIntroComplete below.
-//         const realRudaBoundary = await getRudaGeoJSON();
-//         addRudaBoundaryLayer(map, realRudaBoundary);
-//         setLayerVisibility(
-//           map,
-//           [
-//             LAYERS.rudaBoundaryFill,
-//             LAYERS.rudaBoundaryLine,
-//             LAYERS.rudaBoundaryDashLine,
-//             LAYERS.rudaBoundaryLabel,
-//           ],
-//           true,
-//         );
-//         applyMetaverseLayerOpacities(map, layerVisibility, {
-//           ...adminBoundaryVisibility,
-//           rudaBoundary: true,
-//           rudaBoundaryOpacity:
-//             adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
-//         });
-
-//         introHasRunRef.current = true;
-
-//         onIntroComplete?.();
-//       } catch (err) {
-//         if (cancelled) return;
-
-//         clearIntroBoundaryLayer(map);
-
-//         try {
-//           const realRudaBoundary = await getRudaGeoJSON();
-//           addRudaBoundaryLayer(map, realRudaBoundary);
-//           setLayerVisibility(
-//             map,
-//             [
-//               LAYERS.rudaBoundaryFill,
-//               LAYERS.rudaBoundaryLine,
-//               LAYERS.rudaBoundaryDashLine,
-//               LAYERS.rudaBoundaryLabel,
-//             ],
-//             true,
-//           );
-//           applyMetaverseLayerOpacities(map, layerVisibility, {
-//             ...adminBoundaryVisibility,
-//             rudaBoundary: true,
-//             rudaBoundaryOpacity:
-//               adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
-//           });
-//         } catch (rudaError) {}
-
-//         introHasRunRef.current = true;
-//         onIntroComplete?.();
-//       }
-//     };
-
-//     if (map.isStyleLoaded()) {
-//       runIntro();
-//     } else {
-//       map.once("load", runIntro);
-//     }
-
-//     return () => {
-//       cancelled = true;
-//       map.off("load", runIntro);
-//     };
-//   }, [mapRef, onIntroComplete]);
-
-useEffect(() => {
-  const map = mapRef.current;
-  if (!map) return;
-
-  const showRudaBoundary = async () => {
-    try {
-      const data = await getRudaGeoJSON();
-
-      addRudaBoundaryLayer(map, data);
-
-      setLayerVisibility(
-        map,
-        [
-          LAYERS.rudaBoundaryFill,
-          LAYERS.rudaBoundaryLine,
-          LAYERS.rudaBoundaryDashLine,
-          LAYERS.rudaBoundaryLabel,
-        ],
-        true
-      );
-
-      applyFlyToLayerOpacities(map, layerVisibility, {
-        ...adminBoundaryVisibility,
-        rudaBoundary: true,
-        rudaBoundaryOpacity:
-          adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
-      });
-
-      onIntroComplete?.();
-    } catch (err) {
-      console.error(err);
+    if (!map) {
+      return;
     }
-  };
 
-  if (map.isStyleLoaded()) {
-    showRudaBoundary();
-  } else {
-    map.once("load", showRudaBoundary);
-  }
+    if (introHasRunRef.current) {
+      return;
+    }
 
-  return () => {
-    map.off("load", showRudaBoundary);
-  };
-}, []);
+    let cancelled = false;
+
+    const runIntro = async () => {
+      if (cancelled) {
+        return;
+      }
+
+      if (introHasRunRef.current) {
+        return;
+      }
+
+      try {
+        const steps = INTRO_STEPS;
+
+        for (const step of steps) {
+          if (cancelled) {
+            return;
+          }
+
+          const data = await loadAssetGeoJSON(step.assetPaths);
+
+          if (cancelled) {
+            return;
+          }
+
+          addIntroBoundaryLayer(map, data, step.label);
+
+          fitGeoJSON(map, data);
+
+          await waitForMapMove(map, 800);
+
+          await wait(500);
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        // clearIntroBoundaryLayer(map);
+
+        // Show the real Administrative Boundaries RUDA layer immediately.
+        // Do not wait for the Layers panel to open. The panel checkbox is
+        // synced by onIntroComplete below.
+        const realRudaBoundary = await getRudaGeoJSON();
+        addRudaBoundaryLayer(map, realRudaBoundary);
+        setLayerVisibility(
+          map,
+          [
+            LAYERS.rudaBoundaryFill,
+            LAYERS.rudaBoundaryLine,
+            LAYERS.rudaBoundaryDashLine,
+            LAYERS.rudaBoundaryLabel,
+          ],
+          true,
+        );
+        applyMetaverseLayerStyles(map, layerVisibility, {
+          ...adminBoundaryVisibility,
+          rudaBoundary: true,
+          rudaBoundaryOpacity:
+            adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
+        });
+
+        introHasRunRef.current = true;
+
+        onIntroComplete?.();
+      } catch (err) {
+        if (cancelled) return;
+
+        // clearIntroBoundaryLayer(map);
+
+        try {
+          const realRudaBoundary = await getRudaGeoJSON();
+          addRudaBoundaryLayer(map, realRudaBoundary);
+          setLayerVisibility(
+            map,
+            [
+              LAYERS.rudaBoundaryFill,
+              LAYERS.rudaBoundaryLine,
+              LAYERS.rudaBoundaryDashLine,
+              LAYERS.rudaBoundaryLabel,
+            ],
+            true,
+          );
+          applyMetaverseLayerStyles(map, layerVisibility, {
+            ...adminBoundaryVisibility,
+            rudaBoundary: true,
+            rudaBoundaryOpacity:
+              adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
+          });
+        } catch (rudaError) {}
+
+        introHasRunRef.current = true;
+        onIntroComplete?.();
+      }
+    };
+
+    if (map.isStyleLoaded()) {
+      runIntro();
+    } else {
+      map.once("load", runIntro);
+    }
+
+    return () => {
+      cancelled = true;
+      map.off("load", runIntro);
+    };
+  }, [mapRef, onIntroComplete]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -422,35 +362,29 @@ useEffect(() => {
 
     const run = async () => {
       if (!filters?.projectId) {
-        
-  if (map.getSource(SOURCES.projectBoundary)) {
-    map.getSource(SOURCES.projectBoundary).setData(emptyFC);
-  }
+        INTRO_CLEAR_SOURCES.forEach((sourceId) => {
+          if (map.getSource(sourceId)) {
+            map.getSource(sourceId).setData(emptyFC);
+          }
+        });
 
-  if (map.getSource(SOURCES.masterPlan)) {
-    map.getSource(SOURCES.masterPlan).setData(emptyFC);
-  }
+        if (map.getSource(SOURCES.block)) {
+          map.getSource(SOURCES.block).setData(emptyFC);
+        }
 
-  if (map.getSource(SOURCES.block)) {
-    map.getSource(SOURCES.block).setData(emptyFC);
-  }
-
-  if (map.getSource(SOURCES.contours)) {
-    map.getSource(SOURCES.contours).setData(emptyFC);
-  }
-
-  if (map.getSource(SOURCES.roads)) {
-    map.getSource(SOURCES.roads).setData(emptyFC);
-  }
-
-  return;
-}
+        setLayerVisibility(
+          map,
+          [LAYERS.blockFill, LAYERS.blockLine, LAYERS.blockLabel],
+          false,
+        );
+        return;
+      }
 
       const projectGeoJSON = await getProjectGeoJSON(filters.projectId);
       addProjectBoundaryLayer(map, projectGeoJSON);
       addNotifiedBoundaryLayer(map, projectGeoJSON);
 
-      setLayerVisibility(map, [LAYERS.boundaryFill, LAYERS.boundaryLine], true);
+      setLayerVisibility(map, [LAYERS.boundaryFill, LAYERS.boundaryLine,  LAYERS.blockLabel,], true);
       setLayerVisibility(
         map,
         [LAYERS.notifiedBoundaryLine],
@@ -462,11 +396,9 @@ useEffect(() => {
       updateLayerVisibility((prev) => ({
         ...prev,
         boundary: true,
-        boundaryOpacity: prev.boundaryOpacity ?? 100,
-        masterPlanOpacity: prev.masterPlanOpacity ?? 100,
-        roadsOpacity: prev.roadsOpacity ?? 100,
-        contoursOpacity: prev.contoursOpacity ?? 100,
-        plotLimitsOpacity: prev.plotLimitsOpacity ?? 100,
+        masterPlan: false,
+        blockBoundary: false,
+        roads: false,
       }));
     };
 
@@ -488,7 +420,7 @@ useEffect(() => {
       addNotifiedBoundaryLayer(map, projectGeoJSON);
       setLayerVisibility(map, [LAYERS.notifiedBoundaryLine], true);
 
-      applyFlyToLayerOpacities(
+      applyMetaverseLayerStyles(
         map,
         layerVisibility,
         adminBoundaryVisibility,
@@ -510,26 +442,55 @@ useEffect(() => {
     if (!map || !filters?.projectId) return;
 
     const run = async () => {
-      if (!filters.block) {
+      const shouldShowBlockBoundary =
+        !!layerVisibility.blockBoundary || !!filters.block;
+
+      if (!shouldShowBlockBoundary) {
         if (map.getSource(SOURCES.block)) {
           map.getSource(SOURCES.block).setData(emptyFC);
         }
+
+        setLayerVisibility(
+          map,
+          [LAYERS.blockFill, LAYERS.blockLine, LAYERS.blockLabel],
+          false,
+        );
         return;
       }
 
       const blockGeoJSON = await getBlocksGeoJSON(
         filters.projectId,
-        filters.block,
+        filters.block || undefined,
       );
 
       addBlockLayer(map, blockGeoJSON);
-      setLayerVisibility(map, [LAYERS.blockFill, LAYERS.blockLine], true);
-      fitGeoJSON(map, blockGeoJSON);
+      setLayerVisibility(
+        map,
+        [LAYERS.blockFill, LAYERS.blockLine, LAYERS.blockLabel],
+        true,
+      );
+
+      applyMetaverseLayerStyles(
+        map,
+        layerVisibility,
+        adminBoundaryVisibility,
+      );
+
+      if (filters.block || layerVisibility.blockBoundary) {
+        fitGeoJSON(map, blockGeoJSON);
+      }
     };
 
     if (map.isStyleLoaded()) run();
     else map.once("load", run);
-  }, [filters.projectId, filters.block, mapRef]);
+  }, [
+    filters.projectId,
+    filters.block,
+    layerVisibility.blockBoundary,
+    layerVisibility.blockBoundaryOpacity,
+    adminBoundaryVisibility,
+    mapRef,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -549,7 +510,7 @@ useEffect(() => {
         !!filters.tr_own ||
         !!filters.site_plan;
 
-      if (!hasPlotFilter && !layerVisibility.masterPlan && !layerVisibility.plotLimits) {
+      if (!hasPlotFilter && !layerVisibility.masterPlan) {
         if (map.getSource(SOURCES.masterPlan)) {
           map.getSource(SOURCES.masterPlan).setData(emptyFC);
         }
@@ -575,23 +536,17 @@ useEffect(() => {
 
       setLayerVisibility(
         map,
-        [LAYERS.masterPlanFill, LAYERS.masterPlanLabel],
-        !!layerVisibility.masterPlan,
+        [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
+        true,
       );
 
-      setLayerVisibility(
-        map,
-        [LAYERS.masterPlanLine],
-        !!layerVisibility.masterPlan || !!layerVisibility.plotLimits,
-      );
-
-      applyFlyToLayerOpacities(
+      applyMetaverseLayerStyles(
         map,
         layerVisibility,
         adminBoundaryVisibility,
       );
 
-      if (hasPlotFilter || layerVisibility.masterPlan || layerVisibility.plotLimits) {
+      if (hasPlotFilter || layerVisibility.masterPlan) {
         fitGeoJSON(map, plotGeoJSON);
       }
     };
@@ -612,15 +567,12 @@ useEffect(() => {
     filters.tr_own,
     filters.site_plan,
     layerVisibility.masterPlan,
-    layerVisibility.plotLimits,
     layerVisibility.boundaryOpacity,
     layerVisibility.masterPlanOpacity,
-    layerVisibility.plotLimitsOpacity,
     adminBoundaryVisibility,
     mapRef,
   ]);
 
-  
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -633,7 +585,11 @@ useEffect(() => {
 
       if (adminBoundaryVisibility.rudaMauzaBoundary) {
         const data = await loadAssetGeoJSON(RUDA_MAUZA_ASSET_PATHS);
-        addRudaMauzaBoundaryLayer(map, data);
+        addRudaMauzaBoundaryLayer(
+          map,
+          data,
+          adminBoundaryVisibility?.rudaMauzaBoundaryOpacity ?? 100,
+        );
       }
 
       if (adminBoundaryVisibility.proposedRoads) {
@@ -679,7 +635,7 @@ useEffect(() => {
         adminBoundaryVisibility.geodeticNetwork,
       );
 
-      applyFlyToLayerOpacities(
+      applyMetaverseLayerStyles(
         map,
         layerVisibility,
         adminBoundaryVisibility,
@@ -708,14 +664,14 @@ useEffect(() => {
 
     setLayerVisibility(
       map,
-      [LAYERS.masterPlanFill, LAYERS.masterPlanLabel],
+      [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
       layerVisibility.masterPlan,
     );
 
     setLayerVisibility(
       map,
-      [LAYERS.masterPlanLine],
-      layerVisibility.masterPlan || layerVisibility.plotLimits,
+      [LAYERS.blockFill, LAYERS.blockLine, LAYERS.blockLabel],
+      !!layerVisibility.blockBoundary || !!filters.block,
     );
 
     setLayerVisibility(
@@ -760,8 +716,8 @@ useEffect(() => {
       layerVisibility.cameraLocations,
     );
 
-    applyFlyToLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
-  }, [layerVisibility, adminBoundaryVisibility, mapRef]);
+    applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
+  }, [layerVisibility, adminBoundaryVisibility, filters.block, mapRef]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -770,13 +726,11 @@ useEffect(() => {
     const run = async () => {
       if (layerVisibility.spotLevel) {
         const data = await getSpotLevelGeoJSON(filters.projectId);
-        console.log("SpotLevel data:", data);
         addSpotLevelLayer(map, data);
       }
 
       if (layerVisibility.contours) {
         const data = await getContourGeoJSON(filters.projectId);
-        console.log("Contours:", data);
         addContourLayer(map, data);
       }
 
@@ -810,7 +764,7 @@ useEffect(() => {
         addCameraLocationsLayer(map, data);
       }
 
-      applyFlyToLayerOpacities(
+      applyMetaverseLayerStyles(
         map,
         layerVisibility,
         adminBoundaryVisibility,
@@ -842,29 +796,18 @@ useEffect(() => {
   ]);
 
   // ---------------------------------------------------------------------------
-  // Plot click popup
+  // Vector layer click popups (all toggled vector layers, click-only)
   // ---------------------------------------------------------------------------
-  // We depend on `isMapReady` (set to true inside the map "load" event) so
-  // this effect only fires once the map and its style are fully initialised.
-  // That guarantees the masterPlanHover layer already exists when we wire up
-  // the click handler, and we get a clean teardown on unmount.
   useEffect(() => {
     const map = mapRef.current;
-    // Guard: map must exist and be fully loaded before wiring up interactions.
     if (!map || !isMapReady) return;
 
-    return setupPlotClickPopup({
+    return setupVectorClickPopups({
       map,
-      // Query both fill and line layers so clicks on thin plot borders register.
-      plotLayerIds: [LAYERS.masterPlanFill, LAYERS.masterPlanLine],
-      // The highlight outline layer — driven by filter + opacity in PlotPopup.
-      highlightLayerId: LAYERS.masterPlanHover,
-      // Must match the property used in the masterPlanHover filter expression.
-      highlightFilterKey: "gid",
-      // Auto-close the popup after 10 seconds of inactivity.
       autoCloseMs: 10000,
+      minZoom: 16,
+      maxZoom: 18,
     });
-    // Re-run whenever the map instance is swapped out or readiness changes.
   }, [mapRef, isMapReady]);
 
   return <div ref={mapContainerRef} className="h-full w-full" />;

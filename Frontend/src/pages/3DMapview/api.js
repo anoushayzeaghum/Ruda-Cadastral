@@ -223,6 +223,10 @@ export async function getSocieties(filters = {}) {
   return sortByLabel(items, ["society", "name", "society_name"]);
 }
 
+export const getProjects = async () => {
+  const res = await axios.get(`${API_BASE}/project/`);
+  return normalizeFeatures(res.data);
+};
 // ---------------------------
 // Boundary APIs
 // ---------------------------

@@ -71,7 +71,7 @@ export default function FlyToDashboard() {
     defaultAdminBoundaryVisibility,
   );
 
-  const [metaverseFilters, setMetaverseFilters] = useState(defaultFilters);
+  const [flytoFilters, setflytoFilters] = useState(defaultFilters);
 
   const [layerVisibility, setLayerVisibility] = useState(
     defaultLayerVisibility,
@@ -90,7 +90,7 @@ export default function FlyToDashboard() {
   }, []);
 
   const handleReset = () => {
-    setMetaverseFilters(defaultFilters);
+    setflytoFilters(defaultFilters);
     setLayerVisibility(defaultLayerVisibility);
     setAdminBoundaryVisibility(defaultAdminBoundaryVisibility);
     setShowMetaverseLegend(false);
@@ -105,7 +105,7 @@ export default function FlyToDashboard() {
           mapRef={mapRef}
           isMapReady={isMapReady}
           setIsMapReady={setIsMapReady}
-          filters={metaverseFilters}
+          filters={flytoFilters}
           layerVisibility={layerVisibility}
           setLayerVisibility={setLayerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}
@@ -119,8 +119,8 @@ export default function FlyToDashboard() {
         />
 
         {/* <FlyToSubHeader
-          filters={metaverseFilters}
-          setFilters={setMetaverseFilters}
+          filters={flytoFilters}
+          setFilters={setflytoFilters}
           setLayerVisibility={setLayerVisibility}
           onReset={handleReset}
           onCalendarClick={() => console.log("Calendar clicked")}
@@ -130,8 +130,8 @@ export default function FlyToDashboard() {
           activeTool={activeTool}
           setActiveTool={setActiveTool}
           map={isMapReady ? mapRef.current : null}
-          filters={metaverseFilters}
-          setFilters={setMetaverseFilters}
+          filters={flytoFilters}
+          setFilters={setflytoFilters}
           layerVisibility={layerVisibility}
           setLayerVisibility={setLayerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}
