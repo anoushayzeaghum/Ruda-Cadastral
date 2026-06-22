@@ -95,7 +95,8 @@ export default function SpatialQuery({
                 ["name", "brief_name", "type"],
               ),
             )
-            .filter((item) => item.value !== undefined && item.value !== null),
+            .filter((item) => item.value !== undefined && item.value !== null)
+            .sort((a, b) => (a.label || "").localeCompare(b.label || "")) 
         );
       } catch (error) {
         console.error("Failed to load projects", error);
@@ -130,7 +131,8 @@ export default function SpatialQuery({
                 ["block", "name"],
               ),
             )
-            .filter((item) => item.value !== undefined && item.value !== null),
+            .filter((item) => item.value !== undefined && item.value !== null)
+            .sort((a, b) => (a.label || "").localeCompare(b.label || ""))
         );
       } catch (error) {
         console.error("Failed to load blocks", error);
@@ -164,8 +166,22 @@ export default function SpatialQuery({
         });
 
         if (!mounted) return;
-        setPlotTypes(options.plotTypes || []);
-        setPlotNos(options.plotNos || []);
+        setPlotTypes(
+          (options.plotTypes || []).sort((a, b) =>
+            a.localeCompare(b, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            })
+          )
+        );
+        setPlotNos(
+          (options.plotNos || []).sort((a, b) =>
+            a.localeCompare(b, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            })
+          )
+        );
       } catch (error) {
         console.error("Failed to load plot options", error);
         if (mounted) {
