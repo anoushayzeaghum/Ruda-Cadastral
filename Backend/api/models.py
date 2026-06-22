@@ -485,10 +485,8 @@ class Acre(models.Model):
 
     sq = models.FloatField(null=True, blank=True)
     acre = models.FloatField(null=True, blank=True)
-    m = models.FloatField(null=True, blank=True)
-    a = models.FloatField(null=True, blank=True)
+   
     layer = models.CharField(max_length=100, null=True, blank=True)
-    path = models.CharField(max_length=500, null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(srid=4326)
 
