@@ -523,7 +523,20 @@ export default function GISMetaverseMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !filters?.projectId) return;
+    if (!map) return;
+
+    // Clear existing markers
+    if (plotMarkersRef.current) {
+      plotMarkersRef.current.forEach((m) => m.remove());
+      plotMarkersRef.current = [];
+    }
+
+    if (!filters?.projectId) {
+      if (map.getSource(SOURCES.masterPlan)) {
+        map.getSource(SOURCES.masterPlan).setData(emptyFC);
+      }
+      return;
+    }
 
     const run = async () => {
       const hasPlotFilter =
@@ -572,12 +585,6 @@ export default function GISMetaverseMap({
       ].forEach(id => {
         if (map.getLayer(id)) map.moveLayer(id);
       });
-
-      // Clear existing markers
-      if (plotMarkersRef.current) {
-        plotMarkersRef.current.forEach((m) => m.remove());
-        plotMarkersRef.current = [];
-      }
 
       // Add rotating marker if filtering by plotNo
       if (filters.plotNo && plotGeoJSON && plotGeoJSON.features) {

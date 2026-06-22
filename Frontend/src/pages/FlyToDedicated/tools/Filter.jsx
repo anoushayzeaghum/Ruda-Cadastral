@@ -134,6 +134,18 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
     onApply?.(selected);
   };
 
+  const handleClear = () => {
+    const cleared = {
+      projectId: "",
+      block: "",
+      area: "",
+      plotType: "",
+      plotNo: "",
+    };
+    setSelected(cleared);
+    onApply?.(cleared);
+  };
+
   /* ---------------- mapped options ---------------- */
   const projectOptions = projects.map((p) => ({
     value: String(p.gid || p.id),
@@ -221,14 +233,21 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
         <div className="flex gap-2 pt-2">
           <button
             onClick={handleApply}
-            className="flex-1 h-8 bg-[#8bd66f] text-black font-bold rounded"
+            className="flex-1 h-8 bg-[#8bd66f] text-black font-bold rounded hover:bg-[#7bc262]"
           >
             Apply
           </button>
 
           <button
+            onClick={handleClear}
+            className="flex-1 h-8 bg-red-500/80 text-white font-bold rounded hover:bg-red-500 transition-colors"
+          >
+            Clear
+          </button>
+
+          <button
             onClick={onClose}
-            className="flex-1 h-8 border border-[#344055] rounded"
+            className="flex-1 h-8 border border-[#344055] rounded hover:bg-[#344055]/50"
           >
             Close
           </button>
