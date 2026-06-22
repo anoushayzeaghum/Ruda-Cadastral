@@ -85,7 +85,7 @@ export const getPlotOptions = async (filters = {}) => {
   };
 };
 
-export const getPlotOptionsAll = async () => {
+export const getPlotOptionsAll = async (filters = {}) => {
   const geojson = await getPlotsGeoJSON({});
   const plots = normalizeFeatures(geojson);
 

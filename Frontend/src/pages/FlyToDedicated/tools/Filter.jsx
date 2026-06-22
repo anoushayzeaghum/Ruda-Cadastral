@@ -38,35 +38,54 @@ export default function FlyToFilter({
 
   // load dependent data
   useEffect(() => {
-    if (!selectedProjectId) return;
+  if (!selectedProjectId) return;
 
-    Promise.all([
-      getBlocks(selectedProjectId),
-      getPlotOptionsAll({ project_id: selectedProjectId }),
-    ])
-      .then(([b, p]) => {
-        setBlocks(b || []);
-        setPlotOptions({
-          plotTypes: p?.plotTypes || [],
-          plotNos: p?.plotNos || [],
-        });
-      })
-      .catch(console.error);
-  }, [selectedProjectId]);
+  Promise.all([
+    getBlocks(selectedProjectId),
+    getPlotOptionsAll({
+      project_id: selectedProjectId,
+      block: selected.block || undefined,
+      type: selected.plotType || undefined,
+    }),
+  ])
+    .then(([b, p]) => {
+      setBlocks(b || []);
+
+      setPlotOptions({
+        plotTypes: p?.plotTypes || [],
+        plotNos: p?.plotNos || [],
+      });
+    })
+    .catch(console.error);
+
+}, [
+  selectedProjectId,
+  selected.block,
+  selected.plotType
+]);
 
   const handleChange = (key, value) => {
-    setSelected((prev) => {
-      const updated = { ...prev, [key]: value };
+  setSelected((prev) => {
+    const updated = { ...prev, [key]: value };
 
-      if (key === "projectId") {
-        updated.block = "";
-        updated.plotType = "";
-        updated.plotNo = "";
-      }
+    if (key === "projectId") {
+      updated.block = "";
+      updated.plotType = "";
+      updated.plotNo = "";
+    }
 
-      return updated;
-    });
-  };
+    if (key === "block") {
+      updated.plotType = "";
+      updated.plotNo = "";
+    }
+
+    if (key === "plotType") {
+      updated.plotNo = "";
+    }
+
+    return updated;
+  });
+};
 
   const handleApply = () => {
     onApply?.(selected);

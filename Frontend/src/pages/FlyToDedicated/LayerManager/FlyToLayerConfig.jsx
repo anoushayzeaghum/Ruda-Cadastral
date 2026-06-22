@@ -26,6 +26,7 @@ const LAYERS = {
   boundaryLine: "flyto-project-boundary-line",
   blockFill: "flyto-block-fill",
   blockLine: "flyto-block-line",
+  blockLabel: "flyto-block-label",
   masterPlanFill: "flyto-masterplan-fill",
   masterPlanLine: "flyto-masterplan-line",
   masterPlanLabel: "flyto-masterplan-label",
@@ -58,6 +59,7 @@ const LAYERS = {
   // NEW: Hover highlight layer
   masterPlanHover: "flyto-masterplan-hover",
   notifiedBoundaryLine: "flyto-notified-boundary-line",
+  
 };
 
 const INTRO_STEPS = [
