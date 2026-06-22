@@ -7,10 +7,18 @@ export default function MetaverseMapControls({
   map,
   adminBoundaryVisibility,
   metaverseLegendData,
+  layerVisibility,
 }) {
   const [coords, setCoords] = useState({ lng: 74.3402, lat: 31.5025 });
   const [zoom, setZoom] = useState(12);
   const [showLegend, setShowLegend] = useState(false);
+
+  // Automatically open the legend when the topography layer is toggled ON
+  useEffect(() => {
+    if (layerVisibility?.topography) {
+      setShowLegend(true);
+    }
+  }, [layerVisibility?.topography]);
 
   useEffect(() => {
     if (!map) return;
@@ -153,6 +161,7 @@ export default function MetaverseMapControls({
             <div className="absolute right-11 top-0 max-w-[calc(100vw-4rem)] sm:max-w-none">
               <MetaverseLegend
                 adminBoundaryVisibility={adminBoundaryVisibility}
+                layerVisibility={layerVisibility}
                 rudaPhases={metaverseLegendData?.rudaPhases || []}
               />
             </div>

@@ -559,19 +559,9 @@ export default function GISMetaverseMap({
         return;
       }
 
+      // Always fetch the ENTIRE project so the context never disappears
       const plotGeoJSON = await getPlotsGeoJSON({
         project_id: filters.projectId,
-        block: filters.block || undefined,
-        type: filters.plotType || undefined,
-        plot_no: filters.plotNo || undefined,
-        plot_area: filters.area || undefined,
-        parkfront: filters.parkfront || undefined,
-        rd_facing: filters.rd_facing || undefined,
-        poss_st: filters.poss_st || undefined,
-        canceled: filters.plotStatus || undefined,
-        tr_cate: filters.tr_cate || undefined,
-        tr_own: filters.tr_own || undefined,
-        site_plan: filters.site_plan || undefined,
       });
 
       addMasterPlanLayer(map, plotGeoJSON);
@@ -579,12 +569,33 @@ export default function GISMetaverseMap({
       // Fix Z-Index race condition: Force plot layers to render on top of the block background
       [
         LAYERS.masterPlanFill,
-        LAYERS.masterPlanHover,
         LAYERS.masterPlanLine,
+        LAYERS.masterPlanHover,
         LAYERS.masterPlanLabel
       ].forEach(id => {
         if (map.getLayer(id)) map.moveLayer(id);
       });
+
+      // Highlight the specific plot boundaries if filtered by plotNo
+      if (map.getLayer(LAYERS.masterPlanHover)) {
+        if (filters.plotNo && plotGeoJSON && plotGeoJSON.features && plotGeoJSON.features.length > 0) {
+          const targetFeatures = plotGeoJSON.features.filter(
+            (f) => String(f.properties?.plot_no) === String(filters.plotNo)
+          );
+          if (targetFeatures.length > 0) {
+            // Filter directly by plot_no which is guaranteed to exist
+            map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "plot_no"]], String(filters.plotNo)]);
+            map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 1);
+            map.setPaintProperty(LAYERS.masterPlanHover, "line-color", "#00ffaa");
+          } else {
+            map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
+            map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "gid"]], "__none__"]);
+          }
+        } else {
+          map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
+          map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "gid"]], "__none__"]);
+        }
+      }
 
       // Add rotating marker if filtering by plotNo
       if (filters.plotNo && plotGeoJSON && plotGeoJSON.features) {
@@ -610,7 +621,11 @@ export default function GISMetaverseMap({
           document.head.appendChild(style);
         }
 
-        plotGeoJSON.features.forEach((feature) => {
+        const targetFeatures = plotGeoJSON.features.filter(
+          (f) => String(f.properties?.plot_no) === String(filters.plotNo)
+        );
+
+        targetFeatures.forEach((feature) => {
           if (feature.geometry) {
             const center = turf.centroid(feature);
             
@@ -653,7 +668,17 @@ export default function GISMetaverseMap({
       );
 
       if (hasPlotFilter || layerVisibility.masterPlan) {
-        fitGeoJSON(map, plotGeoJSON);
+        if (filters.plotNo && plotGeoJSON && plotGeoJSON.features) {
+          const targetFeatures = plotGeoJSON.features.filter(
+            (f) => String(f.properties?.plot_no) === String(filters.plotNo)
+          );
+          if (targetFeatures.length > 0) {
+            fitGeoJSON(map, { type: "FeatureCollection", features: targetFeatures });
+          }
+        } else if (!filters.block) {
+          // If no specific plot or block is focused, zoom out to show the whole project
+          fitGeoJSON(map, plotGeoJSON);
+        }
       }
     };
 

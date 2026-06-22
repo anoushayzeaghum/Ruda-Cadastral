@@ -46,12 +46,14 @@ export default function MetaverseDashboard() {
     sewagePoints: false,
     cameraLocations: false,
     notifiedBoundary: false,
+    topography: false,
 
     waterSupplyPointsOpacity: 100,
     waterSupplyLinesOpacity: 100,
     sewagePointsOpacity: 100,
     cameraLocationsOpacity: 100,
     notifiedBoundaryOpacity: 100,
+    topographyOpacity: 80,
   };
 
   const defaultAdminBoundaryVisibility = {
@@ -146,7 +148,10 @@ export default function MetaverseDashboard() {
         />
 
         {showMetaverseLegend && (
-          <MetaverseLegend adminBoundaryVisibility={adminBoundaryVisibility} />
+          <MetaverseLegend
+            adminBoundaryVisibility={adminBoundaryVisibility}
+            layerVisibility={layerVisibility}
+          />
         )}
 
         <MetaverseMapControls
@@ -154,6 +159,7 @@ export default function MetaverseDashboard() {
           showMetaverseLegend={showMetaverseLegend}
           setShowMetaverseLegend={setShowMetaverseLegend}
           adminBoundaryVisibility={adminBoundaryVisibility}
+          layerVisibility={layerVisibility}
         />
       </div>
     </div>

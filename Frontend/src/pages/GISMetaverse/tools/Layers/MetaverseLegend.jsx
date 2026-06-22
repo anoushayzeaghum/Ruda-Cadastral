@@ -81,12 +81,15 @@ const getRudaPhaseLabel = (phase = {}) => {
 
 export default function MetaverseLegend({
   adminBoundaryVisibility = {},
+  layerVisibility = {},
   rudaPhases = [],
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
   const showRudaLegend = !!adminBoundaryVisibility.rudaBoundary;
   const showRoadLegend = !!adminBoundaryVisibility.proposedRoads;
+  const showTopoLegend = !!layerVisibility?.topography;
+
   const legendRudaPhases = rudaPhases?.length
     ? rudaPhases
     : adminBoundaryVisibility?.rudaPhases || [];
@@ -143,9 +146,9 @@ export default function MetaverseLegend({
 
       {!collapsed && (
         <div className={`max-h-[380px] p-3 ${LAYER_PANEL_SCROLL}`}>
-          {!showRudaLegend && !showRoadLegend && (
+          {!showRudaLegend && !showRoadLegend && !showTopoLegend && (
             <div className="rounded-sm border border-[#3b4558] bg-[#232b3a] p-3 text-[11px] text-white/70">
-              No active legend layer. Turn on RUDA Boundary or Proposed Roads.
+              No active legend layer. Turn on RUDA Boundary, Proposed Roads, or Topographic Plan.
             </div>
           )}
 
@@ -172,6 +175,18 @@ export default function MetaverseLegend({
               {roadLegendItems.map((item) => (
                 <LegendRoadItem key={item.label} item={item} />
               ))}
+            </LegendSection>
+          )}
+
+          {showTopoLegend && (
+            <LegendSection title="Topographic Plan">
+              <LegendPolygonItem label="Builtup Areas" color="#f97316" />
+              <LegendPolygonItem label="Parks" color="#22c55e" />
+              <LegendPolygonItem label="Green Belts" color="#10b981" />
+              <LegendRoadItem item={{ label: "Road Tracks", color: "#64748b", width: 2 }} />
+              <LegendPointItem label="Manholes" color="#ef4444" />
+              <LegendPointItem label="Light Poles" color="#eab308" />
+              <LegendPointItem label="Spot Levels" color="#a855f7" />
             </LegendSection>
           )}
         </div>
@@ -223,6 +238,23 @@ function LegendRoadItem({ item }) {
 
       <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-white/80">
         {item.label}
+      </span>
+    </div>
+  );
+}
+
+function LegendPointItem({ label, color }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="flex h-4 w-7 shrink-0 items-center justify-center">
+        <span
+          className="h-3 w-3 rounded-full border border-white/60"
+          style={{ backgroundColor: color }}
+        />
+      </span>
+
+      <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-white/80">
+        {label}
       </span>
     </div>
   );
