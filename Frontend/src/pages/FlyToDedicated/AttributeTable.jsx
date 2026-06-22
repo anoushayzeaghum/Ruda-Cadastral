@@ -32,7 +32,7 @@ function zoomToGeometry(map, geometry) {
   }
 }
 
-export default function AttributeTable({ map, onClose }) {
+export default function AttributeTable({ map, onClose, onSelectPlot }) {
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -73,6 +73,7 @@ export default function AttributeTable({ map, onClose }) {
           name: props.name || "-",
           area: props.plot_area || props.area || "-",
           geometry: f?.geometry || props.geometry || null,
+          raw: props,
         };
       });
 
@@ -159,9 +160,19 @@ export default function AttributeTable({ map, onClose }) {
               rows.map((r, i) => (
                 <tr
                   key={i}
-                  onClick={() => zoomToGeometry(map, r.geometry)}
+                  onClick={() => {
+                    zoomToGeometry(map, r.geometry);
+                    if (onSelectPlot) {
+                      onSelectPlot({
+                        projectId: r.raw?.project_id || r.raw?.project || "",
+                        block: r.block !== "-" ? r.block : "",
+                        plotType: r.plot_type !== "-" ? r.plot_type : "",
+                        plotNo: r.plot_no !== "-" ? r.plot_no : "",
+                      });
+                    }
+                  }}
                   className="cursor-pointer border-b border-[#344055] transition hover:bg-[#1d2533]"
-                  title="Click to zoom to this plot"
+                  title="Click to select and highlight this plot"
                 >
                   <td className="border-b border-[#344055]/70 px-2 py-2">{r.sr}</td>
                   <td className="border-b border-[#344055]/70 px-2 py-2">{r.project}</td>
