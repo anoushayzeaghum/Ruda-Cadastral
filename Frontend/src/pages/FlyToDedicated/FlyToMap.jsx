@@ -569,8 +569,8 @@ export default function GISMetaverseMap({
       // Fix Z-Index race condition: Force plot layers to render on top of the block background
       [
         LAYERS.masterPlanFill,
-        LAYERS.masterPlanHover,
         LAYERS.masterPlanLine,
+        LAYERS.masterPlanHover,
         LAYERS.masterPlanLabel
       ].forEach(id => {
         if (map.getLayer(id)) map.moveLayer(id);
@@ -583,8 +583,8 @@ export default function GISMetaverseMap({
             (f) => String(f.properties?.plot_no) === String(filters.plotNo)
           );
           if (targetFeatures.length > 0) {
-            const gids = targetFeatures.map(f => String(f.properties?.gid || f.id || ""));
-            map.setFilter(LAYERS.masterPlanHover, ["in", ["to-string", ["get", "gid"]], ...gids]);
+            // Filter directly by plot_no which is guaranteed to exist
+            map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "plot_no"]], String(filters.plotNo)]);
             map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 1);
             map.setPaintProperty(LAYERS.masterPlanHover, "line-color", "#00ffaa");
           } else {
