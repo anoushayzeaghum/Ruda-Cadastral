@@ -73,7 +73,20 @@ export const getPlotsGeoJSON = async (filters = {}) => {
 
   return unwrapGeoJSON(res.data);
 };
+const naturalSort = (a, b) => {
+  const ax = String(a).trim();
+  const bx = String(b).trim();
 
+  // extract numbers from strings (Plot-12 → 12)
+  const numA = ax.match(/\d+/)?.[0];
+  const numB = bx.match(/\d+/)?.[0];
+
+  if (numA && numB) {
+    return Number(numA) - Number(numB);
+  }
+
+  return ax.localeCompare(bx, undefined, { numeric: true, sensitivity: "base" });
+};
 export const getPlotOptions = async (filters = {}) => {
   const geojson = await getPlotsGeoJSON(filters);
   const plots = normalizeFeatures(geojson);
@@ -82,11 +95,12 @@ export const getPlotOptions = async (filters = {}) => {
     plotTypes: [...new Set(plots.map((p) => p.type).filter(Boolean))],
     plotNos: [...new Set(plots.map((p) => p.plot_no).filter(Boolean))],
     areas: [...new Set(plots.map((p) => p.plot_area).filter(Boolean))],
+    
   };
 };
 
 export const getPlotOptionsAll = async (filters = {}) => {
-  const geojson = await getPlotsGeoJSON({});
+  const geojson = await getPlotsGeoJSON(filters);
   const plots = normalizeFeatures(geojson);
 
   return {
@@ -97,7 +111,7 @@ export const getPlotOptionsAll = async (filters = {}) => {
     parkFronts: [...new Set(plots.map((p) => p.parkfront).filter(Boolean))],
     roadFacing: [...new Set(plots.map((p) => p.rd_facing).filter(Boolean))],
     possessionStatus: [
-      ...new Set(plots.map((p) => p.poss_st || p.possession).filter(Boolean)),
+      ...new Set(plots.map((p) => p.poss_st ).filter(Boolean)),
     ],
     plotStatus: [...new Set(plots.map((p) => p.canceled).filter(Boolean))],
     categories: [...new Set(plots.map((p) => p.tr_cate).filter(Boolean))],

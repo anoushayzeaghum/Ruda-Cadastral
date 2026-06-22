@@ -36,7 +36,7 @@ export default function FlyToHeader() {
           </div>
 
           <h1 className="truncate text-sm font-normal tracking-wide sm:text-xl md:text-2xl">
-            RUDA GIS METAVERSE
+            RUDA LOCATION INTELLIGENCE
           </h1>
         </div>
 
