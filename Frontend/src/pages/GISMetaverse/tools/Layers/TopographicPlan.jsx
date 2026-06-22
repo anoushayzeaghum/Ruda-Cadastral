@@ -13,8 +13,90 @@ const ORTHO_SOURCE = "gis-handu-gujran-ortho-source";
 const ORTHO_LAYER = "gis-handu-gujran-ortho-layer";
 
 const TOPO_SOURCE = "gis-topo-cb1-source";
-const TOPO_FILL_LAYER = "gis-topo-cb1-fill";
-const TOPO_LINE_LAYER = "gis-topo-cb1-line";
+
+const TOPO_SUB_LAYERS = [
+  {
+    id: "gis-topo-builtup-fill",
+    type: "fill",
+    filter: ["==", ["get", "layer"], "Builtup"],
+    baseOpacity: 0.5,
+    paint: {
+      "fill-color": "#f97316", // Vibrant Amber/Orange for structures
+    },
+  },
+  {
+    id: "gis-topo-builtup-outline",
+    type: "line",
+    filter: ["==", ["get", "layer"], "Builtup"],
+    baseOpacity: 0.8,
+    paint: {
+      "line-color": "#ea580c",
+      "line-width": 1.5,
+    },
+  },
+  {
+    id: "gis-topo-park-fill",
+    type: "fill",
+    filter: ["==", ["get", "layer"], "Park"],
+    baseOpacity: 0.6,
+    paint: {
+      "fill-color": "#22c55e", // Bright Park Green
+    },
+  },
+  {
+    id: "gis-topo-greenbelt-fill",
+    type: "fill",
+    filter: ["==", ["get", "layer"], "Green Belt"],
+    baseOpacity: 0.55,
+    paint: {
+      "fill-color": "#10b981", // Emerald/Teal Green
+    },
+  },
+  {
+    id: "gis-topo-road-line",
+    type: "line",
+    filter: ["==", ["get", "layer"], "Road Track"],
+    baseOpacity: 0.8,
+    paint: {
+      "line-color": "#64748b", // Slate Gray for Road boundaries
+      "line-width": 2,
+    },
+  },
+  {
+    id: "gis-topo-manholes-circle",
+    type: "circle",
+    filter: ["==", ["get", "layer"], "Manholes"],
+    baseOpacity: 0.9,
+    paint: {
+      "circle-color": "#ef4444", // Crimson Red for manholes
+      "circle-radius": 4,
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 1,
+    },
+  },
+  {
+    id: "gis-topo-lightpoles-circle",
+    type: "circle",
+    filter: ["==", ["get", "layer"], "Light Poles"],
+    baseOpacity: 0.9,
+    paint: {
+      "circle-color": "#eab308", // Yellow for light poles
+      "circle-radius": 4.5,
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 1,
+    },
+  },
+  {
+    id: "gis-topo-spotlevel-circle",
+    type: "circle",
+    filter: ["==", ["get", "layer"], "Spot level"],
+    baseOpacity: 0.65,
+    paint: {
+      "circle-color": "#a855f7", // Violet/Purple for survey points
+      "circle-radius": 2.5,
+    },
+  },
+];
 
 // Chahar Bagh / Handu Gujran bounds for fly-to
 const CB_BOUNDS = [
@@ -41,7 +123,12 @@ const ORTHO_TILE_URL =
 
 // Topo_CB_1.geojson is already in WGS84 (CRS84) — no reprojection needed.
 
-export default function TopographicPlan({ map, selectedProjectId }) {
+export default function TopographicPlan({
+  map,
+  selectedProjectId,
+  layerVisibility,
+  setLayerVisibility,
+}) {
   const [open, setOpen] = useState(false);
 
   const [orthoVisible, setOrthoVisible] = useState(false);
@@ -53,8 +140,14 @@ export default function TopographicPlan({ map, selectedProjectId }) {
   const [dtmVisible, setDtmVisible] = useState(false);
   const [dtmOpacity, setDtmOpacity] = useState(85);
 
-  const [topoVisible, setTopoVisible] = useState(false);
-  const [topoOpacity, setTopoOpacity] = useState(80);
+  const topoVisible = !!layerVisibility?.topography;
+  const topoOpacity = layerVisibility?.topographyOpacity ?? 80;
+  const setTopoVisible = (val) => {
+    setLayerVisibility?.((prev) => ({ ...prev, topography: val }));
+  };
+  const setTopoOpacity = (val) => {
+    setLayerVisibility?.((prev) => ({ ...prev, topographyOpacity: val }));
+  };
   const [topoLoading, setTopoLoading] = useState(false);
 
   // ── Lock all layers off when no project is selected ───────────────────────
@@ -65,7 +158,7 @@ export default function TopographicPlan({ map, selectedProjectId }) {
       setDtmVisible(false);
       setTopoVisible(false);
     }
-  }, [selectedProjectId]);
+  }, [selectedProjectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cache reprojected GeoJSON so we don't re-fetch on every opacity change
   const topoDataRef = useRef(null);
@@ -189,14 +282,11 @@ export default function TopographicPlan({ map, selectedProjectId }) {
 
     if (!topoVisible) {
       // Hide layers but keep source to avoid re-fetch on re-toggle
-      if (map.getLayer(TOPO_FILL_LAYER)) {
-        map.setLayoutProperty(TOPO_FILL_LAYER, "visibility", "none");
-      }
-
-      if (map.getLayer(TOPO_LINE_LAYER)) {
-        map.setLayoutProperty(TOPO_LINE_LAYER, "visibility", "none");
-      }
-
+      TOPO_SUB_LAYERS.forEach((sub) => {
+        if (map.getLayer(sub.id)) {
+          map.setLayoutProperty(sub.id, "visibility", "none");
+        }
+      });
       return;
     }
 
@@ -210,50 +300,47 @@ export default function TopographicPlan({ map, selectedProjectId }) {
         map.getSource(TOPO_SOURCE).setData(geojson);
       }
 
-      if (!map.getLayer(TOPO_FILL_LAYER)) {
-        map.addLayer({
-          id: TOPO_FILL_LAYER,
-          type: "fill",
-          source: TOPO_SOURCE,
-          paint: {
-            "fill-color": "#65c96b",
-            "fill-opacity": (topoOpacity / 100) * 0.25,
-          },
-          layout: {
-            visibility: "visible",
-          },
-        });
-      } else {
-        map.setLayoutProperty(TOPO_FILL_LAYER, "visibility", "visible");
-        map.setPaintProperty(
-          TOPO_FILL_LAYER,
-          "fill-opacity",
-          (topoOpacity / 100) * 0.25,
-        );
-      }
+      TOPO_SUB_LAYERS.forEach((sub) => {
+        const opacityVal = (topoOpacity / 100) * sub.baseOpacity;
+        if (!map.getLayer(sub.id)) {
+          const layerDef = {
+            id: sub.id,
+            type: sub.type,
+            source: TOPO_SOURCE,
+            filter: sub.filter,
+            paint: { ...sub.paint },
+            layout: {
+              visibility: "visible",
+            },
+          };
 
-      if (!map.getLayer(TOPO_LINE_LAYER)) {
-        map.addLayer({
-          id: TOPO_LINE_LAYER,
-          type: "line",
-          source: TOPO_SOURCE,
-          paint: {
-            "line-color": "#22c55e",
-            "line-width": 1.2,
-            "line-opacity": topoOpacity / 100,
-          },
-          layout: {
-            visibility: "visible",
-          },
-        });
-      } else {
-        map.setLayoutProperty(TOPO_LINE_LAYER, "visibility", "visible");
-        map.setPaintProperty(
-          TOPO_LINE_LAYER,
-          "line-opacity",
-          topoOpacity / 100,
-        );
-      }
+          // Apply corresponding paint opacity field
+          if (sub.type === "fill") {
+            layerDef.paint["fill-opacity"] = opacityVal;
+          } else if (sub.type === "line") {
+            layerDef.paint["line-opacity"] = opacityVal;
+          } else if (sub.type === "circle") {
+            layerDef.paint["circle-opacity"] = opacityVal;
+            if (sub.paint["circle-stroke-width"]) {
+              layerDef.paint["circle-stroke-opacity"] = opacityVal;
+            }
+          }
+
+          map.addLayer(layerDef);
+        } else {
+          map.setLayoutProperty(sub.id, "visibility", "visible");
+          if (sub.type === "fill") {
+            map.setPaintProperty(sub.id, "fill-opacity", opacityVal);
+          } else if (sub.type === "line") {
+            map.setPaintProperty(sub.id, "line-opacity", opacityVal);
+          } else if (sub.type === "circle") {
+            map.setPaintProperty(sub.id, "circle-opacity", opacityVal);
+            if (sub.paint["circle-stroke-width"]) {
+              map.setPaintProperty(sub.id, "circle-stroke-opacity", opacityVal);
+            }
+          }
+        }
+      });
 
       flyToChaharbagh();
     };
@@ -280,17 +367,21 @@ export default function TopographicPlan({ map, selectedProjectId }) {
   useEffect(() => {
     if (!map || !topoVisible) return;
 
-    if (map.getLayer(TOPO_FILL_LAYER)) {
-      map.setPaintProperty(
-        TOPO_FILL_LAYER,
-        "fill-opacity",
-        (topoOpacity / 100) * 0.25,
-      );
-    }
-
-    if (map.getLayer(TOPO_LINE_LAYER)) {
-      map.setPaintProperty(TOPO_LINE_LAYER, "line-opacity", topoOpacity / 100);
-    }
+    TOPO_SUB_LAYERS.forEach((sub) => {
+      if (map.getLayer(sub.id)) {
+        const opacityVal = (topoOpacity / 100) * sub.baseOpacity;
+        if (sub.type === "fill") {
+          map.setPaintProperty(sub.id, "fill-opacity", opacityVal);
+        } else if (sub.type === "line") {
+          map.setPaintProperty(sub.id, "line-opacity", opacityVal);
+        } else if (sub.type === "circle") {
+          map.setPaintProperty(sub.id, "circle-opacity", opacityVal);
+          if (sub.paint["circle-stroke-width"]) {
+            map.setPaintProperty(sub.id, "circle-stroke-opacity", opacityVal);
+          }
+        }
+      }
+    });
   }, [map, topoOpacity, topoVisible]);
 
   // ── Render ────────────────────────────────────────────────────────────────
