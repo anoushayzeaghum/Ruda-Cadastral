@@ -1,162 +1,221 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import {
   getBlocks,
-  getPlotOptionsAll,
+  getPlotOptions,
   getProjects,
 } from "../../../services/metaverseApi";
 
-export default function FlyToFilter({
-  filters,
-  onApply,
-  onClose,
-}) {
-  const activeProjectId = filters?.projectId || "";
+/* ---------------- utils ---------------- */
+const uniqueSorted = (arr = []) =>
+  [...new Set(arr.filter(Boolean))].sort((a, b) =>
+    String(a).localeCompare(String(b), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    })
+  );
 
+/* ---------------- dropdown ---------------- */
+function SelectBox({ value, onChange, options, placeholder, disabled }) {
+  return (
+    <select
+      className="w-full h-8 bg-[#1d2533] border border-[#344055] rounded px-2 text-xs"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((o, i) => (
+        <option key={i} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/* ---------------- main component ---------------- */
+export default function FlyToFilter({ filters, onApply, onClose }) {
   const [projects, setProjects] = useState([]);
   const [blocks, setBlocks] = useState([]);
-  const [plotOptions, setPlotOptions] = useState({
+  const [options, setOptions] = useState({
+    areas: [],
     plotTypes: [],
     plotNos: [],
   });
 
   const [selected, setSelected] = useState({
-    projectId: activeProjectId,
+    projectId: filters?.projectId || "",
     block: filters?.block || "",
+    area: filters?.area || "",
     plotType: filters?.plotType || "",
     plotNo: filters?.plotNo || "",
   });
 
-  const selectedProjectId = selected.projectId;
-
-  // load projects
+  /* ---------------- load projects ---------------- */
   useEffect(() => {
     getProjects()
       .then(setProjects)
       .catch(console.error);
   }, []);
 
-  // load dependent data
+  /* ---------------- load blocks ---------------- */
   useEffect(() => {
-  if (!selectedProjectId) return;
+    if (!selected.projectId) {
+      setBlocks([]);
+      return;
+    }
 
-  Promise.all([
-    getBlocks(selectedProjectId),
-    getPlotOptionsAll({
-      project_id: selectedProjectId,
+    getBlocks(selected.projectId)
+      .then(setBlocks)
+      .catch(console.error);
+  }, [selected.projectId]);
+
+  /* ---------------- load cascading options ---------------- */
+  useEffect(() => {
+    if (!selected.projectId) {
+      setOptions({ areas: [], plotTypes: [], plotNos: [] });
+      return;
+    }
+
+    getPlotOptions({
+      project_id: selected.projectId,
       block: selected.block || undefined,
+      plot_area: selected.area || undefined,
       type: selected.plotType || undefined,
-    }),
-  ])
-    .then(([b, p]) => {
-      setBlocks(b || []);
-
-      setPlotOptions({
-        plotTypes: p?.plotTypes || [],
-        plotNos: p?.plotNos || [],
-      });
     })
-    .catch(console.error);
+      .then((res) => {
+        setOptions({
+          areas: uniqueSorted(res?.areas || []),
+          plotTypes: uniqueSorted(res?.plotTypes || []),
+          plotNos: uniqueSorted(res?.plotNos || []),
+        });
+      })
+      .catch(console.error);
+  }, [
+    selected.projectId,
+    selected.block,
+    selected.area,
+    selected.plotType,
+  ]);
 
-}, [
-  selectedProjectId,
-  selected.block,
-  selected.plotType
-]);
-
+  /* ---------------- handle change ---------------- */
   const handleChange = (key, value) => {
-  setSelected((prev) => {
-    const updated = { ...prev, [key]: value };
+    setSelected((prev) => {
+      const next = { ...prev, [key]: value };
 
-    if (key === "projectId") {
-      updated.block = "";
-      updated.plotType = "";
-      updated.plotNo = "";
-    }
+      if (key === "projectId") {
+        next.block = "";
+        next.area = "";
+        next.plotType = "";
+        next.plotNo = "";
+      }
 
-    if (key === "block") {
-      updated.plotType = "";
-      updated.plotNo = "";
-    }
+      if (key === "block") {
+        next.area = "";
+        next.plotType = "";
+        next.plotNo = "";
+      }
 
-    if (key === "plotType") {
-      updated.plotNo = "";
-    }
+      if (key === "area") {
+        next.plotType = "";
+        next.plotNo = "";
+      }
 
-    return updated;
-  });
-};
+      if (key === "plotType") {
+        next.plotNo = "";
+      }
+
+      return next;
+    });
+  };
 
   const handleApply = () => {
     onApply?.(selected);
   };
 
+  /* ---------------- mapped options ---------------- */
+  const projectOptions = projects.map((p) => ({
+    value: String(p.gid || p.id),
+    label: p.name || p.project_name,
+  }));
+
+  const blockOptions = blocks.map((b) => ({
+    value: String(b.block || b.name),
+    label: b.block || b.name,
+  }));
+
+  const areaOptions = options.areas.map((a) => ({
+    value: a,
+    label: a,
+  }));
+
+  const plotTypeOptions = options.plotTypes.map((t) => ({
+    value: t,
+    label: t,
+  }));
+
+  const plotNoOptions = options.plotNos.map((p) => ({
+    value: p,
+    label: p,
+  }));
+
+  /* ---------------- UI ---------------- */
   return (
-    <div className="w-[300px] text-white">
+    <div className="w-[320px] text-white bg-[#111827] rounded-md">
       {/* header */}
       <div className="flex items-center justify-between border-b border-[#343c4c] px-3 py-2">
-        <div className="text-xs font-bold">FILTER</div>
+        <div className="text-xs font-bold">FLY TO FILTER</div>
         <button onClick={onClose}>
           <X size={14} />
         </button>
       </div>
 
-      <div className="p-3 space-y-3 text-xs">
+      <div className="p-3 space-y-2 text-xs">
 
         {/* PROJECT */}
-        <select
-          className="w-full h-8 bg-[#1d2533] border border-[#344055] rounded px-2"
+        <SelectBox
           value={selected.projectId}
-          onChange={(e) => handleChange("projectId", e.target.value)}
-        >
-          <option value="">Select Project</option>
-          {projects.map((p) => (
-            <option key={p.gid || p.id} value={p.gid || p.id}>
-              {p.name || p.project_name}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => handleChange("projectId", v)}
+          options={projectOptions}
+          placeholder="Select Project"
+        />
 
         {/* BLOCK */}
-        <select
-          className="w-full h-8 bg-[#1d2533] border border-[#344055] rounded px-2"
+        <SelectBox
           value={selected.block}
-          onChange={(e) => handleChange("block", e.target.value)}
-          disabled={!selectedProjectId}
-        >
-          <option value="">Select Block</option>
-          {blocks.map((b, i) => (
-            <option key={i} value={b.block || b.name}>
-              {b.block || b.name}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => handleChange("block", v)}
+          options={blockOptions}
+          placeholder="Select Block"
+          disabled={!selected.projectId}
+        />
+
+        {/* AREA */}
+        <SelectBox
+          value={selected.area}
+          onChange={(v) => handleChange("area", v)}
+          options={areaOptions}
+          placeholder="Select Area"
+          disabled={!selected.projectId}
+        />
 
         {/* TYPE */}
-        <select
-          className="w-full h-8 bg-[#1d2533] border border-[#344055] rounded px-2"
+        <SelectBox
           value={selected.plotType}
-          onChange={(e) => handleChange("plotType", e.target.value)}
-          disabled={!selectedProjectId}
-        >
-          <option value="">Select Type</option>
-          {plotOptions.plotTypes.map((t, i) => (
-            <option key={i} value={t}>{t}</option>
-          ))}
-        </select>
+          onChange={(v) => handleChange("plotType", v)}
+          options={plotTypeOptions}
+          placeholder="Select Plot Type"
+          disabled={!selected.projectId}
+        />
 
         {/* PLOT NO */}
-        <select
-          className="w-full h-8 bg-[#1d2533] border border-[#344055] rounded px-2"
+        <SelectBox
           value={selected.plotNo}
-          onChange={(e) => handleChange("plotNo", e.target.value)}
-          disabled={!selectedProjectId}
-        >
-          <option value="">Select Plot No</option>
-          {plotOptions.plotNos.map((p, i) => (
-            <option key={i} value={p}>{p}</option>
-          ))}
-        </select>
+          onChange={(v) => handleChange("plotNo", v)}
+          options={plotNoOptions}
+          placeholder="Select Plot No"
+          disabled={!selected.projectId}
+        />
 
         {/* ACTIONS */}
         <div className="flex gap-2 pt-2">
