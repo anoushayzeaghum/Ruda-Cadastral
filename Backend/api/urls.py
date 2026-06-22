@@ -24,12 +24,6 @@ router.register(r"mauza/update", UpdateMauzaView, basename="update-mauza")
 router.register(r"mauza/delete", DeleteMauzaView, basename="delete-mauza")
 router.register(r"mauza/import", ImportMauzaView, basename="import-mauza")
 
-#--------------------------------- Murabba View ---------------------------------
-router.register(r"murabba", ListMurabbaView, basename="murabba")
-router.register(r"murabba/create", CreateMurabbaView, basename="create-murabba")
-router.register(r"murabba/update", UpdateMurabbaView, basename="update-murabba")
-router.register(r"murabba/delete", DeleteMurabbaView, basename="delete-murabba")
-
 #--------------------------------- Khasra View ---------------------------------
 router.register(r"khasra", ListKhasraView, basename="khasra")   
 router.register(r"khasra/create", CreateKhasraView, basename="create-khasra")
@@ -170,7 +164,7 @@ urlpatterns = [
     path("import/district/", import_district_shapefile),
     path("import/tehsil/", import_tehsil_shapefile),
     path("import/mauza/", import_mauza_shapefile),
-    path("import/murabba/", import_murabba_shapefile),
+    # path("import/square/", import_square_shapefile),
     path("import/khasra/", import_khasra_shapefile),
     
     path('', include(router.urls)),

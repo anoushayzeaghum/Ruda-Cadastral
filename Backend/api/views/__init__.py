@@ -1,7 +1,6 @@
 from .District import *
 from .Tehsils import *
 from .Mauza import *
-from .Murabba import *
 from .Khasra import *
 from .Society import *
 from .MasterPlanView import *

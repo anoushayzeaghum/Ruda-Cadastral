@@ -3,7 +3,10 @@ import { LAYERS } from "./LayerManager/MetaverseLayerConfig";
 const ADMIN_LOCATION_FIELDS = [
   { keys: ["district", "District"], label: "District" },
   { keys: ["tehsil", "Tehsil"], label: "Tehsil" },
-  { keys: ["mauza", "Mauza", "Mouza", "mouza", "moza", "Moza"], label: "Mauza" },
+  {
+    keys: ["mauza", "Mauza", "Mouza", "mouza", "moza", "Moza"],
+    label: "Mauza",
+  },
 ];
 
 export const PLOT_POPUP_FIELDS = [
@@ -38,7 +41,7 @@ export const TOPO_LAYER_IDS = {
 
 export const LAND_REVENUE_LAYER_IDS = {
   moza: { fill: "gism-lrr-moza-fill", line: "gism-lrr-moza-line" },
-  murabba: { fill: "gism-lrr-murabba-fill", line: "gism-lrr-murabba-line" },
+  square: { fill: "gism-lrr-square-fill", line: "gism-lrr-square-line" },
   khasra: { fill: "gism-lrr-khasra-fill", line: "gism-lrr-khasra-line" },
 };
 
@@ -282,18 +285,18 @@ export const VECTOR_POPUP_GROUPS = [
     ],
   },
   {
-    id: "lrrMurabba",
-    label: "Murabba",
+    id: "lrrSquare",
+    label: "Square",
     layerIds: [
-      LAND_REVENUE_LAYER_IDS.murabba.fill,
-      LAND_REVENUE_LAYER_IDS.murabba.line,
+      LAND_REVENUE_LAYER_IDS.square.fill,
+      LAND_REVENUE_LAYER_IDS.square.line,
     ],
-    titlePrefix: "Murabba",
-    titleKeys: ["m", "murabba_no", "sheets"],
+    titlePrefix: "Square",
+    titleKeys: ["sq", "SQ", "square", "Square"],
     fields: [
       ...ADMIN_LOCATION_FIELDS,
-      { keys: ["m", "murabba_no"], label: "Murabba No" },
-      { keys: ["sheets"], label: "Sheets" },
+      { keys: ["sq", "SQ", "square", "Square"], label: "Square No" },
+      { keys: ["layer", "Layer"], label: "Layer" },
       { key: "gid", label: "ID" },
     ],
   },

@@ -164,35 +164,6 @@ class MauzaSerializer(GeoFeatureModelSerializer):
         )
 
 
-# --------------------------------------------------------
-# Murabba Serializer
-# District → Tehsil → Mauza → Murabba
-# --------------------------------------------------------
-
-class MurabbaSerializer(GeoFeatureModelSerializer):
-
-    class Meta:
-        model = Murabba
-        geo_field = "geom"
-        id_field = "gid"
-
-        fields = (
-            "gid",
-            "district",
-            "dist_id",
-            "tehsil",
-            "tehsil_id",
-            "kc",
-            "kc_id",
-            "pc",
-            "pc_id",
-            "mauza",
-            "mauza_id",
-            "murabba_no",
-            "sheets",
-            "geom",
-        )
-
 
 # --------------------------------------------------------
 # Khasra Serializer - New Format
@@ -431,6 +402,7 @@ class SquareSerializer(GeoFeatureModelSerializer):
             "mauza",
             "mauza_id",
             "sq",
+            "square_id",
             "layer",
             "geom",
         )
@@ -691,7 +663,6 @@ class ProjectMauzaSerializer(serializers.ModelSerializer):
 
     mauza_detail = MauzaSerializer(source="mauza", read_only=True)
     khasra_detail = KhasraSerializer(source="khasra", read_only=True)
-    murabba_detail = MurabbaSerializer(source="murabba", read_only=True)
 
     class Meta:
         model = ProjectMauza
@@ -699,7 +670,9 @@ class ProjectMauzaSerializer(serializers.ModelSerializer):
             "id",
             "project",
             "mauza",
-            "mauza_detail", "khasra", "khasra_detail", "murabba", "murabba_detail",
+            "mauza_detail",
+            "khasra",
+            "khasra_detail",
+            "square_id",
         )
-
     
