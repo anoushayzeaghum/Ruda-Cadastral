@@ -21,656 +21,92 @@ import {
   getTrijunctionPoints,
 } from "../../services/api";
 
+import {
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  KHASRA_SOURCE,
+  KHASRA_FILL,
+  KHASRA_LINE,
+  KHASRA_LABEL,
+  MURABBA_SOURCE,
+  MURABBA_FILL,
+  MURABBA_LINE,
+  MURABBA_LABEL,
+  SQUARE_LEVEL,
+  ACRE_LEVEL,
+  SELECTED_SOURCE,
+  SELECTED_CORNER_LAYER,
+  SELECTED_CORNER_BOX_LAYER,
+  SELECTED_CORNER_TEXT_LAYER,
+  CONTROL_POINTS_SOURCE,
+  CONTROL_POINTS_LAYER,
+  TRI_JUNCTION_POINTS_SOURCE,
+  TRI_JUNCTION_POINTS_LAYER,
+  TRI_JUNCTION_POINTS_LABEL,
+  TRI_JUNCTION_BURJI_LAYER,
+  TRI_JUNCTION_BURJI_LABEL,
+  FIELD_POINTS_SOURCE,
+  FIELD_POINTS_LAYER,
+  FIELD_POINTS_LABEL,
+  GEODETIC_NETWORK_SOURCE,
+  GEODETIC_NETWORK_LAYER,
+  GEODETIC_NETWORK_LABEL,
+  MEASURE_SOURCE,
+  MEASURE_AREA_SOURCE,
+  MEASURE_AREA_FILL_LAYER,
+  MEASURE_AREA_LINE_LAYER,
+  MEASURE_AREA_POINTS_LAYER,
+  MEASURE_AREA_LABEL_LAYER,
+  BEARING_SOURCE,
+  BEARING_LINE_LAYER,
+  BEARING_POINTS_LAYER,
+  BEARING_LABEL_LAYER,
+  BUFFER_SOURCE,
+  BUFFER_FILL_LAYER,
+  BUFFER_LINE_LAYER,
+  BUFFER_CENTER_LAYER,
+  VECTOR_LAYER_THEME,
+  clampOpacity,
+  getPointLabelLayerId,
+  VECTOR_LABEL_FIELDS,
+  prepareRudaGeojsonForDisplay,
+  normalizeRoadLayerName,
+  emptyFeatureCollection,
+  mergeFeatureCollections,
+  computeArea,
+  BASEMAP_STYLES,
+  getKhasraNumber,
+  getMurabbaNumber,
+  getLayerVisible,
+  getLayerOpacity,
+  getLayerForceLoad,
+  boundaryLevelToLayerKey,
+  getSelectedMauzaId,
+  featureMatchesSelectedMauza,
+  explodePointGeoJSON,
+  pointBelongsToMauza,
+  filterPointGeoJSONByArea,
+  keepValidPointFeaturesForMap,
+  getBoundaryIds,
+  removeBoundaryLevelLayers,
+  addBoundaryLevelLayers,
+  addKhasraLayerStyles,
+  addMurabbaLayerStyles,
+  addPointLayerStyles,
+  addTriJunctionLayerStyles,
+  ensureSelectedLayerStyles,
+  buildCornerMarkerFeatureCollection,
+  addCornerMarkerLayerStyles,
+  HANDU_GUJRAN_BOUNDS,
+  restoreHanduGujranOrthoLayer,
+  ensureMeasureLayerStyles,
+  ensureMeasureAreaLayerStyles,
+  ensureBearingLayerStyles,
+  BUFFER_RADIUS_M,
+  addBufferLayerStyles,
+} from "./LayerManager/index.js";
+
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
-
-// Start zoomed out so the globe/world is visible on initial load
-const DEFAULT_CENTER = [69.3451, 30.3753];
-const DEFAULT_ZOOM = 5;
-
-const KHASRA_SOURCE = "khasra-source";
-const KHASRA_FILL = "khasra-fill";
-const KHASRA_LINE = "khasra-line";
-const KHASRA_LABEL = "khasra-label";
-
-const MURABBA_SOURCE = "murabba-source";
-const MURABBA_FILL = "murabba-fill";
-const MURABBA_LINE = "murabba-line";
-const MURABBA_LABEL = "murabba-label";
-
-const SQUARE_LEVEL = "square";
-const ACRE_LEVEL = "acre";
-
-const SELECTED_SOURCE = "selected-source";
-const SELECTED_FILL = "selected-fill";
-const SELECTED_LINE = "selected-line";
-const SELECTED_CORNER_SOURCE = "selected-corner-source";
-const SELECTED_CORNER_LAYER = "selected-corner-layer";
-const SELECTED_CORNER_BOX_LAYER = "selected-corner-box-layer";
-const SELECTED_CORNER_TEXT_LAYER = "selected-corner-text-layer";
-
-const CONTROL_POINTS_SOURCE = "control-points-source";
-const CONTROL_POINTS_LAYER = "control-points-layer";
-
-const TRI_JUNCTION_POINTS_SOURCE = "tri-junction-points-source";
-const TRI_JUNCTION_POINTS_LAYER = "tri-junction-points-layer";
-const TRI_JUNCTION_POINTS_LABEL = "tri-junction-points-label";
-const TRI_JUNCTION_TRIANGLE_IMAGE = "tri-junction-triangle-marker";
-
-const FIELD_POINTS_SOURCE = "field-points-source";
-const FIELD_POINTS_LAYER = "field-points-layer";
-const FIELD_POINTS_LABEL = "field-points-label";
-
-const GEODETIC_NETWORK_SOURCE = "geodetic-network-source";
-const GEODETIC_NETWORK_LAYER = "geodetic-network-layer";
-const GEODETIC_NETWORK_LABEL = "geodetic-network-label";
-
-const HANDU_GUJRAN_ORTHO_SOURCE = "local-handugujran-ortho-source";
-const HANDU_GUJRAN_ORTHO_LAYER = "local-handugujran-ortho-layer";
-
-const MEASURE_SOURCE = "measure-source";
-const MEASURE_LINE_LAYER = "measure-line-layer";
-const MEASURE_POINTS_LAYER = "measure-points-layer";
-const MEASURE_LABELS_LAYER = "measure-labels-layer";
-
-const MEASURE_AREA_SOURCE = "measure-area-source";
-const MEASURE_AREA_FILL_LAYER = "measure-area-fill-layer";
-const MEASURE_AREA_LINE_LAYER = "measure-area-line-layer";
-const MEASURE_AREA_POINTS_LAYER = "measure-area-points-layer";
-const MEASURE_AREA_LABEL_LAYER = "measure-area-label-layer";
-
-const BEARING_SOURCE = "bearing-source";
-const BEARING_LINE_LAYER = "bearing-line-layer";
-const BEARING_POINTS_LAYER = "bearing-points-layer";
-const BEARING_LABEL_LAYER = "bearing-label-layer";
-
-const BUFFER_SOURCE = "buffer-source";
-const BUFFER_FILL_LAYER = "buffer-fill-layer";
-const BUFFER_LINE_LAYER = "buffer-line-layer";
-const BUFFER_CENTER_LAYER = "buffer-center-layer";
-
-const MAP_THEME = {
-  fillColor: "#158033",
-  fillOpacity: 0.2,
-  lineColor: "#1e3a5f",
-  lineWidth: 2,
-};
-
-const VECTOR_LAYER_THEME = {
-  mauza: {
-    fill: "#dbeafe",
-    fillOpacity: 0.12,
-    line: "#1d4ed8",
-    lineWidth: 2.2,
-    label: "#1e3a8a",
-    labelMinZoom: 11,
-  },
-  khasra: {
-    fill: "#fef3c7",
-    fillOpacity: 0.05,
-    line: "#d97706",
-    lineWidth: ["interpolate", ["linear"], ["zoom"], 12, 0.8, 16, 1.6, 19, 2.3],
-    label: "#92400e",
-    labelMinZoom: 16,
-  },
-  murabba: {
-    fill: "#dcfce7",
-    fillOpacity: 0.04,
-    line: "#059669",
-    lineWidth: ["interpolate", ["linear"], ["zoom"], 11, 1.0, 15, 1.8, 18, 2.4],
-    label: "#065f46",
-    labelMinZoom: 14,
-  },
-  square: {
-    fill: "#dcfce7",
-    fillOpacity: 0.04,
-    line: "#059669",
-    lineWidth: ["interpolate", ["linear"], ["zoom"], 11, 1.0, 15, 1.8, 18, 2.4],
-    label: "#065f46",
-    labelMinZoom: 14,
-  },
-  acre: {
-    fill: "#f3e8ff",
-    fillOpacity: 0.04,
-    line: "#7c3aed",
-    lineWidth: ["interpolate", ["linear"], ["zoom"], 12, 0.9, 16, 1.6, 19, 2.2],
-    label: "#581c87",
-    labelMinZoom: 15,
-  },
-  defaultBoundary: {
-    fill: "#e0f2fe",
-    fillOpacity: 0.06,
-    line: "#194c8e",
-    lineWidth: 2,
-    label: "#1e3a8a",
-    labelMinZoom: 12,
-  },
-  trijunction: {
-    circle: "#dc2626",
-    stroke: "#ffffff",
-    label: "#991b1b",
-  },
-  fieldPoints: {
-    circle: "#2563eb",
-    stroke: "#ffffff",
-    label: "#1e3a8a",
-  },
-  geodeticNetwork: {
-    circle: "#1d4ed8",
-    stroke: "#dbeafe",
-    label: "#0f2f5f",
-  },
-  controlPoints: {
-    circle: "#f59e0b",
-    stroke: "#78350f",
-    label: "#92400e",
-  },
-};
-
-const clampOpacity = (value, fallback = 100) => {
-  const number = Number(value);
-  const safeNumber = Number.isFinite(number) ? number : fallback;
-  return Math.max(0, Math.min(1, safeNumber / 100));
-};
-
-const getPointLabelLayerId = (layerId) => `${layerId}-label`;
-
-const makeLabelExpression = (fields = [], fallback = "") => [
-  "to-string",
-  ["coalesce", ...fields.map((field) => ["get", field]), fallback],
-];
-
-const VECTOR_LABEL_FIELDS = {
-  mauza: makeLabelExpression(["mauza", "Mauza", "MAUZA", "name", "Name"]),
-  khasra: makeLabelExpression(["kh", "KH", "k", "K", "khasra", "khasra_no", "khasra_id", "name"]),
-  murabba: makeLabelExpression(["m", "M", "mn", "murabba", "murabba_no", "murabba_id", "name"]),
-  square: makeLabelExpression(["sq", "SQ", "square", "square_no", "name", "gid"]),
-  acre: makeLabelExpression(["acre", "acre_no", "ac", "name", "gid"]),
-  trijunction: [
-    "to-string",
-    [
-      "coalesce",
-      ["get", "name"],
-      ["get", "code"],
-      ["get", "point_no"],
-      [
-        "concat",
-        ["coalesce", ["get", "m1"], ""],
-        " / ",
-        ["coalesce", ["get", "m2"], ""],
-        " / ",
-        ["coalesce", ["get", "m3"], ""],
-      ],
-      "",
-    ],
-  ],
-  fieldPoints: makeLabelExpression(["name", "Name", "code", "Code", "point_no", "gm_type", "gid"]),
-  geodeticNetwork: makeLabelExpression(["name", "Name", "NAME", "code", "Code", "CODE"]),
-};
-
-const getBoundaryTheme = (level) => {
-  if (level === "mauza") return VECTOR_LAYER_THEME.mauza;
-  if (level === "murabba") return VECTOR_LAYER_THEME.murabba;
-  if (level === SQUARE_LEVEL) return VECTOR_LAYER_THEME.square;
-  if (level === ACRE_LEVEL) return VECTOR_LAYER_THEME.acre;
-  return VECTOR_LAYER_THEME.defaultBoundary;
-};
-
-const getBoundaryLabelExpression = (level) => {
-  if (level === "mauza") return VECTOR_LABEL_FIELDS.mauza;
-  if (level === "murabba") return VECTOR_LABEL_FIELDS.murabba;
-  if (level === SQUARE_LEVEL) return VECTOR_LABEL_FIELDS.square;
-  if (level === ACRE_LEVEL) return VECTOR_LABEL_FIELDS.acre;
-  return null;
-};
-
-const ROAD_LEGEND_ITEMS = [
-  { label: "Primary Roads (300'-Wide)", color: "#c92020", width: 2 },
-  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 3 },
-  { label: "Tertiary Roads", color: "#ff9800", width: 3 },
-  { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
-  { label: "Uti Walk Cycle", color: "#8bc34a", width: 2 },
-  { label: "Bridge", color: "#75008a", width: 5 },
-  { label: "300' CL", color: "#9b2400", width: 2 },
-  { label: "300' ROW", color: "#00bcd4", width: 2.5 },
-];
-
-const ROAD_COLOR_EXPRESSION = [
-  "match",
-  ["get", "layer"],
-  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.color]),
-  "#555555",
-];
-
-const ROAD_WIDTH_EXPRESSION = [
-  "match",
-  ["get", "layer"],
-  ...ROAD_LEGEND_ITEMS.flatMap((item) => [item.label, item.width]),
-  2.5,
-];
-
-const RUDA_PHASE_COLORS = [
-  "#6bb7e8",
-  "#f8d56b",
-  "#6bd69a",
-  "#f59e72",
-  "#b99cf3",
-  "#78d6d0",
-  "#f3a6c8",
-  "#a7d77b",
-  "#f4b860",
-  "#86a8e7",
-  "#d7b377",
-  "#8dd3c7",
-];
-
-const hashString = (value = "") => {
-  const text = String(value || "");
-  let hash = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-};
-
-const stripHtml = (value = "") =>
-  String(value || "")
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-const getRudaPhaseColor = (phaseId) => {
-  const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
-  return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
-};
-
-const getRudaPhaseIdFromLevel = (level = "") => {
-  const match = String(level).match(/^ruda-(.+)$/);
-  return match?.[1] || "";
-};
-
-const getRudaPhaseLabel = (props = {}, phaseId = "") => {
-  const candidates = [
-    props.phase,
-    props.phase_name,
-    props.name,
-    props.folderpath,
-    props.popupinfo,
-    props.snippet,
-  ];
-
-  for (const value of candidates) {
-    const clean = stripHtml(value);
-    if (!clean) continue;
-
-    const phaseMatch = clean.match(/phase\s*[-_:]?\s*([a-z0-9]+)/i);
-    if (phaseMatch?.[1]) return `Phase ${phaseMatch[1]}`;
-
-    if (clean.length <= 28) return clean;
-    return clean.slice(0, 28);
-  }
-
-  return phaseId ? `Phase ${phaseId}` : "RUDA Phase";
-};
-
-const prepareRudaGeojsonForDisplay = (level, geojson) => {
-  const phaseId = getRudaPhaseIdFromLevel(level);
-  const color = getRudaPhaseColor(phaseId);
-
-  return {
-    type: "FeatureCollection",
-    features: (geojson?.features || []).map((feature) => {
-      const props = feature?.properties || {};
-      return {
-        ...feature,
-        properties: {
-          ...props,
-          _ruda_phase_id: phaseId,
-          _ruda_phase_color: color,
-          _ruda_phase_label: getRudaPhaseLabel(props, phaseId),
-        },
-      };
-    }),
-  };
-};
-
-const normalizeRoadLayerName = (value) => String(value ?? "").trim();
-
-const emptyFeatureCollection = () => ({
-  type: "FeatureCollection",
-  features: [],
-});
-
-const mergeFeatureCollections = (collections) => ({
-  type: "FeatureCollection",
-  features: collections.flatMap((collection) =>
-    Array.isArray(collection?.features) ? collection.features : [],
-  ),
-});
-
-function ringArea(coords) {
-  let area = 0;
-  if (!coords || coords.length === 0) return 0;
-
-  for (let i = 0, len = coords.length; i < len; i++) {
-    const p1 = coords[i];
-    const p2 = coords[(i + 1) % len];
-    const lon1 = (p1[0] * Math.PI) / 180;
-    const lat1 = (p1[1] * Math.PI) / 180;
-    const lon2 = (p2[0] * Math.PI) / 180;
-    const lat2 = (p2[1] * Math.PI) / 180;
-    area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
-  }
-
-  return (Math.abs(area) * 6378137 * 6378137) / 2.0;
-}
-
-function computeArea(feature) {
-  if (!feature || !feature.geometry) return 0;
-
-  const geom = feature.geometry;
-  let total = 0;
-
-  if (geom.type === "Polygon") {
-    geom.coordinates.forEach((ring) => {
-      total += ringArea(ring);
-    });
-  } else if (geom.type === "MultiPolygon") {
-    geom.coordinates.forEach((poly) => {
-      poly.forEach((ring) => {
-        total += ringArea(ring);
-      });
-    });
-  }
-
-  return Math.abs(total);
-}
-
-const BASEMAP_STYLES = {
-  Satellite: "mapbox://styles/mapbox/satellite-streets-v12",
-  Streets: "mapbox://styles/mapbox/streets-v12",
-  Light: "mapbox://styles/mapbox/light-v11",
-  Dark: "mapbox://styles/mapbox/dark-v11",
-  Outdoors: "mapbox://styles/mapbox/outdoors-v12",
-};
-
-class BasemapControl {
-  onAdd(map) {
-    this.map = map;
-
-    const container = document.createElement("div");
-    container.className =
-      "mapboxgl-ctrl mapboxgl-ctrl-group bg-white rounded shadow";
-
-    const select = document.createElement("select");
-    select.style.padding = "4px";
-    select.style.fontSize = "12px";
-    select.style.border = "none";
-    select.style.outline = "none";
-    select.style.cursor = "pointer";
-
-    Object.keys(BASEMAP_STYLES).forEach((name) => {
-      const option = document.createElement("option");
-      option.value = BASEMAP_STYLES[name];
-      option.textContent = name;
-      select.appendChild(option);
-    });
-
-    select.onchange = (e) => {
-      map.setStyle(e.target.value);
-    };
-
-    container.appendChild(select);
-    this.container = container;
-
-    return container;
-  }
-
-  onRemove() {
-    if (this.container?.parentNode) {
-      this.container.parentNode.removeChild(this.container);
-    }
-    this.map = undefined;
-  }
-}
-
-const getKhasraNumber = (props = {}) => {
-  return (
-    props.kh ??
-    props.KH ??
-    props.k ??
-    props.K ??
-    props.khasra ??
-    props.khasra_no ??
-    props.khasra_id ??
-    null
-  );
-};
-
-const getMurabbaNumber = (props = {}) => {
-  return (
-    props.m ??
-    props.M ??
-    props.mn ??
-    props.murabba ??
-    props.murabba_no ??
-    props.murabba_id ??
-    null
-  );
-};
-
-const getLayerVisible = (layers = {}, key, fallback = true) => {
-  const value = layers?.[key];
-  if (typeof value === "object") return value.visible !== false;
-  if (typeof value === "boolean") return value;
-  return fallback;
-};
-
-const getLayerOpacity = (layers = {}, key, fallback = 100) => {
-  const value = layers?.[key];
-  if (typeof value === "object" && Number.isFinite(Number(value.opacity))) {
-    return Number(value.opacity);
-  }
-  return fallback;
-};
-
-const getLayerForceLoad = (layers = {}, key) => {
-  const value = layers?.[key];
-  return typeof value === "object" ? !!value.forceLoad : false;
-};
-
-const boundaryLevelToLayerKey = (level) => {
-  if (level === "district") return "districtBoundary";
-  if (level === "tehsil") return "tehsilBoundary";
-  if (level === "mauza") return "mauzaBoundary";
-  if (level === SQUARE_LEVEL) return "squareLayer";
-  if (level === ACRE_LEVEL) return "acreLayer";
-  if (level?.startsWith?.("proposed-road")) return "proposedRoads";
-  if (level?.startsWith?.("ruda")) return "rudaBoundary";
-  return null;
-};
-
-const normalizeComparableValue = (value) => {
-  if (value === null || value === undefined || value === "") return "";
-
-  const text = String(value).trim().toLowerCase();
-  if (!text) return "";
-
-  const numericValue = Number(text);
-  if (Number.isFinite(numericValue)) return String(numericValue);
-
-  return text;
-};
-
-const getSelectedMauzaId = (selectedMauza) => {
-  if (!selectedMauza) return "";
-
-  if (typeof selectedMauza === "object") {
-    return (
-      selectedMauza.mauza_id ??
-      selectedMauza.moza_id ??
-      selectedMauza.mouza_id ??
-      selectedMauza.id ??
-      selectedMauza.gid ??
-      ""
-    );
-  }
-
-  return selectedMauza;
-};
-
-const getFeatureMauzaValues = (feature = {}) => {
-  const props = feature.properties || feature || {};
-
-  return [
-    props.mauza_id,
-    props.MAUZA_ID,
-    props.moza_id,
-    props.mouza_id,
-    props.mauza_gid,
-    props.mauza,
-    props.Mauza,
-    props.moza,
-    props.Moza,
-    props.mouza,
-    props.Mouza,
-  ]
-    .map(normalizeComparableValue)
-    .filter(Boolean);
-};
-
-const featureMatchesSelectedMauza = (feature, selectedMauza) => {
-  const selectedValues = [
-    getSelectedMauzaId(selectedMauza),
-    typeof selectedMauza === "object" ? selectedMauza?.mauza : selectedMauza,
-    typeof selectedMauza === "object" ? selectedMauza?.name : "",
-  ]
-    .map(normalizeComparableValue)
-    .filter(Boolean);
-
-  if (!selectedValues.length) return false;
-
-  const selectedSet = new Set(selectedValues);
-  return getFeatureMauzaValues(feature).some((value) => selectedSet.has(value));
-};
-
-const explodePointGeoJSON = (pointGeojson) => ({
-  type: "FeatureCollection",
-  features: (pointGeojson?.features || []).flatMap((feature, featureIndex) => {
-    const geometry = feature?.geometry || {};
-    const props = feature?.properties || {};
-
-    if (geometry.type === "Point") {
-      return [feature];
-    }
-
-    if (geometry.type === "MultiPoint" && Array.isArray(geometry.coordinates)) {
-      return geometry.coordinates
-        .filter(
-          (coordinate) =>
-            Array.isArray(coordinate) &&
-            coordinate.length >= 2 &&
-            Number.isFinite(Number(coordinate[0])) &&
-            Number.isFinite(Number(coordinate[1])),
-        )
-        .map((coordinate, pointIndex) => ({
-          type: "Feature",
-          id: `${feature?.id ?? props.gid ?? featureIndex}-${pointIndex}`,
-          geometry: {
-            type: "Point",
-            coordinates: [Number(coordinate[0]), Number(coordinate[1])],
-          },
-          properties: {
-            ...props,
-            _pointIndex: pointIndex,
-          },
-        }));
-    }
-
-    return [];
-  }),
-});
-
-const pointBelongsToMauza = (feature, selectedMauza) => {
-  if (!feature || !selectedMauza) return false;
-
-  const props = feature.properties || {};
-
-  if (featureMatchesSelectedMauza(feature, selectedMauza)) return true;
-
-  const mauzaName = normalizeComparableValue(
-    selectedMauza?.mauza || selectedMauza?.name || selectedMauza || "",
-  );
-  const mauzaIdText = normalizeComparableValue(
-    getSelectedMauzaId(selectedMauza),
-  );
-
-  const names = [props.m1, props.m2, props.m3]
-    .map(normalizeComparableValue)
-    .filter(Boolean);
-
-  const ids = [props.m1_id, props.m2_id, props.m3_id]
-    .map(normalizeComparableValue)
-    .filter(Boolean);
-
-  return (
-    (!!mauzaName && names.includes(mauzaName)) ||
-    (!!mauzaIdText && ids.includes(mauzaIdText))
-  );
-};
-
-const filterPointGeoJSONByArea = (pointGeojson, areaGeojson) => {
-  const points = explodePointGeoJSON(pointGeojson).features;
-  const polygons = (areaGeojson?.features || []).filter((feature) =>
-    ["Polygon", "MultiPolygon"].includes(feature?.geometry?.type),
-  );
-
-  if (!points.length || !polygons.length) {
-    return emptyFeatureCollection();
-  }
-
-  return {
-    type: "FeatureCollection",
-    features: points.filter((pointFeature) => {
-      if (pointFeature?.geometry?.type !== "Point") return false;
-
-      return polygons.some((polygonFeature) => {
-        try {
-          return turf.booleanPointInPolygon(pointFeature, polygonFeature);
-        } catch (e) {
-          return false;
-        }
-      });
-    }),
-  };
-};
-
-const ensureTriangleIcon = (map) => {
-  if (!map || map.hasImage(TRI_JUNCTION_TRIANGLE_IMAGE)) return;
-
-  const size = 64;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-
-  const ctx = canvas.getContext("2d");
-
-  ctx.beginPath();
-  ctx.moveTo(size / 2, 6);
-  ctx.lineTo(size - 8, size - 8);
-  ctx.lineTo(8, size - 8);
-  ctx.closePath();
-
-  ctx.fillStyle = VECTOR_LAYER_THEME.trijunction.circle;
-  ctx.fill();
-
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = VECTOR_LAYER_THEME.trijunction.label;
-  ctx.stroke();
-
-  const imageData = ctx.getImageData(0, 0, size, size);
-  map.addImage(TRI_JUNCTION_TRIANGLE_IMAGE, imageData);
-};
 
 export default function MapView({
   selectedDistrict,
@@ -724,6 +160,8 @@ export default function MapView({
     [
       CONTROL_POINTS_LAYER,
       getPointLabelLayerId(CONTROL_POINTS_LAYER),
+      TRI_JUNCTION_BURJI_LAYER,
+      TRI_JUNCTION_BURJI_LABEL,
       TRI_JUNCTION_POINTS_LAYER,
       TRI_JUNCTION_POINTS_LABEL,
       FIELD_POINTS_LAYER,
@@ -1017,14 +455,6 @@ export default function MapView({
     }
   };
 
-  const getBoundaryIds = (level) => ({
-    source: `${level}-boundary-source`,
-    fill: `${level}-boundary-fill`,
-    line: `${level}-boundary-line`,
-    dashLine: `${level}-boundary-dash-line`,
-    label: `${level}-boundary-label`,
-  });
-
   const clearBoundaryLevel = (level) => {
     const map = mapInstance.current;
     if (!map) return;
@@ -1032,11 +462,7 @@ export default function MapView({
     const ids = getBoundaryIds(level);
 
     try {
-      if (map.getLayer(ids.label)) map.removeLayer(ids.label);
-      if (map.getLayer(ids.dashLine)) map.removeLayer(ids.dashLine);
-      if (map.getLayer(ids.line)) map.removeLayer(ids.line);
-      if (map.getLayer(ids.fill)) map.removeLayer(ids.fill);
-      if (map.getSource(ids.source)) map.removeSource(ids.source);
+      removeBoundaryLevelLayers(map, ids);
     } catch (e) {
       console.warn(`Error clearing boundary level ${level}`, e);
     }
@@ -1050,8 +476,6 @@ export default function MapView({
     clearBoundaryLevel(level);
 
     const isRudaLayer = level.startsWith("ruda");
-    const isProposedRoadLayer = level.startsWith("proposed-road");
-    const theme = getBoundaryTheme(level);
 
     const layerOpacity = clampOpacity(
       opacityOverride !== null && opacityOverride !== undefined
@@ -1066,118 +490,13 @@ export default function MapView({
       : geojson || emptyFeatureCollection();
 
     try {
-      map.addSource(ids.source, {
-        type: "geojson",
-        data: sourceGeojson,
+      addBoundaryLevelLayers({
+        map,
+        ids,
+        level,
+        sourceGeojson,
+        layerOpacity,
       });
-
-      if (isProposedRoadLayer) {
-        map.addLayer({
-          id: ids.line,
-          type: "line",
-          source: ids.source,
-          layout: {
-            "line-cap": "round",
-            "line-join": "round",
-          },
-          paint: {
-            "line-color": ROAD_COLOR_EXPRESSION,
-            "line-width": ROAD_WIDTH_EXPRESSION,
-            "line-opacity": layerOpacity,
-          },
-        });
-
-        currentGeojson.current[level] = sourceGeojson;
-        movePointLayersToTop();
-        return;
-      }
-
-      map.addLayer({
-        id: ids.fill,
-        type: "fill",
-        source: ids.source,
-        paint: {
-          "fill-color": isRudaLayer
-            ? ["coalesce", ["get", "_ruda_phase_color"], "#3d7cc4"]
-            : theme.fill,
-          "fill-opacity": isRudaLayer
-            ? layerOpacity
-            : (theme.fillOpacity ?? 0.04) * layerOpacity,
-          "fill-outline-color": isRudaLayer ? "#1f2937" : theme.line,
-        },
-      });
-
-      map.addLayer({
-        id: ids.line,
-        type: "line",
-        source: ids.source,
-        paint: {
-          "line-color": isRudaLayer ? "#111827" : theme.line,
-          "line-width": isRudaLayer ? 2 : theme.lineWidth,
-          "line-opacity": isRudaLayer ? 0.95 : 0.95,
-        },
-      });
-
-      if (isRudaLayer) {
-        map.addLayer({
-          id: ids.dashLine,
-          type: "line",
-          source: ids.source,
-          paint: {
-            "line-color": "#111827",
-            "line-width": 1.2,
-            "line-dasharray": [1.4, 1.2],
-            "line-opacity": 0.9,
-          },
-        });
-
-        map.addLayer({
-          id: ids.label,
-          type: "symbol",
-          source: ids.source,
-          layout: {
-            "text-field": [
-              "coalesce",
-              ["get", "_ruda_phase_label"],
-              "RUDA Phase",
-            ],
-            "text-size": ["interpolate", ["linear"], ["zoom"], 10, 10, 15, 13],
-            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-            "text-allow-overlap": false,
-            "text-ignore-placement": false,
-          },
-          paint: {
-            "text-color": "#111827",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 1.4,
-          },
-        });
-      } else {
-        const labelExpression = getBoundaryLabelExpression(level);
-
-        if (labelExpression) {
-          map.addLayer({
-            id: ids.label,
-            type: "symbol",
-            source: ids.source,
-            minzoom: theme.labelMinZoom ?? 14,
-            layout: {
-              "text-field": labelExpression,
-              "text-size": ["interpolate", ["linear"], ["zoom"], 13, 10, 17, 12],
-              "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-              "text-allow-overlap": false,
-              "text-ignore-placement": false,
-              "text-optional": true,
-            },
-            paint: {
-              "text-color": theme.label,
-              "text-halo-color": "#ffffff",
-              "text-halo-width": 1.25,
-              "text-halo-blur": 0.15,
-            },
-          });
-        }
-      }
 
       currentGeojson.current[level] = sourceGeojson;
       movePointLayersToTop();
@@ -1199,7 +518,11 @@ export default function MapView({
     }
   };
 
-  const clearPointLayer = (sourceId, layerId, labelLayerId = getPointLabelLayerId(layerId)) => {
+  const clearPointLayer = (
+    sourceId,
+    layerId,
+    labelLayerId = getPointLabelLayerId(layerId),
+  ) => {
     const map = mapInstance.current;
     if (!map) return;
 
@@ -1492,48 +815,22 @@ export default function MapView({
     if (!geojson?.features || !Array.isArray(geojson.features)) return;
 
     try {
-      map.addSource(sourceId, {
-        type: "geojson",
-        data: geojson,
+      addPointLayerStyles({
+        map,
+        sourceId,
+        layerId,
+        geojson,
+        color,
+        strokeColor,
+        radius,
+        opacity,
+        labelLayerId,
+        labelExpression,
+        labelColor,
+        labelMinZoom,
+        labelSize,
+        labelOffset,
       });
-
-      map.addLayer({
-        id: layerId,
-        type: "circle",
-        source: sourceId,
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, Math.max(radius - 1.5, 2), 17, radius],
-          "circle-color": color,
-          "circle-stroke-width": 1.6,
-          "circle-stroke-color": strokeColor,
-          "circle-opacity": opacity,
-        },
-      });
-
-      if (labelExpression) {
-        map.addLayer({
-          id: labelLayerId,
-          type: "symbol",
-          source: sourceId,
-          minzoom: labelMinZoom,
-          layout: {
-            "text-field": labelExpression,
-            "text-size": labelSize,
-            "text-offset": labelOffset,
-            "text-anchor": "top",
-            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-            "text-allow-overlap": false,
-            "text-ignore-placement": false,
-            "text-optional": true,
-          },
-          paint: {
-            "text-color": labelColor,
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 1.25,
-            "text-halo-blur": 0.15,
-          },
-        });
-      }
 
       map.on("mouseenter", layerId, handlePointMouseEnter);
       map.on("mouseleave", layerId, handlePointMouseLeave);
@@ -1545,19 +842,58 @@ export default function MapView({
     }
   };
 
+  const clearTriJunctionLayer = () => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    try {
+      closeActivePopup();
+
+      [
+        TRI_JUNCTION_POINTS_LABEL,
+        TRI_JUNCTION_BURJI_LABEL,
+        TRI_JUNCTION_POINTS_LAYER,
+        TRI_JUNCTION_BURJI_LAYER,
+      ].forEach((layerId) => {
+        if (!map.getLayer(layerId)) return;
+
+        if (
+          layerId === TRI_JUNCTION_POINTS_LAYER ||
+          layerId === TRI_JUNCTION_BURJI_LAYER
+        ) {
+          map.off("click", layerId, handlePointClick);
+          map.off("mouseenter", layerId, handlePointMouseEnter);
+          map.off("mouseleave", layerId, handlePointMouseLeave);
+        }
+
+        map.removeLayer(layerId);
+      });
+
+      if (map.getSource(TRI_JUNCTION_POINTS_SOURCE)) {
+        map.removeSource(TRI_JUNCTION_POINTS_SOURCE);
+      }
+    } catch (e) {
+      console.warn("Error clearing tri-junction / burji layer", e);
+    }
+  };
+
   const bringTriJunctionToTop = () => {
     const map = mapInstance.current;
     if (!map) return;
 
     try {
-      if (map.getLayer(TRI_JUNCTION_POINTS_LAYER)) {
-        map.moveLayer(TRI_JUNCTION_POINTS_LAYER);
-      }
-      if (map.getLayer(TRI_JUNCTION_POINTS_LABEL)) {
-        map.moveLayer(TRI_JUNCTION_POINTS_LABEL);
-      }
+      [
+        TRI_JUNCTION_BURJI_LAYER,
+        TRI_JUNCTION_BURJI_LABEL,
+        TRI_JUNCTION_POINTS_LAYER,
+        TRI_JUNCTION_POINTS_LABEL,
+      ].forEach((layerId) => {
+        if (map.getLayer(layerId)) {
+          map.moveLayer(layerId);
+        }
+      });
     } catch (e) {
-      console.warn("Could not move tri-junction layer to top", e);
+      console.warn("Could not move tri-junction / burji layers to top", e);
     }
   };
 
@@ -1565,59 +901,36 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map) return;
 
-    clearPointLayer(sourceId, layerId, TRI_JUNCTION_POINTS_LABEL);
+    clearTriJunctionLayer();
 
     if (!geojson?.features || !Array.isArray(geojson.features)) return;
 
+    const pointGeojson = keepValidPointFeaturesForMap(geojson);
+    if (!pointGeojson.features.length) {
+      console.warn(
+        "Tri Junction / Burji points were fetched but have no valid EPSG:4326 point coordinates.",
+      );
+      return;
+    }
+
     try {
-      ensureTriangleIcon(map);
-
-      map.addSource(sourceId, {
-        type: "geojson",
-        data: geojson,
+      addTriJunctionLayerStyles({
+        map,
+        sourceId,
+        layerId,
+        pointGeojson,
+        opacity: getLayerOpacity(layers, "triJunctionPoints", 100) / 100,
       });
 
-      map.addLayer({
-        id: layerId,
-        type: "symbol",
-        source: sourceId,
-        layout: {
-          "icon-image": TRI_JUNCTION_TRIANGLE_IMAGE,
-          "icon-size": 0.55,
-          "icon-allow-overlap": true,
-          "icon-ignore-placement": true,
-        },
+      [TRI_JUNCTION_BURJI_LAYER, layerId].forEach((clickLayerId) => {
+        map.on("mouseenter", clickLayerId, handlePointMouseEnter);
+        map.on("mouseleave", clickLayerId, handlePointMouseLeave);
+        map.on("click", clickLayerId, handlePointClick);
       });
 
-      map.addLayer({
-        id: TRI_JUNCTION_POINTS_LABEL,
-        type: "symbol",
-        source: sourceId,
-        minzoom: 15,
-        layout: {
-          "text-field": VECTOR_LABEL_FIELDS.trijunction,
-          "text-size": ["interpolate", ["linear"], ["zoom"], 14, 10, 17, 12],
-          "text-offset": [0, 1.35],
-          "text-anchor": "top",
-          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-          "text-allow-overlap": false,
-          "text-ignore-placement": false,
-          "text-optional": true,
-        },
-        paint: {
-          "text-color": VECTOR_LAYER_THEME.trijunction.label,
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 1.25,
-          "text-halo-blur": 0.15,
-        },
-      });
-
+      currentGeojson.current["tri-junction-points"] = pointGeojson;
       bringTriJunctionToTop();
       movePointLayersToTop();
-
-      map.on("mouseenter", layerId, handlePointMouseEnter);
-      map.on("mouseleave", layerId, handlePointMouseLeave);
-      map.on("click", layerId, handlePointClick);
     } catch (e) {
       console.error(`Failed to draw ${layerId}`, e);
     }
@@ -1627,84 +940,13 @@ export default function MapView({
     try {
       clearCornerMarkers();
 
-      const geom = feature.geometry;
-      let coords = [];
+      const cornerFc = buildCornerMarkerFeatureCollection(feature);
 
-      if (geom.type === "Polygon") {
-        coords = geom.coordinates?.[0] || [];
-      } else if (geom.type === "MultiPolygon") {
-        coords = geom.coordinates?.[0]?.[0] || [];
-      }
-
-      if (coords.length > 1) {
-        const first = coords[0];
-        const last = coords[coords.length - 1];
-        if (first[0] === last[0] && first[1] === last[1]) {
-          coords = coords.slice(0, coords.length - 1);
-        }
-      }
-
-      const cornerFeatures = coords.slice(0, 4).map((c, idx) => ({
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [c[0], c[1]] },
-        properties: { idx, label: String.fromCharCode(65 + idx) },
-      }));
-
-      const cornerFc = {
-        type: "FeatureCollection",
-        features: cornerFeatures,
-      };
-
-      map.addSource(SELECTED_CORNER_SOURCE, {
-        type: "geojson",
-        data: cornerFc,
+      addCornerMarkerLayerStyles({
+        map,
+        cornerFeatureCollection: cornerFc,
+        demarcationMode,
       });
-
-      if (demarcationMode) {
-        map.addLayer({
-          id: SELECTED_CORNER_BOX_LAYER,
-          type: "symbol",
-          source: SELECTED_CORNER_SOURCE,
-          layout: {
-            "text-field": "■",
-            "text-size": 45,
-            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-            "text-allow-overlap": true,
-            "text-ignore-placement": true,
-          },
-          paint: {
-            "text-color": "#000000",
-          },
-        });
-
-        map.addLayer({
-          id: SELECTED_CORNER_TEXT_LAYER,
-          type: "symbol",
-          source: SELECTED_CORNER_SOURCE,
-          layout: {
-            "text-field": ["get", "label"],
-            "text-size": 18,
-            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-            "text-allow-overlap": true,
-            "text-ignore-placement": true,
-          },
-          paint: {
-            "text-color": "#ffffff",
-          },
-        });
-      } else {
-        map.addLayer({
-          id: SELECTED_CORNER_LAYER,
-          type: "circle",
-          source: SELECTED_CORNER_SOURCE,
-          paint: {
-            "circle-radius": 6,
-            "circle-color": "#111827",
-            "circle-stroke-width": 1,
-            "circle-stroke-color": "#fff",
-          },
-        });
-      }
 
       function cornerClickHandler(e) {
         const lngLat = e.lngLat;
@@ -1753,36 +995,10 @@ export default function MapView({
   };
 
   const ensureSelectedLayers = (map) => {
-    if (!map.getSource(SELECTED_SOURCE)) {
-      map.addSource(SELECTED_SOURCE, {
-        type: "geojson",
-        data: emptyFeatureCollection(),
-      });
-    }
-
-    if (!map.getLayer(SELECTED_FILL)) {
-      map.addLayer({
-        id: SELECTED_FILL,
-        type: "fill",
-        source: SELECTED_SOURCE,
-        paint: {
-          "fill-color": "#ffffff",
-          "fill-opacity": 0.9,
-        },
-      });
-    }
-
-    if (!map.getLayer(SELECTED_LINE)) {
-      map.addLayer({
-        id: SELECTED_LINE,
-        type: "line",
-        source: SELECTED_SOURCE,
-        paint: {
-          "line-color": "#004225",
-          "line-width": 3,
-        },
-      });
-    }
+    ensureSelectedLayerStyles({
+      map,
+      emptyGeojson: emptyFeatureCollection(),
+    });
   };
 
   const drawKhasras = (geojson) => {
@@ -1802,55 +1018,14 @@ export default function MapView({
         return;
       }
 
-      map.addSource(KHASRA_SOURCE, {
-        type: "geojson",
-        data: geojson,
-      });
+      const khasraOpacity = clampOpacity(
+        getLayerOpacity(layers, "khasraLayer", 25),
+      );
 
-      const khasraTheme = VECTOR_LAYER_THEME.khasra;
-      const khasraOpacity = clampOpacity(getLayerOpacity(layers, "khasraLayer", 25));
-
-      map.addLayer({
-        id: KHASRA_FILL,
-        type: "fill",
-        source: KHASRA_SOURCE,
-        paint: {
-          "fill-color": khasraTheme.fill,
-          "fill-opacity": khasraTheme.fillOpacity * khasraOpacity,
-          "fill-outline-color": khasraTheme.line,
-        },
-      });
-
-      map.addLayer({
-        id: KHASRA_LINE,
-        type: "line",
-        source: KHASRA_SOURCE,
-        paint: {
-          "line-color": khasraTheme.line,
-          "line-width": khasraTheme.lineWidth,
-          "line-opacity": 0.95,
-        },
-      });
-
-      map.addLayer({
-        id: KHASRA_LABEL,
-        type: "symbol",
-        source: KHASRA_SOURCE,
-        minzoom: khasraTheme.labelMinZoom,
-        layout: {
-          "text-field": VECTOR_LABEL_FIELDS.khasra,
-          "text-size": ["interpolate", ["linear"], ["zoom"], 16, 9, 19, 12],
-          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-          "text-allow-overlap": false,
-          "text-ignore-placement": false,
-          "text-optional": true,
-        },
-        paint: {
-          "text-color": khasraTheme.label,
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 1.2,
-          "text-halo-blur": 0.15,
-        },
+      addKhasraLayerStyles({
+        map,
+        geojson,
+        opacity: khasraOpacity,
       });
 
       currentGeojson.current.khasra = geojson;
@@ -1889,8 +1064,6 @@ export default function MapView({
             cloned.properties._layerType = "khasra";
             onParcelSelect(cloned);
           }
-
-          addCornerMarkers(map, feature);
         }
       });
 
@@ -1929,55 +1102,14 @@ export default function MapView({
         return;
       }
 
-      map.addSource(MURABBA_SOURCE, {
-        type: "geojson",
-        data: geojson,
-      });
+      const murabbaOpacity = clampOpacity(
+        getLayerOpacity(layers, "murabbaLayer", 25),
+      );
 
-      const murabbaTheme = VECTOR_LAYER_THEME.murabba;
-      const murabbaOpacity = clampOpacity(getLayerOpacity(layers, "murabbaLayer", 25));
-
-      map.addLayer({
-        id: MURABBA_FILL,
-        type: "fill",
-        source: MURABBA_SOURCE,
-        paint: {
-          "fill-color": murabbaTheme.fill,
-          "fill-opacity": murabbaTheme.fillOpacity * murabbaOpacity,
-          "fill-outline-color": murabbaTheme.line,
-        },
-      });
-
-      map.addLayer({
-        id: MURABBA_LINE,
-        type: "line",
-        source: MURABBA_SOURCE,
-        paint: {
-          "line-color": murabbaTheme.line,
-          "line-width": murabbaTheme.lineWidth,
-          "line-opacity": 0.95,
-        },
-      });
-
-      map.addLayer({
-        id: MURABBA_LABEL,
-        type: "symbol",
-        source: MURABBA_SOURCE,
-        minzoom: murabbaTheme.labelMinZoom,
-        layout: {
-          "text-field": VECTOR_LABEL_FIELDS.murabba,
-          "text-size": ["interpolate", ["linear"], ["zoom"], 14, 10, 18, 12],
-          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-          "text-allow-overlap": false,
-          "text-ignore-placement": false,
-          "text-optional": true,
-        },
-        paint: {
-          "text-color": murabbaTheme.label,
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 1.2,
-          "text-halo-blur": 0.15,
-        },
+      addMurabbaLayerStyles({
+        map,
+        geojson,
+        opacity: murabbaOpacity,
       });
 
       currentGeojson.current.murabba = geojson;
@@ -2016,8 +1148,6 @@ export default function MapView({
             cloned.properties._layerType = "murabba";
             onParcelSelect(cloned);
           }
-
-          addCornerMarkers(map, feature);
         }
       });
 
@@ -2314,7 +1444,6 @@ export default function MapView({
         ensureSelectedLayers(map);
         map.getSource(SELECTED_SOURCE).setData(selectedGeo);
         zoomToGeoJSON(selectedGeo, { padding: 80, duration: 450 });
-        addCornerMarkers(map, matched);
         lastSyncedSelectionRef.current = selectionKey;
       } catch (e) {
         console.warn("Could not highlight selected parcel", e);
@@ -2537,7 +1666,10 @@ export default function MapView({
         const hasArea = !!areaGeojson?.features?.length;
 
         if (getLayerVisible(layers, "triJunctionPoints", false) && hasArea) {
-          const trijunctionGeojson = await getTrijunctionPoints({ type: "TJ" });
+          const mauzaId = getSelectedMauzaId(selectedMauza);
+          const trijunctionGeojson = await getTrijunctionPoints(
+            mauzaId ? { mauza_id: mauzaId } : {},
+          );
           if (cancelled) return;
 
           let filteredTriJunctionGeojson = filterPointGeoJSONByArea(
@@ -2548,8 +1680,8 @@ export default function MapView({
           if (!filteredTriJunctionGeojson.features.length && selectedMauza) {
             filteredTriJunctionGeojson = {
               type: "FeatureCollection",
-              features: (trijunctionGeojson?.features || []).filter((feature) =>
-                pointBelongsToMauza(feature, selectedMauza),
+              features: explodePointGeoJSON(trijunctionGeojson).features.filter(
+                (feature) => pointBelongsToMauza(feature, selectedMauza),
               ),
             };
           }
@@ -2575,17 +1707,11 @@ export default function MapView({
               filteredTriJunctionGeojson;
             movePointLayersToTop();
           } else {
-            clearPointLayer(
-              TRI_JUNCTION_POINTS_SOURCE,
-              TRI_JUNCTION_POINTS_LAYER,
-            );
+            clearTriJunctionLayer();
             delete currentGeojson.current["tri-junction-points"];
           }
         } else {
-          clearPointLayer(
-            TRI_JUNCTION_POINTS_SOURCE,
-            TRI_JUNCTION_POINTS_LAYER,
-          );
+          clearTriJunctionLayer();
           delete currentGeojson.current["tri-junction-points"];
         }
 
@@ -2594,17 +1720,29 @@ export default function MapView({
           const fieldPointsGeojson = await getFieldPoints(mauzaId);
           if (cancelled) return;
 
+          const validFieldPointsGeojson =
+            keepValidPointFeaturesForMap(fieldPointsGeojson);
+
+          if (
+            (fieldPointsGeojson?.features || []).length &&
+            !validFieldPointsGeojson.features.length
+          ) {
+            console.warn(
+              "Field Points were fetched but their geom coordinates are not valid EPSG:4326 lon/lat. Fix the fieldpoints.geom SRID/coordinates in PostGIS.",
+              fieldPointsGeojson,
+            );
+          }
+
           let filteredFieldPointsGeojson = filterPointGeoJSONByArea(
-            fieldPointsGeojson,
+            validFieldPointsGeojson,
             areaGeojson,
           );
 
           if (!filteredFieldPointsGeojson.features.length && selectedMauza) {
             filteredFieldPointsGeojson = {
               type: "FeatureCollection",
-              features: explodePointGeoJSON(fieldPointsGeojson).features.filter(
-                (feature) =>
-                  featureMatchesSelectedMauza(feature, selectedMauza),
+              features: validFieldPointsGeojson.features.filter((feature) =>
+                featureMatchesSelectedMauza(feature, selectedMauza),
               ),
             };
           }
@@ -2795,47 +1933,9 @@ export default function MapView({
           delete currentGeojson.current["control-points"];
         }
 
-        if (
-          getLayerVisible(layers, "triJunctionPoints", false) &&
-          normalizedMauza
-        ) {
-          const trijunctionGeojson = await getTrijunctionPoints({
-            mauza: mauzaName,
-            type: "TJ",
-          });
-
-          const filteredTriJunctionGeojson = {
-            type: "FeatureCollection",
-            features: (trijunctionGeojson?.features || []).filter((feature) => {
-              const m3Value = String(feature?.properties?.m3 || "")
-                .trim()
-                .toLowerCase();
-              return m3Value === normalizedMauza;
-            }),
-          };
-
-          if (filteredTriJunctionGeojson.features.length) {
-            drawTriJunctionLayer({
-              sourceId: TRI_JUNCTION_POINTS_SOURCE,
-              layerId: TRI_JUNCTION_POINTS_LAYER,
-              geojson: filteredTriJunctionGeojson,
-            });
-            currentGeojson.current["tri-junction-points"] =
-              filteredTriJunctionGeojson;
-          } else {
-            clearPointLayer(
-              TRI_JUNCTION_POINTS_SOURCE,
-              TRI_JUNCTION_POINTS_LAYER,
-            );
-            delete currentGeojson.current["tri-junction-points"];
-          }
-        } else {
-          clearPointLayer(
-            TRI_JUNCTION_POINTS_SOURCE,
-            TRI_JUNCTION_POINTS_LAYER,
-          );
-          delete currentGeojson.current["tri-junction-points"];
-        }
+        // Tri Junction Points are loaded by the area-based point loader above.
+        // Keeping that logic in one place prevents the styled TJ/Burji layer
+        // from being overwritten by this older m3-only loader.
       } catch (e) {
         console.error("Failed to load trijunction points:", e);
         setError("Failed to load control / tri-junction points");
@@ -2865,56 +1965,18 @@ export default function MapView({
         ? Number(layers.handuGujranOrtho.opacity) / 100
         : 1.0;
 
-    const HANDU_GUJRAN_BOUNDS = [
-      [74.42562653088396, 31.60509230706726],
-      [74.43545280361002, 31.6112165411359],
-    ];
-
     const restoreHanduGujranOrtho = () => {
-      if (handuGujranOrthoVisible) {
-        if (!map.getSource(HANDU_GUJRAN_ORTHO_SOURCE)) {
-          map.addSource(HANDU_GUJRAN_ORTHO_SOURCE, {
-            type: "raster",
-            tiles: [
-              "http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png",
-            ],
-            tileSize: 256,
-          });
-        }
+      restoreHanduGujranOrthoLayer({
+        map,
+        visible: handuGujranOrthoVisible,
+        opacity: handuGujranOrthoOpacity,
+      });
 
-        if (!map.getLayer(HANDU_GUJRAN_ORTHO_LAYER)) {
-          map.addLayer({
-            id: HANDU_GUJRAN_ORTHO_LAYER,
-            type: "raster",
-            source: HANDU_GUJRAN_ORTHO_SOURCE,
-            paint: {
-              "raster-opacity": handuGujranOrthoOpacity,
-            },
-            layout: {
-              visibility: "visible",
-            },
-          });
-        } else {
-          map.setLayoutProperty(
-            HANDU_GUJRAN_ORTHO_LAYER,
-            "visibility",
-            "visible",
-          );
-          map.setPaintProperty(
-            HANDU_GUJRAN_ORTHO_LAYER,
-            "raster-opacity",
-            handuGujranOrthoOpacity,
-          );
-        }
-
-        if (!prevHanduGujranOrthoVisible.current) {
-          map.fitBounds(HANDU_GUJRAN_BOUNDS, {
-            padding: 50,
-            duration: 1500,
-          });
-        }
-      } else if (map.getLayer(HANDU_GUJRAN_ORTHO_LAYER)) {
-        map.setLayoutProperty(HANDU_GUJRAN_ORTHO_LAYER, "visibility", "none");
+      if (handuGujranOrthoVisible && !prevHanduGujranOrthoVisible.current) {
+        map.fitBounds(HANDU_GUJRAN_BOUNDS, {
+          padding: 50,
+          duration: 1500,
+        });
       }
 
       prevHanduGujranOrthoVisible.current = handuGujranOrthoVisible;
@@ -2980,62 +2042,10 @@ export default function MapView({
     if (measureVisible) {
       map.getCanvas().style.cursor = "crosshair";
 
-      if (!map.getSource(MEASURE_SOURCE)) {
-        map.addSource(MEASURE_SOURCE, {
-          type: "geojson",
-          data: emptyFeatureCollection(),
-        });
-      }
-
-      if (!map.getLayer(MEASURE_LINE_LAYER)) {
-        map.addLayer({
-          id: MEASURE_LINE_LAYER,
-          type: "line",
-          source: MEASURE_SOURCE,
-          filter: ["==", "$type", "LineString"],
-          paint: {
-            "line-color": "#ff0000",
-            "line-width": 3,
-            "line-dasharray": [2, 2],
-          },
-        });
-      }
-
-      if (!map.getLayer(MEASURE_POINTS_LAYER)) {
-        map.addLayer({
-          id: MEASURE_POINTS_LAYER,
-          type: "circle",
-          source: MEASURE_SOURCE,
-          filter: ["==", "$type", "Point"],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#ffffff",
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#ff0000",
-          },
-        });
-      }
-
-      if (!map.getLayer(MEASURE_LABELS_LAYER)) {
-        map.addLayer({
-          id: MEASURE_LABELS_LAYER,
-          type: "symbol",
-          source: MEASURE_SOURCE,
-          filter: ["has", "distance"],
-          layout: {
-            "text-field": ["get", "distance"],
-            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-            "text-size": 14,
-            "text-anchor": "bottom",
-            "text-offset": [0, -1],
-          },
-          paint: {
-            "text-color": "#ff0000",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 2,
-          },
-        });
-      }
+      ensureMeasureLayerStyles({
+        map,
+        emptyGeojson: emptyFeatureCollection(),
+      });
 
       map.on("click", handleMapClick);
       map.on("contextmenu", handleMapRightClick);
@@ -3138,75 +2148,10 @@ export default function MapView({
     if (areaVisible) {
       map.getCanvas().style.cursor = "crosshair";
 
-      if (!map.getSource(MEASURE_AREA_SOURCE)) {
-        map.addSource(MEASURE_AREA_SOURCE, {
-          type: "geojson",
-          data: turf.featureCollection([]),
-        });
-      }
-
-      if (!map.getLayer(MEASURE_AREA_FILL_LAYER)) {
-        map.addLayer({
-          id: MEASURE_AREA_FILL_LAYER,
-          type: "fill",
-          source: MEASURE_AREA_SOURCE,
-          filter: ["==", "$type", "Polygon"],
-          paint: { "fill-color": "#0066ff", "fill-opacity": 0.15 },
-        });
-      }
-
-      if (!map.getLayer(MEASURE_AREA_LINE_LAYER)) {
-        map.addLayer({
-          id: MEASURE_AREA_LINE_LAYER,
-          type: "line",
-          source: MEASURE_AREA_SOURCE,
-          filter: [
-            "any",
-            ["==", "$type", "LineString"],
-            ["==", "$type", "Polygon"],
-          ],
-          paint: {
-            "line-color": "#0066ff",
-            "line-width": 2,
-            "line-dasharray": [2, 2],
-          },
-        });
-      }
-
-      if (!map.getLayer(MEASURE_AREA_POINTS_LAYER)) {
-        map.addLayer({
-          id: MEASURE_AREA_POINTS_LAYER,
-          type: "circle",
-          source: MEASURE_AREA_SOURCE,
-          filter: ["==", "$type", "Point"],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#ffffff",
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#0066ff",
-          },
-        });
-      }
-
-      if (!map.getLayer(MEASURE_AREA_LABEL_LAYER)) {
-        map.addLayer({
-          id: MEASURE_AREA_LABEL_LAYER,
-          type: "symbol",
-          source: MEASURE_AREA_SOURCE,
-          filter: ["has", "areaLabel"],
-          layout: {
-            "text-field": ["get", "areaLabel"],
-            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-            "text-size": 12,
-            "text-anchor": "center",
-          },
-          paint: {
-            "text-color": "#003399",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 2,
-          },
-        });
-      }
+      ensureMeasureAreaLayerStyles({
+        map,
+        emptyGeojson: turf.featureCollection([]),
+      });
 
       map.on("click", handleClick);
       map.on("contextmenu", handleRightClick);
@@ -3299,58 +2244,10 @@ export default function MapView({
     if (bearingVisible) {
       map.getCanvas().style.cursor = "crosshair";
 
-      if (!map.getSource(BEARING_SOURCE)) {
-        map.addSource(BEARING_SOURCE, {
-          type: "geojson",
-          data: turf.featureCollection([]),
-        });
-      }
-
-      if (!map.getLayer(BEARING_LINE_LAYER)) {
-        map.addLayer({
-          id: BEARING_LINE_LAYER,
-          type: "line",
-          source: BEARING_SOURCE,
-          filter: ["==", "$type", "LineString"],
-          paint: { "line-color": "#e67e00", "line-width": 2 },
-        });
-      }
-
-      if (!map.getLayer(BEARING_POINTS_LAYER)) {
-        map.addLayer({
-          id: BEARING_POINTS_LAYER,
-          type: "circle",
-          source: BEARING_SOURCE,
-          filter: ["==", "$type", "Point"],
-          paint: {
-            "circle-radius": 6,
-            "circle-color": "#ffffff",
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#e67e00",
-          },
-        });
-      }
-
-      if (!map.getLayer(BEARING_LABEL_LAYER)) {
-        map.addLayer({
-          id: BEARING_LABEL_LAYER,
-          type: "symbol",
-          source: BEARING_SOURCE,
-          filter: ["has", "bearingLabel"],
-          layout: {
-            "text-field": ["get", "bearingLabel"],
-            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-            "text-size": 13,
-            "text-anchor": "bottom",
-            "text-offset": [0, -1],
-          },
-          paint: {
-            "text-color": "#b35000",
-            "text-halo-color": "#ffffff",
-            "text-halo-width": 2,
-          },
-        });
-      }
+      ensureBearingLayerStyles({
+        map,
+        emptyGeojson: turf.featureCollection([]),
+      });
 
       map.on("click", handleClick);
       map.on("contextmenu", handleRightClick);
@@ -3458,8 +2355,6 @@ export default function MapView({
       }
     };
 
-    const BUFFER_RADIUS_M = 500;
-
     const handleClick = (e) => {
       const { lng, lat } = e.lngLat;
       const pt = turf.point([lng, lat]);
@@ -3467,38 +2362,9 @@ export default function MapView({
       const features = [pt, buffered];
 
       if (!map.getSource(BUFFER_SOURCE)) {
-        map.addSource(BUFFER_SOURCE, {
-          type: "geojson",
-          data: turf.featureCollection(features),
-        });
-
-        map.addLayer({
-          id: BUFFER_FILL_LAYER,
-          type: "fill",
-          source: BUFFER_SOURCE,
-          filter: ["==", "$type", "Polygon"],
-          paint: { "fill-color": "#9333ea", "fill-opacity": 0.12 },
-        });
-
-        map.addLayer({
-          id: BUFFER_LINE_LAYER,
-          type: "line",
-          source: BUFFER_SOURCE,
-          filter: ["==", "$type", "Polygon"],
-          paint: { "line-color": "#9333ea", "line-width": 2 },
-        });
-
-        map.addLayer({
-          id: BUFFER_CENTER_LAYER,
-          type: "circle",
-          source: BUFFER_SOURCE,
-          filter: ["==", "$type", "Point"],
-          paint: {
-            "circle-radius": 5,
-            "circle-color": "#ffffff",
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#9333ea",
-          },
+        addBufferLayerStyles({
+          map,
+          featureCollection: turf.featureCollection(features),
         });
       } else {
         map.getSource(BUFFER_SOURCE).setData(turf.featureCollection(features));
