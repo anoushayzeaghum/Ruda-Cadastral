@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import * as turf from "@turf/turf";
 import { setupVectorClickPopups } from "./PlotPopup";
 import {
   getBlocksGeoJSON,
@@ -100,6 +101,34 @@ export default function GISMetaverseMap({
   setLayerVisibility: updateLayerVisibility,
   onIntroComplete,
 }) {
+  const plotMarkersRef = useRef([]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReady) return;
+
+    const handleZoom = () => {
+      const zoom = map.getZoom();
+      const isVisible = zoom >= 15 && zoom <= 18;
+      
+      if (plotMarkersRef.current) {
+        plotMarkersRef.current.forEach((marker) => {
+          const el = marker.getElement();
+          if (el) {
+            el.style.display = isVisible ? "block" : "none";
+          }
+        });
+      }
+    };
+
+    map.on("zoom", handleZoom);
+    handleZoom();
+
+    return () => {
+      map.off("zoom", handleZoom);
+    };
+  }, [mapRef, isMapReady]);
+
   const rebuildAllLayersOnMap = async () => {
     const map = mapRef.current;
     if (!map) return;
@@ -494,7 +523,20 @@ export default function GISMetaverseMap({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !filters?.projectId) return;
+    if (!map) return;
+
+    // Clear existing markers
+    if (plotMarkersRef.current) {
+      plotMarkersRef.current.forEach((m) => m.remove());
+      plotMarkersRef.current = [];
+    }
+
+    if (!filters?.projectId) {
+      if (map.getSource(SOURCES.masterPlan)) {
+        map.getSource(SOURCES.masterPlan).setData(emptyFC);
+      }
+      return;
+    }
 
     const run = async () => {
       const hasPlotFilter =
@@ -517,22 +559,101 @@ export default function GISMetaverseMap({
         return;
       }
 
+      // Always fetch the ENTIRE project so the context never disappears
       const plotGeoJSON = await getPlotsGeoJSON({
         project_id: filters.projectId,
-        block: filters.block || undefined,
-        type: filters.plotType || undefined,
-        plot_no: filters.plotNo || undefined,
-        plot_area: filters.area || undefined,
-        parkfront: filters.parkfront || undefined,
-        rd_facing: filters.rd_facing || undefined,
-        poss_st: filters.poss_st || undefined,
-        canceled: filters.plotStatus || undefined,
-        tr_cate: filters.tr_cate || undefined,
-        tr_own: filters.tr_own || undefined,
-        site_plan: filters.site_plan || undefined,
       });
 
       addMasterPlanLayer(map, plotGeoJSON);
+
+      // Fix Z-Index race condition: Force plot layers to render on top of the block background
+      [
+        LAYERS.masterPlanFill,
+        LAYERS.masterPlanLine,
+        LAYERS.masterPlanHover,
+        LAYERS.masterPlanLabel
+      ].forEach(id => {
+        if (map.getLayer(id)) map.moveLayer(id);
+      });
+
+      // Highlight the specific plot boundaries if filtered by plotNo
+      if (map.getLayer(LAYERS.masterPlanHover)) {
+        if (filters.plotNo && plotGeoJSON && plotGeoJSON.features && plotGeoJSON.features.length > 0) {
+          const targetFeatures = plotGeoJSON.features.filter(
+            (f) => String(f.properties?.plot_no) === String(filters.plotNo)
+          );
+          if (targetFeatures.length > 0) {
+            // Filter directly by plot_no which is guaranteed to exist
+            map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "plot_no"]], String(filters.plotNo)]);
+            map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 1);
+            map.setPaintProperty(LAYERS.masterPlanHover, "line-color", "#00ffaa");
+          } else {
+            map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
+            map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "gid"]], "__none__"]);
+          }
+        } else {
+          map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
+          map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "gid"]], "__none__"]);
+        }
+      }
+
+      // Add rotating marker if filtering by plotNo
+      if (filters.plotNo && plotGeoJSON && plotGeoJSON.features) {
+        // Inject keyframes into document if not present
+        if (!document.getElementById("plot-marker-styles")) {
+          const style = document.createElement("style");
+          style.id = "plot-marker-styles";
+          style.innerHTML = `
+            @keyframes flyToMarkerAnim {
+              0% { transform: perspective(400px) rotateY(0deg) translateY(0px); }
+              50% { transform: perspective(400px) rotateY(180deg) translateY(-10px); }
+              100% { transform: perspective(400px) rotateY(360deg) translateY(0px); }
+            }
+            .flyto-marker-inner {
+              width: 100%;
+              height: 100%;
+              animation: flyToMarkerAnim 2s ease-in-out infinite;
+              transform-style: preserve-3d;
+              transform-origin: bottom center;
+              filter: drop-shadow(0px 8px 4px rgba(0,0,0,0.5));
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
+        const targetFeatures = plotGeoJSON.features.filter(
+          (f) => String(f.properties?.plot_no) === String(filters.plotNo)
+        );
+
+        targetFeatures.forEach((feature) => {
+          if (feature.geometry) {
+            const center = turf.centroid(feature);
+            
+            // Initial zoom check for creation
+            const currentZoom = map.getZoom();
+            const isVisible = currentZoom >= 15 && currentZoom <= 18;
+            
+            // Mapbox marker wrapper (receives position transforms)
+            const el = document.createElement("div");
+            el.style.width = "40px";
+            el.style.height = "40px";
+            el.style.position = "absolute";
+            el.style.display = isVisible ? "block" : "none";
+            
+            // Inner animated container
+            const inner = document.createElement("div");
+            inner.className = "flyto-marker-inner";
+            inner.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#00ffaa" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; display: block;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3" fill="white"></circle></svg>`;
+            
+            el.appendChild(inner);
+
+            const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+              .setLngLat(center.geometry.coordinates)
+              .addTo(map);
+            plotMarkersRef.current.push(marker);
+          }
+        });
+      }
 
       setLayerVisibility(
         map,
@@ -547,7 +668,17 @@ export default function GISMetaverseMap({
       );
 
       if (hasPlotFilter || layerVisibility.masterPlan) {
-        fitGeoJSON(map, plotGeoJSON);
+        if (filters.plotNo && plotGeoJSON && plotGeoJSON.features) {
+          const targetFeatures = plotGeoJSON.features.filter(
+            (f) => String(f.properties?.plot_no) === String(filters.plotNo)
+          );
+          if (targetFeatures.length > 0) {
+            fitGeoJSON(map, { type: "FeatureCollection", features: targetFeatures });
+          }
+        } else if (!filters.block) {
+          // If no specific plot or block is focused, zoom out to show the whole project
+          fitGeoJSON(map, plotGeoJSON);
+        }
       }
     };
 
@@ -662,10 +793,23 @@ export default function GISMetaverseMap({
       layerVisibility.notifiedBoundary,
     );
 
+    const hasPlotFilter =
+      !!filters.block ||
+      !!filters.plotType ||
+      !!filters.plotNo ||
+      !!filters.area ||
+      !!filters.parkfront ||
+      !!filters.rd_facing ||
+      !!filters.poss_st ||
+      !!filters.plotStatus ||
+      !!filters.tr_cate ||
+      !!filters.tr_own ||
+      !!filters.site_plan;
+
     setLayerVisibility(
       map,
       [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
-      layerVisibility.masterPlan,
+      layerVisibility.masterPlan || hasPlotFilter,
     );
 
     setLayerVisibility(
@@ -717,7 +861,7 @@ export default function GISMetaverseMap({
     );
 
     applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
-  }, [layerVisibility, adminBoundaryVisibility, filters.block, mapRef]);
+  }, [layerVisibility, adminBoundaryVisibility, filters, mapRef]);
 
   useEffect(() => {
     const map = mapRef.current;

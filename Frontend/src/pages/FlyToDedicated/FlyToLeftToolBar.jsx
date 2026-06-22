@@ -66,7 +66,22 @@ export default function FlyToLeftToolbar({
   <div className="relative">
     {bottomPanel === "attribute" && (
       <div className="absolute top-0 left-10 ml-2 z-50">
-        <AttributeTable onClose={() => setBottomPanel(null)} />
+        <AttributeTable
+          map={map}
+          onClose={() => setBottomPanel(null)}
+          onSelectPlot={(plotData) => {
+            setFilters((prev) => ({
+              ...prev,
+              projectId: plotData.projectId || prev.projectId,
+              block: "", // Clear block to avoid mismatches
+              plotType: "", // Clear plotType to avoid mismatches
+              area: "", // Clear area
+              plotNo: plotData.plotNo,
+            }));
+            // We do not close the table here so the user can see the marker drop 
+            // while the table remains open, or they can choose to close it manually.
+          }}
+        />
       </div>
     )}
 
