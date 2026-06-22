@@ -579,12 +579,31 @@ export default function GISMetaverseMap({
       // Highlight the specific plot boundaries if filtered by plotNo
       if (map.getLayer(LAYERS.masterPlanHover)) {
         if (filters.plotNo && plotGeoJSON && plotGeoJSON.features && plotGeoJSON.features.length > 0) {
-          const targetFeatures = plotGeoJSON.features.filter(
+          let targetFeatures = plotGeoJSON.features.filter(
             (f) => String(f.properties?.plot_no) === String(filters.plotNo)
           );
+
+          if (filters.block) {
+            targetFeatures = targetFeatures.filter(
+              (f) => String(f.properties?.block || f.properties?.name) === String(filters.block)
+            );
+          }
+          if (filters.area) {
+            targetFeatures = targetFeatures.filter(
+              (f) => String(f.properties?.plot_area) === String(filters.area)
+            );
+          }
+          if (filters.plotType) {
+            targetFeatures = targetFeatures.filter(
+              (f) => String(f.properties?.type) === String(filters.plotType)
+            );
+          }
+
           if (targetFeatures.length > 0) {
-            // Filter directly by plot_no which is guaranteed to exist
-            map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "plot_no"]], String(filters.plotNo)]);
+            const gids = targetFeatures.map(f => String(f.properties?.gid || f.id));
+            const filterExpr = ["any", ...gids.map(gid => ["==", ["to-string", ["get", "gid"]], gid])];
+
+            map.setFilter(LAYERS.masterPlanHover, filterExpr);
             map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 1);
             map.setPaintProperty(LAYERS.masterPlanHover, "line-color", "#00ffaa");
           } else {
@@ -621,9 +640,25 @@ export default function GISMetaverseMap({
           document.head.appendChild(style);
         }
 
-        const targetFeatures = plotGeoJSON.features.filter(
+        let targetFeatures = plotGeoJSON.features.filter(
           (f) => String(f.properties?.plot_no) === String(filters.plotNo)
         );
+
+        if (filters.block) {
+          targetFeatures = targetFeatures.filter(
+            (f) => String(f.properties?.block || f.properties?.name) === String(filters.block)
+          );
+        }
+        if (filters.area) {
+          targetFeatures = targetFeatures.filter(
+            (f) => String(f.properties?.plot_area) === String(filters.area)
+          );
+        }
+        if (filters.plotType) {
+          targetFeatures = targetFeatures.filter(
+            (f) => String(f.properties?.type) === String(filters.plotType)
+          );
+        }
 
         targetFeatures.forEach((feature) => {
           if (feature.geometry) {
@@ -669,9 +704,13 @@ export default function GISMetaverseMap({
 
       if (hasPlotFilter || layerVisibility.masterPlan) {
         if (filters.plotNo && plotGeoJSON && plotGeoJSON.features) {
-          const targetFeatures = plotGeoJSON.features.filter(
+          let targetFeatures = plotGeoJSON.features.filter(
             (f) => String(f.properties?.plot_no) === String(filters.plotNo)
           );
+          if (filters.block) targetFeatures = targetFeatures.filter(f => String(f.properties?.block || f.properties?.name) === String(filters.block));
+          if (filters.area) targetFeatures = targetFeatures.filter(f => String(f.properties?.plot_area) === String(filters.area));
+          if (filters.plotType) targetFeatures = targetFeatures.filter(f => String(f.properties?.type) === String(filters.plotType));
+          
           if (targetFeatures.length > 0) {
             fitGeoJSON(map, { type: "FeatureCollection", features: targetFeatures });
           }
