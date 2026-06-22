@@ -265,7 +265,7 @@ export default function TopographicPlan({ map, selectedProjectId }) {
 
     setTopoLoading(true);
 
-    fetch("/amenities/Topography CB_1/Topo_CB_1.geojson")
+    fetch("/Topogeojson_backup/Topography.geojson")
       .then((r) => r.json())
       .then((raw) => {
         // File is already in WGS84 — use directly without reprojection.
