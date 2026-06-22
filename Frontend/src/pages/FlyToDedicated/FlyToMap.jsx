@@ -103,6 +103,32 @@ export default function GISMetaverseMap({
 }) {
   const plotMarkersRef = useRef([]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReady) return;
+
+    const handleZoom = () => {
+      const zoom = map.getZoom();
+      const isVisible = zoom >= 15 && zoom <= 18;
+      
+      if (plotMarkersRef.current) {
+        plotMarkersRef.current.forEach((marker) => {
+          const el = marker.getElement();
+          if (el) {
+            el.style.display = isVisible ? "block" : "none";
+          }
+        });
+      }
+    };
+
+    map.on("zoom", handleZoom);
+    handleZoom();
+
+    return () => {
+      map.off("zoom", handleZoom);
+    };
+  }, [mapRef, isMapReady]);
+
   const rebuildAllLayersOnMap = async () => {
     const map = mapRef.current;
     if (!map) return;
@@ -581,11 +607,16 @@ export default function GISMetaverseMap({
           if (feature.geometry) {
             const center = turf.centroid(feature);
             
+            // Initial zoom check for creation
+            const currentZoom = map.getZoom();
+            const isVisible = currentZoom >= 15 && currentZoom <= 18;
+            
             // Mapbox marker wrapper (receives position transforms)
             const el = document.createElement("div");
             el.style.width = "40px";
             el.style.height = "40px";
             el.style.position = "absolute";
+            el.style.display = isVisible ? "block" : "none";
             
             // Inner animated container
             const inner = document.createElement("div");
