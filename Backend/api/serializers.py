@@ -429,10 +429,7 @@ class AcreSerializer(GeoFeatureModelSerializer):
             "mauza_id",
             "sq",
             "acre",
-            "m",
-            "a",
             "layer",
-            "path",
             "geom",
         )
         
