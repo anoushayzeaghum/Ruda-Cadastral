@@ -1,6 +1,6 @@
 import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
 
-export function addMasterPlanLayer(map, data) {
+export function addMasterPlanLayer(map, data, color = null) {
   ensureSource(map, SOURCES.masterPlan, data);
 
   if (!map.getLayer(LAYERS.masterPlanFill)) {
@@ -33,10 +33,12 @@ export function addMasterPlanLayer(map, data) {
       type: "line",
       source: SOURCES.masterPlan,
       paint: {
-        "line-color": "#111827",
+        "line-color": color || "#111827",
         "line-width": 1,
       },
     });
+  } else if (color) {
+    map.setPaintProperty(LAYERS.masterPlanLine, "line-color", color);
   }
 
   if (!map.getLayer(LAYERS.masterPlanLabel)) {
@@ -58,11 +60,13 @@ export function addMasterPlanLayer(map, data) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": "#111827",
+        "text-color": color || "#111827",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.5,
       },
     });
+  } else if (color) {
+    map.setPaintProperty(LAYERS.masterPlanLabel, "text-color", color);
   }
 
   // Highlight layer — rendered on top of fill/line so the selection outline
