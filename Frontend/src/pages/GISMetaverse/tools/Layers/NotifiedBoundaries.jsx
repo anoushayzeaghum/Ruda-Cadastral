@@ -35,7 +35,8 @@ const applyNotifiedBoundaryStyle = (map, style = {}) => {
   if (!map) return;
 
   const color = style.color || NOTIFIED_STYLE.color;
-  const opacityRatio = clampOpacity(style.opacity ?? NOTIFIED_STYLE.opacity) / 100;
+  const opacityRatio =
+    clampOpacity(style.opacity ?? NOTIFIED_STYLE.opacity) / 100;
 
   setPaint(map, NOTIFIED_STYLE.lineLayer, "line-color", color);
   setPaint(map, NOTIFIED_STYLE.lineLayer, "line-opacity", opacityRatio);
@@ -104,7 +105,7 @@ export default function NotifiedBoundaries({
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
+        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
         onClick={() => setOpen((prev) => !prev)}
       >
         <span>NOTIFIED BOUNDARIES</span>

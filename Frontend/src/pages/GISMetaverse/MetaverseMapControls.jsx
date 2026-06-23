@@ -89,7 +89,7 @@ export default function MetaverseMapControls({
         new mapboxgl.Marker().setLngLat([lng, lat]).addTo(map);
       },
       (error) => console.error("Location error:", error),
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true },
     );
   };
 
@@ -126,23 +126,23 @@ export default function MetaverseMapControls({
           <MapPin size={20} />
         </ControlButton>
 
-        <div className="overflow-hidden rounded-md border border-[#344055] bg-[#1d2533] shadow-md">
+        <div className="overflow-hidden rounded-md border border-[#0f3d2e] bg-[#1f2937] shadow-md">
           <button
             type="button"
             title="Zoom In"
             onClick={() => map?.zoomIn()}
-            className="flex h-8 w-8 items-center justify-center text-white hover:bg-[#293445]"
+            className="flex h-8 w-8 items-center justify-center text-white hover:bg-[#0f3d2e]"
           >
             <Plus size={20} />
           </button>
 
-          <div className="h-px bg-[#344055]" />
+          <div className="h-px bg-[#0f3d2e]" />
 
           <button
             type="button"
             title="Zoom Out"
             onClick={() => map?.zoomOut()}
-            className="flex h-8 w-8 items-center justify-center text-white hover:bg-[#293445]"
+            className="flex h-8 w-8 items-center justify-center text-white hover:bg-[#0f3d2e]"
           >
             <Minus size={20} />
           </button>
@@ -174,9 +174,8 @@ export default function MetaverseMapControls({
 
 function CoordinateBox({ coords, zoom }) {
   return (
-    <div className="hidden sm:block mt-0 rounded bg-[#111827] px-2 py-1 text-[10px] font-semibold text-white shadow-md">
+    <div className="hidden sm:block mt-0 rounded bg-[#0f3d2e] px-2 py-1 text-[10px] font-semibold text-white shadow-md">
       {coords.lng}, {coords.lat}
-
       <div className="mt-1 rounded bg-black/60 px-1 py-0.5 text-center text-[9px]">
         Zoom Level: {zoom}
       </div>
@@ -194,7 +193,7 @@ function ControlButton({ title, onClick, children, active = false }) {
       className={`flex h-8 w-8 items-center justify-center rounded-md border text-white shadow-md transition ${
         active
           ? "border-[#8bd66f] bg-[#243041]"
-          : "border-[#344055] bg-[#1d2533] hover:bg-[#293445]"
+          : "border-[#0f3d2e] bg-[#1f2937] hover:bg-[#0f3d2e]"
       }`}
     >
       {children}

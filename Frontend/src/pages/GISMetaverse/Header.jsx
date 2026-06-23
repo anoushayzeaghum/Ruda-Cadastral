@@ -24,7 +24,7 @@ export default function Header() {
   };
 
   return (
-    <div className="relative z-40 w-full bg-[#111827] px-3 py-2 text-white shadow-md sm:px-5">
+    <div className="relative z-40 w-full bg-[#0f3d2e] px-3 py-2 text-white shadow-md sm:px-5">
       <div className="relative z-10 flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="flex shrink-0 items-center justify-center rounded-full bg-white p-1">
@@ -65,7 +65,7 @@ function IconButton({ title, icon, onClick }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#344055] bg-[#1d2533] text-white shadow-sm transition hover:bg-[#293445]"
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#0f3d2e] bg-[#1f2937] text-white shadow-sm transition hover:bg-[#0f3d2e]"
     >
       {icon}
     </button>

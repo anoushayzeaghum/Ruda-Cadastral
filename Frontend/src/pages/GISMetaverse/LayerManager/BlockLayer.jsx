@@ -2,7 +2,7 @@ import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
 
 const BLOCK_COLORS = [
   "#7c3aed",
-  "#2563eb",
+  "#0f3d2e",
   "#16a34a",
   "#f59e0b",
   "#ef4444",
@@ -26,7 +26,9 @@ function buildBlockColorExpression(data) {
   const blockNames = Array.from(
     new Set(
       (data?.features || [])
-        .map((feature) => feature?.properties?.block || feature?.properties?.name)
+        .map(
+          (feature) => feature?.properties?.block || feature?.properties?.name,
+        )
         .filter(Boolean)
         .map((value) => String(value).toLowerCase()),
     ),

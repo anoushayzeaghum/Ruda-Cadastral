@@ -143,7 +143,7 @@ export default function Utilities({
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
+        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
         onClick={() => setOpen((prev) => !prev)}
       >
         <span>UTILITIES</span>
@@ -159,7 +159,9 @@ export default function Utilities({
             label="Water Supply Points"
             opacity={styles.waterSupplyPoints.opacity}
             onChange={() => toggleLayer("waterSupplyPoints")}
-            onOpacityChange={(value) => updateOpacity("waterSupplyPoints", value)}
+            onOpacityChange={(value) =>
+              updateOpacity("waterSupplyPoints", value)
+            }
             onColorChange={(value) => updateColor("waterSupplyPoints", value)}
           />
 
@@ -170,7 +172,9 @@ export default function Utilities({
             label="Water Supply Levels"
             opacity={styles.waterSupplyLines.opacity}
             onChange={() => toggleLayer("waterSupplyLines")}
-            onOpacityChange={(value) => updateOpacity("waterSupplyLines", value)}
+            onOpacityChange={(value) =>
+              updateOpacity("waterSupplyLines", value)
+            }
             onColorChange={(value) => updateColor("waterSupplyLines", value)}
           />
 

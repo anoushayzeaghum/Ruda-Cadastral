@@ -819,7 +819,7 @@ export default function Measurement({ map }) {
                 className={`relative flex min-w-0 flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 transition ${
                   isActive
                     ? "border-[#8bd66f] bg-[#243041] text-white"
-                    : "border-[#344055] bg-[#1a2233] text-white/80 hover:bg-[#1d2a3a] hover:text-white"
+                    : "border-[#0f3d2e] bg-[#1f2937] text-white/80 hover:bg-[#0f3d2e] hover:text-white"
                 }`}
                 title={tool.label}
               >
@@ -864,7 +864,7 @@ export default function Measurement({ map }) {
             <button
               type="button"
               onClick={handleCancel}
-              className="flex-1 rounded-md border border-[#344055] bg-[#1a2233] py-1.5 text-[11px] font-semibold text-white/50 transition hover:border-red-500/40 hover:text-red-400"
+              className="flex-1 rounded-md border border-[#0f3d2e] bg-[#1f2937] py-1.5 text-[11px] font-semibold text-white/50 transition hover:border-red-500/40 hover:text-red-400"
             >
               Cancel
             </button>
@@ -873,7 +873,7 @@ export default function Measurement({ map }) {
 
         {/* Result panel — only shown after Apply is clicked */}
         {activeTool && resultReady && (
-          <div className="mt-1 rounded-md border border-[#3a4354] bg-[#1a2233] overflow-hidden">
+          <div className="mt-1 rounded-md border border-[#3a4354] bg-[#1f2937] overflow-hidden">
             {/* Hint bar */}
             <div className="flex items-center gap-2 border-b border-[#343c4c] px-3 py-2 text-[10px] text-white/50">
               <Info size={11} className="shrink-0" />

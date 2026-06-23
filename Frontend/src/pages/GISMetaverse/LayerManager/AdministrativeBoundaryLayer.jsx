@@ -74,8 +74,8 @@ export function addRudaBoundaryLayer(map, data) {
 }
 
 const RUDA_MAUZA_FILL_COLOR = "#eef6ff";
-const RUDA_MAUZA_LINE_COLOR = "#2563eb";
-const RUDA_MAUZA_LABEL_COLOR = "#1e3a8a";
+const RUDA_MAUZA_LINE_COLOR = "#0f3d2e";
+const RUDA_MAUZA_LABEL_COLOR = "#0f3d2e";
 const RUDA_MAUZA_BASE_FILL_OPACITY = 0.035;
 const RUDA_MAUZA_BASE_LINE_OPACITY = 0.75;
 

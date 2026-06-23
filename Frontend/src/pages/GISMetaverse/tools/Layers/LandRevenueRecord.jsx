@@ -178,9 +178,11 @@ function reorderLandRevenueLayers(map) {
 
   const beforeMasterPlanLayerId = getLandRevenueBeforeId(map);
 
-  LAND_REVENUE_LAYER_ORDER.slice().reverse().forEach((layerId) => {
-    moveLayerSafely(map, layerId, beforeMasterPlanLayerId);
-  });
+  LAND_REVENUE_LAYER_ORDER.slice()
+    .reverse()
+    .forEach((layerId) => {
+      moveLayerSafely(map, layerId, beforeMasterPlanLayerId);
+    });
 }
 
 function getLabelExpression(key) {
@@ -370,7 +372,11 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
     );
   } else if (ids.label) {
     map.setLayoutProperty(ids.label, "visibility", "visible");
-    map.setPaintProperty(ids.label, "text-color", style.labelColor || style.lineColor);
+    map.setPaintProperty(
+      ids.label,
+      "text-color",
+      style.labelColor || style.lineColor,
+    );
     map.setPaintProperty(ids.label, "text-opacity", o);
   }
 
@@ -440,8 +446,10 @@ function updateColor(map, key, color) {
   if (!ids) return;
 
   try {
-    if (map.getLayer(ids.fill)) map.setPaintProperty(ids.fill, "fill-color", color);
-    if (map.getLayer(ids.line)) map.setPaintProperty(ids.line, "line-color", color);
+    if (map.getLayer(ids.fill))
+      map.setPaintProperty(ids.fill, "fill-color", color);
+    if (map.getLayer(ids.line))
+      map.setPaintProperty(ids.line, "line-color", color);
     if (ids.label && map.getLayer(ids.label))
       map.setPaintProperty(ids.label, "text-color", color);
     reorderLandRevenueLayers(map);
@@ -540,7 +548,13 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       setMauzas([]);
       setSelectedMauzas([]);
       if (draw) {
-        addOrUpdatePolygonLayer(map, "moza", emptyFC(), layers.moza.opacity, layers.moza.color);
+        addOrUpdatePolygonLayer(
+          map,
+          "moza",
+          emptyFC(),
+          layers.moza.opacity,
+          layers.moza.color,
+        );
         setVisible("moza", false);
       }
       return emptyFC();
@@ -552,7 +566,13 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     ) {
       const cachedGeojson = cachedData.current.moza;
       if (draw) {
-        addOrUpdatePolygonLayer(map, "moza", cachedGeojson, layers.moza.opacity, layers.moza.color);
+        addOrUpdatePolygonLayer(
+          map,
+          "moza",
+          cachedGeojson,
+          layers.moza.opacity,
+          layers.moza.color,
+        );
         if (zoom) fitToGeojson(map, cachedGeojson);
         setVisible("moza", true);
       }
@@ -580,7 +600,13 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       });
 
       if (draw) {
-        addOrUpdatePolygonLayer(map, "moza", projectGeojson, layers.moza.opacity, layers.moza.color);
+        addOrUpdatePolygonLayer(
+          map,
+          "moza",
+          projectGeojson,
+          layers.moza.opacity,
+          layers.moza.color,
+        );
         if (zoom) fitToGeojson(map, projectGeojson);
         setVisible("moza", true);
       }
@@ -605,7 +631,13 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   ) => {
     if (!map || !mauzaIds?.length) {
       cachedData.current[key] = emptyFC();
-      addOrUpdatePolygonLayer(map, key, emptyFC(), layers[key].opacity, layers[key].color);
+      addOrUpdatePolygonLayer(
+        map,
+        key,
+        emptyFC(),
+        layers[key].opacity,
+        layers[key].color,
+      );
       setVisible(key, true);
       return emptyFC();
     }
@@ -619,7 +651,13 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
           : await getSquaresGeoJSON({ mauza_id: mauzaIds });
 
       cachedData.current[key] = geojson;
-      addOrUpdatePolygonLayer(map, key, geojson, layers[key].opacity, layers[key].color);
+      addOrUpdatePolygonLayer(
+        map,
+        key,
+        geojson,
+        layers[key].opacity,
+        layers[key].color,
+      );
       if (zoom) fitToGeojson(map, geojson);
       setVisible(key, true);
 
@@ -816,7 +854,10 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                   key={`khasra-${id}-${name}`}
                   className="flex items-center gap-2 py-1 text-[11px] text-white/85"
                 >
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: layers.khasra.color }} />
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: layers.khasra.color }}
+                  />
                   <span className="truncate">{name}</span>
                 </div>
               );
@@ -831,7 +872,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
+        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
         onClick={() => setOpen((prev) => !prev)}
       >
         <span>LAND REVENUE RECORD</span>
@@ -880,11 +921,14 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                   </div>
                 )}
 
-                {selectedProjectId && !layers.moza.visible && !mauzas.length && layers.moza.loading && (
-                  <div className="py-1 text-[11px] text-white/45">
-                    Loading linked mauza names for the selected project.
-                  </div>
-                )}
+                {selectedProjectId &&
+                  !layers.moza.visible &&
+                  !mauzas.length &&
+                  layers.moza.loading && (
+                    <div className="py-1 text-[11px] text-white/45">
+                      Loading linked mauza names for the selected project.
+                    </div>
+                  )}
 
                 {selectedProjectId &&
                   !mauzas.length &&

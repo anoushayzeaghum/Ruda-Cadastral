@@ -62,7 +62,8 @@ function addOrUpdatePointLayer(map, key, geojson, opacity = 100) {
   if (!map) return;
 
   const ids = IDS[key];
-  const color = LAYER_DEFS.find((layer) => layer.key === key)?.color || "#ffffff";
+  const color =
+    LAYER_DEFS.find((layer) => layer.key === key)?.color || "#ffffff";
   const o = opacity / 100;
 
   if (!map.getSource(ids.src)) {
@@ -125,8 +126,10 @@ function applyVisibility(map, key, visible) {
   const ids = IDS[key];
   const vis = visible ? "visible" : "none";
   try {
-    if (ids.circle && map.getLayer(ids.circle)) map.setLayoutProperty(ids.circle, "visibility", vis);
-    if (ids.label && map.getLayer(ids.label)) map.setLayoutProperty(ids.label, "visibility", vis);
+    if (ids.circle && map.getLayer(ids.circle))
+      map.setLayoutProperty(ids.circle, "visibility", vis);
+    if (ids.label && map.getLayer(ids.label))
+      map.setLayoutProperty(ids.label, "visibility", vis);
   } catch (_) {}
 }
 
@@ -139,7 +142,8 @@ function applyOpacity(map, key, opacity) {
       map.setPaintProperty(ids.circle, "circle-opacity", o);
       map.setPaintProperty(ids.circle, "circle-stroke-opacity", o);
     }
-    if (ids.label && map.getLayer(ids.label)) map.setPaintProperty(ids.label, "text-opacity", o);
+    if (ids.label && map.getLayer(ids.label))
+      map.setPaintProperty(ids.label, "text-opacity", o);
   } catch (_) {}
 }
 
@@ -147,11 +151,18 @@ export default function Miscellaneous({ map }) {
   const [open, setOpen] = useState(false);
   const cachedData = useRef({});
   const [layers, setLayers] = useState(() =>
-    Object.fromEntries(LAYER_DEFS.map((d) => [d.key, { visible: false, opacity: 100, loading: false }]))
+    Object.fromEntries(
+      LAYER_DEFS.map((d) => [
+        d.key,
+        { visible: false, opacity: 100, loading: false },
+      ]),
+    ),
   );
 
-  const setVisible = (key, v) => setLayers((p) => ({ ...p, [key]: { ...p[key], visible: v } }));
-  const setOpacity = (key, o) => setLayers((p) => ({ ...p, [key]: { ...p[key], opacity: o } }));
+  const setVisible = (key, v) =>
+    setLayers((p) => ({ ...p, [key]: { ...p[key], visible: v } }));
+  const setOpacity = (key, o) =>
+    setLayers((p) => ({ ...p, [key]: { ...p[key], opacity: o } }));
   const setLoading = (key, loading) =>
     setLayers((p) => ({ ...p, [key]: { ...p[key], loading } }));
 
@@ -162,7 +173,9 @@ export default function Miscellaneous({ map }) {
     try {
       const data =
         cachedData.current[key] ||
-        (key === "trijunction" ? await getTrijunctionPoints() : await getFieldPoints());
+        (key === "trijunction"
+          ? await getTrijunctionPoints()
+          : await getFieldPoints());
 
       cachedData.current[key] = data;
       addOrUpdatePointLayer(map, key, data, layers[key].opacity);
@@ -185,7 +198,9 @@ export default function Miscellaneous({ map }) {
   };
 
   useEffect(() => {
-    LAYER_DEFS.forEach(({ key }) => applyVisibility(map, key, layers[key].visible));
+    LAYER_DEFS.forEach(({ key }) =>
+      applyVisibility(map, key, layers[key].visible),
+    );
   }, [map, layers]);
 
   useEffect(() => {
@@ -198,7 +213,7 @@ export default function Miscellaneous({ map }) {
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
+        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
         onClick={() => setOpen((p) => !p)}
       >
         <span>MISCELLANEOUS</span>

@@ -131,7 +131,7 @@ export default function MetaverseLegend({
       <button
         type="button"
         onClick={() => setCollapsed((value) => !value)}
-        className="flex w-full cursor-pointer items-center justify-between border-b border-[#343c4c] px-4 py-3 text-white hover:bg-[#293445]"
+        className="flex w-full cursor-pointer items-center justify-between border-b border-[#343c4c] px-4 py-3 text-white hover:bg-[#0f3d2e]"
       >
         <span className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide">
           <MapIcon size={15} />
@@ -148,7 +148,8 @@ export default function MetaverseLegend({
         <div className={`max-h-[380px] p-3 ${LAYER_PANEL_SCROLL}`}>
           {!showRudaLegend && !showRoadLegend && !showTopoLegend && (
             <div className="rounded-sm border border-[#3b4558] bg-[#232b3a] p-3 text-[11px] text-white/70">
-              No active legend layer. Turn on RUDA Boundary, Proposed Roads, or Topographic Plan.
+              No active legend layer. Turn on RUDA Boundary, Proposed Roads, or
+              Topographic Plan.
             </div>
           )}
 
@@ -171,7 +172,10 @@ export default function MetaverseLegend({
           )}
 
           {showRoadLegend && (
-            <LegendSection title="RUDA Proposed Roads" icon={<Route size={14} />}>
+            <LegendSection
+              title="RUDA Proposed Roads"
+              icon={<Route size={14} />}
+            >
               {roadLegendItems.map((item) => (
                 <LegendRoadItem key={item.label} item={item} />
               ))}
@@ -183,7 +187,9 @@ export default function MetaverseLegend({
               <LegendPolygonItem label="Builtup Areas" color="#f97316" />
               <LegendPolygonItem label="Parks" color="#22c55e" />
               <LegendPolygonItem label="Green Belts" color="#10b981" />
-              <LegendRoadItem item={{ label: "Road Tracks", color: "#64748b", width: 2 }} />
+              <LegendRoadItem
+                item={{ label: "Road Tracks", color: "#64748b", width: 2 }}
+              />
               <LegendPointItem label="Manholes" color="#ef4444" />
               <LegendPointItem label="Light Poles" color="#eab308" />
               <LegendPointItem label="Spot Levels" color="#a855f7" />

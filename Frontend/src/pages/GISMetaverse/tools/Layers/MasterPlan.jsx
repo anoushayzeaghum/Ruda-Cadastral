@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
 const MASTER_PLAN_LAYER_COLORS = {
-  boundary: "#244cff",
+  boundary: "#0f3d2e",
   blockBoundary: "#7c3aed",
   masterPlan: "#111827",
   spotLevel: "#65c96b",
@@ -64,25 +64,55 @@ const applyMasterPlanLayerOpacity = (map, key, opacity = 100) => {
 
   switch (key) {
     case "boundary":
-      setPaint(map, "metaverse-project-boundary-fill", "fill-opacity", 0.12 * opacityRatio);
-      setPaint(map, "metaverse-project-boundary-line", "line-opacity", opacityRatio);
+      setPaint(
+        map,
+        "metaverse-project-boundary-fill",
+        "fill-opacity",
+        0.12 * opacityRatio,
+      );
+      setPaint(
+        map,
+        "metaverse-project-boundary-line",
+        "line-opacity",
+        opacityRatio,
+      );
       break;
 
     case "blockBoundary":
-      setPaint(map, "metaverse-block-fill", "fill-opacity", 0.28 * opacityRatio);
+      setPaint(
+        map,
+        "metaverse-block-fill",
+        "fill-opacity",
+        0.28 * opacityRatio,
+      );
       setPaint(map, "metaverse-block-line", "line-opacity", opacityRatio);
       setPaint(map, "metaverse-block-label", "text-opacity", opacityRatio);
       break;
 
     case "masterPlan":
-      setPaint(map, "metaverse-masterplan-fill", "fill-opacity", 0.45 * opacityRatio);
+      setPaint(
+        map,
+        "metaverse-masterplan-fill",
+        "fill-opacity",
+        0.45 * opacityRatio,
+      );
       setPaint(map, "metaverse-masterplan-line", "line-opacity", opacityRatio);
       setPaint(map, "metaverse-masterplan-label", "text-opacity", opacityRatio);
       break;
 
     case "spotLevel":
-      setPaint(map, "metaverse-spot-level-circle", "circle-opacity", opacityRatio);
-      setPaint(map, "metaverse-spot-level-circle", "circle-stroke-opacity", opacityRatio);
+      setPaint(
+        map,
+        "metaverse-spot-level-circle",
+        "circle-opacity",
+        opacityRatio,
+      );
+      setPaint(
+        map,
+        "metaverse-spot-level-circle",
+        "circle-stroke-opacity",
+        opacityRatio,
+      );
       break;
 
     case "contours":
@@ -91,7 +121,12 @@ const applyMasterPlanLayerOpacity = (map, key, opacity = 100) => {
       break;
 
     case "roads":
-      setPaint(map, "metaverse-roads-fill", "fill-opacity", 0.35 * opacityRatio);
+      setPaint(
+        map,
+        "metaverse-roads-fill",
+        "fill-opacity",
+        0.35 * opacityRatio,
+      );
       setPaint(map, "metaverse-roads-line", "line-opacity", opacityRatio);
       break;
 
@@ -198,12 +233,24 @@ export default function MasterPlan({
       if (!layerVisibility[key]) return [];
       setRuntimeStyle(key, styles[key]);
       return [0, 250, 700].map((delay) =>
-        setTimeout(() => applyMasterPlanLayerStyle(map, key, styles[key]), delay),
+        setTimeout(
+          () => applyMasterPlanLayerStyle(map, key, styles[key]),
+          delay,
+        ),
       );
     });
 
     return () => timers.forEach(clearTimeout);
-  }, [map, selectedProjectId, layerVisibility.boundary, layerVisibility.blockBoundary, layerVisibility.masterPlan, layerVisibility.spotLevel, layerVisibility.contours, layerVisibility.roads]);
+  }, [
+    map,
+    selectedProjectId,
+    layerVisibility.boundary,
+    layerVisibility.blockBoundary,
+    layerVisibility.masterPlan,
+    layerVisibility.spotLevel,
+    layerVisibility.contours,
+    layerVisibility.roads,
+  ]);
 
   useEffect(() => {
     if (!selectedProjectId) {
@@ -244,7 +291,7 @@ export default function MasterPlan({
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
+        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
         onClick={() => setOpen((prev) => !prev)}
       >
         <span>MASTER PLAN</span>

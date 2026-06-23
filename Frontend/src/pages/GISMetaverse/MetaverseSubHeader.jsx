@@ -255,63 +255,63 @@ export default function MetaverseSubHeader({
     };
   }, [filters.projectId]);
 
-useEffect(() => {
-  let cancelled = false;
+  useEffect(() => {
+    let cancelled = false;
 
-  const loadCascadingOptions = async () => {
-    if (!filters.projectId) {
-      setOptions({ plotTypes: [], plotNos: [], areas: [] });
-      return;
-    }
-
-    try {
-      // Plot Type depends on Project + Block
-      const plotTypeOptions = await getPlotOptions({
-        project_id: filters.projectId,
-        block: filters.block || undefined,
-      });
-
-      // Area depends on Project + Block + Plot Type
-      const areaOptions = await getPlotOptions({
-        project_id: filters.projectId,
-        block: filters.block || undefined,
-        type: filters.plotType || undefined,
-      });
-
-      // Plot No depends on Project + Block + Plot Type + Area
-      const plotNoOptions = await getPlotOptions({
-        project_id: filters.projectId,
-        block: filters.block || undefined,
-        type: filters.plotType || undefined,
-        plot_area: filters.area || undefined,
-      });
-console.log("RAW AREAS FROM API:", areaOptions.areas);
-      if (cancelled) return;
-
-      setOptions({
-        plotTypes: uniqueSorted(plotTypeOptions.plotTypes || []),
-        areas: uniqueSorted(areaOptions.areas || []),
-        plotNos: uniqueSorted(plotNoOptions.plotNos || []),
-      });
-    } catch (err) {
-      console.error(err);
-
-      if (!cancelled) {
-        setOptions({
-          plotTypes: [],
-          areas: [],
-          plotNos: [],
-        });
+    const loadCascadingOptions = async () => {
+      if (!filters.projectId) {
+        setOptions({ plotTypes: [], plotNos: [], areas: [] });
+        return;
       }
-    }
-  };
 
-  loadCascadingOptions();
+      try {
+        // Plot Type depends on Project + Block
+        const plotTypeOptions = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+        });
 
-  return () => {
-    cancelled = true;
-  };
-}, [filters.projectId, filters.block, filters.plotType, filters.area]);
+        // Area depends on Project + Block + Plot Type
+        const areaOptions = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+          type: filters.plotType || undefined,
+        });
+
+        // Plot No depends on Project + Block + Plot Type + Area
+        const plotNoOptions = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block || undefined,
+          type: filters.plotType || undefined,
+          plot_area: filters.area || undefined,
+        });
+        console.log("RAW AREAS FROM API:", areaOptions.areas);
+        if (cancelled) return;
+
+        setOptions({
+          plotTypes: uniqueSorted(plotTypeOptions.plotTypes || []),
+          areas: uniqueSorted(areaOptions.areas || []),
+          plotNos: uniqueSorted(plotNoOptions.plotNos || []),
+        });
+      } catch (err) {
+        console.error(err);
+
+        if (!cancelled) {
+          setOptions({
+            plotTypes: [],
+            areas: [],
+            plotNos: [],
+          });
+        }
+      }
+    };
+
+    loadCascadingOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters.projectId, filters.block, filters.plotType, filters.area]);
 
   const updateFilter = (key, value) => {
     setFilters((prev) => {
@@ -367,44 +367,46 @@ console.log("RAW AREAS FROM API:", areaOptions.areas);
     label: b.block,
   }));
 
-const areaToMarla = (value) => {
-  const text = String(value || "").toLowerCase().trim();
+  const areaToMarla = (value) => {
+    const text = String(value || "")
+      .toLowerCase()
+      .trim();
 
-  const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
+    const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
 
-  if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
-  if (text.includes("kanal")) return number * 20;  // 1 kanal = 20 marla
-  if (text.includes("marla")) return number;
+    if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
+    if (text.includes("kanal")) return number * 20; // 1 kanal = 20 marla
+    if (text.includes("marla")) return number;
 
-  return number;
-};
+    return number;
+  };
 
-const areaOptions = (options.areas || [])
-  .map((area) => ({
-    value: String(area),
-    label: area,
-  }))
-  .sort((a, b) => {
-    const av = areaToMarla(a.label);
-    const bv = areaToMarla(b.label);
+  const areaOptions = (options.areas || [])
+    .map((area) => ({
+      value: String(area),
+      label: area,
+    }))
+    .sort((a, b) => {
+      const av = areaToMarla(a.label);
+      const bv = areaToMarla(b.label);
 
-    // primary sort: actual size
-    if (av !== bv) return av - bv;
+      // primary sort: actual size
+      if (av !== bv) return av - bv;
 
-    // secondary: unit priority (optional but makes it stable)
-    const unitRank = (label) => {
-      const l = label.toLowerCase();
-      if (l.includes("marla")) return 1;
-      if (l.includes("kanal")) return 2;
-      if (l.includes("acre")) return 3;
-      return 4;
-    };
+      // secondary: unit priority (optional but makes it stable)
+      const unitRank = (label) => {
+        const l = label.toLowerCase();
+        if (l.includes("marla")) return 1;
+        if (l.includes("kanal")) return 2;
+        if (l.includes("acre")) return 3;
+        return 4;
+      };
 
-    const unitDiff = unitRank(a.label) - unitRank(b.label);
-    if (unitDiff !== 0) return unitDiff;
+      const unitDiff = unitRank(a.label) - unitRank(b.label);
+      if (unitDiff !== 0) return unitDiff;
 
-    return a.label.localeCompare(b.label);
-  });
+      return a.label.localeCompare(b.label);
+    });
 
   const plotTypeOptions = options.plotTypes?.map((type) => ({
     value: String(type),
@@ -421,7 +423,7 @@ const areaOptions = (options.areas || [])
 
   return (
     <div className="absolute left-1/2 top-3 z-20 w-[calc(100vw-4.5rem)] max-w-[720px] -translate-x-1/2">
-      <div className="flex items-center gap-1.5 overflow-x-auto rounded-lg bg-[#111827] px-2 py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex items-center gap-1.5 overflow-x-auto rounded-lg bg-[#0f3d2e] px-2 py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <SearchableSelect
           value={filters.projectId}
           placeholder="Projects"
@@ -453,7 +455,7 @@ const areaOptions = (options.areas || [])
           options={areaOptions}
           onChange={(value) => updateFilter("area", value)}
           className={filterClassName}
-        />       
+        />
 
         <SearchableSelect
           value={filters.plotNo}

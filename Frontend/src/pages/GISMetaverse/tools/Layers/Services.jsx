@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronRight, Grid3X3, Video, X, VideoOff, Maximize2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Grid3X3,
+  Video,
+  X,
+  VideoOff,
+  Maximize2,
+} from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -12,11 +20,11 @@ const CAMERA_STYLE = {
 
 // Placeholder camera feeds — set `stream` to a real HLS URL when available
 const CAMERA_FEEDS = [
-  { id: 1, label: "Camera 1", location: "Main Entrance",   stream: null },
-  { id: 2, label: "Camera 2", location: "Block-A Gate",    stream: null },
-  { id: 3, label: "Camera 3", location: "Roundabout",      stream: null },
-  { id: 4, label: "Camera 4", location: "Boulevard",       stream: null },
-  { id: 5, label: "Camera 5", location: "Park North",      stream: null },
+  { id: 1, label: "Camera 1", location: "Main Entrance", stream: null },
+  { id: 2, label: "Camera 2", location: "Block-A Gate", stream: null },
+  { id: 3, label: "Camera 3", location: "Roundabout", stream: null },
+  { id: 4, label: "Camera 4", location: "Boulevard", stream: null },
+  { id: 5, label: "Camera 5", location: "Park North", stream: null },
   { id: 6, label: "Camera 6", location: "Commercial Area", stream: null },
 ];
 
@@ -48,10 +56,16 @@ const setRuntimeStyle = (key, patch = {}) => {
 const applyCameraStyle = (map, style = {}) => {
   if (!map) return;
   const color = style.color || CAMERA_STYLE.color;
-  const opacityRatio = clampOpacity(style.opacity ?? CAMERA_STYLE.opacity) / 100;
+  const opacityRatio =
+    clampOpacity(style.opacity ?? CAMERA_STYLE.opacity) / 100;
   setPaint(map, CAMERA_STYLE.circleLayer, "circle-color", color);
   setPaint(map, CAMERA_STYLE.circleLayer, "circle-opacity", opacityRatio);
-  setPaint(map, CAMERA_STYLE.circleLayer, "circle-stroke-opacity", opacityRatio);
+  setPaint(
+    map,
+    CAMERA_STYLE.circleLayer,
+    "circle-stroke-opacity",
+    opacityRatio,
+  );
   setPaint(map, CAMERA_STYLE.labelLayer, "text-color", color);
   setPaint(map, CAMERA_STYLE.labelLayer, "text-opacity", opacityRatio);
 };
@@ -155,7 +169,9 @@ export default function Services({
                 Live Camera Feed
                 <span className="ml-auto flex items-center gap-1">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
-                  <span className="text-[10px] font-normal text-white/50">LIVE</span>
+                  <span className="text-[10px] font-normal text-white/50">
+                    LIVE
+                  </span>
                 </span>
               </button>
             )}
@@ -168,14 +184,18 @@ export default function Services({
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div
             className={`flex flex-col overflow-hidden rounded-xl border border-[#3a4354] bg-[#0f1520] shadow-2xl transition-all duration-200 ${
-              fullscreen ? "fixed inset-4" : "w-[min(900px,96vw)] max-h-[min(620px,90vh)]"
+              fullscreen
+                ? "fixed inset-4"
+                : "w-[min(900px,96vw)] max-h-[min(620px,90vh)]"
             }`}
           >
             {/* Modal header */}
             <div className="flex shrink-0 items-center justify-between border-b border-[#2a3548] bg-[#161f2e] px-4 py-3">
               <div className="flex items-center gap-2">
                 <Video size={15} className="text-[#f97316]" />
-                <span className="text-[13px] font-bold text-white">Live Camera Feed</span>
+                <span className="text-[13px] font-bold text-white">
+                  Live Camera Feed
+                </span>
                 <span className="flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-semibold text-red-400">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
                   LIVE
@@ -193,7 +213,10 @@ export default function Services({
                 <button
                   type="button"
                   title="Close"
-                  onClick={() => { setLiveFeedOpen(false); setFullscreen(false); }}
+                  onClick={() => {
+                    setLiveFeedOpen(false);
+                    setFullscreen(false);
+                  }}
                   className="flex h-7 w-7 items-center justify-center rounded text-white/50 transition hover:bg-[#2a3548] hover:text-white"
                 >
                   <X size={14} />
@@ -220,7 +243,9 @@ export default function Services({
                         className="h-1.5 w-1.5 rounded-full"
                         style={{
                           backgroundColor:
-                            selectedCamera.id === cam.id ? "#f97316" : "#4b5563",
+                            selectedCamera.id === cam.id
+                              ? "#f97316"
+                              : "#4b5563",
                         }}
                       />
                       {cam.label}
@@ -237,8 +262,12 @@ export default function Services({
                 {/* Camera info bar */}
                 <div className="flex shrink-0 items-center justify-between border-b border-[#2a3548] bg-[#131c2b] px-4 py-2">
                   <div>
-                    <p className="text-[12px] font-bold text-white">{selectedCamera.label}</p>
-                    <p className="text-[10px] text-white/40">{selectedCamera.location}</p>
+                    <p className="text-[12px] font-bold text-white">
+                      {selectedCamera.label}
+                    </p>
+                    <p className="text-[10px] text-white/40">
+                      {selectedCamera.location}
+                    </p>
                   </div>
                   <span className="rounded bg-green-500/15 px-2 py-0.5 text-[10px] font-semibold text-green-400">
                     Connected
@@ -294,7 +323,10 @@ export default function Services({
 function LiveClock() {
   const [time, setTime] = useState(() => new Date().toLocaleTimeString());
   useEffect(() => {
-    const id = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
+    const id = setInterval(
+      () => setTime(new Date().toLocaleTimeString()),
+      1000,
+    );
     return () => clearInterval(id);
   }, []);
   return <>{time}</>;
@@ -364,7 +396,9 @@ function LayerItem({
           onChange={(e) => onOpacityChange(Number(e.target.value))}
           className="h-[3px] flex-1 cursor-pointer rounded-full bg-[#8fd36f] accent-[#65c96b] disabled:cursor-not-allowed"
         />
-        <span className="w-7 text-right text-[11px] text-white/90">{opacity}%</span>
+        <span className="w-7 text-right text-[11px] text-white/90">
+          {opacity}%
+        </span>
       </div>
     </div>
   );
