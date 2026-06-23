@@ -653,16 +653,60 @@ export default function MapView({
     return num.toFixed(6);
   };
 
-  // ── Shared polygon popup ───────────────────────────────────────────────────
-  const buildPolygonPopupHtml = (layerType, props = {}, extraRows = []) => {
+  // ── Unified popup builder — matches GISMetaverse PlotPopup design ──────────
+  const buildUnifiedPopupHtml = (title, rows = []) => {
     const esc = (v) =>
-      v == null ? "-" : String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      v == null
+        ? ""
+        : String(v)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
 
-    const CONFIGS = {
-      khasra: {
-        title: "Khasra",
-        color: "#16a34a",
-        rows: [
+    const filteredRows = rows.filter(
+      ([, v]) => v != null && String(v).trim() !== "" && String(v).trim() !== "-",
+    );
+
+    const rowsHtml = filteredRows
+      .map(
+        ([label, value]) => `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(0,0,0,0.05);padding:7px 0;box-sizing:border-box;">
+          <span style="min-width:90px;flex-shrink:0;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:#6b7280;">${esc(label)}:</span>
+          <span style="word-break:break-word;text-align:right;font-size:12px;font-weight:500;line-height:1.4;color:#111827;">${esc(value)}</span>
+        </div>`,
+      )
+      .join("");
+
+    return `
+      <div style="width:280px;overflow:hidden;border-radius:10px;background:#fff;color:#111827;box-shadow:0 20px 60px rgba(0,0,0,0.25);outline:1px solid rgba(0,0,0,0.08);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:10px 10px 0 0;background:#111827;padding:12px 16px;">
+          <div style="font-size:15px;font-weight:700;letter-spacing:0.3px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${esc(title)}
+          </div>
+          <button type="button" data-mapview-popup-close="true" aria-label="Close"
+            style="display:flex;flex-shrink:0;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.1);font-size:18px;line-height:1;color:#fff;border:none;cursor:pointer;">×</button>
+        </div>
+        <div style="max-height:272px;overflow-y:auto;padding:10px 14px;scrollbar-width:none;">
+          ${
+            rowsHtml ||
+            `<div style="padding:16px 0;text-align:center;font-size:11px;font-weight:500;color:#9ca3af;">No additional details available.</div>`
+          }
+        </div>
+      </div>`;
+  };
+
+  // Resolve rows for each layer type
+  const buildPopupRowsForType = (layerType, props = {}, coordinates = null) => {
+    const coordRows = coordinates?.lat != null
+      ? [
+          ["Latitude", formatCoordinate(coordinates.lat)],
+          ["Longitude", formatCoordinate(coordinates.lng)],
+        ]
+      : [];
+
+    switch (layerType) {
+      case "khasra":
+        return [
           ["Khasra No", props.kh ?? props.KH ?? props.k ?? props.K ?? props.khasra_no ?? props.khasra_id],
           ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
           ["Murabba No", props.m ?? props.M ?? props.mn ?? props.murabba_no],
@@ -670,137 +714,125 @@ export default function MapView({
           ["Area", props._area_acres != null ? `${Number(props._area_acres).toFixed(3)} Acres` : null],
           ["DC Rate", props.dc_rate],
           ["Remarks", props.remarks],
-        ],
-      },
-      murabba: {
-        title: "Murabba",
-        color: "#059669",
-        rows: [
+        ];
+      case "murabba":
+        return [
           ["Murabba No", props.m ?? props.M ?? props.mn ?? props.murabba_no ?? props.murabba_id],
           ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
           ["Land Type", props.type ?? props.land_type],
           ["Area", props._area_acres != null ? `${Number(props._area_acres).toFixed(3)} Acres` : null],
           ["Remarks", props.remarks],
-        ],
-      },
-      mauza: {
-        title: "Mauza",
-        color: "#1d4ed8",
-        rows: [
+        ];
+      case "mauza":
+        return [
           ["Mauza", props.mauza ?? props.Mauza ?? props.moza ?? props.name],
           ["Tehsil", props.tehsil ?? props.Tehsil],
           ["District", props.district ?? props.District],
-        ],
-      },
-      tehsil: {
-        title: "Tehsil",
-        color: "#1d4ed8",
-        rows: [
+        ];
+      case "tehsil":
+        return [
           ["Tehsil", props.tehsil ?? props.name ?? props.tehsil_name],
           ["District", props.district ?? props.District],
-        ],
-      },
-      district: {
-        title: "District",
-        color: "#1e3a8a",
-        rows: [
+        ];
+      case "district":
+        return [
           ["District", props.district ?? props.name ?? props.district_name],
           ["Division", props.division ?? props.Division],
-        ],
-      },
-      square: {
-        title: "Square",
-        color: "#059669",
-        rows: [
+        ];
+      case "square":
+        return [
           ["Square No", props.sq ?? props.SQ ?? props.square ?? props.square_no],
           ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
           ["Tehsil", props.tehsil ?? props.Tehsil],
           ["District", props.district ?? props.District],
-        ],
-      },
-      acre: {
-        title: "Acre",
-        color: "#7c3aed",
-        rows: [
+        ];
+      case "acre":
+        return [
           ["Acre No", props.acre ?? props.acre_no ?? props.ac ?? props.name],
           ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
-        ],
-      },
-      ruda: {
-        title: "RUDA Phase",
-        color: "#0f3d2e",
-        rows: [
+        ];
+      case "ruda":
+        return [
           ["Phase", props._ruda_phase_label ?? props.phase ?? props.name],
           ["Name", props.name],
-        ],
-      },
-    };
-
-    const config = CONFIGS[layerType] ?? {
-      title: layerType.charAt(0).toUpperCase() + layerType.slice(1),
-      color: "#158033",
-      rows: extraRows,
-    };
-
-    const allRows = [...(config.rows || []), ...extraRows].filter(
-      ([, v]) => v != null && String(v).trim() !== "" && String(v).trim() !== "-",
-    );
-
-    const rowsHtml = allRows
-      .map(
-        ([label, value]) => `
-        <div style="display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #f3f4f6;">
-          <span style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;">${esc(label)}</span>
-          <span style="font-size:12px;font-weight:600;color:#111827;text-align:right;">${esc(value)}</span>
-        </div>`,
-      )
-      .join("");
-
-    return `
-      <div style="width:240px;overflow:hidden;border-radius:10px;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,0.18);outline:1px solid rgba(0,0,0,0.07);">
-        <div style="background:${config.color};padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:0.2px;">${esc(config.title)}</span>
-          <button type="button" data-polygon-popup-close="true"
-            style="background:rgba(255,255,255,0.15);border:none;cursor:pointer;width:20px;height:20px;border-radius:50%;color:#fff;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
-        </div>
-        <div style="padding:8px 12px;max-height:240px;overflow-y:auto;">
-          ${rowsHtml || '<div style="padding:8px 0;font-size:11px;color:#9ca3af;text-align:center;">No details available.</div>'}
-        </div>
-      </div>`;
+        ];
+      case "geodetic":
+        return [
+          ["Name", props.name],
+          ["Code", props.code],
+          ["Elevation (m)", props.elevation],
+          ...coordRows,
+        ];
+      case "fieldPoint":
+        return [
+          ["Name", props.name],
+          ["Code", props.code],
+          ["Type", props.gm_type],
+          ["Elevation (m)", props.elevation],
+          ...coordRows,
+        ];
+      case "trijunction":
+        return [
+          ["Mauza 1", props.m1],
+          ["Mauza 2", props.m2],
+          ["Mauza 3", props.m3],
+          ...coordRows,
+        ];
+      case "controlPoint":
+        return [["Type", "Burji"], ...coordRows];
+      default:
+        return [...coordRows];
+    }
   };
 
-  const showPolygonPopup = (layerType, props, lngLat, extraRows = []) => {
+  const POPUP_TITLES = {
+    khasra: "Khasra",
+    murabba: "Murabba",
+    mauza: "Mauza",
+    tehsil: "Tehsil",
+    district: "District",
+    square: "Square",
+    acre: "Acre",
+    ruda: "RUDA Phase",
+    geodetic: "Geodetic Point",
+    fieldPoint: "Field Point",
+    trijunction: "Tri-junction Point",
+    controlPoint: "Control Point",
+  };
+
+  // Single show-popup helper used by all layers
+  const showMapviewPopup = (layerType, props, lngLat, coordinates = null) => {
     const map = mapInstance.current;
     if (!map) return;
 
     closeActivePopup();
 
-    const html = buildPolygonPopupHtml(layerType, props, extraRows);
+    const title = POPUP_TITLES[layerType] ?? layerType;
+    const rows = buildPopupRowsForType(layerType, props, coordinates);
+    const html = buildUnifiedPopupHtml(title, rows);
 
     const popup = new mapboxgl.Popup({
       closeButton: false,
       closeOnClick: false,
-      offset: 12,
+      offset: 15,
       maxWidth: "none",
-      className: "mapview-polygon-popup",
+      className: "mapview-unified-popup",
     })
       .setLngLat(lngLat)
       .setHTML(html)
       .addTo(map);
 
-    // Strip Mapbox default padding/shadow
+    // Match GISMetaverse popup shell styling
     const el = popup.getElement();
     const content = el?.querySelector(".mapboxgl-popup-content");
     if (content) {
-      content.style.cssText = "padding:0;background:transparent;box-shadow:none;border-radius:10px;";
+      content.style.cssText =
+        "padding:0;background:transparent;box-shadow:none;border-radius:10px;";
     }
     const tip = el?.querySelector(".mapboxgl-popup-tip");
-    if (tip) tip.style.borderTopColor = layerType === "district" ? "#1e3a8a"
-      : layerType === "acre" ? "#7c3aed"
-      : layerType?.startsWith("ruda") ? "#0f3d2e"
-      : "#158033";
+    if (tip) tip.style.borderTopColor = "#111827";
 
-    const closeBtn = el?.querySelector("[data-polygon-popup-close]");
+    const closeBtn = el?.querySelector("[data-mapview-popup-close]");
     if (closeBtn) {
       closeBtn.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -827,89 +859,9 @@ export default function MapView({
     });
   };
 
-
-  const buildMinimalPopupHtml = (
-    props = {},
-    coordinates = { lat: null, lng: null },
-  ) => {
-    const isControlPoint = props.type === "B";
-    const isTriJunction = props.type === "TJ";
-    const isFieldPoint = props._layerType === "fieldPoints";
-    const isGeodeticPoint = props._layerType === "geodeticNetwork";
-
-    const coordinatesHtml = `
-      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #d1d5db;">
-        <div><span style="font-weight: 600;">Latitude:</span> ${formatCoordinate(coordinates.lat)}</div>
-        <div><span style="font-weight: 600;">Longitude:</span> ${formatCoordinate(coordinates.lng)}</div>
-      </div>
-    `;
-
-    if (isGeodeticPoint) {
-      return `
-        <div style="min-width: 220px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #1f2937;">
-          <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
-            Geodetic Network
-          </div>
-          <div><span style="font-weight: 600;">Name:</span> ${props.name ?? "-"}</div>
-          <div><span style="font-weight: 600;">Code:</span> ${props.code ?? "-"}</div>
-          <div><span style="font-weight: 600;">Elevation:</span> ${props.elevation ?? "-"}</div>
-          ${coordinatesHtml}
-        </div>
-      `;
-    }
-
-    if (isFieldPoint) {
-      return `
-        <div style="min-width: 220px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #1f2937;">
-          <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
-            Field Point
-          </div>
-          <div><span style="font-weight: 600;">Name:</span> ${props.name ?? "-"}</div>
-          <div><span style="font-weight: 600;">Code:</span> ${props.code ?? "-"}</div>
-          <div><span style="font-weight: 600;">GM Type:</span> ${props.gm_type ?? "-"}</div>
-          <div><span style="font-weight: 600;">Elevation:</span> ${props.elevation ?? "-"}</div>
-          ${coordinatesHtml}
-        </div>
-      `;
-    }
-
-    if (isControlPoint) {
-      return `
-        <div style="min-width: 180px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.45; color: #1f2937;">
-          <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
-            Control Point
-          </div>
-          <div>
-            <span style="font-weight: 600;">Type:</span> Burji
-          </div>
-          ${coordinatesHtml}
-        </div>
-      `;
-    }
-
-    if (isTriJunction) {
-      return `
-        <div style="min-width: 220px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.5; color: #1f2937;">
-          <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
-            Tri-junction Point
-          </div>
-          <div><span style="font-weight: 600;">Mauza 1:</span> ${props.m1 ?? "-"}</div>
-          <div><span style="font-weight: 600;">Mauza 2:</span> ${props.m2 ?? "-"}</div>
-          <div><span style="font-weight: 600;">Mauza 3:</span> ${props.m3 ?? "-"}</div>
-          ${coordinatesHtml}
-        </div>
-      `;
-    }
-
-    return `
-      <div style="min-width: 160px; font-family: Arial, sans-serif; font-size: 12px; color: #1f2937;">
-        <div style="font-size: 13px; font-weight: 700; color: #158033; margin-bottom: 6px;">
-          Point
-        </div>
-        <div>No details available</div>
-        ${coordinatesHtml}
-      </div>
-    `;
+  // Keep showPolygonPopup as a thin wrapper so existing call-sites don't break
+  const showPolygonPopup = (layerType, props, lngLat) => {
+    showMapviewPopup(layerType, props, lngLat);
   };
 
   function handlePointMouseEnter() {
@@ -934,44 +886,25 @@ export default function MapView({
     const props = feature.properties || {};
     const coordinates = getFeatureLatLng(feature, e.lngLat);
 
-    const html = buildMinimalPopupHtml(props, coordinates);
+    // Determine which unified popup type to use
+    const isGeodetic = props._layerType === "geodeticNetwork";
+    const isFieldPoint = props._layerType === "fieldPoints";
+    const isTriJunction = String(props.type ?? "").toUpperCase() === "TJ";
+    const isControlPoint = String(props.type ?? "").toUpperCase() === "B";
 
-    closeActivePopup();
+    const layerType = isGeodetic ? "geodetic"
+      : isFieldPoint ? "fieldPoint"
+      : isTriJunction ? "trijunction"
+      : isControlPoint ? "controlPoint"
+      : "controlPoint";
 
-    const popup = new mapboxgl.Popup({
-      offset: 10,
-      maxWidth: "260px",
-      closeButton: true,
-      closeOnClick: false,
-    })
-      .setLngLat(
-        e.lngLat ||
-          (coordinates.lng != null && coordinates.lat != null
-            ? [coordinates.lng, coordinates.lat]
-            : [DEFAULT_CENTER[0], DEFAULT_CENTER[1]]),
-      )
-      .setHTML(html)
-      .addTo(map);
+    const lngLat = e.lngLat || (
+      coordinates.lng != null && coordinates.lat != null
+        ? [coordinates.lng, coordinates.lat]
+        : DEFAULT_CENTER
+    );
 
-    activePopupRef.current = popup;
-
-    popupTimeoutRef.current = setTimeout(() => {
-      if (activePopupRef.current === popup) {
-        popup.remove();
-        activePopupRef.current = null;
-      }
-      popupTimeoutRef.current = null;
-    }, 6000);
-
-    popup.on("close", () => {
-      if (activePopupRef.current === popup) {
-        activePopupRef.current = null;
-      }
-      if (popupTimeoutRef.current) {
-        clearTimeout(popupTimeoutRef.current);
-        popupTimeoutRef.current = null;
-      }
-    });
+    showMapviewPopup(layerType, props, lngLat, coordinates);
   }
 
   const drawPointLayer = ({
@@ -1132,36 +1065,12 @@ export default function MapView({
 
       function cornerClickHandler(e) {
         const lngLat = e.lngLat;
-        closeActivePopup();
-
-        const html = `<div style="font-family: Arial, sans-serif; font-size:12px;"><div style="font-weight:600">Corner</div><div>Lat: ${formatCoordinate(lngLat.lat)}</div><div>Lng: ${formatCoordinate(lngLat.lng)}</div></div>`;
-
-        const popup = new mapboxgl.Popup({
-          offset: 8,
-          closeButton: false,
-          closeOnClick: false,
-        })
-          .setLngLat([lngLat.lng, lngLat.lat])
-          .setHTML(html)
-          .addTo(map);
-
-        activePopupRef.current = popup;
-
-        popupTimeoutRef.current = setTimeout(() => {
-          if (activePopupRef.current === popup) {
-            popup.remove();
-            activePopupRef.current = null;
-          }
-          popupTimeoutRef.current = null;
-        }, 3000);
-
-        popup.on("close", () => {
-          if (activePopupRef.current === popup) activePopupRef.current = null;
-          if (popupTimeoutRef.current) {
-            clearTimeout(popupTimeoutRef.current);
-            popupTimeoutRef.current = null;
-          }
-        });
+        showMapviewPopup(
+          "controlPoint",
+          { type: "B" },
+          [lngLat.lng, lngLat.lat],
+          { lat: lngLat.lat, lng: lngLat.lng },
+        );
       }
 
       const activeCornerLayer = demarcationMode
@@ -2484,26 +2393,36 @@ export default function MapView({
 
       navigator.clipboard?.writeText(`${latStr}, ${lngStr}`).catch(() => {});
 
+      const html = buildUnifiedPopupHtml("Coordinates", [
+        ["Latitude", latStr],
+        ["Longitude", lngStr],
+        ["Copied", "✓ Copied to clipboard"],
+      ]);
+
+      if (coordPickerPopupRef.current) {
+        coordPickerPopupRef.current.remove();
+        coordPickerPopupRef.current = null;
+      }
+
       const popup = new mapboxgl.Popup({
-        offset: 10,
-        closeButton: true,
+        closeButton: false,
         closeOnClick: false,
-        maxWidth: "260px",
+        offset: 15,
+        maxWidth: "none",
+        className: "mapview-unified-popup",
       })
         .setLngLat([lng, lat])
-        .setHTML(
-          `
-          <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#1f2937;min-width:190px">
-            <div style="font-weight:700;color:#0f3d2e;margin-bottom:6px;font-size:13px;">📍 Coordinates</div>
-            <div><span style="font-weight:600">Latitude:</span> ${latStr}</div>
-            <div><span style="font-weight:600">Longitude:</span> ${lngStr}</div>
-            <div style="margin-top:8px;padding:4px 8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;font-size:11px;color:#166534">
-              ✓ Copied to clipboard
-            </div>
-          </div>
-        `,
-        )
+        .setHTML(html)
         .addTo(map);
+
+      // Apply GISMetaverse shell styling
+      const el = popup.getElement();
+      const content = el?.querySelector(".mapboxgl-popup-content");
+      if (content) content.style.cssText = "padding:0;background:transparent;box-shadow:none;border-radius:10px;";
+      const tip = el?.querySelector(".mapboxgl-popup-tip");
+      if (tip) tip.style.borderTopColor = "#111827";
+      const closeBtn = el?.querySelector("[data-mapview-popup-close]");
+      if (closeBtn) closeBtn.addEventListener("click", () => { popup.remove(); coordPickerPopupRef.current = null; });
 
       coordPickerPopupRef.current = popup;
       popup.on("close", () => {
