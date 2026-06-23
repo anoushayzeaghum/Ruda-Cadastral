@@ -72,33 +72,40 @@ export default function Filter({
     [selectedFilters.projectId, activeProjectId],
   );
 
+/* ---------------- utils ---------------- */
 const normalizeSortValue = (value) => String(value ?? "").trim();
 
-const getFirstNumber = (value) => {
-  const match = normalizeSortValue(value).match(/\d+/);
-  return match ? Number(match[0]) : null;
-};
 const naturalSort = (items = [], getValue = (item) => item) =>
-  [...items].sort((a, b) => {
-    const av = normalizeSortValue(getValue(a));
-    const bv = normalizeSortValue(getValue(b));
+  [...items].sort((a, b) =>
+    normalizeSortValue(getValue(a)).localeCompare(
+      normalizeSortValue(getValue(b)),
+      undefined,
+      {
+        numeric: true,
+        sensitivity: "base",
+      }
+    )
+  );
 
-    const an = getFirstNumber(av);
-    const bn = getFirstNumber(bv);
-
-    if (an !== null && bn !== null && an !== bn) return an - bn;
-    if (an !== null && bn === null) return -1;
-    if (an === null && bn !== null) return 1;
-
-    return av.localeCompare(bv, undefined, {
+const uniqueSorted = (arr = []) =>
+  [...new Set(arr.filter(Boolean))].sort((a, b) =>
+    String(a).localeCompare(String(b), undefined, {
       numeric: true,
       sensitivity: "base",
-    });
-  });
+    })
+  );
 
-const uniqueSorted = (items = []) =>
-  naturalSort([...new Set(items.filter(Boolean))]);
+const areaToMarla = (value) => {
+  const text = String(value || "").toLowerCase().trim();
 
+  const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
+
+  if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
+  if (text.includes("kanal")) return number * 20; // 1 kanal = 20 marla
+  if (text.includes("marla")) return number;
+
+  return number;
+};
   useEffect(() => {
     const loadProjects = async () => {
       try {
@@ -163,67 +170,88 @@ const uniqueSorted = (items = []) =>
         return;
       }
 
-      const [blockRes, plotRes] = await Promise.all([
-        getBlocks(selectedProjectId),
-        getPlotsGeoJSON({
-          project_id: selectedProjectId,
-          block: selectedFilters.block || undefined,
-          plot_area: selectedFilters.area || undefined,
-          type: selectedFilters.plotType || undefined,
-          plot_no: selectedFilters.plotNo || undefined,
-          parkfront: selectedFilters.parkfront || undefined,
-          rd_facing: selectedFilters.rd_facing || undefined,
-          poss_st: selectedFilters.poss_st || undefined,
-          tr_cate: selectedFilters.tr_cate || undefined,
-          tr_own: selectedFilters.tr_own || undefined,
-          site_plan: selectedFilters.site_plan || undefined,
-        }),
-      ]);
+const [blockRes, plotRes] = await Promise.all([
+  getBlocks(selectedProjectId),
 
-      const plots = normalizeFeatures(plotRes);
+  // ONLY filter by project and block
+  getPlotsGeoJSON({
+    project_id: selectedProjectId,
+    block: selectedFilters.block || undefined,
+  }),
+]);
+
+const plots = normalizeFeatures(plotRes);
+
+// Type should always show all types
+const filteredForTypes = plots;
+
+// Area depends only on type
+const filteredForAreas = plots.filter(
+  p =>
+    !selectedFilters.plotType ||
+    p.type === selectedFilters.plotType
+);
+
+// Plot No depends on type + area
+const filteredForPlotNos = plots.filter(
+  p =>
+    (!selectedFilters.plotType ||
+      p.type === selectedFilters.plotType) &&
+    (!selectedFilters.area ||
+      p.plot_area === selectedFilters.area)
+);
+
+// Park Front depends on type + area + plotNo
+const filteredForParkFronts = plots.filter(
+  p =>
+    (!selectedFilters.plotType ||
+      p.type === selectedFilters.plotType) &&
+    (!selectedFilters.area ||
+      p.plot_area === selectedFilters.area) &&
+    (!selectedFilters.plotNo ||
+      p.plot_no === selectedFilters.plotNo)
+);
 
       setBlocks(blockRes || []);
 
-      setPlotOptions({
+setPlotOptions({
   plotTypes: naturalSort(
-    [...new Set(plots.map(p => p.type).filter(Boolean))]
+    [...new Set(filteredForTypes.map(p => p.type).filter(Boolean))]
   ),
+
+  areas: [...new Set(filteredForAreas.map(p => p.plot_area).filter(Boolean))]
+    .sort((a, b) => areaToMarla(a) - areaToMarla(b)),
 
   plotNos: naturalSort(
-    [...new Set(plots.map(p => p.plot_no).filter(Boolean))],
-    (v) => v
-  ),
-
-  areas: naturalSort(
-    [...new Set(plots.map(p => p.plot_area).filter(Boolean))]
+    [...new Set(filteredForPlotNos.map(p => p.plot_no).filter(Boolean))]
   ),
 
   parkFronts: naturalSort(
-    [...new Set(plots.map(p => p.parkfront).filter(Boolean))]
+    [...new Set(filteredForParkFronts.map(p => p.parkfront).filter(Boolean))]
   ),
 
   roadFacing: naturalSort(
-    [...new Set(plots.map(p => p.rd_facing).filter(Boolean))]
+    [...new Set(filteredForParkFronts.map(p => p.rd_facing).filter(Boolean))]
   ),
 
   possessionStatus: naturalSort(
-    [...new Set(plots.map(p => p.poss_st).filter(Boolean))]
+    [...new Set(filteredForParkFronts.map(p => p.poss_st).filter(Boolean))]
   ),
 
   plotStatus: naturalSort(
-    [...new Set(plots.map(p => p.canceled).filter(Boolean))]
+    [...new Set(filteredForParkFronts.map(p => p.canceled).filter(Boolean))]
   ),
 
   categories: naturalSort(
-    [...new Set(plots.map(p => p.tr_cate).filter(Boolean))]
+    [...new Set(filteredForParkFronts.map(p => p.tr_cate).filter(Boolean))]
   ),
 
   owners: naturalSort(
-    [...new Set(plots.map(p => p.tr_own).filter(Boolean))]
+    [...new Set(filteredForParkFronts.map(p => p.tr_own).filter(Boolean))]
   ),
 
   sitePlans: naturalSort(
-    [...new Set(plots.map(p => p.site_plan).filter(Boolean))]
+    [...new Set(filteredForParkFronts.map(p => p.site_plan).filter(Boolean))]
   ),
 });
 
@@ -236,42 +264,85 @@ const uniqueSorted = (items = []) =>
 }, [
   selectedProjectId,
   selectedFilters.block,
-  selectedFilters.area,
   selectedFilters.plotType,
-  selectedFilters.plotNo,
-  selectedFilters.parkfront,
-  selectedFilters.rd_facing,
-  selectedFilters.poss_st,
-  selectedFilters.tr_cate,
-  selectedFilters.tr_own,
-  selectedFilters.site_plan,
+  selectedFilters.area
 ]);
 
-  const handleChange = (key, value) => {
-    setSelectedFilters((prev) => {
-      const updated = {
-        ...prev,
-        [key]: value,
-      };
+const handleChange = (key, value) => {
+  setSelectedFilters((prev) => {
+    const updated = {
+      ...prev,
+      [key]: value,
+    };
 
-      if (key === "projectId") {
-        updated.block = "";
-        updated.plotNo = "";
-        updated.plotType = "";
-        updated.area = "";
-        updated.parkfront = "";
-        updated.rd_facing = "";
-        updated.poss_st = "";
-        updated.plotStatus = "";
-        updated.tr_cate = "";
-        updated.tr_own = "";
-        updated.site_plan = "";
-      }
+    // Project changed
+    if (key === "projectId") {
+      updated.block = "";
+      updated.plotType = "";
+      updated.area = "";
+      updated.plotNo = "";
+      updated.parkfront = "";
+      updated.rd_facing = "";
+      updated.poss_st = "";
+      updated.plotStatus = "";
+      updated.tr_cate = "";
+      updated.tr_own = "";
+      updated.site_plan = "";
+    }
 
-      return updated;
-    });
-  };
+    // Block changed
+    if (key === "block") {
+      updated.plotType = "";
+      updated.area = "";
+      updated.plotNo = "";
+      updated.parkfront = "";
+      updated.rd_facing = "";
+      updated.poss_st = "";
+      updated.plotStatus = "";
+      updated.tr_cate = "";
+      updated.tr_own = "";
+      updated.site_plan = "";
+    }
 
+    // Plot type changed
+    if (key === "plotType") {
+      updated.area = "";
+      updated.plotNo = "";
+      updated.parkfront = "";
+      updated.rd_facing = "";
+      updated.poss_st = "";
+      updated.plotStatus = "";
+      updated.tr_cate = "";
+      updated.tr_own = "";
+      updated.site_plan = "";
+    }
+
+    // Area changed
+    if (key === "area") {
+      updated.plotNo = "";
+      updated.parkfront = "";
+      updated.rd_facing = "";
+      updated.poss_st = "";
+      updated.plotStatus = "";
+      updated.tr_cate = "";
+      updated.tr_own = "";
+      updated.site_plan = "";
+    }
+
+    // Plot No changed
+    if (key === "plotNo") {
+      updated.parkfront = "";
+      updated.rd_facing = "";
+      updated.poss_st = "";
+      updated.plotStatus = "";
+      updated.tr_cate = "";
+      updated.tr_own = "";
+      updated.site_plan = "";
+    }
+
+    return updated;
+  });
+};
   const handleApply = () => {
     const cleanedFilters = {
       projectId: selectedFilters.projectId || "",
@@ -352,7 +423,10 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Project</option>
 
-              {projects.map((p) => (
+              {naturalSort(
+                  projects,
+                  (p) => p.name || p.project_name
+                ).map((p) => (
                 <option key={p.gid || p.id} value={p.gid || p.id}>
                   {p.name || p.project_name || `Project ${p.gid || p.id}`}
                 </option>
@@ -373,12 +447,37 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Block</option>
 
-              {blocks.map((b) => (
+              {naturalSort(
+                  blocks,
+                  (b) => b.block || b.name || b.block_name
+                ).map((b) => (
                 <option
                   key={b.gid || b.id || b.block || b.name || b.block_name}
                   value={b.block || b.name || b.block_name}
                 >
                   {b.block || b.name || b.block_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold text-white/80">
+              Type
+            </label>
+
+            <select
+              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              value={selectedFilters.plotType || ""}
+              onChange={(e) => handleChange("plotType", e.target.value)}
+              disabled={!selectedProjectId}
+            >
+              <option value="">Select Type</option>
+
+              {naturalSort(
+                  plotOptions.plotTypes || []
+                ).map((t, i) => (
+                <option key={`${t}-${i}`} value={t}>
+                  {t}
                 </option>
               ))}
             </select>
@@ -396,7 +495,9 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Area</option>
 
-              {(plotOptions.areas || []).map((a, i) => (
+              {[...(plotOptions.areas || [])]
+                .sort((a, b) => areaToMarla(a) - areaToMarla(b))
+                .map((a, i) => (
                 <option key={`${a}-${i}`} value={a}>
                   {a}
                 </option>
@@ -404,26 +505,7 @@ const uniqueSorted = (items = []) =>
             </select>
           </div>
 
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-white/80">
-              Type
-            </label>
-
-            <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
-              value={selectedFilters.plotType || ""}
-              onChange={(e) => handleChange("plotType", e.target.value)}
-              disabled={!selectedProjectId}
-            >
-              <option value="">Select Type</option>
-
-              {(plotOptions.plotTypes || []).map((t, i) => (
-                <option key={`${t}-${i}`} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </div>
+          
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-white/80">
@@ -438,18 +520,15 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Plot No</option>
 
-              {(plotOptions.plotNos || []).map((p, i) => (
+              {naturalSort(
+                  plotOptions.plotNos || []
+                ).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
               ))}
             </select>
           </div>
-
-          
-
-          
-
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-white/80">
               Park Front
@@ -463,7 +542,9 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Park Front</option>
 
-              {(plotOptions.parkFronts || []).map((p, i) => (
+              {naturalSort(
+                  plotOptions.parkFronts || []
+                ).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -484,7 +565,9 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Road Facing</option>
 
-              {(plotOptions.roadFacing || []).map((p, i) => (
+              {naturalSort(
+                  plotOptions.roadFacing || []
+                ).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -505,7 +588,9 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Status</option>
 
-              {(plotOptions.possessionStatus || []).map((p, i) => (
+              {naturalSort(
+                  plotOptions.possessionStatus || []
+                ).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -547,7 +632,9 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Category</option>
 
-              {(plotOptions.categories || []).map((p, i) => (
+              {naturalSort(
+                  plotOptions.categories || []
+                ).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -568,7 +655,9 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Owner</option>
 
-              {(plotOptions.owners || []).map((p, i) => (
+              {naturalSort(
+                  plotOptions.owners || []
+                ).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -589,7 +678,9 @@ const uniqueSorted = (items = []) =>
             >
               <option value="">Select Site Plan</option>
 
-              {(plotOptions.sitePlans || []).map((p, i) => (
+              {naturalSort(
+                  plotOptions.sitePlans || []
+                ).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>

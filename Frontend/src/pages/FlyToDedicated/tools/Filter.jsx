@@ -7,13 +7,36 @@ import {
 } from "../../../services/metaverseApi";
 
 /* ---------------- utils ---------------- */
-const uniqueSorted = (arr = []) =>
-  [...new Set(arr.filter(Boolean))].sort((a, b) =>
-    String(a).localeCompare(String(b), undefined, {
+const normalizeSortValue = (value) => String(value ?? "").trim();
+
+const getFirstNumber = (value) => {
+  const match = normalizeSortValue(value).match(/\d+(\.\d+)?/);
+  return match ? Number(match[0]) : null;
+};
+
+const naturalSort = (items = [], getValue = (item) => item) =>
+  [...items].sort((a, b) => {
+    const av = normalizeSortValue(getValue(a));
+    const bv = normalizeSortValue(getValue(b));
+
+    const an = getFirstNumber(av);
+    const bn = getFirstNumber(bv);
+
+    if (an !== null && bn !== null && an !== bn) {
+      return an - bn;
+    }
+
+    if (an !== null && bn === null) return -1;
+    if (an === null && bn !== null) return 1;
+
+    return av.localeCompare(bv, undefined, {
       numeric: true,
       sensitivity: "base",
-    })
-  );
+    });
+  });
+
+const uniqueSorted = (arr = []) =>
+  naturalSort([...new Set(arr.filter(Boolean))]);
 
 /* ---------------- dropdown ---------------- */
 function SelectBox({ value, onChange, options, placeholder, disabled }) {
@@ -53,11 +76,18 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
   });
 
   /* ---------------- load projects ---------------- */
-  useEffect(() => {
-    getProjects()
-      .then(setProjects)
-      .catch(console.error);
-  }, []);
+useEffect(() => {
+  getProjects()
+    .then((data) =>
+      setProjects(
+        naturalSort(
+          data,
+          (p) => p.brief_name || p.name || p.project_name || p.id
+        )
+      )
+    )
+    .catch(console.error);
+}, []);
 
   /* ---------------- load blocks ---------------- */
   useEffect(() => {
@@ -67,68 +97,101 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
     }
 
     getBlocks(selected.projectId)
-      .then(setBlocks)
+      .then((data) =>
+        setBlocks(
+          naturalSort(
+            data,
+            (b) => b.block || b.name
+          )
+        )
+      )
       .catch(console.error);
   }, [selected.projectId]);
 
   /* ---------------- load cascading options ---------------- */
-  useEffect(() => {
-    if (!selected.projectId) {
-      setOptions({ areas: [], plotTypes: [], plotNos: [] });
-      return;
-    }
+/* ---------------- load cascading options ---------------- */
+useEffect(() => {
+  if (!selected.projectId) {
+    setOptions({ areas: [], plotTypes: [], plotNos: [] });
+    return;
+  }
 
-    getPlotOptions({
-      project_id: selected.projectId,
-      block: selected.block || undefined,
-      plot_area: selected.area || undefined,
-      type: selected.plotType || undefined,
-    })
-      .then((res) => {
-        setOptions({
-          areas: uniqueSorted(res?.areas || []),
-          plotTypes: uniqueSorted(res?.plotTypes || []),
-          plotNos: uniqueSorted(res?.plotNos || []),
-        });
-      })
-      .catch(console.error);
-  }, [
-    selected.projectId,
-    selected.block,
-    selected.area,
-    selected.plotType,
-  ]);
+  const loadOptions = async () => {
+    try {
+      // Plot Type depends on Project + Block
+      const plotTypeRes = await getPlotOptions({
+        project_id: selected.projectId,
+        block: selected.block || undefined,
+      });
+
+      // Area depends on Project + Block + Plot Type
+      const areaRes = await getPlotOptions({
+        project_id: selected.projectId,
+        block: selected.block || undefined,
+        type: selected.plotType || undefined,
+      });
+
+      // Plot No depends on Project + Block + Plot Type + Area
+      const plotNoRes = await getPlotOptions({
+        project_id: selected.projectId,
+        block: selected.block || undefined,
+        type: selected.plotType || undefined,
+        plot_area: selected.area || undefined,
+      });
+
+      setOptions({
+        plotTypes: uniqueSorted(plotTypeRes?.plotTypes || []),
+        areas: uniqueSorted(areaRes?.areas || []),
+        plotNos: uniqueSorted(plotNoRes?.plotNos || []),
+      });
+    } catch (err) {
+      console.error(err);
+      setOptions({
+        areas: [],
+        plotTypes: [],
+        plotNos: [],
+      });
+    }
+  };
+
+  loadOptions();
+}, [
+  selected.projectId,
+  selected.block,
+  selected.plotType,
+  selected.area,
+]);
 
   /* ---------------- handle change ---------------- */
-  const handleChange = (key, value) => {
-    setSelected((prev) => {
-      const next = { ...prev, [key]: value };
+const handleChange = (key, value) => {
+  setSelected((prev) => {
+    const next = { ...prev, [key]: value };
 
-      if (key === "projectId") {
-        next.block = "";
-        next.area = "";
-        next.plotType = "";
-        next.plotNo = "";
-      }
+    if (key === "projectId") {
+      next.block = "";
+      next.plotType = "";
+      next.area = "";
+      next.plotNo = "";
+    }
 
-      if (key === "block") {
-        next.area = "";
-        next.plotType = "";
-        next.plotNo = "";
-      }
+    if (key === "block") {
+      next.plotType = "";
+      next.area = "";
+      next.plotNo = "";
+    }
 
-      if (key === "area") {
-        next.plotType = "";
-        next.plotNo = "";
-      }
+    if (key === "plotType") {
+      next.area = "";
+      next.plotNo = "";
+    }
 
-      if (key === "plotType") {
-        next.plotNo = "";
-      }
+    if (key === "area") {
+      next.plotNo = "";
+    }
 
-      return next;
-    });
-  };
+    return next;
+  });
+};
 
   const handleApply = () => {
     onApply?.(selected);
@@ -147,30 +210,56 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
   };
 
   /* ---------------- mapped options ---------------- */
-  const projectOptions = projects.map((p) => ({
+const projectOptions = naturalSort(
+  projects.map((p) => ({
     value: String(p.gid || p.id),
-    label: p.name || p.project_name,
-  }));
+    label: p.brief_name || p.name || p.project_name,
+  })),
+  (p) => p.label
+);
 
-  const blockOptions = blocks.map((b) => ({
+const blockOptions = naturalSort(
+  blocks.map((b) => ({
     value: String(b.block || b.name),
     label: b.block || b.name,
-  }));
+  })),
+  (b) => b.label
+);
 
-  const areaOptions = options.areas.map((a) => ({
-    value: a,
-    label: a,
-  }));
-
-  const plotTypeOptions = options.plotTypes.map((t) => ({
+const plotTypeOptions = naturalSort(
+  options.plotTypes.map((t) => ({
     value: t,
     label: t,
-  }));
+  })),
+  (t) => t.label
+);
 
-  const plotNoOptions = options.plotNos.map((p) => ({
+const areaToMarla = (value) => {
+  const text = String(value || "").toLowerCase().trim();
+
+  const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
+
+  if (text.includes("acre")) return number * 160;
+  if (text.includes("kanal")) return number * 20;
+  if (text.includes("marla")) return number;
+
+  return number;
+};
+
+const areaOptions = options.areas
+  .map((a) => ({
+    value: a,
+    label: a,
+  }))
+  .sort((a, b) => areaToMarla(a.label) - areaToMarla(b.label));
+
+const plotNoOptions = naturalSort(
+  options.plotNos.map((p) => ({
     value: p,
     label: p,
-  }));
+  })),
+  (p) => p.label
+);
 
   /* ---------------- UI ---------------- */
   return (
@@ -202,15 +291,6 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
           disabled={!selected.projectId}
         />
 
-        {/* AREA */}
-        <SelectBox
-          value={selected.area}
-          onChange={(v) => handleChange("area", v)}
-          options={areaOptions}
-          placeholder="Select Area"
-          disabled={!selected.projectId}
-        />
-
         {/* TYPE */}
         <SelectBox
           value={selected.plotType}
@@ -219,6 +299,15 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
           placeholder="Select Plot Type"
           disabled={!selected.projectId}
         />
+
+        {/* AREA */}
+        <SelectBox
+          value={selected.area}
+          onChange={(v) => handleChange("area", v)}
+          options={areaOptions}
+          placeholder="Select Area"
+          disabled={!selected.projectId}
+        />        
 
         {/* PLOT NO */}
         <SelectBox

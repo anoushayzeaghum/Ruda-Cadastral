@@ -367,10 +367,26 @@ useEffect(() => {
     label: b.block,
   }));
 
-  const areaOptions = options.areas?.map((area) => ({
+  const areaToMarla = (value) => {
+  const text = String(value || "").toLowerCase().trim();
+
+  const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
+
+  if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
+  if (text.includes("kanal")) return number * 20; // 1 kanal = 20 marla
+  if (text.includes("marla")) return number;
+
+  return number;
+};
+
+const areaOptions = options.areas
+  ?.map((area) => ({
     value: String(area),
     label: area,
-  }));
+  }))
+  .sort((a, b) => {
+    return areaToMarla(a.label) - areaToMarla(b.label);
+  });
 
   const plotTypeOptions = options.plotTypes?.map((type) => ({
     value: String(type),
