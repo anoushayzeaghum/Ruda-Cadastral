@@ -77,11 +77,11 @@ const POLYGON_STYLES = {
     lineColor: "#ff8b24",
     fillOpacityMultiplier: 0.16,
     lineWidth: 1.5,
-    labelColor: "#7c2d12",
+    labelColor: "#ff8b24",
     labelMinZoom: 14,
   },
   square: {
-    fillColor: "#fff7cc",
+    fillColor: "#d7bf32",
     lineColor: "#d7bf32",
     fillOpacityMultiplier: 0.1,
     lineWidth: 1.6,
@@ -95,6 +95,26 @@ const POLYGON_STYLES = {
     labelMinZoom: 14.6,
   },
 };
+
+function getPolygonStyle(key, color) {
+  const baseStyle = POLYGON_STYLES[key] || {
+    fillColor: getLayerColor(key),
+    lineColor: getLayerColor(key),
+    fillOpacityMultiplier: 0.2,
+    lineWidth: 1.5,
+    labelColor: getLayerColor(key),
+    labelMinZoom: 14,
+  };
+
+  if (!color) return baseStyle;
+
+  return {
+    ...baseStyle,
+    fillColor: color,
+    lineColor: color,
+    labelColor: color,
+  };
+}
 
 const LAND_REVENUE_LAYER_ORDER = [
   IDS.moza.fill,
@@ -263,19 +283,12 @@ function fitToGeojson(map, geojson) {
   });
 }
 
-function addOrUpdatePolygonLayer(map, key, geojson, opacity) {
+function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
   const ids = IDS[key];
   if (!map || !ids || !geojson) return;
 
   const o = opacity / 100;
-  const style = POLYGON_STYLES[key] || {
-    fillColor: getLayerColor(key),
-    lineColor: getLayerColor(key),
-    fillOpacityMultiplier: 0.2,
-    lineWidth: 1.5,
-    labelColor: getLayerColor(key),
-    labelMinZoom: 14,
-  };
+  const style = getPolygonStyle(key, color);
 
   if (!map.getSource(ids.src)) {
     map.addSource(ids.src, { type: "geojson", data: geojson });
@@ -420,6 +433,21 @@ function updateOpacity(map, key, opacity) {
   } catch (_) {}
 }
 
+function updateColor(map, key, color) {
+  if (!map || key === "masawi") return;
+
+  const ids = IDS[key];
+  if (!ids) return;
+
+  try {
+    if (map.getLayer(ids.fill)) map.setPaintProperty(ids.fill, "fill-color", color);
+    if (map.getLayer(ids.line)) map.setPaintProperty(ids.line, "line-color", color);
+    if (ids.label && map.getLayer(ids.label))
+      map.setPaintProperty(ids.label, "text-color", color);
+    reorderLandRevenueLayers(map);
+  } catch (_) {}
+}
+
 function addOrUpdateMasawiLayer(map, opacity) {
   if (!map) return;
 
@@ -461,7 +489,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     Object.fromEntries(
       ALL_LAYER_DEFS.map((d) => [
         d.key,
-        { visible: false, opacity: 100, loading: false },
+        { visible: false, opacity: 100, color: d.color, loading: false },
       ]),
     ),
   );
@@ -475,6 +503,12 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
 
   const setOpacity = (key, opacity) => {
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], opacity } }));
+    updateOpacity(map, key, opacity);
+  };
+
+  const setColor = (key, color) => {
+    setLayers((prev) => ({ ...prev, [key]: { ...prev[key], color } }));
+    updateColor(map, key, color);
   };
 
   const setLoading = (key, loading) => {
@@ -506,7 +540,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       setMauzas([]);
       setSelectedMauzas([]);
       if (draw) {
-        addOrUpdatePolygonLayer(map, "moza", emptyFC(), layers.moza.opacity);
+        addOrUpdatePolygonLayer(map, "moza", emptyFC(), layers.moza.opacity, layers.moza.color);
         setVisible("moza", false);
       }
       return emptyFC();
@@ -518,7 +552,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     ) {
       const cachedGeojson = cachedData.current.moza;
       if (draw) {
-        addOrUpdatePolygonLayer(map, "moza", cachedGeojson, layers.moza.opacity);
+        addOrUpdatePolygonLayer(map, "moza", cachedGeojson, layers.moza.opacity, layers.moza.color);
         if (zoom) fitToGeojson(map, cachedGeojson);
         setVisible("moza", true);
       }
@@ -546,7 +580,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       });
 
       if (draw) {
-        addOrUpdatePolygonLayer(map, "moza", projectGeojson, layers.moza.opacity);
+        addOrUpdatePolygonLayer(map, "moza", projectGeojson, layers.moza.opacity, layers.moza.color);
         if (zoom) fitToGeojson(map, projectGeojson);
         setVisible("moza", true);
       }
@@ -571,7 +605,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   ) => {
     if (!map || !mauzaIds?.length) {
       cachedData.current[key] = emptyFC();
-      addOrUpdatePolygonLayer(map, key, emptyFC(), layers[key].opacity);
+      addOrUpdatePolygonLayer(map, key, emptyFC(), layers[key].opacity, layers[key].color);
       setVisible(key, true);
       return emptyFC();
     }
@@ -585,7 +619,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
           : await getSquaresGeoJSON({ mauza_id: mauzaIds });
 
       cachedData.current[key] = geojson;
-      addOrUpdatePolygonLayer(map, key, geojson, layers[key].opacity);
+      addOrUpdatePolygonLayer(map, key, geojson, layers[key].opacity, layers[key].color);
       if (zoom) fitToGeojson(map, geojson);
       setVisible(key, true);
 
@@ -658,15 +692,15 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   };
 
   useEffect(() => {
-    ALL_LAYER_DEFS.forEach(({ key }) => {
-      if (layers[key]?.visible) updateOpacity(map, key, layers[key].opacity);
-    });
-  }, [map, layers]);
-
-  useEffect(() => {
     if (!map || !layers.moza.visible) return;
-    addOrUpdatePolygonLayer(map, "moza", mauzaGeojson, layers.moza.opacity);
-  }, [map, mauzaGeojson, layers.moza.visible, layers.moza.opacity]);
+    addOrUpdatePolygonLayer(
+      map,
+      "moza",
+      mauzaGeojson,
+      layers.moza.opacity,
+      layers.moza.color,
+    );
+  }, [map, mauzaGeojson, layers.moza.visible]);
 
   useEffect(() => {
     if (!map) return;
@@ -740,7 +774,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       <LayerItem
         key={key}
         checked={layers[key].visible}
-        color={color}
+        color={layers[key].color || color}
         label={label}
         loading={layers[key].loading}
         opacity={layers[key].opacity}
@@ -749,6 +783,8 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
         dropdownTitle="Show khasra mauza names"
         onChange={(checked) => handleVisible(key, checked)}
         onOpacityChange={(opacity) => setOpacity(key, opacity)}
+        onColorChange={(value) => setColor(key, value)}
+        colorEditable={key !== "masawi"}
         disabled={!hasSelectedProject}
         onDropdownToggle={() => setKhasraPanelOpen((prev) => !prev)}
       >
@@ -780,7 +816,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                   key={`khasra-${id}-${name}`}
                   className="flex items-center gap-2 py-1 text-[11px] text-white/85"
                 >
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#1f7a3a]" />
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: layers.khasra.color }} />
                   <span className="truncate">{name}</span>
                 </div>
               );
@@ -811,7 +847,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
           )}
           <LayerItem
             checked={layers.moza.visible}
-            color={MAUZA_DEF.color}
+            color={layers.moza.color || MAUZA_DEF.color}
             label="Mauza Boundary"
             loading={layers.moza.loading}
             opacity={layers.moza.opacity}
@@ -821,6 +857,8 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
             disabled={!hasSelectedProject}
             onChange={(checked) => handleVisible("moza", checked)}
             onOpacityChange={(opacity) => setOpacity("moza", opacity)}
+            onColorChange={(value) => setColor("moza", value)}
+            colorEditable
             onDropdownToggle={() => {
               setMauzaPanelOpen((prev) => {
                 const nextOpen = !prev;
@@ -895,6 +933,28 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   );
 }
 
+function ColorPickerSquare({ color, label, disabled, onColorChange }) {
+  return (
+    <span
+      className="relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/35"
+      style={{ backgroundColor: color }}
+      title={`Change ${label} color`}
+      onClick={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.stopPropagation()}
+    >
+      <input
+        type="color"
+        value={color}
+        disabled={disabled}
+        onClick={(event) => event.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
+        onChange={(event) => onColorChange?.(event.target.value)}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+      />
+    </span>
+  );
+}
+
 function LayerItem({
   checked,
   color,
@@ -906,8 +966,10 @@ function LayerItem({
   dropdownTitle,
   onChange,
   onOpacityChange,
+  onColorChange,
   onDropdownToggle,
   disabled = false,
+  colorEditable = false,
   children,
 }) {
   return (
@@ -929,10 +991,19 @@ function LayerItem({
             className="accent-[#65c96b] disabled:cursor-not-allowed"
           />
 
-          <span
-            className="h-4 w-4 shrink-0 rounded-sm border-2"
-            style={{ borderColor: color }}
-          />
+          {colorEditable ? (
+            <ColorPickerSquare
+              color={color}
+              label={label}
+              disabled={disabled}
+              onColorChange={onColorChange}
+            />
+          ) : (
+            <span
+              className="h-4 w-4 shrink-0 rounded-sm border border-white/35"
+              style={{ backgroundColor: color }}
+            />
+          )}
 
           <span className="truncate text-[11px]">
             {loading ? (
