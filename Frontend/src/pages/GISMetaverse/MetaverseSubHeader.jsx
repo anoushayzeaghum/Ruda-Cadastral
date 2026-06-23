@@ -285,7 +285,7 @@ useEffect(() => {
         type: filters.plotType || undefined,
         plot_area: filters.area || undefined,
       });
-
+console.log("RAW AREAS FROM API:", areaOptions.areas);
       if (cancelled) return;
 
       setOptions({
@@ -367,25 +367,43 @@ useEffect(() => {
     label: b.block,
   }));
 
-  const areaToMarla = (value) => {
+const areaToMarla = (value) => {
   const text = String(value || "").toLowerCase().trim();
 
   const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
 
   if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
-  if (text.includes("kanal")) return number * 20; // 1 kanal = 20 marla
+  if (text.includes("kanal")) return number * 20;  // 1 kanal = 20 marla
   if (text.includes("marla")) return number;
 
   return number;
 };
 
-const areaOptions = options.areas
-  ?.map((area) => ({
+const areaOptions = (options.areas || [])
+  .map((area) => ({
     value: String(area),
     label: area,
   }))
   .sort((a, b) => {
-    return areaToMarla(a.label) - areaToMarla(b.label);
+    const av = areaToMarla(a.label);
+    const bv = areaToMarla(b.label);
+
+    // primary sort: actual size
+    if (av !== bv) return av - bv;
+
+    // secondary: unit priority (optional but makes it stable)
+    const unitRank = (label) => {
+      const l = label.toLowerCase();
+      if (l.includes("marla")) return 1;
+      if (l.includes("kanal")) return 2;
+      if (l.includes("acre")) return 3;
+      return 4;
+    };
+
+    const unitDiff = unitRank(a.label) - unitRank(b.label);
+    if (unitDiff !== 0) return unitDiff;
+
+    return a.label.localeCompare(b.label);
   });
 
   const plotTypeOptions = options.plotTypes?.map((type) => ({
