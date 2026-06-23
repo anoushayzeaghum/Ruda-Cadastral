@@ -26,10 +26,13 @@ export default function LayersPanel({
         setAdminBoundaryVisibility={setAdminBoundaryVisibility}
       />
       <MasterPlan
+        map={map}
         selectedProjectId={filters?.projectId}
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
+      <LandRevenueRecord map={map} selectedProjectId={filters?.projectId} />
+
       <TopographicPlan
         map={map}
         selectedProjectId={filters?.projectId}
@@ -37,18 +40,20 @@ export default function LayersPanel({
         setLayerVisibility={setLayerVisibility}
       />
       <Utilities
+        map={map}
         selectedProjectId={filters?.projectId}
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
       <Services
+        map={map}
         selectedProjectId={filters?.projectId}
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
-      <LandRevenueRecord map={map} selectedProjectId={filters?.projectId} />
       {/* <Miscellaneous map={map} /> */}
       <NotifiedBoundaries
+        map={map}
         selectedProjectId={filters?.projectId}
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
