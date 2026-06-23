@@ -111,10 +111,10 @@ export default function MetaverseLeftToolbar({
               key={tool.id}
               title={tool.label}
               onClick={() => handleToolClick(tool.id)}
-              className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+              className={`relative flex h-9 w-9 items-center justify-center rounded-md shadow-md transition-all duration-150 ${
                 isActive
-                  ? "border-[#8bd66f] bg-[#243041] text-white"
-                  : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+                  ? "bg-[#1B3A6B] text-white border-2 border-white"
+                  : "bg-white text-[#1B3A6B] border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
               }`}
             >
               <Icon size={20} />
