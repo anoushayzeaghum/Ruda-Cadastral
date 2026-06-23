@@ -35,29 +35,27 @@ const basemaps = [
 ];
 
 export default function Basemaps({ map, rebuildAllLayers }) {
- 
-
   const [activeBasemap, setActiveBasemap] = useState("streets");
 
-const handleBasemapChange = (basemap) => {
-  setActiveBasemap(basemap.id);
+  const handleBasemapChange = (basemap) => {
+    setActiveBasemap(basemap.id);
 
-  if (!map) return;
+    if (!map) return;
 
-  map.stop();
-  map.setStyle(basemap.style);
+    map.stop();
+    map.setStyle(basemap.style);
 
-  map.once("style.load", () => {
-    console.log("STYLE LOADED");
+    map.once("style.load", () => {
+      console.log("STYLE LOADED");
 
-    if (rebuildAllLayers) {
-      console.log("CALLING REBUILD");
-      rebuildAllLayers();
-    } else {
-      console.log("NO REBUILD FUNCTION");
-    }
-  });
-};
+      if (rebuildAllLayers) {
+        console.log("CALLING REBUILD");
+        rebuildAllLayers();
+      } else {
+        console.log("NO REBUILD FUNCTION");
+      }
+    });
+  };
 
   return (
     <div className="text-white">
@@ -77,8 +75,8 @@ const handleBasemapChange = (basemap) => {
               key={basemap.id}
               onClick={() => handleBasemapChange(basemap)}
               className={`overflow-hidden rounded-md border bg-[#1f2937] text-left transition hover:border-[#8bd66f] ${
-                  isActive ? "border-[#8bd66f]" : "border-[#0f3d2e]"
-                }`}
+                isActive ? "border-[#8bd66f]" : "border-[#0f3d2e]"
+              }`}
             >
               <div
                 className="relative h-16 w-full"

@@ -10,7 +10,7 @@ export default function FlyTo({
 }) {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(
-    filters?.projectId || ""
+    filters?.projectId || "",
   );
   const [loading, setLoading] = useState(false);
 
@@ -25,10 +25,12 @@ export default function FlyTo({
         if (!ignore) {
           // ✅ SORT ALPHABETICALLY BY PROJECT NAME
           const sorted = (data || []).sort((a, b) => {
-            const nameA =
-              (a.name || a.project_name || "").toString().toLowerCase();
-            const nameB =
-              (b.name || b.project_name || "").toString().toLowerCase();
+            const nameA = (a.name || a.project_name || "")
+              .toString()
+              .toLowerCase();
+            const nameB = (b.name || b.project_name || "")
+              .toString()
+              .toLowerCase();
 
             return nameA.localeCompare(nameB);
           });

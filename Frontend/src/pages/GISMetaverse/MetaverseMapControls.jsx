@@ -89,7 +89,7 @@ export default function MetaverseMapControls({
         new mapboxgl.Marker().setLngLat([lng, lat]).addTo(map);
       },
       (error) => console.error("Location error:", error),
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true },
     );
   };
 
@@ -176,7 +176,6 @@ function CoordinateBox({ coords, zoom }) {
   return (
     <div className="hidden sm:block mt-0 rounded bg-[#0f3d2e] px-2 py-1 text-[10px] font-semibold text-white shadow-md">
       {coords.lng}, {coords.lat}
-
       <div className="mt-1 rounded bg-black/60 px-1 py-0.5 text-center text-[9px]">
         Zoom Level: {zoom}
       </div>

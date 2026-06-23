@@ -74,7 +74,12 @@ const applyAdministrativeLayerOpacity = (map, key, opacity = 100) => {
       break;
 
     case "rudaMauzaBoundary":
-      setPaint(map, "metaverse-ruda-mauza-boundary-fill", "fill-opacity", 0.12 * o);
+      setPaint(
+        map,
+        "metaverse-ruda-mauza-boundary-fill",
+        "fill-opacity",
+        0.12 * o,
+      );
       setPaint(map, "metaverse-ruda-mauza-boundary-line", "line-opacity", o);
       setPaint(map, "metaverse-ruda-mauza-boundary-label", "text-opacity", o);
       break;

@@ -26,7 +26,9 @@ function buildBlockColorExpression(data) {
   const blockNames = Array.from(
     new Set(
       (data?.features || [])
-        .map((feature) => feature?.properties?.block || feature?.properties?.name)
+        .map(
+          (feature) => feature?.properties?.block || feature?.properties?.name,
+        )
         .filter(Boolean)
         .map((value) => String(value).toLowerCase()),
     ),

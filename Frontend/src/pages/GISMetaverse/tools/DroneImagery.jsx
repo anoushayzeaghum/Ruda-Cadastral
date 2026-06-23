@@ -32,32 +32,32 @@ const IMAGERY_LAYERS = [
     label: "Jan 2023",
     color: "#a855f7",
     sourceId: "gis-jan2023-source",
-    layerId:  "gis-jan2023-layer",
-    tileUrl:  "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+    layerId: "gis-jan2023-layer",
+    tileUrl: "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
   },
   {
     id: "june2023",
     label: "June 2023",
     color: "#3b82f6",
     sourceId: "gis-june2023-source",
-    layerId:  "gis-june2023-layer",
-    tileUrl:  "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+    layerId: "gis-june2023-layer",
+    tileUrl: "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
   },
   {
     id: "nov2024",
     label: "Nov 2024",
     color: "#ef4444",
     sourceId: "gis-nov2024-source",
-    layerId:  "gis-nov2024-layer",
-    tileUrl:  "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+    layerId: "gis-nov2024-layer",
+    tileUrl: "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
   },
   {
     id: "apr2026",
     label: "Apr 2026",
     color: "#f59e0b",
     sourceId: "gis-apr2026-source",
-    layerId:  "gis-apr2026-layer",
-    tileUrl:  "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+    layerId: "gis-apr2026-layer",
+    tileUrl: "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
   },
 ];
 
@@ -74,20 +74,23 @@ export default function DroneImagery({ map }) {
 
   // ── Video state ───────────────────────────────────────────────────────────
   const [activeVideo, setActiveVideo] = useState(null);
-  const [playing,     setPlaying]     = useState(false);
-  const [muted,       setMuted]       = useState(false);
-  const [volume,      setVolume]      = useState(0.8);
-  const [progress,    setProgress]    = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(0.8);
+  const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration,    setDuration]    = useState(0);
-  const [dragging,    setDragging]    = useState(false);
-  const [expanded,    setExpanded]    = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const videoRef = useRef(null);
 
   const flyToChaharbagh = () => {
     if (!map) return;
     map.fitBounds(
-      [[74.42562653088396, 31.60509230706726], [74.43545280361002, 31.6112165411359]],
+      [
+        [74.42562653088396, 31.60509230706726],
+        [74.43545280361002, 31.6112165411359],
+      ],
       { padding: 50, duration: 1500 },
     );
   };
@@ -218,7 +221,9 @@ export default function DroneImagery({ map }) {
               const state = imageryState[layer.id];
               return (
                 <div key={layer.id}>
-                  {i > 0 && <div className="border-t border-[#394354] -mx-2 mb-4" />}
+                  {i > 0 && (
+                    <div className="border-t border-[#394354] -mx-2 mb-4" />
+                  )}
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -244,7 +249,9 @@ export default function DroneImagery({ map }) {
                       max="100"
                       value={state.opacity}
                       onChange={(e) =>
-                        setLayerState(layer.id, { opacity: Number(e.target.value) })
+                        setLayerState(layer.id, {
+                          opacity: Number(e.target.value),
+                        })
                       }
                       className="h-[3px] flex-1 rounded-full accent-[#65c96b] bg-[#8fd36f]"
                     />
@@ -282,7 +289,9 @@ export default function DroneImagery({ map }) {
             >
               <div
                 className="shrink-0 w-14 h-10 rounded overflow-hidden flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg,#1a3a1a,#2d5a2d)" }}
+                style={{
+                  background: "linear-gradient(135deg,#1a3a1a,#2d5a2d)",
+                }}
               >
                 <Video size={20} className="text-[#65c96b]/70" />
               </div>
@@ -291,7 +300,9 @@ export default function DroneImagery({ map }) {
                 <div className="font-semibold text-white/90 text-[11px] truncate">
                   {vid.title}
                 </div>
-                <div className="text-[10px] text-white/40 truncate">{vid.subtitle}</div>
+                <div className="text-[10px] text-white/40 truncate">
+                  {vid.subtitle}
+                </div>
               </div>
 
               <div
@@ -348,7 +359,11 @@ export default function DroneImagery({ map }) {
                       onClick={() => setExpanded((e) => !e)}
                       className="flex h-6 w-6 items-center justify-center rounded text-white/50 hover:text-white hover:bg-[#2a3548] transition"
                     >
-                      {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                      {expanded ? (
+                        <Minimize2 size={13} />
+                      ) : (
+                        <Maximize2 size={13} />
+                      )}
                     </button>
                     <button
                       type="button"
@@ -361,7 +376,10 @@ export default function DroneImagery({ map }) {
                 </div>
 
                 {/* Video */}
-                <div className="relative bg-black" style={{ aspectRatio: "16/9" }}>
+                <div
+                  className="relative bg-black"
+                  style={{ aspectRatio: "16/9" }}
+                >
                   <video
                     ref={videoRef}
                     src={activeVid.src}
@@ -414,7 +432,10 @@ export default function DroneImagery({ map }) {
                       const v = videoRef.current;
                       if (!v) return;
                       const rect = e.currentTarget.getBoundingClientRect();
-                      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                      const pct = Math.max(
+                        0,
+                        Math.min(1, (e.clientX - rect.left) / rect.width),
+                      );
                       v.currentTime = pct * v.duration;
                       setProgress(pct * 100);
                       setCurrentTime(v.currentTime);
@@ -422,11 +443,17 @@ export default function DroneImagery({ map }) {
                   >
                     <div
                       className="h-full rounded-full"
-                      style={{ width: `${progress}%`, backgroundColor: "#65c96b" }}
+                      style={{
+                        width: `${progress}%`,
+                        backgroundColor: "#65c96b",
+                      }}
                     />
                     <div
                       className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#65c96b] bg-white shadow opacity-0 group-hover:opacity-100"
-                      style={{ left: `calc(${progress}% - 6px)`, backgroundColor: "#65c96b" }}
+                      style={{
+                        left: `calc(${progress}% - 6px)`,
+                        backgroundColor: "#65c96b",
+                      }}
                     />
                   </div>
 
@@ -456,7 +483,11 @@ export default function DroneImagery({ map }) {
                         className="flex h-8 w-8 items-center justify-center rounded-full transition"
                         style={{ backgroundColor: "#65c96b", color: "#111827" }}
                       >
-                        {playing ? <Pause size={15} /> : <Play size={15} className="ml-0.5" />}
+                        {playing ? (
+                          <Pause size={15} />
+                        ) : (
+                          <Play size={15} className="ml-0.5" />
+                        )}
                       </button>
                     </div>
 
@@ -466,7 +497,11 @@ export default function DroneImagery({ map }) {
                           title={muted ? "Unmute" : "Mute"}
                           onClick={() => setMuted((m) => !m)}
                         >
-                          {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+                          {muted ? (
+                            <VolumeX size={14} />
+                          ) : (
+                            <Volume2 size={14} />
+                          )}
                         </CtrlBtn>
                         <input
                           type="range"
@@ -487,7 +522,8 @@ export default function DroneImagery({ map }) {
                           const v = videoRef.current;
                           if (!v) return;
                           if (v.requestFullscreen) v.requestFullscreen();
-                          else if (v.webkitRequestFullscreen) v.webkitRequestFullscreen();
+                          else if (v.webkitRequestFullscreen)
+                            v.webkitRequestFullscreen();
                         }}
                       >
                         <Maximize2 size={14} />

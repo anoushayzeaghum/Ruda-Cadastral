@@ -114,7 +114,7 @@ export default function MetaverseLeftToolbar({
               className={`relative flex h-9 w-9 items-center justify-center rounded-md shadow-md transition-all duration-150 ${
                 isActive
                   ? "bg-white text-[#1B3A6B] border-2 border-[#1B3A6B]"
-                  : "bg-[#1B3A6B] text-white border border-[#1B3A6B] hover:bg-[#162f5a]"
+                  : "border-[#0f3d2e] bg-[#1f2937] text-white hover:bg-[#0f3d2e]"
               }`}
             >
               <Icon size={20} />
@@ -125,7 +125,7 @@ export default function MetaverseLeftToolbar({
 
       {/* LAYERS PANEL */}
       <div
-        className={`absolute z-30 bg-[#202736] text-white border border-[#3a4354] rounded-md shadow-2xl
+        className={`absolute z-30 bg-[#06291f] text-white border border-[#3a4354] rounded-md shadow-2xl
         sm:left-14 sm:w-[300px]
         bottom-0 left-0 right-0 sm:bottom-auto`}
         style={{
@@ -146,7 +146,7 @@ export default function MetaverseLeftToolbar({
       {/* TOOL PANELS (FILTER, IMPORT, etc.) */}
       {activeTool && activeTool !== "layers" && (
         <div
-          className="absolute z-30 bg-[#202736] text-white border border-[#3a4354] rounded-md shadow-2xl
+          className="absolute z-30 bg-[#06291f] text-white border border-[#3a4354] rounded-md shadow-2xl
           sm:left-14 sm:w-[320px]
           bottom-0 left-0 right-0 sm:bottom-auto"
           style={{

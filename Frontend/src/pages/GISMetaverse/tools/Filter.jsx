@@ -36,7 +36,6 @@ export default function Filter({
 
   const [projects, setProjects] = useState([]);
   const [blocks, setBlocks] = useState([]);
-  
 
   const [plotOptions, setPlotOptions] = useState({
     plotTypes: [],
@@ -72,40 +71,42 @@ export default function Filter({
     [selectedFilters.projectId, activeProjectId],
   );
 
-/* ---------------- utils ---------------- */
-const normalizeSortValue = (value) => String(value ?? "").trim();
+  /* ---------------- utils ---------------- */
+  const normalizeSortValue = (value) => String(value ?? "").trim();
 
-const naturalSort = (items = [], getValue = (item) => item) =>
-  [...items].sort((a, b) =>
-    normalizeSortValue(getValue(a)).localeCompare(
-      normalizeSortValue(getValue(b)),
-      undefined,
-      {
+  const naturalSort = (items = [], getValue = (item) => item) =>
+    [...items].sort((a, b) =>
+      normalizeSortValue(getValue(a)).localeCompare(
+        normalizeSortValue(getValue(b)),
+        undefined,
+        {
+          numeric: true,
+          sensitivity: "base",
+        },
+      ),
+    );
+
+  const uniqueSorted = (arr = []) =>
+    [...new Set(arr.filter(Boolean))].sort((a, b) =>
+      String(a).localeCompare(String(b), undefined, {
         numeric: true,
         sensitivity: "base",
-      }
-    )
-  );
+      }),
+    );
 
-const uniqueSorted = (arr = []) =>
-  [...new Set(arr.filter(Boolean))].sort((a, b) =>
-    String(a).localeCompare(String(b), undefined, {
-      numeric: true,
-      sensitivity: "base",
-    })
-  );
+  const areaToMarla = (value) => {
+    const text = String(value || "")
+      .toLowerCase()
+      .trim();
 
-const areaToMarla = (value) => {
-  const text = String(value || "").toLowerCase().trim();
+    const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
 
-  const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
+    if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
+    if (text.includes("kanal")) return number * 20; // 1 kanal = 20 marla
+    if (text.includes("marla")) return number;
 
-  if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
-  if (text.includes("kanal")) return number * 20; // 1 kanal = 20 marla
-  if (text.includes("marla")) return number;
-
-  return number;
-};
+    return number;
+  };
   useEffect(() => {
     const loadProjects = async () => {
       try {
@@ -151,198 +152,212 @@ const areaToMarla = (value) => {
   ]);
 
   useEffect(() => {
-  const loadFilterData = async () => {
-    try {
-      if (!selectedProjectId) {
-        setBlocks([]);
+    const loadFilterData = async () => {
+      try {
+        if (!selectedProjectId) {
+          setBlocks([]);
+          setPlotOptions({
+            plotTypes: [],
+            plotNos: [],
+            areas: [],
+            parkFronts: [],
+            roadFacing: [],
+            possessionStatus: [],
+            plotStatus: [],
+            categories: [],
+            owners: [],
+            sitePlans: [],
+          });
+          return;
+        }
+
+        const [blockRes, plotRes] = await Promise.all([
+          getBlocks(selectedProjectId),
+
+          // ONLY filter by project and block
+          getPlotsGeoJSON({
+            project_id: selectedProjectId,
+            block: selectedFilters.block || undefined,
+          }),
+        ]);
+
+        const plots = normalizeFeatures(plotRes);
+
+        // Type should always show all types
+        const filteredForTypes = plots;
+
+        // Area depends only on type
+        const filteredForAreas = plots.filter(
+          (p) =>
+            !selectedFilters.plotType || p.type === selectedFilters.plotType,
+        );
+
+        // Plot No depends on type + area
+        const filteredForPlotNos = plots.filter(
+          (p) =>
+            (!selectedFilters.plotType ||
+              p.type === selectedFilters.plotType) &&
+            (!selectedFilters.area || p.plot_area === selectedFilters.area),
+        );
+
+        // Park Front depends on type + area + plotNo
+        const filteredForParkFronts = plots.filter(
+          (p) =>
+            (!selectedFilters.plotType ||
+              p.type === selectedFilters.plotType) &&
+            (!selectedFilters.area || p.plot_area === selectedFilters.area) &&
+            (!selectedFilters.plotNo || p.plot_no === selectedFilters.plotNo),
+        );
+
+        setBlocks(blockRes || []);
+
         setPlotOptions({
-          plotTypes: [],
-          plotNos: [],
-          areas: [],
-          parkFronts: [],
-          roadFacing: [],
-          possessionStatus: [],
-          plotStatus: [],
-          categories: [],
-          owners: [],
-          sitePlans: [],
+          plotTypes: naturalSort([
+            ...new Set(filteredForTypes.map((p) => p.type).filter(Boolean)),
+          ]),
+
+          areas: [
+            ...new Set(
+              filteredForAreas.map((p) => p.plot_area).filter(Boolean),
+            ),
+          ].sort((a, b) => areaToMarla(a) - areaToMarla(b)),
+
+          plotNos: naturalSort([
+            ...new Set(
+              filteredForPlotNos.map((p) => p.plot_no).filter(Boolean),
+            ),
+          ]),
+
+          parkFronts: naturalSort([
+            ...new Set(
+              filteredForParkFronts.map((p) => p.parkfront).filter(Boolean),
+            ),
+          ]),
+
+          roadFacing: naturalSort([
+            ...new Set(
+              filteredForParkFronts.map((p) => p.rd_facing).filter(Boolean),
+            ),
+          ]),
+
+          possessionStatus: naturalSort([
+            ...new Set(
+              filteredForParkFronts.map((p) => p.poss_st).filter(Boolean),
+            ),
+          ]),
+
+          plotStatus: naturalSort([
+            ...new Set(
+              filteredForParkFronts.map((p) => p.canceled).filter(Boolean),
+            ),
+          ]),
+
+          categories: naturalSort([
+            ...new Set(
+              filteredForParkFronts.map((p) => p.tr_cate).filter(Boolean),
+            ),
+          ]),
+
+          owners: naturalSort([
+            ...new Set(
+              filteredForParkFronts.map((p) => p.tr_own).filter(Boolean),
+            ),
+          ]),
+
+          sitePlans: naturalSort([
+            ...new Set(
+              filteredForParkFronts.map((p) => p.site_plan).filter(Boolean),
+            ),
+          ]),
         });
-        return;
+      } catch (err) {
+        console.error("Filter API error:", err);
       }
-
-const [blockRes, plotRes] = await Promise.all([
-  getBlocks(selectedProjectId),
-
-  // ONLY filter by project and block
-  getPlotsGeoJSON({
-    project_id: selectedProjectId,
-    block: selectedFilters.block || undefined,
-  }),
-]);
-
-const plots = normalizeFeatures(plotRes);
-
-// Type should always show all types
-const filteredForTypes = plots;
-
-// Area depends only on type
-const filteredForAreas = plots.filter(
-  p =>
-    !selectedFilters.plotType ||
-    p.type === selectedFilters.plotType
-);
-
-// Plot No depends on type + area
-const filteredForPlotNos = plots.filter(
-  p =>
-    (!selectedFilters.plotType ||
-      p.type === selectedFilters.plotType) &&
-    (!selectedFilters.area ||
-      p.plot_area === selectedFilters.area)
-);
-
-// Park Front depends on type + area + plotNo
-const filteredForParkFronts = plots.filter(
-  p =>
-    (!selectedFilters.plotType ||
-      p.type === selectedFilters.plotType) &&
-    (!selectedFilters.area ||
-      p.plot_area === selectedFilters.area) &&
-    (!selectedFilters.plotNo ||
-      p.plot_no === selectedFilters.plotNo)
-);
-
-      setBlocks(blockRes || []);
-
-setPlotOptions({
-  plotTypes: naturalSort(
-    [...new Set(filteredForTypes.map(p => p.type).filter(Boolean))]
-  ),
-
-  areas: [...new Set(filteredForAreas.map(p => p.plot_area).filter(Boolean))]
-    .sort((a, b) => areaToMarla(a) - areaToMarla(b)),
-
-  plotNos: naturalSort(
-    [...new Set(filteredForPlotNos.map(p => p.plot_no).filter(Boolean))]
-  ),
-
-  parkFronts: naturalSort(
-    [...new Set(filteredForParkFronts.map(p => p.parkfront).filter(Boolean))]
-  ),
-
-  roadFacing: naturalSort(
-    [...new Set(filteredForParkFronts.map(p => p.rd_facing).filter(Boolean))]
-  ),
-
-  possessionStatus: naturalSort(
-    [...new Set(filteredForParkFronts.map(p => p.poss_st).filter(Boolean))]
-  ),
-
-  plotStatus: naturalSort(
-    [...new Set(filteredForParkFronts.map(p => p.canceled).filter(Boolean))]
-  ),
-
-  categories: naturalSort(
-    [...new Set(filteredForParkFronts.map(p => p.tr_cate).filter(Boolean))]
-  ),
-
-  owners: naturalSort(
-    [...new Set(filteredForParkFronts.map(p => p.tr_own).filter(Boolean))]
-  ),
-
-  sitePlans: naturalSort(
-    [...new Set(filteredForParkFronts.map(p => p.site_plan).filter(Boolean))]
-  ),
-});
-
-    } catch (err) {
-      console.error("Filter API error:", err);
-    }
-  };
-
-  loadFilterData();
-}, [
-  selectedProjectId,
-  selectedFilters.block,
-  selectedFilters.plotType,
-  selectedFilters.area
-]);
-
-const handleChange = (key, value) => {
-  setSelectedFilters((prev) => {
-    const updated = {
-      ...prev,
-      [key]: value,
     };
 
-    // Project changed
-    if (key === "projectId") {
-      updated.block = "";
-      updated.plotType = "";
-      updated.area = "";
-      updated.plotNo = "";
-      updated.parkfront = "";
-      updated.rd_facing = "";
-      updated.poss_st = "";
-      updated.plotStatus = "";
-      updated.tr_cate = "";
-      updated.tr_own = "";
-      updated.site_plan = "";
-    }
+    loadFilterData();
+  }, [
+    selectedProjectId,
+    selectedFilters.block,
+    selectedFilters.plotType,
+    selectedFilters.area,
+  ]);
 
-    // Block changed
-    if (key === "block") {
-      updated.plotType = "";
-      updated.area = "";
-      updated.plotNo = "";
-      updated.parkfront = "";
-      updated.rd_facing = "";
-      updated.poss_st = "";
-      updated.plotStatus = "";
-      updated.tr_cate = "";
-      updated.tr_own = "";
-      updated.site_plan = "";
-    }
+  const handleChange = (key, value) => {
+    setSelectedFilters((prev) => {
+      const updated = {
+        ...prev,
+        [key]: value,
+      };
 
-    // Plot type changed
-    if (key === "plotType") {
-      updated.area = "";
-      updated.plotNo = "";
-      updated.parkfront = "";
-      updated.rd_facing = "";
-      updated.poss_st = "";
-      updated.plotStatus = "";
-      updated.tr_cate = "";
-      updated.tr_own = "";
-      updated.site_plan = "";
-    }
+      // Project changed
+      if (key === "projectId") {
+        updated.block = "";
+        updated.plotType = "";
+        updated.area = "";
+        updated.plotNo = "";
+        updated.parkfront = "";
+        updated.rd_facing = "";
+        updated.poss_st = "";
+        updated.plotStatus = "";
+        updated.tr_cate = "";
+        updated.tr_own = "";
+        updated.site_plan = "";
+      }
 
-    // Area changed
-    if (key === "area") {
-      updated.plotNo = "";
-      updated.parkfront = "";
-      updated.rd_facing = "";
-      updated.poss_st = "";
-      updated.plotStatus = "";
-      updated.tr_cate = "";
-      updated.tr_own = "";
-      updated.site_plan = "";
-    }
+      // Block changed
+      if (key === "block") {
+        updated.plotType = "";
+        updated.area = "";
+        updated.plotNo = "";
+        updated.parkfront = "";
+        updated.rd_facing = "";
+        updated.poss_st = "";
+        updated.plotStatus = "";
+        updated.tr_cate = "";
+        updated.tr_own = "";
+        updated.site_plan = "";
+      }
 
-    // Plot No changed
-    if (key === "plotNo") {
-      updated.parkfront = "";
-      updated.rd_facing = "";
-      updated.poss_st = "";
-      updated.plotStatus = "";
-      updated.tr_cate = "";
-      updated.tr_own = "";
-      updated.site_plan = "";
-    }
+      // Plot type changed
+      if (key === "plotType") {
+        updated.area = "";
+        updated.plotNo = "";
+        updated.parkfront = "";
+        updated.rd_facing = "";
+        updated.poss_st = "";
+        updated.plotStatus = "";
+        updated.tr_cate = "";
+        updated.tr_own = "";
+        updated.site_plan = "";
+      }
 
-    return updated;
-  });
-};
+      // Area changed
+      if (key === "area") {
+        updated.plotNo = "";
+        updated.parkfront = "";
+        updated.rd_facing = "";
+        updated.poss_st = "";
+        updated.plotStatus = "";
+        updated.tr_cate = "";
+        updated.tr_own = "";
+        updated.site_plan = "";
+      }
+
+      // Plot No changed
+      if (key === "plotNo") {
+        updated.parkfront = "";
+        updated.rd_facing = "";
+        updated.poss_st = "";
+        updated.plotStatus = "";
+        updated.tr_cate = "";
+        updated.tr_own = "";
+        updated.site_plan = "";
+      }
+
+      return updated;
+    });
+  };
   const handleApply = () => {
     const cleanedFilters = {
       projectId: selectedFilters.projectId || "",
@@ -423,14 +438,13 @@ const handleChange = (key, value) => {
             >
               <option value="">Select Project</option>
 
-              {naturalSort(
-                  projects,
-                  (p) => p.name || p.project_name
-                ).map((p) => (
-                <option key={p.gid || p.id} value={p.gid || p.id}>
-                  {p.name || p.project_name || `Project ${p.gid || p.id}`}
-                </option>
-              ))}
+              {naturalSort(projects, (p) => p.name || p.project_name).map(
+                (p) => (
+                  <option key={p.gid || p.id} value={p.gid || p.id}>
+                    {p.name || p.project_name || `Project ${p.gid || p.id}`}
+                  </option>
+                ),
+              )}
             </select>
           </div>
 
@@ -448,9 +462,9 @@ const handleChange = (key, value) => {
               <option value="">Select Block</option>
 
               {naturalSort(
-                  blocks,
-                  (b) => b.block || b.name || b.block_name
-                ).map((b) => (
+                blocks,
+                (b) => b.block || b.name || b.block_name,
+              ).map((b) => (
                 <option
                   key={b.gid || b.id || b.block || b.name || b.block_name}
                   value={b.block || b.name || b.block_name}
@@ -473,9 +487,7 @@ const handleChange = (key, value) => {
             >
               <option value="">Select Type</option>
 
-              {naturalSort(
-                  plotOptions.plotTypes || []
-                ).map((t, i) => (
+              {naturalSort(plotOptions.plotTypes || []).map((t, i) => (
                 <option key={`${t}-${i}`} value={t}>
                   {t}
                 </option>
@@ -498,14 +510,12 @@ const handleChange = (key, value) => {
               {[...(plotOptions.areas || [])]
                 .sort((a, b) => areaToMarla(a) - areaToMarla(b))
                 .map((a, i) => (
-                <option key={`${a}-${i}`} value={a}>
-                  {a}
-                </option>
-              ))}
+                  <option key={`${a}-${i}`} value={a}>
+                    {a}
+                  </option>
+                ))}
             </select>
           </div>
-
-          
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-white/80">
@@ -520,9 +530,7 @@ const handleChange = (key, value) => {
             >
               <option value="">Select Plot No</option>
 
-              {naturalSort(
-                  plotOptions.plotNos || []
-                ).map((p, i) => (
+              {naturalSort(plotOptions.plotNos || []).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -542,9 +550,7 @@ const handleChange = (key, value) => {
             >
               <option value="">Select Park Front</option>
 
-              {naturalSort(
-                  plotOptions.parkFronts || []
-                ).map((p, i) => (
+              {naturalSort(plotOptions.parkFronts || []).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -565,9 +571,7 @@ const handleChange = (key, value) => {
             >
               <option value="">Select Road Facing</option>
 
-              {naturalSort(
-                  plotOptions.roadFacing || []
-                ).map((p, i) => (
+              {naturalSort(plotOptions.roadFacing || []).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -588,9 +592,7 @@ const handleChange = (key, value) => {
             >
               <option value="">Select Status</option>
 
-              {naturalSort(
-                  plotOptions.possessionStatus || []
-                ).map((p, i) => (
+              {naturalSort(plotOptions.possessionStatus || []).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -632,9 +634,7 @@ const handleChange = (key, value) => {
             >
               <option value="">Select Category</option>
 
-              {naturalSort(
-                  plotOptions.categories || []
-                ).map((p, i) => (
+              {naturalSort(plotOptions.categories || []).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -655,9 +655,7 @@ const handleChange = (key, value) => {
             >
               <option value="">Select Owner</option>
 
-              {naturalSort(
-                  plotOptions.owners || []
-                ).map((p, i) => (
+              {naturalSort(plotOptions.owners || []).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>
@@ -678,9 +676,7 @@ const handleChange = (key, value) => {
             >
               <option value="">Select Site Plan</option>
 
-              {naturalSort(
-                  plotOptions.sitePlans || []
-                ).map((p, i) => (
+              {naturalSort(plotOptions.sitePlans || []).map((p, i) => (
                 <option key={`${p}-${i}`} value={p}>
                   {p}
                 </option>

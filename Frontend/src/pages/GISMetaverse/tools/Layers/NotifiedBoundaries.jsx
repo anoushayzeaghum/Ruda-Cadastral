@@ -35,7 +35,8 @@ const applyNotifiedBoundaryStyle = (map, style = {}) => {
   if (!map) return;
 
   const color = style.color || NOTIFIED_STYLE.color;
-  const opacityRatio = clampOpacity(style.opacity ?? NOTIFIED_STYLE.opacity) / 100;
+  const opacityRatio =
+    clampOpacity(style.opacity ?? NOTIFIED_STYLE.opacity) / 100;
 
   setPaint(map, NOTIFIED_STYLE.lineLayer, "line-color", color);
   setPaint(map, NOTIFIED_STYLE.lineLayer, "line-opacity", opacityRatio);
