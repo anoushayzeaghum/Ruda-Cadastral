@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import mapboxgl from "mapbox-gl";
+import mapboxgl from "mapbox-gl"; 
+import LayerStyleControl from "../Layers/LayerStyleControl";
+import ColorPalette from "../Layers/ColorPalette";
 
 const RUDA_BOUNDARY_LAYER_IDS = [
   "metaverse-ruda-boundary-fill",
@@ -105,7 +107,6 @@ const getRudaPhaseItemsFromGeoJSON = (geojson = {}) => {
 
   return [...unique.values()];
 };
-
 export default function AdministrativeBoundaries({
   map,
   adminBoundaryVisibility,
@@ -113,7 +114,8 @@ export default function AdministrativeBoundaries({
 }) {
   const [open, setOpen] = useState(false);
   const [rudaPhaseDropdownOpen, setRudaPhaseDropdownOpen] = useState(false);
-
+  
+  // const [color, setColor] = useState("#22c55e");
   const ADMIN_SOURCE_IDS = {
     rudaBoundary: "metaverse-ruda-boundary-source",
     rudaMauzaBoundary: "metaverse-ruda-mauza-boundary-source",
@@ -438,6 +440,8 @@ export default function AdministrativeBoundaries({
             checked={adminBoundaryVisibility.rudaMauzaBoundary}
             color="#22c55e"
             label="Ruda Mauza Boundary"
+            map={map}
+            layerId="metaverse-ruda-mauza-boundary-line"
             opacity={adminBoundaryVisibility.rudaMauzaBoundaryOpacity ?? 100}
             onChange={() => toggleLayer("rudaMauzaBoundary")}
             onOpacityChange={(value) =>
@@ -478,7 +482,12 @@ function LayerItem({
   hasDropdown = false,
   dropdownOpen = false,
   onDropdownToggle,
+  map,
+  layerId,
 }) {
+  const [colorOpen, setColorOpen] = useState(false);
+  const [localColor, setLocalColor] = useState(color);
+
   return (
     <div className="mt-3 first:mt-1">
       <div className="flex items-center justify-between">
@@ -490,10 +499,30 @@ function LayerItem({
             className="accent-[#65c96b]"
           />
 
-          <span
-            className="h-4 w-4 rounded-sm border-2"
-            style={{ borderColor: color }}
-          />
+          <div className="flex items-center gap-2 relative">
+            <LayerStyleControl
+              color={localColor}
+              // label={label}
+              onColorClick={() => setColorOpen((p) => !p)}
+            />
+
+            {colorOpen && (
+              <div className="absolute z-50 bg-[#1f2633] border p-2">
+                <ColorPalette
+                  onSelect={(c) => {
+                    setLocalColor(c);
+                    setColorOpen(false);
+
+                    map?.setPaintProperty(
+                      layerId,
+                      "line-color",
+                      c
+                    );
+                  }}
+                />
+              </div>
+            )}
+          </div>
 
           <span className="text-[11px]">{label}</span>
         </label>
