@@ -1,7 +1,7 @@
 import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
 
-const PROJECT_BOUNDARY_FILL_COLOR = "#2474ff";
-const PROJECT_BOUNDARY_LINE_COLOR = "#244cff";
+const PROJECT_BOUNDARY_FILL_COLOR = "#0f3d2e";
+const PROJECT_BOUNDARY_LINE_COLOR = "#0f3d2e";
 
 export function addProjectBoundaryLayer(map, data, color = null) {
   ensureSource(map, SOURCES.boundary, data);

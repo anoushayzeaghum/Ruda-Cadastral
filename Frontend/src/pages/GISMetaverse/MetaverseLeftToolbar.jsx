@@ -114,7 +114,7 @@ export default function MetaverseLeftToolbar({
               className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
                 isActive
                   ? "border-[#8bd66f] bg-[#243041] text-white"
-                  : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+                  : "border-[#0f3d2e] bg-[#1f2937] text-white hover:bg-[#0f3d2e]"
               }`}
             >
               <Icon size={20} />

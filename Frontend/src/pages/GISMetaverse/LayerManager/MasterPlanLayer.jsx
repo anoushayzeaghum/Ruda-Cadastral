@@ -13,7 +13,7 @@ export function addMasterPlanLayer(map, data, color = null) {
           "match",
           ["get", "type"],
           "Residential",
-          "#2563eb",
+          "#0f3d2e",
           "Commercial",
           "#facc15",
           "Park",

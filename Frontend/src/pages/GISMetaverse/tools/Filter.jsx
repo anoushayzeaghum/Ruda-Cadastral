@@ -417,7 +417,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.projectId || ""}
               onChange={(e) => handleChange("projectId", e.target.value)}
             >
@@ -440,7 +440,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.block || ""}
               onChange={(e) => handleChange("block", e.target.value)}
               disabled={!selectedProjectId}
@@ -466,7 +466,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.plotType || ""}
               onChange={(e) => handleChange("plotType", e.target.value)}
               disabled={!selectedProjectId}
@@ -488,7 +488,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.area || ""}
               onChange={(e) => handleChange("area", e.target.value)}
               disabled={!selectedProjectId}
@@ -513,7 +513,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.plotNo || ""}
               onChange={(e) => handleChange("plotNo", e.target.value)}
               disabled={!selectedProjectId}
@@ -535,7 +535,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.parkfront || ""}
               onChange={(e) => handleChange("parkfront", e.target.value)}
               disabled={!selectedProjectId}
@@ -558,7 +558,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.rd_facing || ""}
               onChange={(e) => handleChange("rd_facing", e.target.value)}
               disabled={!selectedProjectId}
@@ -581,7 +581,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.poss_st || ""}
               onChange={(e) => handleChange("poss_st", e.target.value)}
               disabled={!selectedProjectId}
@@ -604,7 +604,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.plotStatus || ""}
               onChange={(e) => handleChange("plotStatus", e.target.value)}
               disabled={!selectedProjectId}
@@ -625,7 +625,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.tr_cate || ""}
               onChange={(e) => handleChange("tr_cate", e.target.value)}
               disabled={!selectedProjectId}
@@ -648,7 +648,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.tr_own || ""}
               onChange={(e) => handleChange("tr_own", e.target.value)}
               disabled={!selectedProjectId}
@@ -671,7 +671,7 @@ const handleChange = (key, value) => {
             </label>
 
             <select
-              className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
+              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
               value={selectedFilters.site_plan || ""}
               onChange={(e) => handleChange("site_plan", e.target.value)}
               disabled={!selectedProjectId}
@@ -700,7 +700,7 @@ const handleChange = (key, value) => {
             <button
               type="button"
               onClick={handleReset}
-              className="h-8 flex-1 rounded-md border border-[#344055] bg-[#1d2533] text-xs font-bold text-white"
+              className="h-8 flex-1 rounded-md border border-[#0f3d2e] bg-[#1f2937] text-xs font-bold text-white"
             >
               Reset
             </button>

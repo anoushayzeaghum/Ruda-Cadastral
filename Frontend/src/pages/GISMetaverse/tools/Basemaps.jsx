@@ -24,7 +24,7 @@ const basemaps = [
     id: "dark",
     label: "Dark",
     style: "mapbox://styles/mapbox/dark-v11",
-    preview: "linear-gradient(135deg, #111827, #374151)",
+    preview: "linear-gradient(135deg, #0f3d2e, #374151)",
   },
   {
     id: "outdoors",
@@ -76,9 +76,9 @@ const handleBasemapChange = (basemap) => {
             <button
               key={basemap.id}
               onClick={() => handleBasemapChange(basemap)}
-              className={`overflow-hidden rounded-md border bg-[#1d2533] text-left transition hover:border-[#8bd66f] ${
-                isActive ? "border-[#8bd66f]" : "border-[#344055]"
-              }`}
+              className={`overflow-hidden rounded-md border bg-[#1f2937] text-left transition hover:border-[#8bd66f] ${
+                  isActive ? "border-[#8bd66f]" : "border-[#0f3d2e]"
+                }`}
             >
               <div
                 className="relative h-16 w-full"

@@ -12,7 +12,7 @@ const RUDA_BOUNDARY_LAYER_IDS = [
 
 const ADMIN_LAYER_COLORS = {
   rudaBoundary: "#6bb7e8",
-  rudaMauzaBoundary: "#2563eb",
+  rudaMauzaBoundary: "#0f3d2e",
   geodeticNetwork: "#1d4ed8",
   proposedRoads: "#19598d",
 };
@@ -535,7 +535,7 @@ export default function AdministrativeBoundaries({
     <div className="border-b border-[#343c4c]">
       <button
         type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
+        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
         onClick={() => setOpen((prev) => !prev)}
       >
         <span>ADMINISTRATIVE BOUNDARIES</span>
@@ -586,7 +586,7 @@ export default function AdministrativeBoundaries({
                     <button
                       type="button"
                       onClick={resetRudaPhases}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#8fd36f] hover:bg-[#293445]"
+                      className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]"
                     >
                       Reset
                     </button>
@@ -729,7 +729,7 @@ function LayerItem({
           <button
             type="button"
             onClick={onDropdownToggle}
-            className="rounded p-0.5 text-white/70 hover:bg-[#293445] hover:text-white"
+            className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white"
             title="Show RUDA phases"
           >
             {dropdownOpen ? (

@@ -529,7 +529,7 @@ function CtrlBtn({ title, onClick, children }) {
       type="button"
       title={title}
       onClick={onClick}
-      className="flex h-7 w-7 items-center justify-center rounded-md border border-[#344055] bg-[#1d2533] text-white/70 transition hover:bg-[#293445] hover:text-white"
+      className="flex h-7 w-7 items-center justify-center rounded-md border border-[#0f3d2e] bg-[#1f2937] text-white/70 transition hover:bg-[#0f3d2e] hover:text-white"
     >
       {children}
     </button>

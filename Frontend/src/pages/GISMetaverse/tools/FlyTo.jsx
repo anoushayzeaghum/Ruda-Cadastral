@@ -76,7 +76,7 @@ export default function FlyTo({
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-[#344055] bg-[#111827] px-2 py-1.5 text-white shadow-lg">
+    <div className="flex items-center gap-2 rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 py-1.5 text-white shadow-lg">
       <div className="flex items-center gap-1 text-[12px] font-bold whitespace-nowrap">
         <Send size={15} />
         Fly to :

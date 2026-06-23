@@ -131,7 +131,7 @@ export default function MetaverseLegend({
       <button
         type="button"
         onClick={() => setCollapsed((value) => !value)}
-        className="flex w-full cursor-pointer items-center justify-between border-b border-[#343c4c] px-4 py-3 text-white hover:bg-[#293445]"
+        className="flex w-full cursor-pointer items-center justify-between border-b border-[#343c4c] px-4 py-3 text-white hover:bg-[#0f3d2e]"
       >
         <span className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide">
           <MapIcon size={15} />
