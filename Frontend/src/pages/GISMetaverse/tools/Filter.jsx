@@ -3,8 +3,11 @@ import { Filter as FilterIcon, X } from "lucide-react";
 import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
 import {
   getBlocks,
-  getPlotOptionsAll,
+  // getPlotOptionsAll,
+  getPlotOptions,
   getProjects,
+  getPlotsGeoJSON,
+  normalizeFeatures,
 } from "../../../services/metaverseApi";
 
 const initialSelectedFilters = {
@@ -33,6 +36,7 @@ export default function Filter({
 
   const [projects, setProjects] = useState([]);
   const [blocks, setBlocks] = useState([]);
+  
 
   const [plotOptions, setPlotOptions] = useState({
     plotTypes: [],
@@ -67,6 +71,33 @@ export default function Filter({
     () => selectedFilters.projectId || activeProjectId,
     [selectedFilters.projectId, activeProjectId],
   );
+
+const normalizeSortValue = (value) => String(value ?? "").trim();
+
+const getFirstNumber = (value) => {
+  const match = normalizeSortValue(value).match(/\d+/);
+  return match ? Number(match[0]) : null;
+};
+const naturalSort = (items = [], getValue = (item) => item) =>
+  [...items].sort((a, b) => {
+    const av = normalizeSortValue(getValue(a));
+    const bv = normalizeSortValue(getValue(b));
+
+    const an = getFirstNumber(av);
+    const bn = getFirstNumber(bv);
+
+    if (an !== null && bn !== null && an !== bn) return an - bn;
+    if (an !== null && bn === null) return -1;
+    if (an === null && bn !== null) return 1;
+
+    return av.localeCompare(bv, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+
+const uniqueSorted = (items = []) =>
+  naturalSort([...new Set(items.filter(Boolean))]);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -113,51 +144,108 @@ export default function Filter({
   ]);
 
   useEffect(() => {
-    const loadFilterData = async () => {
-      try {
-        if (!selectedProjectId) {
-          setBlocks([]);
-          setPlotOptions({
-            plotTypes: [],
-            plotNos: [],
-            areas: [],
-            parkFronts: [],
-            roadFacing: [],
-            possessionStatus: [],
-            plotStatus: [],
-            categories: [],
-            owners: [],
-            sitePlans: [],
-          });
-          return;
-        }
-
-        const [blockRes, plotRes] = await Promise.all([
-          getBlocks(selectedProjectId),
-          getPlotOptionsAll({ project_id: selectedProjectId }),
-        ]);
-
-        setBlocks(blockRes || []);
-
+  const loadFilterData = async () => {
+    try {
+      if (!selectedProjectId) {
+        setBlocks([]);
         setPlotOptions({
-          plotTypes: plotRes?.plotTypes || [],
-          plotNos: plotRes?.plotNos || [],
-          areas: plotRes?.areas || plotRes?.plotAreas || [],
-          parkFronts: plotRes?.parkFronts || [],
-          roadFacing: plotRes?.roadFacing || [],
-          possessionStatus: plotRes?.possessionStatus || [],
-          plotStatus: plotRes?.plotStatus || [],
-          categories: plotRes?.categories || [],
-          owners: plotRes?.owners || [],
-          sitePlans: plotRes?.sitePlans || [],
+          plotTypes: [],
+          plotNos: [],
+          areas: [],
+          parkFronts: [],
+          roadFacing: [],
+          possessionStatus: [],
+          plotStatus: [],
+          categories: [],
+          owners: [],
+          sitePlans: [],
         });
-      } catch (err) {
-        console.error("Filter API error:", err);
+        return;
       }
-    };
 
-    loadFilterData();
-  }, [selectedProjectId]);
+      const [blockRes, plotRes] = await Promise.all([
+        getBlocks(selectedProjectId),
+        getPlotsGeoJSON({
+          project_id: selectedProjectId,
+          block: selectedFilters.block || undefined,
+          plot_area: selectedFilters.area || undefined,
+          type: selectedFilters.plotType || undefined,
+          plot_no: selectedFilters.plotNo || undefined,
+          parkfront: selectedFilters.parkfront || undefined,
+          rd_facing: selectedFilters.rd_facing || undefined,
+          poss_st: selectedFilters.poss_st || undefined,
+          tr_cate: selectedFilters.tr_cate || undefined,
+          tr_own: selectedFilters.tr_own || undefined,
+          site_plan: selectedFilters.site_plan || undefined,
+        }),
+      ]);
+
+      const plots = normalizeFeatures(plotRes);
+
+      setBlocks(blockRes || []);
+
+      setPlotOptions({
+  plotTypes: naturalSort(
+    [...new Set(plots.map(p => p.type).filter(Boolean))]
+  ),
+
+  plotNos: naturalSort(
+    [...new Set(plots.map(p => p.plot_no).filter(Boolean))],
+    (v) => v
+  ),
+
+  areas: naturalSort(
+    [...new Set(plots.map(p => p.plot_area).filter(Boolean))]
+  ),
+
+  parkFronts: naturalSort(
+    [...new Set(plots.map(p => p.parkfront).filter(Boolean))]
+  ),
+
+  roadFacing: naturalSort(
+    [...new Set(plots.map(p => p.rd_facing).filter(Boolean))]
+  ),
+
+  possessionStatus: naturalSort(
+    [...new Set(plots.map(p => p.poss_st).filter(Boolean))]
+  ),
+
+  plotStatus: naturalSort(
+    [...new Set(plots.map(p => p.canceled).filter(Boolean))]
+  ),
+
+  categories: naturalSort(
+    [...new Set(plots.map(p => p.tr_cate).filter(Boolean))]
+  ),
+
+  owners: naturalSort(
+    [...new Set(plots.map(p => p.tr_own).filter(Boolean))]
+  ),
+
+  sitePlans: naturalSort(
+    [...new Set(plots.map(p => p.site_plan).filter(Boolean))]
+  ),
+});
+
+    } catch (err) {
+      console.error("Filter API error:", err);
+    }
+  };
+
+  loadFilterData();
+}, [
+  selectedProjectId,
+  selectedFilters.block,
+  selectedFilters.area,
+  selectedFilters.plotType,
+  selectedFilters.plotNo,
+  selectedFilters.parkfront,
+  selectedFilters.rd_facing,
+  selectedFilters.poss_st,
+  selectedFilters.tr_cate,
+  selectedFilters.tr_own,
+  selectedFilters.site_plan,
+]);
 
   const handleChange = (key, value) => {
     setSelectedFilters((prev) => {
@@ -295,23 +383,22 @@ export default function Filter({
               ))}
             </select>
           </div>
-
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-white/80">
-              Plot No
+              Area
             </label>
 
             <select
               className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
-              value={selectedFilters.plotNo || ""}
-              onChange={(e) => handleChange("plotNo", e.target.value)}
+              value={selectedFilters.area || ""}
+              onChange={(e) => handleChange("area", e.target.value)}
               disabled={!selectedProjectId}
             >
-              <option value="">Select Plot No</option>
+              <option value="">Select Area</option>
 
-              {(plotOptions.plotNos || []).map((p, i) => (
-                <option key={`${p}-${i}`} value={p}>
-                  {p}
+              {(plotOptions.areas || []).map((a, i) => (
+                <option key={`${a}-${i}`} value={a}>
+                  {a}
                 </option>
               ))}
             </select>
@@ -340,24 +427,28 @@ export default function Filter({
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-white/80">
-              Area
+              Plot No
             </label>
 
             <select
               className="h-8 w-full rounded-md border border-[#344055] bg-[#1d2533] px-2 text-xs text-white"
-              value={selectedFilters.area || ""}
-              onChange={(e) => handleChange("area", e.target.value)}
+              value={selectedFilters.plotNo || ""}
+              onChange={(e) => handleChange("plotNo", e.target.value)}
               disabled={!selectedProjectId}
             >
-              <option value="">Select Area</option>
+              <option value="">Select Plot No</option>
 
-              {(plotOptions.areas || []).map((a, i) => (
-                <option key={`${a}-${i}`} value={a}>
-                  {a}
+              {(plotOptions.plotNos || []).map((p, i) => (
+                <option key={`${p}-${i}`} value={p}>
+                  {p}
                 </option>
               ))}
             </select>
           </div>
+
+          
+
+          
 
           <div>
             <label className="mb-1 block text-[11px] font-semibold text-white/80">

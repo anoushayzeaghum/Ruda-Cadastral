@@ -1,9 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getBlocks, getPlotOptions, getProjects } from "../../services/metaverseApi";
+import Select from "react-select";
+import {
+  getBlocks,
+  getPlotOptions,
+  getProjects,
+} from "../../services/metaverseApi";
 
 const toOption = (item, valueKeys = [], labelKeys = []) => {
-  const value = valueKeys.map((key) => item?.[key]).find((v) => v !== undefined && v !== null && v !== "");
-  const label = labelKeys.map((key) => item?.[key]).find((v) => v !== undefined && v !== null && v !== "");
+  const value = valueKeys
+    .map((key) => item?.[key])
+    .find((v) => v !== undefined && v !== null && v !== "");
+  const label = labelKeys
+    .map((key) => item?.[key])
+    .find((v) => v !== undefined && v !== null && v !== "");
   return {
     value,
     label: label || String(value || "Select"),
@@ -11,16 +20,64 @@ const toOption = (item, valueKeys = [], labelKeys = []) => {
   };
 };
 
-export default function SpatialQuery({ filters = {}, onFiltersChange = () => {} }) {
+const selectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: "38px",
+    height: "38px",
+    borderColor: state.isFocused ? "#0c6d30" : "#d5dbe1",
+    boxShadow: state.isFocused ? "0 0 0 1px #0a5a27" : "none",
+    borderRadius: "4px",
+    fontSize: "14px",
+    color: "#4b5563",
+    "&:hover": {
+      borderColor: state.isFocused ? "#0c6d30" : "#d5dbe1",
+    },
+  }),
+  valueContainer: (base) => ({
+    ...base,
+    height: "38px",
+    padding: "0 12px",
+  }),
+  input: (base) => ({
+    ...base,
+    margin: 0,
+    padding: 0,
+  }),
+  indicatorsContainer: (base) => ({
+    ...base,
+    height: "38px",
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: "#4b5563",
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: "#4b5563",
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+
+export default function SpatialQuery({
+  filters = {},
+  onFiltersChange = () => {},
+}) {
   const [projects, setProjects] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [plotTypes, setPlotTypes] = useState([]);
   const [plotNos, setPlotNos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const selectedProjectId = filters?.selectedProject?.value || filters?.projectId || "";
-  const selectedBlockId = filters?.selectedBlock?.raw?.gid || filters?.blockId || "";
-  const selectedBlockName = filters?.selectedBlock?.raw?.block || filters?.block || "";
+  const selectedProjectId =
+    filters?.selectedProject?.value || filters?.projectId || "";
+  const selectedBlockId =
+    filters?.selectedBlock?.raw?.gid || filters?.blockId || "";
+  const selectedBlockName =
+    filters?.selectedBlock?.raw?.block || filters?.block || "";
 
   useEffect(() => {
     let mounted = true;
@@ -31,8 +88,15 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {} 
         if (!mounted) return;
         setProjects(
           res
-            .map((item) => toOption(item, ["gid", "id", "project_id"], ["name", "brief_name", "type"]))
-            .filter((item) => item.value !== undefined && item.value !== null),
+            .map((item) =>
+              toOption(
+                item,
+                ["gid", "id", "project_id"],
+                ["name", "brief_name", "type"],
+              ),
+            )
+            .filter((item) => item.value !== undefined && item.value !== null)
+            .sort((a, b) => (a.label || "").localeCompare(b.label || "")) 
         );
       } catch (error) {
         console.error("Failed to load projects", error);
@@ -60,8 +124,15 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {} 
         if (!mounted) return;
         setBlocks(
           res
-            .map((item) => toOption(item, ["gid", "block_id", "id", "block"], ["block", "name"]))
-            .filter((item) => item.value !== undefined && item.value !== null),
+            .map((item) =>
+              toOption(
+                item,
+                ["gid", "block_id", "id", "block"],
+                ["block", "name"],
+              ),
+            )
+            .filter((item) => item.value !== undefined && item.value !== null)
+            .sort((a, b) => (a.label || "").localeCompare(b.label || ""))
         );
       } catch (error) {
         console.error("Failed to load blocks", error);
@@ -95,8 +166,22 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {} 
         });
 
         if (!mounted) return;
-        setPlotTypes(options.plotTypes || []);
-        setPlotNos(options.plotNos || []);
+        setPlotTypes(
+          (options.plotTypes || []).sort((a, b) =>
+            a.localeCompare(b, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            })
+          )
+        );
+        setPlotNos(
+          (options.plotNos || []).sort((a, b) =>
+            a.localeCompare(b, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            })
+          )
+        );
       } catch (error) {
         console.error("Failed to load plot options", error);
         if (mounted) {
@@ -112,9 +197,17 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {} 
     return () => {
       mounted = false;
     };
-  }, [selectedProjectId, selectedBlockId, selectedBlockName, filters?.plotType]);
+  }, [
+    selectedProjectId,
+    selectedBlockId,
+    selectedBlockName,
+    filters?.plotType,
+  ]);
 
-  const canSearch = useMemo(() => Boolean(selectedProjectId), [selectedProjectId]);
+  const canSearch = useMemo(
+    () => Boolean(selectedProjectId),
+    [selectedProjectId],
+  );
 
   const update = (patch) => onFiltersChange(patch);
 
@@ -153,11 +246,16 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {} 
 
       <div className="p-4 h-[calc(100%-56px)]">
         <div className="space-y-3">
-          <select
-            className="inputStyle"
-            value={selectedProjectId}
-            onChange={(e) => {
-              const opt = projects.find((item) => String(item.value) === String(e.target.value)) || null;
+          <Select
+            classNamePrefix="spatial-select"
+            styles={selectStyles}
+            options={projects}
+            value={
+              projects.find(
+                (item) => String(item.value) === String(selectedProjectId),
+              ) || null
+            }
+            onChange={(opt) => {
               update({
                 selectedProject: opt,
                 projectId: opt?.value || "",
@@ -170,21 +268,25 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {} 
                 selectedParcelNumber: "",
               });
             }}
-            disabled={!projects.length}
-          >
-            <option value="">Select Project</option>
-            {projects.map((project) => (
-              <option key={project.value} value={project.value}>
-                {project.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Select Project"
+            isSearchable
+            isDisabled={!projects.length}
+          />
 
-          <select
-            className="inputStyle"
-            value={filters?.selectedBlock?.value || selectedBlockName || ""}
-            onChange={(e) => {
-              const opt = blocks.find((item) => String(item.value) === String(e.target.value)) || null;
+          <Select
+            classNamePrefix="spatial-select"
+            styles={selectStyles}
+            options={blocks}
+            value={
+              blocks.find(
+                (item) =>
+                  String(item.value) ===
+                  String(
+                    filters?.selectedBlock?.value || selectedBlockName || "",
+                  ),
+              ) || null
+            }
+            onChange={(opt) => {
               update({
                 selectedBlock: opt,
                 blockId: opt?.raw?.gid || opt?.raw?.block_id || "",
@@ -194,45 +296,54 @@ export default function SpatialQuery({ filters = {}, onFiltersChange = () => {} 
                 selectedParcelNumber: "",
               });
             }}
-            disabled={!selectedProjectId || !blocks.length}
-          >
-            <option value="">Select Block</option>
-            {blocks.map((block) => (
-              <option key={block.value} value={block.value}>
-                {block.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Select Block"
+            isSearchable
+            isDisabled={!selectedProjectId || !blocks.length}
+          />
 
-          <select
-            className="inputStyle"
-            value={filters?.plotType || ""}
-            onChange={(e) => {
-              update({ plotType: e.target.value, plotNo: "", selectedParcelNumber: "" });
+          <Select
+            classNamePrefix="spatial-select"
+            styles={selectStyles}
+            options={plotTypes.map((type) => ({ value: type, label: type }))}
+            value={
+              filters?.plotType
+                ? { value: filters.plotType, label: filters.plotType }
+                : null
+            }
+            onChange={(opt) => {
+              update({
+                plotType: opt?.value || "",
+                plotNo: "",
+                selectedParcelNumber: "",
+              });
             }}
-            disabled={!selectedProjectId || loading || !plotTypes.length}
-          >
-            <option value="">Select Plot Type</option>
-            {plotTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+            placeholder="Select Plot Type"
+            isSearchable
+            isDisabled={!selectedProjectId || loading || !plotTypes.length}
+          />
 
-          <select
-            className="inputStyle"
-            value={filters?.plotNo || ""}
-            onChange={(e) => update({ plotNo: e.target.value, selectedParcelNumber: e.target.value })}
-            disabled={!selectedProjectId || loading || !plotNos.length}
-          >
-            <option value="">Select Plot No</option>
-            {plotNos.map((plotNo) => (
-              <option key={plotNo} value={plotNo}>
-                {plotNo}
-              </option>
-            ))}
-          </select>
+          <Select
+            classNamePrefix="spatial-select"
+            styles={selectStyles}
+            options={plotNos.map((plotNo) => ({
+              value: plotNo,
+              label: plotNo,
+            }))}
+            value={
+              filters?.plotNo
+                ? { value: filters.plotNo, label: filters.plotNo }
+                : null
+            }
+            onChange={(opt) =>
+              update({
+                plotNo: opt?.value || "",
+                selectedParcelNumber: opt?.value || "",
+              })
+            }
+            placeholder="Select Plot No"
+            isSearchable
+            isDisabled={!selectedProjectId || loading || !plotNos.length}
+          />
 
           <div className="grid grid-cols-2 gap-3 pt-2">
             <button

@@ -81,6 +81,9 @@ export default function MetaverseLeftToolbar({
       ? 12 + activeToolIndex * (TOOL_BUTTON_SIZE + TOOL_GAP)
       : 12;
 
+  const layersPanelTop = 12;
+  const isLayersPanelOpen = activeTool === "layers";
+
   const handleToolClick = (toolId) => {
     if (toolId === "threeD") {
       navigate("/society-3d");
@@ -121,32 +124,66 @@ export default function MetaverseLeftToolbar({
         })}
       </div>
 
-      {activeTool && (
+      <div
+        className={`absolute z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl
+          /* Mobile: slide up from bottom as a sheet */
+          bottom-0 left-0 right-0 max-h-[70vh] rounded-b-none overflow-hidden
+          /* sm+: restore left toolbar panel behaviour */
+          sm:bottom-auto sm:left-14 sm:right-auto sm:w-[300px] sm:max-h-[min(500px,calc(100vh-90px))] sm:rounded-b-md`}
+        style={{
+          top: window.innerWidth >= 640 ? `${layersPanelTop}px` : undefined,
+          display: isLayersPanelOpen ? undefined : "none",
+        }}
+        aria-hidden={!isLayersPanelOpen}
+      >
+        {/* Mobile drag handle — hidden on sm+ */}
+        <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-2 sm:hidden">
+          <div className="mx-auto h-1 w-10 rounded-full bg-white/30" />
+          <button
+            type="button"
+            onClick={() => setActiveTool(null)}
+            className="ml-4 text-white/50 hover:text-white text-xs"
+          >
+            ✕
+          </button>
+        </div>
+
+        <LayersPanel
+          map={map}
+          filters={filters}
+          layerVisibility={layerVisibility}
+          setLayerVisibility={setLayerVisibility}
+          adminBoundaryVisibility={adminBoundaryVisibility}
+          setAdminBoundaryVisibility={setAdminBoundaryVisibility}
+        />
+      </div>
+
+      {activeTool && activeTool !== "layers" && (
         <div
           className={`absolute z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl
             /* Mobile: slide up from bottom as a sheet */
             bottom-0 left-0 right-0 max-h-[70vh] rounded-b-none
-            ${activeTool === "layers" || activeTool === "filter" ? "overflow-hidden" : "overflow-y-auto"}
+            ${activeTool === "filter" ? "overflow-hidden" : "overflow-y-auto"}
             /* sm+: restore left toolbar panel behaviour */
             sm:bottom-auto sm:left-14 sm:right-auto sm:rounded-b-md
             ${
               activeTool === "filter"
                 ? "sm:w-[300px] sm:max-h-[min(400px,calc(100vh-90px))] overflow-hidden"
-                : activeTool === "layers"
-                  ? "sm:w-[300px] sm:max-h-[min(500px,calc(100vh-90px))] overflow-hidden"
-                  : activeTool === "droneImagery"
-                    ? "sm:w-[320px] sm:max-h-[calc(100vh-90px)]"
-                    : activeTool === "timeLapse"
-                      ? "sm:w-[360px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                      : activeTool === "changeDetection"
-                        ? "sm:w-[360px] sm:max-h-[500px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                        : activeTool === "import"
-                          ? "sm:w-[340px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                          : activeTool === "measurement"
-                            ? "sm:w-[350px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                            : "sm:w-[3050px] sm:max-h-[calc(100vh-90px)]"
+                : activeTool === "droneImagery"
+                  ? "sm:w-[320px] sm:max-h-[calc(100vh-90px)]"
+                  : activeTool === "timeLapse"
+                    ? "sm:w-[360px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                    : activeTool === "changeDetection"
+                      ? "sm:w-[360px] sm:max-h-[500px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                      : activeTool === "import"
+                        ? "sm:w-[340px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                        : activeTool === "measurement"
+                          ? "sm:w-[350px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                          : "sm:w-[3050px] sm:max-h-[calc(100vh-90px)]"
             }`}
-          style={{ top: window.innerWidth >= 640 ? `${panelTop}px` : undefined }}
+          style={{
+            top: window.innerWidth >= 640 ? `${panelTop}px` : undefined,
+          }}
         >
           {/* Mobile drag handle — hidden on sm+ */}
           <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-2 sm:hidden">
@@ -160,20 +197,8 @@ export default function MetaverseLeftToolbar({
             </button>
           </div>
 
-          {activeTool === "layers" && (            <LayersPanel
-              map={map}
-              filters={filters}
-              layerVisibility={layerVisibility}
-              setLayerVisibility={setLayerVisibility}
-              adminBoundaryVisibility={adminBoundaryVisibility}
-              setAdminBoundaryVisibility={setAdminBoundaryVisibility}
-            />
-          )}
           {activeTool === "basemaps" && (
-            <Basemaps
-              map={map}
-              rebuildAllLayers={rebuildAllLayers}
-            />
+            <Basemaps map={map} rebuildAllLayers={rebuildAllLayers} />
           )}
           {activeTool === "filter" && (
             <Filter
@@ -189,15 +214,18 @@ export default function MetaverseLeftToolbar({
           )}
 
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
-          {activeTool === "timeLapse" && <TimeLapse map={map} onClose={() => setActiveTool(null)} />}
-          {activeTool === "changeDetection" && <ChangeDetection map={map} onClose={() => setActiveTool(null)} />}
+          {activeTool === "timeLapse" && (
+            <TimeLapse map={map} onClose={() => setActiveTool(null)} />
+          )}
+          {activeTool === "changeDetection" && (
+            <ChangeDetection map={map} onClose={() => setActiveTool(null)} />
+          )}
           {activeTool === "import" && (
             <Import map={map} onClose={() => setActiveTool(null)} />
           )}
           {activeTool === "measurement" && <Measurement map={map} />}
 
-          {activeTool !== "layers" &&
-            activeTool !== "filter" &&
+          {activeTool !== "filter" &&
             activeTool !== "droneImagery" &&
             activeTool !== "timeLapse" &&
             activeTool !== "changeDetection" &&

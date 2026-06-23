@@ -46,8 +46,7 @@ const getLandType = (props = {}) => {
 
 export default function MapPage() {
   const outletContext = useOutletContext() ?? {};
-  console.log("outletContext =", outletContext);
-console.log("filters =", outletContext?.filters);
+
   const filters = outletContext.filters;
 
   const mapShellRef = useRef(null);
@@ -403,7 +402,6 @@ console.log("filters =", outletContext?.filters);
         />
 
         {/* <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} /> */}
-{console.log("filters:", filters)}
         {filters && (
           <SubHeader
             filters={filters}

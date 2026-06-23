@@ -19,15 +19,15 @@ const extractCollection = (payload) => {
 const isGeoJSONGeometry = (value) =>
   Boolean(
     value?.type &&
-      [
-        "Point",
-        "MultiPoint",
-        "LineString",
-        "MultiLineString",
-        "Polygon",
-        "MultiPolygon",
-        "GeometryCollection",
-      ].includes(value.type),
+    [
+      "Point",
+      "MultiPoint",
+      "LineString",
+      "MultiLineString",
+      "Polygon",
+      "MultiPolygon",
+      "GeometryCollection",
+    ].includes(value.type),
   );
 
 const toGeoJSONFeature = (item, fallbackProperties = {}) => {
@@ -528,8 +528,8 @@ const buildMauzaFilterParams = (filters = {}) => ({
     : filters.mauza_id,
 });
 
-const getRequestedMauzaIds = (filters = {}) => filters.mauza_ids ?? filters.mauza_id;
-
+const getRequestedMauzaIds = (filters = {}) =>
+  filters.mauza_ids ?? filters.mauza_id;
 
 const mergeGeoJSONCollections = (collections = []) => ({
   type: "FeatureCollection",
