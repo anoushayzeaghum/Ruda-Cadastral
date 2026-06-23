@@ -21,7 +21,20 @@ export default function FlyTo({
       try {
         setLoading(true);
         const data = await getProjects();
-        if (!ignore) setProjects(data || []);
+
+        if (!ignore) {
+          // ✅ SORT ALPHABETICALLY BY PROJECT NAME
+          const sorted = (data || []).sort((a, b) => {
+            const nameA =
+              (a.name || a.project_name || "").toString().toLowerCase();
+            const nameB =
+              (b.name || b.project_name || "").toString().toLowerCase();
+
+            return nameA.localeCompare(nameB);
+          });
+
+          setProjects(sorted);
+        }
       } catch (error) {
         console.error("Failed to load projects for Fly To:", error);
       } finally {

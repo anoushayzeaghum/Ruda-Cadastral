@@ -10,7 +10,6 @@ import {
   Box,
   Globe2,
   FileInput,
-  ChevronRight,
   Send,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +22,6 @@ import TimeLapse from "./tools/TimeLapse";
 import ChangeDetection from "./tools/ChangeDetection";
 import Import from "./tools/Import";
 import Measurement from "./tools/Measurement";
-import SegmentMeasurement from "./tools/SegmentMeasurement";
 import FlyTo from "./tools/FlyTo";
 
 const tools = [
@@ -33,8 +31,17 @@ const tools = [
   { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
   { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
   { id: "measurement", label: "Measurement", icon: Ruler },
+
+  // 👇 3D first
   { id: "threeD", label: "3D View", icon: Box },
+
+  // 👇 moved here (below 3D)
+  { id: "flyTo", label: "Fly To", icon: Send },
+
   { id: "import", label: "Import", icon: FileInput },
+
+  // 👇 moved here (below import)
+  { id: "basemaps", label: "Basemaps", icon: Globe2 },
 ];
 
 const TOOL_BUTTON_SIZE = 36;
@@ -53,7 +60,6 @@ export default function MetaverseLeftToolbar({
   rebuildAllLayers,
 }) {
   const navigate = useNavigate();
-  const [bottomPanel, setBottomPanel] = useState(null);
   const [followEnabled, setFollowEnabled] = useState(false);
 
   useEffect(() => {
@@ -67,22 +73,21 @@ export default function MetaverseLeftToolbar({
           duration: 900,
         });
       },
-      (err) => console.error("Follow location error:", err),
-      { enableHighAccuracy: true },
+      (err) => console.error(err),
+      { enableHighAccuracy: true }
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
   }, [followEnabled, map]);
 
-  const activeToolIndex = tools.findIndex((tool) => tool.id === activeTool);
+  const activeToolIndex = tools.findIndex((t) => t.id === activeTool);
 
   const panelTop =
     activeToolIndex >= 0
       ? 12 + activeToolIndex * (TOOL_BUTTON_SIZE + TOOL_GAP)
       : 12;
 
-  const layersPanelTop = 12;
-  const isLayersPanelOpen = activeTool === "layers";
+  const isLayersOpen = activeTool === "layers";
 
   const handleToolClick = (toolId) => {
     if (toolId === "threeD") {
@@ -90,17 +95,12 @@ export default function MetaverseLeftToolbar({
       return;
     }
 
-    setBottomPanel(null);
     setActiveTool((prev) => (prev === toolId ? null : toolId));
-  };
-
-  const handleBottomPanel = (panel) => {
-    setActiveTool(null);
-    setBottomPanel((prev) => (prev === panel ? null : panel));
   };
 
   return (
     <>
+      {/* LEFT TOOLBAR */}
       <div className="absolute left-2 top-3 z-30 flex flex-col gap-1">
         {tools.map((tool) => {
           const Icon = tool.icon;
@@ -109,7 +109,6 @@ export default function MetaverseLeftToolbar({
           return (
             <button
               key={tool.id}
-              type="button"
               title={tool.label}
               onClick={() => handleToolClick(tool.id)}
               className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
@@ -118,36 +117,22 @@ export default function MetaverseLeftToolbar({
                   : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
               }`}
             >
-              <Icon size={20} strokeWidth={2.2} />
+              <Icon size={20} />
             </button>
           );
         })}
       </div>
 
+      {/* LAYERS PANEL */}
       <div
-        className={`absolute z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl
-          /* Mobile: slide up from bottom as a sheet */
-          bottom-0 left-0 right-0 max-h-[70vh] rounded-b-none overflow-hidden
-          /* sm+: restore left toolbar panel behaviour */
-          sm:bottom-auto sm:left-14 sm:right-auto sm:w-[300px] sm:max-h-[min(500px,calc(100vh-90px))] sm:rounded-b-md`}
+        className={`absolute z-30 bg-[#202736] text-white border border-[#3a4354] rounded-md shadow-2xl
+        sm:left-14 sm:w-[300px]
+        bottom-0 left-0 right-0 sm:bottom-auto`}
         style={{
-          top: window.innerWidth >= 640 ? `${layersPanelTop}px` : undefined,
-          display: isLayersPanelOpen ? undefined : "none",
+          top: window.innerWidth >= 640 ? `${panelTop}px` : undefined,
+          display: isLayersOpen ? "block" : "none",
         }}
-        aria-hidden={!isLayersPanelOpen}
       >
-        {/* Mobile drag handle — hidden on sm+ */}
-        <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-2 sm:hidden">
-          <div className="mx-auto h-1 w-10 rounded-full bg-white/30" />
-          <button
-            type="button"
-            onClick={() => setActiveTool(null)}
-            className="ml-4 text-white/50 hover:text-white text-xs"
-          >
-            ✕
-          </button>
-        </div>
-
         <LayersPanel
           map={map}
           filters={filters}
@@ -158,59 +143,30 @@ export default function MetaverseLeftToolbar({
         />
       </div>
 
+      {/* TOOL PANELS (FILTER, IMPORT, etc.) */}
       {activeTool && activeTool !== "layers" && (
         <div
-          className={`absolute z-30 rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl
-            /* Mobile: slide up from bottom as a sheet */
-            bottom-0 left-0 right-0 max-h-[70vh] rounded-b-none
-            ${activeTool === "filter" ? "overflow-hidden" : "overflow-y-auto"}
-            /* sm+: restore left toolbar panel behaviour */
-            sm:bottom-auto sm:left-14 sm:right-auto sm:rounded-b-md
-            ${
-              activeTool === "filter"
-                ? "sm:w-[300px] sm:max-h-[min(400px,calc(100vh-90px))] overflow-hidden"
-                : activeTool === "droneImagery"
-                  ? "sm:w-[320px] sm:max-h-[calc(100vh-90px)]"
-                  : activeTool === "timeLapse"
-                    ? "sm:w-[360px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                    : activeTool === "changeDetection"
-                      ? "sm:w-[360px] sm:max-h-[500px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                      : activeTool === "import"
-                        ? "sm:w-[340px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                        : activeTool === "measurement"
-                          ? "sm:w-[350px] sm:max-h-[calc(100vh-90px)] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                          : "sm:w-[3050px] sm:max-h-[calc(100vh-90px)]"
-            }`}
+          className="absolute z-30 bg-[#202736] text-white border border-[#3a4354] rounded-md shadow-2xl
+          sm:left-14 sm:w-[320px]
+          bottom-0 left-0 right-0 sm:bottom-auto"
           style={{
             top: window.innerWidth >= 640 ? `${panelTop}px` : undefined,
           }}
         >
-          {/* Mobile drag handle — hidden on sm+ */}
-          <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-2 sm:hidden">
-            <div className="mx-auto h-1 w-10 rounded-full bg-white/30" />
-            <button
-              type="button"
-              onClick={() => setActiveTool(null)}
-              className="ml-4 text-white/50 hover:text-white text-xs"
-            >
-              ✕
-            </button>
-          </div>
-
-          {activeTool === "basemaps" && (
-            <Basemaps map={map} rebuildAllLayers={rebuildAllLayers} />
-          )}
           {activeTool === "filter" && (
             <Filter
               filters={filters}
-              projectId={filters?.projectId}
               setLayerVisibility={setLayerVisibility}
-              onApply={(appliedFilters) => {
-                setFilters?.((prev) => ({ ...prev, ...appliedFilters }));
+              onApply={(f) => {
+                setFilters((prev) => ({ ...prev, ...f }));
                 setActiveTool("layers");
               }}
               onClose={() => setActiveTool(null)}
             />
+          )}
+
+          {activeTool === "basemaps" && (
+            <Basemaps map={map} rebuildAllLayers={rebuildAllLayers} />
           )}
 
           {activeTool === "droneImagery" && <DroneImagery map={map} />}
@@ -224,63 +180,15 @@ export default function MetaverseLeftToolbar({
             <Import map={map} onClose={() => setActiveTool(null)} />
           )}
           {activeTool === "measurement" && <Measurement map={map} />}
-
-          {activeTool !== "filter" &&
-            activeTool !== "droneImagery" &&
-            activeTool !== "timeLapse" &&
-            activeTool !== "changeDetection" &&
-            activeTool !== "import" &&
-            activeTool !== "measurement" && (
-              <GenericToolPanel tool={tools.find((t) => t.id === activeTool)} />
-            )}
+          {activeTool === "flyTo" && (
+            <FlyTo
+              filters={filters}
+              setFilters={setFilters}
+              setLayerVisibility={setLayerVisibility}
+            />
+          )}
         </div>
       )}
-
-      <div className="absolute bottom-4 left-2 z-40 flex flex-col items-start gap-2">
-        {/* Basemaps button with panel opening above */}
-        <div className="relative">
-          {bottomPanel === "basemaps" && (
-            <div className="absolute bottom-0 left-10 mb-0 ml-1 w-[calc(100vw-4rem)] max-h-[340px] overflow-y-auto rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:w-[380px]">
-              <Basemaps map={map} />
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => handleBottomPanel("basemaps")}
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-[#344055] bg-[#1d2533] text-white shadow-md transition hover:bg-[#293445]"
-            title="Basemaps"
-          >
-            <Globe2 size={20} strokeWidth={2.2} />
-          </button>
-        </div>
-
-        {/* Fly To button with panel opening to the right, vertically centered on the icon */}
-        <div className="relative">
-          {bottomPanel === "flyTo" && (
-            <div className="absolute left-10 top-1/2 -translate-y-1/2 ml-1">
-              <FlyTo
-                filters={filters}
-                setFilters={setFilters}
-                setLayerVisibility={setLayerVisibility}
-              />
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => handleBottomPanel("flyTo")}
-            title="Fly To"
-            className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
-              bottomPanel === "flyTo"
-                ? "border-[#8bd66f] bg-[#243041] text-white"
-                : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
-            }`}
-          >
-            <Send size={20} strokeWidth={2.2} />
-          </button>
-        </div>
-
-        {/* <SegmentMeasurement map={map} /> */}
-      </div>
     </>
   );
 }
