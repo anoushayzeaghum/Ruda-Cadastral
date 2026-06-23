@@ -420,6 +420,7 @@ export default function MapPage() {
         )}
 
         <LeftPanel
+          map={mapboxMap}
           layers={layers}
           setLayers={setLayers}
           rudaPhases={rudaPhases}

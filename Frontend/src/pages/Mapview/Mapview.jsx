@@ -319,6 +319,7 @@ export default function MapView({
       );
       map.on("load", () => {
         setIsMapReady(true);
+        if (typeof onMapReady === "function") onMapReady(map);
       });
 
       // Whenever a style is (re)loaded — whether via the UI control or
