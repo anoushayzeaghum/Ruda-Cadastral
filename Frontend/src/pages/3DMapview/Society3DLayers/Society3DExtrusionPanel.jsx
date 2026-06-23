@@ -1,4 +1,5 @@
-import { Box, Brush, MousePointer2, RotateCcw, Wand2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Box, MousePointer2, RotateCcw, Wand2, X } from "lucide-react";
 import { getFeatureId } from "../cesiumHelpers";
 
 export default function Society3DExtrusionPanel({
@@ -6,10 +7,45 @@ export default function Society3DExtrusionPanel({
   setExtrusion,
   selectedFeature,
   onApplyToSelected,
+  onApplyToAll,
   onClearExtrusions,
   onClose,
 }) {
   const selectedId = selectedFeature ? getFeatureId(selectedFeature) : "";
+  const [applyTarget, setApplyTarget] = useState("selected");
+
+  useEffect(() => {
+    if (!selectedFeature && applyTarget === "selected") {
+      setApplyTarget("all");
+    }
+  }, [selectedFeature, applyTarget]);
+
+  const handleApply = () => {
+    if (applyTarget === "selected" && !selectedFeature) return;
+
+    const payload = {
+      applyTarget,
+      applyToAll: applyTarget === "all",
+      selectedFeature: applyTarget === "all" ? null : selectedFeature,
+      selectedId: applyTarget === "all" ? "__ALL_PLOTS__" : selectedId,
+    };
+
+    if (applyTarget === "all") {
+      // Preferred handler for all plots.
+      // Add this prop in Society3DMapview if you already have a separate all-plot extrusion function.
+      if (typeof onApplyToAll === "function") {
+        onApplyToAll(payload);
+        return;
+      }
+
+      // Backward-compatible fallback for existing code.
+      // Your parent handler should check payload.applyToAll === true and apply height to every plot entity.
+      onApplyToSelected?.(payload);
+      return;
+    }
+
+    onApplyToSelected?.(payload);
+  };
 
   return (
     <aside className="w-[330px] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
@@ -22,7 +58,7 @@ export default function Society3DExtrusionPanel({
             </h2>
           </div>
           <p className="mt-1 text-[11px] text-white/55">
-            Select a plot/building, set height and apply extrusion.
+            Select one plot or all plots, set height and apply extrusion.
           </p>
         </div>
 
@@ -43,9 +79,17 @@ export default function Society3DExtrusionPanel({
             <MousePointer2 size={14} className="text-[#8bd66f]" />
             Selected Feature
           </div>
-          <p className="mt-2 truncate rounded-md border border-[#344055] bg-[#111827] px-2 py-2 text-[12px] text-[#8bd66f]">
-            {selectedId || "No plot selected"}
-          </p>
+
+          <select
+            value={applyTarget}
+            onChange={(event) => setApplyTarget(event.target.value)}
+            className="mt-2 w-full rounded-md border border-[#344055] bg-[#111827] px-2 py-2 text-[12px] font-semibold text-white outline-none transition focus:border-[#8bd66f]"
+          >
+            <option value="selected" disabled={!selectedFeature}>
+              {selectedId ? `Selected Plot: ${selectedId}` : "No plot selected"}
+            </option>
+            <option value="all">All Plots</option>
+          </select>
         </div>
 
         <label className="block">
@@ -63,20 +107,6 @@ export default function Society3DExtrusionPanel({
               }))
             }
             className="w-full rounded-md border border-[#344055] bg-[#111827] px-3 py-2 text-sm font-semibold text-white outline-none transition focus:border-[#8bd66f]"
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-1 flex items-center gap-2 text-[12px] font-semibold text-white/80">
-            <Brush size={14} className="text-[#8bd66f]" /> Color
-          </span>
-          <input
-            type="color"
-            value={extrusion.color}
-            onChange={(event) =>
-              setExtrusion((prev) => ({ ...prev, color: event.target.value }))
-            }
-            className="h-10 w-full cursor-pointer rounded-md border border-[#344055] bg-[#111827] p-1"
           />
         </label>
 
@@ -116,8 +146,8 @@ export default function Society3DExtrusionPanel({
         <div className="grid grid-cols-2 gap-2 pt-1">
           <button
             type="button"
-            onClick={onApplyToSelected}
-            disabled={!selectedFeature}
+            onClick={handleApply}
+            disabled={applyTarget === "selected" && !selectedFeature}
             className="rounded-md border border-[#8bd66f] bg-[#243041] px-3 py-2 text-[12px] font-bold text-white transition hover:bg-[#2f3d52] disabled:cursor-not-allowed disabled:border-[#344055] disabled:bg-[#1d2533] disabled:text-white/35"
           >
             Apply
