@@ -18,7 +18,9 @@ import {
   Network,
   Route,
   Image as ImageIcon,
+  X,
 } from "lucide-react";
+import Measurement from "../GISMetaverse/tools/Measurement";
 
 const BASEMAPS = [
   {
@@ -86,6 +88,7 @@ const getRudaPhaseColor = (phaseId) => {
 };
 
 export default function LeftPanel({
+  map,
   layers,
   setLayers,
   rudaPhases,
@@ -353,7 +356,7 @@ export default function LeftPanel({
       {activePanel && (
         <div className="pointer-events-auto w-[320px] max-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
           {activePanel === "layers" && (
-            <Panel title="Layer Manager">
+            <Panel title="Layer Manager" onClose={() => setActivePanel("")}>
               <div className="max-h-[calc(100vh-205px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <RudaBoundaryLayers
                   rudaPhases={rudaPhases}
@@ -415,7 +418,7 @@ export default function LeftPanel({
           )}
 
           {activePanel === "vectorBoundaries" && (
-            <Panel title="Vector Boundaries">
+            <Panel title="Vector Boundaries" onClose={() => setActivePanel("")}>
               <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <VectorBoundaryLayers
                   items={VECTOR_BOUNDARY_LAYERS}
@@ -429,122 +432,28 @@ export default function LeftPanel({
           )}
 
           {activePanel === "toolbox" && (
-            <Panel title="Toolbox">
-              <div className="px-3 pb-1 pt-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-white/45">
-                  Measurement Tools
-                </p>
+            <div className="max-h-[calc(100vh-160px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {/* Close button header */}
+              <div className="flex items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-white">
+                  Toolbox
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("")}
+                  title="Close panel"
+                  aria-label="Close panel"
+                  className="flex h-6 w-6 items-center justify-center rounded text-white/50 transition hover:bg-[#0a3327] hover:text-white"
+                >
+                  <X size={14} />
+                </button>
               </div>
-              <div className="grid grid-cols-3 gap-2 px-3 pb-3">
-                <ToolboxButton
-                  icon={<Ruler size={18} />}
-                  label="Distance"
-                  active={getLayerVisible("measure")}
-                  description="Click to measure line distance. Right-click to clear."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("measure");
-                    // Deactivate other drawing tools when activating this one
-                    if (willActivate) {
-                      updateLayer("measureArea", { visible: false });
-                      updateLayer("measureBearing", { visible: false });
-                      updateLayer("coordPicker", { visible: false });
-                    }
-                    toggleLayer("measure");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<SquareDashedIcon size={18} />}
-                  label="Area"
-                  active={getLayerVisible("measureArea")}
-                  description="Click to draw a polygon and calculate area. Right-click to close & finish."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("measureArea");
-                    if (willActivate) {
-                      updateLayer("measure", { visible: false });
-                      updateLayer("measureBearing", { visible: false });
-                      updateLayer("coordPicker", { visible: false });
-                    }
-                    toggleLayer("measureArea");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<Compass size={18} />}
-                  label="Bearing"
-                  active={getLayerVisible("measureBearing")}
-                  description="Click two points to measure the bearing angle between them."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("measureBearing");
-                    if (willActivate) {
-                      updateLayer("measure", { visible: false });
-                      updateLayer("measureArea", { visible: false });
-                      updateLayer("coordPicker", { visible: false });
-                    }
-                    toggleLayer("measureBearing");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<Crosshair size={18} />}
-                  label="Coordinates"
-                  active={getLayerVisible("coordPicker")}
-                  description="Click anywhere to copy the exact coordinates of that point."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("coordPicker");
-                    if (willActivate) {
-                      updateLayer("measure", { visible: false });
-                      updateLayer("measureArea", { visible: false });
-                      updateLayer("measureBearing", { visible: false });
-                    }
-                    toggleLayer("coordPicker");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<CircleDot size={18} />}
-                  label="Buffer"
-                  active={getLayerVisible("measureBuffer")}
-                  description="Click a point to draw a 500 m buffer zone around it."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("measureBuffer");
-                    if (willActivate) {
-                      updateLayer("measure", { visible: false });
-                      updateLayer("measureArea", { visible: false });
-                      updateLayer("measureBearing", { visible: false });
-                      updateLayer("coordPicker", { visible: false });
-                    }
-                    toggleLayer("measureBuffer");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<Printer size={18} />}
-                  label="Print Map"
-                  description="Export the current map view as a PNG image."
-                  onClick={() => toggleLayer("printMap")}
-                />
-              </div>
-
-              {/* Active tool hint */}
-              {(getLayerVisible("measure") ||
-                getLayerVisible("measureArea") ||
-                getLayerVisible("measureBearing") ||
-                getLayerVisible("coordPicker") ||
-                getLayerVisible("measureBuffer")) && (
-                <div className="mx-3 mb-3 rounded-md border border-[#13593f] bg-[#031a14] px-3 py-2 text-[11px] leading-snug text-white/75">
-                  {getLayerVisible("measure") &&
-                    "📏 Click points to measure distance. Right-click to clear."}
-                  {getLayerVisible("measureArea") &&
-                    "🔲 Click to draw polygon vertices. Right-click to close and calculate area."}
-                  {getLayerVisible("measureBearing") &&
-                    "🧭 Click the start point, then the end point to measure bearing."}
-                  {getLayerVisible("coordPicker") &&
-                    "📍 Click anywhere on the map to get precise coordinates."}
-                  {getLayerVisible("measureBuffer") &&
-                    "⭕ Click a location to draw a 500 m buffer zone around it."}
-                </div>
-              )}
-            </Panel>
+              <Measurement map={map} />
+            </div>
           )}
 
           {activePanel === "basemap" && (
-            <Panel title="Basemap">
+            <Panel title="Basemap" onClose={() => setActivePanel("")}>
               <div className="grid grid-cols-2 gap-2 p-3">
                 {BASEMAPS.map((item) => (
                   <button
@@ -580,7 +489,7 @@ export default function LeftPanel({
           )}
 
           {activePanel === "rasterData" && (
-            <Panel title="Raster Data">
+            <Panel title="Raster Data" onClose={() => setActivePanel("")}>
               <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <RasterDataLayers
                   items={RASTER_DATA_LAYERS}
@@ -1106,13 +1015,24 @@ function PanelIcon({ title, icon, active, onClick }) {
   );
 }
 
-function Panel({ title, children }) {
+function Panel({ title, children, onClose }) {
   return (
     <div>
       <div className="flex items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-white">
           {title}
         </h3>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            title="Close panel"
+            aria-label="Close panel"
+            className="flex h-6 w-6 items-center justify-center rounded text-white/50 transition hover:bg-[#0a3327] hover:text-white"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
       {children}
     </div>

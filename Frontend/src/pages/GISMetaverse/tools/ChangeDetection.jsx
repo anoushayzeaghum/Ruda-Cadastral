@@ -17,10 +17,12 @@ const BOUNDS = [
 ];
 
 /** Keep the Chahar Bagh study site prominent — not the wider surroundings */
-const STUDY_FIT = { padding: 12, maxZoom: 17.5, duration: 0 };
+const STUDY_FIT = { padding: 24, maxZoom: 17.5, duration: 0 };
 
 const EXPANDED_PANEL_CLASS =
-  "fixed z-[70] top-1/2 left-1/2 flex max-h-[min(90vh,720px)] w-[min(680px,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-[#3a4354] bg-[#202736] shadow-2xl";
+  "fixed z-[70] inset-x-0 mx-auto flex flex-col overflow-hidden rounded-xl border border-[#3a4354] bg-[#202736] shadow-2xl"
+  + " w-[min(860px,96vw)]"
+  + " top-[64px] bottom-[16px]";
 
 const IMAGERY = [
   {
@@ -524,13 +526,18 @@ export default function ChangeDetection({ map, onClose }) {
     const ro = new ResizeObserver(resize);
     ro.observe(el);
 
+    // Fire multiple times to catch CSS transition end (300ms) + tile load
     const t1 = setTimeout(resize, 50);
-    const t2 = setTimeout(resize, 350);
+    const t2 = setTimeout(resize, 200);
+    const t3 = setTimeout(resize, 400);
+    const t4 = setTimeout(resize, 700);
 
     return () => {
       ro.disconnect();
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
     };
   }, [expanded, applyStudyFocus]);
 
@@ -749,7 +756,7 @@ export default function ChangeDetection({ map, onClose }) {
         </div>
 
         <div
-          className={`p-3 ${expanded ? "min-h-0 flex-1 overflow-y-auto overscroll-contain" : ""}`}
+          className={`p-3 ${expanded ? "min-h-0 flex-1 flex flex-col overflow-y-auto overscroll-contain" : ""}`}
         >
           <p className="text-white/60 mb-3 text-[11px]">
             Compare two drone images side-by-side.
@@ -792,12 +799,12 @@ export default function ChangeDetection({ map, onClose }) {
             </div>
           </div>
 
-          {/* Swipe comparison map — taller when expanded */}
+          {/* Swipe comparison map — fills all remaining space when expanded */}
           <div
             ref={containerRef}
-            className="relative mb-3 shrink-0 select-none overflow-hidden rounded-md border border-[#3b4558] transition-all duration-300"
+            className={`relative mb-3 select-none overflow-hidden rounded-md border border-[#3b4558] transition-all duration-300 ${expanded ? "flex-1 min-h-0" : "shrink-0"}`}
             style={{
-              height: expanded ? "min(32vh, 260px)" : "200px",
+              height: expanded ? undefined : "200px",
               width: "100%",
             }}
           >

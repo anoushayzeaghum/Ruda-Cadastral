@@ -74,7 +74,7 @@ export default function MetaverseLeftToolbar({
         });
       },
       (err) => console.error(err),
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true },
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
@@ -111,10 +111,10 @@ export default function MetaverseLeftToolbar({
               key={tool.id}
               title={tool.label}
               onClick={() => handleToolClick(tool.id)}
-              className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+              className={`relative flex h-9 w-9 items-center justify-center rounded-md shadow-md transition-all duration-150 ${
                 isActive
-                  ? "border-[#8bd66f] bg-[#243041] text-white"
-                  : "border-[#0f3d2e] bg-[#1f2937] text-white hover:bg-[#0f3d2e]"
+                  ? "bg-white text-[#1B3A6B] border-2 border-[#1B3A6B]"
+                  : "bg-[#1B3A6B] text-white border border-[#1B3A6B] hover:bg-[#162f5a]"
               }`}
             >
               <Icon size={20} />
