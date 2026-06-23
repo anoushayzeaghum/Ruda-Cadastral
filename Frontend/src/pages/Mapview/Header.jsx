@@ -2,14 +2,18 @@ import { LayoutDashboard, LogOut, Home } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 import { useNavigate } from "react-router-dom";
 
+// const headerBackgroundStyle = {
+//   backgroundImage: [
+//     "linear-gradient(90deg, rgba(20, 83, 45, 0.96) 0%, rgba(22, 101, 52, 0.86) 42%, rgba(21, 128, 61, 0.72) 70%, rgba(20, 83, 45, 0.82) 100%)",
+//     "url('/ruda_bg.png')",
+//   ].join(", "),
+//   backgroundSize: "cover",
+//   backgroundPosition: "center center",
+//   backgroundRepeat: "no-repeat",
+// };
+
 const headerBackgroundStyle = {
-  backgroundImage: [
-    "linear-gradient(90deg, rgba(20, 83, 45, 0.96) 0%, rgba(22, 101, 52, 0.86) 42%, rgba(21, 128, 61, 0.72) 70%, rgba(20, 83, 45, 0.82) 100%)",
-    "url('/ruda_bg.png')",
-  ].join(", "),
-  backgroundSize: "cover",
-  backgroundPosition: "center center",
-  backgroundRepeat: "no-repeat",
+  backgroundColor: "#0f3d2e",
 };
 
 export default function Header() {
@@ -38,13 +42,13 @@ export default function Header() {
           </div>
 
           <div className="flex items-center gap-3 min-w-0">
-            <h1 className="text-2xl font-normal tracking-wide shrink-0">
-              RCMS
+            <h1 className="text-xl font-normal tracking-wide shrink-0">
+              RUDA CADASTRAL MANAGEMENT SYSTEM
             </h1>
-            <span className="text-white/55 text-lg">|</span>
+            {/* <span className="text-white/55 text-lg">|</span>
             <p className="text-base font-normal text-white/90 truncate">
               RUDA Cadastral Management System
-            </p>
+            </p> */}
           </div>
         </div>
 

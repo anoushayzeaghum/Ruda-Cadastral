@@ -303,7 +303,7 @@ export default function LeftPanel({
     toggleLayer("proposedRoads");
   };
   return (
-    <div className="pointer-events-none absolute left-3 top-20 z-30 flex items-start gap-2">
+    <div className="pointer-events-none absolute left-3 top-5 z-30 flex items-start gap-2">
       {/* Separate icon buttons. No combined background wrapper. */}
       <div className="pointer-events-auto flex flex-col gap-1">
         <PanelIcon
@@ -351,7 +351,7 @@ export default function LeftPanel({
       </div>
 
       {activePanel && (
-        <div className="pointer-events-auto w-[320px] max-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+        <div className="pointer-events-auto w-[320px] max-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
           {activePanel === "layers" && (
             <Panel title="Layer Manager">
               <div className="max-h-[calc(100vh-205px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -527,7 +527,7 @@ export default function LeftPanel({
                 getLayerVisible("measureBearing") ||
                 getLayerVisible("coordPicker") ||
                 getLayerVisible("measureBuffer")) && (
-                <div className="mx-3 mb-3 rounded-md border border-[#3a4354] bg-[#1d2533] px-3 py-2 text-[11px] leading-snug text-white/75">
+                <div className="mx-3 mb-3 rounded-md border border-[#13593f] bg-[#031a14] px-3 py-2 text-[11px] leading-snug text-white/75">
                   {getLayerVisible("measure") &&
                     "📏 Click points to measure distance. Right-click to clear."}
                   {getLayerVisible("measureArea") &&
@@ -553,8 +553,8 @@ export default function LeftPanel({
                     onClick={() => setBasemap(item.name)}
                     className={`overflow-hidden rounded-lg border text-left transition ${
                       basemap === item.name
-                        ? "border-[#8bd66f] bg-[#243041]"
-                        : "border-[#344055] bg-[#1d2533] hover:bg-[#293445]"
+                        ? "border-[#9be37b] bg-[#083526]"
+                        : "border-[#104c39] bg-[#031a14] hover:bg-[#0a3327]"
                     }`}
                   >
                     <div className="relative h-16 w-full overflow-hidden">
@@ -570,7 +570,7 @@ export default function LeftPanel({
                         {item.name}
                       </span>
                       {basemap === item.name && (
-                        <span className="text-[#8bd66f]">✓</span>
+                        <span className="text-[#9be37b]">✓</span>
                       )}
                     </div>
                   </button>
@@ -606,14 +606,14 @@ function RasterDataLayers({
   updateLayer,
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-md border border-[#3a4354] bg-[#1d2533] shadow-md">
-      <div className="flex items-center gap-2 border-b border-[#343c4c] bg-[#202736] px-3 py-2.5">
+    <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
+      <div className="flex items-center gap-2 border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
         <h4 className="text-[12px] font-semibold leading-tight text-white">
           Raster Layers
         </h4>
       </div>
 
-      <div className="overflow-hidden rounded-md border border-[#343c4c] bg-[#202736] shadow-sm">
+      <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
         {items.map((item, index) => (
           <AdminLayerRow
             key={item.key}
@@ -652,11 +652,11 @@ function RudaBoundaryLayers({
   getAllProposedRoadIds,
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-md border border-[#3a4354] bg-[#1d2533] shadow-md">
+    <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
       <button
         type="button"
         onClick={() => setRudaSectionOpen((open) => !open)}
-        className="flex w-full items-center justify-between border-b border-[#343c4c] bg-[#202736] px-3 py-2.5 text-left transition hover:bg-[#293445]"
+        className="flex w-full items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5 text-left transition hover:bg-[#0a3327]"
       >
         <h4 className="text-[12px] font-semibold leading-tight text-white">
           RUDA Boundaries
@@ -669,7 +669,7 @@ function RudaBoundaryLayers({
       </button>
 
       {rudaSectionOpen && (
-        <div className="overflow-hidden rounded-md border border-[#343c4c] bg-[#202736] shadow-sm">
+        <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
         <RudaLayerRow
           label="RUDA Boundary"
           checked={getLayerVisible("rudaBoundary")}
@@ -682,8 +682,8 @@ function RudaBoundaryLayers({
         />
 
         {rudaDropdownOpen && (
-          <div className="border-b border-[#343c4c] bg-[#1d2533] px-3 py-2">
-            <div className="max-h-44 overflow-y-auto rounded-md border border-[#343c4c] bg-[#202736] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+            <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {(rudaPhases || []).length === 0 ? (
                 <p className="px-1 py-1 text-[11px] font-medium text-white/50">
                   No phases found
@@ -702,7 +702,7 @@ function RudaBoundaryLayers({
                       allIds.every((id) => selectedIdSet.has(String(id)));
 
                     return (
-                      <div className="mb-1 flex items-center justify-between border-b border-[#343c4c] pb-1.5">
+                      <div className="mb-1 flex items-center justify-between border-b border-[#0c3d2d] pb-1.5">
                         <label className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -714,7 +714,7 @@ function RudaBoundaryLayers({
                                 setSelectedRudaPhaseIds([]);
                               }
                             }}
-                            className="h-3.5 w-3.5 shrink-0 accent-[#8bd66f]"
+                            className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
                           />
                           <span className="text-[12px] font-semibold leading-tight text-white">
                             Select All
@@ -724,7 +724,7 @@ function RudaBoundaryLayers({
                         <button
                           type="button"
                           onClick={() => setSelectedRudaPhaseIds([])}
-                          className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#8bd66f] hover:bg-[#293445]"
+                          className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#9be37b] hover:bg-[#0a3327]"
                         >
                           Reset
                         </button>
@@ -746,7 +746,7 @@ function RudaBoundaryLayers({
                     return (
                       <label
                         key={id}
-                        className="flex items-center gap-2 border-b border-[#343c4c]/70 py-1.5 last:border-b-0"
+                        className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0"
                       >
                         <input
                           type="checkbox"
@@ -765,7 +765,7 @@ function RudaBoundaryLayers({
                               ]);
                             }
                           }}
-                          className="h-3.5 w-3.5 shrink-0 accent-[#8bd66f]"
+                          className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
                         />
                         <span
                           className="h-3.5 w-5 shrink-0 rounded-sm border border-white/50"
@@ -797,15 +797,15 @@ function RudaBoundaryLayers({
         />
 
         {proposedDropdownOpen && (
-          <div className="border-b border-[#343c4c] bg-[#1d2533] px-3 py-2">
-            <div className="max-h-44 overflow-y-auto rounded-md border border-[#343c4c] bg-[#202736] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+            <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {(rudaProposedRoads || []).length === 0 ? (
                 <p className="px-1 py-1 text-[11px] text-white/50">
                   No proposed roads found
                 </p>
               ) : (
                 <>
-                  <div className="mb-1 flex items-center justify-between border-b border-[#343c4c] pb-1.5">
+                  <div className="mb-1 flex items-center justify-between border-b border-[#0c3d2d] pb-1.5">
                     <label className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -820,7 +820,7 @@ function RudaBoundaryLayers({
                             setSelectedProposedRoadIds([]);
                           }
                         }}
-                        className="h-3.5 w-3.5 accent-[#8bd66f]"
+                        className="h-3.5 w-3.5 accent-[#9be37b]"
                       />
                       <span className="text-[12px] font-semibold leading-tight text-white">
                         Select All
@@ -830,7 +830,7 @@ function RudaBoundaryLayers({
                     <button
                       type="button"
                       onClick={() => setSelectedProposedRoadIds([])}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#8bd66f] hover:bg-[#293445]"
+                      className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#9be37b] hover:bg-[#0a3327]"
                     >
                       Reset
                     </button>
@@ -846,7 +846,7 @@ function RudaBoundaryLayers({
                     return (
                       <label
                         key={id}
-                        className="flex items-center gap-2 border-b border-[#343c4c]/70 py-1.5 last:border-b-0"
+                        className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0"
                       >
                         <input
                           type="checkbox"
@@ -863,7 +863,7 @@ function RudaBoundaryLayers({
                               ]);
                             }
                           }}
-                          className="h-3.5 w-3.5 accent-[#8bd66f]"
+                          className="h-3.5 w-3.5 accent-[#9be37b]"
                         />
                         <span className="truncate text-[12px] font-medium leading-tight text-white/85">
                           {name}
@@ -903,13 +903,13 @@ function RudaLayerRow({
   dropdownTitle = "Layer options",
 }) {
   return (
-    <div className="border-b border-[#343c4c] bg-[#202736] px-2.5 py-2">
+    <div className="border-b border-[#0c3d2d] bg-[#06291f] px-2.5 py-2">
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
           checked={!!checked}
           onChange={onToggle}
-          className="h-4 w-4 shrink-0 accent-[#8bd66f]"
+          className="h-4 w-4 shrink-0 accent-[#9be37b]"
         />
 
         <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
@@ -923,7 +923,7 @@ function RudaLayerRow({
               title={dropdownTitle}
               aria-label={dropdownTitle}
               onClick={onDropdownToggle}
-              className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#293445]"
+              className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
             >
               <ChevronDown
                 size={16}
@@ -943,7 +943,7 @@ function RudaLayerRow({
           max="100"
           value={opacity}
           onChange={(e) => onOpacity(Number(e.target.value))}
-          className="h-1.5 min-w-0 flex-1 accent-[#8bd66f]"
+          className="h-1.5 min-w-0 flex-1 accent-[#9be37b]"
         />
         <span className="w-9 shrink-0 text-right text-[11px] font-medium text-white/60">
           {opacity}%
@@ -961,14 +961,14 @@ function VectorBoundaryLayers({
   updateLayer,
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-md border border-[#3a4354] bg-[#1d2533] shadow-md">
-      <div className="flex items-center gap-2 border-b border-[#343c4c] bg-[#202736] px-3 py-2.5">
+    <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
+      <div className="flex items-center gap-2 border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
         <h4 className="text-[12px] font-semibold leading-tight text-white">
           Vector Boundaries
         </h4>
       </div>
 
-      <div className="overflow-hidden rounded-md border border-[#343c4c] bg-[#202736] shadow-sm">
+      <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
         {items.map((item, index) => (
           <AdminLayerRow
             key={item.key}
@@ -993,14 +993,14 @@ function SelectedAdministrativeLayers({
   updateLayer,
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-md border border-[#3a4354] bg-[#1d2533] shadow-md">
-      <div className="flex items-center gap-2 border-b border-[#343c4c] bg-[#202736] px-3 py-2.5">
+    <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
+      <div className="flex items-center gap-2 border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
         <h4 className="text-[12px] font-semibold leading-tight text-white">
           Selected Administrative Layers
         </h4>
       </div>
 
-      <div className="overflow-hidden rounded-md border border-[#343c4c] bg-[#202736] shadow-sm">
+      <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
         {items.map((item, index) => (
           <AdminLayerRow
             key={item.key}
@@ -1027,8 +1027,8 @@ function AdminLayerRow({
 }) {
   return (
     <div
-      className={`bg-[#202736] px-2.5 py-2 ${
-        isLast ? "" : "border-b border-[#343c4c]"
+      className={`bg-[#06291f] px-2.5 py-2 ${
+        isLast ? "" : "border-b border-[#0c3d2d]"
       }`}
     >
       <div className="flex items-center gap-2">
@@ -1036,7 +1036,7 @@ function AdminLayerRow({
           type="checkbox"
           checked={!!checked}
           onChange={onToggle}
-          className="h-4 w-4 shrink-0 accent-[#8bd66f]"
+          className="h-4 w-4 shrink-0 accent-[#9be37b]"
         />
 
         <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
@@ -1048,7 +1048,7 @@ function AdminLayerRow({
             type="button"
             title="Layer info"
             aria-label="Layer info"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#293445]"
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
           >
             <Info size={14} fill="currentColor" strokeWidth={2.2} />
           </button>
@@ -1056,7 +1056,7 @@ function AdminLayerRow({
             type="button"
             title="Zoom/Search layer"
             aria-label="Zoom/Search layer"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#293445]"
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
           >
             <Search size={15} strokeWidth={2.6} />
           </button>
@@ -1064,7 +1064,7 @@ function AdminLayerRow({
             type="button"
             title="Layer options"
             aria-label="Layer options"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#293445]"
+            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
           >
             <ChevronDown size={16} fill="currentColor" strokeWidth={2.6} />
           </button>
@@ -1078,7 +1078,7 @@ function AdminLayerRow({
           max="100"
           value={opacity}
           onChange={(e) => onOpacity(Number(e.target.value))}
-          className="h-1.5 min-w-0 flex-1 accent-[#8bd66f]"
+          className="h-1.5 min-w-0 flex-1 accent-[#9be37b]"
         />
         <span className="w-9 shrink-0 text-right text-[11px] font-medium text-white/60">
           {opacity}%
@@ -1097,8 +1097,8 @@ function PanelIcon({ title, icon, active, onClick }) {
       onClick={onClick}
       className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
         active
-          ? "border-[#8bd66f] bg-[#243041] text-white"
-          : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+          ? "border-[#9be37b] bg-[#083526] text-white"
+          : "border-[#104c39] bg-[#031a14] text-white hover:bg-[#0a3327]"
       }`}
     >
       {icon}
@@ -1109,7 +1109,7 @@ function PanelIcon({ title, icon, active, onClick }) {
 function Panel({ title, children }) {
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-[#343c4c] bg-[#202736] px-3 py-2.5">
+      <div className="flex items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-white">
           {title}
         </h3>
@@ -1142,7 +1142,7 @@ function LayerRow({
 }) {
   return (
     <div
-      className={`rounded-md border border-[#343c4c] bg-[#202736] p-2 ${disabled ? "opacity-55" : ""}`}
+      className={`rounded-md border border-[#0c3d2d] bg-[#06291f] p-2 ${disabled ? "opacity-55" : ""}`}
     >
       <div className="flex items-center justify-between gap-2">
         <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-white/85">
@@ -1151,9 +1151,9 @@ function LayerRow({
             checked={!!checked}
             onChange={onToggle}
             disabled={disabled}
-            className="h-4 w-4 accent-[#8bd66f]"
+            className="h-4 w-4 accent-[#9be37b]"
           />
-          <span className="text-[#8bd66f]">{icon}</span>
+          <span className="text-[#9be37b]">{icon}</span>
           <span className="truncate">{label}</span>
         </label>
         <div className="flex shrink-0 items-center gap-2">
@@ -1174,7 +1174,7 @@ function LayerRow({
           value={opacity}
           disabled={disabled}
           onChange={(e) => onOpacity(Number(e.target.value))}
-          className="mt-0.5 h-1.5 w-full accent-[#8bd66f]"
+          className="mt-0.5 h-1.5 w-full accent-[#9be37b]"
         />
       )}
       {disabled && disabledText && (
@@ -1193,11 +1193,11 @@ function ToolboxButton({ icon, label, active, onClick, description }) {
       aria-label={label}
       className={`flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition ${
         active
-          ? "border-[#8bd66f] bg-[#243041] text-white shadow-inner"
-          : "border-[#344055] bg-[#1d2533] text-white/85 hover:bg-[#293445]"
+          ? "border-[#9be37b] bg-[#083526] text-white shadow-inner"
+          : "border-[#104c39] bg-[#031a14] text-white/85 hover:bg-[#0a3327]"
       }`}
     >
-      <span className={active ? "text-[#8bd66f]" : "text-white/80"}>
+      <span className={active ? "text-[#9be37b]" : "text-white/80"}>
         {icon}
       </span>
       <span className="text-center text-[10px] font-medium leading-tight">
