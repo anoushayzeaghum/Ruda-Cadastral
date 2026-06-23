@@ -1,12 +1,102 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
+const UTILITY_LAYER_STYLES = {
+  waterSupplyPoints: {
+    color: "#42a5f5",
+    opacity: 100,
+    circleLayer: "metaverse-water-supply-points-circle",
+    labelLayer: "metaverse-water-supply-points-label",
+  },
+  waterSupplyLines: {
+    color: "#1e88e5",
+    opacity: 100,
+    lineLayer: "metaverse-water-supply-lines-line",
+    labelLayer: "metaverse-water-supply-lines-label",
+  },
+  sewagePoints: {
+    color: "#8e44ad",
+    opacity: 100,
+    circleLayer: "metaverse-sewage-points-circle",
+    labelLayer: "metaverse-sewage-points-label",
+  },
+};
+
+const clampOpacity = (value = 100) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 100;
+  return Math.min(Math.max(numeric, 0), 100);
+};
+
+const setPaint = (map, layerId, property, value) => {
+  if (map?.getLayer?.(layerId)) {
+    map.setPaintProperty(layerId, property, value);
+  }
+};
+
+const setRuntimeStyle = (key, patch = {}) => {
+  if (typeof window === "undefined") return;
+
+  window.__metaverseLayerRuntimeStyles = {
+    ...(window.__metaverseLayerRuntimeStyles || {}),
+    [key]: {
+      ...(window.__metaverseLayerRuntimeStyles?.[key] || {}),
+      ...patch,
+    },
+  };
+};
+
+const applyUtilityLayerStyle = (map, key, style = {}) => {
+  const def = UTILITY_LAYER_STYLES[key];
+  if (!map || !def) return;
+
+  const color = style.color || def.color;
+  const opacityRatio = clampOpacity(style.opacity ?? def.opacity) / 100;
+
+  if (def.circleLayer) {
+    setPaint(map, def.circleLayer, "circle-color", color);
+    setPaint(map, def.circleLayer, "circle-opacity", opacityRatio);
+    setPaint(map, def.circleLayer, "circle-stroke-opacity", opacityRatio);
+  }
+
+  if (def.lineLayer) {
+    setPaint(map, def.lineLayer, "line-color", color);
+    setPaint(map, def.lineLayer, "line-opacity", opacityRatio);
+  }
+
+  if (def.labelLayer) {
+    setPaint(map, def.labelLayer, "text-color", color);
+    setPaint(map, def.labelLayer, "text-opacity", opacityRatio);
+  }
+};
+
+const applyAfterLayerLoads = (map, key, style) => {
+  [0, 120, 350, 700, 1200, 2000].forEach((delay) => {
+    window.setTimeout(() => applyUtilityLayerStyle(map, key, style), delay);
+  });
+};
+
 export default function Utilities({
+  map,
   selectedProjectId,
   layerVisibility = {},
   setLayerVisibility,
 }) {
   const [open, setOpen] = useState(false);
+  const [styles, setStyles] = useState(() => ({
+    waterSupplyPoints: {
+      color: UTILITY_LAYER_STYLES.waterSupplyPoints.color,
+      opacity: layerVisibility.waterSupplyPointsOpacity ?? 100,
+    },
+    waterSupplyLines: {
+      color: UTILITY_LAYER_STYLES.waterSupplyLines.color,
+      opacity: layerVisibility.waterSupplyLinesOpacity ?? 100,
+    },
+    sewagePoints: {
+      color: UTILITY_LAYER_STYLES.sewagePoints.color,
+      opacity: layerVisibility.sewagePointsOpacity ?? 100,
+    },
+  }));
 
   const toggleLayer = (key) => {
     if (!selectedProjectId) {
@@ -16,19 +106,37 @@ export default function Utilities({
 
     if (!setLayerVisibility) return;
 
+    const nextVisible = !layerVisibility[key];
+
     setLayerVisibility((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
+
+    if (nextVisible) {
+      setRuntimeStyle(key, styles[key]);
+      applyAfterLayerLoads(map, key, styles[key]);
+    }
   };
 
   const updateOpacity = (key, value) => {
-    if (!setLayerVisibility) return;
+    const opacity = clampOpacity(value);
 
-    setLayerVisibility((prev) => ({
-      ...prev,
-      [`${key}Opacity`]: value,
-    }));
+    setStyles((prev) => {
+      const nextStyle = { ...prev[key], opacity };
+      setRuntimeStyle(key, nextStyle);
+      applyUtilityLayerStyle(map, key, nextStyle);
+      return { ...prev, [key]: nextStyle };
+    });
+  };
+
+  const updateColor = (key, color) => {
+    setStyles((prev) => {
+      const nextStyle = { ...prev[key], color };
+      setRuntimeStyle(key, nextStyle);
+      applyUtilityLayerStyle(map, key, nextStyle);
+      return { ...prev, [key]: nextStyle };
+    });
   };
 
   return (
@@ -47,39 +155,60 @@ export default function Utilities({
           <LayerItem
             disabled={!selectedProjectId}
             checked={!!layerVisibility.waterSupplyPoints}
-            color="#42a5f5"
+            color={styles.waterSupplyPoints.color}
             label="Water Supply Points"
-            opacity={layerVisibility.waterSupplyPointsOpacity ?? 100}
+            opacity={styles.waterSupplyPoints.opacity}
             onChange={() => toggleLayer("waterSupplyPoints")}
-            onOpacityChange={(value) =>
-              updateOpacity("waterSupplyPoints", value)
-            }
+            onOpacityChange={(value) => updateOpacity("waterSupplyPoints", value)}
+            onColorChange={(value) => updateColor("waterSupplyPoints", value)}
           />
 
           <LayerItem
             disabled={!selectedProjectId}
             checked={!!layerVisibility.waterSupplyLines}
-            color="#1e88e5"
+            color={styles.waterSupplyLines.color}
             label="Water Supply Levels"
-            opacity={layerVisibility.waterSupplyLinesOpacity ?? 100}
+            opacity={styles.waterSupplyLines.opacity}
             onChange={() => toggleLayer("waterSupplyLines")}
-            onOpacityChange={(value) =>
-              updateOpacity("waterSupplyLines", value)
-            }
+            onOpacityChange={(value) => updateOpacity("waterSupplyLines", value)}
+            onColorChange={(value) => updateColor("waterSupplyLines", value)}
           />
 
           <LayerItem
             disabled={!selectedProjectId}
             checked={!!layerVisibility.sewagePoints}
-            color="#8e44ad"
+            color={styles.sewagePoints.color}
             label="Sewage Points"
-            opacity={layerVisibility.sewagePointsOpacity ?? 100}
+            opacity={styles.sewagePoints.opacity}
             onChange={() => toggleLayer("sewagePoints")}
             onOpacityChange={(value) => updateOpacity("sewagePoints", value)}
+            onColorChange={(value) => updateColor("sewagePoints", value)}
           />
         </div>
       )}
     </div>
+  );
+}
+
+function ColorPickerSquare({ color, label, disabled, onColorChange }) {
+  return (
+    <span
+      className="relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/35"
+      style={{ backgroundColor: color }}
+      title={`Change ${label} color`}
+      onClick={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.stopPropagation()}
+    >
+      <input
+        type="color"
+        value={color}
+        disabled={disabled}
+        onClick={(event) => event.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
+        onChange={(event) => onColorChange?.(event.target.value)}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+      />
+    </span>
   );
 }
 
@@ -90,6 +219,7 @@ function LayerItem({
   opacity,
   onChange,
   onOpacityChange,
+  onColorChange,
   disabled,
 }) {
   return (
@@ -104,9 +234,11 @@ function LayerItem({
             className="accent-[#65c96b]"
           />
 
-          <span
-            className="h-4 w-4 rounded-sm border-2"
-            style={{ borderColor: color }}
+          <ColorPickerSquare
+            color={color}
+            label={label}
+            disabled={disabled}
+            onColorChange={onColorChange}
           />
 
           <span className="text-[11px]">{label}</span>
