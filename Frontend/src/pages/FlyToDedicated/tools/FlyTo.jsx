@@ -18,16 +18,23 @@ export default function FlyTo({
     let ignore = false;
 
     const loadProjects = async () => {
-      try {
-        setLoading(true);
-        const data = await getProjects();
-        if (!ignore) setProjects(data || []);
-      } catch (error) {
-        console.error("Failed to load projects for Fly To:", error);
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    };
+  try {
+    setLoading(true);
+    const data = await getProjects();
+
+    const sorted = (data || []).sort((a, b) => {
+      const nameA = (a.name || a.project_name || "").toLowerCase();
+      const nameB = (b.name || b.project_name || "").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    if (!ignore) setProjects(sorted);
+  } catch (error) {
+    console.error("Failed to load projects for Fly To:", error);
+  } finally {
+    if (!ignore) setLoading(false);
+  }
+};
 
     loadProjects();
 
@@ -50,6 +57,7 @@ const handleFlyToProject = () => {
     plotType: "",
     plotNo: "",
     area: "",
+    flyTrigger: Date.now(), 
   }));
 
   // Show only boundary layer

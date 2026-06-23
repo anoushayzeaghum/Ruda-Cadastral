@@ -255,56 +255,63 @@ export default function MetaverseSubHeader({
     };
   }, [filters.projectId]);
 
-  useEffect(() => {
-    let cancelled = false;
+useEffect(() => {
+  let cancelled = false;
 
-    const loadCascadingOptions = async () => {
-      if (!filters.projectId) {
-        setOptions({ plotTypes: [], plotNos: [], areas: [] });
-        return;
-      }
+  const loadCascadingOptions = async () => {
+    if (!filters.projectId) {
+      setOptions({ plotTypes: [], plotNos: [], areas: [] });
+      return;
+    }
 
-      try {
-        // Area depends on Project + Block only.
-        const areaOptions = await getPlotOptions({
-          project_id: filters.projectId,
-          block: filters.block || undefined,
-        });
+    try {
+      // Plot Type depends on Project + Block
+      const plotTypeOptions = await getPlotOptions({
+        project_id: filters.projectId,
+        block: filters.block || undefined,
+      });
 
-        // Plot Type depends on Project + Block + Area.
-        const plotTypeOptions = await getPlotOptions({
-          project_id: filters.projectId,
-          block: filters.block || undefined,
-          plot_area: filters.area || undefined,
-        });
+      // Area depends on Project + Block + Plot Type
+      const areaOptions = await getPlotOptions({
+        project_id: filters.projectId,
+        block: filters.block || undefined,
+        type: filters.plotType || undefined,
+      });
 
-        // Plot No depends on Project + Block + Area + Plot Type.
-        const plotNoOptions = await getPlotOptions({
-          project_id: filters.projectId,
-          block: filters.block || undefined,
-          plot_area: filters.area || undefined,
-          type: filters.plotType || undefined,
-        });
+      // Plot No depends on Project + Block + Plot Type + Area
+      const plotNoOptions = await getPlotOptions({
+        project_id: filters.projectId,
+        block: filters.block || undefined,
+        type: filters.plotType || undefined,
+        plot_area: filters.area || undefined,
+      });
 
-        if (cancelled) return;
+      if (cancelled) return;
 
+      setOptions({
+        plotTypes: uniqueSorted(plotTypeOptions.plotTypes || []),
+        areas: uniqueSorted(areaOptions.areas || []),
+        plotNos: uniqueSorted(plotNoOptions.plotNos || []),
+      });
+    } catch (err) {
+      console.error(err);
+
+      if (!cancelled) {
         setOptions({
-          plotTypes: uniqueSorted(plotTypeOptions.plotTypes || []),
-          plotNos: uniqueSorted(plotNoOptions.plotNos || []),
-          areas: uniqueSorted(areaOptions.areas || []),
+          plotTypes: [],
+          areas: [],
+          plotNos: [],
         });
-      } catch (err) {
-        console.error(err);
-        if (!cancelled) setOptions({ plotTypes: [], plotNos: [], areas: [] });
       }
-    };
+    }
+  };
 
-    loadCascadingOptions();
+  loadCascadingOptions();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [filters.projectId, filters.block, filters.area, filters.plotType]);
+  return () => {
+    cancelled = true;
+  };
+}, [filters.projectId, filters.block, filters.plotType, filters.area]);
 
   const updateFilter = (key, value) => {
     setFilters((prev) => {
@@ -332,17 +339,17 @@ export default function MetaverseSubHeader({
       }
 
       if (key === "block") {
+        next.plotType = "";
         next.area = "";
-        next.plotType = "";
-        next.plotNo = "";
-      }
-
-      if (key === "area") {
-        next.plotType = "";
         next.plotNo = "";
       }
 
       if (key === "plotType") {
+        next.area = "";
+        next.plotNo = "";
+      }
+
+      if (key === "area") {
         next.plotNo = "";
       }
 
@@ -360,10 +367,26 @@ export default function MetaverseSubHeader({
     label: b.block,
   }));
 
-  const areaOptions = options.areas?.map((area) => ({
+  const areaToMarla = (value) => {
+  const text = String(value || "").toLowerCase().trim();
+
+  const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
+
+  if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
+  if (text.includes("kanal")) return number * 20; // 1 kanal = 20 marla
+  if (text.includes("marla")) return number;
+
+  return number;
+};
+
+const areaOptions = options.areas
+  ?.map((area) => ({
     value: String(area),
     label: area,
-  }));
+  }))
+  .sort((a, b) => {
+    return areaToMarla(a.label) - areaToMarla(b.label);
+  });
 
   const plotTypeOptions = options.plotTypes?.map((type) => ({
     value: String(type),
@@ -397,16 +420,6 @@ export default function MetaverseSubHeader({
           onChange={(value) => updateFilter("block", value)}
           className={filterClassName}
         />
-
-        <SearchableSelect
-          value={filters.area}
-          placeholder="Area"
-          disabled={!filters.projectId}
-          options={areaOptions}
-          onChange={(value) => updateFilter("area", value)}
-          className={filterClassName}
-        />
-
         <SearchableSelect
           value={filters.plotType}
           placeholder="Plot Type"
@@ -415,6 +428,14 @@ export default function MetaverseSubHeader({
           onChange={(value) => updateFilter("plotType", value)}
           className={filterClassName}
         />
+        <SearchableSelect
+          value={filters.area}
+          placeholder="Area"
+          disabled={!filters.projectId}
+          options={areaOptions}
+          onChange={(value) => updateFilter("area", value)}
+          className={filterClassName}
+        />       
 
         <SearchableSelect
           value={filters.plotNo}
