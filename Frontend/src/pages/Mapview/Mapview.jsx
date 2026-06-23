@@ -142,6 +142,67 @@ export default function MapView({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const proposedRoadsVisible = getLayerVisible(layers, "proposedRoads", false);
+  const proposedRoadsOpacity = getLayerOpacity(layers, "proposedRoads", 100);
+  const rudaBoundaryVisible = getLayerVisible(layers, "rudaBoundary", false);
+  const rudaBoundaryOpacity = getLayerOpacity(layers, "rudaBoundary", 70);
+  const geodeticNetworkVisible = getLayerVisible(
+    layers,
+    "geodeticNetwork",
+    false,
+  );
+  const geodeticNetworkOpacity = getLayerOpacity(
+    layers,
+    "geodeticNetwork",
+    100,
+  );
+  const districtBoundaryVisible = getLayerVisible(
+    layers,
+    "districtBoundary",
+    true,
+  );
+  const districtBoundaryOpacity = getLayerOpacity(
+    layers,
+    "districtBoundary",
+    100,
+  );
+  const tehsilBoundaryVisible = getLayerVisible(layers, "tehsilBoundary", true);
+  const tehsilBoundaryOpacity = getLayerOpacity(layers, "tehsilBoundary", 100);
+  const mauzaBoundaryVisible = getLayerVisible(layers, "mauzaBoundary", true);
+  const mauzaBoundaryOpacity = getLayerOpacity(layers, "mauzaBoundary", 100);
+  const squareLayerVisible = getLayerVisible(layers, "squareLayer", false);
+  const squareLayerOpacity = getLayerOpacity(layers, "squareLayer", 35);
+  const acreLayerVisible = getLayerVisible(layers, "acreLayer", false);
+  const acreLayerOpacity = getLayerOpacity(layers, "acreLayer", 35);
+  const khasraLayerVisible = getLayerVisible(layers, "khasraLayer", false);
+  const khasraLayerOpacity = getLayerOpacity(layers, "khasraLayer", 25);
+  const khasraLayerForceLoad = getLayerForceLoad(layers, "khasraLayer");
+  const murabbaLayerVisible = getLayerVisible(layers, "murabbaLayer", false);
+  const murabbaLayerOpacity = getLayerOpacity(layers, "murabbaLayer", 25);
+  const murabbaLayerForceLoad = getLayerForceLoad(layers, "murabbaLayer");
+  const triJunctionPointsVisible = getLayerVisible(
+    layers,
+    "triJunctionPoints",
+    false,
+  );
+  const triJunctionPointsOpacity = getLayerOpacity(
+    layers,
+    "triJunctionPoints",
+    100,
+  );
+  const fieldPointsVisible = getLayerVisible(layers, "fieldPoints", false);
+  const fieldPointsOpacity = getLayerOpacity(layers, "fieldPoints", 100);
+  const controlPointsVisible = getLayerVisible(layers, "controlPoints", false);
+  const handuGujranOrthoVisible =
+    typeof layers?.handuGujranOrtho === "object"
+      ? layers.handuGujranOrtho.visible
+      : !!layers?.handuGujranOrtho;
+  const handuGujranOrthoOpacity =
+    typeof layers?.handuGujranOrtho === "object" &&
+    Number.isFinite(Number(layers.handuGujranOrtho.opacity))
+      ? Number(layers.handuGujranOrtho.opacity) / 100
+      : 1.0;
+
   const clearProposedRoads = () => {
     try {
       Object.keys(currentGeojson.current || {})
@@ -296,7 +357,7 @@ export default function MapView({
                 color: VECTOR_LAYER_THEME.fieldPoints.circle,
                 strokeColor: VECTOR_LAYER_THEME.fieldPoints.stroke,
                 radius: 4.5,
-                opacity: getLayerOpacity(layers, "fieldPoints", 100) / 100,
+                opacity: fieldPointsOpacity / 100,
                 labelLayerId: FIELD_POINTS_LABEL,
                 labelExpression: VECTOR_LABEL_FIELDS.fieldPoints,
                 labelColor: VECTOR_LAYER_THEME.fieldPoints.label,
@@ -310,7 +371,7 @@ export default function MapView({
                 color: VECTOR_LAYER_THEME.geodeticNetwork.circle,
                 strokeColor: VECTOR_LAYER_THEME.geodeticNetwork.stroke,
                 radius: 6,
-                opacity: getLayerOpacity(layers, "geodeticNetwork", 100) / 100,
+                opacity: geodeticNetworkOpacity / 100,
                 labelLayerId: GEODETIC_NETWORK_LABEL,
                 labelExpression: VECTOR_LABEL_FIELDS.geodeticNetwork,
                 labelColor: VECTOR_LAYER_THEME.geodeticNetwork.label,
@@ -360,7 +421,7 @@ export default function MapView({
       const map = mapInstance.current;
       if (!map) return;
 
-      if (!getLayerVisible(layers, "proposedRoads", false)) {
+      if (!proposedRoadsVisible) {
         clearProposedRoads();
         return;
       }
@@ -401,7 +462,7 @@ export default function MapView({
         drawBoundaryLevel(
           "proposed-roads",
           filteredGeojson,
-          getLayerOpacity(layers, "proposedRoads", 100),
+          proposedRoadsOpacity,
         );
 
         currentGeojson.current["proposed-roads"] = filteredGeojson;
@@ -415,7 +476,7 @@ export default function MapView({
     };
 
     loadProposedRoads();
-  }, [isMapReady, layers?.proposedRoads, selectedProposedRoadIds]);
+  }, [isMapReady, proposedRoadsVisible, selectedProposedRoadIds]);
 
   const zoomToGeoJSON = (geojson, options = {}) => {
     const map = mapInstance.current;
@@ -482,7 +543,7 @@ export default function MapView({
       opacityOverride !== null && opacityOverride !== undefined
         ? opacityOverride
         : isRudaLayer
-          ? getLayerOpacity(layers, "rudaBoundary", 50)
+          ? rudaBoundaryOpacity
           : 100,
     );
 
@@ -533,6 +594,42 @@ export default function MapView({
     } catch (e) {
       console.error("drawBoundaryLevel error", e);
     }
+  };
+
+  const applyOpacityToMapLayer = (layerId, opacityValue) => {
+    const map = mapInstance.current;
+    if (!map || !layerId || !map.getLayer(layerId)) return;
+
+    const layer = map.getLayer(layerId);
+    const opacity = clampOpacity(opacityValue);
+
+    try {
+      if (layer.type === "fill") {
+        map.setPaintProperty(layerId, "fill-opacity", opacity);
+      } else if (layer.type === "line") {
+        map.setPaintProperty(layerId, "line-opacity", opacity);
+      } else if (layer.type === "circle") {
+        map.setPaintProperty(layerId, "circle-opacity", opacity);
+        map.setPaintProperty(layerId, "circle-stroke-opacity", opacity);
+      } else if (layer.type === "symbol") {
+        map.setPaintProperty(layerId, "text-opacity", opacity);
+        map.setPaintProperty(layerId, "icon-opacity", opacity);
+      } else if (layer.type === "raster") {
+        map.setPaintProperty(layerId, "raster-opacity", opacity);
+      } else if (layer.type === "fill-extrusion") {
+        map.setPaintProperty(layerId, "fill-extrusion-opacity", opacity);
+      }
+    } catch (e) {
+      console.warn(`Could not update opacity for ${layerId}`, e);
+    }
+  };
+
+  const applyOpacityToBoundaryLevel = (level, opacityValue) => {
+    const ids = getBoundaryIds(level);
+
+    Object.values(ids || {})
+      .flat()
+      .forEach((layerId) => applyOpacityToMapLayer(layerId, opacityValue));
   };
 
   const clearLayerAndSource = (fillId, lineId, sourceId) => {
@@ -1034,7 +1131,7 @@ export default function MapView({
         sourceId,
         layerId,
         pointGeojson,
-        opacity: getLayerOpacity(layers, "triJunctionPoints", 100) / 100,
+        opacity: triJunctionPointsOpacity / 100,
       });
 
       [TRI_JUNCTION_BURJI_LAYER, layerId].forEach((clickLayerId) => {
@@ -1109,9 +1206,7 @@ export default function MapView({
         return;
       }
 
-      const khasraOpacity = clampOpacity(
-        getLayerOpacity(layers, "khasraLayer", 25),
-      );
+      const khasraOpacity = clampOpacity(khasraLayerOpacity);
 
       addKhasraLayerStyles({
         map,
@@ -1200,9 +1295,7 @@ export default function MapView({
         return;
       }
 
-      const murabbaOpacity = clampOpacity(
-        getLayerOpacity(layers, "murabbaLayer", 25),
-      );
+      const murabbaOpacity = clampOpacity(murabbaLayerOpacity);
 
       addMurabbaLayerStyles({
         map,
@@ -1276,6 +1369,85 @@ export default function MapView({
 
   useEffect(() => {
     if (!isMapReady) return;
+    applyOpacityToBoundaryLevel("proposed-roads", proposedRoadsOpacity);
+  }, [isMapReady, proposedRoadsOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    Object.keys(currentGeojson.current || {})
+      .filter((key) => key.startsWith("ruda-"))
+      .forEach((level) =>
+        applyOpacityToBoundaryLevel(level, rudaBoundaryOpacity),
+      );
+  }, [isMapReady, rudaBoundaryOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyOpacityToBoundaryLevel("district", districtBoundaryOpacity);
+  }, [isMapReady, districtBoundaryOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyOpacityToBoundaryLevel("tehsil", tehsilBoundaryOpacity);
+  }, [isMapReady, tehsilBoundaryOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyOpacityToBoundaryLevel("mauza", mauzaBoundaryOpacity);
+  }, [isMapReady, mauzaBoundaryOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyOpacityToBoundaryLevel(SQUARE_LEVEL, squareLayerOpacity);
+  }, [isMapReady, squareLayerOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyOpacityToBoundaryLevel(ACRE_LEVEL, acreLayerOpacity);
+  }, [isMapReady, acreLayerOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [KHASRA_FILL, KHASRA_LINE, KHASRA_LABEL].forEach((layerId) =>
+      applyOpacityToMapLayer(layerId, khasraLayerOpacity),
+    );
+  }, [isMapReady, khasraLayerOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [MURABBA_FILL, MURABBA_LINE, MURABBA_LABEL].forEach((layerId) =>
+      applyOpacityToMapLayer(layerId, murabbaLayerOpacity),
+    );
+  }, [isMapReady, murabbaLayerOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [GEODETIC_NETWORK_LAYER, GEODETIC_NETWORK_LABEL].forEach((layerId) =>
+      applyOpacityToMapLayer(layerId, geodeticNetworkOpacity),
+    );
+  }, [isMapReady, geodeticNetworkOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [
+      TRI_JUNCTION_POINTS_LAYER,
+      TRI_JUNCTION_POINTS_LABEL,
+      TRI_JUNCTION_BURJI_LAYER,
+      TRI_JUNCTION_BURJI_LABEL,
+    ].forEach((layerId) =>
+      applyOpacityToMapLayer(layerId, triJunctionPointsOpacity),
+    );
+  }, [isMapReady, triJunctionPointsOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [FIELD_POINTS_LAYER, FIELD_POINTS_LABEL].forEach((layerId) =>
+      applyOpacityToMapLayer(layerId, fieldPointsOpacity),
+    );
+  }, [isMapReady, fieldPointsOpacity]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
 
     let cancelled = false;
 
@@ -1303,12 +1475,8 @@ export default function MapView({
             currentGeojson.current.district = merged;
             loadedGeojsons.push(merged);
 
-            if (getLayerVisible(layers, "districtBoundary", true)) {
-              drawBoundaryLevel(
-                "district",
-                merged,
-                getLayerOpacity(layers, "districtBoundary", 100),
-              );
+            if (districtBoundaryVisible) {
+              drawBoundaryLevel("district", merged, districtBoundaryOpacity);
             }
           }
         }
@@ -1324,12 +1492,8 @@ export default function MapView({
             currentGeojson.current.tehsil = merged;
             loadedGeojsons.push(merged);
 
-            if (getLayerVisible(layers, "tehsilBoundary", true)) {
-              drawBoundaryLevel(
-                "tehsil",
-                merged,
-                getLayerOpacity(layers, "tehsilBoundary", 100),
-              );
+            if (tehsilBoundaryVisible) {
+              drawBoundaryLevel("tehsil", merged, tehsilBoundaryOpacity);
             }
           }
         }
@@ -1344,12 +1508,8 @@ export default function MapView({
             currentGeojson.current.mauza = geojson;
             loadedGeojsons.push(geojson);
 
-            if (getLayerVisible(layers, "mauzaBoundary", true)) {
-              drawBoundaryLevel(
-                "mauza",
-                geojson,
-                getLayerOpacity(layers, "mauzaBoundary", 100),
-              );
+            if (mauzaBoundaryVisible) {
+              drawBoundaryLevel("mauza", geojson, mauzaBoundaryOpacity);
             }
           }
         }
@@ -1381,9 +1541,9 @@ export default function MapView({
     selectedTehsil,
     selectedMauza,
     isMapReady,
-    layers?.districtBoundary,
-    layers?.tehsilBoundary,
-    layers?.mauzaBoundary,
+    districtBoundaryVisible,
+    tehsilBoundaryVisible,
+    mauzaBoundaryVisible,
   ]);
 
   useEffect(() => {
@@ -1429,7 +1589,7 @@ export default function MapView({
                 color: VECTOR_LAYER_THEME.fieldPoints.circle,
                 strokeColor: VECTOR_LAYER_THEME.fieldPoints.stroke,
                 radius: 4.5,
-                opacity: getLayerOpacity(layers, "fieldPoints", 100) / 100,
+                opacity: fieldPointsOpacity / 100,
                 labelLayerId: FIELD_POINTS_LABEL,
                 labelExpression: VECTOR_LABEL_FIELDS.fieldPoints,
                 labelColor: VECTOR_LAYER_THEME.fieldPoints.label,
@@ -1443,7 +1603,7 @@ export default function MapView({
                 color: VECTOR_LAYER_THEME.geodeticNetwork.circle,
                 strokeColor: VECTOR_LAYER_THEME.geodeticNetwork.stroke,
                 radius: 6,
-                opacity: getLayerOpacity(layers, "geodeticNetwork", 100) / 100,
+                opacity: geodeticNetworkOpacity / 100,
                 labelLayerId: GEODETIC_NETWORK_LABEL,
                 labelExpression: VECTOR_LABEL_FIELDS.geodeticNetwork,
                 labelColor: VECTOR_LAYER_THEME.geodeticNetwork.label,
@@ -1571,7 +1731,7 @@ export default function MapView({
         } catch (e) {}
       };
 
-      if (!getLayerVisible(layers, "rudaBoundary", false)) {
+      if (!rudaBoundaryVisible) {
         clearRudaLevels();
         return;
       }
@@ -1603,7 +1763,7 @@ export default function MapView({
           drawBoundaryLevel(
             `ruda-${item.gid}`,
             item.geojson,
-            getLayerOpacity(layers, "rudaBoundary", 50),
+            rudaBoundaryOpacity,
           );
           currentGeojson.current[`ruda-${item.gid}`] = item.geojson;
         });
@@ -1622,13 +1782,13 @@ export default function MapView({
     };
 
     loadRuda();
-  }, [isMapReady, layers?.rudaBoundary, selectedRudaPhaseIds]);
+  }, [isMapReady, rudaBoundaryVisible, selectedRudaPhaseIds]);
 
   useEffect(() => {
     if (!isMapReady) return;
 
     const loadGeodeticNetwork = async () => {
-      if (!getLayerVisible(layers, "geodeticNetwork", false)) {
+      if (!geodeticNetworkVisible) {
         clearPointLayer(GEODETIC_NETWORK_SOURCE, GEODETIC_NETWORK_LAYER);
         delete currentGeojson.current["geodetic-network"];
         return;
@@ -1656,7 +1816,7 @@ export default function MapView({
             color: VECTOR_LAYER_THEME.geodeticNetwork.circle,
             strokeColor: VECTOR_LAYER_THEME.geodeticNetwork.stroke,
             radius: 6,
-            opacity: getLayerOpacity(layers, "geodeticNetwork", 100) / 100,
+            opacity: geodeticNetworkOpacity / 100,
             labelLayerId: GEODETIC_NETWORK_LABEL,
             labelExpression: VECTOR_LABEL_FIELDS.geodeticNetwork,
             labelColor: VECTOR_LAYER_THEME.geodeticNetwork.label,
@@ -1678,14 +1838,10 @@ export default function MapView({
     };
 
     loadGeodeticNetwork();
-  }, [isMapReady, layers?.geodeticNetwork]);
+  }, [isMapReady, geodeticNetworkVisible]);
 
   useEffect(() => {
-    if (
-      !selectedMauza ||
-      !isMapReady ||
-      !getLayerVisible(layers, "squareLayer", false)
-    ) {
+    if (!selectedMauza || !isMapReady || !squareLayerVisible) {
       clearBoundaryLevel(SQUARE_LEVEL);
       delete currentGeojson.current[SQUARE_LEVEL];
       return;
@@ -1698,11 +1854,7 @@ export default function MapView({
         const geojson = await getSquares(mauzaId);
 
         if (geojson?.features?.length) {
-          drawBoundaryLevel(
-            SQUARE_LEVEL,
-            geojson,
-            getLayerOpacity(layers, "squareLayer", 35),
-          );
+          drawBoundaryLevel(SQUARE_LEVEL, geojson, squareLayerOpacity);
           currentGeojson.current[SQUARE_LEVEL] = geojson;
           zoomToGeoJSON(geojson, { padding: 70, duration: 500 });
         } else {
@@ -1718,14 +1870,10 @@ export default function MapView({
     };
 
     loadSquares();
-  }, [selectedMauza, isMapReady, layers?.squareLayer]);
+  }, [selectedMauza, isMapReady, squareLayerVisible]);
 
   useEffect(() => {
-    if (
-      !selectedMauza ||
-      !isMapReady ||
-      !getLayerVisible(layers, "acreLayer", false)
-    ) {
+    if (!selectedMauza || !isMapReady || !acreLayerVisible) {
       clearBoundaryLevel(ACRE_LEVEL);
       delete currentGeojson.current[ACRE_LEVEL];
       return;
@@ -1738,11 +1886,7 @@ export default function MapView({
         const geojson = await getAcres(mauzaId);
 
         if (geojson?.features?.length) {
-          drawBoundaryLevel(
-            ACRE_LEVEL,
-            geojson,
-            getLayerOpacity(layers, "acreLayer", 35),
-          );
+          drawBoundaryLevel(ACRE_LEVEL, geojson, acreLayerOpacity);
           currentGeojson.current[ACRE_LEVEL] = geojson;
           zoomToGeoJSON(geojson, { padding: 70, duration: 500 });
         } else {
@@ -1758,7 +1902,7 @@ export default function MapView({
     };
 
     loadAcres();
-  }, [selectedMauza, isMapReady, layers?.acreLayer]);
+  }, [selectedMauza, isMapReady, acreLayerVisible]);
 
   useEffect(() => {
     if (!isMapReady) return;
@@ -1770,7 +1914,7 @@ export default function MapView({
         const areaGeojson = await resolveOpenAreaGeoJSON();
         const hasArea = !!areaGeojson?.features?.length;
 
-        if (getLayerVisible(layers, "triJunctionPoints", false) && hasArea) {
+        if (triJunctionPointsVisible && hasArea) {
           const mauzaId = getSelectedMauzaId(selectedMauza);
           const trijunctionGeojson = await getTrijunctionPoints(
             mauzaId ? { mauza_id: mauzaId } : {},
@@ -1820,7 +1964,7 @@ export default function MapView({
           delete currentGeojson.current["tri-junction-points"];
         }
 
-        if (getLayerVisible(layers, "fieldPoints", false) && hasArea) {
+        if (fieldPointsVisible && hasArea) {
           const mauzaId = getSelectedMauzaId(selectedMauza);
           const fieldPointsGeojson = await getFieldPoints(mauzaId);
           if (cancelled) return;
@@ -1871,7 +2015,7 @@ export default function MapView({
               color: VECTOR_LAYER_THEME.fieldPoints.circle,
               strokeColor: VECTOR_LAYER_THEME.fieldPoints.stroke,
               radius: 4.5,
-              opacity: getLayerOpacity(layers, "fieldPoints", 100) / 100,
+              opacity: fieldPointsOpacity / 100,
               labelLayerId: FIELD_POINTS_LABEL,
               labelExpression: VECTOR_LABEL_FIELDS.fieldPoints,
               labelColor: VECTOR_LAYER_THEME.fieldPoints.label,
@@ -1904,16 +2048,16 @@ export default function MapView({
     isMapReady,
     selectedMauza,
     selectedFeatureNumber,
-    layers?.triJunctionPoints,
-    layers?.fieldPoints,
+    triJunctionPointsVisible,
+    fieldPointsVisible,
   ]);
 
   useEffect(() => {
     const shouldShowKhasra =
       !!selectedMauza &&
       isMapReady &&
-      getLayerVisible(layers, "khasraLayer", false) &&
-      (viewBy === "khasra" || getLayerForceLoad(layers, "khasraLayer"));
+      khasraLayerVisible &&
+      (viewBy === "khasra" || khasraLayerForceLoad);
 
     if (!shouldShowKhasra) {
       clearKhasraLayers();
@@ -1946,14 +2090,20 @@ export default function MapView({
     };
 
     loadKhasras();
-  }, [selectedMauza, isMapReady, viewBy, layers?.khasraLayer]);
+  }, [
+    selectedMauza,
+    isMapReady,
+    viewBy,
+    khasraLayerVisible,
+    khasraLayerForceLoad,
+  ]);
 
   useEffect(() => {
     const shouldShowMurabba =
       !!selectedMauza &&
       isMapReady &&
-      getLayerVisible(layers, "murabbaLayer", false) &&
-      (viewBy === "murabba" || getLayerForceLoad(layers, "murabbaLayer"));
+      murabbaLayerVisible &&
+      (viewBy === "murabba" || murabbaLayerForceLoad);
 
     if (!shouldShowMurabba) {
       clearMurabbaLayers();
@@ -1986,7 +2136,13 @@ export default function MapView({
     };
 
     loadMurabbas();
-  }, [selectedMauza, isMapReady, viewBy, layers?.murabbaLayer]);
+  }, [
+    selectedMauza,
+    isMapReady,
+    viewBy,
+    murabbaLayerVisible,
+    murabbaLayerForceLoad,
+  ]);
 
   useEffect(() => {
     if (!isMapReady) return;
@@ -2000,10 +2156,7 @@ export default function MapView({
       try {
         const normalizedMauza = (mauzaName || "").trim().toLowerCase();
 
-        if (
-          getLayerVisible(layers, "controlPoints", false) &&
-          normalizedMauza
-        ) {
+        if (controlPointsVisible && normalizedMauza) {
           const controlGeojson = await getTrijunctionPoints({
             mauza: mauzaName,
             type: "B",
@@ -2048,27 +2201,11 @@ export default function MapView({
     };
 
     loadPoints();
-  }, [
-    isMapReady,
-    selectedMauza,
-    layers?.controlPoints,
-    layers?.triJunctionPoints,
-  ]);
+  }, [isMapReady, selectedMauza, controlPointsVisible]);
 
   useEffect(() => {
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
-
-    const handuGujranOrthoVisible =
-      typeof layers?.handuGujranOrtho === "object"
-        ? layers.handuGujranOrtho.visible
-        : !!layers?.handuGujranOrtho;
-
-    const handuGujranOrthoOpacity =
-      typeof layers?.handuGujranOrtho === "object" &&
-      Number.isFinite(Number(layers.handuGujranOrtho.opacity))
-        ? Number(layers.handuGujranOrtho.opacity) / 100
-        : 1.0;
 
     const restoreHanduGujranOrtho = () => {
       restoreHanduGujranOrthoLayer({
@@ -2094,7 +2231,7 @@ export default function MapView({
     return () => {
       map.off("style.load", restoreHanduGujranOrtho);
     };
-  }, [layers?.handuGujranOrtho, isMapReady]);
+  }, [handuGujranOrthoVisible, handuGujranOrthoOpacity, isMapReady]);
 
   useEffect(() => {
     const map = mapInstance.current;
