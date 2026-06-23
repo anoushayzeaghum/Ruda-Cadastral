@@ -409,17 +409,21 @@ export default function GISMetaverseMap({
         return;
       }
 
-      const projectGeoJSON = await getProjectGeoJSON(filters.projectId);
-      addProjectBoundaryLayer(map, projectGeoJSON);
-      addNotifiedBoundaryLayer(map, projectGeoJSON);
+    const projectGeoJSON = await getProjectGeoJSON(filters.projectId);
 
-      setLayerVisibility(map, [LAYERS.boundaryFill, LAYERS.boundaryLine,  LAYERS.blockLabel,], true);
-      setLayerVisibility(
-        map,
-        [LAYERS.notifiedBoundaryLine],
-        !!layerVisibility.notifiedBoundary,
-      );
+      if (map.getSource("project-boundary")) {
+        map.getSource("project-boundary").setData(projectGeoJSON);
+      } else {
+        addProjectBoundaryLayer(map, projectGeoJSON);
+      }
 
+      if (map.getSource("notified-boundary")) {
+        map.getSource("notified-boundary").setData(projectGeoJSON);
+      } else {
+        addNotifiedBoundaryLayer(map, projectGeoJSON);
+      }
+
+      // 🔥 ALWAYS re-fly even same project
       fitGeoJSON(map, projectGeoJSON);
 
       updateLayerVisibility((prev) => ({
@@ -433,7 +437,7 @@ export default function GISMetaverseMap({
 
     if (map.isStyleLoaded()) run();
     else map.once("load", run);
-  }, [filters.projectId, mapRef, updateLayerVisibility]);
+  }, [filters.projectId, filters.flyTrigger, mapRef, updateLayerVisibility]);
 
   useEffect(() => {
     const map = mapRef.current;
