@@ -805,7 +805,7 @@ export default function GISMetaverseMap({
     return setupVectorClickPopups({
       map,
       autoCloseMs: 10000,
-      minZoom: 16,
+      minZoom: 13,
       maxZoom: 18,
     });
   }, [mapRef, isMapReady]);

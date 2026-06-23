@@ -476,6 +476,7 @@ export default function MapView({
     clearBoundaryLevel(level);
 
     const isRudaLayer = level.startsWith("ruda");
+    const isProposedRoadLayer = level.startsWith("proposed-road");
 
     const layerOpacity = clampOpacity(
       opacityOverride !== null && opacityOverride !== undefined
@@ -500,6 +501,35 @@ export default function MapView({
 
       currentGeojson.current[level] = sourceGeojson;
       movePointLayersToTop();
+
+      // ── Click popup for polygon / line boundary layers ─────────────────
+      // Determine which layer ID to listen on and which popup type to show.
+      const popupLayerId = isProposedRoadLayer
+        ? ids.line   // proposed roads are lines only
+        : ids.fill;  // all other boundaries have a fill layer
+
+      if (map.getLayer(popupLayerId)) {
+        // Determine popup type from level name
+        const popupType = isRudaLayer ? "ruda"
+          : level === "district" ? "district"
+          : level === "tehsil" ? "tehsil"
+          : level === "mauza" ? "mauza"
+          : level === SQUARE_LEVEL ? "square"
+          : level === ACRE_LEVEL ? "acre"
+          : level;
+
+        map.on("mouseenter", popupLayerId, () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", popupLayerId, () => {
+          map.getCanvas().style.cursor = "";
+        });
+        map.on("click", popupLayerId, (e) => {
+          const feature = e.features?.[0];
+          if (!feature) return;
+          showPolygonPopup(popupType, feature.properties || {}, e.lngLat);
+        });
+      }
     } catch (e) {
       console.error("drawBoundaryLevel error", e);
     }
@@ -622,6 +652,181 @@ export default function MapView({
     if (value === null || value === undefined || Number.isNaN(num)) return "-";
     return num.toFixed(6);
   };
+
+  // ── Shared polygon popup ───────────────────────────────────────────────────
+  const buildPolygonPopupHtml = (layerType, props = {}, extraRows = []) => {
+    const esc = (v) =>
+      v == null ? "-" : String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    const CONFIGS = {
+      khasra: {
+        title: "Khasra",
+        color: "#16a34a",
+        rows: [
+          ["Khasra No", props.kh ?? props.KH ?? props.k ?? props.K ?? props.khasra_no ?? props.khasra_id],
+          ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
+          ["Murabba No", props.m ?? props.M ?? props.mn ?? props.murabba_no],
+          ["Land Type", props.type ?? props.land_type],
+          ["Area", props._area_acres != null ? `${Number(props._area_acres).toFixed(3)} Acres` : null],
+          ["DC Rate", props.dc_rate],
+          ["Remarks", props.remarks],
+        ],
+      },
+      murabba: {
+        title: "Murabba",
+        color: "#059669",
+        rows: [
+          ["Murabba No", props.m ?? props.M ?? props.mn ?? props.murabba_no ?? props.murabba_id],
+          ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
+          ["Land Type", props.type ?? props.land_type],
+          ["Area", props._area_acres != null ? `${Number(props._area_acres).toFixed(3)} Acres` : null],
+          ["Remarks", props.remarks],
+        ],
+      },
+      mauza: {
+        title: "Mauza",
+        color: "#1d4ed8",
+        rows: [
+          ["Mauza", props.mauza ?? props.Mauza ?? props.moza ?? props.name],
+          ["Tehsil", props.tehsil ?? props.Tehsil],
+          ["District", props.district ?? props.District],
+        ],
+      },
+      tehsil: {
+        title: "Tehsil",
+        color: "#1d4ed8",
+        rows: [
+          ["Tehsil", props.tehsil ?? props.name ?? props.tehsil_name],
+          ["District", props.district ?? props.District],
+        ],
+      },
+      district: {
+        title: "District",
+        color: "#1e3a8a",
+        rows: [
+          ["District", props.district ?? props.name ?? props.district_name],
+          ["Division", props.division ?? props.Division],
+        ],
+      },
+      square: {
+        title: "Square",
+        color: "#059669",
+        rows: [
+          ["Square No", props.sq ?? props.SQ ?? props.square ?? props.square_no],
+          ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
+          ["Tehsil", props.tehsil ?? props.Tehsil],
+          ["District", props.district ?? props.District],
+        ],
+      },
+      acre: {
+        title: "Acre",
+        color: "#7c3aed",
+        rows: [
+          ["Acre No", props.acre ?? props.acre_no ?? props.ac ?? props.name],
+          ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
+        ],
+      },
+      ruda: {
+        title: "RUDA Phase",
+        color: "#0f3d2e",
+        rows: [
+          ["Phase", props._ruda_phase_label ?? props.phase ?? props.name],
+          ["Name", props.name],
+        ],
+      },
+    };
+
+    const config = CONFIGS[layerType] ?? {
+      title: layerType.charAt(0).toUpperCase() + layerType.slice(1),
+      color: "#158033",
+      rows: extraRows,
+    };
+
+    const allRows = [...(config.rows || []), ...extraRows].filter(
+      ([, v]) => v != null && String(v).trim() !== "" && String(v).trim() !== "-",
+    );
+
+    const rowsHtml = allRows
+      .map(
+        ([label, value]) => `
+        <div style="display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #f3f4f6;">
+          <span style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;">${esc(label)}</span>
+          <span style="font-size:12px;font-weight:600;color:#111827;text-align:right;">${esc(value)}</span>
+        </div>`,
+      )
+      .join("");
+
+    return `
+      <div style="width:240px;overflow:hidden;border-radius:10px;background:#fff;box-shadow:0 8px 30px rgba(0,0,0,0.18);outline:1px solid rgba(0,0,0,0.07);">
+        <div style="background:${config.color};padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span style="font-size:13px;font-weight:700;color:#fff;letter-spacing:0.2px;">${esc(config.title)}</span>
+          <button type="button" data-polygon-popup-close="true"
+            style="background:rgba(255,255,255,0.15);border:none;cursor:pointer;width:20px;height:20px;border-radius:50%;color:#fff;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
+        </div>
+        <div style="padding:8px 12px;max-height:240px;overflow-y:auto;">
+          ${rowsHtml || '<div style="padding:8px 0;font-size:11px;color:#9ca3af;text-align:center;">No details available.</div>'}
+        </div>
+      </div>`;
+  };
+
+  const showPolygonPopup = (layerType, props, lngLat, extraRows = []) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    closeActivePopup();
+
+    const html = buildPolygonPopupHtml(layerType, props, extraRows);
+
+    const popup = new mapboxgl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      offset: 12,
+      maxWidth: "none",
+      className: "mapview-polygon-popup",
+    })
+      .setLngLat(lngLat)
+      .setHTML(html)
+      .addTo(map);
+
+    // Strip Mapbox default padding/shadow
+    const el = popup.getElement();
+    const content = el?.querySelector(".mapboxgl-popup-content");
+    if (content) {
+      content.style.cssText = "padding:0;background:transparent;box-shadow:none;border-radius:10px;";
+    }
+    const tip = el?.querySelector(".mapboxgl-popup-tip");
+    if (tip) tip.style.borderTopColor = layerType === "district" ? "#1e3a8a"
+      : layerType === "acre" ? "#7c3aed"
+      : layerType?.startsWith("ruda") ? "#0f3d2e"
+      : "#158033";
+
+    const closeBtn = el?.querySelector("[data-polygon-popup-close]");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        closeActivePopup();
+      });
+    }
+
+    activePopupRef.current = popup;
+
+    popupTimeoutRef.current = setTimeout(() => {
+      if (activePopupRef.current === popup) {
+        popup.remove();
+        activePopupRef.current = null;
+      }
+      popupTimeoutRef.current = null;
+    }, 8000);
+
+    popup.on("close", () => {
+      if (activePopupRef.current === popup) activePopupRef.current = null;
+      if (popupTimeoutRef.current) {
+        clearTimeout(popupTimeoutRef.current);
+        popupTimeoutRef.current = null;
+      }
+    });
+  };
+
 
   const buildMinimalPopupHtml = (
     props = {},
@@ -1033,6 +1238,13 @@ export default function MapView({
             console.warn("Could not set selected feature", err);
           }
 
+          // Show popup with computed area
+          const propsWithArea = {
+            ...(feature.properties || {}),
+            _area_acres: area_acres,
+          };
+          showPolygonPopup("khasra", propsWithArea, e.lngLat);
+
           if (typeof onParcelSelect === "function") {
             const cloned = JSON.parse(JSON.stringify(feature));
             cloned.properties = cloned.properties || {};
@@ -1116,6 +1328,13 @@ export default function MapView({
           } catch (err) {
             console.warn("Could not set selected feature", err);
           }
+
+          // Show popup with computed area
+          const propsWithArea = {
+            ...(feature.properties || {}),
+            _area_acres: area_acres,
+          };
+          showPolygonPopup("murabba", propsWithArea, e.lngLat);
 
           if (typeof onParcelSelect === "function") {
             const cloned = JSON.parse(JSON.stringify(feature));
