@@ -389,60 +389,175 @@ function setLayerPaintProperty(map, layerId, property, value) {
   }
 }
 
+function getRuntimeLayerStyle(styleKey = "") {
+  if (typeof window === "undefined") return {};
+  return window.__metaverseLayerRuntimeStyles?.[styleKey] || {};
+}
+
+function getRuntimeOpacity(source, stateKey, styleKey, fallback = 100) {
+  const runtimeOpacity = getRuntimeLayerStyle(styleKey).opacity;
+  const value = runtimeOpacity ?? source?.[stateKey] ?? fallback;
+  const numeric = Number(value);
+
+  if (!Number.isFinite(numeric)) return fallback / 100;
+  return Math.min(Math.max(numeric, 0), 100) / 100;
+}
+
+function applyRuntimeLayerColors(map) {
+  const colorEntries = [
+    {
+      key: "boundary",
+      paints: [
+        [LAYERS.boundaryFill, "fill-color"],
+        [LAYERS.boundaryLine, "line-color"],
+      ],
+    },
+    {
+      key: "spotLevel",
+      paints: [[LAYERS.spotLevelCircle, "circle-color"]],
+    },
+    {
+      key: "contours",
+      paints: [
+        [LAYERS.contoursLine, "line-color"],
+        [LAYERS.contoursLabel, "text-color"],
+      ],
+    },
+    {
+      key: "rudaMauzaBoundary",
+      paints: [
+        [LAYERS.rudaMauzaBoundaryFill, "fill-color"],
+        [LAYERS.rudaMauzaBoundaryFill, "fill-outline-color"],
+        [LAYERS.rudaMauzaBoundaryLine, "line-color"],
+        [LAYERS.rudaMauzaBoundaryLabel, "text-color"],
+      ],
+    },
+    {
+      key: "geodeticNetwork",
+      paints: [
+        [LAYERS.geodeticNetworkCircle, "circle-color"],
+        [LAYERS.geodeticNetworkLabel, "text-color"],
+      ],
+    },
+    {
+      key: "waterSupplyPoints",
+      paints: [
+        [LAYERS.waterSupplyPointsCircle, "circle-color"],
+        [LAYERS.waterSupplyPointsLabel, "text-color"],
+      ],
+    },
+    {
+      key: "waterSupplyLines",
+      paints: [
+        [LAYERS.waterSupplyLinesLine, "line-color"],
+        [LAYERS.waterSupplyLinesLabel, "text-color"],
+      ],
+    },
+    {
+      key: "sewagePoints",
+      paints: [
+        [LAYERS.sewagePointsCircle, "circle-color"],
+        [LAYERS.sewagePointsLabel, "text-color"],
+      ],
+    },
+    {
+      key: "cameraLocations",
+      paints: [
+        [LAYERS.cameraLocationsCircle, "circle-color"],
+        [LAYERS.cameraLocationsLabel, "text-color"],
+      ],
+    },
+    {
+      key: "notifiedBoundary",
+      paints: [[LAYERS.notifiedBoundaryLine, "line-color"]],
+    },
+  ];
+
+  colorEntries.forEach(({ key, paints }) => {
+    const color = getRuntimeLayerStyle(key).color;
+    if (!color) return;
+
+    paints.forEach(([layerId, property]) => {
+      setLayerPaintProperty(map, layerId, property, color);
+    });
+  });
+}
+
 function applyMetaverseLayerOpacities(
   map,
   layerVisibility = {},
   adminBoundaryVisibility = {},
 ) {
-  const getOpacity = (source, key, fallback = 100) =>
-    Number(source?.[key] ?? fallback) / 100;
+  const getOpacity = (source, key, fallback = 100) => {
+    const numeric = Number(source?.[key] ?? fallback);
+    if (!Number.isFinite(numeric)) return fallback / 100;
+    return Math.min(Math.max(numeric, 0), 100) / 100;
+  };
 
-  const boundaryOpacity = getOpacity(layerVisibility, "boundaryOpacity");
-  const masterPlanOpacity = getOpacity(layerVisibility, "masterPlanOpacity");
-  const blockBoundaryOpacity = getOpacity(
+  const boundaryOpacity = getRuntimeOpacity(
+    layerVisibility,
+    "boundaryOpacity",
+    "boundary",
+  );
+  const masterPlanOpacity = getRuntimeOpacity(
+    layerVisibility,
+    "masterPlanOpacity",
+    "masterPlan",
+  );
+  const blockBoundaryOpacity = getRuntimeOpacity(
     layerVisibility,
     "blockBoundaryOpacity",
+    "blockBoundary",
   );
-  const spotLevelOpacity = getOpacity(layerVisibility, "spotLevelOpacity");
-  const contoursOpacity = getOpacity(layerVisibility, "contoursOpacity");
-  const roadsOpacity = getOpacity(layerVisibility, "roadsOpacity");
-  const notifiedBoundaryOpacity = getOpacity(
+  const spotLevelOpacity = getRuntimeOpacity(layerVisibility, "spotLevelOpacity", "spotLevel");
+  const contoursOpacity = getRuntimeOpacity(layerVisibility, "contoursOpacity", "contours");
+  const roadsOpacity = getRuntimeOpacity(layerVisibility, "roadsOpacity", "roads");
+  const notifiedBoundaryOpacity = getRuntimeOpacity(
     layerVisibility,
     "notifiedBoundaryOpacity",
+    "notifiedBoundary",
   );
 
-  const waterSupplyPointsOpacity = getOpacity(
+  const waterSupplyPointsOpacity = getRuntimeOpacity(
     layerVisibility,
     "waterSupplyPointsOpacity",
+    "waterSupplyPoints",
   );
-  const waterSupplyLinesOpacity = getOpacity(
+  const waterSupplyLinesOpacity = getRuntimeOpacity(
     layerVisibility,
     "waterSupplyLinesOpacity",
+    "waterSupplyLines",
   );
-  const sewagePointsOpacity = getOpacity(
+  const sewagePointsOpacity = getRuntimeOpacity(
     layerVisibility,
     "sewagePointsOpacity",
+    "sewagePoints",
   );
-  const cameraLocationsOpacity = getOpacity(
+  const cameraLocationsOpacity = getRuntimeOpacity(
     layerVisibility,
     "cameraLocationsOpacity",
+    "cameraLocations",
   );
 
-  const rudaBoundaryOpacity = getOpacity(
+  const rudaBoundaryOpacity = getRuntimeOpacity(
     adminBoundaryVisibility,
     "rudaBoundaryOpacity",
+    "rudaBoundary",
   );
-  const rudaMauzaBoundaryOpacity = getOpacity(
+  const rudaMauzaBoundaryOpacity = getRuntimeOpacity(
     adminBoundaryVisibility,
     "rudaMauzaBoundaryOpacity",
+    "rudaMauzaBoundary",
   );
-  const geodeticNetworkOpacity = getOpacity(
+  const geodeticNetworkOpacity = getRuntimeOpacity(
     adminBoundaryVisibility,
     "geodeticNetworkOpacity",
+    "geodeticNetwork",
   );
-  const proposedRoadsOpacity = getOpacity(
+  const proposedRoadsOpacity = getRuntimeOpacity(
     adminBoundaryVisibility,
     "proposedRoadsOpacity",
+    "proposedRoads",
   );
 
   setLayerPaintProperty(
@@ -676,6 +791,8 @@ function applyMetaverseLayerOpacities(
     "text-opacity",
     geodeticNetworkOpacity,
   );
+
+  applyRuntimeLayerColors(map);
 }
 
 export {
