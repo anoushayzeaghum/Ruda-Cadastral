@@ -1,12 +1,63 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
+const NOTIFIED_STYLE = {
+  color: "#ef4444",
+  opacity: 100,
+  lineLayer: "metaverse-notified-boundary-line",
+};
+
+const clampOpacity = (value = 100) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 100;
+  return Math.min(Math.max(numeric, 0), 100);
+};
+
+const setPaint = (map, layerId, property, value) => {
+  if (map?.getLayer?.(layerId)) {
+    map.setPaintProperty(layerId, property, value);
+  }
+};
+
+const setRuntimeStyle = (key, patch = {}) => {
+  if (typeof window === "undefined") return;
+
+  window.__metaverseLayerRuntimeStyles = {
+    ...(window.__metaverseLayerRuntimeStyles || {}),
+    [key]: {
+      ...(window.__metaverseLayerRuntimeStyles?.[key] || {}),
+      ...patch,
+    },
+  };
+};
+
+const applyNotifiedBoundaryStyle = (map, style = {}) => {
+  if (!map) return;
+
+  const color = style.color || NOTIFIED_STYLE.color;
+  const opacityRatio = clampOpacity(style.opacity ?? NOTIFIED_STYLE.opacity) / 100;
+
+  setPaint(map, NOTIFIED_STYLE.lineLayer, "line-color", color);
+  setPaint(map, NOTIFIED_STYLE.lineLayer, "line-opacity", opacityRatio);
+};
+
+const applyAfterLayerLoads = (map, style) => {
+  [0, 120, 350, 700, 1200, 2000].forEach((delay) => {
+    window.setTimeout(() => applyNotifiedBoundaryStyle(map, style), delay);
+  });
+};
+
 export default function NotifiedBoundaries({
+  map,
   selectedProjectId,
   layerVisibility = {},
   setLayerVisibility,
 }) {
   const [open, setOpen] = useState(false);
+  const [style, setStyle] = useState({
+    color: NOTIFIED_STYLE.color,
+    opacity: layerVisibility.notifiedBoundaryOpacity ?? 100,
+  });
 
   const toggleLayer = () => {
     if (!selectedProjectId) {
@@ -16,19 +67,37 @@ export default function NotifiedBoundaries({
 
     if (!setLayerVisibility) return;
 
+    const nextVisible = !layerVisibility.notifiedBoundary;
+
     setLayerVisibility((prev) => ({
       ...prev,
       notifiedBoundary: !prev.notifiedBoundary,
     }));
+
+    if (nextVisible) {
+      setRuntimeStyle("notifiedBoundary", style);
+      applyAfterLayerLoads(map, style);
+    }
   };
 
   const updateOpacity = (value) => {
-    if (!setLayerVisibility) return;
+    const opacity = clampOpacity(value);
 
-    setLayerVisibility((prev) => ({
-      ...prev,
-      notifiedBoundaryOpacity: value,
-    }));
+    setStyle((prev) => {
+      const nextStyle = { ...prev, opacity };
+      setRuntimeStyle("notifiedBoundary", nextStyle);
+      applyNotifiedBoundaryStyle(map, nextStyle);
+      return nextStyle;
+    });
+  };
+
+  const updateColor = (color) => {
+    setStyle((prev) => {
+      const nextStyle = { ...prev, color };
+      setRuntimeStyle("notifiedBoundary", nextStyle);
+      applyNotifiedBoundaryStyle(map, nextStyle);
+      return nextStyle;
+    });
   };
 
   return (
@@ -47,15 +116,38 @@ export default function NotifiedBoundaries({
           <LayerItem
             disabled={!selectedProjectId}
             checked={!!layerVisibility.notifiedBoundary}
-            color="#ef4444"
+            color={style.color}
             label="Notified Boundary"
-            opacity={layerVisibility.notifiedBoundaryOpacity ?? 100}
+            opacity={style.opacity}
             onChange={toggleLayer}
             onOpacityChange={updateOpacity}
+            onColorChange={updateColor}
           />
         </div>
       )}
     </div>
+  );
+}
+
+function ColorPickerSquare({ color, label, disabled, onColorChange }) {
+  return (
+    <span
+      className="relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/35"
+      style={{ backgroundColor: color }}
+      title={`Change ${label} color`}
+      onClick={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.stopPropagation()}
+    >
+      <input
+        type="color"
+        value={color}
+        disabled={disabled}
+        onClick={(event) => event.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
+        onChange={(event) => onColorChange?.(event.target.value)}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+      />
+    </span>
   );
 }
 
@@ -66,6 +158,7 @@ function LayerItem({
   opacity,
   onChange,
   onOpacityChange,
+  onColorChange,
   disabled,
 }) {
   return (
@@ -80,9 +173,11 @@ function LayerItem({
             className="accent-[#65c96b]"
           />
 
-          <span
-            className="h-4 w-4 rounded-sm border-2"
-            style={{ borderColor: color }}
+          <ColorPickerSquare
+            color={color}
+            label={label}
+            disabled={disabled}
+            onColorChange={onColorChange}
           />
 
           <span className="text-[11px]">{label}</span>
