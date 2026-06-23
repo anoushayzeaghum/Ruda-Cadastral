@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import mapboxgl from "mapbox-gl"; 
-import LayerStyleControl from "../Layers/LayerStyleControl";
-import ColorPalette from "../Layers/ColorPalette";
+import mapboxgl from "mapbox-gl";
 
 const RUDA_BOUNDARY_LAYER_IDS = [
   "metaverse-ruda-boundary-fill",
@@ -11,6 +9,95 @@ const RUDA_BOUNDARY_LAYER_IDS = [
   "metaverse-ruda-boundary-dash-line",
   "metaverse-ruda-boundary-label",
 ];
+
+const ADMIN_LAYER_COLORS = {
+  rudaBoundary: "#6bb7e8",
+  rudaMauzaBoundary: "#2563eb",
+  geodeticNetwork: "#1d4ed8",
+  proposedRoads: "#19598d",
+};
+
+const setPaint = (map, layerId, property, value) => {
+  if (map?.getLayer?.(layerId)) {
+    map.setPaintProperty(layerId, property, value);
+  }
+};
+
+const applyAdministrativeLayerColor = (map, key, color) => {
+  if (!map || !color) return;
+
+  switch (key) {
+    case "rudaMauzaBoundary":
+      setPaint(map, "metaverse-ruda-mauza-boundary-fill", "fill-color", color);
+      setPaint(
+        map,
+        "metaverse-ruda-mauza-boundary-fill",
+        "fill-outline-color",
+        color,
+      );
+      setPaint(map, "metaverse-ruda-mauza-boundary-line", "line-color", color);
+      setPaint(map, "metaverse-ruda-mauza-boundary-label", "text-color", color);
+      break;
+
+    case "geodeticNetwork":
+      setPaint(map, "metaverse-geodetic-network-circle", "circle-color", color);
+      setPaint(map, "metaverse-geodetic-network-label", "text-color", color);
+      break;
+
+    default:
+      break;
+  }
+};
+
+const getOpacityRatio = (opacity = 100) => {
+  const value = Number(opacity);
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(Math.max(value, 0), 100) / 100;
+};
+
+const applyAdministrativeLayerOpacity = (map, key, opacity = 100) => {
+  if (!map) return;
+
+  const o = getOpacityRatio(opacity);
+
+  switch (key) {
+    case "rudaBoundary":
+      setPaint(map, "metaverse-ruda-boundary-fill", "fill-opacity", 0.5 * o);
+      setPaint(map, "metaverse-ruda-boundary-line", "line-opacity", 0.95 * o);
+      setPaint(
+        map,
+        "metaverse-ruda-boundary-dash-line",
+        "line-opacity",
+        0.9 * o,
+      );
+      setPaint(map, "metaverse-ruda-boundary-label", "text-opacity", o);
+      break;
+
+    case "rudaMauzaBoundary":
+      setPaint(map, "metaverse-ruda-mauza-boundary-fill", "fill-opacity", 0.12 * o);
+      setPaint(map, "metaverse-ruda-mauza-boundary-line", "line-opacity", o);
+      setPaint(map, "metaverse-ruda-mauza-boundary-label", "text-opacity", o);
+      break;
+
+    case "geodeticNetwork":
+      setPaint(map, "metaverse-geodetic-network-circle", "circle-opacity", o);
+      setPaint(
+        map,
+        "metaverse-geodetic-network-circle",
+        "circle-stroke-opacity",
+        o,
+      );
+      setPaint(map, "metaverse-geodetic-network-label", "text-opacity", o);
+      break;
+
+    case "proposedRoads":
+      setPaint(map, "metaverse-proposed-roads-line", "line-opacity", o);
+      break;
+
+    default:
+      break;
+  }
+};
 
 const RUDA_PHASE_COLORS = [
   "#6bb7e8",
@@ -107,6 +194,7 @@ const getRudaPhaseItemsFromGeoJSON = (geojson = {}) => {
 
   return [...unique.values()];
 };
+
 export default function AdministrativeBoundaries({
   map,
   adminBoundaryVisibility,
@@ -114,8 +202,24 @@ export default function AdministrativeBoundaries({
 }) {
   const [open, setOpen] = useState(false);
   const [rudaPhaseDropdownOpen, setRudaPhaseDropdownOpen] = useState(false);
-  
-  // const [color, setColor] = useState("#22c55e");
+
+  // Keep editable colors local to this panel so changing colors does NOT update
+  // adminBoundaryVisibility and does NOT re-trigger any API/loading effects.
+  const [editableColors, setEditableColors] = useState({
+    rudaMauzaBoundary: ADMIN_LAYER_COLORS.rudaMauzaBoundary,
+    geodeticNetwork: ADMIN_LAYER_COLORS.geodeticNetwork,
+  });
+
+  // Keep opacity local to this panel. Changing the slider should only repaint
+  // already-loaded Mapbox layers and should not update adminBoundaryVisibility,
+  // because that parent state can re-trigger API/loading effects.
+  const [editableOpacities, setEditableOpacities] = useState({
+    rudaBoundary: adminBoundaryVisibility?.rudaBoundaryOpacity ?? 100,
+    rudaMauzaBoundary: adminBoundaryVisibility?.rudaMauzaBoundaryOpacity ?? 100,
+    geodeticNetwork: adminBoundaryVisibility?.geodeticNetworkOpacity ?? 100,
+    proposedRoads: adminBoundaryVisibility?.proposedRoadsOpacity ?? 100,
+  });
+
   const ADMIN_SOURCE_IDS = {
     rudaBoundary: "metaverse-ruda-boundary-source",
     rudaMauzaBoundary: "metaverse-ruda-mauza-boundary-source",
@@ -202,6 +306,80 @@ export default function AdministrativeBoundaries({
     adminBoundaryVisibility?.rudaBoundary,
     adminBoundaryVisibility?.rudaPhases,
     adminBoundaryVisibility?.selectedRudaPhaseIds,
+  ]);
+
+  useEffect(() => {
+    if (!map) return undefined;
+
+    const applyColors = () => {
+      applyAdministrativeLayerColor(
+        map,
+        "rudaMauzaBoundary",
+        editableColors.rudaMauzaBoundary,
+      );
+      applyAdministrativeLayerColor(
+        map,
+        "geodeticNetwork",
+        editableColors.geodeticNetwork,
+      );
+    };
+
+    applyColors();
+    const timers = [150, 500, 1000].map((delay) =>
+      setTimeout(applyColors, delay),
+    );
+
+    return () => timers.forEach(clearTimeout);
+  }, [
+    map,
+    editableColors.rudaMauzaBoundary,
+    editableColors.geodeticNetwork,
+    adminBoundaryVisibility?.rudaMauzaBoundary,
+    adminBoundaryVisibility?.geodeticNetwork,
+  ]);
+
+  useEffect(() => {
+    if (!map) return undefined;
+
+    const applyOpacities = () => {
+      applyAdministrativeLayerOpacity(
+        map,
+        "rudaBoundary",
+        editableOpacities.rudaBoundary,
+      );
+      applyAdministrativeLayerOpacity(
+        map,
+        "rudaMauzaBoundary",
+        editableOpacities.rudaMauzaBoundary,
+      );
+      applyAdministrativeLayerOpacity(
+        map,
+        "geodeticNetwork",
+        editableOpacities.geodeticNetwork,
+      );
+      applyAdministrativeLayerOpacity(
+        map,
+        "proposedRoads",
+        editableOpacities.proposedRoads,
+      );
+    };
+
+    applyOpacities();
+    const timers = [150, 500, 1000].map((delay) =>
+      setTimeout(applyOpacities, delay),
+    );
+
+    return () => timers.forEach(clearTimeout);
+  }, [
+    map,
+    editableOpacities.rudaBoundary,
+    editableOpacities.rudaMauzaBoundary,
+    editableOpacities.geodeticNetwork,
+    editableOpacities.proposedRoads,
+    adminBoundaryVisibility?.rudaBoundary,
+    adminBoundaryVisibility?.rudaMauzaBoundary,
+    adminBoundaryVisibility?.geodeticNetwork,
+    adminBoundaryVisibility?.proposedRoads,
   ]);
 
   const zoomToBoundarySource = (key) => {
@@ -299,10 +477,21 @@ export default function AdministrativeBoundaries({
   };
 
   const updateOpacity = (key, value) => {
-    setAdminBoundaryVisibility((prev) => ({
+    setEditableOpacities((prev) => ({
       ...prev,
-      [`${key}Opacity`]: value,
+      [key]: value,
     }));
+
+    applyAdministrativeLayerOpacity(map, key, value);
+  };
+
+  const updateColor = (key, value) => {
+    setEditableColors((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+
+    applyAdministrativeLayerColor(map, key, value);
   };
 
   const toggleRudaPhase = (phaseId) => {
@@ -357,9 +546,9 @@ export default function AdministrativeBoundaries({
         <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
           <LayerItem
             checked={adminBoundaryVisibility.rudaBoundary}
-            color="#6bb7e8"
+            color={ADMIN_LAYER_COLORS.rudaBoundary}
             label="Ruda Boundary"
-            opacity={adminBoundaryVisibility.rudaBoundaryOpacity ?? 100}
+            opacity={editableOpacities.rudaBoundary}
             onChange={() => toggleLayer("rudaBoundary")}
             onOpacityChange={(value) => updateOpacity("rudaBoundary", value)}
             hasDropdown
@@ -438,31 +627,33 @@ export default function AdministrativeBoundaries({
 
           <LayerItem
             checked={adminBoundaryVisibility.rudaMauzaBoundary}
-            color="#22c55e"
+            color={editableColors.rudaMauzaBoundary}
             label="Ruda Mauza Boundary"
-            map={map}
-            layerId="metaverse-ruda-mauza-boundary-line"
-            opacity={adminBoundaryVisibility.rudaMauzaBoundaryOpacity ?? 100}
+            opacity={editableOpacities.rudaMauzaBoundary}
             onChange={() => toggleLayer("rudaMauzaBoundary")}
             onOpacityChange={(value) =>
               updateOpacity("rudaMauzaBoundary", value)
             }
+            colorEditable
+            onColorChange={(value) => updateColor("rudaMauzaBoundary", value)}
           />
 
           <LayerItem
             checked={adminBoundaryVisibility.geodeticNetwork}
-            color="#1d4ed8"
+            color={editableColors.geodeticNetwork}
             label="Geodetic Network"
-            opacity={adminBoundaryVisibility.geodeticNetworkOpacity ?? 100}
+            opacity={editableOpacities.geodeticNetwork}
             onChange={() => toggleLayer("geodeticNetwork")}
             onOpacityChange={(value) => updateOpacity("geodeticNetwork", value)}
+            colorEditable
+            onColorChange={(value) => updateColor("geodeticNetwork", value)}
           />
 
           <LayerItem
             checked={adminBoundaryVisibility.proposedRoads}
-            color="#19598d"
+            color={ADMIN_LAYER_COLORS.proposedRoads}
             label="Proposed Roads Layer"
-            opacity={adminBoundaryVisibility.proposedRoadsOpacity ?? 100}
+            opacity={editableOpacities.proposedRoads}
             onChange={() => toggleLayer("proposedRoads")}
             onOpacityChange={(value) => updateOpacity("proposedRoads", value)}
           />
@@ -482,11 +673,17 @@ function LayerItem({
   hasDropdown = false,
   dropdownOpen = false,
   onDropdownToggle,
-  map,
-  layerId,
+  colorEditable = false,
+  onColorChange,
 }) {
-  const [colorOpen, setColorOpen] = useState(false);
-  const [localColor, setLocalColor] = useState(color);
+  const handleColorEvent = (event) => {
+    event.stopPropagation();
+  };
+
+  const handleColorChange = (event) => {
+    event.stopPropagation();
+    onColorChange?.(event.target.value);
+  };
 
   return (
     <div className="mt-3 first:mt-1">
@@ -499,30 +696,31 @@ function LayerItem({
             className="accent-[#65c96b]"
           />
 
-          <div className="flex items-center gap-2 relative">
-            <LayerStyleControl
-              color={localColor}
-              // label={label}
-              onColorClick={() => setColorOpen((p) => !p)}
+          {colorEditable ? (
+            <span
+              className="relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/50"
+              style={{ backgroundColor: color, borderColor: color }}
+              title={`Change ${label} color`}
+              onClick={handleColorEvent}
+              onMouseDown={handleColorEvent}
+            >
+              <input
+                type="color"
+                value={color}
+                aria-label={`Change ${label} color`}
+                onClick={handleColorEvent}
+                onMouseDown={handleColorEvent}
+                onInput={handleColorChange}
+                onChange={handleColorChange}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </span>
+          ) : (
+            <span
+              className="h-4 w-4 rounded-sm border-2 border-white/50"
+              style={{ backgroundColor: color, borderColor: color }}
             />
-
-            {colorOpen && (
-              <div className="absolute z-50 bg-[#1f2633] border p-2">
-                <ColorPalette
-                  onSelect={(c) => {
-                    setLocalColor(c);
-                    setColorOpen(false);
-
-                    map?.setPaintProperty(
-                      layerId,
-                      "line-color",
-                      c
-                    );
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          )}
 
           <span className="text-[11px]">{label}</span>
         </label>

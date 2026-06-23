@@ -1,6 +1,6 @@
 import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
 
-export function addContourLayer(map, data) {
+export function addContourLayer(map, data, color = null) {
   ensureSource(map, SOURCES.contours, data);
 
   if (!map.getLayer(LAYERS.contoursLine)) {
@@ -9,10 +9,12 @@ export function addContourLayer(map, data) {
       type: "line",
       source: SOURCES.contours,
       paint: {
-        "line-color": "#615514",
+        "line-color": color || "#615514",
         "line-width": 1.5,
       },
     });
+  } else if (color) {
+    map.setPaintProperty(LAYERS.contoursLine, "line-color", color);
   }
 
   if (!map.getLayer(LAYERS.contoursLabel)) {
@@ -36,10 +38,12 @@ export function addContourLayer(map, data) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": "#3f370f",
+        "text-color": color || "#3f370f",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.2,
       },
     });
+  } else if (color) {
+    map.setPaintProperty(LAYERS.contoursLabel, "text-color", color);
   }
 }

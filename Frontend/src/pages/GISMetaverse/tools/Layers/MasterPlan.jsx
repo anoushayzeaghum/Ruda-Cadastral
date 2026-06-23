@@ -1,28 +1,209 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 
+const MASTER_PLAN_LAYER_COLORS = {
+  boundary: "#244cff",
+  blockBoundary: "#7c3aed",
+  masterPlan: "#111827",
+  spotLevel: "#65c96b",
+  contours: "#615514",
+  roads: "#ef4444",
+};
+
+const clampOpacity = (value = 100) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 100;
+  return Math.min(Math.max(numeric, 0), 100);
+};
+
+const setPaint = (map, layerId, property, value) => {
+  if (map?.getLayer?.(layerId)) {
+    map.setPaintProperty(layerId, property, value);
+  }
+};
+
+const setRuntimeStyle = (key, patch = {}) => {
+  if (typeof window === "undefined") return;
+
+  window.__metaverseLayerRuntimeStyles = {
+    ...(window.__metaverseLayerRuntimeStyles || {}),
+    [key]: {
+      ...(window.__metaverseLayerRuntimeStyles?.[key] || {}),
+      ...patch,
+    },
+  };
+};
+
+const applyMasterPlanLayerColor = (map, key, color) => {
+  if (!map || !color) return;
+
+  switch (key) {
+    case "boundary":
+      setPaint(map, "metaverse-project-boundary-fill", "fill-color", color);
+      setPaint(map, "metaverse-project-boundary-line", "line-color", color);
+      break;
+
+    case "spotLevel":
+      setPaint(map, "metaverse-spot-level-circle", "circle-color", color);
+      break;
+
+    case "contours":
+      setPaint(map, "metaverse-contours-line", "line-color", color);
+      setPaint(map, "metaverse-contours-label", "text-color", color);
+      break;
+
+    default:
+      break;
+  }
+};
+
+const applyMasterPlanLayerOpacity = (map, key, opacity = 100) => {
+  if (!map) return;
+
+  const opacityRatio = clampOpacity(opacity) / 100;
+
+  switch (key) {
+    case "boundary":
+      setPaint(map, "metaverse-project-boundary-fill", "fill-opacity", 0.12 * opacityRatio);
+      setPaint(map, "metaverse-project-boundary-line", "line-opacity", opacityRatio);
+      break;
+
+    case "blockBoundary":
+      setPaint(map, "metaverse-block-fill", "fill-opacity", 0.28 * opacityRatio);
+      setPaint(map, "metaverse-block-line", "line-opacity", opacityRatio);
+      setPaint(map, "metaverse-block-label", "text-opacity", opacityRatio);
+      break;
+
+    case "masterPlan":
+      setPaint(map, "metaverse-masterplan-fill", "fill-opacity", 0.45 * opacityRatio);
+      setPaint(map, "metaverse-masterplan-line", "line-opacity", opacityRatio);
+      setPaint(map, "metaverse-masterplan-label", "text-opacity", opacityRatio);
+      break;
+
+    case "spotLevel":
+      setPaint(map, "metaverse-spot-level-circle", "circle-opacity", opacityRatio);
+      setPaint(map, "metaverse-spot-level-circle", "circle-stroke-opacity", opacityRatio);
+      break;
+
+    case "contours":
+      setPaint(map, "metaverse-contours-line", "line-opacity", opacityRatio);
+      setPaint(map, "metaverse-contours-label", "text-opacity", opacityRatio);
+      break;
+
+    case "roads":
+      setPaint(map, "metaverse-roads-fill", "fill-opacity", 0.35 * opacityRatio);
+      setPaint(map, "metaverse-roads-line", "line-opacity", opacityRatio);
+      break;
+
+    default:
+      break;
+  }
+};
+
+const applyMasterPlanLayerStyle = (map, key, style = {}) => {
+  if (!map) return;
+
+  applyMasterPlanLayerOpacity(map, key, style.opacity ?? 100);
+
+  if (["boundary", "spotLevel", "contours"].includes(key)) {
+    applyMasterPlanLayerColor(
+      map,
+      key,
+      style.color || MASTER_PLAN_LAYER_COLORS[key],
+    );
+  }
+};
+
+const applyAfterLayerLoads = (map, key, style) => {
+  [0, 120, 350, 700, 1200, 2000].forEach((delay) => {
+    window.setTimeout(() => applyMasterPlanLayerStyle(map, key, style), delay);
+  });
+};
+
 export default function MasterPlan({
+  map,
   selectedProjectId,
   layerVisibility,
   setLayerVisibility,
 }) {
   const [open, setOpen] = useState(false);
 
+  const [styles, setStyles] = useState({
+    boundary: {
+      color: MASTER_PLAN_LAYER_COLORS.boundary,
+      opacity: layerVisibility.boundaryOpacity ?? 100,
+    },
+    blockBoundary: {
+      color: MASTER_PLAN_LAYER_COLORS.blockBoundary,
+      opacity: layerVisibility.blockBoundaryOpacity ?? 100,
+    },
+    masterPlan: {
+      color: MASTER_PLAN_LAYER_COLORS.masterPlan,
+      opacity: layerVisibility.masterPlanOpacity ?? 100,
+    },
+    spotLevel: {
+      color: MASTER_PLAN_LAYER_COLORS.spotLevel,
+      opacity: layerVisibility.spotLevelOpacity ?? 100,
+    },
+    contours: {
+      color: MASTER_PLAN_LAYER_COLORS.contours,
+      opacity: layerVisibility.contoursOpacity ?? 100,
+    },
+    roads: {
+      color: MASTER_PLAN_LAYER_COLORS.roads,
+      opacity: layerVisibility.roadsOpacity ?? 100,
+    },
+  });
+
   const toggleLayer = (key) => {
     if (!selectedProjectId) return;
+
+    const nextVisible = !layerVisibility[key];
 
     setLayerVisibility((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
+
+    if (nextVisible) {
+      setRuntimeStyle(key, styles[key]);
+      applyAfterLayerLoads(map, key, styles[key]);
+    }
   };
 
   const updateOpacity = (key, value) => {
-    setLayerVisibility((prev) => ({
-      ...prev,
-      [`${key}Opacity`]: value,
-    }));
+    const opacity = clampOpacity(value);
+
+    setStyles((prev) => {
+      const nextStyle = { ...prev[key], opacity };
+      setRuntimeStyle(key, nextStyle);
+      applyMasterPlanLayerOpacity(map, key, opacity);
+      return { ...prev, [key]: nextStyle };
+    });
   };
+
+  const updateColor = (key, value) => {
+    setStyles((prev) => {
+      const nextStyle = { ...prev[key], color: value };
+      setRuntimeStyle(key, nextStyle);
+      applyMasterPlanLayerColor(map, key, value);
+      return { ...prev, [key]: nextStyle };
+    });
+  };
+
+  useEffect(() => {
+    if (!map) return undefined;
+
+    const timers = Object.keys(styles).flatMap((key) => {
+      if (!layerVisibility[key]) return [];
+      setRuntimeStyle(key, styles[key]);
+      return [0, 250, 700].map((delay) =>
+        setTimeout(() => applyMasterPlanLayerStyle(map, key, styles[key]), delay),
+      );
+    });
+
+    return () => timers.forEach(clearTimeout);
+  }, [map, selectedProjectId, layerVisibility.boundary, layerVisibility.blockBoundary, layerVisibility.masterPlan, layerVisibility.spotLevel, layerVisibility.contours, layerVisibility.roads]);
 
   useEffect(() => {
     if (!selectedProjectId) {
@@ -75,19 +256,21 @@ export default function MasterPlan({
           <LayerItem
             disabled={!selectedProjectId}
             checked={layerVisibility.boundary}
-            color="#ff8b24"
+            color={styles.boundary.color}
             label="Project Boundary"
-            opacity={layerVisibility.boundaryOpacity ?? 100}
+            opacity={styles.boundary.opacity}
             onChange={() => toggleLayer("boundary")}
             onOpacityChange={(value) => updateOpacity("boundary", value)}
+            colorEditable
+            onColorChange={(value) => updateColor("boundary", value)}
           />
 
           <LayerItem
             disabled={!selectedProjectId}
             checked={!!layerVisibility.blockBoundary}
-            color="#7c3aed"
+            color={styles.blockBoundary.color}
             label="Block Boundary"
-            opacity={layerVisibility.blockBoundaryOpacity ?? 100}
+            opacity={styles.blockBoundary.opacity}
             onChange={() => toggleLayer("blockBoundary")}
             onOpacityChange={(value) => updateOpacity("blockBoundary", value)}
           />
@@ -95,9 +278,9 @@ export default function MasterPlan({
           <LayerItem
             disabled={!selectedProjectId}
             checked={layerVisibility.masterPlan}
-            color="#42a5f5"
+            color={styles.masterPlan.color}
             label="Master Plan Boundary"
-            opacity={layerVisibility.masterPlanOpacity ?? 100}
+            opacity={styles.masterPlan.opacity}
             onChange={() => toggleLayer("masterPlan")}
             onOpacityChange={(value) => updateOpacity("masterPlan", value)}
           />
@@ -105,35 +288,63 @@ export default function MasterPlan({
           <LayerItem
             disabled={!selectedProjectId}
             checked={layerVisibility.spotLevel}
-            color="#65c96b"
+            color={styles.spotLevel.color}
             label="Spot Level"
-            opacity={layerVisibility.spotLevelOpacity ?? 100}
+            opacity={styles.spotLevel.opacity}
             onChange={() => toggleLayer("spotLevel")}
             onOpacityChange={(value) => updateOpacity("spotLevel", value)}
+            colorEditable
+            onColorChange={(value) => updateColor("spotLevel", value)}
           />
 
           <LayerItem
             disabled={!selectedProjectId}
             checked={layerVisibility.contours}
-            color="#d7bf32"
+            color={styles.contours.color}
             label="Contours"
-            opacity={layerVisibility.contoursOpacity ?? 100}
+            opacity={styles.contours.opacity}
             onChange={() => toggleLayer("contours")}
             onOpacityChange={(value) => updateOpacity("contours", value)}
+            colorEditable
+            onColorChange={(value) => updateColor("contours", value)}
           />
 
           <LayerItem
             disabled={!selectedProjectId}
             checked={layerVisibility.roads}
-            color="#ef4444"
+            color={styles.roads.color}
             label="Roads"
-            opacity={layerVisibility.roadsOpacity ?? 100}
+            opacity={styles.roads.opacity}
             onChange={() => toggleLayer("roads")}
             onOpacityChange={(value) => updateOpacity("roads", value)}
           />
         </div>
       )}
     </div>
+  );
+}
+
+function ColorPickerSquare({ color, label, disabled, onColorChange }) {
+  return (
+    <span
+      className="relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/35"
+      style={{ backgroundColor: color }}
+      title={`Change ${label} color`}
+      onClick={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.stopPropagation()}
+    >
+      <input
+        type="color"
+        value={color}
+        disabled={disabled}
+        aria-label={`Change ${label} color`}
+        onClick={(event) => event.stopPropagation()}
+        onMouseDown={(event) => event.stopPropagation()}
+        onInput={(event) => onColorChange?.(event.target.value)}
+        onChange={(event) => onColorChange?.(event.target.value)}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+      />
+    </span>
   );
 }
 
@@ -145,6 +356,8 @@ function LayerItem({
   onChange,
   onOpacityChange,
   disabled,
+  colorEditable = false,
+  onColorChange,
 }) {
   return (
     <div className={`mt-3 first:mt-1 ${disabled ? "opacity-50" : ""}`}>
@@ -158,10 +371,19 @@ function LayerItem({
             className="accent-[#65c96b]"
           />
 
-          <span
-            className="h-4 w-4 rounded-sm border-2"
-            style={{ borderColor: color }}
-          />
+          {colorEditable ? (
+            <ColorPickerSquare
+              color={color}
+              label={label}
+              disabled={disabled}
+              onColorChange={onColorChange}
+            />
+          ) : (
+            <span
+              className="h-4 w-4 rounded-sm border border-white/35"
+              style={{ backgroundColor: color }}
+            />
+          )}
 
           <span className="text-[11px]">{label}</span>
         </label>
