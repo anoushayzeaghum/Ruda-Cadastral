@@ -63,8 +63,93 @@ const resolveTitle = (props, group) => {
   return group.label || "Feature Details";
 };
 
-const buildFeaturePopupHTML = (props = {}, group) => {
+/**
+ * Returns size tokens scaled to the current zoom level.
+ * zoom 13–14  → small
+ * zoom 14–15  → medium
+ * zoom 15–16  → normal
+ * zoom 16+    → large (original)
+ */
+const getPopupSizeTokens = (zoom = 16) => {
+  if (zoom < 14) {
+    // Small — compact, condensed
+    return {
+      containerWidth: "180px",
+      titleFontSize: "11px",
+      labelFontSize: "9px",
+      valueFontSize: "9px",
+      headerPx: "8px",
+      headerPy: "6px",
+      bodyPx: "8px",
+      bodyPy: "6px",
+      rowPy: "4px",
+      maxBodyHeight: "160px",
+      labelMinWidth: "64px",
+      btnSize: "18px",
+      btnFontSize: "14px",
+      borderRadius: "7px",
+    };
+  }
+  if (zoom < 15) {
+    // Medium
+    return {
+      containerWidth: "220px",
+      titleFontSize: "12px",
+      labelFontSize: "10px",
+      valueFontSize: "10px",
+      headerPx: "10px",
+      headerPy: "8px",
+      bodyPx: "10px",
+      bodyPy: "8px",
+      rowPy: "5px",
+      maxBodyHeight: "200px",
+      labelMinWidth: "74px",
+      btnSize: "20px",
+      btnFontSize: "15px",
+      borderRadius: "8px",
+    };
+  }
+  if (zoom < 16) {
+    // Normal
+    return {
+      containerWidth: "250px",
+      titleFontSize: "13px",
+      labelFontSize: "10.5px",
+      valueFontSize: "11px",
+      headerPx: "12px",
+      headerPy: "10px",
+      bodyPx: "12px",
+      bodyPy: "10px",
+      rowPy: "6px",
+      maxBodyHeight: "240px",
+      labelMinWidth: "82px",
+      btnSize: "22px",
+      btnFontSize: "16px",
+      borderRadius: "9px",
+    };
+  }
+  // Large (zoom 16+) — original size
+  return {
+    containerWidth: "280px",
+    titleFontSize: "15px",
+    labelFontSize: "11px",
+    valueFontSize: "12px",
+    headerPx: "16px",
+    headerPy: "12px",
+    bodyPx: "14px",
+    bodyPy: "10px",
+    rowPy: "7px",
+    maxBodyHeight: "272px",
+    labelMinWidth: "90px",
+    btnSize: "24px",
+    btnFontSize: "18px",
+    borderRadius: "10px",
+  };
+};
+
+const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
   const title = escapeHTML(resolveTitle(props, group));
+  const s = getPopupSizeTokens(zoom);
 
   const rows = (group.fields || [])
     .map((field) => {
@@ -78,11 +163,11 @@ const buildFeaturePopupHTML = (props = {}, group) => {
       );
 
       return `
-        <div class="flex items-start justify-between gap-3 border-b border-black/5 py-[7px] last:border-b-0">
-          <span class="min-w-[90px] shrink-0 text-[11px] font-medium uppercase tracking-[0.4px] text-gray-500">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;border-bottom:1px solid rgba(0,0,0,0.06);padding:${s.rowPy} 0;">
+          <span style="min-width:${s.labelMinWidth};flex-shrink:0;font-size:${s.labelFontSize};font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:#6b7280;">
             ${escapeHTML(field.label)}:
           </span>
-          <span class="break-words text-right text-xs font-medium leading-[1.4] text-black">
+          <span style="word-break:break-word;text-align:right;font-size:${s.valueFontSize};font-weight:500;line-height:1.4;color:#111827;">
             ${displayValue}
           </span>
         </div>
@@ -92,29 +177,27 @@ const buildFeaturePopupHTML = (props = {}, group) => {
     .join("");
 
   return `
-    <div class="w-[280px] overflow-hidden rounded-[10px] bg-white text-gray-900 shadow-2xl ring-1 ring-black/10">
-      <div class="flex items-center justify-between gap-3 rounded-t-[10px] bg-gray-900 px-4 py-3">
-        <div class="text-[15px] font-bold tracking-[0.3px] text-white">
+    <div style="width:${s.containerWidth};overflow:hidden;border-radius:${s.borderRadius};background:#fff;color:#111827;box-shadow:0 20px 60px rgba(0,0,0,0.25);outline:1px solid rgba(0,0,0,0.08);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:${s.borderRadius} ${s.borderRadius} 0 0;background:#111827;padding:${s.headerPy} ${s.headerPx};">
+        <div style="font-size:${s.titleFontSize};font-weight:700;letter-spacing:0.3px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
           ${title}
         </div>
         <button
           type="button"
           data-vector-popup-close="true"
           aria-label="Close feature info"
-          class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-lg leading-none text-white transition hover:bg-white/20"
+          style="display:flex;flex-shrink:0;align-items:center;justify-content:center;width:${s.btnSize};height:${s.btnSize};border-radius:50%;background:rgba(255,255,255,0.1);font-size:${s.btnFontSize};line-height:1;color:#fff;border:none;cursor:pointer;"
         >
           ×
         </button>
       </div>
 
-      <div class="max-h-[272px] overflow-y-auto px-3.5 py-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div style="max-height:${s.maxBodyHeight};overflow-y:auto;padding:${s.bodyPy} ${s.bodyPx};scrollbar-width:none;">
         ${
           rows ||
-          `
-          <div class="py-4 text-center text-xs font-medium text-gray-500">
+          `<div style="padding:12px 0;text-align:center;font-size:${s.labelFontSize};font-weight:500;color:#9ca3af;">
             No additional details available.
-          </div>
-        `
+          </div>`
         }
       </div>
     </div>
@@ -196,6 +279,10 @@ export function setupVectorClickPopups({
   let closeTimer = null;
   let isDestroyed = false;
   let activeHighlightGroup = null;
+  // Track the last clicked feature so we can rebuild the popup on zoom
+  let lastClickedFeature = null;
+  let lastClickedGroup = null;
+  let lastClickedLngLat = null;
 
   const isZoomInPopupRange = () => {
     const zoom = safeMapCall(map, () => map.getZoom(), null);
@@ -263,6 +350,9 @@ export function setupVectorClickPopups({
     }
 
     popup = null;
+    lastClickedFeature = null;
+    lastClickedGroup = null;
+    lastClickedLngLat = null;
 
     if (clearSelected) {
       clearHighlight();
@@ -304,6 +394,13 @@ export function setupVectorClickPopups({
     highlightFeature(feature, group);
     clearCloseTimer();
 
+    // Store for zoom-driven resize
+    lastClickedFeature = feature;
+    lastClickedGroup = group;
+    lastClickedLngLat = event.lngLat;
+
+    const currentZoom = safeMapCall(map, () => map.getZoom(), 16);
+
     try {
       popup?.remove();
 
@@ -315,7 +412,7 @@ export function setupVectorClickPopups({
         className: "vector-feature-popup",
       })
         .setLngLat(event.lngLat)
-        .setHTML(buildFeaturePopupHTML(feature.properties || {}, group))
+        .setHTML(buildFeaturePopupHTML(feature.properties || {}, group, currentZoom))
         .addTo(map);
     } catch (error) {
       console.error("[VectorPopup] Failed to create popup:", error);
@@ -357,8 +454,36 @@ export function setupVectorClickPopups({
   };
 
   const handleZoomChange = () => {
-    if (!isZoomInPopupRange() && popup) {
-      closePopup();
+    if (!isZoomInPopupRange()) {
+      if (popup) closePopup();
+      return;
+    }
+
+    // Resize the open popup to match the new zoom level
+    if (popup && lastClickedFeature && lastClickedGroup) {
+      const currentZoom = safeMapCall(map, () => map.getZoom(), 16);
+      const newHTML = buildFeaturePopupHTML(
+        lastClickedFeature.properties || {},
+        lastClickedGroup,
+        currentZoom,
+      );
+      try {
+        popup.setHTML(newHTML);
+        applyTailwindToMapboxPopupShell(popup);
+
+        // Re-attach close button listener after setHTML replaces the DOM
+        const closeBtn = popup
+          .getElement()
+          ?.querySelector('[data-vector-popup-close="true"]');
+        if (closeBtn) {
+          closeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            closePopup();
+          });
+        }
+      } catch {
+        // popup may have been removed
+      }
     }
   };
 
@@ -387,6 +512,9 @@ export function setupVectorClickPopups({
     }
 
     popup = null;
+    lastClickedFeature = null;
+    lastClickedGroup = null;
+    lastClickedLngLat = null;
     clearHighlight();
   };
 }
