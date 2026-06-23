@@ -101,17 +101,21 @@ const setLayoutProperties = (map, layerId, layout = {}) => {
   });
 };
 
-export function applyRudaMauzaBoundaryStyle(map, opacity = 100) {
+export function applyRudaMauzaBoundaryStyle(
+  map,
+  opacity = 100,
+  color = RUDA_MAUZA_LINE_COLOR,
+) {
   const opacityRatio = getOpacityRatio(opacity);
 
   setPaintProperties(map, LAYERS.rudaMauzaBoundaryFill, {
-    "fill-color": RUDA_MAUZA_FILL_COLOR,
+    "fill-color": color,
     "fill-opacity": RUDA_MAUZA_BASE_FILL_OPACITY * opacityRatio,
-    "fill-outline-color": RUDA_MAUZA_LINE_COLOR,
+    "fill-outline-color": color,
   });
 
   setPaintProperties(map, LAYERS.rudaMauzaBoundaryLine, {
-    "line-color": RUDA_MAUZA_LINE_COLOR,
+    "line-color": color,
     "line-width": [
       "interpolate",
       ["linear"],
@@ -127,13 +131,18 @@ export function applyRudaMauzaBoundaryStyle(map, opacity = 100) {
   });
 
   setPaintProperties(map, LAYERS.rudaMauzaBoundaryLabel, {
-    "text-color": RUDA_MAUZA_LABEL_COLOR,
+    "text-color": color,
     "text-halo-color": "#ffffff",
     "text-halo-width": 1.3,
   });
 }
 
-export function addRudaMauzaBoundaryLayer(map, data, opacity = 100) {
+export function addRudaMauzaBoundaryLayer(
+  map,
+  data,
+  opacity = 100,
+  color = RUDA_MAUZA_LINE_COLOR,
+) {
   ensureSource(
     map,
     SOURCES.rudaMauzaBoundary,
@@ -146,9 +155,9 @@ export function addRudaMauzaBoundaryLayer(map, data, opacity = 100) {
       type: "fill",
       source: SOURCES.rudaMauzaBoundary,
       paint: {
-        "fill-color": RUDA_MAUZA_FILL_COLOR,
+        "fill-color": color,
         "fill-opacity": RUDA_MAUZA_BASE_FILL_OPACITY,
-        "fill-outline-color": RUDA_MAUZA_LINE_COLOR,
+        "fill-outline-color": color,
       },
     });
   }
@@ -159,7 +168,7 @@ export function addRudaMauzaBoundaryLayer(map, data, opacity = 100) {
       type: "line",
       source: SOURCES.rudaMauzaBoundary,
       paint: {
-        "line-color": RUDA_MAUZA_LINE_COLOR,
+        "line-color": color,
         "line-width": [
           "interpolate",
           ["linear"],
@@ -208,7 +217,7 @@ export function addRudaMauzaBoundaryLayer(map, data, opacity = 100) {
     setLayoutProperties(map, LAYERS.rudaMauzaBoundaryLabel, labelLayout);
   }
 
-  applyRudaMauzaBoundaryStyle(map, opacity);
+  applyRudaMauzaBoundaryStyle(map, opacity, color);
 }
 
 export function addProposedRoadsLayer(map, data) {
