@@ -32,7 +32,7 @@ function zoomToGeometry(map, geometry) {
   }
 }
 
-export default function AttributeTable({ map, onClose, onSelectPlot }) {
+export default function AttributeTable({ map, onClose, onSelectPlot, filters }) {
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,9 +43,13 @@ export default function AttributeTable({ map, onClose, onSelectPlot }) {
     setLoading(true);
 
     try {
-      const res = await axios.get(`${API_BASE}/plot/`, {
-        params: { search: query },
-      });
+      const params = { search: query };
+      if (filters?.projectId) params.project_id = filters.projectId;
+      if (filters?.block) params.block = filters.block;
+      if (filters?.area) params.plot_area = filters.area;
+      if (filters?.plotType) params.type = filters.plotType;
+      // Note: plot_no is not included in search query as it is handled via selection
+      const res = await axios.get(`${API_BASE}/plot/`, { params });
 
       const raw = res.data?.data || res.data || [];
 
