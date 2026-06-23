@@ -1,7 +1,13 @@
 import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
 
-export function addProjectBoundaryLayer(map, data) {
+const PROJECT_BOUNDARY_FILL_COLOR = "#2474ff";
+const PROJECT_BOUNDARY_LINE_COLOR = "#244cff";
+
+export function addProjectBoundaryLayer(map, data, color = null) {
   ensureSource(map, SOURCES.boundary, data);
+
+  const fillColor = color || PROJECT_BOUNDARY_FILL_COLOR;
+  const lineColor = color || PROJECT_BOUNDARY_LINE_COLOR;
 
   if (!map.getLayer(LAYERS.boundaryFill)) {
     map.addLayer({
@@ -9,10 +15,12 @@ export function addProjectBoundaryLayer(map, data) {
       type: "fill",
       source: SOURCES.boundary,
       paint: {
-        "fill-color": "#2474ff",
+        "fill-color": fillColor,
         "fill-opacity": 0.12,
       },
     });
+  } else {
+    map.setPaintProperty(LAYERS.boundaryFill, "fill-color", fillColor);
   }
 
   if (!map.getLayer(LAYERS.boundaryLine)) {
@@ -21,10 +29,12 @@ export function addProjectBoundaryLayer(map, data) {
       type: "line",
       source: SOURCES.boundary,
       paint: {
-        "line-color": "#244cff",
+        "line-color": lineColor,
         "line-width": 3,
       },
     });
+  } else {
+    map.setPaintProperty(LAYERS.boundaryLine, "line-color", lineColor);
   }
 }
 
