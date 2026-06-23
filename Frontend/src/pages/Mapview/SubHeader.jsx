@@ -36,6 +36,8 @@ export default function SubHeader({
   const showMurabbaKhasraDropdowns =
     selectedMauza && viewBy === "khasra" && isMurabbaBasedKhasra;
 
+  const parcelDropdownMeta = getParcelDropdownMeta(viewBy);
+
   return (
     <div className="absolute top-4 left-1/2 z-30 w-fit max-w-[calc(100vw-96px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
       <div className="flex w-fit items-center justify-center gap-2 px-2 py-2 overflow-visible">
@@ -103,11 +105,7 @@ export default function SubHeader({
 
           <FilterCard
             label="View By — انتخاب کریں"
-            value={
-              viewBy
-                ? viewBy.charAt(0).toUpperCase() + viewBy.slice(1)
-                : "Select"
-            }
+            value={getViewByDisplay(viewBy)}
           >
             <NativeSelectOverlay
               value={viewBy}
@@ -116,13 +114,14 @@ export default function SubHeader({
             >
               <option value="">-- Select View --</option>
               <option value="khasra">Khasra</option>
-              <option value="murabba">Murabba</option>
+              <option value="square">Square</option>
+              <option value="acre">Acre</option>
             </NativeSelectOverlay>
           </FilterCard>
 
           {showStandardParcelDropdown && (
             <FilterCard
-              label={viewBy === "khasra" ? "Khasra No" : "Murabba No"}
+              label={parcelDropdownMeta.label}
               value={selectedParcelNumber || "Select"}
             >
               <SearchableSingleSelect
@@ -130,11 +129,7 @@ export default function SubHeader({
                 selectedValue={selectedParcelNumber}
                 onChange={onParcelNumberChange}
                 disabled={!parcelOptions?.length}
-                placeholder={
-                  viewBy === "khasra"
-                    ? "Search Khasra No..."
-                    : "Search Murabba No..."
-                }
+                placeholder={parcelDropdownMeta.placeholder}
               />
             </FilterCard>
           )}
@@ -187,6 +182,27 @@ function FilterCard({ label, value, children }) {
       {children}
     </div>
   );
+}
+
+
+function getViewByDisplay(viewBy) {
+  const labels = {
+    khasra: "Khasra",
+    square: "Square",
+    acre: "Acre",
+  };
+
+  return labels[viewBy] || "Select";
+}
+
+function getParcelDropdownMeta(viewBy) {
+  const meta = {
+    khasra: { label: "Khasra No", placeholder: "Search Khasra No..." },
+    square: { label: "Square No", placeholder: "Search Square No..." },
+    acre: { label: "Acre No", placeholder: "Search Acre No..." },
+  };
+
+  return meta[viewBy] || { label: "Parcel No", placeholder: "Search Parcel No..." };
 }
 
 function NativeSelectOverlay({ value, onChange, disabled, children }) {

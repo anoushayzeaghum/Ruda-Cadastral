@@ -108,6 +108,33 @@ import {
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
+const getSquareNumberFromProps = (props = {}, feature = null) => {
+  return (
+    props.sq ??
+    props.SQ ??
+    props.square ??
+    props.square_no ??
+    props.square_id ??
+    props.s ??
+    props.S ??
+    feature?.id ??
+    null
+  );
+};
+
+const getAcreNumberFromProps = (props = {}, feature = null) => {
+  return (
+    props.acre ??
+    props.acre_no ??
+    props.ac ??
+    props.AC ??
+    props.name ??
+    props.gid ??
+    feature?.id ??
+    null
+  );
+};
+
 export default function MapView({
   selectedDistrict,
   selectedTehsil,
@@ -567,18 +594,24 @@ export default function MapView({
       // ── Click popup for polygon / line boundary layers ─────────────────
       // Determine which layer ID to listen on and which popup type to show.
       const popupLayerId = isProposedRoadLayer
-        ? ids.line   // proposed roads are lines only
-        : ids.fill;  // all other boundaries have a fill layer
+        ? ids.line // proposed roads are lines only
+        : ids.fill; // all other boundaries have a fill layer
 
       if (map.getLayer(popupLayerId)) {
         // Determine popup type from level name
-        const popupType = isRudaLayer ? "ruda"
-          : level === "district" ? "district"
-          : level === "tehsil" ? "tehsil"
-          : level === "mauza" ? "mauza"
-          : level === SQUARE_LEVEL ? "square"
-          : level === ACRE_LEVEL ? "acre"
-          : level;
+        const popupType = isRudaLayer
+          ? "ruda"
+          : level === "district"
+            ? "district"
+            : level === "tehsil"
+              ? "tehsil"
+              : level === "mauza"
+                ? "mauza"
+                : level === SQUARE_LEVEL
+                  ? "square"
+                  : level === ACRE_LEVEL
+                    ? "acre"
+                    : level;
 
         map.on("mouseenter", popupLayerId, () => {
           map.getCanvas().style.cursor = "pointer";
@@ -762,7 +795,8 @@ export default function MapView({
             .replace(/>/g, "&gt;");
 
     const filteredRows = rows.filter(
-      ([, v]) => v != null && String(v).trim() !== "" && String(v).trim() !== "-",
+      ([, v]) =>
+        v != null && String(v).trim() !== "" && String(v).trim() !== "-",
     );
 
     const rowsHtml = filteredRows
@@ -795,30 +829,56 @@ export default function MapView({
 
   // Resolve rows for each layer type
   const buildPopupRowsForType = (layerType, props = {}, coordinates = null) => {
-    const coordRows = coordinates?.lat != null
-      ? [
-          ["Latitude", formatCoordinate(coordinates.lat)],
-          ["Longitude", formatCoordinate(coordinates.lng)],
-        ]
-      : [];
+    const coordRows =
+      coordinates?.lat != null
+        ? [
+            ["Latitude", formatCoordinate(coordinates.lat)],
+            ["Longitude", formatCoordinate(coordinates.lng)],
+          ]
+        : [];
 
     switch (layerType) {
       case "khasra":
         return [
-          ["Khasra No", props.kh ?? props.KH ?? props.k ?? props.K ?? props.khasra_no ?? props.khasra_id],
+          [
+            "Khasra No",
+            props.kh ??
+              props.KH ??
+              props.k ??
+              props.K ??
+              props.khasra_no ??
+              props.khasra_id,
+          ],
           ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
           ["Murabba No", props.m ?? props.M ?? props.mn ?? props.murabba_no],
           ["Land Type", props.type ?? props.land_type],
-          ["Area", props._area_acres != null ? `${Number(props._area_acres).toFixed(3)} Acres` : null],
+          [
+            "Area",
+            props._area_acres != null
+              ? `${Number(props._area_acres).toFixed(3)} Acres`
+              : null,
+          ],
           ["DC Rate", props.dc_rate],
           ["Remarks", props.remarks],
         ];
       case "murabba":
         return [
-          ["Murabba No", props.m ?? props.M ?? props.mn ?? props.murabba_no ?? props.murabba_id],
+          [
+            "Murabba No",
+            props.m ??
+              props.M ??
+              props.mn ??
+              props.murabba_no ??
+              props.murabba_id,
+          ],
           ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
           ["Land Type", props.type ?? props.land_type],
-          ["Area", props._area_acres != null ? `${Number(props._area_acres).toFixed(3)} Acres` : null],
+          [
+            "Area",
+            props._area_acres != null
+              ? `${Number(props._area_acres).toFixed(3)} Acres`
+              : null,
+          ],
           ["Remarks", props.remarks],
         ];
       case "mauza":
@@ -839,7 +899,10 @@ export default function MapView({
         ];
       case "square":
         return [
-          ["Square No", props.sq ?? props.SQ ?? props.square ?? props.square_no],
+          [
+            "Square No",
+            props.sq ?? props.SQ ?? props.square ?? props.square_no,
+          ],
           ["Mauza", props.mauza ?? props.Mauza ?? props.moza],
           ["Tehsil", props.tehsil ?? props.Tehsil],
           ["District", props.district ?? props.District],
@@ -990,17 +1053,21 @@ export default function MapView({
     const isTriJunction = String(props.type ?? "").toUpperCase() === "TJ";
     const isControlPoint = String(props.type ?? "").toUpperCase() === "B";
 
-    const layerType = isGeodetic ? "geodetic"
-      : isFieldPoint ? "fieldPoint"
-      : isTriJunction ? "trijunction"
-      : isControlPoint ? "controlPoint"
-      : "controlPoint";
+    const layerType = isGeodetic
+      ? "geodetic"
+      : isFieldPoint
+        ? "fieldPoint"
+        : isTriJunction
+          ? "trijunction"
+          : isControlPoint
+            ? "controlPoint"
+            : "controlPoint";
 
-    const lngLat = e.lngLat || (
-      coordinates.lng != null && coordinates.lat != null
+    const lngLat =
+      e.lngLat ||
+      (coordinates.lng != null && coordinates.lat != null
         ? [coordinates.lng, coordinates.lat]
-        : DEFAULT_CENTER
-    );
+        : DEFAULT_CENTER);
 
     showMapviewPopup(layerType, props, lngLat, coordinates);
   }
@@ -1669,9 +1736,15 @@ export default function MapView({
         ? currentGeojson.current.khasra
         : viewBy === "murabba"
           ? currentGeojson.current.murabba
-          : currentGeojson.current.khasra ||
-            currentGeojson.current.murabba ||
-            {};
+          : viewBy === "square"
+            ? currentGeojson.current[SQUARE_LEVEL]
+            : viewBy === "acre"
+              ? currentGeojson.current[ACRE_LEVEL]
+              : currentGeojson.current.khasra ||
+                currentGeojson.current.murabba ||
+                currentGeojson.current[SQUARE_LEVEL] ||
+                currentGeojson.current[ACRE_LEVEL] ||
+                {};
 
     const features = Array.isArray(current?.features) ? current.features : [];
 
@@ -1697,7 +1770,11 @@ export default function MapView({
           ? getKhasraNumber(p)
           : viewBy === "murabba"
             ? getMurabbaNumber(p)
-            : feat?.id;
+            : viewBy === "square"
+              ? getSquareNumberFromProps(p, feat)
+              : viewBy === "acre"
+                ? getAcreNumberFromProps(p, feat)
+                : feat?.id;
 
       return String(cand) === String(selectedFeatureNumber);
     });
@@ -1857,10 +1934,14 @@ export default function MapView({
         if (geojson?.features?.length) {
           drawBoundaryLevel(SQUARE_LEVEL, geojson, squareLayerOpacity);
           currentGeojson.current[SQUARE_LEVEL] = geojson;
+          setFeatureCount(geojson.features.length);
+          reportLoadedFeatures(geojson);
           zoomToGeoJSON(geojson, { padding: 70, duration: 500 });
         } else {
           clearBoundaryLevel(SQUARE_LEVEL);
           delete currentGeojson.current[SQUARE_LEVEL];
+          setFeatureCount(0);
+          reportLoadedFeatures(emptyFeatureCollection());
         }
       } catch (e) {
         console.error("Square boundary load error:", e);
@@ -1889,10 +1970,14 @@ export default function MapView({
         if (geojson?.features?.length) {
           drawBoundaryLevel(ACRE_LEVEL, geojson, acreLayerOpacity);
           currentGeojson.current[ACRE_LEVEL] = geojson;
+          setFeatureCount(geojson.features.length);
+          reportLoadedFeatures(geojson);
           zoomToGeoJSON(geojson, { padding: 70, duration: 500 });
         } else {
           clearBoundaryLevel(ACRE_LEVEL);
           delete currentGeojson.current[ACRE_LEVEL];
+          setFeatureCount(0);
+          reportLoadedFeatures(emptyFeatureCollection());
         }
       } catch (e) {
         console.error("Acre boundary load error:", e);
@@ -2556,11 +2641,17 @@ export default function MapView({
       // Apply GISMetaverse shell styling
       const el = popup.getElement();
       const content = el?.querySelector(".mapboxgl-popup-content");
-      if (content) content.style.cssText = "padding:0;background:transparent;box-shadow:none;border-radius:10px;";
+      if (content)
+        content.style.cssText =
+          "padding:0;background:transparent;box-shadow:none;border-radius:10px;";
       const tip = el?.querySelector(".mapboxgl-popup-tip");
       if (tip) tip.style.borderTopColor = "#111827";
       const closeBtn = el?.querySelector("[data-mapview-popup-close]");
-      if (closeBtn) closeBtn.addEventListener("click", () => { popup.remove(); coordPickerPopupRef.current = null; });
+      if (closeBtn)
+        closeBtn.addEventListener("click", () => {
+          popup.remove();
+          coordPickerPopupRef.current = null;
+        });
 
       coordPickerPopupRef.current = popup;
       popup.on("close", () => {

@@ -40,6 +40,49 @@ const getMurabbaNumber = (props = {}) => {
   );
 };
 
+const getSquareNumber = (props = {}, feature = null) => {
+  return (
+    props.sq ??
+    props.SQ ??
+    props.square ??
+    props.square_no ??
+    props.square_id ??
+    props.s ??
+    props.S ??
+    feature?.id ??
+    null
+  );
+};
+
+const getAcreNumber = (props = {}, feature = null) => {
+  return (
+    props.acre ??
+    props.acre_no ??
+    props.ac ??
+    props.AC ??
+    props.name ??
+    props.gid ??
+    feature?.id ??
+    null
+  );
+};
+
+const getFeatureNumberByView = (props = {}, viewBy = "", feature = null) => {
+  if (viewBy === "khasra") return getKhasraNumber(props);
+  if (viewBy === "square") return getSquareNumber(props, feature);
+  if (viewBy === "acre") return getAcreNumber(props, feature);
+  if (viewBy === "murabba") return getMurabbaNumber(props);
+  return feature?.id ?? null;
+};
+
+const VIEW_BY_LAYER_KEYS = {
+  khasra: "khasraLayer",
+  square: "squareLayer",
+  acre: "acreLayer",
+};
+
+const VIEW_BY_BOUNDARY_KEYS = Object.values(VIEW_BY_LAYER_KEYS);
+
 const getLandType = (props = {}) => {
   return props.type ?? props.land_type ?? null;
 };
@@ -95,6 +138,7 @@ export default function MapPage() {
     setSelectedMurabbaNumber("");
     setSelectedParcel(null);
     setParcelPanelOpen(false);
+    setLoadedParcelsGeojson(null);
   }, [filters?.selectedMauza, filters?.viewBy]);
 
   const murabbaOptions = useMemo(() => {
@@ -153,12 +197,11 @@ export default function MapPage() {
     } else {
       features.forEach((f) => {
         const props = f?.properties || {};
-        const valueRaw =
-          filters?.viewBy === "khasra"
-            ? getKhasraNumber(props)
-            : filters?.viewBy === "murabba"
-              ? getMurabbaNumber(props)
-              : f?.id;
+        const valueRaw = getFeatureNumberByView(
+          props,
+          filters?.viewBy,
+          f,
+        );
 
         if (valueRaw == null || valueRaw === "") return;
 
@@ -237,12 +280,21 @@ export default function MapPage() {
       });
     }
 
-    if (filters?.selectedMauzaDetails && filters?.viewBy === "murabba") {
+    if (filters?.selectedMauzaDetails && filters?.viewBy === "square") {
       items.push({
-        key: "murabbaLayer",
+        key: "squareLayer",
         label: selectedParcelNumber
-          ? `Murabba: ${selectedParcelNumber}`
-          : "Murabba Layer",
+          ? `Square: ${selectedParcelNumber}`
+          : "Square Layer",
+      });
+    }
+
+    if (filters?.selectedMauzaDetails && filters?.viewBy === "acre") {
+      items.push({
+        key: "acreLayer",
+        label: selectedParcelNumber
+          ? `Acre: ${selectedParcelNumber}`
+          : "Acre Layer",
       });
     }
 
@@ -256,6 +308,9 @@ export default function MapPage() {
     selectedParcelNumber,
   ]);
 
+  const selectedMauzaKey =
+    filters?.selectedMauzaDetails?.mauza_id ?? filters?.selectedMauza ?? "";
+
   useEffect(() => {
     const activeKeys = new Set(selectedFilterLayers.map((item) => item.key));
     const managedKeys = [
@@ -263,6 +318,8 @@ export default function MapPage() {
       "tehsilBoundary",
       "mauzaBoundary",
       "khasraLayer",
+      "squareLayer",
+      "acreLayer",
       "murabbaLayer",
     ];
 
@@ -284,10 +341,7 @@ export default function MapPage() {
           changed = true;
         }
 
-        if (
-          (key === "khasraLayer" || key === "murabbaLayer") &&
-          next[key]?.visible !== true
-        ) {
+        if (VIEW_BY_BOUNDARY_KEYS.includes(key) && next[key]?.visible !== true) {
           next[key] = {
             ...next[key],
             visible: true,
@@ -299,6 +353,37 @@ export default function MapPage() {
       return changed ? next : prev;
     });
   }, [selectedFilterLayers]);
+
+  useEffect(() => {
+    const activeViewByLayerKey = VIEW_BY_LAYER_KEYS[filters?.viewBy];
+
+    if (!selectedMauzaKey || !activeViewByLayerKey) return;
+
+    setLayers((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      VIEW_BY_BOUNDARY_KEYS.forEach((key) => {
+        const current =
+          typeof next[key] === "object"
+            ? next[key]
+            : { visible: !!next[key], opacity: key === "khasraLayer" ? 25 : 35 };
+
+        const shouldBeVisible = key === activeViewByLayerKey;
+
+        if (current.visible !== shouldBeVisible || current.forceLoad) {
+          next[key] = {
+            ...current,
+            visible: shouldBeVisible,
+            forceLoad: false,
+          };
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [selectedMauzaKey, filters?.viewBy]);
 
   const selectedFeatureNumber = useMemo(() => {
     if (filters?.viewBy === "khasra" && isMurabbaBasedKhasra) {
@@ -334,7 +419,7 @@ export default function MapPage() {
           khasraNo !== null && khasraNo !== undefined ? String(khasraNo) : "",
         );
       } else {
-        const num = filters?.viewBy === "khasra" ? khasraNo : murabbaNo;
+        const num = getFeatureNumberByView(props, filters?.viewBy, feature);
         setSelectedParcelNumber(
           num !== null && num !== undefined ? String(num) : "",
         );
