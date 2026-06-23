@@ -34,12 +34,16 @@ const setLayoutProperties = (map, layerId, layout = {}) => {
   });
 };
 
-export function addGeodeticNetworkLayer(map, data) {
+export function addGeodeticNetworkLayer(
+  map,
+  data,
+  color = GEODETIC_POINT_COLOR,
+) {
   ensureSource(map, SOURCES.geodeticNetwork, data);
 
   const circlePaint = {
     "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 4, 14, 6, 17, 8],
-    "circle-color": GEODETIC_POINT_COLOR,
+    "circle-color": color,
     "circle-stroke-color": GEODETIC_POINT_STROKE,
     "circle-stroke-width": 1.5,
   };
@@ -56,7 +60,7 @@ export function addGeodeticNetworkLayer(map, data) {
   };
 
   const labelPaint = {
-    "text-color": GEODETIC_LABEL_COLOR,
+    "text-color": color,
     "text-halo-color": "#ffffff",
     "text-halo-width": 1.4,
     "text-halo-blur": 0.2,
