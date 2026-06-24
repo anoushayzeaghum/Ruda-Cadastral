@@ -57,7 +57,7 @@ class ListPlotView(viewsets.ViewSet):
                 queryset = queryset.filter(plot_no__iexact=plot_no)
 
             if block:
-                queryset = queryset.filter(block__iexact=block)
+                queryset = queryset.filter(block__block__iexact=block)
 
             if plot_area:
                 queryset = queryset.filter(plot_area__iexact=plot_area)

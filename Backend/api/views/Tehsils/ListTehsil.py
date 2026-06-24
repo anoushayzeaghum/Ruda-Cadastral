@@ -37,7 +37,7 @@ class ListTehsilView(viewsets.ViewSet):
 
             elif district_i:
 
-                queryset = Tehsil.objects.filter(district_i=district_i)
+                queryset = Tehsil.objects.filter(district_id=district_i)
 
                 serializer = TehsilSerializer(queryset, many=True)
 

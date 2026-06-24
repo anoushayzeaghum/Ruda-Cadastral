@@ -9,11 +9,27 @@ class ListProjectMauzaView(viewsets.ViewSet):
     def list(self, request):
         try:
             project_id = request.query_params.get("project_id")
+            mauza_id = request.query_params.get("mauza_id")
+            khasra_id = request.query_params.get("khasra_id")
 
-            qs = ProjectMauza.objects.select_related("project", "mauza").all()
+            qs = (
+                ProjectMauza.objects
+                .select_related(
+                    "project",
+                    "mauza",
+                    "khasra"
+                )
+                .all()
+            )
 
             if project_id:
                 qs = qs.filter(project_id=project_id)
+
+            if mauza_id:
+                qs = qs.filter(mauza_id=mauza_id)
+
+            if khasra_id:
+                qs = qs.filter(khasra_id=khasra_id)
 
             serializer = ProjectMauzaSerializer(qs, many=True)
 

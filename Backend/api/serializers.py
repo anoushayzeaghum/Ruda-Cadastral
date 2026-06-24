@@ -116,19 +116,29 @@ class DistrictSerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 
 class TehsilSerializer(GeoFeatureModelSerializer):
+    district_i = serializers.IntegerField(
+        source="district_id",
+        read_only=True
+    )
+
+    district_name = serializers.CharField(
+        source="district.name",
+        read_only=True
+    )
 
     class Meta:
         model = Tehsil
         geo_field = "geom"
-        id_field = "id"
+        id_field = "gid"
 
         fields = (
             "gid",
             "id",
             "objectid",
             "name",
-            "district",
-            "district_i",
+            "district",        # FK value
+            "district_i",      # same value as district_id
+            "district_name",   # Kasur
             "extent",
             "shape_star",
             "shape_stle",
@@ -142,6 +152,15 @@ class TehsilSerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 
 class MauzaSerializer(GeoFeatureModelSerializer):
+    district_name = serializers.CharField(
+        source="district.name",
+        read_only=True
+    )
+
+    tehsil_name = serializers.CharField(
+        source="tehsil.name",
+        read_only=True
+    )
 
     class Meta:
         model = Mauza
@@ -150,10 +169,14 @@ class MauzaSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "district",
-            "dist_id",
-            "tehsil",
-            "tehsil_id",
+            "district",       # FK value
+            "district_id",    # same value as dist_id column
+            "district_name",
+
+            "tehsil",         # FK value
+            "tehsil_id",      # same value as tehsil_id column
+            "tehsil_name",
+
             "kc",
             "kc_id",
             "pc",
@@ -164,13 +187,31 @@ class MauzaSerializer(GeoFeatureModelSerializer):
         )
 
 
-
 # --------------------------------------------------------
 # Khasra Serializer - New Format
 # District → Tehsil → Mauza → Khasra
 # --------------------------------------------------------
-
 class KhasraSerializer(GeoFeatureModelSerializer):
+
+    dist_id = serializers.IntegerField(
+        source="district_id",
+        read_only=True
+    )
+
+    tehsil_name = serializers.CharField(
+        source="tehsil.name",
+        read_only=True
+    )
+
+    district_name = serializers.CharField(
+        source="district.name",
+        read_only=True
+    )
+
+    mauza_name = serializers.CharField(
+        source="mauza.mauza",
+        read_only=True
+    )
 
     class Meta:
         model = Khasra
@@ -180,32 +221,38 @@ class KhasraSerializer(GeoFeatureModelSerializer):
         fields = (
             "gid",
             "join_shp",
-            "district",
+
             "dist_id",
-            "tehsil",
             "tehsil_id",
+            "mauza_id",
+
+            "district_name",
+            "tehsil_name",
+            "mauza_name",
+
             "kc",
             "kc_id",
             "pc",
             "pc_id",
-            "mauza",
-            "mauza_id",
+
             "hadbust_no",
             "asse_cir",
-            "karam",
             "type",
+            "karam",
             "sq",
             "kh",
             "sk",
+
             "khasra_id",
             "khewat_id",
             "khatoni_no",
             "dc_rate",
             "remarks",
             "b",
+
             "geom",
         )
-
+        
 # --------------------------------------------------------
 # Society Serializer
 # District → Tehsil → Mauza → Society
@@ -255,12 +302,78 @@ class MasterPlanSerializer(GeoFeatureModelSerializer):
             "geom",
         )
 
+
+# --------------------------------------------------------
+# Project Serializer
+# --------------------------------------------------------
+class ProjectSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Project
+        geo_field = "geom"
+        id_field = "gid"
+        fields = (
+            "gid",
+            "name", "type", "brief_name",
+            "geom"
+        )
+
+
+    
+# --------------------------------------------------------
+# ProjectMauza Serializer
+# --------------------------------------------------------
+class ProjectMauzaSerializer(serializers.ModelSerializer):
+
+    project_name = serializers.CharField(
+        source="project.name",
+        read_only=True
+    )
+
+    mauza_name = serializers.CharField(
+        source="mauza.mauza",
+        read_only=True
+    )
+
+    khasra_no = serializers.CharField(
+        source="khasra.kh",
+        read_only=True
+    )
+
+    # ADD THESE
+    mauza_detail = MauzaSerializer(
+        source="mauza",
+        read_only=True
+    )
+
+    khasra_detail = KhasraSerializer(
+        source="khasra",
+        read_only=True
+    )
+
+    class Meta:
+        model = ProjectMauza
+        fields = (
+            "id",
+
+            "project",
+            "project_name",
+
+            "mauza",
+            "mauza_name",
+            "mauza_detail",
+
+            "khasra",
+            "khasra_no",
+            "khasra_detail",
+
+            "square_id",
+        )
+
 # --------------------------------------------------------
 # SpotLevel Serializer
 # District → Tehsil → Mauza → Society → SpotLevel
 # -------------------------------------------------------
-
-
 
 class SpotLevelSerializer(GeoFeatureModelSerializer):
 
@@ -270,11 +383,10 @@ class SpotLevelSerializer(GeoFeatureModelSerializer):
         id_field = "gid"
         fields = (
             "gid",
-            "society_id",
-            "mauza_id",
-            "dist_id",
-            "tehsil_id",
-            "project_id",
+            "mauza",
+            "district",
+            "tehsil",
+            "project",
             "geom",
         )
 
@@ -292,11 +404,10 @@ class ContourSerializer(GeoFeatureModelSerializer):
         id_field = "gid"
         fields = (
             "gid",
-            "society_id",
-            "mauza_id",
-            "dist_id",
-            "tehsil_id",
-            "project_id",
+            "mauza",
+            "district",
+            "tehsil",
+            "project",
             "elevation",
             "geom",
         )
@@ -359,6 +470,20 @@ class RudaBoundarySerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 
 class TrijunctionSerializer(GeoFeatureModelSerializer):
+
+    # FK ids
+    m1_id = serializers.FloatField(read_only=True)
+    m2_id = serializers.FloatField(read_only=True)
+    m3_id = serializers.FloatField(read_only=True)
+
+    mauza_id = serializers.FloatField(read_only=True)
+
+    # Mauza name
+    mauza_name = serializers.CharField(
+        source="mauza.mauza",
+        read_only=True
+    )
+
     class Meta:
         model = Trijunction
         geo_field = "geom"
@@ -367,17 +492,22 @@ class TrijunctionSerializer(GeoFeatureModelSerializer):
         fields = (
             "gid",
             "type",
+
             "m1",
             "m1_id",
+
             "m2",
             "m2_id",
+
             "m3",
             "m3_id",
+
             "mauza_id",
+            "mauza_name",
+
             "layer",
             "geom",
         )
-
 # --------------------------------------------------------
 # Square Serializer
 
@@ -472,30 +602,34 @@ class GeodeticNetworkSerializer(GeoFeatureModelSerializer):
             "elevation",
             "geom",
         )
-# --------------------------------------------------------
-# Project Serializer
-# --------------------------------------------------------
-class ProjectSerializer(GeoFeatureModelSerializer):
 
-    class Meta:
-        model = Project
-        geo_field = "geom"
-        id_field = "gid"
-        fields = (
-            "gid",
-            "name", "type", "brief_name",
-            "geom"
-        )
 
 # --------------------------------------------------------
 # Block Serializer
 # --------------------------------------------------------
 
 class BlockSerializer(GeoFeatureModelSerializer):
+
+    project_name = serializers.CharField(
+        source="project.name",
+        read_only=True
+    )
+
     class Meta:
         model = Block
         geo_field = "geom"
-        fields = ("gid", "name", "area", "block" , "geom", "project_id")
+
+        fields = (
+            "gid",
+            "name",
+            "area",
+            "block",
+
+            "project",
+            "project_name",
+
+            "geom",
+        )
 
 
 # --------------------------------------------------------
@@ -516,8 +650,17 @@ class BlockLevelSerializer(GeoFeatureModelSerializer):
 # Plot Serializer
 # --------------------------------------------------------
 class PlotSerializer(GeoFeatureModelSerializer):
-    project_name = serializers.CharField(read_only=True)
-    block_name = serializers.CharField(read_only=True)
+
+    project_name = serializers.CharField(
+        source="project.name",
+        read_only=True
+    )
+
+    block_name = serializers.CharField(
+        source="block.name",
+        read_only=True
+    )
+
     class Meta:
         model = Plot
         geo_field = "geom"
@@ -525,39 +668,61 @@ class PlotSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "name", "project_name", "block_name",
+            "name",
+            "project",
+            "project_name",
+
+            "block",
+            "block_name",
+
             "type",
             "remarks",
-            "project_id",
-            "block_id",
+
             "plot_no",
             "plot_area",
-            "block",
+
             "shape_leng",
             "shape_area",
             "dimension",
+
             "parkfront",
             "rd_ft",
             "storey",
             "rd_facing",
+
             "h",
             "demar",
+
             "possession",
             "poss_st",
+
             "canceled",
             "site_plan",
+
             "unique_id",
+
             "tr_srno",
             "tr_own",
             "tr_p_no",
             "tr_cate",
+
             "geom",
         )
-
 # --------------------------------------------------------
 # Road Serializer
 # --------------------------------------------------------
 class RoadSerializer(GeoFeatureModelSerializer):
+
+    project_name = serializers.CharField(
+        source="project.name",
+        read_only=True
+    )
+
+    block_name = serializers.CharField(
+        source="block.name",
+        read_only=True
+    )
+
     class Meta:
         model = Road
         geo_field = "geom"
@@ -566,12 +731,16 @@ class RoadSerializer(GeoFeatureModelSerializer):
         fields = (
             "gid",
             "name",
+
+            "project",
+            "project_name",
+
             "block",
+            "block_name",
+
             "dimension",
             "type",
             "row",
-            "project_id",
-            "block_id",
             "geom",
         )
 
@@ -653,23 +822,3 @@ class WSPointSerializer(GeoFeatureModelSerializer):
             "geom",
         )
 
-# --------------------------------------------------------
-# ProjectMauza Serializer
-# --------------------------------------------------------
-class ProjectMauzaSerializer(serializers.ModelSerializer):
-
-    mauza_detail = MauzaSerializer(source="mauza", read_only=True)
-    khasra_detail = KhasraSerializer(source="khasra", read_only=True)
-
-    class Meta:
-        model = ProjectMauza
-        fields = (
-            "id",
-            "project",
-            "mauza",
-            "mauza_detail",
-            "khasra",
-            "khasra_detail",
-            "square_id",
-        )
-    

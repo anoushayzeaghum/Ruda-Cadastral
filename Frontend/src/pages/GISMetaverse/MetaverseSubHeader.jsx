@@ -285,7 +285,6 @@ export default function MetaverseSubHeader({
           type: filters.plotType || undefined,
           plot_area: filters.area || undefined,
         });
-        console.log("RAW AREAS FROM API:", areaOptions.areas);
         if (cancelled) return;
 
         setOptions({

@@ -14,7 +14,7 @@ class ListRoadView(viewsets.ViewSet):
             block = request.query_params.get("block")
             road_type = request.query_params.get("type")
             project_id = request.query_params.get("project_id")
-
+            block_id = request.query_params.get("block_id")
             if gid:
                 obj = Road.objects.filter(gid=gid).first()
 
@@ -36,11 +36,15 @@ class ListRoadView(viewsets.ViewSet):
 
             if project_id:
                 queryset = queryset.filter(project_id=project_id)
+            
+            if block_id:
+                queryset = queryset.filter(block_id=block_id)
+            
             if name:
                 queryset = queryset.filter(name__icontains=name)
 
             if block:
-                queryset = queryset.filter(block__icontains=block)
+                queryset = queryset.filter(block__block__icontains=block)
 
             if road_type:
                 queryset = queryset.filter(type__icontains=road_type)
