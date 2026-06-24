@@ -20,7 +20,6 @@ import {
   Image as ImageIcon,
   X,
   Table2,
-  Palette,
 } from "lucide-react";
 import Measurement from "../GISMetaverse/tools/Measurement";
 
@@ -462,17 +461,21 @@ export default function LeftPanel({
         />
       </div>
 
-      {openAttributeTable === "rudaBoundary" && <RudaBoundaryAttribute map={map} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "proposedRoads" && <ProposedRoadAttribute map={map} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "geodeticNetwork" && <GeodeticNetworkAttribute map={map} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "mauzaBoundary" && <MauzaBoundaryAttribute map={map} geojson={layerRecordCache.mauzaBoundary?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "khasraLayer" && <KhasraBoundaryAttribute map={map} geojson={layerRecordCache.khasraLayer?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "squareLayer" && <SquareBoundaryAttribute map={map} geojson={layerRecordCache.squareLayer?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "districtBoundary" && <DistrictBoundaryAttribute map={map} geojson={layerRecordCache.districtBoundary?.geojson} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "tehsilBoundary" && <TehsilBoundaryAttribute map={map} geojson={layerRecordCache.tehsilBoundary?.geojson} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "acreLayer" && <AcreBoundaryAttribute map={map} geojson={layerRecordCache.acreLayer?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "triJunctionPoints" && <TriJunctionPointsAttribute map={map} geojson={layerRecordCache.triJunctionPoints?.geojson} onClose={() => setOpenAttributeTable(null)} />}
-      {openAttributeTable === "fieldPoints" && <FieldPointsAttribute map={map} geojson={layerRecordCache.fieldPoints?.geojson} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable && (
+        <div className="pointer-events-auto">
+          {openAttributeTable === "rudaBoundary" && <RudaBoundaryAttribute map={map} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "proposedRoads" && <ProposedRoadAttribute map={map} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "geodeticNetwork" && <GeodeticNetworkAttribute map={map} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "mauzaBoundary" && <MauzaBoundaryAttribute map={map} geojson={layerRecordCache.mauzaBoundary?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "khasraLayer" && <KhasraBoundaryAttribute map={map} geojson={layerRecordCache.khasraLayer?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "squareLayer" && <SquareBoundaryAttribute map={map} geojson={layerRecordCache.squareLayer?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "districtBoundary" && <DistrictBoundaryAttribute map={map} geojson={layerRecordCache.districtBoundary?.geojson} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "tehsilBoundary" && <TehsilBoundaryAttribute map={map} geojson={layerRecordCache.tehsilBoundary?.geojson} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "acreLayer" && <AcreBoundaryAttribute map={map} geojson={layerRecordCache.acreLayer?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "triJunctionPoints" && <TriJunctionPointsAttribute map={map} geojson={layerRecordCache.triJunctionPoints?.geojson} onClose={() => setOpenAttributeTable(null)} />}
+          {openAttributeTable === "fieldPoints" && <FieldPointsAttribute map={map} geojson={layerRecordCache.fieldPoints?.geojson} onClose={() => setOpenAttributeTable(null)} />}
+        </div>
+      )}
 
       {activePanel && (
         <div className="pointer-events-auto w-[320px] max-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
@@ -701,9 +704,9 @@ function SmallColorPicker({ color, onChange }) {
   return (
     <label
       title="Change layer color"
-      className="relative flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/20 hover:bg-[#0a3327]"
+      className="relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-white/30 hover:ring-1 hover:ring-[#9be37b]"
+      style={{ backgroundColor: color || "#9be37b" }}
     >
-      <Palette size={13} className="text-white/75" />
       <input
         type="color"
         value={color || "#9be37b"}
@@ -794,7 +797,6 @@ function RudaBoundaryLayers({
             isOpen={rudaDropdownOpen}
             onToggle={toggleRudaBoundaryLayer}
             onOpacity={(value) => updateLayer("rudaBoundary", { opacity: value })}
-            onColor={(value) => setLayerColor("rudaBoundary", value)}
             onDropdownToggle={() => setRudaDropdownOpen((s) => !s)}
             onTable={() => openAttributeTable("rudaBoundary")}
           />
@@ -847,7 +849,6 @@ function RudaBoundaryLayers({
             isOpen={proposedDropdownOpen}
             onToggle={toggleProposedRoadLayer}
             onOpacity={(value) => updateLayer("proposedRoads", { opacity: value })}
-            onColor={(value) => setLayerColor("proposedRoads", value)}
             onDropdownToggle={() => setProposedDropdownOpen((s) => !s)}
             onTable={() => openAttributeTable("proposedRoads")}
           />

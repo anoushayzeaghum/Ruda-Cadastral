@@ -224,8 +224,8 @@ export default function MapView({
     return typeof value === "object" && value.color ? value.color : fallback;
   };
 
-  const rudaBoundaryColor = getLayerColorValue("rudaBoundary", "#22c55e");
-  const proposedRoadsColor = getLayerColorValue("proposedRoads", "#ef4444");
+  // RUDA boundary and proposed roads keep their own thematic styling.
+  // Do not force a single picked color on these two grouped layers.
   const geodeticNetworkColor = getLayerColorValue(
     "geodeticNetwork",
     VECTOR_LAYER_THEME.geodeticNetwork.circle,
@@ -618,7 +618,8 @@ export default function MapView({
       });
 
       currentGeojson.current[level] = sourceGeojson;
-      applyColorToBoundaryLevel(level, boundaryLevelColor(level));
+      const thematicColor = boundaryLevelColor(level);
+      if (thematicColor) applyColorToBoundaryLevel(level, thematicColor);
       movePointLayersToTop();
 
       // ── Click popup for polygon / line boundary layers ─────────────────
@@ -697,8 +698,8 @@ export default function MapView({
   };
 
   const boundaryLevelColor = (level) => {
-    if (String(level).startsWith("ruda")) return rudaBoundaryColor;
-    if (String(level).startsWith("proposed-road")) return proposedRoadsColor;
+    if (String(level).startsWith("ruda")) return null;
+    if (String(level).startsWith("proposed-road")) return null;
     if (level === "district") return districtBoundaryColor;
     if (level === "tehsil") return tehsilBoundaryColor;
     if (level === "mauza") return mauzaBoundaryColor;
@@ -1591,18 +1592,6 @@ export default function MapView({
       applyOpacityToMapLayer(layerId, fieldPointsOpacity),
     );
   }, [isMapReady, fieldPointsOpacity]);
-
-  useEffect(() => {
-    if (!isMapReady) return;
-    Object.keys(currentGeojson.current || {})
-      .filter((key) => key.startsWith("ruda-"))
-      .forEach((level) => applyColorToBoundaryLevel(level, rudaBoundaryColor));
-  }, [isMapReady, rudaBoundaryColor]);
-
-  useEffect(() => {
-    if (!isMapReady) return;
-    applyColorToBoundaryLevel("proposed-roads", proposedRoadsColor);
-  }, [isMapReady, proposedRoadsColor]);
 
   useEffect(() => {
     if (!isMapReady) return;
