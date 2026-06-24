@@ -42,7 +42,7 @@ const uniqueSorted = (arr = []) =>
 function SelectBox({ value, onChange, options, placeholder, disabled }) {
   return (
     <select
-      className="w-full h-8 bg-[#1d2533] border border-[#344055] rounded px-2 text-xs"
+      className="w-full h-8 bg-[#031a14] border border-[#0c3d2d] rounded px-2 text-xs"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
@@ -263,9 +263,9 @@ const plotNoOptions = naturalSort(
 
   /* ---------------- UI ---------------- */
   return (
-    <div className="w-[320px] text-white bg-[#111827] rounded-md">
+    <div className="w-[320px] text-white bg-[#06291f] border border-[#13593f] rounded-md">
       {/* header */}
-      <div className="flex items-center justify-between border-b border-[#343c4c] px-3 py-2">
+      <div className="flex items-center justify-between border-b border-[#0c3d2d] px-3 py-2">
         <div className="text-xs font-bold">FLY TO FILTER</div>
         <button onClick={onClose}>
           <X size={14} />
@@ -322,7 +322,7 @@ const plotNoOptions = naturalSort(
         <div className="flex gap-2 pt-2">
           <button
             onClick={handleApply}
-            className="flex-1 h-8 bg-[#8bd66f] text-black font-bold rounded hover:bg-[#7bc262]"
+            className="flex-1 h-8 bg-[#9be37b] text-black font-bold rounded hover:bg-[#7bc262]"
           >
             Apply
           </button>
@@ -336,7 +336,7 @@ const plotNoOptions = naturalSort(
 
           <button
             onClick={onClose}
-            className="flex-1 h-8 border border-[#344055] rounded hover:bg-[#344055]/50"
+            className="flex-1 h-8 border border-[#0c3d2d] rounded hover:bg-[#0c3d2d]/50"
           >
             Close
           </button>
