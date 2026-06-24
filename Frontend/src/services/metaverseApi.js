@@ -120,6 +120,36 @@ export const getPlotOptionsAll = async (filters = {}) => {
   };
 };
 
+export const getPlotIntersectingKhasras = async (plotGid) => {
+  console.log("[metaverseApi] getPlotIntersectingKhasras called", {
+    API_BASE,
+    plotGid,
+    url: `${API_BASE}/plot/${plotGid}/intersecting-khasras/`,
+  });
+
+  if (!plotGid) {
+    console.error("[metaverseApi] Missing plotGid. Returning empty response.");
+    return {
+      plot_no: null,
+      plot_area: null,
+      plot_area_sqft: 0,
+      intersected_count: 0,
+      features: [],
+    };
+  }
+
+  const res = await axios.get(`${API_BASE}/plot/${plotGid}/intersecting-khasras/`);
+  const data = unwrapApiData(res.data);
+
+  console.log("[metaverseApi] getPlotIntersectingKhasras response", {
+    status: res.status,
+    raw: res.data,
+    unwrapped: data,
+  });
+
+  return data;
+};
+
 export const getSpotLevelGeoJSON = async (projectId) => {
   if (!projectId) return emptyFC();
 
