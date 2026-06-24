@@ -350,18 +350,18 @@ export const getMasterPlanGeoJSON = async ({ society_id, mauza_id } = {}) => {
   return normalizeGeoJson(res);
 };
 
-export const getSpotLevelGeoJSON = async ({ society_id, mauza_id } = {}) => {
+export const getSpotLevelGeoJSON = async ({ project_id, mauza_id } = {}) => {
   const params = {};
-  if (society_id) params.society_id = society_id;
+  if (project_id) params.project_id = project_id;
   if (mauza_id) params.mauza_id = mauza_id;
 
   const res = await API.get("/spot-level/", { params });
   return normalizeGeoJson(res);
 };
 
-export const getContourGeoJSON = async ({ society_id, mauza_id } = {}) => {
+export const getContourGeoJSON = async ({ project_id, mauza_id } = {}) => {
   const params = {};
-  if (society_id) params.society_id = society_id;
+  if (project_id) params.project_id = project_id;
   if (mauza_id) params.mauza_id = mauza_id;
 
   const res = await API.get("/contour/", { params });
