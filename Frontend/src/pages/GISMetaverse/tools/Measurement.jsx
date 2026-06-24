@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Trash2,
   Info,
+  X,
 } from "lucide-react";
 
 // ── Mapbox layer / source IDs ─────────────────────────────────────────────────
@@ -221,7 +222,7 @@ function EmptyHint({ children }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Measurement({ map }) {
+export default function Measurement({ map, onClose }) {
   // activeTool: set immediately when user clicks a tool icon → starts map drawing
   const [activeTool, setActiveTool] = useState(null);
   // resultReady: true after user clicks Apply → shows the result panel
@@ -797,7 +798,18 @@ export default function Measurement({ map }) {
           <Ruler size={14} />
           <span>MEASUREMENT</span>
         </div>
-        <ChevronRight size={15} />
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-6 w-6 items-center justify-center rounded text-white/50 transition hover:bg-[#2a3548] hover:text-white"
+            title="Close"
+          >
+            <X size={14} />
+          </button>
+        ) : (
+          <ChevronRight size={15} />
+        )}
       </div>
 
       <div className="p-3 space-y-3">

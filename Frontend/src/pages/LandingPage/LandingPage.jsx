@@ -60,7 +60,8 @@ const GIS_APPS = [
     desc: "Manage and visualize cadastral records, Khasra layers, mauza limits and administrative boundaries in one interactive GIS platform.",
     img: "/s1.png",
     route: "/Mapview",
-    color: "from-[#49B84A] to-[#004225]",
+    gradientFrom: "#49B84A",
+    gradientTo: "#004225",
   },
   {
     icon: <Search size={22} />,
@@ -68,7 +69,8 @@ const GIS_APPS = [
     desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
     img: "/s2.png",
     route: "/gis-metaverse",
-    color: "from-[#0B7A3B] to-[#004225]",
+    gradientFrom: "#0B7A3B",
+    gradientTo: "#004225",
   },
   {
     icon: <ClipboardList size={22} />,
@@ -76,7 +78,8 @@ const GIS_APPS = [
     desc: "Experience cadastral and society data in an immersive 3D environment with land-use visualization.",
     img: "/s3.png",
     route: "/society-3d",
-    color: "from-[#49B84A] to-[#0B7A3B]",
+    gradientFrom: "#49B84A",
+    gradientTo: "#0B7A3B",
   },
   {
     icon: <FileText size={22} />,
@@ -84,7 +87,8 @@ const GIS_APPS = [
     desc: "Search plots, view demarcation details, verify and generate printable plot reports for cadastral documentation.",
     img: "/s4.png",
     route: "/demarcation",
-    color: "from-[#0B7A3B] to-[#00351f]",
+    gradientFrom: "#49B84A",
+    gradientTo: "#0B7A3B",
   },
   {
     icon: <Eye size={22} />,
@@ -92,7 +96,8 @@ const GIS_APPS = [
     desc: "Control and manage the complete cadastral system, including users, records, spatial datasets, dashboards, permissions and administrative workflows.",
     img: "/s5.png",
     route: "/dashboard",
-    color: "from-[#49B84A] to-[#004225]",
+    gradientFrom: "#49B84A",
+    gradientTo: "#004225",
   },
   {
     icon: <Smartphone size={22} />,
@@ -100,7 +105,8 @@ const GIS_APPS = [
     desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
     img: "/s6.png",
     route: "/flyto-dashboard",
-    color: "from-[#0B7A3B] to-[#004225]",
+    gradientFrom: "#0B7A3B",
+    gradientTo: "#004225",
   },
 ];
 
@@ -174,13 +180,16 @@ function useInView(options = {}) {
   return [ref, visible];
 }
 
-function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
+function AppCard({ icon, title, desc, img, route, color, gradientFrom, gradientTo, index, onClick }) {
   const [ref, visible] = useInView();
+  const [hovered, setHovered] = useState(false);
 
   return (
     <article
       ref={ref}
       onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={`group relative bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100
         transition-all duration-500 ease-out
         ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}
@@ -227,7 +236,12 @@ function AppCard({ icon, title, desc, img, route, color, index, onClick }) {
       </div>
 
       <div
-        className={`h-0.5 w-0 group-hover:w-full bg-gradient-to-r ${color} transition-all duration-500`}
+        style={{
+          height: "2px",
+          width: hovered ? "100%" : "0%",
+          background: `linear-gradient(to right, ${gradientFrom}, ${gradientTo})`,
+          transition: "width 500ms ease",
+        }}
       />
     </article>
   );
@@ -565,7 +579,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {GIS_APPS.map(({ icon, title, desc, img, route, color }, i) => (
+            {GIS_APPS.map(({ icon, title, desc, img, route, gradientFrom, gradientTo }, i) => (
               <AppCard
                 key={title}
                 index={i}
@@ -574,7 +588,8 @@ export default function LandingPage() {
                 desc={desc}
                 img={img}
                 route={route}
-                color={color}
+                gradientFrom={gradientFrom}
+                gradientTo={gradientTo}
                 onClick={() => route && navigate(route)}
               />
             ))}
