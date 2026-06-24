@@ -31,7 +31,7 @@ export function addRudaBoundaryLayer(map, data) {
       type: "line",
       source: SOURCES.rudaBoundary,
       paint: {
-        "line-color": "#111827",
+        "line-color": "#06291f",
         "line-width": 2,
         "line-opacity": 0.95,
       },
@@ -44,7 +44,7 @@ export function addRudaBoundaryLayer(map, data) {
       type: "line",
       source: SOURCES.rudaBoundary,
       paint: {
-        "line-color": "#111827",
+        "line-color": "#06291f",
         "line-width": 1.2,
         "line-dasharray": [1.4, 1.2],
         "line-opacity": 0.9,
@@ -65,7 +65,7 @@ export function addRudaBoundaryLayer(map, data) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": "#111827",
+        "text-color": "#06291f",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.4,
       },

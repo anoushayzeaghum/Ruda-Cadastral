@@ -159,6 +159,24 @@ router.register(r"project-mauza/delete", DeleteProjectMauzaView, basename="delet
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Custom plot-khasra intersection API.
+    # Keep this BEFORE router.urls so DRF router does not try to resolve this as a plot detail route.
+    path(
+        'api/plot/<int:plot_gid>/intersecting-khasras/',
+        PlotIntersectingKhasrasAPIView.as_view(),
+        name='plot-intersecting-khasras',
+    ),
+
+    # Backup route in case this urls.py is included under /api/ from the project urls.
+    # If this file is the project root urls.py, it will also expose:
+    # http://localhost:8000/plot/<gid>/intersecting-khasras/
+    path(
+        'plot/<int:plot_gid>/intersecting-khasras/',
+        PlotIntersectingKhasrasAPIView.as_view(),
+        name='plot-intersecting-khasras-no-api-prefix',
+    ),
+
     path('api/', include(router.urls)),
 
     path("import/district/", import_district_shapefile),
@@ -166,6 +184,6 @@ urlpatterns = [
     path("import/mauza/", import_mauza_shapefile),
     # path("import/square/", import_square_shapefile),
     path("import/khasra/", import_khasra_shapefile),
-    
+
     path('', include(router.urls)),
 ]

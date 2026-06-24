@@ -20,7 +20,7 @@ const BOUNDS = [
 const STUDY_FIT = { padding: 24, maxZoom: 17.5, duration: 0 };
 
 const EXPANDED_PANEL_CLASS =
-  "fixed z-[70] inset-x-0 mx-auto flex flex-col overflow-hidden rounded-xl border border-[#3a4354] bg-[#202736] shadow-2xl"
+  "fixed z-[70] inset-x-0 mx-auto flex flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#06291f] shadow-2xl"
   + " w-[min(860px,96vw)]"
   + " top-[64px] bottom-[16px]";
 

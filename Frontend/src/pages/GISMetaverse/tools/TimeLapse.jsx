@@ -22,7 +22,7 @@ const BOUNDS = [
 const STUDY_FIT = { padding: 12, maxZoom: 17.5, duration: 0 };
 
 const EXPANDED_PANEL_CLASS =
-  "fixed z-[70] inset-x-0 mx-auto flex flex-col overflow-hidden rounded-xl border border-[#3a4354] bg-[#202736] shadow-2xl"
+  "fixed z-[70] inset-x-0 mx-auto flex flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#06291f] shadow-2xl"
   + " w-[min(860px,96vw)]"
   + " top-[64px] bottom-[16px]";
 
@@ -454,7 +454,7 @@ export default function TimeLapse({ map, onClose }) {
             className={`px-2 py-0.5 rounded text-[10px] transition ${
               speed === s
                 ? "bg-[#8fd36f] text-[#1a1f2e] font-bold"
-                : "bg-[#2c3648] text-white/60 hover:bg-[#344055]"
+                : "bg-[#031a14] text-white/60 hover:bg-[#0c3d2d]"
             }`}
           >
             {s === 3000 ? "Slow" : s === 2000 ? "Normal" : "Fast"}

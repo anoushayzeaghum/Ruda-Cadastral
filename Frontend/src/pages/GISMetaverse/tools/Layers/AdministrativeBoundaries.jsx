@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import mapboxgl from "mapbox-gl";
+import RudaBoundaryAttribute from "./AttributeTable/RudaBoundaryAttribute";
+import RudaMozaBoundaryAttribute from "./AttributeTable/RudaMozaBoundaryAttribute";
+import GeodeticNetworkAttribute from "./AttributeTable/GeodeticNetworkAttribute";
+import ProposedRoadAttribute from "./AttributeTable/ProposedRoadAttribute";
+import { formatNumber, getMapSourceGeoJSON } from "./AttributeTable/AdminAttributeTableShell";
+import { readAreaSqft, sqftToAcres } from "./AttributeTable/areaUtils";
 
 const RUDA_BOUNDARY_LAYER_IDS = [
   "metaverse-ruda-boundary-fill",
@@ -207,6 +213,10 @@ export default function AdministrativeBoundaries({
 }) {
   const [open, setOpen] = useState(false);
   const [rudaPhaseDropdownOpen, setRudaPhaseDropdownOpen] = useState(false);
+  const [rudaMauzaDropdownOpen, setRudaMauzaDropdownOpen] = useState(false);
+  const [geodeticDropdownOpen, setGeodeticDropdownOpen] = useState(false);
+  const [proposedRoadsDropdownOpen, setProposedRoadsDropdownOpen] = useState(false);
+  const [activeAttributeTable, setActiveAttributeTable] = useState(null);
 
   // Keep editable colors local to this panel so changing colors does NOT update
   // adminBoundaryVisibility and does NOT re-trigger any API/loading effects.
@@ -536,6 +546,76 @@ export default function AdministrativeBoundaries({
     rudaPhases.length > 0 &&
     rudaPhases.every((phase) => selectedRudaPhaseSet.has(String(phase.id)));
 
+  const getLayerGeoJSON = (key) =>
+    getMapSourceGeoJSON(map, ADMIN_SOURCE_IDS[key]);
+
+  const rudaMauzaSummary = useMemo(() => {
+    const geojson = getLayerGeoJSON("rudaMauzaBoundary");
+    const features = geojson.features || [];
+    const totalSqft = features.reduce(
+      (sum, feature) => sum + readAreaSqft(feature),
+      0,
+    );
+
+    return {
+      count: features.length,
+      totalSqft,
+      totalAcres: sqftToAcres(totalSqft),
+    };
+  }, [map, adminBoundaryVisibility?.rudaMauzaBoundary, rudaMauzaDropdownOpen]);
+
+  const geodeticSummary = useMemo(() => {
+    const geojson = getLayerGeoJSON("geodeticNetwork");
+    const features = geojson.features || [];
+    const elevations = features
+      .map((feature) => Number(feature?.properties?.elevation))
+      .filter(Number.isFinite);
+    const codes = new Set(
+      features.map((feature) => feature?.properties?.code).filter(Boolean),
+    );
+
+    return {
+      count: features.length,
+      codeCount: codes.size,
+      minElevation: elevations.length ? Math.min(...elevations) : null,
+      maxElevation: elevations.length ? Math.max(...elevations) : null,
+    };
+  }, [map, adminBoundaryVisibility?.geodeticNetwork, geodeticDropdownOpen]);
+
+  const proposedRoadsSummary = useMemo(() => {
+    const geojson = getLayerGeoJSON("proposedRoads");
+    const counts = new Map();
+
+    (geojson.features || []).forEach((feature) => {
+      const props = feature?.properties || {};
+      const type =
+        props.type || props.road_type || props.layer || props.name || props.refname || "Other";
+      counts.set(type, (counts.get(type) || 0) + 1);
+    });
+
+    return [...counts.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+  }, [map, adminBoundaryVisibility?.proposedRoads, proposedRoadsDropdownOpen]);
+
+  const renderAttributeTable = () => {
+    const commonProps = {
+      map,
+      onClose: () => setActiveAttributeTable(null),
+    };
+
+    switch (activeAttributeTable) {
+      case "rudaBoundary":
+        return <RudaBoundaryAttribute {...commonProps} />;
+      case "rudaMauzaBoundary":
+        return <RudaMozaBoundaryAttribute {...commonProps} />;
+      case "geodeticNetwork":
+        return <GeodeticNetworkAttribute {...commonProps} />;
+      case "proposedRoads":
+        return <ProposedRoadAttribute {...commonProps} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="border-b border-[#343c4c]">
       <button
@@ -562,6 +642,7 @@ export default function AdministrativeBoundaries({
               setRudaPhaseDropdownOpen((prev) => !prev);
               refreshRudaPhasesFromMap();
             }}
+            onTableOpen={() => setActiveAttributeTable("rudaBoundary")}
           />
 
           {rudaPhaseDropdownOpen && (
@@ -639,9 +720,30 @@ export default function AdministrativeBoundaries({
             onOpacityChange={(value) =>
               updateOpacity("rudaMauzaBoundary", value)
             }
+            hasDropdown
+            dropdownOpen={rudaMauzaDropdownOpen}
+            onDropdownToggle={() => setRudaMauzaDropdownOpen((prev) => !prev)}
+            onTableOpen={() => setActiveAttributeTable("rudaMauzaBoundary")}
             colorEditable
             onColorChange={(value) => updateColor("rudaMauzaBoundary", value)}
           />
+
+          {rudaMauzaDropdownOpen && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Mozas</span>
+                <span>{rudaMauzaSummary.count}</span>
+              </div>
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Area (sq ft)</span>
+                <span>{formatNumber(rudaMauzaSummary.totalSqft)}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span>Total Area (acres)</span>
+                <span>{formatNumber(rudaMauzaSummary.totalAcres)}</span>
+              </div>
+            </div>
+          )}
 
           <LayerItem
             checked={adminBoundaryVisibility.geodeticNetwork}
@@ -650,9 +752,34 @@ export default function AdministrativeBoundaries({
             opacity={editableOpacities.geodeticNetwork}
             onChange={() => toggleLayer("geodeticNetwork")}
             onOpacityChange={(value) => updateOpacity("geodeticNetwork", value)}
+            hasDropdown
+            dropdownOpen={geodeticDropdownOpen}
+            onDropdownToggle={() => setGeodeticDropdownOpen((prev) => !prev)}
+            onTableOpen={() => setActiveAttributeTable("geodeticNetwork")}
             colorEditable
             onColorChange={(value) => updateColor("geodeticNetwork", value)}
           />
+
+          {geodeticDropdownOpen && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Points</span>
+                <span>{geodeticSummary.count}</span>
+              </div>
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Unique Codes</span>
+                <span>{geodeticSummary.codeCount}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span>Elevation Range</span>
+                <span>
+                  {geodeticSummary.minElevation === null
+                    ? "-"
+                    : `${formatNumber(geodeticSummary.minElevation)} - ${formatNumber(geodeticSummary.maxElevation)}`}
+                </span>
+              </div>
+            </div>
+          )}
 
           <LayerItem
             checked={adminBoundaryVisibility.proposedRoads}
@@ -661,9 +788,33 @@ export default function AdministrativeBoundaries({
             opacity={editableOpacities.proposedRoads}
             onChange={() => toggleLayer("proposedRoads")}
             onOpacityChange={(value) => updateOpacity("proposedRoads", value)}
+            hasDropdown
+            dropdownOpen={proposedRoadsDropdownOpen}
+            onDropdownToggle={() => setProposedRoadsDropdownOpen((prev) => !prev)}
+            onTableOpen={() => setActiveAttributeTable("proposedRoads")}
           />
+
+          {proposedRoadsDropdownOpen && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              {proposedRoadsSummary.length === 0 ? (
+                <p className="py-1 text-white/60">No road types found</p>
+              ) : (
+                proposedRoadsSummary.map(([type, count]) => (
+                  <div
+                    key={type}
+                    className="flex justify-between border-b border-[#343c4c]/70 py-1 last:border-b-0"
+                  >
+                    <span className="max-w-[150px] truncate">{type}</span>
+                    <span>{count}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       )}
+
+      {renderAttributeTable()}
     </div>
   );
 }
@@ -678,6 +829,7 @@ function LayerItem({
   hasDropdown = false,
   dropdownOpen = false,
   onDropdownToggle,
+  onTableOpen,
   colorEditable = false,
   onColorChange,
 }) {
@@ -730,22 +882,39 @@ function LayerItem({
           <span className="text-[11px]">{label}</span>
         </label>
 
-        {hasDropdown ? (
-          <button
-            type="button"
-            onClick={onDropdownToggle}
-            className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white"
-            title="Show RUDA phases"
-          >
-            {dropdownOpen ? (
-              <ChevronDown size={14} />
-            ) : (
-              <ChevronRight size={14} />
-            )}
-          </button>
-        ) : (
-          <Grid3X3 size={14} className="text-white/60" />
-        )}
+        <div className="flex items-center gap-1">
+          {onTableOpen && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onTableOpen();
+              }}
+              className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white"
+              title={`Open ${label} attribute table`}
+            >
+              <Grid3X3 size={14} />
+            </button>
+          )}
+
+          {hasDropdown && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onDropdownToggle?.();
+              }}
+              className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white"
+              title={`Show ${label} details`}
+            >
+              {dropdownOpen ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-2 flex items-center gap-2 pl-6">

@@ -48,7 +48,7 @@ export function addIntroBoundaryLayer(map, data, label) {
         "text-ignore-placement": true,
       },
       paint: {
-        "text-color": "#111827",
+        "text-color": "#06291f",
         "text-halo-color": "#ffffff",
         "text-halo-width": 2,
       },

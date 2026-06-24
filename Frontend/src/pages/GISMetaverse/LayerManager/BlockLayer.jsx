@@ -90,7 +90,7 @@ export function addBlockLayer(map, data) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": "#111827",
+        "text-color": "#06291f",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.7,
         "text-opacity": 1,

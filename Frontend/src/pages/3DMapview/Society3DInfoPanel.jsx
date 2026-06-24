@@ -72,15 +72,15 @@ export default function Society3DInfoPanel({ feature, isOpen, onClose }) {
       `}</style>
 
       <aside
-        className="absolute right-5 top-5 z-50 w-[330px] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl"
+        className="absolute right-5 top-5 z-50 w-[330px] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl"
         style={{
           animation: "society3dPanelDrop 220ms ease-out both",
           transformOrigin: "top center",
         }}
       >
-        <div className="flex items-center justify-between border-b border-[#343c4c] bg-[#1d2533] px-4 py-3">
+        <div className="flex items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
-            <MapPin size={18} className="shrink-0 text-[#8bd66f]" />
+            <MapPin size={18} className="shrink-0 text-[#9be37b]" />
             <h2 className="truncate text-sm font-bold uppercase tracking-wide">
               3D Feature Info
             </h2>
@@ -103,7 +103,7 @@ export default function Society3DInfoPanel({ feature, isOpen, onClose }) {
         </div>
 
         <div className="max-h-[calc(100vh-120px)] space-y-3 overflow-y-auto p-4">
-          <div className="rounded-md border border-[#3a4354] bg-[#1d2533] p-3">
+          <div className="rounded-md border border-[#13593f] bg-[#06291f] p-3">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-white/45">
@@ -113,19 +113,19 @@ export default function Society3DInfoPanel({ feature, isOpen, onClose }) {
                   {featureType}
                 </p>
               </div>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#344055] bg-[#202736]">
-                <Building2 size={18} className="text-[#8bd66f]" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#0c3d2d] bg-[#06291f]">
+                <Building2 size={18} className="text-[#9be37b]" />
               </div>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-md border border-[#3a4354]">
-            <div className="flex items-center gap-2 border-b border-[#343c4c] bg-[#1d2533] px-3 py-2 text-[12px] font-semibold text-white/80">
-              <Ruler size={14} className="text-[#8bd66f]" />
+          <div className="overflow-hidden rounded-md border border-[#13593f]">
+            <div className="flex items-center gap-2 border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2 text-[12px] font-semibold text-white/80">
+              <Ruler size={14} className="text-[#9be37b]" />
               Attribute Details
             </div>
 
-            <div className="divide-y divide-[#343c4c] bg-[#202736]">
+            <div className="divide-y divide-[#0c3d2d] bg-[#06291f]">
               {rows.map(([label, value]) => (
                 <div
                   key={label}

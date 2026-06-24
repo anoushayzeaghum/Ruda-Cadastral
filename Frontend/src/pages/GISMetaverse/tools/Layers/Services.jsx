@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -7,13 +7,23 @@ import {
   X,
   VideoOff,
   Maximize2,
+  Eye,
 } from "lucide-react";
+import axios from "axios";
+import CameraLocationsAttribute from "./AttributeTable/CameraLocationsAttribute";
+import {
+  API_BASE,
+  getMapSourceGeoJSON,
+  unwrapGeoJSON,
+} from "./AttributeTable/AdminAttributeTableShell";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CAMERA_STYLE = {
   color: "#f97316",
   opacity: 100,
+  sourceId: "metaverse-camera-locations-source",
+  endpoint: "/camera-location/",
   circleLayer: "metaverse-camera-locations-circle",
   labelLayer: "metaverse-camera-locations-label",
 };
@@ -92,8 +102,45 @@ export default function Services({
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState(CAMERA_FEEDS[0]);
   const [fullscreen, setFullscreen] = useState(false);
+  const [activeAttributeTable, setActiveAttributeTable] = useState(null);
+  const [cameraDropdownOpen, setCameraDropdownOpen] = useState(false);
+  const [cameraDropdownData, setCameraDropdownData] = useState([]);
 
   const cameraEnabled = !!layerVisibility.cameraLocations;
+
+  const readCameraSourceOrFetch = async () => {
+    const fromMap = getMapSourceGeoJSON(map, CAMERA_STYLE.sourceId);
+    if (fromMap.features?.length) return fromMap;
+
+    const res = await axios.get(`${API_BASE}${CAMERA_STYLE.endpoint}`, {
+      params: { project_id: selectedProjectId },
+    });
+    return unwrapGeoJSON(res.data);
+  };
+
+  const loadCameraDropdownData = async () => {
+    if (!selectedProjectId) return;
+
+    try {
+      const geojson = await readCameraSourceOrFetch();
+      setCameraDropdownData(geojson.features || []);
+    } catch (error) {
+      console.error("Camera locations dropdown load error:", error);
+      setCameraDropdownData([]);
+    }
+  };
+
+  const toggleCameraDropdown = () => {
+    setCameraDropdownOpen((prev) => !prev);
+    loadCameraDropdownData();
+  };
+
+  const cameraSummary = useMemo(
+    () => ({
+      count: cameraDropdownData.length,
+    }),
+    [cameraDropdownData],
+  );
 
   const toggleLayer = (key) => {
     if (!selectedProjectId) {
@@ -138,7 +185,7 @@ export default function Services({
       <div className="border-b border-[#343c4c]">
         <button
           type="button"
-          className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
+          className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0a3327]"
           onClick={() => setOpen((prev) => !prev)}
         >
           <span>SERVICES</span>
@@ -156,7 +203,23 @@ export default function Services({
               onChange={() => toggleLayer("cameraLocations")}
               onOpacityChange={updateOpacity}
               onColorChange={updateColor}
+              hasDropdown
+              dropdownOpen={cameraDropdownOpen}
+              onDropdownToggle={toggleCameraDropdown}
+              onTableOpen={() => setActiveAttributeTable("cameraLocations")}
+              onEyeClick={() => {
+                // Placeholder only. Camera view action can be implemented later.
+              }}
             />
+
+            {cameraDropdownOpen && (
+              <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+                <div className="flex justify-between py-1">
+                  <span>Total Camera Locations</span>
+                  <span>{cameraSummary.count}</span>
+                </div>
+              </div>
+            )}
 
             {/* Live Camera Feed button — visible only when Camera Locations is ON */}
             {cameraEnabled && (
@@ -183,7 +246,7 @@ export default function Services({
       {liveFeedOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div
-            className={`flex flex-col overflow-hidden rounded-xl border border-[#3a4354] bg-[#0f1520] shadow-2xl transition-all duration-200 ${
+            className={`flex flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#031a14] shadow-2xl transition-all duration-200 ${
               fullscreen
                 ? "fixed inset-4"
                 : "w-[min(900px,96vw)] max-h-[min(620px,90vh)]"
@@ -314,6 +377,14 @@ export default function Services({
           </div>
         </div>
       )}
+
+      {activeAttributeTable === "cameraLocations" && (
+        <CameraLocationsAttribute
+          map={map}
+          selectedProjectId={selectedProjectId}
+          onClose={() => setActiveAttributeTable(null)}
+        />
+      )}
     </>
   );
 }
@@ -363,6 +434,11 @@ function LayerItem({
   onOpacityChange,
   onColorChange,
   disabled,
+  hasDropdown = false,
+  dropdownOpen = false,
+  onDropdownToggle,
+  onTableOpen,
+  onEyeClick,
 }) {
   return (
     <div className={`mt-3 first:mt-1 ${disabled ? "opacity-50" : ""}`}>
@@ -383,7 +459,56 @@ function LayerItem({
           />
           <span className="text-[11px]">{label}</span>
         </label>
-        <Grid3X3 size={14} className="text-white/60" />
+        <div className="flex items-center gap-1">
+          {onEyeClick && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                onEyeClick();
+              }}
+              className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              title={`View ${label}`}
+            >
+              <Eye size={14} />
+            </button>
+          )}
+
+          {onTableOpen && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                onTableOpen();
+              }}
+              className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              title={`Open ${label} attribute table`}
+            >
+              <Grid3X3 size={14} />
+            </button>
+          )}
+
+          {hasDropdown && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDropdownToggle?.();
+              }}
+              className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              title={`Show ${label} details`}
+            >
+              {dropdownOpen ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-2 flex items-center gap-2 pl-6">

@@ -1,22 +1,37 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import WaterSupplyPointAttribute from "./AttributeTable/WaterSupplyPointAttribute";
+import WaterSupplyLevelAttribute from "./AttributeTable/WaterSupplyLevelAttribute";
+import SewagePointAttribute from "./AttributeTable/SewagePointAttribute";
+import {
+  API_BASE,
+  getMapSourceGeoJSON,
+  unwrapGeoJSON,
+} from "./AttributeTable/AdminAttributeTableShell";
 
 const UTILITY_LAYER_STYLES = {
   waterSupplyPoints: {
     color: "#42a5f5",
     opacity: 100,
+    sourceId: "metaverse-water-supply-points-source",
+    endpoint: "/wspoint-features-cb1/",
     circleLayer: "metaverse-water-supply-points-circle",
     labelLayer: "metaverse-water-supply-points-label",
   },
   waterSupplyLines: {
     color: "#1e88e5",
     opacity: 100,
+    sourceId: "metaverse-water-supply-lines-source",
+    endpoint: "/wsl-cb1/",
     lineLayer: "metaverse-water-supply-lines-line",
     labelLayer: "metaverse-water-supply-lines-label",
   },
   sewagePoints: {
     color: "#8e44ad",
     opacity: 100,
+    sourceId: "metaverse-sewage-points-source",
+    endpoint: "/swpoint-cb1/",
     circleLayer: "metaverse-sewage-points-circle",
     labelLayer: "metaverse-sewage-points-label",
   },
@@ -76,6 +91,22 @@ const applyAfterLayerLoads = (map, key, style) => {
   });
 };
 
+const uniqueValues = (features = [], keys = []) => {
+  const values = new Set();
+  features.forEach((feature) => {
+    const props = feature.properties || {};
+    keys.forEach((key) => {
+      const value = props[key];
+      if (value !== undefined && value !== null && value !== "") {
+        values.add(String(value));
+      }
+    });
+  });
+  return [...values].sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true }),
+  );
+};
+
 export default function Utilities({
   map,
   selectedProjectId,
@@ -83,6 +114,17 @@ export default function Utilities({
   setLayerVisibility,
 }) {
   const [open, setOpen] = useState(false);
+  const [activeAttributeTable, setActiveAttributeTable] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState({
+    waterSupplyPoints: false,
+    waterSupplyLines: false,
+    sewagePoints: false,
+  });
+  const [dropdownData, setDropdownData] = useState({
+    waterSupplyPoints: [],
+    waterSupplyLines: [],
+    sewagePoints: [],
+  });
   const [styles, setStyles] = useState(() => ({
     waterSupplyPoints: {
       color: UTILITY_LAYER_STYLES.waterSupplyPoints.color,
@@ -97,6 +139,37 @@ export default function Utilities({
       opacity: layerVisibility.sewagePointsOpacity ?? 100,
     },
   }));
+
+  const readSourceOrFetch = async (key) => {
+    const def = UTILITY_LAYER_STYLES[key];
+    const fromMap = getMapSourceGeoJSON(map, def.sourceId);
+    if (fromMap.features?.length) return fromMap;
+
+    const res = await axios.get(`${API_BASE}${def.endpoint}`, {
+      params: { project_id: selectedProjectId },
+    });
+    return unwrapGeoJSON(res.data);
+  };
+
+  const loadDropdownData = async (key) => {
+    if (!selectedProjectId) return;
+
+    try {
+      const geojson = await readSourceOrFetch(key);
+      setDropdownData((prev) => ({
+        ...prev,
+        [key]: geojson.features || [],
+      }));
+    } catch (error) {
+      console.error(`${key} utility dropdown load error:`, error);
+      setDropdownData((prev) => ({ ...prev, [key]: [] }));
+    }
+  };
+
+  const toggleDropdown = (key) => {
+    setDropdownOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+    loadDropdownData(key);
+  };
 
   const toggleLayer = (key) => {
     if (!selectedProjectId) {
@@ -139,6 +212,49 @@ export default function Utilities({
     });
   };
 
+  const waterSupplyPointSummary = useMemo(() => {
+    const features = dropdownData.waterSupplyPoints || [];
+    return {
+      count: features.length,
+      types: uniqueValues(features, ["type"]),
+    };
+  }, [dropdownData.waterSupplyPoints]);
+
+  const waterSupplyLevelSummary = useMemo(() => {
+    const features = dropdownData.waterSupplyLines || [];
+    return {
+      count: features.length,
+      levels: uniqueValues(features, ["dia", "type", "name"]),
+    };
+  }, [dropdownData.waterSupplyLines]);
+
+  const sewagePointSummary = useMemo(() => {
+    const features = dropdownData.sewagePoints || [];
+    return {
+      count: features.length,
+      types: uniqueValues(features, ["type"]),
+    };
+  }, [dropdownData.sewagePoints]);
+
+  const renderAttributeTable = () => {
+    const commonProps = {
+      map,
+      selectedProjectId,
+      onClose: () => setActiveAttributeTable(null),
+    };
+
+    switch (activeAttributeTable) {
+      case "waterSupplyPoints":
+        return <WaterSupplyPointAttribute {...commonProps} />;
+      case "waterSupplyLines":
+        return <WaterSupplyLevelAttribute {...commonProps} />;
+      case "sewagePoints":
+        return <SewagePointAttribute {...commonProps} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="border-b border-[#343c4c]">
       <button
@@ -163,7 +279,30 @@ export default function Utilities({
               updateOpacity("waterSupplyPoints", value)
             }
             onColorChange={(value) => updateColor("waterSupplyPoints", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.waterSupplyPoints}
+            onDropdownToggle={() => toggleDropdown("waterSupplyPoints")}
+            onTableOpen={() => setActiveAttributeTable("waterSupplyPoints")}
           />
+
+          {dropdownOpen.waterSupplyPoints && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Water Supply Points</span>
+                <span>{waterSupplyPointSummary.count}</span>
+              </div>
+              {waterSupplyPointSummary.types.length > 0 && (
+                <div className="pt-1">
+                  <p className="mb-1 text-white/55">Types</p>
+                  {waterSupplyPointSummary.types.map((type) => (
+                    <div key={type} className="flex justify-between py-0.5">
+                      <span className="max-w-[170px] truncate">{type}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <LayerItem
             disabled={!selectedProjectId}
@@ -176,7 +315,32 @@ export default function Utilities({
               updateOpacity("waterSupplyLines", value)
             }
             onColorChange={(value) => updateColor("waterSupplyLines", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.waterSupplyLines}
+            onDropdownToggle={() => toggleDropdown("waterSupplyLines")}
+            onTableOpen={() => setActiveAttributeTable("waterSupplyLines")}
           />
+
+          {dropdownOpen.waterSupplyLines && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Water Supply Levels</span>
+                <span>{waterSupplyLevelSummary.count}</span>
+              </div>
+              {waterSupplyLevelSummary.levels.length > 0 && (
+                <div className="pt-1">
+                  <p className="mb-1 text-white/55">Different Levels</p>
+                  <div className="max-h-36 overflow-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {waterSupplyLevelSummary.levels.map((level) => (
+                      <div key={level} className="truncate py-0.5">
+                        {level}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <LayerItem
             disabled={!selectedProjectId}
@@ -187,9 +351,34 @@ export default function Utilities({
             onChange={() => toggleLayer("sewagePoints")}
             onOpacityChange={(value) => updateOpacity("sewagePoints", value)}
             onColorChange={(value) => updateColor("sewagePoints", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.sewagePoints}
+            onDropdownToggle={() => toggleDropdown("sewagePoints")}
+            onTableOpen={() => setActiveAttributeTable("sewagePoints")}
           />
+
+          {dropdownOpen.sewagePoints && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Sewage Points</span>
+                <span>{sewagePointSummary.count}</span>
+              </div>
+              {sewagePointSummary.types.length > 0 && (
+                <div className="pt-1">
+                  <p className="mb-1 text-white/55">Types</p>
+                  {sewagePointSummary.types.map((type) => (
+                    <div key={type} className="truncate py-0.5">
+                      {type}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
+
+      {renderAttributeTable()}
     </div>
   );
 }
@@ -225,6 +414,10 @@ function LayerItem({
   onOpacityChange,
   onColorChange,
   disabled,
+  hasDropdown = false,
+  dropdownOpen = false,
+  onDropdownToggle,
+  onTableOpen,
 }) {
   return (
     <div className={`mt-3 first:mt-1 ${disabled ? "opacity-50" : ""}`}>
@@ -248,7 +441,41 @@ function LayerItem({
           <span className="text-[11px]">{label}</span>
         </label>
 
-        <Grid3X3 size={14} className="text-white/60" />
+        <div className="flex items-center gap-1">
+          {onTableOpen && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                onTableOpen();
+              }}
+              className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              title={`Open ${label} attribute table`}
+            >
+              <Grid3X3 size={14} />
+            </button>
+          )}
+
+          {hasDropdown && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDropdownToggle?.();
+              }}
+              className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              title={`Show ${label} details`}
+            >
+              {dropdownOpen ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-2 flex items-center gap-2 pl-6">

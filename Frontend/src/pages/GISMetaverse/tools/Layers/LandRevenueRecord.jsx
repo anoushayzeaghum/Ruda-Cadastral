@@ -5,7 +5,12 @@ import {
   getSquaresGeoJSON,
   getKhasrasGeoJSON,
 } from "../../../../services/api";
-import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import { ChevronDown, ChevronRight, Grid3X3, Table2 } from "lucide-react";
+import MauzaBoundaryAttribute from "./AttributeTable/MauzaBoundaryAttribute";
+import KhasraBoundaryAttribute from "./AttributeTable/KhasraBoundaryAttribute";
+import SquareBoundaryAttribute from "./AttributeTable/SquareBoundaryAttribute";
+import { formatNumber } from "./AttributeTable/AdminAttributeTableShell";
+import { readAreaSqft } from "./AttributeTable/areaUtils";
 
 const MASAWI_SOURCE = "gis-handu-gujran-ortho-source";
 const MASAWI_LAYER = "gis-handu-gujran-ortho-layer";
@@ -237,6 +242,38 @@ function getMauzaName(feature) {
     feature?.properties?.name ??
     feature?.properties?.Name ??
     `Mauza ${getMauzaId(feature) || ""}`
+  );
+}
+
+
+function getFeatureAreaLabel(feature) {
+  const sqft = readAreaSqft(feature);
+  return sqft ? `${formatNumber(sqft)} sq ft` : "-";
+}
+
+function getKhasraName(feature) {
+  const props = feature?.properties || {};
+  return (
+    props.join_shp ??
+    props.kh ??
+    props.KH ??
+    props.khasra_no ??
+    props.khasra_id ??
+    props.name ??
+    props.Name ??
+    `Khasra ${props.gid || ""}`
+  );
+}
+
+function getSquareName(feature) {
+  const props = feature?.properties || {};
+  return (
+    props.layer ??
+    props.sq ??
+    props.square_id ??
+    props.name ??
+    props.Name ??
+    `Square ${props.gid || ""}`
   );
 }
 
@@ -490,6 +527,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
   const [khasraPanelOpen, setKhasraPanelOpen] = useState(false);
   const [khasraMauzas, setKhasraMauzas] = useState([]);
   const [open, setOpen] = useState(false);
+  const [activeTable, setActiveTable] = useState(null);
 
   const cachedData = useRef({});
 
@@ -539,6 +577,9 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     () => ({ type: "FeatureCollection", features: activeMauzaFeatures }),
     [activeMauzaFeatures],
   );
+
+  const khasraGeojson = cachedData.current.khasra || emptyFC();
+  const squareGeojson = cachedData.current.square || emptyFC();
 
   const loadProjectMauzas = async ({ draw = false, zoom = false } = {}) => {
     if (!map) return emptyFC();
@@ -666,7 +707,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
           mauzaIds.includes(getMauzaId(feature)),
         );
         setKhasraMauzas(linkedMauzas);
-        setKhasraPanelOpen(true);
+        setKhasraPanelOpen("khasra");
       }
 
       return geojson;
@@ -791,6 +832,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     setMauzaPanelOpen(false);
     setKhasraPanelOpen(false);
     setOpen(false);
+    setActiveTable(null);
 
     ["moza", "square", "khasra", "masawi"].forEach((key) =>
       hideLayer(map, key),
@@ -807,6 +849,14 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
 
   const renderBoundaryRow = ({ key, label, color, dropdown }) => {
     const isKhasra = key === "khasra";
+    const isSquare = key === "square";
+    const isMasawi = key === "masawi";
+    const boundaryFeatures =
+      key === "khasra"
+        ? cachedData.current.khasra?.features || []
+        : key === "square"
+          ? cachedData.current.square?.features || []
+          : [];
 
     return (
       <LayerItem
@@ -816,52 +866,65 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
         label={label}
         loading={layers[key].loading}
         opacity={layers[key].opacity}
-        hasDropdown={dropdown}
-        dropdownOpen={isKhasra && khasraPanelOpen}
-        dropdownTitle="Show khasra mauza names"
+        hasDropdown={dropdown || isSquare || isMasawi}
+        hasTable={isKhasra || isSquare}
+        dropdownOpen={(isKhasra || isSquare || isMasawi) && khasraPanelOpen === key}
+        dropdownTitle={`Show ${label} details`}
         onChange={(checked) => handleVisible(key, checked)}
         onOpacityChange={(opacity) => setOpacity(key, opacity)}
         onColorChange={(value) => setColor(key, value)}
         colorEditable={key !== "masawi"}
         disabled={!hasSelectedProject}
-        onDropdownToggle={() => setKhasraPanelOpen((prev) => !prev)}
+        onDropdownToggle={() =>
+          setKhasraPanelOpen((prev) => (prev === key ? false : key))
+        }
+        onTableOpen={() => setActiveTable(key)}
       >
-        {isKhasra && khasraPanelOpen && (
+        {(isKhasra || isSquare || isMasawi) && khasraPanelOpen === key && (
           <div
             className={`max-h-32 border-t border-white/10 px-3 py-1.5 ${LAYER_PANEL_SCROLL}`}
             onClick={(event) => event.stopPropagation()}
           >
-            {!layers.khasra.visible && (
-              <div className="py-1 text-[11px] text-white/45">
-                Turn on Khasra Boundary to view linked mauza names.
+            {isMasawi ? (
+              <div className="flex items-center gap-2 py-1 text-[11px] text-white/85">
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: layers.masawi.color }}
+                />
+                <span className="truncate">Handu Gujran Masawi / Ortho Image</span>
               </div>
+            ) : !layers[key].visible ? (
+              <div className="py-1 text-[11px] text-white/45">
+                Turn on {label} to view opened records.
+              </div>
+            ) : !boundaryFeatures.length && !layers[key].loading ? (
+              <div className="py-1 text-[11px] text-white/45">
+                No {label.toLowerCase()} records loaded for selected project mauzas.
+              </div>
+            ) : (
+              boundaryFeatures.map((feature, index) => {
+                const props = feature?.properties || {};
+                const displayName = isKhasra
+                  ? getKhasraName(feature)
+                  : `${getSquareName(feature)}${props.mauza ? ` - ${props.mauza}` : ""}`;
+
+                return (
+                  <div
+                    key={`${key}-${props.gid || feature.id || index}`}
+                    className="flex items-center gap-2 py-1 text-[11px] text-white/85"
+                  >
+                    <span
+                      className="h-1.5 w-1.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: layers[key].color }}
+                    />
+                    <span className="min-w-0 flex-1 truncate">{displayName}</span>
+                    <span className="shrink-0 text-white/50">
+                      {getFeatureAreaLabel(feature)}
+                    </span>
+                  </div>
+                );
+              })
             )}
-
-            {layers.khasra.visible &&
-              !khasraMauzas.length &&
-              !layers.khasra.loading && (
-                <div className="py-1 text-[11px] text-white/45">
-                  No khasra boundary loaded for selected project mauzas.
-                </div>
-              )}
-
-            {khasraMauzas.map((mauza) => {
-              const id = getMauzaId(mauza);
-              const name = getMauzaName(mauza);
-
-              return (
-                <div
-                  key={`khasra-${id}-${name}`}
-                  className="flex items-center gap-2 py-1 text-[11px] text-white/85"
-                >
-                  <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: layers.khasra.color }}
-                  />
-                  <span className="truncate">{name}</span>
-                </div>
-              );
-            })}
           </div>
         )}
       </LayerItem>
@@ -893,6 +956,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
             loading={layers.moza.loading}
             opacity={layers.moza.opacity}
             hasDropdown
+            hasTable
             dropdownOpen={mauzaPanelOpen}
             dropdownTitle="Show mauza names"
             disabled={!hasSelectedProject}
@@ -900,6 +964,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
             onOpacityChange={(opacity) => setOpacity("moza", opacity)}
             onColorChange={(value) => setColor("moza", value)}
             colorEditable
+            onTableOpen={() => setActiveTable("moza")}
             onDropdownToggle={() => {
               setMauzaPanelOpen((prev) => {
                 const nextOpen = !prev;
@@ -962,7 +1027,9 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                         }}
                         className="accent-[#1f7a3a]"
                       />
-                      <span className="truncate">{name}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {name} - {getFeatureAreaLabel(mauza)}
+                      </span>
                     </label>
                   );
                 })}
@@ -972,6 +1039,30 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
 
           {LAYER_DEFS.map((definition) => renderBoundaryRow(definition))}
         </div>
+      )}
+
+      {activeTable === "moza" && (
+        <MauzaBoundaryAttribute
+          map={map}
+          geojson={mauzaGeojson}
+          onClose={() => setActiveTable(null)}
+        />
+      )}
+
+      {activeTable === "khasra" && (
+        <KhasraBoundaryAttribute
+          map={map}
+          geojson={khasraGeojson}
+          onClose={() => setActiveTable(null)}
+        />
+      )}
+
+      {activeTable === "square" && (
+        <SquareBoundaryAttribute
+          map={map}
+          geojson={squareGeojson}
+          onClose={() => setActiveTable(null)}
+        />
       )}
     </div>
   );
@@ -1006,12 +1097,14 @@ function LayerItem({
   loading,
   opacity,
   hasDropdown = false,
+  hasTable = false,
   dropdownOpen = false,
   dropdownTitle,
   onChange,
   onOpacityChange,
   onColorChange,
   onDropdownToggle,
+  onTableOpen,
   disabled = false,
   colorEditable = false,
   children,
@@ -1063,28 +1156,46 @@ function LayerItem({
           </span>
         </label>
 
-        {hasDropdown ? (
-          <button
-            type="button"
-            disabled={disabled}
-            className="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-white/60"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (disabled) return;
-              onDropdownToggle?.();
-            }}
-            title={dropdownTitle}
-          >
-            <Grid3X3 size={14} />
-            {dropdownOpen ? (
-              <ChevronDown size={14} />
-            ) : (
-              <ChevronRight size={14} />
-            )}
-          </button>
-        ) : (
-          <Grid3X3 size={14} className="shrink-0 text-white/60" />
-        )}
+        <div className="flex shrink-0 items-center gap-1">
+          {hasTable && (
+            <button
+              type="button"
+              disabled={disabled}
+              className="rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-white/60"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (disabled) return;
+                onTableOpen?.();
+              }}
+              title={`Open ${label} attribute table`}
+            >
+              <Table2 size={14} />
+            </button>
+          )}
+
+          {hasDropdown ? (
+            <button
+              type="button"
+              disabled={disabled}
+              className="flex items-center gap-1 rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-white/60"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (disabled) return;
+                onDropdownToggle?.();
+              }}
+              title={dropdownTitle}
+            >
+              <Grid3X3 size={14} />
+              {dropdownOpen ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
+            </button>
+          ) : (
+            <Grid3X3 size={14} className="text-white/60" />
+          )}
+        </div>
       </div>
 
       <div className="mt-2 flex items-center gap-2 pl-6">

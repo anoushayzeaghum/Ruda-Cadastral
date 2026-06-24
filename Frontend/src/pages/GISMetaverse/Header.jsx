@@ -65,7 +65,7 @@ function IconButton({ title, icon, onClick }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#0f3d2e] bg-[#1f2937] text-white shadow-sm transition hover:bg-[#0f3d2e]"
+      className="h-9 w-9 rounded-lg bg-white/15 border border-white/25 text-white flex items-center justify-center shadow-sm transition hover:bg-white/25 hover:border-white/40"
     >
       {icon}
     </button>

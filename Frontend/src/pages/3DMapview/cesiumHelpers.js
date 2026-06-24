@@ -195,7 +195,7 @@ if (
     category: "road",
     label: "Road",
     fillColor: "#374151",
-    outlineColor: "#111827",
+    outlineColor: "#06291f",
     opacity: 1,
     extrude: false,
     heightMeters: 0,
@@ -669,7 +669,7 @@ function createPolygonEntity(
     : options.opacity;
   const material = color(fillColor, finalOpacity);
   const outlineColor = color(
-    smartStyle?.outlineColor || options.outlineColor || "#111827",
+    smartStyle?.outlineColor || options.outlineColor || "#06291f",
     1,
   );
 

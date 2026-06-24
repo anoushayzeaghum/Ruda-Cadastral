@@ -97,7 +97,7 @@ export default function FlyToDashboard() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#111827]">
+    <div className="h-screen w-screen overflow-hidden bg-[#0f3d2e]">
       <FlyToHeader />
 
       <div className="relative h-[calc(100vh-56px)] w-full">

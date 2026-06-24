@@ -68,7 +68,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["brief_name"], label: "Brief Name" },
       { keys: ["name"], label: "Project Name" },
       { keys: ["type"], label: "Type" },
-      { key: "gid", label: "ID" },
       { keys: ["shape_area"], label: "Area" },
       { keys: ["shape_leng"], label: "Perimeter" },
     ],
@@ -83,8 +82,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["block"], label: "Block No" },
       { keys: ["name"], label: "Name" },
       { key: "area", label: "Area" },
-      { key: "project_id", label: "Project ID" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -94,11 +91,8 @@ export const VECTOR_POPUP_GROUPS = [
     titlePrefix: "Spot Level",
     titleKeys: ["gid", "name"],
     fields: [
-      { key: "gid", label: "ID" },
       { keys: ["name"], label: "Name" },
       { keys: ["elevation", "level"], label: "Elevation" },
-      { key: "project_id", label: "Project ID" },
-      { key: "society_id", label: "Society ID" },
     ],
   },
   {
@@ -109,8 +103,6 @@ export const VECTOR_POPUP_GROUPS = [
     titleKeys: ["elevation", "ELEVATION", "Elevation", "gid"],
     fields: [
       { keys: ["elevation", "ELEVATION", "Elevation"], label: "Elevation" },
-      { key: "gid", label: "ID" },
-      { key: "project_id", label: "Project ID" },
     ],
   },
   {
@@ -124,8 +116,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["block"], label: "Block" },
       { keys: ["dimension"], label: "Dimension" },
       { keys: ["row", "ROW"], label: "ROW" },
-      { key: "project_id", label: "Project ID" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -136,8 +126,6 @@ export const VECTOR_POPUP_GROUPS = [
     fields: [
       { keys: ["name", "Name"], label: "Name" },
       { keys: ["type", "Type"], label: "Type" },
-      { key: "project_id", label: "Project ID" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -150,8 +138,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["dia", "DIA", "Dia"], label: "Diameter" },
       { keys: ["type", "Type"], label: "Type" },
       { keys: ["shape_leng"], label: "Length" },
-      { key: "project_id", label: "Project ID" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -162,8 +148,6 @@ export const VECTOR_POPUP_GROUPS = [
     fields: [
       { keys: ["name", "Name"], label: "Name" },
       { keys: ["type", "Type"], label: "Type" },
-      { key: "project_id", label: "Project ID" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -178,8 +162,6 @@ export const VECTOR_POPUP_GROUPS = [
       { key: "x", label: "X" },
       { key: "y", label: "Y" },
       { key: "sr_no", label: "Serial No" },
-      { key: "project_id", label: "Project ID" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -195,7 +177,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["snippet"], label: "Snippet", stripHtml: true },
       { keys: ["shape_area"], label: "Area" },
       { keys: ["shape_leng"], label: "Perimeter" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -206,7 +187,6 @@ export const VECTOR_POPUP_GROUPS = [
     fields: [
       ...ADMIN_LOCATION_FIELDS,
       { keys: ["Mouza", "mouza", "Mauza", "mauza"], label: "Mauza Name" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -220,7 +200,6 @@ export const VECTOR_POPUP_GROUPS = [
       { key: "easting_m", label: "Easting (m)" },
       { key: "northing_m", label: "Northing (m)" },
       { key: "elevation", label: "Elevation" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -237,7 +216,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["color"], label: "Color" },
       { key: "elevation", label: "Elevation" },
       { keys: ["kml_desc"], label: "Description", stripHtml: true },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -249,7 +227,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["brief_name"], label: "Brief Name" },
       { keys: ["name"], label: "Project Name" },
       { keys: ["type"], label: "Type" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -261,8 +238,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["name", "Name"], label: "Name" },
       { keys: ["layer", "Layer"], label: "Layer" },
       { keys: ["description", "Description"], label: "Description" },
-      { key: "gid", label: "ID" },
-      { key: "fid", label: "Feature ID" },
     ],
   },
   {
@@ -278,7 +253,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["mauza_id"], label: "Mauza ID" },
       { keys: ["kc"], label: "Kanungo Circle" },
       { keys: ["pc"], label: "Patwar Circle" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -294,7 +268,6 @@ export const VECTOR_POPUP_GROUPS = [
       ...ADMIN_LOCATION_FIELDS,
       { keys: ["m", "murabba_no"], label: "Murabba No" },
       { keys: ["sheets"], label: "Sheets" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -310,12 +283,10 @@ export const VECTOR_POPUP_GROUPS = [
       ...ADMIN_LOCATION_FIELDS,
       { keys: ["kh", "KH", "khasra_id"], label: "Khasra No" },
       { keys: ["khatoni_no"], label: "Khatoni No" },
-      { keys: ["khewat_id"], label: "Khewat ID" },
       { keys: ["sq"], label: "Square" },
       { keys: ["type"], label: "Type" },
       { keys: ["dc_rate"], label: "DC Rate" },
       { keys: ["remarks"], label: "Remarks" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -331,7 +302,6 @@ export const VECTOR_POPUP_GROUPS = [
       { key: "x", label: "X" },
       { key: "y", label: "Y" },
       { keys: ["layer"], label: "Layer" },
-      { key: "gid", label: "ID" },
     ],
   },
   {
@@ -345,7 +315,6 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["code"], label: "Code" },
       { key: "elevation", label: "Elevation" },
       { keys: ["layer"], label: "Layer" },
-      { key: "gid", label: "ID" },
     ],
   },
 ];

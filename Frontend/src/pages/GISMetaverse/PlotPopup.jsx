@@ -4,6 +4,7 @@ import {
   buildLayerPopupLookup,
   getAllPopupLayerIds,
 } from "./vectorLayerPopupConfig";
+import { openIntersectingKhasraDetails } from "./IntersectingKhasraDetails";
 
 const escapeHTML = (value = "") =>
   String(value)
@@ -150,6 +151,7 @@ const getPopupSizeTokens = (zoom = 16) => {
 const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
   const title = escapeHTML(resolveTitle(props, group));
   const s = getPopupSizeTokens(zoom);
+  const showKhasraButton = group?.id === "masterPlan";
 
   const rows = (group.fields || [])
     .map((field) => {
@@ -167,7 +169,7 @@ const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
           <span style="min-width:${s.labelMinWidth};flex-shrink:0;font-size:${s.labelFontSize};font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:#6b7280;">
             ${escapeHTML(field.label)}:
           </span>
-          <span style="word-break:break-word;text-align:right;font-size:${s.valueFontSize};font-weight:500;line-height:1.4;color:#111827;">
+          <span style="word-break:break-word;text-align:right;font-size:${s.valueFontSize};font-weight:500;line-height:1.4;color:#06291f;">
             ${displayValue}
           </span>
         </div>
@@ -177,19 +179,36 @@ const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
     .join("");
 
   return `
-    <div style="width:${s.containerWidth};overflow:hidden;border-radius:${s.borderRadius};background:#fff;color:#111827;box-shadow:0 20px 60px rgba(0,0,0,0.25);outline:1px solid rgba(0,0,0,0.08);">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:${s.borderRadius} ${s.borderRadius} 0 0;background:#111827;padding:${s.headerPy} ${s.headerPx};">
+    <div style="width:${s.containerWidth};overflow:hidden;border-radius:${s.borderRadius};background:#fff;color:#06291f;box-shadow:0 20px 60px rgba(0,0,0,0.25);outline:1px solid rgba(0,0,0,0.08);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:${s.borderRadius} ${s.borderRadius} 0 0;background:#06291f;padding:${s.headerPy} ${s.headerPx};">
         <div style="font-size:${s.titleFontSize};font-weight:700;letter-spacing:0.3px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
           ${title}
         </div>
-        <button
-          type="button"
-          data-vector-popup-close="true"
-          aria-label="Close feature info"
-          style="display:flex;flex-shrink:0;align-items:center;justify-content:center;width:${s.btnSize};height:${s.btnSize};border-radius:50%;background:rgba(255,255,255,0.1);font-size:${s.btnFontSize};line-height:1;color:#fff;border:none;cursor:pointer;"
-        >
-          ×
-        </button>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          ${
+            showKhasraButton
+              ? `
+                <button
+                  type="button"
+                  data-khasra-details-open="true"
+                  aria-label="Open intersecting khasra details"
+                  style="display:flex;flex-shrink:0;align-items:center;justify-content:center;width:${s.btnSize};height:${s.btnSize};border-radius:50%;background:rgba(255,255,255,0.1);font-size:${s.btnFontSize};line-height:1;color:#fff;border:none;cursor:pointer;"
+                >
+                  📎
+                </button>
+              `
+              : ""
+          }
+
+          <button
+            type="button"
+            data-vector-popup-close="true"
+            aria-label="Close feature info"
+            style="display:flex;flex-shrink:0;align-items:center;justify-content:center;width:${s.btnSize};height:${s.btnSize};border-radius:50%;background:rgba(255,255,255,0.1);font-size:${s.btnFontSize};line-height:1;color:#fff;border:none;cursor:pointer;"
+          >
+            ×
+          </button>
+        </div>
       </div>
 
       <div style="max-height:${s.maxBodyHeight};overflow-y:auto;padding:${s.bodyPy} ${s.bodyPx};scrollbar-width:none;">
@@ -255,7 +274,7 @@ const applyTailwindToMapboxPopupShell = (popup) => {
 
   const tip = el.querySelector(".mapboxgl-popup-tip");
   if (tip) {
-    tip.style.borderTopColor = "#111827";
+    tip.style.borderTopColor = "#06291f";
   }
 };
 
@@ -386,6 +405,44 @@ export function setupVectorClickPopups({
     return { feature, group };
   };
 
+  const attachKhasraButtonListener = (feature, group) => {
+    const khasraBtn = popup
+      ?.getElement()
+      ?.querySelector('[data-khasra-details-open="true"]');
+
+    if (khasraBtn) {
+      khasraBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        clearCloseTimer();
+
+        const props = feature?.properties || {};
+        const popupPayload = {
+          ...props,
+          gid: props.gid ?? props.GID ?? props.id ?? feature?.id ?? null,
+          id: props.id ?? feature?.id ?? props.gid ?? null,
+          _mapboxFeatureId: feature?.id ?? null,
+          _layerId: feature?.layer?.id ?? null,
+          _popupGroupId: group?.id ?? null,
+        };
+
+        console.log("[PlotPopup] Khasra details clicked", {
+          featureId: feature?.id,
+          layerId: feature?.layer?.id,
+          groupId: group?.id,
+          props,
+          popupPayload,
+        });
+
+        openIntersectingKhasraDetails(popupPayload);
+      });
+    } else {
+      console.warn("[PlotPopup] Khasra button not found in popup DOM", {
+        feature,
+        group,
+      });
+    }
+  };
+
   const showPopup = (event, feature, group) => {
     if (isDestroyed || !isUsableMap(map) || !feature || !group) return;
     if (!isZoomInPopupRange()) return;
@@ -433,6 +490,8 @@ export function setupVectorClickPopups({
       });
     }
 
+    attachKhasraButtonListener(feature, group);
+
     closeTimer = window.setTimeout(() => closePopup(), autoCloseMs);
   };
 
@@ -448,6 +507,13 @@ export function setupVectorClickPopups({
       if (popup) closePopup();
       return;
     }
+
+    console.log("[PlotPopup] Vector feature clicked", {
+      layerId: hit.feature?.layer?.id,
+      featureId: hit.feature?.id,
+      groupId: hit.group?.id,
+      properties: hit.feature?.properties,
+    });
 
     event.preventDefault?.();
     showPopup(event, hit.feature, hit.group);
@@ -481,6 +547,8 @@ export function setupVectorClickPopups({
             closePopup();
           });
         }
+
+        attachKhasraButtonListener(lastClickedFeature, lastClickedGroup);
       } catch {
         // popup may have been removed
       }

@@ -49,15 +49,15 @@ export default function Society3DLayerPanel({
       `}</style>
 
       <aside
-        className="w-[330px] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl"
+        className="w-[330px] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl"
         style={{
           animation: "society3dPanelDrop 220ms ease-out both",
           transformOrigin: "top center",
         }}
       >
-        <div className="flex items-center justify-between border-b border-[#343c4c] bg-[#1d2533] px-4 py-3">
+        <div className="flex items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-4 py-3">
           <div className="flex items-center gap-2">
-            <Layers size={18} className="text-[#8bd66f]" />
+            <Layers size={18} className="text-[#9be37b]" />
             <h2 className="text-sm font-bold uppercase tracking-wide">
               3D Layer Manager
             </h2>
@@ -78,7 +78,7 @@ export default function Society3DLayerPanel({
         </div>
 
         <div className="max-h-[calc(100vh-120px)] space-y-3 overflow-y-auto p-4">
-          <div className="rounded-md border border-[#3a4354] bg-[#1d2533] p-3">
+          <div className="rounded-md border border-[#13593f] bg-[#06291f] p-3">
             <p className="mb-2 text-[12px] font-semibold text-white/80">
               Basemap
             </p>
@@ -90,8 +90,8 @@ export default function Society3DLayerPanel({
                   onClick={() => setBasemap(name)}
                   className={`rounded-md border px-2 py-1.5 text-[11px] font-semibold transition ${
                     basemap === name
-                      ? "border-[#8bd66f] bg-[#243041] text-white"
-                      : "border-[#344055] bg-[#202736] text-white/80 hover:bg-[#293445]"
+                      ? "border-[#9be37b] bg-[#0a3327] text-white"
+                      : "border-[#0c3d2d] bg-[#031a14] text-white/80 hover:bg-[#0a3327]"
                   }`}
                 >
                   {name}
@@ -100,8 +100,8 @@ export default function Society3DLayerPanel({
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-md border border-[#3a4354]">
-            <div className="border-b border-[#343c4c] bg-[#1d2533] px-3 py-2 text-[12px] font-semibold text-white/80">
+          <div className="overflow-hidden rounded-md border border-[#13593f]">
+            <div className="border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2 text-[12px] font-semibold text-white/80">
               Project 3D Layers
             </div>
 
@@ -149,9 +149,9 @@ function LayerRow({
           checked={checked}
           onChange={onToggle}
           disabled={disabled}
-          className="h-4 w-4 rounded border-[#344055] bg-[#1d2533] text-[#8bd66f] focus:ring-[#8bd66f]"
+          className="h-4 w-4 rounded border-[#0c3d2d] bg-[#06291f] text-[#9be37b] focus:ring-[#9be37b]"
         />
-        <Icon size={15} className="text-[#8bd66f]" />
+        <Icon size={15} className="text-[#9be37b]" />
         <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-white/85">
           {label}
         </span>
@@ -168,7 +168,7 @@ function LayerRow({
           value={opacity}
           disabled={disabled || !checked}
           onChange={(event) => onOpacityChange(event.target.value)}
-          className="h-1.5 w-full accent-[#8bd66f] disabled:opacity-50"
+          className="h-1.5 w-full accent-[#9be37b] disabled:opacity-50"
         />
       </div>
     </div>

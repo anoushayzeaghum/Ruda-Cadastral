@@ -34,7 +34,7 @@ export default function FlyToLeftToolbar({
   {/* FILTER */}
   <div className="relative">
     {bottomPanel === "filter" && (
-      <div className="absolute top-0 left-10 ml-2 w-[320px] max-h-[70vh] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+      <div className="absolute top-0 left-10 ml-2 w-[320px] max-h-[70vh] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
         <FlyToFilter
           filters={filters}
           onClose={() => setBottomPanel(null)}
@@ -53,10 +53,10 @@ export default function FlyToLeftToolbar({
             type="button"
             title="Filter"
             onClick={() => handleBottomPanel("filter")}
-            className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+            className={`flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm transition ${
               bottomPanel === "filter"
-                ? "border-[#8bd66f] bg-[#243041] text-white"
-                : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+                ? "border-[#9be37b] bg-[#0a3327] text-white"
+                : "border-[#0c3d2d] bg-[#06291f] text-white hover:bg-[#0a3327]"
             }`}
           >
             <FilterIcon size={20} strokeWidth={2.2} />
@@ -103,10 +103,10 @@ export default function FlyToLeftToolbar({
             type="button"
             title="Attribute Search"
             onClick={() => handleBottomPanel("attribute")}
-            className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+            className={`flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm transition ${
               bottomPanel === "attribute"
-                ? "border-[#8bd66f] bg-[#243041] text-white"
-                : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+                ? "border-[#9be37b] bg-[#0a3327] text-white"
+                : "border-[#0c3d2d] bg-[#06291f] text-white hover:bg-[#0a3327]"
             }`}
           >
             <Search size={20} />
@@ -119,7 +119,7 @@ export default function FlyToLeftToolbar({
         {/* BASEMAPS */}
         <div className="relative">
           {bottomPanel === "basemaps" && (
-            <div className="absolute bottom-0 left-10 ml-1 w-[calc(100vw-4rem)] max-h-[340px] overflow-y-auto rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl sm:w-[380px]">
+            <div className="absolute bottom-0 left-10 ml-1 w-[calc(100vw-4rem)] max-h-[340px] overflow-y-auto rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:w-[380px]">
               <Basemaps map={map} rebuildAllLayers={rebuildAllLayers} />
             </div>
           )}
@@ -128,10 +128,10 @@ export default function FlyToLeftToolbar({
             type="button"
             title="Basemaps"
             onClick={() => handleBottomPanel("basemaps")}
-            className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+            className={`flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm transition ${
               bottomPanel === "basemaps"
-                ? "border-[#8bd66f] bg-[#243041] text-white"
-                : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+                ? "border-[#9be37b] bg-[#0a3327] text-white"
+                : "border-[#0c3d2d] bg-[#06291f] text-white hover:bg-[#0a3327]"
             }`}
           >
             <Globe2 size={20} strokeWidth={2.2} />
@@ -141,7 +141,7 @@ export default function FlyToLeftToolbar({
         {/* LAYERS */}
         <div className="relative">
           {bottomPanel === "layers" && (
-            <div className="absolute bottom-0 left-10 ml-1 w-[300px] max-h-[500px] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+            <div className="absolute bottom-0 left-10 ml-1 w-[300px] max-h-[500px] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
               <LayersPanel
                 map={map}
                 filters={filters}
@@ -158,10 +158,10 @@ export default function FlyToLeftToolbar({
             type="button"
             title="Layers"
             onClick={() => handleBottomPanel("layers")}
-            className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+            className={`flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm transition ${
               bottomPanel === "layers"
-                ? "border-[#8bd66f] bg-[#243041] text-white"
-                : "border-[#344055] bg-[#1d2533] text-white hover:bg-[#293445]"
+                ? "border-[#9be37b] bg-[#0a3327] text-white"
+                : "border-[#0c3d2d] bg-[#06291f] text-white hover:bg-[#0a3327]"
             }`}
           >
             <Layers size={20} strokeWidth={2.2} />

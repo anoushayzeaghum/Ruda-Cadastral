@@ -1,63 +1,38 @@
 import { useState } from "react";
 import { Globe2, Check } from "lucide-react";
 
-const basemaps = [
-  {
-    id: "streets",
-    label: "Streets",
-    style: "mapbox://styles/mapbox/streets-v12",
-    preview: "linear-gradient(135deg, #d7e3c7, #8db57a)",
-  },
-  {
-    id: "satellite",
-    label: "Satellite",
-    style: "mapbox://styles/mapbox/satellite-streets-v12",
-    preview: "linear-gradient(135deg, #26351f, #7c8b65)",
-  },
-  {
-    id: "light",
-    label: "Light",
-    style: "mapbox://styles/mapbox/light-v11",
-    preview: "linear-gradient(135deg, #f4f4f2, #cfcfcf)",
-  },
-  {
-    id: "dark",
-    label: "Dark",
-    style: "mapbox://styles/mapbox/dark-v11",
-    preview: "linear-gradient(135deg, #111827, #374151)",
-  },
-  {
-    id: "outdoors",
-    label: "Outdoors",
-    style: "mapbox://styles/mapbox/outdoors-v12",
-    preview: "linear-gradient(135deg, #b7d59a, #5f8f58)",
-  },
+import { BASEMAP_STYLES } from "../../Mapview/LayerManager/layerConfig";
+
+const BASEMAPS = [
+  { name: "Streets", image: "/basemaps/streets.png" },
+  { name: "Satellite", image: "/basemaps/satellite.png" },
+  { name: "Dark", image: "/basemaps/dark.png" },
+  { name: "Light", image: "/basemaps/light.png" },
+  { name: "Outdoors", image: "/basemaps/outdoors.png" },
 ];
 
 export default function Basemaps({ map, rebuildAllLayers }) {
- 
+  const [activeBasemap, setActiveBasemap] = useState("Streets");
 
-  const [activeBasemap, setActiveBasemap] = useState("streets");
+  const handleBasemapChange = (item) => {
+    setActiveBasemap(item.name);
 
-const handleBasemapChange = (basemap) => {
-  setActiveBasemap(basemap.id);
+    if (!map) return;
 
-  if (!map) return;
+    map.stop();
+    map.setStyle(BASEMAP_STYLES[item.name] || item.name);
 
-  map.stop();
-  map.setStyle(basemap.style);
+    map.once("style.load", () => {
+      console.log("STYLE LOADED");
 
-  map.once("style.load", () => {
-    console.log("STYLE LOADED");
-
-    if (rebuildAllLayers) {
-      console.log("CALLING REBUILD");
-      rebuildAllLayers();
-    } else {
-      console.log("NO REBUILD FUNCTION");
-    }
-  });
-};
+      if (rebuildAllLayers) {
+        console.log("CALLING REBUILD");
+        rebuildAllLayers();
+      } else {
+        console.log("NO REBUILD FUNCTION");
+      }
+    });
+  };
 
   return (
     <div className="text-white">
@@ -68,35 +43,36 @@ const handleBasemapChange = (basemap) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 p-3">
-        {basemaps.map((basemap) => {
-          const isActive = activeBasemap === basemap.id;
-
-          return (
-            <button
-              key={basemap.id}
-              onClick={() => handleBasemapChange(basemap)}
-              className={`overflow-hidden rounded-md border bg-[#1d2533] text-left transition hover:border-[#8bd66f] ${
-                isActive ? "border-[#8bd66f]" : "border-[#344055]"
-              }`}
-            >
-              <div
-                className="relative h-16 w-full"
-                style={{ background: basemap.preview }}
-              >
-                {isActive && (
-                  <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#8bd66f] text-[#111827]">
-                    <Check size={13} strokeWidth={3} />
+      <div className="grid grid-cols-2 gap-4 p-4">
+        {BASEMAPS.map((item) => (
+          <div
+            key={item.name}
+            className={`cursor-pointer rounded-lg border-2 p-1 transition-all ${
+              activeBasemap === item.name
+                ? "border-green-500 shadow-lg"
+                : "border-transparent hover:border-[#8bd66f]"
+            }`}
+            onClick={() => handleBasemapChange(item)}
+          >
+            <div className="relative aspect-video overflow-hidden rounded-md">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="h-full w-full object-cover"
+              />
+              {activeBasemap === item.name && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <div className="rounded-full bg-green-500 p-1">
+                    <Check size={16} className="text-white" />
                   </div>
-                )}
-              </div>
-
-              <div className="px-3 py-2 text-xs font-semibold">
-                {basemap.label}
-              </div>
-            </button>
-          );
-        })}
+                </div>
+              )}
+            </div>
+            <p className="mt-2 text-center text-sm font-medium text-slate-200">
+              {item.name}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

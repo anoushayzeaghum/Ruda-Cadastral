@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Trash2,
   Info,
+  X,
 } from "lucide-react";
 
 // ── Mapbox layer / source IDs ─────────────────────────────────────────────────
@@ -187,7 +188,7 @@ function UnitSelector({ options, value, onChange, color }) {
               : {
                   backgroundColor: "#1a2233",
                   color: "rgba(255,255,255,0.4)",
-                  border: "1px solid #344055",
+                  border: "1px solid #0c3d2d",
                 }
           }
         >
@@ -221,7 +222,7 @@ function EmptyHint({ children }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function Measurement({ map }) {
+export default function Measurement({ map, onClose }) {
   // activeTool: set immediately when user clicks a tool icon → starts map drawing
   const [activeTool, setActiveTool] = useState(null);
   // resultReady: true after user clicks Apply → shows the result panel
@@ -797,7 +798,18 @@ export default function Measurement({ map }) {
           <Ruler size={14} />
           <span>MEASUREMENT</span>
         </div>
-        <ChevronRight size={15} />
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-6 w-6 items-center justify-center rounded text-white/50 transition hover:bg-[#2a3548] hover:text-white"
+            title="Close"
+          >
+            <X size={14} />
+          </button>
+        ) : (
+          <ChevronRight size={15} />
+        )}
       </div>
 
       <div className="p-3 space-y-3">
@@ -818,7 +830,7 @@ export default function Measurement({ map }) {
                 }}
                 className={`relative flex min-w-0 flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 transition ${
                   isActive
-                    ? "border-[#8bd66f] bg-[#243041] text-white"
+                    ? "border-[#9be37b] bg-[#0a3327] text-white"
                     : "border-[#0f3d2e] bg-[#1f2937] text-white/80 hover:bg-[#0f3d2e] hover:text-white"
                 }`}
                 title={tool.label}
@@ -873,7 +885,7 @@ export default function Measurement({ map }) {
 
         {/* Result panel — only shown after Apply is clicked */}
         {activeTool && resultReady && (
-          <div className="mt-1 rounded-md border border-[#3a4354] bg-[#1f2937] overflow-hidden">
+          <div className="mt-1 rounded-md border border-[#13593f] bg-[#06291f] overflow-hidden">
             {/* Hint bar */}
             <div className="flex items-center gap-2 border-b border-[#343c4c] px-3 py-2 text-[10px] text-white/50">
               <Info size={11} className="shrink-0" />

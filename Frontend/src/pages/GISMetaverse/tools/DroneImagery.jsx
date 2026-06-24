@@ -328,7 +328,7 @@ export default function DroneImagery({ map }) {
               )}
 
               <div
-                className={`bg-[#111827] shadow-xl transition-all duration-300 ${
+                className={`bg-[#06291f] shadow-xl transition-all duration-300 ${
                   expanded
                     ? "fixed z-[70] rounded-xl border border-[#3b4558] overflow-hidden"
                     : "mt-2 rounded-lg border border-[#3b4558] overflow-hidden"
@@ -481,7 +481,7 @@ export default function DroneImagery({ map }) {
                         type="button"
                         onClick={() => setPlaying((p) => !p)}
                         className="flex h-8 w-8 items-center justify-center rounded-full transition"
-                        style={{ backgroundColor: "#65c96b", color: "#111827" }}
+                        style={{ backgroundColor: "#9be37b", color: "#06291f" }}
                       >
                         {playing ? (
                           <Pause size={15} />
