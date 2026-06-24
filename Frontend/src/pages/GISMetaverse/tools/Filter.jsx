@@ -688,7 +688,7 @@ export default function Filter({
             <button
               type="button"
               onClick={handleApply}
-              className="h-8 flex-1 rounded-md bg-[#8bd66f] text-xs font-bold text-[#111827]"
+              className="h-8 flex-1 rounded-md bg-[#9be37b] text-xs font-bold text-[#06291f]"
             >
               Apply
             </button>

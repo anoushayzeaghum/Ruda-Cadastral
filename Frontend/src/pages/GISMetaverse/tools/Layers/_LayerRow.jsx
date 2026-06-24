@@ -47,7 +47,7 @@ export default function LayerRow({
           onChange={(e) => onOpacityChange?.(Number(e.target.value))}
           className="h-[3px] flex-1 rounded-full accent-[#65c96b] disabled:cursor-not-allowed"
           style={{
-            background: `linear-gradient(to right, ${color} ${opacity ?? 100}%, #344055 ${opacity ?? 100}%)`,
+            background: `linear-gradient(to right, ${color} ${opacity ?? 100}%, #0c3d2d ${opacity ?? 100}%)`,
           }}
         />
         <span className="w-8 text-right text-[11px] text-white/90 shrink-0">

@@ -564,8 +564,8 @@ function MapTool({ title, icon, onClick, isActive = false }) {
       onClick={onClick}
       className={`flex h-9 w-9 items-center justify-center rounded-md border text-white shadow-md transition ${
         isActive
-          ? "border-[#8bd66f] bg-[#243041]"
-          : "border-[#344055] bg-[#1d2533] hover:bg-[#293445]"
+          ? "border-[#9be37b] bg-[#0a3327]"
+          : "border-[#0c3d2d] bg-[#06291f] hover:bg-[#0a3327]"
       }`}
     >
       {icon}

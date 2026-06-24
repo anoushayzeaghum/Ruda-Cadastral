@@ -138,7 +138,7 @@ export default function Services({
       <div className="border-b border-[#343c4c]">
         <button
           type="button"
-          className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#293445]"
+          className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0a3327]"
           onClick={() => setOpen((prev) => !prev)}
         >
           <span>SERVICES</span>
@@ -183,7 +183,7 @@ export default function Services({
       {liveFeedOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm">
           <div
-            className={`flex flex-col overflow-hidden rounded-xl border border-[#3a4354] bg-[#0f1520] shadow-2xl transition-all duration-200 ${
+            className={`flex flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#031a14] shadow-2xl transition-all duration-200 ${
               fullscreen
                 ? "fixed inset-4"
                 : "w-[min(900px,96vw)] max-h-[min(620px,90vh)]"

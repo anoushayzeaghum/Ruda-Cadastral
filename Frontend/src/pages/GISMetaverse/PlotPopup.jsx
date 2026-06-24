@@ -167,7 +167,7 @@ const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
           <span style="min-width:${s.labelMinWidth};flex-shrink:0;font-size:${s.labelFontSize};font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:#6b7280;">
             ${escapeHTML(field.label)}:
           </span>
-          <span style="word-break:break-word;text-align:right;font-size:${s.valueFontSize};font-weight:500;line-height:1.4;color:#111827;">
+          <span style="word-break:break-word;text-align:right;font-size:${s.valueFontSize};font-weight:500;line-height:1.4;color:#06291f;">
             ${displayValue}
           </span>
         </div>
@@ -177,8 +177,8 @@ const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
     .join("");
 
   return `
-    <div style="width:${s.containerWidth};overflow:hidden;border-radius:${s.borderRadius};background:#fff;color:#111827;box-shadow:0 20px 60px rgba(0,0,0,0.25);outline:1px solid rgba(0,0,0,0.08);">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:${s.borderRadius} ${s.borderRadius} 0 0;background:#111827;padding:${s.headerPy} ${s.headerPx};">
+    <div style="width:${s.containerWidth};overflow:hidden;border-radius:${s.borderRadius};background:#fff;color:#06291f;box-shadow:0 20px 60px rgba(0,0,0,0.25);outline:1px solid rgba(0,0,0,0.08);">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:${s.borderRadius} ${s.borderRadius} 0 0;background:#06291f;padding:${s.headerPy} ${s.headerPx};">
         <div style="font-size:${s.titleFontSize};font-weight:700;letter-spacing:0.3px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
           ${title}
         </div>
@@ -255,7 +255,7 @@ const applyTailwindToMapboxPopupShell = (popup) => {
 
   const tip = el.querySelector(".mapboxgl-popup-tip");
   if (tip) {
-    tip.style.borderTopColor = "#111827";
+    tip.style.borderTopColor = "#06291f";
   }
 };
 

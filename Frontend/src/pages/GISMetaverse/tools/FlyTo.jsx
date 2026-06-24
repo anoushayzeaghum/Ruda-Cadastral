@@ -78,7 +78,7 @@ export default function FlyTo({
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 py-1.5 text-white shadow-lg">
+    <div className="flex items-center gap-2 rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 text-white shadow-lg">
       <div className="flex items-center gap-1 text-[12px] font-bold whitespace-nowrap">
         <Send size={15} />
         Fly to :
@@ -87,7 +87,7 @@ export default function FlyTo({
       <select
         value={selectedProjectId}
         onChange={(e) => setSelectedProjectId(e.target.value)}
-        className="h-7 w-[160px] rounded bg-white px-2 text-[12px] text-[#111827] outline-none"
+        className="h-7 w-[160px] rounded bg-white px-2 text-[12px] text-[#06291f] outline-none"
       >
         <option value="">Select Project</option>
 
@@ -107,7 +107,7 @@ export default function FlyTo({
         type="button"
         onClick={handleFlyToProject}
         disabled={!selectedProjectId || loading}
-        className="flex h-7 items-center justify-center gap-1 rounded bg-white px-5 text-[12px] font-bold text-[#111827] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-7 items-center justify-center gap-1 rounded bg-white px-5 text-[12px] font-bold text-[#06291f] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? <Loader2 size={13} className="animate-spin" /> : null}
         Fly

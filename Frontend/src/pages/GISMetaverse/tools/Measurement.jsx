@@ -188,7 +188,7 @@ function UnitSelector({ options, value, onChange, color }) {
               : {
                   backgroundColor: "#1a2233",
                   color: "rgba(255,255,255,0.4)",
-                  border: "1px solid #344055",
+                  border: "1px solid #0c3d2d",
                 }
           }
         >
@@ -830,7 +830,7 @@ export default function Measurement({ map, onClose }) {
                 }}
                 className={`relative flex min-w-0 flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 transition ${
                   isActive
-                    ? "border-[#8bd66f] bg-[#243041] text-white"
+                    ? "border-[#9be37b] bg-[#0a3327] text-white"
                     : "border-[#0f3d2e] bg-[#1f2937] text-white/80 hover:bg-[#0f3d2e] hover:text-white"
                 }`}
                 title={tool.label}
@@ -885,7 +885,7 @@ export default function Measurement({ map, onClose }) {
 
         {/* Result panel — only shown after Apply is clicked */}
         {activeTool && resultReady && (
-          <div className="mt-1 rounded-md border border-[#3a4354] bg-[#1f2937] overflow-hidden">
+          <div className="mt-1 rounded-md border border-[#13593f] bg-[#06291f] overflow-hidden">
             {/* Hint bar */}
             <div className="flex items-center gap-2 border-b border-[#343c4c] px-3 py-2 text-[10px] text-white/50">
               <Info size={11} className="shrink-0" />

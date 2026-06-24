@@ -205,7 +205,7 @@ export default function SegmentMeasurement({ map }) {
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-md bg-[#111827] px-2 py-1.5 text-white shadow-lg">
+    <div className="flex items-center gap-2 rounded-md bg-[#06291f] px-2 py-1.5 text-white shadow-lg">
       <div className="flex items-center gap-1 text-[12px] font-bold">
         <Ruler size={15} />
         Measure
@@ -214,7 +214,7 @@ export default function SegmentMeasurement({ map }) {
       <select
         value={measureType}
         onChange={handleChange}
-        className="h-7 w-[110px] rounded bg-white px-2 text-[12px] text-[#111827] outline-none"
+        className="h-7 w-[110px] rounded bg-white px-2 text-[12px] text-[#06291f] outline-none"
       >
         <option value="">-----</option>
         <option value="coordinate">Coordinate</option>

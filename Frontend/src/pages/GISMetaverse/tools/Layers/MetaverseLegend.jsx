@@ -127,7 +127,7 @@ export default function MetaverseLegend({
   }, [legendRudaPhases, adminBoundaryVisibility?.selectedRudaPhaseIds]);
 
   return (
-    <aside className="pointer-events-auto w-[310px] overflow-hidden rounded-md border border-[#3a4354] bg-[#202736] text-white shadow-2xl">
+    <aside className="pointer-events-auto w-[310px] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
       <button
         type="button"
         onClick={() => setCollapsed((value) => !value)}

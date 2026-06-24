@@ -33,7 +33,7 @@ export function addMasterPlanLayer(map, data, color = null) {
       type: "line",
       source: SOURCES.masterPlan,
       paint: {
-        "line-color": color || "#111827",
+        "line-color": color || "#06291f",
         "line-width": 1,
       },
     });
@@ -60,7 +60,7 @@ export function addMasterPlanLayer(map, data, color = null) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": color || "#111827",
+        "text-color": color || "#06291f",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.5,
       },

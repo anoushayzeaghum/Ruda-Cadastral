@@ -153,7 +153,7 @@ function SearchableSelect({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={`Search ${placeholder}`}
-                className="h-7 w-full rounded border border-gray-300 px-2 text-xs font-semibold text-[#111827] outline-none"
+                className="h-7 w-full rounded border border-gray-300 px-2 text-xs font-semibold text-[#06291f] outline-none"
               />
             </div>
 
@@ -161,7 +161,7 @@ function SearchableSelect({
               <button
                 type="button"
                 onClick={() => handleSelect("")}
-                className={`block w-full px-2 py-1.5 text-left text-xs font-semibold text-[#111827] hover:bg-gray-100 ${
+                className={`block w-full px-2 py-1.5 text-left text-xs font-semibold text-[#06291f] hover:bg-gray-100 ${
                   value === "" ? "bg-gray-100" : ""
                 }`}
               >
@@ -174,7 +174,7 @@ function SearchableSelect({
                     key={option.value}
                     type="button"
                     onClick={() => handleSelect(option.value)}
-                    className={`block w-full px-2 py-1.5 text-left text-xs font-semibold text-[#111827] hover:bg-gray-100 ${
+                    className={`block w-full px-2 py-1.5 text-left text-xs font-semibold text-[#06291f] hover:bg-gray-100 ${
                       String(option.value) === String(value)
                         ? "bg-gray-100"
                         : ""
@@ -419,17 +419,17 @@ export default function MetaverseSubHeader({
   }));
 
   const filterClassName =
-    "h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none";
+    "h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#06291f] outline-none";
 
   return (
     <div className="absolute left-1/2 top-3 z-20 w-[calc(100vw-4.5rem)] max-w-[720px] -translate-x-1/2">
-      <div className="flex items-center gap-1.5 overflow-x-auto rounded-lg bg-[#0f3d2e] px-2 py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex items-center gap-1.5 overflow-x-auto rounded-lg bg-[#06291f] px-2 py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <SearchableSelect
           value={filters.projectId}
           placeholder="Projects"
           options={projectOptions}
           onChange={(value) => updateFilter("projectId", value)}
-          className="h-8 w-[130px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#111827] outline-none"
+          className="h-8 w-[130px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#06291f] outline-none"
         />
 
         <SearchableSelect
@@ -470,7 +470,7 @@ export default function MetaverseSubHeader({
           type="button"
           onClick={onCalendarClick}
           title="Calendar"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#111827] hover:bg-[#b6bdc8]"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
         >
           <CalendarDays size={16} strokeWidth={2.4} />
         </button>
@@ -479,7 +479,7 @@ export default function MetaverseSubHeader({
           type="button"
           onClick={onReset}
           title="Reset"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#111827] hover:bg-[#b6bdc8]"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
         >
           <RotateCcw size={16} strokeWidth={2.4} />
         </button>

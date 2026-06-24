@@ -126,23 +126,23 @@ export default function MetaverseMapControls({
           <MapPin size={20} />
         </ControlButton>
 
-        <div className="overflow-hidden rounded-md border border-[#0f3d2e] bg-[#1f2937] shadow-md">
+        <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-md">
           <button
             type="button"
             title="Zoom In"
             onClick={() => map?.zoomIn()}
-            className="flex h-8 w-8 items-center justify-center text-white hover:bg-[#0f3d2e]"
+            className="flex h-8 w-8 items-center justify-center text-white hover:bg-[#0a3327]"
           >
             <Plus size={20} />
           </button>
 
-          <div className="h-px bg-[#0f3d2e]" />
+          <div className="h-px bg-[#0c3d2d]" />
 
           <button
             type="button"
             title="Zoom Out"
             onClick={() => map?.zoomOut()}
-            className="flex h-8 w-8 items-center justify-center text-white hover:bg-[#0f3d2e]"
+            className="flex h-8 w-8 items-center justify-center text-white hover:bg-[#0a3327]"
           >
             <Minus size={20} />
           </button>
@@ -174,7 +174,7 @@ export default function MetaverseMapControls({
 
 function CoordinateBox({ coords, zoom }) {
   return (
-    <div className="hidden sm:block mt-0 rounded bg-[#0f3d2e] px-2 py-1 text-[10px] font-semibold text-white shadow-md">
+    <div className="hidden sm:block mt-0 rounded bg-[#06291f]/90 px-2 py-1 text-[10px] font-semibold text-white shadow-md">
       {coords.lng}, {coords.lat}
       <div className="mt-1 rounded bg-black/60 px-1 py-0.5 text-center text-[9px]">
         Zoom Level: {zoom}
@@ -192,8 +192,8 @@ function ControlButton({ title, onClick, children, active = false }) {
       onClick={onClick}
       className={`flex h-8 w-8 items-center justify-center rounded-md border text-white shadow-md transition ${
         active
-          ? "border-[#8bd66f] bg-[#243041]"
-          : "border-[#0f3d2e] bg-[#1f2937] hover:bg-[#0f3d2e]"
+          ? "border-[#9be37b] bg-[#0a3327]"
+          : "border-[#0c3d2d] bg-[#06291f] hover:bg-[#0a3327]"
       }`}
     >
       {children}
