@@ -1,5 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import ProjectBoundaryAttribute from "./AttributeTable/ProjectBoundaryAttribute";
+import BlockBoundaryAttribute from "./AttributeTable/BlockBoundaryAttribute";
+import MasterPlanBoundaryAttribute from "./AttributeTable/MasterPlanBoundaryAttribute";
+import SpotLevelAttribute from "./AttributeTable/SpotLevelAttribute";
+import ContoursAttribute from "./AttributeTable/ContoursAttribute";
+import RoadsAttribute from "./AttributeTable/RoadsAttribute";
+import { API_BASE, formatNumber, getMapSourceGeoJSON, unwrapGeoJSON } from "./AttributeTable/AdminAttributeTableShell";
+import { readAreaSqft, sqftToAcres } from "./AttributeTable/areaUtils";
 
 const MASTER_PLAN_LAYER_COLORS = {
   boundary: "#0f3d2e",
@@ -9,6 +18,31 @@ const MASTER_PLAN_LAYER_COLORS = {
   contours: "#615514",
   roads: "#ef4444",
 };
+
+const MASTER_PLAN_SOURCE_IDS = {
+  boundary: "metaverse-project-boundary-source",
+  blockBoundary: "metaverse-block-source",
+  masterPlan: "metaverse-masterplan-source",
+  spotLevel: "metaverse-spot-level-source",
+  contours: "metaverse-contours-source",
+  roads: "metaverse-roads-source",
+};
+
+
+const getFeatureKey = (feature = {}) => {
+  const props = feature.properties || {};
+  return String(
+    props.gid ?? props.id ?? props.block_id ?? props.block ?? props.name ?? feature.id ?? "",
+  );
+};
+
+const getFeatureLabel = (feature = {}) => {
+  const props = feature.properties || {};
+  return props.block || props.name || props.gid || feature.id || "-";
+};
+
+const featureCollectionFromRows = (data) => unwrapGeoJSON(data);
+
 
 const clampOpacity = (value = 100) => {
   const numeric = Number(value);
@@ -162,6 +196,24 @@ export default function MasterPlan({
   setLayerVisibility,
 }) {
   const [open, setOpen] = useState(false);
+  const [activeAttributeTable, setActiveAttributeTable] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState({
+    boundary: false,
+    blockBoundary: false,
+    masterPlan: false,
+    spotLevel: false,
+    contours: false,
+    roads: false,
+  });
+  const [dropdownData, setDropdownData] = useState({
+    boundary: [],
+    blockBoundary: [],
+    masterPlan: [],
+    spotLevel: [],
+    contours: [],
+    roads: [],
+  });
+  const [selectedBlockKeys, setSelectedBlockKeys] = useState([]);
 
   const [styles, setStyles] = useState({
     boundary: {
@@ -189,6 +241,117 @@ export default function MasterPlan({
       opacity: layerVisibility.roadsOpacity ?? 100,
     },
   });
+
+  const readSourceOrFetch = async (key, endpoint, params = {}) => {
+    const fromMap = getMapSourceGeoJSON(map, MASTER_PLAN_SOURCE_IDS[key]);
+    if (fromMap.features?.length) return fromMap;
+
+    const res = await axios.get(`${API_BASE}${endpoint}`, { params });
+    return featureCollectionFromRows(res.data);
+  };
+
+  const loadDropdownData = async (key) => {
+    if (!selectedProjectId) return;
+
+    try {
+      if (key === "boundary") {
+        const data = await readSourceOrFetch("boundary", "/project/", { gid: selectedProjectId });
+        setDropdownData((prev) => ({ ...prev, boundary: data.features || [] }));
+      }
+
+      if (key === "blockBoundary") {
+        const data = await readSourceOrFetch("blockBoundary", "/block/", { project_id: selectedProjectId });
+        const features = data.features || [];
+        setDropdownData((prev) => ({ ...prev, blockBoundary: features }));
+        setSelectedBlockKeys((prev) => prev.length ? prev : features.map(getFeatureKey).filter(Boolean));
+      }
+
+      if (key === "masterPlan") {
+        const data = await readSourceOrFetch("masterPlan", "/plot/", { project_id: selectedProjectId });
+        setDropdownData((prev) => ({ ...prev, masterPlan: data.features || [] }));
+      }
+
+      if (key === "spotLevel") {
+        const data = await readSourceOrFetch("spotLevel", "/spot-level/", { project_id: selectedProjectId });
+        setDropdownData((prev) => ({ ...prev, spotLevel: data.features || [] }));
+      }
+
+      if (key === "contours") {
+        const data = await readSourceOrFetch("contours", "/contour/", { project_id: selectedProjectId });
+        setDropdownData((prev) => ({ ...prev, contours: data.features || [] }));
+      }
+
+      if (key === "roads") {
+        const data = await readSourceOrFetch("roads", "/road/", { project_id: selectedProjectId });
+        setDropdownData((prev) => ({ ...prev, roads: data.features || [] }));
+      }
+    } catch (error) {
+      console.error(`${key} dropdown load error:`, error);
+      setDropdownData((prev) => ({ ...prev, [key]: [] }));
+    }
+  };
+
+  const toggleDropdown = (key) => {
+    setDropdownOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+    loadDropdownData(key);
+  };
+
+  const setBlockLayerFilter = (keys = []) => {
+    if (!map) return;
+    const selected = keys.map(String);
+    const filter = selected.length
+      ? [
+          "match",
+          [
+            "to-string",
+            [
+              "coalesce",
+              ["get", "gid"],
+              ["get", "id"],
+              ["get", "block_id"],
+              ["get", "block"],
+              ["get", "name"],
+            ],
+          ],
+          selected,
+          true,
+          false,
+        ]
+      : ["==", ["get", "__nothing__"], "__selected__"];
+
+    ["metaverse-block-fill", "metaverse-block-line", "metaverse-block-label"].forEach((layerId) => {
+      try {
+        if (map.getLayer(layerId)) map.setFilter(layerId, filter);
+      } catch (error) {
+        console.error("Block filter error:", error);
+      }
+    });
+  };
+
+  const toggleBlockSelection = (feature) => {
+    const key = getFeatureKey(feature);
+    if (!key) return;
+
+    setSelectedBlockKeys((prev) => {
+      const set = new Set(prev.map(String));
+      if (set.has(key)) set.delete(key);
+      else set.add(key);
+      const next = [...set];
+      setBlockLayerFilter(next);
+      return next;
+    });
+  };
+
+  const selectAllBlocks = () => {
+    const keys = (dropdownData.blockBoundary || []).map(getFeatureKey).filter(Boolean);
+    setSelectedBlockKeys(keys);
+    setBlockLayerFilter(keys);
+  };
+
+  const unselectAllBlocks = () => {
+    setSelectedBlockKeys([]);
+    setBlockLayerFilter([]);
+  };
 
   const toggleLayer = (key) => {
     if (!selectedProjectId) return;
@@ -287,6 +450,84 @@ export default function MasterPlan({
     }
   }, [selectedProjectId, setLayerVisibility]);
 
+  useEffect(() => {
+    if (layerVisibility.blockBoundary && selectedBlockKeys.length) {
+      setBlockLayerFilter(selectedBlockKeys);
+    }
+  }, [map, layerVisibility.blockBoundary, selectedBlockKeys]);
+
+  const projectBoundarySummary = useMemo(
+    () => dropdownData.boundary.map((feature) => getFeatureLabel(feature)),
+    [dropdownData.boundary],
+  );
+
+  const blockSelectionSet = useMemo(
+    () => new Set(selectedBlockKeys.map(String)),
+    [selectedBlockKeys],
+  );
+
+  const plotSummary = useMemo(() => {
+    const counts = new Map();
+    (dropdownData.masterPlan || []).forEach((feature) => {
+      const props = feature.properties || {};
+      const type = props.type || props.land_use || "Other";
+      counts.set(type, (counts.get(type) || 0) + 1);
+    });
+    return [...counts.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+  }, [dropdownData.masterPlan]);
+
+  const contoursSummary = useMemo(() => {
+    const elevations = new Set();
+    (dropdownData.contours || []).forEach((feature) => {
+      const props = feature.properties || {};
+      if (props.elevation !== undefined && props.elevation !== null && props.elevation !== "") {
+        elevations.add(String(props.elevation));
+      }
+    });
+    return {
+      count: dropdownData.contours.length,
+      elevationCount: elevations.size,
+    };
+  }, [dropdownData.contours]);
+
+  const roadsSummary = useMemo(() => {
+    const rows = new Map();
+    (dropdownData.roads || []).forEach((feature) => {
+      const props = feature.properties || {};
+      const type = props.type || props.road_type || props.row || "Other";
+      const current = rows.get(type) || { count: 0, sqft: 0 };
+      current.count += 1;
+      current.sqft += readAreaSqft(feature);
+      rows.set(type, current);
+    });
+    return [...rows.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+  }, [dropdownData.roads]);
+
+  const renderAttributeTable = () => {
+    const commonProps = {
+      map,
+      selectedProjectId,
+      onClose: () => setActiveAttributeTable(null),
+    };
+
+    switch (activeAttributeTable) {
+      case "boundary":
+        return <ProjectBoundaryAttribute {...commonProps} />;
+      case "blockBoundary":
+        return <BlockBoundaryAttribute {...commonProps} />;
+      case "masterPlan":
+        return <MasterPlanBoundaryAttribute {...commonProps} />;
+      case "spotLevel":
+        return <SpotLevelAttribute {...commonProps} />;
+      case "contours":
+        return <ContoursAttribute {...commonProps} />;
+      case "roads":
+        return <RoadsAttribute {...commonProps} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="border-b border-[#343c4c]">
       <button
@@ -310,7 +551,26 @@ export default function MasterPlan({
             onOpacityChange={(value) => updateOpacity("boundary", value)}
             colorEditable
             onColorChange={(value) => updateColor("boundary", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.boundary}
+            onDropdownToggle={() => toggleDropdown("boundary")}
+            onTableOpen={() => setActiveAttributeTable("boundary")}
           />
+
+          {dropdownOpen.boundary && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              {projectBoundarySummary.length === 0 ? (
+                <p className="py-1 text-white/60">No project boundary found</p>
+              ) : (
+                projectBoundarySummary.map((name, index) => (
+                  <div key={`${name}-${index}`} className="flex justify-between border-b border-[#343c4c]/70 py-1 last:border-b-0">
+                    <span>Project Boundary</span>
+                    <span className="max-w-[150px] truncate">{name}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
 
           <LayerItem
             disabled={!selectedProjectId}
@@ -320,7 +580,40 @@ export default function MasterPlan({
             opacity={styles.blockBoundary.opacity}
             onChange={() => toggleLayer("blockBoundary")}
             onOpacityChange={(value) => updateOpacity("blockBoundary", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.blockBoundary}
+            onDropdownToggle={() => toggleDropdown("blockBoundary")}
+            onTableOpen={() => setActiveAttributeTable("blockBoundary")}
           />
+
+          {dropdownOpen.blockBoundary && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-2 py-2 text-[11px] text-white/80">
+              <div className="mb-1.5 flex items-center justify-between border-b border-[#343c4c] pb-1.5">
+                <button type="button" onClick={selectAllBlocks} className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]">Select All</button>
+                <button type="button" onClick={unselectAllBlocks} className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]">Unselect All</button>
+              </div>
+              {(dropdownData.blockBoundary || []).length === 0 ? (
+                <p className="px-1 py-1 text-white/60">No blocks found</p>
+              ) : (
+                <div className="max-h-44 overflow-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {dropdownData.blockBoundary.map((feature, index) => {
+                    const key = getFeatureKey(feature) || String(index);
+                    return (
+                      <label key={key} className="flex cursor-pointer items-center gap-2 border-b border-[#343c4c]/60 py-1.5 last:border-b-0">
+                        <input
+                          type="checkbox"
+                          checked={blockSelectionSet.has(String(key))}
+                          onChange={() => toggleBlockSelection(feature)}
+                          className="accent-[#65c96b]"
+                        />
+                        <span className="min-w-0 flex-1 truncate">{getFeatureLabel(feature)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           <LayerItem
             disabled={!selectedProjectId}
@@ -330,7 +623,30 @@ export default function MasterPlan({
             opacity={styles.masterPlan.opacity}
             onChange={() => toggleLayer("masterPlan")}
             onOpacityChange={(value) => updateOpacity("masterPlan", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.masterPlan}
+            onDropdownToggle={() => toggleDropdown("masterPlan")}
+            onTableOpen={() => setActiveAttributeTable("masterPlan")}
           />
+
+          {dropdownOpen.masterPlan && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Plots</span>
+                <span>{dropdownData.masterPlan.length}</span>
+              </div>
+              {plotSummary.length === 0 ? (
+                <p className="py-1 text-white/60">No plot types found</p>
+              ) : (
+                plotSummary.map(([type, count]) => (
+                  <div key={type} className="flex justify-between border-b border-[#343c4c]/70 py-1 last:border-b-0">
+                    <span className="max-w-[150px] truncate">{type}</span>
+                    <span>{count}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
 
           <LayerItem
             disabled={!selectedProjectId}
@@ -342,7 +658,20 @@ export default function MasterPlan({
             onOpacityChange={(value) => updateOpacity("spotLevel", value)}
             colorEditable
             onColorChange={(value) => updateColor("spotLevel", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.spotLevel}
+            onDropdownToggle={() => toggleDropdown("spotLevel")}
+            onTableOpen={() => setActiveAttributeTable("spotLevel")}
           />
+
+          {dropdownOpen.spotLevel && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between py-1">
+                <span>Total Spot Levels</span>
+                <span>{dropdownData.spotLevel.length}</span>
+              </div>
+            </div>
+          )}
 
           <LayerItem
             disabled={!selectedProjectId}
@@ -354,7 +683,24 @@ export default function MasterPlan({
             onOpacityChange={(value) => updateOpacity("contours", value)}
             colorEditable
             onColorChange={(value) => updateColor("contours", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.contours}
+            onDropdownToggle={() => toggleDropdown("contours")}
+            onTableOpen={() => setActiveAttributeTable("contours")}
           />
+
+          {dropdownOpen.contours && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Contours</span>
+                <span>{contoursSummary.count}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span>Unique Elevations</span>
+                <span>{contoursSummary.elevationCount}</span>
+              </div>
+            </div>
+          )}
 
           <LayerItem
             disabled={!selectedProjectId}
@@ -364,9 +710,36 @@ export default function MasterPlan({
             opacity={styles.roads.opacity}
             onChange={() => toggleLayer("roads")}
             onOpacityChange={(value) => updateOpacity("roads", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.roads}
+            onDropdownToggle={() => toggleDropdown("roads")}
+            onTableOpen={() => setActiveAttributeTable("roads")}
           />
+
+          {dropdownOpen.roads && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              {roadsSummary.length === 0 ? (
+                <p className="py-1 text-white/60">No road types found</p>
+              ) : (
+                roadsSummary.map(([type, summary]) => (
+                  <div key={type} className="border-b border-[#343c4c]/70 py-1 last:border-b-0">
+                    <div className="flex justify-between">
+                      <span className="max-w-[150px] truncate">{type}</span>
+                      <span>{summary.count}</span>
+                    </div>
+                    <div className="mt-0.5 flex justify-between text-white/55">
+                      <span>Area</span>
+                      <span>{formatNumber(summary.sqft)} sq ft / {formatNumber(sqftToAcres(summary.sqft))} ac</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       )}
+
+      {renderAttributeTable()}
     </div>
   );
 }
@@ -405,6 +778,10 @@ function LayerItem({
   disabled,
   colorEditable = false,
   onColorChange,
+  hasDropdown = false,
+  dropdownOpen = false,
+  onDropdownToggle,
+  onTableOpen,
 }) {
   return (
     <div className={`mt-3 first:mt-1 ${disabled ? "opacity-50" : ""}`}>
@@ -435,7 +812,37 @@ function LayerItem({
           <span className="text-[11px]">{label}</span>
         </label>
 
-        <Grid3X3 size={14} className="text-white/60" />
+        <div className="flex items-center gap-1">
+          {onTableOpen && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                onTableOpen();
+              }}
+              className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              title={`Open ${label} attribute table`}
+            >
+              <Grid3X3 size={14} />
+            </button>
+          )}
+
+          {hasDropdown && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(event) => {
+                event.stopPropagation();
+                onDropdownToggle?.();
+              }}
+              className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              title={`Show ${label} details`}
+            >
+              {dropdownOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-2 flex items-center gap-2 pl-6">
