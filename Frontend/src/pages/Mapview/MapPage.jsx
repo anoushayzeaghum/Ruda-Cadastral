@@ -98,19 +98,19 @@ export default function MapPage() {
   const [parcelPanelOpen, setParcelPanelOpen] = useState(false);
 
   const [layers, setLayers] = useState({
-    rudaBoundary: { visible: false, opacity: 70 },
-    proposedRoads: { visible: false, opacity: 100 },
-    geodeticNetwork: { visible: false, opacity: 100 },
-    districtBoundary: { visible: true, opacity: 0 },
-    tehsilBoundary: { visible: true, opacity: 0 },
-    mauzaBoundary: { visible: true, opacity: 0 },
-    khasraLayer: { visible: false, opacity: 25 },
-    squareLayer: { visible: false, opacity: 35 },
-    acreLayer: { visible: false, opacity: 35 },
-    murabbaLayer: { visible: false, opacity: 25 },
-    controlPoints: { visible: false, opacity: 100 },
-    triJunctionPoints: { visible: false, opacity: 100 },
-    fieldPoints: { visible: false, opacity: 100 },
+    rudaBoundary: { visible: false, opacity: 70, color: "#22c55e" },
+    proposedRoads: { visible: false, opacity: 100, color: "#ef4444" },
+    geodeticNetwork: { visible: false, opacity: 100, color: "#1d4ed8" },
+    districtBoundary: { visible: true, opacity: 0, color: "#f59e0b" },
+    tehsilBoundary: { visible: true, opacity: 0, color: "#06b6d4" },
+    mauzaBoundary: { visible: true, opacity: 0, color: "#a3e635" },
+    khasraLayer: { visible: false, opacity: 25, color: "#f97316" },
+    squareLayer: { visible: false, opacity: 35, color: "#8b5cf6" },
+    acreLayer: { visible: false, opacity: 35, color: "#14b8a6" },
+    murabbaLayer: { visible: false, opacity: 25, color: "#facc15" },
+    controlPoints: { visible: false, opacity: 100, color: "#38bdf8" },
+    triJunctionPoints: { visible: false, opacity: 100, color: "#e11d48" },
+    fieldPoints: { visible: false, opacity: 100, color: "#2563eb" },
     mussaviLayer: { visible: false, opacity: 100 },
   });
 
@@ -197,11 +197,7 @@ export default function MapPage() {
     } else {
       features.forEach((f) => {
         const props = f?.properties || {};
-        const valueRaw = getFeatureNumberByView(
-          props,
-          filters?.viewBy,
-          f,
-        );
+        const valueRaw = getFeatureNumberByView(props, filters?.viewBy, f);
 
         if (valueRaw == null || valueRaw === "") return;
 
@@ -341,7 +337,10 @@ export default function MapPage() {
           changed = true;
         }
 
-        if (VIEW_BY_BOUNDARY_KEYS.includes(key) && next[key]?.visible !== true) {
+        if (
+          VIEW_BY_BOUNDARY_KEYS.includes(key) &&
+          next[key]?.visible !== true
+        ) {
           next[key] = {
             ...next[key],
             visible: true,
@@ -367,7 +366,10 @@ export default function MapPage() {
         const current =
           typeof next[key] === "object"
             ? next[key]
-            : { visible: !!next[key], opacity: key === "khasraLayer" ? 25 : 35 };
+            : {
+                visible: !!next[key],
+                opacity: key === "khasraLayer" ? 25 : 35,
+              };
 
         const shouldBeVisible = key === activeViewByLayerKey;
 
@@ -446,9 +448,10 @@ export default function MapPage() {
 
   // Reset the printMap flag immediately after it fires so it can be triggered again
   useEffect(() => {
-    const isPrint = typeof layers?.printMap === "object"
-      ? layers.printMap.visible
-      : !!layers?.printMap;
+    const isPrint =
+      typeof layers?.printMap === "object"
+        ? layers.printMap.visible
+        : !!layers?.printMap;
 
     if (!isPrint) return;
 
@@ -517,7 +520,10 @@ export default function MapPage() {
           basemap={basemap}
           setBasemap={setBasemap}
           selectedMauza={filters?.selectedMauzaDetails}
+          selectedDistrict={filters?.selectedDistrictOptions}
+          selectedTehsil={filters?.selectedTehsilOptions}
           selectedFilterLayers={selectedFilterLayers}
+          loadedParcelsGeojson={loadedParcelsGeojson}
         />
 
         <Legend

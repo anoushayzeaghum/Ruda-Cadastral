@@ -19,8 +19,23 @@ import {
   Route,
   Image as ImageIcon,
   X,
+  Table2,
+  Palette,
 } from "lucide-react";
 import Measurement from "../GISMetaverse/tools/Measurement";
+
+import RudaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaBoundaryAttribute";
+import RudaMozaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaMozaBoundaryAttribute";
+import ProposedRoadAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProposedRoadAttribute";
+import GeodeticNetworkAttribute from "../GISMetaverse/tools/Layers/AttributeTable/GeodeticNetworkAttribute";
+import MauzaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/MauzaBoundaryAttribute";
+import KhasraBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/KhasraBoundaryAttribute";
+import SquareBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/SquareBoundaryAttribute";
+import DistrictBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/DistrictBoundaryAttribute";
+import TehsilBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TehsilBoundaryAttribute";
+import AcreBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/AcreBoundaryAttribute";
+import TriJunctionPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TriJunctionPointsAttribute";
+import FieldPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/FieldPointsAttribute";
 
 const BASEMAPS = [
   {
@@ -100,13 +115,22 @@ export default function LeftPanel({
   basemap,
   setBasemap,
   selectedMauza,
+  selectedDistrict = [],
+  selectedTehsil = [],
   selectedFilterLayers = [],
+  loadedParcelsGeojson = null,
 }) {
   const [activePanel, setActivePanel] = useState("layers");
   const [rudaSectionOpen, setRudaSectionOpen] = useState(true);
   const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
   const hasMauza = !!selectedMauza;
   const initializedOpacityKeysRef = useRef(new Set());
+  const [openAttributeTable, setOpenAttributeTable] = useState(null);
+  const [dropdownOpenByKey, setDropdownOpenByKey] = useState({});
+  const [layerRecordCache, setLayerRecordCache] = useState({});
+
+  const toggleDropdownForKey = (key) =>
+    setDropdownOpenByKey((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const [rudaProposedRoads, setRudaProposedRoads] = useState([]);
   const [proposedDropdownOpen, setProposedDropdownOpen] = useState(false);
@@ -136,6 +160,88 @@ export default function LeftPanel({
     return 100;
   };
 
+  const getDefaultColorForLayer = (layerKey) => {
+    const defaults = {
+      rudaBoundary: "#22c55e",
+      proposedRoads: "#ef4444",
+      geodeticNetwork: "#1d4ed8",
+      districtBoundary: "#f59e0b",
+      tehsilBoundary: "#06b6d4",
+      mauzaBoundary: "#a3e635",
+      khasraLayer: "#f97316",
+      squareLayer: "#8b5cf6",
+      acreLayer: "#14b8a6",
+      triJunctionPoints: "#e11d48",
+      fieldPoints: "#2563eb",
+      murabbaLayer: "#facc15",
+      handuGujranOrtho: "#9be37b",
+    };
+    return defaults[layerKey] || "#9be37b";
+  };
+
+  const getLayerColor = (layerKey) => {
+    const value = layers?.[layerKey];
+    return typeof value === "object" && value.color ? value.color : getDefaultColorForLayer(layerKey);
+  };
+
+  const setLayerColor = (layerKey, color) => updateLayer(layerKey, { color });
+
+  const selectedMauzaId = selectedMauza?.mauza_id ?? selectedMauza?.id ?? selectedMauza?.gid;
+
+  const loadLayerRecords = async (key) => {
+    if (layerRecordCache[key]?.loaded) return;
+
+    try {
+      const api = await import("../../services/api");
+      let geojson = null;
+
+      if (key === "districtBoundary") {
+        const items = Array.isArray(selectedDistrict) ? selectedDistrict : selectedDistrict ? [selectedDistrict] : [];
+        const features = [];
+        for (const d of items) {
+          const id = d?.id ?? d?.gid ?? d;
+          if (!id) continue;
+          const gj = await api.getDistrictBoundary(id);
+          features.push(...(gj?.features || []));
+        }
+        geojson = { type: "FeatureCollection", features };
+      } else if (key === "tehsilBoundary") {
+        const items = Array.isArray(selectedTehsil) ? selectedTehsil : selectedTehsil ? [selectedTehsil] : [];
+        const features = [];
+        for (const t of items) {
+          const id = t?.id ?? t?.gid ?? t;
+          if (!id) continue;
+          const gj = await api.getTehsilBoundary(id);
+          features.push(...(gj?.features || []));
+        }
+        geojson = { type: "FeatureCollection", features };
+      } else if (key === "mauzaBoundary") {
+        geojson = selectedMauzaId ? await api.getMauzaBoundary(selectedMauzaId) : null;
+      } else if (key === "khasraLayer") {
+        geojson = selectedMauzaId ? await api.getKhasras(selectedMauzaId) : loadedParcelsGeojson;
+      } else if (key === "squareLayer") {
+        geojson = selectedMauzaId ? await api.getSquares(selectedMauzaId) : loadedParcelsGeojson;
+      } else if (key === "acreLayer") {
+        geojson = selectedMauzaId ? await api.getAcres(selectedMauzaId) : loadedParcelsGeojson;
+      } else if (key === "triJunctionPoints") {
+        geojson = await api.getTrijunctionPoints();
+      } else if (key === "fieldPoints") {
+        geojson = selectedMauzaId ? await api.getFieldPoints(selectedMauzaId) : null;
+      }
+
+      setLayerRecordCache((prev) => ({
+        ...prev,
+        [key]: { loaded: true, geojson: geojson || { type: "FeatureCollection", features: [] } },
+      }));
+    } catch (error) {
+      console.error(`Failed to load ${key} records`, error);
+      setLayerRecordCache((prev) => ({
+        ...prev,
+        [key]: { loaded: true, geojson: { type: "FeatureCollection", features: [] } },
+      }));
+    }
+  };
+
   const selectedLayerItems = useMemo(
     () => selectedFilterLayers.filter((item) => item?.label && item?.key),
     [selectedFilterLayers],
@@ -158,6 +264,7 @@ export default function LeftPanel({
         next[key] = {
           ...(typeof current === "object" ? current : { visible: !!current }),
           opacity,
+          color: getDefaultColorForLayer(key),
         };
         initializedOpacityKeysRef.current.add(key);
         changed = true;
@@ -173,6 +280,7 @@ export default function LeftPanel({
             ? current
             : { visible: current === undefined ? true : !!current }),
           opacity: getDefaultOpacityForSelectedLayer(item),
+          color: getDefaultColorForLayer(item.key),
         };
         initializedOpacityKeysRef.current.add(item.key);
         changed = true;
@@ -188,7 +296,8 @@ export default function LeftPanel({
       [layerKey]: {
         ...(typeof prev?.[layerKey] === "object"
           ? prev[layerKey]
-          : { visible: !!prev?.[layerKey], opacity: 100 }),
+          : { visible: !!prev?.[layerKey], opacity: 100, color: getDefaultColorForLayer(layerKey) }),
+        color: getLayerColor(layerKey),
         ...patch,
       },
     }));
@@ -353,6 +462,18 @@ export default function LeftPanel({
         />
       </div>
 
+      {openAttributeTable === "rudaBoundary" && <RudaBoundaryAttribute map={map} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "proposedRoads" && <ProposedRoadAttribute map={map} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "geodeticNetwork" && <GeodeticNetworkAttribute map={map} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "mauzaBoundary" && <MauzaBoundaryAttribute map={map} geojson={layerRecordCache.mauzaBoundary?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "khasraLayer" && <KhasraBoundaryAttribute map={map} geojson={layerRecordCache.khasraLayer?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "squareLayer" && <SquareBoundaryAttribute map={map} geojson={layerRecordCache.squareLayer?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "districtBoundary" && <DistrictBoundaryAttribute map={map} geojson={layerRecordCache.districtBoundary?.geojson} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "tehsilBoundary" && <TehsilBoundaryAttribute map={map} geojson={layerRecordCache.tehsilBoundary?.geojson} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "acreLayer" && <AcreBoundaryAttribute map={map} geojson={layerRecordCache.acreLayer?.geojson || loadedParcelsGeojson} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "triJunctionPoints" && <TriJunctionPointsAttribute map={map} geojson={layerRecordCache.triJunctionPoints?.geojson} onClose={() => setOpenAttributeTable(null)} />}
+      {openAttributeTable === "fieldPoints" && <FieldPointsAttribute map={map} geojson={layerRecordCache.fieldPoints?.geojson} onClose={() => setOpenAttributeTable(null)} />}
+
       {activePanel && (
         <div className="pointer-events-auto w-[320px] max-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
           {activePanel === "layers" && (
@@ -377,6 +498,9 @@ export default function LeftPanel({
                   toggleRudaBoundaryLayer={toggleRudaBoundaryLayer}
                   toggleProposedRoadLayer={toggleProposedRoadLayer}
                   updateLayer={updateLayer}
+                  getLayerColor={getLayerColor}
+                  setLayerColor={setLayerColor}
+                  openAttributeTable={setOpenAttributeTable}
                   getAllProposedRoadIds={getAllProposedRoadIds}
                 />
 
@@ -387,6 +511,14 @@ export default function LeftPanel({
                     getLayerOpacity={getLayerOpacity}
                     toggleLayer={toggleLayer}
                     updateLayer={updateLayer}
+                    getLayerColor={getLayerColor}
+                    setLayerColor={setLayerColor}
+                    dropdownOpenByKey={dropdownOpenByKey}
+                    toggleDropdownForKey={toggleDropdownForKey}
+                    openAttributeTable={setOpenAttributeTable}
+                    layerRecordCache={layerRecordCache}
+                    loadLayerRecords={loadLayerRecords}
+                    loadedParcelsGeojson={loadedParcelsGeojson}
                   />
                 )}
 
@@ -426,6 +558,14 @@ export default function LeftPanel({
                   getLayerOpacity={getLayerOpacity}
                   toggleLayer={toggleVectorBoundaryLayer}
                   updateLayer={updateLayer}
+                  getLayerColor={getLayerColor}
+                  setLayerColor={setLayerColor}
+                  dropdownOpenByKey={dropdownOpenByKey}
+                  toggleDropdownForKey={toggleDropdownForKey}
+                  openAttributeTable={setOpenAttributeTable}
+                  layerRecordCache={layerRecordCache}
+                  loadLayerRecords={loadLayerRecords}
+                  loadedParcelsGeojson={loadedParcelsGeojson}
                 />
               </div>
             </Panel>
@@ -539,6 +679,73 @@ function RasterDataLayers({
   );
 }
 
+
+const getFeatureProps = (feature = {}) => feature.properties || feature || {};
+const featureLabel = (feature = {}, fallback = "Feature") => {
+  const props = getFeatureProps(feature);
+  return (
+    props.name ||
+    props.Name ||
+    props.mauza ||
+    props.Mauza ||
+    props.join_shp ||
+    props.kh ||
+    props.sq ||
+    props.acre ||
+    props.type ||
+    `${fallback} ${props.gid || feature.id || ""}`
+  );
+};
+
+function SmallColorPicker({ color, onChange }) {
+  return (
+    <label
+      title="Change layer color"
+      className="relative flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-white/20 hover:bg-[#0a3327]"
+    >
+      <Palette size={13} className="text-white/75" />
+      <input
+        type="color"
+        value={color || "#9be37b"}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 cursor-pointer opacity-0"
+      />
+    </label>
+  );
+}
+
+function LayerDropdownPanel({ geojson, loadingText = "Loading records...", emptyText = "No records found" }) {
+  const features = geojson?.features || [];
+  return (
+    <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+      <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {!geojson ? (
+          <p className="px-1 py-1 text-[11px] text-white/50">{loadingText}</p>
+        ) : features.length === 0 ? (
+          <p className="px-1 py-1 text-[11px] text-white/50">{emptyText}</p>
+        ) : (
+          <>
+            <div className="border-b border-[#0c3d2d] pb-1.5 text-[12px] font-semibold text-white">
+              Total: {features.length}
+            </div>
+            {features.slice(0, 100).map((feature, index) => (
+              <div
+                key={getFeatureProps(feature).gid || feature.id || index}
+                className="truncate border-b border-[#0c3d2d]/70 py-1.5 text-[12px] font-medium text-white/85 last:border-b-0"
+              >
+                {featureLabel(feature, "Record")}
+              </div>
+            ))}
+            {features.length > 100 && (
+              <div className="py-1.5 text-[11px] text-white/50">Showing first 100 records</div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function RudaBoundaryLayers({
   rudaPhases,
   rudaSectionOpen,
@@ -558,8 +765,13 @@ function RudaBoundaryLayers({
   toggleRudaBoundaryLayer,
   toggleProposedRoadLayer,
   updateLayer,
+  getLayerColor,
+  setLayerColor,
+  openAttributeTable,
   getAllProposedRoadIds,
 }) {
+  const [geodeticDropdownOpen, setGeodeticDropdownOpen] = useState(false);
+
   return (
     <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
       <button
@@ -567,297 +779,126 @@ function RudaBoundaryLayers({
         onClick={() => setRudaSectionOpen((open) => !open)}
         className="flex w-full items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5 text-left transition hover:bg-[#0a3327]"
       >
-        <h4 className="text-[12px] font-semibold leading-tight text-white">
-          RUDA Boundaries
-        </h4>
-        <ChevronDown
-          size={16}
-          strokeWidth={2.6}
-          className={`text-white/70 transition ${rudaSectionOpen ? "rotate-180" : ""}`}
-        />
+        <h4 className="text-[12px] font-semibold leading-tight text-white">RUDA Boundaries</h4>
+        <ChevronDown size={16} strokeWidth={2.6} className={`text-white/70 transition ${rudaSectionOpen ? "rotate-180" : ""}`} />
       </button>
 
       {rudaSectionOpen && (
         <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
-        <RudaLayerRow
-          label="RUDA Boundary"
-          checked={getLayerVisible("rudaBoundary")}
-          opacity={getLayerOpacity("rudaBoundary")}
-          isOpen={rudaDropdownOpen}
-          onToggle={toggleRudaBoundaryLayer}
-          onOpacity={(value) => updateLayer("rudaBoundary", { opacity: value })}
-          onDropdownToggle={() => setRudaDropdownOpen((s) => !s)}
-          dropdownTitle="Show RUDA phases"
-        />
+          <AdminLayerRow
+            layerKey="rudaBoundary"
+            label="RUDA Boundary"
+            checked={getLayerVisible("rudaBoundary")}
+            opacity={getLayerOpacity("rudaBoundary")}
+            color={getLayerColor("rudaBoundary")}
+            isOpen={rudaDropdownOpen}
+            onToggle={toggleRudaBoundaryLayer}
+            onOpacity={(value) => updateLayer("rudaBoundary", { opacity: value })}
+            onColor={(value) => setLayerColor("rudaBoundary", value)}
+            onDropdownToggle={() => setRudaDropdownOpen((s) => !s)}
+            onTable={() => openAttributeTable("rudaBoundary")}
+          />
 
-        {rudaDropdownOpen && (
-          <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
-            <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              {(rudaPhases || []).length === 0 ? (
-                <p className="px-1 py-1 text-[11px] font-medium text-white/50">
-                  No phases found
-                </p>
-              ) : (
-                <>
-                  {(() => {
-                    const allIds = (rudaPhases || [])
-                      .map((phase) => phase.gid ?? phase.id ?? phase.oid)
-                      .filter((id) => id !== undefined && id !== null);
-                    const selectedIdSet = new Set(
-                      (selectedRudaPhaseIds || []).map((id) => String(id)),
-                    );
-                    const allChecked =
-                      allIds.length > 0 &&
-                      allIds.every((id) => selectedIdSet.has(String(id)));
-
-                    return (
-                      <div className="mb-1 flex items-center justify-between border-b border-[#0c3d2d] pb-1.5">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={allChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedRudaPhaseIds(allIds);
-                              } else {
-                                setSelectedRudaPhaseIds([]);
-                              }
-                            }}
-                            className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
-                          />
-                          <span className="text-[12px] font-semibold leading-tight text-white">
-                            Select All
-                          </span>
+          {rudaDropdownOpen && (
+            <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+              <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {(rudaPhases || []).length === 0 ? (
+                  <p className="px-1 py-1 text-[11px] font-medium text-white/50">No phases found</p>
+                ) : (
+                  <>
+                    {(() => {
+                      const allIds = (rudaPhases || []).map((phase) => phase.gid ?? phase.id ?? phase.oid).filter((id) => id !== undefined && id !== null);
+                      const selectedIdSet = new Set((selectedRudaPhaseIds || []).map((id) => String(id)));
+                      const allChecked = allIds.length > 0 && allIds.every((id) => selectedIdSet.has(String(id)));
+                      return (
+                        <div className="mb-1 flex items-center justify-between border-b border-[#0c3d2d] pb-1.5">
+                          <label className="flex items-center gap-2">
+                            <input type="checkbox" checked={allChecked} onChange={(e) => setSelectedRudaPhaseIds(e.target.checked ? allIds : [])} className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]" />
+                            <span className="text-[12px] font-semibold leading-tight text-white">Select All</span>
+                          </label>
+                          <button type="button" onClick={() => setSelectedRudaPhaseIds([])} className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#9be37b] hover:bg-[#0a3327]">Reset</button>
+                        </div>
+                      );
+                    })()}
+                    {(rudaPhases || []).map((phase) => {
+                      const id = phase.gid ?? phase.id ?? phase.oid;
+                      const name = phase.name ?? phase.folderpath ?? `Phase ${id}`;
+                      const checked = new Set((selectedRudaPhaseIds || []).map((value) => String(value))).has(String(id));
+                      return (
+                        <label key={id} className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0">
+                          <input type="checkbox" checked={!!checked} onChange={() => checked ? setSelectedRudaPhaseIds((prev) => (prev || []).filter((x) => String(x) !== String(id))) : setSelectedRudaPhaseIds((prev) => [...(prev || []), id])} className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]" />
+                          <span className="h-3.5 w-5 shrink-0 rounded-sm border border-white/50" style={{ backgroundColor: getRudaPhaseColor(id) }} />
+                          <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">{name}</span>
                         </label>
-
-                        <button
-                          type="button"
-                          onClick={() => setSelectedRudaPhaseIds([])}
-                          className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#9be37b] hover:bg-[#0a3327]"
-                        >
-                          Reset
-                        </button>
-                      </div>
-                    );
-                  })()}
-
-                  {(rudaPhases || []).map((phase) => {
-                    const id = phase.gid ?? phase.id ?? phase.oid;
-                    const name =
-                      phase.name ?? phase.folderpath ?? `Phase ${id}`;
-                    const selectedIdSet = new Set(
-                      (selectedRudaPhaseIds || []).map((value) =>
-                        String(value),
-                      ),
-                    );
-                    const checked = selectedIdSet.has(String(id));
-
-                    return (
-                      <label
-                        key={id}
-                        className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!checked}
-                          onChange={() => {
-                            if (checked) {
-                              setSelectedRudaPhaseIds((prev) =>
-                                (prev || []).filter(
-                                  (x) => String(x) !== String(id),
-                                ),
-                              );
-                            } else {
-                              setSelectedRudaPhaseIds((prev) => [
-                                ...(prev || []),
-                                id,
-                              ]);
-                            }
-                          }}
-                          className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
-                        />
-                        <span
-                          className="h-3.5 w-5 shrink-0 rounded-sm border border-white/50"
-                          style={{ backgroundColor: getRudaPhaseColor(id) }}
-                        />
-                        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
-                          {name}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </>
-              )}
+                      );
+                    })}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <RudaLayerRow
-          label="Proposed Roads"
-          checked={getLayerVisible("proposedRoads")}
-          opacity={getLayerOpacity("proposedRoads")}
-          isOpen={proposedDropdownOpen}
-          onToggle={toggleProposedRoadLayer}
-          onOpacity={(value) =>
-            updateLayer("proposedRoads", { opacity: value })
-          }
-          onDropdownToggle={() => setProposedDropdownOpen((s) => !s)}
-          dropdownTitle="Show proposed roads"
-        />
+          <AdminLayerRow
+            layerKey="proposedRoads"
+            label="Proposed Roads"
+            checked={getLayerVisible("proposedRoads")}
+            opacity={getLayerOpacity("proposedRoads")}
+            color={getLayerColor("proposedRoads")}
+            isOpen={proposedDropdownOpen}
+            onToggle={toggleProposedRoadLayer}
+            onOpacity={(value) => updateLayer("proposedRoads", { opacity: value })}
+            onColor={(value) => setLayerColor("proposedRoads", value)}
+            onDropdownToggle={() => setProposedDropdownOpen((s) => !s)}
+            onTable={() => openAttributeTable("proposedRoads")}
+          />
 
-        {proposedDropdownOpen && (
-          <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
-            <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              {(rudaProposedRoads || []).length === 0 ? (
-                <p className="px-1 py-1 text-[11px] text-white/50">
-                  No proposed roads found
-                </p>
-              ) : (
-                <>
-                  <div className="mb-1 flex items-center justify-between border-b border-[#0c3d2d] pb-1.5">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={
-                          (selectedProposedRoadIds || []).length ===
-                          rudaProposedRoads.length
-                        }
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedProposedRoadIds(getAllProposedRoadIds());
-                          } else {
-                            setSelectedProposedRoadIds([]);
-                          }
-                        }}
-                        className="h-3.5 w-3.5 accent-[#9be37b]"
-                      />
-                      <span className="text-[12px] font-semibold leading-tight text-white">
-                        Select All
-                      </span>
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedProposedRoadIds([])}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#9be37b] hover:bg-[#0a3327]"
-                    >
-                      Reset
-                    </button>
-                  </div>
-
-                  {(rudaProposedRoads || []).map((road) => {
-                    const id = road.gid ?? road.id ?? road.oid;
-                    const name = road.name ?? `Road ${id}`;
-                    const checked = (selectedProposedRoadIds || []).includes(
-                      id,
-                    );
-
-                    return (
-                      <label
-                        key={id}
-                        className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            if (checked) {
-                              setSelectedProposedRoadIds((prev) =>
-                                (prev || []).filter((x) => x !== id),
-                              );
-                            } else {
-                              setSelectedProposedRoadIds((prev) => [
-                                ...(prev || []),
-                                id,
-                              ]);
-                            }
-                          }}
-                          className="h-3.5 w-3.5 accent-[#9be37b]"
-                        />
-                        <span className="truncate text-[12px] font-medium leading-tight text-white/85">
-                          {name}
-                        </span>
+          {proposedDropdownOpen && (
+            <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+              <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {(rudaProposedRoads || []).length === 0 ? (
+                  <p className="px-1 py-1 text-[11px] text-white/50">No proposed roads found</p>
+                ) : (
+                  <>
+                    <div className="mb-1 flex items-center justify-between border-b border-[#0c3d2d] pb-1.5">
+                      <label className="flex items-center gap-2">
+                        <input type="checkbox" checked={(selectedProposedRoadIds || []).length === rudaProposedRoads.length} onChange={(e) => setSelectedProposedRoadIds(e.target.checked ? getAllProposedRoadIds() : [])} className="h-3.5 w-3.5 accent-[#9be37b]" />
+                        <span className="text-[12px] font-semibold leading-tight text-white">Select All</span>
                       </label>
-                    );
-                  })}
-                </>
-              )}
+                      <button type="button" onClick={() => setSelectedProposedRoadIds([])} className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#9be37b] hover:bg-[#0a3327]">Reset</button>
+                    </div>
+                    {(rudaProposedRoads || []).map((road) => {
+                      const id = road.gid ?? road.id ?? road.oid;
+                      const name = road.name ?? road.layer ?? `Road ${id}`;
+                      const checked = (selectedProposedRoadIds || []).includes(id);
+                      return (
+                        <label key={id} className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0">
+                          <input type="checkbox" checked={checked} onChange={() => checked ? setSelectedProposedRoadIds((prev) => (prev || []).filter((x) => x !== id)) : setSelectedProposedRoadIds((prev) => [...(prev || []), id])} className="h-3.5 w-3.5 accent-[#9be37b]" />
+                          <span className="truncate text-[12px] font-medium leading-tight text-white/85">{name}</span>
+                        </label>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <RudaLayerRow
-          label="Geodetic Network"
-          checked={getLayerVisible("geodeticNetwork")}
-          opacity={getLayerOpacity("geodeticNetwork")}
-          onToggle={() => toggleLayer("geodeticNetwork")}
-          onOpacity={(value) =>
-            updateLayer("geodeticNetwork", { opacity: value })
-          }
-        />
-      </div>
+          <AdminLayerRow
+            layerKey="geodeticNetwork"
+            label="Geodetic Network"
+            checked={getLayerVisible("geodeticNetwork")}
+            opacity={getLayerOpacity("geodeticNetwork")}
+            color={getLayerColor("geodeticNetwork")}
+            isOpen={geodeticDropdownOpen}
+            onToggle={() => toggleLayer("geodeticNetwork")}
+            onOpacity={(value) => updateLayer("geodeticNetwork", { opacity: value })}
+            onColor={(value) => setLayerColor("geodeticNetwork", value)}
+            onDropdownToggle={() => setGeodeticDropdownOpen((s) => !s)}
+            onTable={() => openAttributeTable("geodeticNetwork")}
+          />
+          {geodeticDropdownOpen && <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2 text-[12px] text-white/80">Open the attribute table to view all geodetic points.</div>}
+        </div>
       )}
-    </div>
-  );
-}
-
-function RudaLayerRow({
-  label,
-  checked,
-  opacity,
-  isOpen,
-  onToggle,
-  onOpacity,
-  onDropdownToggle,
-  dropdownTitle = "Layer options",
-}) {
-  return (
-    <div className="border-b border-[#0c3d2d] bg-[#06291f] px-2.5 py-2">
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={!!checked}
-          onChange={onToggle}
-          className="h-4 w-4 shrink-0 accent-[#9be37b]"
-        />
-
-        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
-          {label}
-        </span>
-
-        {onDropdownToggle && (
-          <div className="flex shrink-0 items-center gap-1.5 text-white/75">
-            <button
-              type="button"
-              title={dropdownTitle}
-              aria-label={dropdownTitle}
-              onClick={onDropdownToggle}
-              className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
-            >
-              <ChevronDown
-                size={16}
-                fill="currentColor"
-                strokeWidth={2.6}
-                className={`transition ${isOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-1 flex items-center gap-2 pl-6">
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={opacity}
-          onChange={(e) => onOpacity(Number(e.target.value))}
-          className="h-1.5 min-w-0 flex-1 accent-[#9be37b]"
-        />
-        <span className="w-9 shrink-0 text-right text-[11px] font-medium text-white/60">
-          {opacity}%
-        </span>
-      </div>
     </div>
   );
 }
@@ -868,26 +909,50 @@ function VectorBoundaryLayers({
   getLayerOpacity,
   toggleLayer,
   updateLayer,
+  getLayerColor,
+  setLayerColor,
+  dropdownOpenByKey,
+  toggleDropdownForKey,
+  openAttributeTable,
+  layerRecordCache,
+  loadLayerRecords,
+  loadedParcelsGeojson,
 }) {
+  const getGeojsonForKey = (key) => layerRecordCache?.[key]?.geojson || (key === "khasraLayer" || key === "squareLayer" || key === "acreLayer" ? loadedParcelsGeojson : null);
+
+  const tableKeyFor = (key) => key;
+
   return (
     <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
       <div className="flex items-center gap-2 border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
-        <h4 className="text-[12px] font-semibold leading-tight text-white">
-          Vector Boundaries
-        </h4>
+        <h4 className="text-[12px] font-semibold leading-tight text-white">Vector Boundaries</h4>
       </div>
 
       <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
         {items.map((item, index) => (
-          <AdminLayerRow
-            key={item.key}
-            label={item.label}
-            checked={getLayerVisible(item.key)}
-            opacity={getLayerOpacity(item.key)}
-            isLast={index === items.length - 1}
-            onToggle={() => toggleLayer(item.key)}
-            onOpacity={(value) => updateLayer(item.key, { opacity: value })}
-          />
+          <div key={item.key}>
+            <AdminLayerRow
+              layerKey={item.key}
+              label={item.label}
+              checked={getLayerVisible(item.key)}
+              opacity={getLayerOpacity(item.key)}
+              color={getLayerColor(item.key)}
+              isOpen={!!dropdownOpenByKey?.[item.key]}
+              isLast={index === items.length - 1}
+              onToggle={() => toggleLayer(item.key)}
+              onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+              onColor={(value) => setLayerColor(item.key, value)}
+              onDropdownToggle={() => {
+                toggleDropdownForKey(item.key);
+                loadLayerRecords(item.key);
+              }}
+              onTable={() => {
+                loadLayerRecords(item.key);
+                openAttributeTable(tableKeyFor(item.key));
+              }}
+            />
+            {dropdownOpenByKey?.[item.key] && <LayerDropdownPanel geojson={getGeojsonForKey(item.key)} />}
+          </div>
         ))}
       </div>
     </div>
@@ -900,26 +965,45 @@ function SelectedAdministrativeLayers({
   getLayerOpacity,
   toggleLayer,
   updateLayer,
+  getLayerColor,
+  setLayerColor,
+  dropdownOpenByKey,
+  toggleDropdownForKey,
+  openAttributeTable,
+  layerRecordCache,
+  loadLayerRecords,
 }) {
   return (
     <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
       <div className="flex items-center gap-2 border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
-        <h4 className="text-[12px] font-semibold leading-tight text-white">
-          Selected Administrative Layers
-        </h4>
+        <h4 className="text-[12px] font-semibold leading-tight text-white">Selected Administrative Layers</h4>
       </div>
 
       <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
         {items.map((item, index) => (
-          <AdminLayerRow
-            key={item.key}
-            label={item.label}
-            checked={getLayerVisible(item.key)}
-            opacity={getLayerOpacity(item.key)}
-            isLast={index === items.length - 1}
-            onToggle={() => toggleLayer(item.key)}
-            onOpacity={(value) => updateLayer(item.key, { opacity: value })}
-          />
+          <div key={item.key}>
+            <AdminLayerRow
+              layerKey={item.key}
+              label={item.label}
+              checked={getLayerVisible(item.key)}
+              opacity={getLayerOpacity(item.key)}
+              color={getLayerColor(item.key)}
+              isOpen={!!dropdownOpenByKey?.[item.key]}
+              isLast={index === items.length - 1}
+              onToggle={() => toggleLayer(item.key)}
+              onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+              onColor={(value) => setLayerColor(item.key, value)}
+              onDropdownToggle={() => {
+                toggleDropdownForKey(item.key);
+                loadLayerRecords(item.key);
+              }}
+              onTable={() => {
+                loadLayerRecords(item.key);
+                openAttributeTable(item.key);
+              }}
+            />
+            {dropdownOpenByKey?.[item.key] && <LayerDropdownPanel geojson={layerRecordCache?.[item.key]?.geojson} />}
+          </div>
         ))}
       </div>
     </div>
@@ -930,68 +1014,38 @@ function AdminLayerRow({
   label,
   checked,
   opacity,
+  color,
+  isOpen,
   isLast,
   onToggle,
   onOpacity,
+  onColor,
+  onDropdownToggle,
+  onTable,
 }) {
   return (
-    <div
-      className={`bg-[#06291f] px-2.5 py-2 ${
-        isLast ? "" : "border-b border-[#0c3d2d]"
-      }`}
-    >
+    <div className={`bg-[#06291f] px-2.5 py-2 ${isLast ? "" : "border-b border-[#0c3d2d]"}`}>
       <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={!!checked}
-          onChange={onToggle}
-          className="h-4 w-4 shrink-0 accent-[#9be37b]"
-        />
-
-        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
-          {label}
-        </span>
-
+        <input type="checkbox" checked={!!checked} onChange={onToggle} className="h-4 w-4 shrink-0 accent-[#9be37b]" />
+        {onColor && <SmallColorPicker color={color} onChange={onColor} />}
+        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">{label}</span>
         <div className="flex shrink-0 items-center gap-1.5 text-white/75">
-          <button
-            type="button"
-            title="Layer info"
-            aria-label="Layer info"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
-          >
-            <Info size={14} fill="currentColor" strokeWidth={2.2} />
-          </button>
-          <button
-            type="button"
-            title="Zoom/Search layer"
-            aria-label="Zoom/Search layer"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
-          >
-            <Search size={15} strokeWidth={2.6} />
-          </button>
-          <button
-            type="button"
-            title="Layer options"
-            aria-label="Layer options"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
-          >
-            <ChevronDown size={16} fill="currentColor" strokeWidth={2.6} />
-          </button>
+          {onTable && (
+            <button type="button" title="Attribute table" aria-label="Attribute table" onClick={onTable} className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]">
+              <Table2 size={14} strokeWidth={2.4} />
+            </button>
+          )}
+          {onDropdownToggle && (
+            <button type="button" title="Layer details" aria-label="Layer details" onClick={onDropdownToggle} className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]">
+              <ChevronDown size={16} fill="currentColor" strokeWidth={2.6} className={`transition ${isOpen ? "rotate-180" : ""}`} />
+            </button>
+          )}
         </div>
       </div>
 
       <div className="mt-1 flex items-center gap-2 pl-6">
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={opacity}
-          onChange={(e) => onOpacity(Number(e.target.value))}
-          className="h-1.5 min-w-0 flex-1 accent-[#9be37b]"
-        />
-        <span className="w-9 shrink-0 text-right text-[11px] font-medium text-white/60">
-          {opacity}%
-        </span>
+        <input type="range" min="0" max="100" value={opacity} onChange={(e) => onOpacity(Number(e.target.value))} className="h-1.5 min-w-0 flex-1 accent-[#9be37b]" />
+        <span className="w-9 shrink-0 text-right text-[11px] font-medium text-white/60">{opacity}%</span>
       </div>
     </div>
   );

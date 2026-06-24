@@ -219,6 +219,35 @@ export default function MapView({
   );
   const fieldPointsVisible = getLayerVisible(layers, "fieldPoints", false);
   const fieldPointsOpacity = getLayerOpacity(layers, "fieldPoints", 100);
+  const getLayerColorValue = (layerKey, fallback) => {
+    const value = layers?.[layerKey];
+    return typeof value === "object" && value.color ? value.color : fallback;
+  };
+
+  const rudaBoundaryColor = getLayerColorValue("rudaBoundary", "#22c55e");
+  const proposedRoadsColor = getLayerColorValue("proposedRoads", "#ef4444");
+  const geodeticNetworkColor = getLayerColorValue(
+    "geodeticNetwork",
+    VECTOR_LAYER_THEME.geodeticNetwork.circle,
+  );
+  const districtBoundaryColor = getLayerColorValue(
+    "districtBoundary",
+    "#f59e0b",
+  );
+  const tehsilBoundaryColor = getLayerColorValue("tehsilBoundary", "#06b6d4");
+  const mauzaBoundaryColor = getLayerColorValue("mauzaBoundary", "#a3e635");
+  const squareLayerColor = getLayerColorValue("squareLayer", "#8b5cf6");
+  const acreLayerColor = getLayerColorValue("acreLayer", "#14b8a6");
+  const khasraLayerColor = getLayerColorValue("khasraLayer", "#f97316");
+  const murabbaLayerColor = getLayerColorValue("murabbaLayer", "#facc15");
+  const triJunctionPointsColor = getLayerColorValue(
+    "triJunctionPoints",
+    "#e11d48",
+  );
+  const fieldPointsColor = getLayerColorValue(
+    "fieldPoints",
+    VECTOR_LAYER_THEME.fieldPoints.circle,
+  );
   const controlPointsVisible = getLayerVisible(layers, "controlPoints", false);
   const handuGujranOrthoVisible =
     typeof layers?.handuGujranOrtho === "object"
@@ -382,8 +411,8 @@ export default function MapView({
                 sourceId: FIELD_POINTS_SOURCE,
                 layerId: FIELD_POINTS_LAYER,
                 geojson: g,
-                color: VECTOR_LAYER_THEME.fieldPoints.circle,
-                strokeColor: VECTOR_LAYER_THEME.fieldPoints.stroke,
+                color: fieldPointsColor,
+                strokeColor: fieldPointsColor,
                 radius: 4.5,
                 opacity: fieldPointsOpacity / 100,
                 labelLayerId: FIELD_POINTS_LABEL,
@@ -396,8 +425,8 @@ export default function MapView({
                 sourceId: GEODETIC_NETWORK_SOURCE,
                 layerId: GEODETIC_NETWORK_LAYER,
                 geojson: g,
-                color: VECTOR_LAYER_THEME.geodeticNetwork.circle,
-                strokeColor: VECTOR_LAYER_THEME.geodeticNetwork.stroke,
+                color: geodeticNetworkColor,
+                strokeColor: geodeticNetworkColor,
                 radius: 6,
                 opacity: geodeticNetworkOpacity / 100,
                 labelLayerId: GEODETIC_NETWORK_LABEL,
@@ -589,6 +618,7 @@ export default function MapView({
       });
 
       currentGeojson.current[level] = sourceGeojson;
+      applyColorToBoundaryLevel(level, boundaryLevelColor(level));
       movePointLayersToTop();
 
       // ── Click popup for polygon / line boundary layers ─────────────────
@@ -664,6 +694,46 @@ export default function MapView({
     Object.values(ids || {})
       .flat()
       .forEach((layerId) => applyOpacityToMapLayer(layerId, opacityValue));
+  };
+
+  const boundaryLevelColor = (level) => {
+    if (String(level).startsWith("ruda")) return rudaBoundaryColor;
+    if (String(level).startsWith("proposed-road")) return proposedRoadsColor;
+    if (level === "district") return districtBoundaryColor;
+    if (level === "tehsil") return tehsilBoundaryColor;
+    if (level === "mauza") return mauzaBoundaryColor;
+    if (level === SQUARE_LEVEL) return squareLayerColor;
+    if (level === ACRE_LEVEL) return acreLayerColor;
+    return null;
+  };
+
+  const applyColorToMapLayer = (layerId, colorValue) => {
+    const map = mapInstance.current;
+    if (!map || !layerId || !map.getLayer(layerId) || !colorValue) return;
+
+    const layer = map.getLayer(layerId);
+
+    try {
+      if (layer.type === "fill") {
+        map.setPaintProperty(layerId, "fill-color", colorValue);
+      } else if (layer.type === "line") {
+        map.setPaintProperty(layerId, "line-color", colorValue);
+      } else if (layer.type === "circle") {
+        map.setPaintProperty(layerId, "circle-color", colorValue);
+        map.setPaintProperty(layerId, "circle-stroke-color", colorValue);
+      } else if (layer.type === "symbol") {
+        map.setPaintProperty(layerId, "text-color", colorValue);
+      }
+    } catch (e) {
+      console.warn(`Could not update color for ${layerId}`, e);
+    }
+  };
+
+  const applyColorToBoundaryLevel = (level, colorValue) => {
+    const ids = getBoundaryIds(level);
+    Object.values(ids || {})
+      .flat()
+      .forEach((layerId) => applyColorToMapLayer(layerId, colorValue));
   };
 
   const clearLayerAndSource = (fillId, lineId, sourceId) => {
@@ -1209,6 +1279,14 @@ export default function MapView({
       });
 
       currentGeojson.current["tri-junction-points"] = pointGeojson;
+      [
+        TRI_JUNCTION_POINTS_LAYER,
+        TRI_JUNCTION_POINTS_LABEL,
+        TRI_JUNCTION_BURJI_LAYER,
+        TRI_JUNCTION_BURJI_LABEL,
+      ].forEach((layerId) =>
+        applyColorToMapLayer(layerId, triJunctionPointsColor),
+      );
       bringTriJunctionToTop();
       movePointLayersToTop();
     } catch (e) {
@@ -1516,6 +1594,83 @@ export default function MapView({
 
   useEffect(() => {
     if (!isMapReady) return;
+    Object.keys(currentGeojson.current || {})
+      .filter((key) => key.startsWith("ruda-"))
+      .forEach((level) => applyColorToBoundaryLevel(level, rudaBoundaryColor));
+  }, [isMapReady, rudaBoundaryColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyColorToBoundaryLevel("proposed-roads", proposedRoadsColor);
+  }, [isMapReady, proposedRoadsColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyColorToBoundaryLevel("district", districtBoundaryColor);
+  }, [isMapReady, districtBoundaryColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyColorToBoundaryLevel("tehsil", tehsilBoundaryColor);
+  }, [isMapReady, tehsilBoundaryColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyColorToBoundaryLevel("mauza", mauzaBoundaryColor);
+  }, [isMapReady, mauzaBoundaryColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyColorToBoundaryLevel(SQUARE_LEVEL, squareLayerColor);
+  }, [isMapReady, squareLayerColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    applyColorToBoundaryLevel(ACRE_LEVEL, acreLayerColor);
+  }, [isMapReady, acreLayerColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [KHASRA_FILL, KHASRA_LINE, KHASRA_LABEL].forEach((layerId) =>
+      applyColorToMapLayer(layerId, khasraLayerColor),
+    );
+  }, [isMapReady, khasraLayerColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [MURABBA_FILL, MURABBA_LINE, MURABBA_LABEL].forEach((layerId) =>
+      applyColorToMapLayer(layerId, murabbaLayerColor),
+    );
+  }, [isMapReady, murabbaLayerColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [GEODETIC_NETWORK_LAYER, GEODETIC_NETWORK_LABEL].forEach((layerId) =>
+      applyColorToMapLayer(layerId, geodeticNetworkColor),
+    );
+  }, [isMapReady, geodeticNetworkColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [
+      TRI_JUNCTION_POINTS_LAYER,
+      TRI_JUNCTION_POINTS_LABEL,
+      TRI_JUNCTION_BURJI_LAYER,
+      TRI_JUNCTION_BURJI_LABEL,
+    ].forEach((layerId) =>
+      applyColorToMapLayer(layerId, triJunctionPointsColor),
+    );
+  }, [isMapReady, triJunctionPointsColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
+    [FIELD_POINTS_LAYER, FIELD_POINTS_LABEL].forEach((layerId) =>
+      applyColorToMapLayer(layerId, fieldPointsColor),
+    );
+  }, [isMapReady, fieldPointsColor]);
+
+  useEffect(() => {
+    if (!isMapReady) return;
 
     let cancelled = false;
 
@@ -1654,8 +1809,8 @@ export default function MapView({
                 sourceId: FIELD_POINTS_SOURCE,
                 layerId: FIELD_POINTS_LAYER,
                 geojson: g,
-                color: VECTOR_LAYER_THEME.fieldPoints.circle,
-                strokeColor: VECTOR_LAYER_THEME.fieldPoints.stroke,
+                color: fieldPointsColor,
+                strokeColor: fieldPointsColor,
                 radius: 4.5,
                 opacity: fieldPointsOpacity / 100,
                 labelLayerId: FIELD_POINTS_LABEL,
@@ -1668,8 +1823,8 @@ export default function MapView({
                 sourceId: GEODETIC_NETWORK_SOURCE,
                 layerId: GEODETIC_NETWORK_LAYER,
                 geojson: g,
-                color: VECTOR_LAYER_THEME.geodeticNetwork.circle,
-                strokeColor: VECTOR_LAYER_THEME.geodeticNetwork.stroke,
+                color: geodeticNetworkColor,
+                strokeColor: geodeticNetworkColor,
                 radius: 6,
                 opacity: geodeticNetworkOpacity / 100,
                 labelLayerId: GEODETIC_NETWORK_LABEL,
@@ -1891,8 +2046,8 @@ export default function MapView({
             sourceId: GEODETIC_NETWORK_SOURCE,
             layerId: GEODETIC_NETWORK_LAYER,
             geojson: preparedGeojson,
-            color: VECTOR_LAYER_THEME.geodeticNetwork.circle,
-            strokeColor: VECTOR_LAYER_THEME.geodeticNetwork.stroke,
+            color: geodeticNetworkColor,
+            strokeColor: geodeticNetworkColor,
             radius: 6,
             opacity: geodeticNetworkOpacity / 100,
             labelLayerId: GEODETIC_NETWORK_LABEL,
@@ -2098,8 +2253,8 @@ export default function MapView({
               sourceId: FIELD_POINTS_SOURCE,
               layerId: FIELD_POINTS_LAYER,
               geojson: preparedFieldPointsGeojson,
-              color: VECTOR_LAYER_THEME.fieldPoints.circle,
-              strokeColor: VECTOR_LAYER_THEME.fieldPoints.stroke,
+              color: fieldPointsColor,
+              strokeColor: fieldPointsColor,
               radius: 4.5,
               opacity: fieldPointsOpacity / 100,
               labelLayerId: FIELD_POINTS_LABEL,
