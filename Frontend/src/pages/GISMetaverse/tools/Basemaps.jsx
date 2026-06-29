@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Globe2, Check } from "lucide-react";
+import { Globe2, Check, X } from "lucide-react";
 
 const basemaps = [
   {
@@ -74,8 +74,8 @@ export default function Basemaps({ map, rebuildAllLayers }) {
             <button
               key={basemap.id}
               onClick={() => handleBasemapChange(basemap)}
-              className={`overflow-hidden rounded-md border bg-[#1f2937] text-left transition hover:border-[#8bd66f] ${
-                isActive ? "border-[#8bd66f]" : "border-[#0f3d2e]"
+              className={`overflow-hidden rounded-md border bg-[#06291f] text-left transition hover:border-[#9be37b] ${
+                isActive ? "border-[#9be37b]" : "border-[#0f3d2e]"
               }`}
             >
               <div
@@ -83,7 +83,7 @@ export default function Basemaps({ map, rebuildAllLayers }) {
                 style={{ background: basemap.preview }}
               >
                 {isActive && (
-                  <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#8bd66f] text-[#111827]">
+                  <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#9be37b] text-[#06291f]">
                     <Check size={13} strokeWidth={3} />
                   </div>
                 )}

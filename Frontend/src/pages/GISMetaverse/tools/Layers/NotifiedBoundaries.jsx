@@ -113,7 +113,7 @@ export default function NotifiedBoundaries({
       </button>
 
       {open && (
-        <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
+        <div className="mx-3 mb-3 rounded-sm border border-[#13593f]/40 bg-[#093024] p-2">
           <LayerItem
             disabled={!selectedProjectId}
             checked={!!layerVisibility.notifiedBoundary}

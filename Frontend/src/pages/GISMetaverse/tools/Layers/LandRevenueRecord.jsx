@@ -5,7 +5,7 @@ import {
   getSquaresGeoJSON,
   getKhasrasGeoJSON,
 } from "../../../../services/api";
-import { ChevronDown, ChevronRight, Grid3X3, Table2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import MauzaBoundaryAttribute from "./AttributeTable/MauzaBoundaryAttribute";
 import KhasraBoundaryAttribute from "./AttributeTable/KhasraBoundaryAttribute";
 import SquareBoundaryAttribute from "./AttributeTable/SquareBoundaryAttribute";
@@ -943,7 +943,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
       </button>
 
       {open && (
-        <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
+        <div className="mx-3 mb-3 rounded-sm border border-[#13593f]/40 bg-[#093024] p-2">
           {!hasSelectedProject && (
             <p className="mb-2 px-1 text-[11px] text-white/40">
               Select a project to enable land revenue layers.
@@ -1157,7 +1157,7 @@ function LayerItem({
         </label>
 
         <div className="flex shrink-0 items-center gap-1">
-          {hasTable && (
+          {hasTable ? (
             <button
               type="button"
               disabled={disabled}
@@ -1169,11 +1169,13 @@ function LayerItem({
               }}
               title={`Open ${label} attribute table`}
             >
-              <Table2 size={14} />
+              <Grid3X3 size={14} />
             </button>
+          ) : (
+            <Grid3X3 size={14} className="text-white/60" />
           )}
 
-          {hasDropdown ? (
+          {hasDropdown && (
             <button
               type="button"
               disabled={disabled}
@@ -1185,15 +1187,12 @@ function LayerItem({
               }}
               title={dropdownTitle}
             >
-              <Grid3X3 size={14} />
               {dropdownOpen ? (
                 <ChevronDown size={14} />
               ) : (
                 <ChevronRight size={14} />
               )}
             </button>
-          ) : (
-            <Grid3X3 size={14} className="text-white/60" />
           )}
         </div>
       </div>

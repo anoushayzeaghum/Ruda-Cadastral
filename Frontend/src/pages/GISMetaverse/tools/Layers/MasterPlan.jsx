@@ -540,7 +540,7 @@ export default function MasterPlan({
       </button>
 
       {open && (
-        <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
+        <div className="mx-3 mb-3 rounded-sm border border-[#13593f]/40 bg-[#093024] p-2">
           <LayerItem
             disabled={!selectedProjectId}
             checked={layerVisibility.boundary}
@@ -558,7 +558,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.boundary && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               {projectBoundarySummary.length === 0 ? (
                 <p className="py-1 text-white/60">No project boundary found</p>
               ) : (
@@ -587,7 +587,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.blockBoundary && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-2 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-2 py-2 text-[11px] text-white/80">
               <div className="mb-1.5 flex items-center justify-between border-b border-[#343c4c] pb-1.5">
                 <button type="button" onClick={selectAllBlocks} className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]">Select All</button>
                 <button type="button" onClick={unselectAllBlocks} className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]">Unselect All</button>
@@ -630,7 +630,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.masterPlan && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
                 <span>Total Plots</span>
                 <span>{dropdownData.masterPlan.length}</span>
@@ -665,7 +665,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.spotLevel && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between py-1">
                 <span>Total Spot Levels</span>
                 <span>{dropdownData.spotLevel.length}</span>
@@ -690,7 +690,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.contours && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
                 <span>Total Contours</span>
                 <span>{contoursSummary.count}</span>
@@ -717,7 +717,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.roads && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               {roadsSummary.length === 0 ? (
                 <p className="py-1 text-white/60">No road types found</p>
               ) : (

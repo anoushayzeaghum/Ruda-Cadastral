@@ -147,7 +147,7 @@ export default function MetaverseLegend({
       {!collapsed && (
         <div className={`max-h-[380px] p-3 ${LAYER_PANEL_SCROLL}`}>
           {!showRudaLegend && !showRoadLegend && !showTopoLegend && (
-            <div className="rounded-sm border border-[#3b4558] bg-[#232b3a] p-3 text-[11px] text-white/70">
+            <div className="rounded-sm border border-[#13593f]/30 bg-[#051f17] p-3 text-[11px] text-white/70">
               No active legend layer. Turn on RUDA Boundary, Proposed Roads, or
               Topographic Plan.
             </div>
@@ -203,7 +203,7 @@ export default function MetaverseLegend({
 
 function LegendSection({ title, icon, children }) {
   return (
-    <div className="mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2 last:mb-0">
+    <div className="mb-3 rounded-sm border border-[#13593f]/30 bg-[#051f17] p-2 last:mb-0">
       <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold text-white">
         {icon}
         {title}

@@ -628,7 +628,7 @@ export default function AdministrativeBoundaries({
       </button>
 
       {open && (
-        <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
+        <div className="mx-3 mb-3 rounded-sm border border-[#13593f]/40 bg-[#093024] p-2">
           <LayerItem
             checked={adminBoundaryVisibility.rudaBoundary}
             color={ADMIN_LAYER_COLORS.rudaBoundary}
@@ -646,7 +646,7 @@ export default function AdministrativeBoundaries({
           />
 
           {rudaPhaseDropdownOpen && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-2 py-2">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-2 py-2">
               {rudaPhases.length === 0 ? (
                 <p className="px-1 py-1 text-[11px] text-white/60">
                   No phases found
@@ -729,7 +729,7 @@ export default function AdministrativeBoundaries({
           />
 
           {rudaMauzaDropdownOpen && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
                 <span>Total Mozas</span>
                 <span>{rudaMauzaSummary.count}</span>
@@ -761,7 +761,7 @@ export default function AdministrativeBoundaries({
           />
 
           {geodeticDropdownOpen && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
                 <span>Total Points</span>
                 <span>{geodeticSummary.count}</span>
@@ -795,7 +795,7 @@ export default function AdministrativeBoundaries({
           />
 
           {proposedRoadsDropdownOpen && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               {proposedRoadsSummary.length === 0 ? (
                 <p className="py-1 text-white/60">No road types found</p>
               ) : (
