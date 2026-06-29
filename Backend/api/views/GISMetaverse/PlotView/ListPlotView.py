@@ -1,5 +1,5 @@
 from ...common_imports import *
-from django.db.models import Q, OuterRef, Subquery
+from django.db.models import Q
 
 
 class ListPlotView(viewsets.ViewSet):
@@ -20,25 +20,10 @@ class ListPlotView(viewsets.ViewSet):
             # ⭐ GLOBAL SEARCH PARAM
             search = request.query_params.get("search")
 
-            # ----------------------------
-            # BASE QUERYSET
-            # ----------------------------
-            queryset = Plot.objects.all().order_by("gid")
-
-            # ----------------------------
-            # JOIN PROJECT NAME (Subquery)
-            # ----------------------------
-            project_name_qs = Project.objects.filter(
-                gid=OuterRef("project_id")
-            ).values("name")[:1]
-
-            block_name_qs = Block.objects.filter(
-                gid=OuterRef("block_id")
-            ).values("name")[:1]
-
-            queryset = queryset.annotate(
-                project_name=Subquery(project_name_qs),
-                block_name=Subquery(block_name_qs),
+            queryset = (
+                Plot.objects
+                .select_related("project", "block")
+                .order_by("gid")
             )
 
             # ----------------------------
@@ -48,16 +33,19 @@ class ListPlotView(viewsets.ViewSet):
                 queryset = queryset.filter(gid=gid)
 
             if project_id:
-                queryset = queryset.filter(project_id=project_id)
+                queryset = queryset.filter(project__gid=project_id)
 
             if block_id:
-                queryset = queryset.filter(block_id=block_id)
+                queryset = queryset.filter(block__gid=block_id)
+
+            if block:
+                queryset = queryset.filter(block__block__iexact=block)
 
             if plot_no:
                 queryset = queryset.filter(plot_no__iexact=plot_no)
 
-            if block:
-                queryset = queryset.filter(block__block__iexact=block)
+            # if block:
+            #     queryset = queryset.filter(block__block__iexact=block)
 
             if plot_area:
                 queryset = queryset.filter(plot_area__iexact=plot_area)
@@ -73,10 +61,10 @@ class ListPlotView(viewsets.ViewSet):
                     Q(plot_no__icontains=search) |
                     Q(name__icontains=search) |
                     Q(type__icontains=search) |
-                    Q(block__icontains=search) |
                     Q(plot_area__icontains=search) |
-                    Q(project_name__icontains=search) |
-                    Q(block_name__icontains=search)
+                    Q(project__name__icontains=search) |
+                    Q(block__name__icontains=search) |
+                    Q(block__block__icontains=search)
                 )
 
             # ----------------------------

@@ -87,17 +87,17 @@ const naturalSort = (a, b) => {
 
   return ax.localeCompare(bx, undefined, { numeric: true, sensitivity: "base" });
 };
-export const getPlotOptions = async (filters = {}) => {
-  const geojson = await getPlotsGeoJSON(filters);
-  const plots = normalizeFeatures(geojson);
+// export const getPlotOptions = async (filters = {}) => {
+//   const geojson = await getPlotsGeoJSON(filters);
+//   const plots = normalizeFeatures(geojson);
 
-  return {
-    plotTypes: [...new Set(plots.map((p) => p.type).filter(Boolean))],
-    plotNos: [...new Set(plots.map((p) => p.plot_no).filter(Boolean))],
-    areas: [...new Set(plots.map((p) => p.plot_area).filter(Boolean))],
+//   return {
+//     plotTypes: [...new Set(plots.map((p) => p.type).filter(Boolean))],
+//     plotNos: [...new Set(plots.map((p) => p.plot_no).filter(Boolean))],
+//     areas: [...new Set(plots.map((p) => p.plot_area).filter(Boolean))],
     
-  };
-};
+//   };
+// };
 
 export const getPlotOptionsAll = async (filters = {}) => {
   const geojson = await getPlotsGeoJSON(filters);
@@ -376,4 +376,20 @@ export const saveProjectMauzas = async (projectId, mauzaIds, khasraIds, murabbaI
   });
 
   return res.data;
+};
+
+export const getPlotOptions = async (params = {}) => {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== "") {
+      query.append(k, v);
+    }
+  });
+
+  const response = await fetch(
+    `${API_BASE}/plot-options/?${query.toString()}`
+  );
+
+  return response.json();
 };

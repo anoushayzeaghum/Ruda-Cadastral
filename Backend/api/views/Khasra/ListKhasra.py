@@ -1,7 +1,7 @@
 from ..common_imports import *
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
+import traceback
 
 class ListKhasraView(viewsets.ViewSet):
     queryset = Khasra.objects.all()
@@ -9,6 +9,7 @@ class ListKhasraView(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
+        
         try:
             gid = request.query_params.get("gid") or request.query_params.get("id")
             mauza_id = request.query_params.get("mauza_id")
@@ -34,7 +35,11 @@ class ListKhasraView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = Khasra.objects.all()
+            queryset = Khasra.objects.select_related(
+                "district",
+                "tehsil",
+                "mauza"
+            )
 
             if dist_id:
                 queryset = queryset.filter(district_id=dist_id)
@@ -55,6 +60,10 @@ class ListKhasraView(viewsets.ViewSet):
             ).create_response()
 
         except Exception as e:
+            print("\n========== KHASRA ERROR ==========")
+            print(traceback.format_exc())
+            print("=================================\n")
+
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",

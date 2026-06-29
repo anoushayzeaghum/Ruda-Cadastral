@@ -3,3 +3,5 @@ from .ListPlotView import *
 from .UpdatePlotView import *
 from .DeletePlotView import *
 from .PlotIntersectingKhasrasAPIView import *
+
+from .PlotOptionsView import *

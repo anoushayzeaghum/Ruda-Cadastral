@@ -256,106 +256,116 @@ export default function MetaverseSubHeader({
   }, [filters.projectId]);
 
   useEffect(() => {
-    let cancelled = false;
+  let cancelled = false;
 
-    const loadCascadingOptions = async () => {
-      if (!filters.projectId) {
-        setOptions({ plotTypes: [], plotNos: [], areas: [] });
-        return;
+  const load = async () => {
+    if (!filters.projectId) {
+      setOptions({
+        plotTypes: [],
+        areas: [],
+        plotNos: [],
+      });
+      return;
+    }
+
+    try {
+      let plotTypes = [];
+      let areas = [];
+      let plotNos = [];
+
+      // Project + Block -> Plot Types
+      const typeRes = await getPlotOptions({
+        project_id: filters.projectId,
+        block: filters.block,
+      });
+
+      plotTypes = uniqueSorted(
+        typeRes.plotTypes || []
+      );
+
+      // Project + Block + Plot Type -> Areas
+      if (filters.plotType) {
+        const areaRes = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block,
+          type: filters.plotType,
+        });
+
+        areas = uniqueSorted(
+          areaRes.areas || []
+        );
       }
 
-      try {
-        // Plot Type depends on Project + Block
-        const plotTypeOptions = await getPlotOptions({
+      // Project + Block + Plot Type + Area -> Plot Nos
+      if (filters.plotType && filters.area) {
+        const plotNoRes = await getPlotOptions({
           project_id: filters.projectId,
-          block: filters.block || undefined,
+          block: filters.block,
+          type: filters.plotType,
+          plot_area: filters.area,
         });
 
-        // Area depends on Project + Block + Plot Type
-        const areaOptions = await getPlotOptions({
-          project_id: filters.projectId,
-          block: filters.block || undefined,
-          type: filters.plotType || undefined,
-        });
+        plotNos = uniqueSorted(
+          plotNoRes.plotNos || []
+        );
+      }
 
-        // Plot No depends on Project + Block + Plot Type + Area
-        const plotNoOptions = await getPlotOptions({
-          project_id: filters.projectId,
-          block: filters.block || undefined,
-          type: filters.plotType || undefined,
-          plot_area: filters.area || undefined,
-        });
-        if (cancelled) return;
-
+      if (!cancelled) {
         setOptions({
-          plotTypes: uniqueSorted(plotTypeOptions.plotTypes || []),
-          areas: uniqueSorted(areaOptions.areas || []),
-          plotNos: uniqueSorted(plotNoOptions.plotNos || []),
+          plotTypes,
+          areas,
+          plotNos,
         });
-      } catch (err) {
-        console.error(err);
-
-        if (!cancelled) {
-          setOptions({
-            plotTypes: [],
-            areas: [],
-            plotNos: [],
-          });
-        }
       }
-    };
-
-    loadCascadingOptions();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [filters.projectId, filters.block, filters.plotType, filters.area]);
-
-  const updateFilter = (key, value) => {
-    setFilters((prev) => {
-      const next = { ...prev, [key]: value };
-
-      if (key === "projectId") {
-        next.block = "";
-        next.plotType = "";
-        next.plotNo = "";
-        next.area = "";
-
-        setLayerVisibility((prev) => ({
-          ...prev,
-          boundary: !!value,
-          masterPlan: false,
-          spotLevel: false,
-          contours: false,
-          roads: false,
-          waterSupplyPoints: false,
-          waterSupplyLines: false,
-          sewagePoints: false,
-          cameraLocations: false,
-          notifiedBoundary: false,
-        }));
-      }
-
-      if (key === "block") {
-        next.plotType = "";
-        next.area = "";
-        next.plotNo = "";
-      }
-
-      if (key === "plotType") {
-        next.area = "";
-        next.plotNo = "";
-      }
-
-      if (key === "area") {
-        next.plotNo = "";
-      }
-
-      return next;
-    });
+    } catch (err) {
+      console.error(err);
+    }
   };
 
+  load();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  filters.projectId,
+  filters.block,
+  filters.plotType,
+  filters.area,
+]);
+
+const updateFilter = (key, value) => {
+  setFilters(prev => {
+    const next = {
+      ...prev,
+      [key]: value,
+    };
+
+    if (key === "projectId") {
+      next.block = "";
+      next.plotType = "";
+      next.area = "";
+      next.plotNo = "";
+    }
+
+    if (key === "block") {
+      next.plotType = "";
+      next.area = "";
+      next.plotNo = "";
+    }
+
+    if (key === "plotType") {
+      next.area = "";
+      next.plotNo = "";
+    }
+
+    if (key === "area") {
+      next.plotNo = "";
+    }
+
+    return next;
+  });
+};
   const projectOptions = projects.map((p) => ({
     value: String(p.gid || p.id),
     label: p.brief_name || p.name,

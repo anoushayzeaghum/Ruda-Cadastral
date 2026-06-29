@@ -135,7 +135,7 @@ export default function useCadastralFilters() {
           selectedTehsil.map((tehsil) => getMauzas(tehsil)),
         );
 
-        console.log("Responses from API:", responses);
+        // console.log("Responses from API:", responses);
 
         // Extract features correctly
         const allFeatures = responses.flatMap((fc) => fc.features);
@@ -150,7 +150,7 @@ export default function useCadastralFilters() {
 
         const unique = dedupeBy(data, "mauza_id");
 
-        console.log("Flattened mauza data:", unique);
+        // console.log("Flattened mauza data:", unique);
 
         setMauzas(sortByLabel(unique, "mauza"));
         if (!ignore) {

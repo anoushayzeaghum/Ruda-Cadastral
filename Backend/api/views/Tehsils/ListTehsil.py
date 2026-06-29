@@ -37,7 +37,13 @@ class ListTehsilView(viewsets.ViewSet):
 
             elif district_i:
 
-                queryset = Tehsil.objects.filter(district_id=district_i)
+                queryset = (
+                    Tehsil.objects
+                    .select_related("district")
+                    .defer("geom")
+                    .filter(district_id=district_i)
+                    .order_by("name")
+                )
 
                 serializer = TehsilSerializer(queryset, many=True)
 
@@ -48,7 +54,12 @@ class ListTehsilView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = Tehsil.objects.all()
+            queryset = (
+                Tehsil.objects
+                .select_related("district")
+                .defer("geom")
+                .order_by("name")
+            )
 
             serializer = TehsilSerializer(queryset, many=True)
 
