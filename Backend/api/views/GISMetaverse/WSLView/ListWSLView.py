@@ -15,7 +15,12 @@ class ListWSLView(viewsets.ViewSet):
             project_id = request.query_params.get("project_id")
 
             if gid:
-                obj = WSL.objects.filter(gid=gid).first()
+                obj = (
+                    WSL.objects
+                    .select_related("project")
+                    .filter(gid=gid)
+                    .first()
+                )
 
                 if not obj:
                     return ApiResponse(
@@ -31,7 +36,7 @@ class ListWSLView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = WSL.objects.all()
+            queryset = WSL.objects.select_related("project")
 
             if name:
                 queryset = queryset.filter(name__icontains=name)
@@ -40,7 +45,9 @@ class ListWSLView(viewsets.ViewSet):
                 queryset = queryset.filter(type__icontains=type_val)
 
             if project_id:
-                queryset = queryset.filter(project_id=project_id)
+                queryset = queryset.filter(
+                    project__gid=project_id
+                )
 
             serializer = WSLSerializer(queryset, many=True)
 
@@ -62,7 +69,12 @@ class ListWSLView(viewsets.ViewSet):
     @action(detail=True, methods=["get"], url_path="geojson")
     def geojson(self, request, pk=None):
         try:
-            obj = WSL.objects.filter(gid=pk).first()
+            obj = (
+                WSL.objects
+                .select_related("project")
+                .filter(gid=pk)
+                .first()
+            )
 
             if not obj:
                 return ApiResponse(

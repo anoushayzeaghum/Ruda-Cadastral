@@ -185,5 +185,10 @@ urlpatterns = [
     # path("import/square/", import_square_shapefile),
     path("import/khasra/", import_khasra_shapefile),
 
+    path(
+        "plot-options/",
+        PlotOptionsView.as_view(),
+        name="plot-options"
+    ),
     path('', include(router.urls)),
 ]

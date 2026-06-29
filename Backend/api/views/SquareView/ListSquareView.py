@@ -89,17 +89,20 @@ class ListSquareView(viewsets.ViewSet):
     def list(self, request, *args, **kwargs):
         try:
             gid = request.query_params.get("gid")
-
-            # support both mauza name and mauza_id
             mauza = (
                 request.query_params.get("mauza")
                 or request.query_params.get("mauza_id")
             )
-
             sq = request.query_params.get("sq")
 
+            queryset = Square.objects.select_related(
+                "district",
+                "tehsil",
+                "mauza",
+            )
+
             if gid:
-                obj = Square.objects.filter(gid=gid).first()
+                obj = queryset.filter(gid=gid).first()
 
                 if not obj:
                     return ApiResponse(
@@ -115,14 +118,15 @@ class ListSquareView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = Square.objects.all()
-
             if mauza:
                 try:
-                    mauza_int = int(mauza)
-                    queryset = queryset.filter(mauza_id=mauza_int)
-                except Exception:
-                    queryset = queryset.filter(mauza__iexact=mauza)
+                    queryset = queryset.filter(
+                        mauza__mauza_id=float(mauza)
+                    )
+                except ValueError:
+                    queryset = queryset.filter(
+                        mauza__mauza__iexact=mauza
+                    )
 
             if sq:
                 queryset = queryset.filter(sq=sq)
@@ -137,9 +141,12 @@ class ListSquareView(viewsets.ViewSet):
             ).create_response()
 
         except Exception as e:
+            import traceback
+
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
                 data=str(e),
+                error_traceback=traceback.format_exc(),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()

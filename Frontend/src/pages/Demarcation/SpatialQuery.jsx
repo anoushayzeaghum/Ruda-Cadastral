@@ -146,63 +146,88 @@ export default function SpatialQuery({
     };
   }, [selectedProjectId]);
 
-  useEffect(() => {
-    let mounted = true;
+useEffect(() => {
+  let mounted = true;
 
-    async function loadPlotOptions() {
-      if (!selectedProjectId) {
-        setPlotTypes([]);
-        setPlotNos([]);
-        return;
-      }
+  async function loadPlotOptions() {
+    if (!selectedProjectId) {
+      setPlotTypes([]);
+      setPlotNos([]);
+      return;
+    }
 
-      setLoading(true);
-      try {
-        const options = await getPlotOptions({
+    setLoading(true);
+
+    try {
+      //
+      // STEP 1
+      // Project + Block => Plot Types
+      //
+      const typeRes = await getPlotOptions({
+        project_id: selectedProjectId,
+        block_id: selectedBlockId || undefined,
+        block: selectedBlockName || undefined,
+      });
+
+      if (!mounted) return;
+
+      setPlotTypes(
+        [...new Set(typeRes.plotTypes || [])].sort((a, b) =>
+          a.localeCompare(b, undefined, {
+            numeric: true,
+            sensitivity: "base",
+          }),
+        ),
+      );
+
+      //
+      // STEP 2
+      // Project + Block + Plot Type => Plot Nos
+      //
+      if (filters?.plotType) {
+        const plotRes = await getPlotOptions({
           project_id: selectedProjectId,
           block_id: selectedBlockId || undefined,
           block: selectedBlockName || undefined,
-          type: filters?.plotType || undefined,
+          type: filters.plotType,
         });
 
         if (!mounted) return;
-        setPlotTypes(
-          (options.plotTypes || []).sort((a, b) =>
-            a.localeCompare(b, undefined, {
-              numeric: true,
-              sensitivity: "base",
-            })
-          )
-        );
-        setPlotNos(
-          (options.plotNos || []).sort((a, b) =>
-            a.localeCompare(b, undefined, {
-              numeric: true,
-              sensitivity: "base",
-            })
-          )
-        );
-      } catch (error) {
-        console.error("Failed to load plot options", error);
-        if (mounted) {
-          setPlotTypes([]);
-          setPlotNos([]);
-        }
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    }
 
-    loadPlotOptions();
-    return () => {
-      mounted = false;
-    };
-  }, [
-    selectedProjectId,
-    selectedBlockId,
-    selectedBlockName,
-    filters?.plotType,
-  ]);
+        setPlotNos(
+          [...new Set(plotRes.plotNos || [])].sort((a, b) =>
+            a.localeCompare(b, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            }),
+          ),
+        );
+      } else {
+        setPlotNos([]);
+      }
+    } catch (err) {
+      console.error(err);
+
+      if (mounted) {
+        setPlotTypes([]);
+        setPlotNos([]);
+      }
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  }
+
+  loadPlotOptions();
+
+  return () => {
+    mounted = false;
+  };
+}, [
+  selectedProjectId,
+  selectedBlockId,
+  selectedBlockName,
+  filters?.plotType,
+]);
 
   const canSearch = useMemo(
     () => Boolean(selectedProjectId),
@@ -289,8 +314,8 @@ export default function SpatialQuery({
             onChange={(opt) => {
               update({
                 selectedBlock: opt,
-                blockId: opt?.raw?.gid || opt?.raw?.block_id || "",
-                block: opt?.raw?.block || opt?.label || "",
+                blockId: opt?.raw?.gid || "",
+                block: opt?.raw?.block || "",
                 plotType: "",
                 plotNo: "",
                 selectedParcelNumber: "",
@@ -321,7 +346,7 @@ export default function SpatialQuery({
             isSearchable
             isDisabled={!selectedProjectId || loading || !plotTypes.length}
           />
-
+          
           <Select
             classNamePrefix="spatial-select"
             styles={selectStyles}

@@ -15,7 +15,7 @@ class ListDistrictView(viewsets.ViewSet):
 
             if district_id:
 
-                district = District.objects.filter(id=district_id).first()
+                district = District.objects.get(id=district_id)
 
                 if not district:
                     return ApiResponse(
@@ -33,7 +33,7 @@ class ListDistrictView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = District.objects.all()
+            queryset = District.objects.defer("geom").order_by("name")
 
             serializer = DistrictSerializer(queryset, many=True)
 

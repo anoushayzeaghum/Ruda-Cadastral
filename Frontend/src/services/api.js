@@ -185,7 +185,7 @@ export const getMauzas = async (tehsil) => {
   const res = await API.get("/mauza/", {
     params,
   });
-  console.log("Raw response for getMauzas:", res);
+  // console.log("Raw response for getMauzas:", res);
   return normalizeGeoJson(res);
 };
 
