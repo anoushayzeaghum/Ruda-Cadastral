@@ -1,5 +1,153 @@
 import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
 
+const MASTER_PLAN_FILL_COLOR = [
+  "case",
+
+  // Residential plots - light blue like your reference image
+  [
+    ">=",
+    [
+      "index-of",
+      "residential",
+      [
+        "downcase",
+        [
+          "to-string",
+          [
+            "coalesce",
+            ["get", "type"],
+            ["get", "land_use"],
+            ["get", "landuse"],
+            "",
+          ],
+        ],
+      ],
+    ],
+    0,
+  ],
+  "#8fb3ff",
+
+  // Commercial plots - yellow
+  [
+    ">=",
+    [
+      "index-of",
+      "commercial",
+      [
+        "downcase",
+        [
+          "to-string",
+          [
+            "coalesce",
+            ["get", "type"],
+            ["get", "land_use"],
+            ["get", "landuse"],
+            "",
+          ],
+        ],
+      ],
+    ],
+    0,
+  ],
+  "#f6dc78",
+
+  // Parks / open spaces - green
+  [
+    "any",
+    [
+      ">=",
+      [
+        "index-of",
+        "park",
+        [
+          "downcase",
+          [
+            "to-string",
+            [
+              "coalesce",
+              ["get", "type"],
+              ["get", "land_use"],
+              ["get", "landuse"],
+              "",
+            ],
+          ],
+        ],
+      ],
+      0,
+    ],
+    [
+      ">=",
+      [
+        "index-of",
+        "green",
+        [
+          "downcase",
+          [
+            "to-string",
+            [
+              "coalesce",
+              ["get", "type"],
+              ["get", "land_use"],
+              ["get", "landuse"],
+              "",
+            ],
+          ],
+        ],
+      ],
+      0,
+    ],
+    [
+      ">=",
+      [
+        "index-of",
+        "open",
+        [
+          "downcase",
+          [
+            "to-string",
+            [
+              "coalesce",
+              ["get", "type"],
+              ["get", "land_use"],
+              ["get", "landuse"],
+              "",
+            ],
+          ],
+        ],
+      ],
+      0,
+    ],
+  ],
+  "#8fbc8f",
+
+  // Roads inside master plan - soft red/pink, separate roads layer can still be unchecked
+  [
+    ">=",
+    [
+      "index-of",
+      "road",
+      [
+        "downcase",
+        [
+          "to-string",
+          [
+            "coalesce",
+            ["get", "type"],
+            ["get", "land_use"],
+            ["get", "landuse"],
+            "",
+          ],
+        ],
+      ],
+    ],
+    0,
+  ],
+  "#e89a95",
+
+  // Other / public / unknown plots - grey
+  "#c8c0bd",
+];
+
 export function addMasterPlanLayer(map, data, color = null) {
   ensureSource(map, SOURCES.masterPlan, data);
 
@@ -9,22 +157,17 @@ export function addMasterPlanLayer(map, data, color = null) {
       type: "fill",
       source: SOURCES.masterPlan,
       paint: {
-        "fill-color": [
-          "match",
-          ["get", "type"],
-          "Residential",
-          "#0f3d2e",
-          "Commercial",
-          "#facc15",
-          "Park",
-          "#15803d",
-          "Road",
-          "#ef4444",
-          "#9ca3af",
-        ],
-        "fill-opacity": 0.45,
+        "fill-color": MASTER_PLAN_FILL_COLOR,
+        "fill-opacity": 0.9,
       },
     });
+  } else {
+    map.setPaintProperty(
+      LAYERS.masterPlanFill,
+      "fill-color",
+      MASTER_PLAN_FILL_COLOR,
+    );
+    map.setPaintProperty(LAYERS.masterPlanFill, "fill-opacity", 0.9);
   }
 
   if (!map.getLayer(LAYERS.masterPlanLine)) {
@@ -33,12 +176,13 @@ export function addMasterPlanLayer(map, data, color = null) {
       type: "line",
       source: SOURCES.masterPlan,
       paint: {
-        "line-color": color || "#06291f",
-        "line-width": 1,
+        "line-color": "#111111",
+        "line-width": 1.15,
       },
     });
-  } else if (color) {
-    map.setPaintProperty(LAYERS.masterPlanLine, "line-color", color);
+  } else {
+    map.setPaintProperty(LAYERS.masterPlanLine, "line-color", "#111111");
+    map.setPaintProperty(LAYERS.masterPlanLine, "line-width", 1.15);
   }
 
   if (!map.getLayer(LAYERS.masterPlanLabel)) {
@@ -60,19 +204,19 @@ export function addMasterPlanLayer(map, data, color = null) {
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": color || "#06291f",
+        "text-color": color || "#111111",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.5,
       },
     });
-  } else if (color) {
-    map.setPaintProperty(LAYERS.masterPlanLabel, "text-color", color);
+  } else {
+    map.setPaintProperty(
+      LAYERS.masterPlanLabel,
+      "text-color",
+      color || "#111111",
+    );
   }
 
-  // Highlight layer — rendered on top of fill/line so the selection outline
-  // is always visible. The filter uses ["to-string", ["get", "gid"]] so it
-  // exactly matches the expression that PlotPopup sets at runtime.
-  // Starts hidden (line-opacity: 0) and matching nothing (__none__).
   if (!map.getLayer(LAYERS.masterPlanHover)) {
     map.addLayer({
       id: LAYERS.masterPlanHover,
@@ -83,9 +227,6 @@ export function addMasterPlanLayer(map, data, color = null) {
         "line-width": 4,
         "line-opacity": 0,
       },
-      // Use the same expression type that PlotPopup will set dynamically.
-      // A plain string comparison ["==", ["get", "gid"], ""] would type-mismatch
-      // when gid is a number, so we cast both sides to string.
       filter: ["==", ["to-string", ["get", "gid"]], "__none__"],
     });
   }

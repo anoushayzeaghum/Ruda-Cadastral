@@ -13,7 +13,7 @@ import { readAreaSqft, sqftToAcres } from "./AttributeTable/areaUtils";
 const MASTER_PLAN_LAYER_COLORS = {
   boundary: "#0f3d2e",
   blockBoundary: "#7c3aed",
-  masterPlan: "#111827",
+  masterPlan: "#2563eb",
   spotLevel: "#65c96b",
   contours: "#615514",
   roads: "#ef4444",
@@ -40,6 +40,24 @@ const getFeatureLabel = (feature = {}) => {
   const props = feature.properties || {};
   return props.block || props.name || props.gid || feature.id || "-";
 };
+
+const getBlockAreaValue = (feature = {}) => {
+  const props = feature.properties || {};
+  const area = props.area ?? props.Area ?? props.area_acres ?? props.acres;
+  const numeric = Number(area);
+
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return `${formatNumber(numeric)} acres`;
+  }
+
+  const sqft = readAreaSqft(feature);
+  const acres = sqftToAcres(sqft);
+
+  return acres > 0 ? `${formatNumber(acres)} acres` : "Area N/A";
+};
+
+const getBlockDropdownLabel = (feature = {}) =>
+  `${getFeatureLabel(feature)} (${getBlockAreaValue(feature)})`;
 
 const featureCollectionFromRows = (data) => unwrapGeoJSON(data);
 
@@ -84,6 +102,11 @@ const applyMasterPlanLayerColor = (map, key, color) => {
     case "contours":
       setPaint(map, "metaverse-contours-line", "line-color", color);
       setPaint(map, "metaverse-contours-label", "text-color", color);
+      break;
+
+    case "masterPlan":
+      setPaint(map, "metaverse-masterplan-line", "line-color", color);
+      setPaint(map, "metaverse-masterplan-label", "text-color", color);
       break;
 
     default:
@@ -174,7 +197,7 @@ const applyMasterPlanLayerStyle = (map, key, style = {}) => {
 
   applyMasterPlanLayerOpacity(map, key, style.opacity ?? 100);
 
-  if (["boundary", "spotLevel", "contours"].includes(key)) {
+  if (["boundary", "masterPlan", "spotLevel", "contours"].includes(key)) {
     applyMasterPlanLayerColor(
       map,
       key,
@@ -261,9 +284,16 @@ export default function MasterPlan({
 
       if (key === "blockBoundary") {
         const data = await readSourceOrFetch("blockBoundary", "/block/", { project_id: selectedProjectId });
-        const features = data.features || [];
+        const features = [...(data.features || [])].sort((a, b) =>
+          String(getFeatureLabel(a)).localeCompare(String(getFeatureLabel(b)), undefined, {
+            numeric: true,
+            sensitivity: "base",
+          }),
+        );
         setDropdownData((prev) => ({ ...prev, blockBoundary: features }));
-        setSelectedBlockKeys((prev) => prev.length ? prev : features.map(getFeatureKey).filter(Boolean));
+        setSelectedBlockKeys((prev) =>
+          prev.length ? prev : features.map(getFeatureKey).filter(Boolean),
+        );
       }
 
       if (key === "masterPlan") {
@@ -606,7 +636,7 @@ export default function MasterPlan({
                           onChange={() => toggleBlockSelection(feature)}
                           className="accent-[#65c96b]"
                         />
-                        <span className="min-w-0 flex-1 truncate">{getFeatureLabel(feature)}</span>
+                        <span className="min-w-0 flex-1 truncate">{getBlockDropdownLabel(feature)}</span>
                       </label>
                     );
                   })}

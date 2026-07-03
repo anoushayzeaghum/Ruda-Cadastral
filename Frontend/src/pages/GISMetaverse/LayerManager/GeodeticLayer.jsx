@@ -1,8 +1,7 @@
 import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
 
-const GEODETIC_POINT_COLOR = "#1d4ed8";
-const GEODETIC_POINT_STROKE = "#dbeafe";
-const GEODETIC_LABEL_COLOR = "#0f2f5f";
+const GEODETIC_POINT_COLOR = "#ef4444";
+const GEODETIC_POINT_STROKE = "#fee2e2";
 
 const GEODETIC_LABEL_FIELD = [
   "to-string",

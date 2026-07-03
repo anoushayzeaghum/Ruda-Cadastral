@@ -19,7 +19,7 @@ const RUDA_BOUNDARY_LAYER_IDS = [
 const ADMIN_LAYER_COLORS = {
   rudaBoundary: "#6bb7e8",
   rudaMauzaBoundary: "#0f3d2e",
-  geodeticNetwork: "#1d4ed8",
+  geodeticNetwork: "#ef4444",
   proposedRoads: "#19598d",
 };
 

@@ -22,6 +22,13 @@ export const normalizeFeatures = (data) => {
 
 const emptyFC = () => ({ type: "FeatureCollection", features: [] });
 
+const compactParams = (params = {}) =>
+  Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    ),
+  );
+
 const unwrapGeoJSON = (data) => {
   const raw = unwrapApiData(data);
   if (raw?.type === "FeatureCollection") return raw;
@@ -85,7 +92,10 @@ const naturalSort = (a, b) => {
     return Number(numA) - Number(numB);
   }
 
-  return ax.localeCompare(bx, undefined, { numeric: true, sensitivity: "base" });
+  return ax.localeCompare(bx, undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
 };
 // export const getPlotOptions = async (filters = {}) => {
 //   const geojson = await getPlotsGeoJSON(filters);
@@ -95,7 +105,7 @@ const naturalSort = (a, b) => {
 //     plotTypes: [...new Set(plots.map((p) => p.type).filter(Boolean))],
 //     plotNos: [...new Set(plots.map((p) => p.plot_no).filter(Boolean))],
 //     areas: [...new Set(plots.map((p) => p.plot_area).filter(Boolean))],
-    
+
 //   };
 // };
 
@@ -110,9 +120,7 @@ export const getPlotOptionsAll = async (filters = {}) => {
     // NEW (ADD ALL MISSING FIELDS)
     parkFronts: [...new Set(plots.map((p) => p.parkfront).filter(Boolean))],
     roadFacing: [...new Set(plots.map((p) => p.rd_facing).filter(Boolean))],
-    possessionStatus: [
-      ...new Set(plots.map((p) => p.poss_st ).filter(Boolean)),
-    ],
+    possessionStatus: [...new Set(plots.map((p) => p.poss_st).filter(Boolean))],
     plotStatus: [...new Set(plots.map((p) => p.canceled).filter(Boolean))],
     categories: [...new Set(plots.map((p) => p.tr_cate).filter(Boolean))],
     owners: [...new Set(plots.map((p) => p.tr_own).filter(Boolean))],
@@ -138,7 +146,9 @@ export const getPlotIntersectingKhasras = async (plotGid) => {
     };
   }
 
-  const res = await axios.get(`${API_BASE}/plot/${plotGid}/intersecting-khasras/`);
+  const res = await axios.get(
+    `${API_BASE}/plot/${plotGid}/intersecting-khasras/`,
+  );
   const data = unwrapApiData(res.data);
 
   console.log("[metaverseApi] getPlotIntersectingKhasras response", {
@@ -178,16 +188,49 @@ export const getRoadsGeoJSON = async (filters = {}) => {
 
   if (!params.project_id) return emptyFC();
 
-  const res = await axios.get(`${API_BASE}/road/`, {
-    params: {
-      project_id: params.project_id,
-      block_id: params.block_id || undefined,
-      block: params.block || undefined,
-      type: params.type || undefined,
-    },
+  const requestParams = compactParams({
+    project_id: params.project_id,
+    block_id: params.block_id,
+    block: params.block,
+
+    // Use this only when you intentionally pass a ROAD type
+    // such as "Secondary Road". Do not pass plot type here.
+    type: params.road_type ?? params.type,
   });
 
-  return unwrapGeoJSON(res.data);
+  try {
+    const res = await axios.get(`${API_BASE}/road/`, {
+      params: requestParams,
+    });
+
+    return unwrapGeoJSON(res.data);
+  } catch (error) {
+    const status = error?.response?.status;
+
+    // If an optional road filter breaks the backend, retry with only project_id.
+    // This keeps the map usable and confirms whether the issue is filter-related.
+    if (
+      status === 500 &&
+      (requestParams.block_id || requestParams.block || requestParams.type)
+    ) {
+      console.warn(
+        "[metaverseApi] /road/ failed with filters. Retrying with project_id only.",
+        {
+          status,
+          requestParams,
+          response: error?.response?.data,
+        },
+      );
+
+      const retry = await axios.get(`${API_BASE}/road/`, {
+        params: { project_id: params.project_id },
+      });
+
+      return unwrapGeoJSON(retry.data);
+    }
+
+    throw error;
+  }
 };
 
 export const getWaterSupplyPointsGeoJSON = async (projectId) => {
@@ -367,12 +410,17 @@ export const getKhasrasGeoJSON = async (filters = {}) => {
   return unwrapGeoJSON(res.data);
 };
 
-export const saveProjectMauzas = async (projectId, mauzaIds, khasraIds, murabbaIds) => {
+export const saveProjectMauzas = async (
+  projectId,
+  mauzaIds,
+  khasraIds,
+  murabbaIds,
+) => {
   const res = await axios.post(`${API_BASE}/project-mauza/create/`, {
     project_id: projectId,
     mauza_ids: mauzaIds,
     khasra_ids: khasraIds,
-    murabba_ids: murabbaIds
+    murabba_ids: murabbaIds,
   });
 
   return res.data;
@@ -387,9 +435,7 @@ export const getPlotOptions = async (params = {}) => {
     }
   });
 
-  const response = await fetch(
-    `${API_BASE}/plot-options/?${query.toString()}`
-  );
+  const response = await fetch(`${API_BASE}/plot-options/?${query.toString()}`);
 
   return response.json();
 };
