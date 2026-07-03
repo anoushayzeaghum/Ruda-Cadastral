@@ -48,16 +48,16 @@ export default function Society3DExtrusionPanel({
   };
 
   return (
-    <aside className="w-[330px] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
-      <div className="flex items-start justify-between border-b border-[#0c3d2d] bg-[#06291f] px-4 py-3">
+    <aside className="w-full sm:w-[330px] overflow-hidden border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
+      <div className="flex items-start justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 sm:px-4 py-2 sm:py-3">
         <div>
-          <div className="flex items-center gap-2">
-            <Box size={18} className="text-[#9be37b]" />
-            <h2 className="text-sm font-bold uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Box size={16} className="text-[#9be37b] sm:w-[18px] sm:h-[18px]" />
+            <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wide">
               3D Extrusion Manager
             </h2>
           </div>
-          <p className="mt-1 text-[11px] text-white/55">
+          <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-white/55">
             Select one plot or all plots, set height and apply extrusion.
           </p>
         </div>
@@ -67,23 +67,25 @@ export default function Society3DExtrusionPanel({
           title="Close"
           aria-label="Close extrusion manager"
           onClick={onClose}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/55 transition hover:bg-white/10 hover:text-white"
+          className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-md text-white/55 transition hover:bg-white/10 hover:text-white"
         >
-          <X size={15} />
+          <X size={14} className="sm:w-[15px] sm:h-[15px]" />
         </button>
       </div>
 
-      <div className="space-y-4 p-4">
-        <div className="rounded-md border border-[#13593f] bg-[#06291f] p-3">
-          <div className="flex items-center gap-2 text-[12px] font-semibold text-white/80">
-            <MousePointer2 size={14} className="text-[#9be37b]" />
+      <div className="space-y-3 sm:space-y-4 p-3 sm:p-4"
+        style={{ maxHeight: 'calc(70vh - 120px)', overflowY: 'auto' }}
+      >
+        <div className="rounded-md border border-[#13593f] bg-[#06291f] p-2 sm:p-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-[12px] font-semibold text-white/80">
+            <MousePointer2 size={13} className="text-[#9be37b] sm:w-[14px] sm:h-[14px]" />
             Selected Feature
           </div>
 
           <select
             value={applyTarget}
             onChange={(event) => setApplyTarget(event.target.value)}
-            className="mt-2 w-full rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-2 text-[12px] font-semibold text-white outline-none transition focus:border-[#9be37b]"
+            className="mt-1.5 sm:mt-2 w-full rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold text-white outline-none transition focus:border-[#9be37b]"
           >
             <option value="selected" disabled={!selectedFeature}>
               {selectedId ? `Selected Plot: ${selectedId}` : "No plot selected"}
@@ -93,8 +95,8 @@ export default function Society3DExtrusionPanel({
         </div>
 
         <label className="block">
-          <span className="mb-1 flex items-center gap-2 text-[12px] font-semibold text-white/80">
-            <Wand2 size={14} className="text-[#9be37b]" /> Height (feet)
+          <span className="mb-1 flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-[12px] font-semibold text-white/80">
+            <Wand2 size={13} className="text-[#9be37b] sm:w-[14px] sm:h-[14px]" /> Height (feet)
           </span>
           <input
             type="number"
@@ -106,19 +108,19 @@ export default function Society3DExtrusionPanel({
                 heightFeet: event.target.value,
               }))
             }
-            className="w-full rounded-md border border-[#0c3d2d] bg-[#06291f] px-3 py-2 text-sm font-semibold text-white outline-none transition focus:border-[#9be37b]"
+            className="w-full rounded-md border border-[#0c3d2d] bg-[#06291f] px-2.5 sm:px-3 py-1.5 sm:py-2 text-sm font-semibold text-white outline-none transition focus:border-[#9be37b]"
           />
         </label>
 
         <div>
-          <p className="mb-2 text-[12px] font-semibold text-white/80">
+          <p className="mb-1.5 sm:mb-2 text-[11px] sm:text-[12px] font-semibold text-white/80">
             Extrude From
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             {["base", "top"].map((value) => (
               <label
                 key={value}
-                className={`flex cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-[12px] font-semibold uppercase transition ${
+                className={`flex cursor-pointer items-center justify-center gap-1.5 sm:gap-2 rounded-md border px-2 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-semibold uppercase transition ${
                   extrusion.extrudeFrom === value
                     ? "border-[#9be37b] bg-[#0a3327] text-white"
                     : "border-[#0c3d2d] bg-[#06291f] text-white/75 hover:bg-[#0a3327]"
@@ -143,21 +145,21 @@ export default function Society3DExtrusionPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 pt-1">
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-1">
           <button
             type="button"
             onClick={handleApply}
             disabled={applyTarget === "selected" && !selectedFeature}
-            className="rounded-md border border-[#9be37b] bg-[#0a3327] px-3 py-2 text-[12px] font-bold text-white transition hover:bg-[#13593f] disabled:cursor-not-allowed disabled:border-[#0c3d2d] disabled:bg-[#06291f] disabled:text-white/35"
+            className="rounded-md border border-[#9be37b] bg-[#0a3327] px-2 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-bold text-white transition hover:bg-[#13593f] disabled:cursor-not-allowed disabled:border-[#0c3d2d] disabled:bg-[#06291f] disabled:text-white/35"
           >
             Apply
           </button>
           <button
             type="button"
             onClick={onClearExtrusions}
-            className="flex items-center justify-center gap-1 rounded-md border border-[#0c3d2d] bg-[#06291f] px-3 py-2 text-[12px] font-bold text-white/85 transition hover:bg-[#0a3327] hover:text-white"
+            className="flex items-center justify-center gap-1 rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-[12px] font-bold text-white/85 transition hover:bg-[#0a3327] hover:text-white"
           >
-            <RotateCcw size={13} /> Clear All
+            <RotateCcw size={12} className="sm:w-[13px] sm:h-[13px]" /> Clear All
           </button>
         </div>
       </div>

@@ -1,5 +1,22 @@
-import { Box, Layers } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Box, Layers, X } from "lucide-react";
 import { ThreeDExtrusionManager, ThreeDLayerManager } from "./Society3DLayers";
+
+// Hook — true when viewport width is below the sm breakpoint (640 px)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 640,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  return isMobile;
+}
 
 const tools = [
   { id: "layers", label: "3D Layer Manager", icon: Layers },
@@ -24,6 +41,8 @@ export default function Society3DLeftToolbar({
   onApplyToSelected,
   onClearExtrusions,
 }) {
+  const isMobile = useIsMobile();
+  
   const activeToolIndex = tools.findIndex((tool) => tool.id === activePanel);
   const panelTop =
     activeToolIndex >= 0
@@ -43,7 +62,12 @@ export default function Society3DLeftToolbar({
         }
       `}</style>
 
-      <div className="absolute left-2 top-5 z-40 flex flex-col gap-1">
+      {/* Tool buttons - bottom center on mobile, left side on desktop */}
+      <div className={`absolute z-40 ${
+        isMobile 
+          ? 'bottom-3 left-1/2 -translate-x-1/2 flex-row' 
+          : 'left-2 top-5 flex-col'
+      } flex gap-1`}>
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isActive = activePanel === tool.id;
@@ -55,49 +79,89 @@ export default function Society3DLeftToolbar({
               title={tool.label}
               aria-label={tool.label}
               onClick={() => handleToolClick(tool.id)}
-              className={`flex h-9 w-9 items-center justify-center rounded-md border text-white shadow-md transition ${
+              className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border text-white shadow-md transition ${
                 isActive
                   ? "border-[#9be37b] bg-[#0a3327]"
                   : "border-[#0c3d2d] bg-[#06291f] hover:bg-[#0a3327]"
               }`}
             >
-              <Icon size={20} strokeWidth={2.2} />
+              <Icon size={16} strokeWidth={2.2} className="sm:hidden" />
+              <Icon size={20} strokeWidth={2.2} className="hidden sm:block" />
             </button>
           );
         })}
+        
+        {/* Close button for mobile - only shown when a panel is active */}
+        {isMobile && activePanel && (
+          <button
+            type="button"
+            title="Close Panel"
+            aria-label="Close panel"
+            onClick={() => setActivePanel(null)}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-[#0c3d2d] bg-[#06291f] text-white shadow-md transition hover:bg-[#0a3327]"
+          >
+            <X size={16} strokeWidth={2.2} />
+          </button>
+        )}
       </div>
 
       {activePanel && (
-        <div
-          className="absolute left-14 z-40 w-[330px]"
-          style={{
-            top: `${panelTop}px`,
-            animation: "society3dPanelDrop 220ms ease-out both",
-            transformOrigin: "top left",
-          }}
-        >
-          {activePanel === "layers" && (
-            <ThreeDLayerManager
-              layers={layers}
-              setLayers={setLayers}
-              basemap={basemap}
-              setBasemap={setBasemap}
-              selectedProject={selectedProject}
-              onClose={() => setActivePanel(null)}
+        <>
+          {/* Mobile backdrop overlay */}
+          {isMobile && (
+            <div
+              className="fixed inset-0 z-40 bg-black/40"
+              onClick={() => setActivePanel(null)}
             />
           )}
+          
+          <div
+            className={`z-50 overflow-hidden ${
+              isMobile
+                ? 'fixed bottom-0 left-0 right-0 rounded-t-xl'
+                : 'absolute left-14 rounded-md'
+            }`}
+            style={
+              isMobile
+                ? { maxHeight: '70vh' }
+                : {
+                    top: `${panelTop}px`,
+                    width: '330px',
+                    animation: "society3dPanelDrop 220ms ease-out both",
+                    transformOrigin: "top left",
+                  }
+            }
+          >
+            {/* Mobile drag handle */}
+            {isMobile && (
+              <div className="flex justify-center bg-[#06291f] py-2">
+                <div className="h-1 w-10 rounded-full bg-white/30" />
+              </div>
+            )}
+            
+            {activePanel === "layers" && (
+              <ThreeDLayerManager
+                layers={layers}
+                setLayers={setLayers}
+                basemap={basemap}
+                setBasemap={setBasemap}
+                selectedProject={selectedProject}
+                onClose={() => setActivePanel(null)}
+              />
+            )}
 
-          {activePanel === "extrusion" && (
-            <ThreeDExtrusionManager
-              extrusion={extrusion}
-              setExtrusion={setExtrusion}
-              selectedFeature={selectedFeature}
-              onApplyToSelected={onApplyToSelected}
-              onClearExtrusions={onClearExtrusions}
-              onClose={() => setActivePanel(null)}
-            />
-          )}
-        </div>
+            {activePanel === "extrusion" && (
+              <ThreeDExtrusionManager
+                extrusion={extrusion}
+                setExtrusion={setExtrusion}
+                selectedFeature={selectedFeature}
+                onApplyToSelected={onApplyToSelected}
+                onClearExtrusions={onClearExtrusions}
+                onClose={() => setActivePanel(null)}
+              />
+            )}
+          </div>
+        </>
       )}
     </>
   );
