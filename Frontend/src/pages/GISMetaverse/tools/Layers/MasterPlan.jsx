@@ -105,8 +105,8 @@ const applyMasterPlanLayerColor = (map, key, color) => {
       break;
 
     case "masterPlan":
-      setPaint(map, "metaverse-masterplan-line", "line-color", color);
-      setPaint(map, "metaverse-masterplan-label", "text-color", color);
+      // Master Plan boundary styling is controlled centrally by MasterPlanLayer.jsx.
+      // Prevent UI runtime overrides from changing line/text color here.
       break;
 
     default:
@@ -197,7 +197,7 @@ const applyMasterPlanLayerStyle = (map, key, style = {}) => {
 
   applyMasterPlanLayerOpacity(map, key, style.opacity ?? 100);
 
-  if (["boundary", "masterPlan", "spotLevel", "contours"].includes(key)) {
+  if (["boundary", "spotLevel", "contours"].includes(key)) {
     applyMasterPlanLayerColor(
       map,
       key,
