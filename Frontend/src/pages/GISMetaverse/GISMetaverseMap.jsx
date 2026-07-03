@@ -59,7 +59,11 @@ import { addGeodeticNetworkLayer } from "./LayerManager/GeodeticLayer";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-function applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility) {
+function applyMetaverseLayerStyles(
+  map,
+  layerVisibility,
+  adminBoundaryVisibility,
+) {
   applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
   applyRudaMauzaBoundaryStyle(
     map,
@@ -90,6 +94,17 @@ async function loadAssetGeoJSON(paths = []) {
   throw lastError || new Error("Intro GeoJSON could not be loaded");
 }
 
+const logLayerLoadError = (layerName, error) => {
+  const status = error?.response?.status;
+  const message = error?.response?.data?.message || error?.message || error;
+
+  console.error(`[GISMetaverseMap] ${layerName} layer load error`, {
+    status,
+    message,
+    response: error?.response?.data,
+  });
+};
+
 export default function GISMetaverseMap({
   mapRef,
   isMapReady,
@@ -100,9 +115,72 @@ export default function GISMetaverseMap({
   setLayerVisibility: updateLayerVisibility,
   onIntroComplete,
 }) {
+  const loadAdministrativeLayers = async (map) => {
+    if (!map) return;
+
+    if (adminBoundaryVisibility?.rudaBoundary) {
+      const data = await getRudaGeoJSON();
+      addRudaBoundaryLayer(map, data);
+    }
+
+    if (adminBoundaryVisibility?.rudaMauzaBoundary) {
+      const data = await loadAssetGeoJSON(RUDA_MAUZA_ASSET_PATHS);
+      addRudaMauzaBoundaryLayer(
+        map,
+        data,
+        adminBoundaryVisibility?.rudaMauzaBoundaryOpacity ?? 100,
+      );
+    }
+
+    if (adminBoundaryVisibility?.proposedRoads) {
+      const data = await getRudaProposedRoadsGeoJSON();
+      addProposedRoadsLayer(map, data);
+    }
+
+    if (adminBoundaryVisibility?.geodeticNetwork) {
+      const data = await getGeodeticNetworkGeoJSON();
+      addGeodeticNetworkLayer(map, data);
+    }
+
+    setLayerVisibility(
+      map,
+      [
+        LAYERS.rudaBoundaryFill,
+        LAYERS.rudaBoundaryLine,
+        LAYERS.rudaBoundaryDashLine,
+        LAYERS.rudaBoundaryLabel,
+      ],
+      !!adminBoundaryVisibility?.rudaBoundary,
+    );
+
+    setLayerVisibility(
+      map,
+      [
+        LAYERS.rudaMauzaBoundaryFill,
+        LAYERS.rudaMauzaBoundaryLine,
+        LAYERS.rudaMauzaBoundaryLabel,
+      ],
+      !!adminBoundaryVisibility?.rudaMauzaBoundary,
+    );
+
+    setLayerVisibility(
+      map,
+      [LAYERS.proposedRoadsLine],
+      !!adminBoundaryVisibility?.proposedRoads,
+    );
+
+    setLayerVisibility(
+      map,
+      [LAYERS.geodeticNetworkCircle, LAYERS.geodeticNetworkLabel],
+      !!adminBoundaryVisibility?.geodeticNetwork,
+    );
+  };
+
   const rebuildAllLayersOnMap = async () => {
     const map = mapRef.current;
     if (!map) return;
+
+    await loadAdministrativeLayers(map);
 
     const projectId = filters?.projectId;
     if (!projectId) return;
@@ -173,6 +251,7 @@ export default function GISMetaverseMap({
 
   const mapContainerRef = useRef(null);
   const introHasRunRef = useRef(false);
+  const masterPlanLoadSeqRef = useRef(0);
   useEffect(() => {
     if (mapRef.current) return;
 
@@ -420,11 +499,7 @@ export default function GISMetaverseMap({
       addNotifiedBoundaryLayer(map, projectGeoJSON);
       setLayerVisibility(map, [LAYERS.notifiedBoundaryLine], true);
 
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
@@ -470,11 +545,7 @@ export default function GISMetaverseMap({
         true,
       );
 
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
 
       if (filters.block || layerVisibility.blockBoundary) {
         fitGeoJSON(map, blockGeoJSON);
@@ -496,6 +567,8 @@ export default function GISMetaverseMap({
     const map = mapRef.current;
     if (!map || !filters?.projectId) return;
 
+    const currentLoadSeq = ++masterPlanLoadSeqRef.current;
+
     const run = async () => {
       const hasPlotFilter =
         !!filters.block ||
@@ -510,10 +583,19 @@ export default function GISMetaverseMap({
         !!filters.tr_own ||
         !!filters.site_plan;
 
-      if (!hasPlotFilter && !layerVisibility.masterPlan) {
+      // Master Plan Boundary should be controlled only by its checkbox.
+      // Previously, plot filters could load/show this source even when the
+      // checkbox was off, and older async responses could repaint it later.
+      if (!layerVisibility.masterPlan) {
         if (map.getSource(SOURCES.masterPlan)) {
           map.getSource(SOURCES.masterPlan).setData(emptyFC);
         }
+
+        setLayerVisibility(
+          map,
+          [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
+          false,
+        );
         return;
       }
 
@@ -532,6 +614,10 @@ export default function GISMetaverseMap({
         site_plan: filters.site_plan || undefined,
       });
 
+      // Ignore stale requests. This prevents an older master-plan request
+      // from drawing a second/different-styled version after the correct one.
+      if (currentLoadSeq !== masterPlanLoadSeqRef.current) return;
+
       addMasterPlanLayer(map, plotGeoJSON);
 
       setLayerVisibility(
@@ -540,13 +626,9 @@ export default function GISMetaverseMap({
         true,
       );
 
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
 
-      if (hasPlotFilter || layerVisibility.masterPlan) {
+      if (hasPlotFilter) {
         fitGeoJSON(map, plotGeoJSON);
       }
     };
@@ -567,9 +649,6 @@ export default function GISMetaverseMap({
     filters.tr_own,
     filters.site_plan,
     layerVisibility.masterPlan,
-    layerVisibility.boundaryOpacity,
-    layerVisibility.masterPlanOpacity,
-    adminBoundaryVisibility,
     mapRef,
   ]);
 
@@ -578,68 +657,9 @@ export default function GISMetaverseMap({
     if (!map) return;
 
     const run = async () => {
-      if (adminBoundaryVisibility.rudaBoundary) {
-        const data = await getRudaGeoJSON();
-        addRudaBoundaryLayer(map, data);
-      }
+      await loadAdministrativeLayers(map);
 
-      if (adminBoundaryVisibility.rudaMauzaBoundary) {
-        const data = await loadAssetGeoJSON(RUDA_MAUZA_ASSET_PATHS);
-        addRudaMauzaBoundaryLayer(
-          map,
-          data,
-          adminBoundaryVisibility?.rudaMauzaBoundaryOpacity ?? 100,
-        );
-      }
-
-      if (adminBoundaryVisibility.proposedRoads) {
-        const data = await getRudaProposedRoadsGeoJSON();
-        addProposedRoadsLayer(map, data);
-      }
-
-      if (adminBoundaryVisibility.geodeticNetwork) {
-        const data = await getGeodeticNetworkGeoJSON();
-        addGeodeticNetworkLayer(map, data);
-      }
-
-      setLayerVisibility(
-        map,
-        [
-          LAYERS.rudaBoundaryFill,
-          LAYERS.rudaBoundaryLine,
-          LAYERS.rudaBoundaryDashLine,
-          LAYERS.rudaBoundaryLabel,
-        ],
-        adminBoundaryVisibility.rudaBoundary,
-      );
-
-      setLayerVisibility(
-        map,
-        [
-          LAYERS.rudaMauzaBoundaryFill,
-          LAYERS.rudaMauzaBoundaryLine,
-          LAYERS.rudaMauzaBoundaryLabel,
-        ],
-        adminBoundaryVisibility.rudaMauzaBoundary,
-      );
-
-      setLayerVisibility(
-        map,
-        [LAYERS.proposedRoadsLine],
-        adminBoundaryVisibility.proposedRoads,
-      );
-
-      setLayerVisibility(
-        map,
-        [LAYERS.geodeticNetworkCircle, LAYERS.geodeticNetworkLabel],
-        adminBoundaryVisibility.geodeticNetwork,
-      );
-
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
@@ -735,13 +755,16 @@ export default function GISMetaverseMap({
       }
 
       if (layerVisibility.roads) {
-        const data = await getRoadsGeoJSON({
-          project_id: filters.projectId,
-          block: filters.block || undefined,
-          type: filters.plotType || undefined,
-        });
+        try {
+          const data = await getRoadsGeoJSON({
+            project_id: filters.projectId,
+            block: filters.block || undefined,
+          });
 
-        addRoadLayer(map, data);
+          addRoadLayer(map, data);
+        } catch (error) {
+          logLayerLoadError("Roads", error);
+        }
       }
 
       if (layerVisibility.waterSupplyPoints) {
@@ -764,11 +787,7 @@ export default function GISMetaverseMap({
         addCameraLocationsLayer(map, data);
       }
 
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
@@ -776,7 +795,6 @@ export default function GISMetaverseMap({
   }, [
     filters.projectId,
     filters.block,
-    filters.plotType,
     layerVisibility.spotLevel,
     layerVisibility.contours,
     layerVisibility.roads,

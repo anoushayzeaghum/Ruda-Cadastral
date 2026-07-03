@@ -25,7 +25,7 @@ export default function MasterPlanBoundaryAttribute({ map, selectedProjectId, on
 
         const formatted = (geojson.features || []).map((feature, index) => {
           const props = feature.properties || {};
-          return {
+          const row = {
             id: props.gid || feature.id || index,
             sr: index + 1,
             name: props.name || "-",
@@ -40,7 +40,10 @@ export default function MasterPlanBoundaryAttribute({ map, selectedProjectId, on
             tr_cate: props.tr_cate || "-",
             geometry: feature.geometry,
           };
+          console.log('MasterPlanBoundaryAttribute row loaded', row);
+          return row;
         });
+        console.log('MasterPlanBoundaryAttribute total rows', formatted.length);
 
         if (active) setRows(formatted);
       } catch (error) {

@@ -11,6 +11,7 @@ import {
   Globe2,
   FileInput,
   Send,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -125,14 +126,27 @@ export default function MetaverseLeftToolbar({
 
       {/* LAYERS PANEL */}
       <div
-        className={`absolute z-30 bg-[#06291f] text-white border border-[#3a4354] rounded-md shadow-2xl
+        className={`absolute z-30 bg-[#06291f] text-white border border-[#13593f] rounded-md shadow-2xl
         sm:left-14 sm:w-[300px]
         bottom-0 left-0 right-0 sm:bottom-auto`}
         style={{
           top: window.innerWidth >= 640 ? `${panelTop}px` : undefined,
-          display: isLayersOpen ? "block" : "none",
+          display: isLayersOpen ? "flex" : "none",
+          flexDirection: "column",
         }}
       >
+        {/* Layers panel header with close button */}
+        <div className="flex shrink-0 items-center justify-between border-b border-[#0c3d2d] px-4 py-2.5">
+          <span className="text-[12px] font-bold uppercase tracking-wide">Layers</span>
+          <button
+            type="button"
+            onClick={() => setActiveTool(null)}
+            className="flex h-6 w-6 items-center justify-center rounded text-white/50 transition hover:bg-[#0a3327] hover:text-white"
+            title="Close"
+          >
+            <X size={14} />
+          </button>
+        </div>
         <LayersPanel
           map={map}
           filters={filters}
@@ -146,7 +160,7 @@ export default function MetaverseLeftToolbar({
       {/* TOOL PANELS (FILTER, IMPORT, etc.) */}
       {activeTool && activeTool !== "layers" && (
         <div
-          className="absolute z-30 bg-[#06291f] text-white border border-[#3a4354] rounded-md shadow-2xl
+          className="absolute z-30 bg-[#06291f] text-white border border-[#13593f] rounded-md shadow-2xl
           sm:left-14 sm:w-[320px]
           bottom-0 left-0 right-0 sm:bottom-auto"
           style={{
@@ -166,10 +180,19 @@ export default function MetaverseLeftToolbar({
           )}
 
           {activeTool === "basemaps" && (
-            <Basemaps map={map} rebuildAllLayers={rebuildAllLayers} />
+            <>
+              <PanelHeader title="Basemaps" onClose={() => setActiveTool(null)} />
+              <Basemaps map={map} rebuildAllLayers={rebuildAllLayers} />
+            </>
           )}
 
-          {activeTool === "droneImagery" && <DroneImagery map={map} />}
+          {activeTool === "droneImagery" && (
+            <>
+              <PanelHeader title="Drone Imagery" onClose={() => setActiveTool(null)} />
+              <DroneImagery map={map} />
+            </>
+          )}
+
           {activeTool === "timeLapse" && (
             <TimeLapse map={map} onClose={() => setActiveTool(null)} />
           )}
@@ -179,13 +202,20 @@ export default function MetaverseLeftToolbar({
           {activeTool === "import" && (
             <Import map={map} onClose={() => setActiveTool(null)} />
           )}
-          {activeTool === "measurement" && <Measurement map={map} />}
+
+          {activeTool === "measurement" && (
+            <Measurement map={map} onClose={() => setActiveTool(null)} />
+          )}
+
           {activeTool === "flyTo" && (
-            <FlyTo
-              filters={filters}
-              setFilters={setFilters}
-              setLayerVisibility={setLayerVisibility}
-            />
+            <>
+              <PanelHeader title="Fly To" onClose={() => setActiveTool(null)} />
+              <FlyTo
+                filters={filters}
+                setFilters={setFilters}
+                setLayerVisibility={setLayerVisibility}
+              />
+            </>
           )}
         </div>
       )}
@@ -193,10 +223,26 @@ export default function MetaverseLeftToolbar({
   );
 }
 
+function PanelHeader({ title, onClose }) {
+  return (
+    <div className="flex shrink-0 items-center justify-between border-b border-[#0c3d2d] px-4 py-2.5">
+      <span className="text-[12px] font-bold uppercase tracking-wide">{title}</span>
+      <button
+        type="button"
+        onClick={onClose}
+        className="flex h-6 w-6 items-center justify-center rounded text-white/50 transition hover:bg-[#0a3327] hover:text-white"
+        title="Close"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
 function GenericToolPanel({ tool }) {
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-3 text-[12px] font-bold">
+      <div className="flex items-center justify-between border-b border-[#0c3d2d] px-4 py-3 text-[12px] font-bold">
         <span>{tool?.label}</span>
         <ChevronRight size={15} />
       </div>

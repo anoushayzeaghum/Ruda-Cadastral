@@ -30,10 +30,8 @@ export default function ProposedRoadAttribute({ map, onClose }) {
             id: props.gid || feature.id || index,
             sr: index + 1,
             road_type: getRoadType(props),
-            name: props.name || props.refname || "-",
             entity: props.entity || "-",
             linetype: props.linetype || "-",
-            elevation: props.elevation ?? "-",
             linewt: props.linewt ?? "-",
             geometry: feature.geometry,
           };
@@ -64,10 +62,8 @@ export default function ProposedRoadAttribute({ map, onClose }) {
       columns={[
         { key: "sr", label: "SR" },
         { key: "road_type", label: "Road Type" },
-        { key: "name", label: "Name" },
         { key: "entity", label: "Entity" },
         { key: "linetype", label: "Line Type" },
-        { key: "elevation", label: "Elevation" },
         { key: "linewt", label: "Line Weight" },
       ]}
     />

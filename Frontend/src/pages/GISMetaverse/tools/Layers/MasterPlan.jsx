@@ -13,7 +13,7 @@ import { readAreaSqft, sqftToAcres } from "./AttributeTable/areaUtils";
 const MASTER_PLAN_LAYER_COLORS = {
   boundary: "#0f3d2e",
   blockBoundary: "#7c3aed",
-  masterPlan: "#111827",
+  masterPlan: "#2563eb",
   spotLevel: "#65c96b",
   contours: "#615514",
   roads: "#ef4444",
@@ -40,6 +40,24 @@ const getFeatureLabel = (feature = {}) => {
   const props = feature.properties || {};
   return props.block || props.name || props.gid || feature.id || "-";
 };
+
+const getBlockAreaValue = (feature = {}) => {
+  const props = feature.properties || {};
+  const area = props.area ?? props.Area ?? props.area_acres ?? props.acres;
+  const numeric = Number(area);
+
+  if (Number.isFinite(numeric) && numeric > 0) {
+    return `${formatNumber(numeric)} acres`;
+  }
+
+  const sqft = readAreaSqft(feature);
+  const acres = sqftToAcres(sqft);
+
+  return acres > 0 ? `${formatNumber(acres)} acres` : "Area N/A";
+};
+
+const getBlockDropdownLabel = (feature = {}) =>
+  `${getFeatureLabel(feature)} (${getBlockAreaValue(feature)})`;
 
 const featureCollectionFromRows = (data) => unwrapGeoJSON(data);
 
@@ -84,6 +102,11 @@ const applyMasterPlanLayerColor = (map, key, color) => {
     case "contours":
       setPaint(map, "metaverse-contours-line", "line-color", color);
       setPaint(map, "metaverse-contours-label", "text-color", color);
+      break;
+
+    case "masterPlan":
+      // Master Plan boundary styling is controlled centrally by MasterPlanLayer.jsx.
+      // Prevent UI runtime overrides from changing line/text color here.
       break;
 
     default:
@@ -261,9 +284,16 @@ export default function MasterPlan({
 
       if (key === "blockBoundary") {
         const data = await readSourceOrFetch("blockBoundary", "/block/", { project_id: selectedProjectId });
-        const features = data.features || [];
+        const features = [...(data.features || [])].sort((a, b) =>
+          String(getFeatureLabel(a)).localeCompare(String(getFeatureLabel(b)), undefined, {
+            numeric: true,
+            sensitivity: "base",
+          }),
+        );
         setDropdownData((prev) => ({ ...prev, blockBoundary: features }));
-        setSelectedBlockKeys((prev) => prev.length ? prev : features.map(getFeatureKey).filter(Boolean));
+        setSelectedBlockKeys((prev) =>
+          prev.length ? prev : features.map(getFeatureKey).filter(Boolean),
+        );
       }
 
       if (key === "masterPlan") {
@@ -540,7 +570,7 @@ export default function MasterPlan({
       </button>
 
       {open && (
-        <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
+        <div className="mx-3 mb-3 rounded-sm border border-[#13593f]/40 bg-[#093024] p-2">
           <LayerItem
             disabled={!selectedProjectId}
             checked={layerVisibility.boundary}
@@ -558,7 +588,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.boundary && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               {projectBoundarySummary.length === 0 ? (
                 <p className="py-1 text-white/60">No project boundary found</p>
               ) : (
@@ -587,7 +617,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.blockBoundary && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-2 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-2 py-2 text-[11px] text-white/80">
               <div className="mb-1.5 flex items-center justify-between border-b border-[#343c4c] pb-1.5">
                 <button type="button" onClick={selectAllBlocks} className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]">Select All</button>
                 <button type="button" onClick={unselectAllBlocks} className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]">Unselect All</button>
@@ -606,7 +636,7 @@ export default function MasterPlan({
                           onChange={() => toggleBlockSelection(feature)}
                           className="accent-[#65c96b]"
                         />
-                        <span className="min-w-0 flex-1 truncate">{getFeatureLabel(feature)}</span>
+                        <span className="min-w-0 flex-1 truncate">{getBlockDropdownLabel(feature)}</span>
                       </label>
                     );
                   })}
@@ -630,7 +660,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.masterPlan && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
                 <span>Total Plots</span>
                 <span>{dropdownData.masterPlan.length}</span>
@@ -665,7 +695,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.spotLevel && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between py-1">
                 <span>Total Spot Levels</span>
                 <span>{dropdownData.spotLevel.length}</span>
@@ -690,7 +720,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.contours && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
                 <span>Total Contours</span>
                 <span>{contoursSummary.count}</span>
@@ -717,7 +747,7 @@ export default function MasterPlan({
           />
 
           {dropdownOpen.roads && (
-            <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               {roadsSummary.length === 0 ? (
                 <p className="py-1 text-white/60">No road types found</p>
               ) : (

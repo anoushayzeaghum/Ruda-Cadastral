@@ -31,13 +31,11 @@ export default function RudaMozaBoundaryAttribute({ map, onClose }) {
     <AdminAttributeTableShell
       map={map}
       title="Ruda Moza Boundaries"
-      placeholder="Search moza name or phase..."
+      placeholder="Search records..."
       rows={rows}
       onClose={onClose}
       columns={[
         { key: "sr", label: "SR" },
-        { key: "mauza", label: "Moza Name" },
-        { key: "phase", label: "Phase" },
         { key: "area_sqft", label: "Area (sq ft)" },
       ]}
     />

@@ -193,7 +193,7 @@ export default function Services({
         </button>
 
         {open && (
-          <div className="mx-3 mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2">
+          <div className="mx-3 mb-3 rounded-sm border border-[#13593f]/40 bg-[#093024] p-2">
             <LayerItem
               disabled={!selectedProjectId}
               checked={cameraEnabled}
@@ -213,7 +213,7 @@ export default function Services({
             />
 
             {cameraDropdownOpen && (
-              <div className="ml-6 mt-2 rounded-sm border border-[#3b4558] bg-[#1f2633] px-3 py-2 text-[11px] text-white/80">
+              <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
                 <div className="flex justify-between py-1">
                   <span>Total Camera Locations</span>
                   <span>{cameraSummary.count}</span>

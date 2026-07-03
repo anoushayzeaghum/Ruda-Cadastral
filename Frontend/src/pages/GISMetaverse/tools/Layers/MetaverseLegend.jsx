@@ -127,29 +127,29 @@ export default function MetaverseLegend({
   }, [legendRudaPhases, adminBoundaryVisibility?.selectedRudaPhaseIds]);
 
   return (
-    <aside className="pointer-events-auto w-[310px] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
+    <aside className="pointer-events-auto overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl"
+      style={{ width: "min(220px, calc(100vw - 60px))" }}
+    >
       <button
         type="button"
         onClick={() => setCollapsed((value) => !value)}
-        className="flex w-full cursor-pointer items-center justify-between border-b border-[#343c4c] px-4 py-3 text-white hover:bg-[#0f3d2e]"
+        className="flex w-full cursor-pointer items-center justify-between border-b border-[#343c4c] px-2.5 py-1.5 text-white hover:bg-[#0f3d2e]"
       >
-        <span className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wide">
-          <MapIcon size={15} />
+        <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide">
+          <MapIcon size={12} />
           Legend
         </span>
-
         <ChevronDown
-          size={15}
+          size={12}
           className={`transition-transform ${collapsed ? "-rotate-90" : ""}`}
         />
       </button>
 
       {!collapsed && (
-        <div className={`max-h-[380px] p-3 ${LAYER_PANEL_SCROLL}`}>
+        <div className={`max-h-[300px] p-1.5 ${LAYER_PANEL_SCROLL}`}>
           {!showRudaLegend && !showRoadLegend && !showTopoLegend && (
-            <div className="rounded-sm border border-[#3b4558] bg-[#232b3a] p-3 text-[11px] text-white/70">
-              No active legend layer. Turn on RUDA Boundary, Proposed Roads, or
-              Topographic Plan.
+            <div className="rounded-sm border border-[#13593f]/30 bg-[#051f17] p-1.5 text-[9px] text-white/70">
+              No active legend layer.
             </div>
           )}
 
@@ -164,7 +164,7 @@ export default function MetaverseLegend({
                   />
                 ))
               ) : (
-                <div className="text-[11px] text-white/60">
+                <div className="text-[10px] text-white/60">
                   RUDA boundary is active.
                 </div>
               )}
@@ -174,7 +174,7 @@ export default function MetaverseLegend({
           {showRoadLegend && (
             <LegendSection
               title="RUDA Proposed Roads"
-              icon={<Route size={14} />}
+              icon={<Route size={12} />}
             >
               {roadLegendItems.map((item) => (
                 <LegendRoadItem key={item.label} item={item} />
@@ -203,26 +203,24 @@ export default function MetaverseLegend({
 
 function LegendSection({ title, icon, children }) {
   return (
-    <div className="mb-3 rounded-sm border border-[#3b4558] bg-[#232b3a] p-2 last:mb-0">
-      <div className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold text-white">
+    <div className="mb-1.5 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-1.5 py-1 last:mb-0">
+      <div className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-white">
         {icon}
         {title}
       </div>
-
-      <div className="space-y-2">{children}</div>
+      <div className="space-y-1">{children}</div>
     </div>
   );
 }
 
 function LegendPolygonItem({ label, color }) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-1.5">
       <span
-        className="h-4 w-7 shrink-0 rounded-sm border border-white/40"
+        className="h-3 w-5 shrink-0 rounded-sm border border-white/40"
         style={{ backgroundColor: color }}
       />
-
-      <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-white/80">
+      <span className="min-w-0 flex-1 truncate text-[10px] leading-tight text-white/80">
         {label}
       </span>
     </div>
@@ -231,18 +229,14 @@ function LegendPolygonItem({ label, color }) {
 
 function LegendRoadItem({ item }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="flex h-5 w-10 shrink-0 items-center">
+    <div className="flex items-center gap-1.5">
+      <span className="flex h-3 w-5 shrink-0 items-center">
         <span
           className="block w-full rounded-full"
-          style={{
-            height: `${item.width}px`,
-            backgroundColor: item.color,
-          }}
+          style={{ height: `${item.width}px`, backgroundColor: item.color }}
         />
       </span>
-
-      <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-white/80">
+      <span className="min-w-0 flex-1 truncate text-[10px] leading-tight text-white/80">
         {item.label}
       </span>
     </div>
@@ -251,15 +245,14 @@ function LegendRoadItem({ item }) {
 
 function LegendPointItem({ label, color }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="flex h-4 w-7 shrink-0 items-center justify-center">
+    <div className="flex items-center gap-1.5">
+      <span className="flex h-3 w-5 shrink-0 items-center justify-center">
         <span
-          className="h-3 w-3 rounded-full border border-white/60"
+          className="h-2 w-2 rounded-full border border-white/60"
           style={{ backgroundColor: color }}
         />
       </span>
-
-      <span className="min-w-0 flex-1 truncate text-[11px] leading-tight text-white/80">
+      <span className="min-w-0 flex-1 truncate text-[10px] leading-tight text-white/80">
         {label}
       </span>
     </div>
