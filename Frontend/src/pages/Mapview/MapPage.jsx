@@ -100,7 +100,7 @@ export default function MapPage() {
   const [layers, setLayers] = useState({
     rudaBoundary: { visible: false, opacity: 70, color: "#22c55e" },
     proposedRoads: { visible: false, opacity: 100, color: "#ef4444" },
-    geodeticNetwork: { visible: false, opacity: 100, color: "#1d4ed8" },
+    geodeticNetwork: { visible: false, opacity: 100, color: "#d81d1d" },
     districtBoundary: { visible: true, opacity: 0, color: "#f59e0b" },
     tehsilBoundary: { visible: true, opacity: 0, color: "#06b6d4" },
     mauzaBoundary: { visible: true, opacity: 0, color: "#a3e635" },
