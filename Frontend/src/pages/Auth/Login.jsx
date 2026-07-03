@@ -56,7 +56,7 @@ export default function Login() {
         }),
       );
 
-      navigate("/dashboard");
+      navigate("/landing");
     } catch (error) {
       console.error("Login error:", error);
       alert("Something went wrong while logging in.");
