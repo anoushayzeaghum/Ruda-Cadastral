@@ -84,7 +84,7 @@ export default function ParcelPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute right-3 top-24 z-20 w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-170px)]">
+    <div className="absolute right-1 sm:right-3 top-16 sm:top-24 z-20 w-[calc(100vw-60px)] xs:w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-130px)] sm:max-h-[calc(100vh-170px)]">
       <div className="border-b border-slate-200">
         <div className="flex items-center justify-between gap-2 bg-[#0f3d2e] px-3 py-2.5">
           <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-white min-w-0">
@@ -108,7 +108,7 @@ export default function ParcelPanel({
           </div>
         </div>
 
-        <div className="flex gap-2 px-4 pt-3 pb-3">
+        <div className="flex gap-1 sm:gap-2 px-3 sm:px-4 pt-2 sm:pt-3 pb-2 sm:pb-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabButton
             label="Parcel Info"
             value="parcelInfo"
@@ -278,7 +278,7 @@ function TabButton({ label, value, active, onChange }) {
   return (
     <button
       onClick={() => onChange(value)}
-      className={`text-[12px] px-3 py-1.5 rounded-md font-semibold leading-tight transition ${isActive
+      className={`text-[10px] sm:text-[12px] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md font-semibold leading-tight transition shrink-0 ${isActive
           ? "bg-green-700 text-white"
           : "bg-slate-200 text-slate-700 hover:bg-slate-300"
         }`}

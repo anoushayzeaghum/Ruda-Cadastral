@@ -414,7 +414,7 @@ export default function LeftPanel({
     toggleLayer("proposedRoads");
   };
   return (
-    <div className="pointer-events-none absolute left-3 top-5 z-30 flex items-start gap-2">
+    <div className="pointer-events-none absolute left-1.5 sm:left-3 top-3 sm:top-5 z-30 flex items-start gap-1.5 sm:gap-2">
       {/* Separate icon buttons. No combined background wrapper. */}
       <div className="pointer-events-auto flex flex-col gap-1">
         <PanelIcon
@@ -423,7 +423,8 @@ export default function LeftPanel({
           onClick={() =>
             setActivePanel(activePanel === "layers" ? "" : "layers")
           }
-          icon={<Layers size={18} />}
+          icon={<Layers size={15} className="sm:hidden" />}
+          iconLg={<Layers size={18} className="hidden sm:block" />}
         />
         <PanelIcon
           title="Vector Boundaries"
@@ -433,7 +434,8 @@ export default function LeftPanel({
               activePanel === "vectorBoundaries" ? "" : "vectorBoundaries",
             )
           }
-          icon={<Map size={18} />}
+          icon={<Map size={15} className="sm:hidden" />}
+          iconLg={<Map size={18} className="hidden sm:block" />}
         />
         <PanelIcon
           title="Toolbox"
@@ -441,7 +443,8 @@ export default function LeftPanel({
           onClick={() =>
             setActivePanel(activePanel === "toolbox" ? "" : "toolbox")
           }
-          icon={<Wrench size={18} />}
+          icon={<Wrench size={15} className="sm:hidden" />}
+          iconLg={<Wrench size={18} className="hidden sm:block" />}
         />
         <PanelIcon
           title="Raster Data"
@@ -449,7 +452,8 @@ export default function LeftPanel({
           onClick={() =>
             setActivePanel(activePanel === "rasterData" ? "" : "rasterData")
           }
-          icon={<ImageIcon size={18} />}
+          icon={<ImageIcon size={15} className="sm:hidden" />}
+          iconLg={<ImageIcon size={18} className="hidden sm:block" />}
         />
         <PanelIcon
           title="Basemap"
@@ -457,7 +461,8 @@ export default function LeftPanel({
           onClick={() =>
             setActivePanel(activePanel === "basemap" ? "" : "basemap")
           }
-          icon={<Satellite size={18} />}
+          icon={<Satellite size={15} className="sm:hidden" />}
+          iconLg={<Satellite size={18} className="hidden sm:block" />}
         />
       </div>
 
@@ -478,10 +483,13 @@ export default function LeftPanel({
       )}
 
       {activePanel && (
-        <div className="pointer-events-auto w-[320px] max-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
+        <div
+          className="pointer-events-auto max-h-[calc(100vh-120px)] sm:max-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl"
+          style={{ width: "min(280px, calc(100vw - 60px))" }}
+        >
           {activePanel === "layers" && (
             <Panel title="Layer Manager" onClose={() => setActivePanel("")}>
-              <div className="max-h-[calc(100vh-205px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div className="max-h-[calc(100vh-185px)] sm:max-h-[calc(100vh-205px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <RudaBoundaryLayers
                   rudaPhases={rudaPhases}
                   rudaSectionOpen={rudaSectionOpen}
@@ -554,7 +562,7 @@ export default function LeftPanel({
 
           {activePanel === "vectorBoundaries" && (
             <Panel title="Vector Boundaries" onClose={() => setActivePanel("")}>
-              <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div className="max-h-[calc(100vh-205px)] sm:max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <VectorBoundaryLayers
                   items={VECTOR_BOUNDARY_LAYERS}
                   getLayerVisible={getLayerVisible}
@@ -633,7 +641,7 @@ export default function LeftPanel({
 
           {activePanel === "rasterData" && (
             <Panel title="Raster Data" onClose={() => setActivePanel("")}>
-              <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div className="max-h-[calc(100vh-205px)] sm:max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <RasterDataLayers
                   items={RASTER_DATA_LAYERS}
                   getLayerVisible={getLayerVisible}
@@ -1052,20 +1060,21 @@ function AdminLayerRow({
   );
 }
 
-function PanelIcon({ title, icon, active, onClick }) {
+function PanelIcon({ title, icon, iconLg, active, onClick }) {
   return (
     <button
       type="button"
       title={title}
       aria-label={title}
       onClick={onClick}
-      className={`flex h-9 w-9 items-center justify-center rounded-md border shadow-md transition ${
+      className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border shadow-md transition ${
         active
           ? "border-[#9be37b] bg-[#083526] text-white"
           : "border-[#104c39] bg-[#031a14] text-white hover:bg-[#0a3327]"
       }`}
     >
       {icon}
+      {iconLg}
     </button>
   );
 }

@@ -39,131 +39,131 @@ export default function SubHeader({
   const parcelDropdownMeta = getParcelDropdownMeta(viewBy);
 
   return (
-    <div className="absolute top-4 left-1/2 z-30 w-fit max-w-[calc(100vw-96px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
-      <div className="flex w-fit items-center justify-center gap-2 px-2 py-2 overflow-visible">
-        <div className="flex w-fit items-center justify-center gap-2 overflow-visible">
-          <FilterCard
-            label="District — ضلع"
-            value={getMultiValueDisplay({
-              options: districts,
-              selected: selectedDistrict,
-              idKey: "id",
-              labelKey: "name",
-            })}
+    <div className="absolute top-2 sm:top-4 left-1/2 z-30 -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md"
+      style={{ maxWidth: "calc(100vw - 72px)", width: "max-content" }}
+    >
+      <div className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-1.5 sm:py-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <FilterCard
+          label="District — ضلع"
+          value={getMultiValueDisplay({
+            options: districts,
+            selected: selectedDistrict,
+            idKey: "id",
+            labelKey: "name",
+          })}
+        >
+          <MultiSelectDropdown
+            options={districts.map((d) => ({
+              value: String(d.id),
+              label: d.name,
+            }))}
+            selectedValues={selectedDistrict}
+            onToggle={filters.handleDistrictChange}
+            disabled={filters.loading?.districts}
+          />
+        </FilterCard>
+
+        <FilterCard
+          label="Tehsil — تحصیل"
+          value={getMultiValueDisplay({
+            options: tehsils,
+            selected: selectedTehsil,
+            idKey: "id",
+            labelKey: "name",
+          })}
+        >
+          <MultiSelectDropdown
+            options={tehsils.map((t) => ({
+              value: String(t.id),
+              label: t.name,
+            }))}
+            selectedValues={selectedTehsil}
+            onToggle={filters.handleTehsilChange}
+            disabled={!selectedDistrict.length || filters.loading?.tehsils}
+          />
+        </FilterCard>
+
+        <FilterCard
+          label="Mauza — موضع"
+          value={
+            mauzas.find((m) => String(m.mauza_id) === String(selectedMauza))
+              ?.mauza || "Select"
+          }
+        >
+          <NativeSelectOverlay
+            value={selectedMauza}
+            onChange={filters.handleMauzaChange}
+            disabled={!selectedTehsil.length || filters.loading?.mauzas}
           >
-            <MultiSelectDropdown
-              options={districts.map((d) => ({
-                value: String(d.id),
-                label: d.name,
-              }))}
-              selectedValues={selectedDistrict}
-              onToggle={filters.handleDistrictChange}
-              disabled={filters.loading?.districts}
+            <option value="">-- Mauza --</option>
+            {mauzas.map((m) => (
+              <option key={m.mauza_id} value={m.mauza_id}>
+                {m.mauza}
+              </option>
+            ))}
+          </NativeSelectOverlay>
+        </FilterCard>
+
+        <FilterCard
+          label="View By — انتخاب کریں"
+          value={getViewByDisplay(viewBy)}
+        >
+          <NativeSelectOverlay
+            value={viewBy}
+            onChange={filters.handleViewByChange}
+            disabled={!selectedMauza}
+          >
+            <option value="">-- Select View --</option>
+            <option value="khasra">Khasra</option>
+            <option value="square">Square</option>
+            <option value="acre">Acre</option>
+          </NativeSelectOverlay>
+        </FilterCard>
+
+        {showStandardParcelDropdown && (
+          <FilterCard
+            label={parcelDropdownMeta.label}
+            value={selectedParcelNumber || "Select"}
+          >
+            <SearchableSingleSelect
+              options={parcelOptions}
+              selectedValue={selectedParcelNumber}
+              onChange={onParcelNumberChange}
+              disabled={!parcelOptions?.length}
+              placeholder={parcelDropdownMeta.placeholder}
             />
           </FilterCard>
+        )}
 
-          <FilterCard
-            label="Tehsil — تحصیل"
-            value={getMultiValueDisplay({
-              options: tehsils,
-              selected: selectedTehsil,
-              idKey: "id",
-              labelKey: "name",
-            })}
-          >
-            <MultiSelectDropdown
-              options={tehsils.map((t) => ({
-                value: String(t.id),
-                label: t.name,
-              }))}
-              selectedValues={selectedTehsil}
-              onToggle={filters.handleTehsilChange}
-              disabled={!selectedDistrict.length || filters.loading?.tehsils}
-            />
-          </FilterCard>
-
-          <FilterCard
-            label="Mauza — موضع"
-            value={
-              mauzas.find((m) => String(m.mauza_id) === String(selectedMauza))
-                ?.mauza || "Select"
-            }
-          >
-            <NativeSelectOverlay
-              value={selectedMauza}
-              onChange={filters.handleMauzaChange}
-              disabled={!selectedTehsil.length || filters.loading?.mauzas}
-            >
-              <option value="">-- Mauza --</option>
-              {mauzas.map((m) => (
-                <option key={m.mauza_id} value={m.mauza_id}>
-                  {m.mauza}
-                </option>
-              ))}
-            </NativeSelectOverlay>
-          </FilterCard>
-
-          <FilterCard
-            label="View By — انتخاب کریں"
-            value={getViewByDisplay(viewBy)}
-          >
-            <NativeSelectOverlay
-              value={viewBy}
-              onChange={filters.handleViewByChange}
-              disabled={!selectedMauza}
-            >
-              <option value="">-- Select View --</option>
-              <option value="khasra">Khasra</option>
-              <option value="square">Square</option>
-              <option value="acre">Acre</option>
-            </NativeSelectOverlay>
-          </FilterCard>
-
-          {showStandardParcelDropdown && (
+        {showMurabbaKhasraDropdowns && (
+          <>
             <FilterCard
-              label={parcelDropdownMeta.label}
+              label="Murabba No"
+              value={selectedMurabbaNumber || "Select"}
+            >
+              <SearchableSingleSelect
+                options={murabbaOptions}
+                selectedValue={selectedMurabbaNumber}
+                onChange={onMurabbaNumberChange}
+                disabled={!murabbaOptions?.length}
+                placeholder="Search Murabba No..."
+              />
+            </FilterCard>
+
+            <FilterCard
+              label="Khasra No"
               value={selectedParcelNumber || "Select"}
             >
               <SearchableSingleSelect
-                options={parcelOptions}
+                options={khasraOptions}
                 selectedValue={selectedParcelNumber}
                 onChange={onParcelNumberChange}
-                disabled={!parcelOptions?.length}
-                placeholder={parcelDropdownMeta.placeholder}
+                disabled={!selectedMurabbaNumber || !khasraOptions?.length}
+                placeholder="Search Khasra No..."
               />
             </FilterCard>
-          )}
-
-          {showMurabbaKhasraDropdowns && (
-            <>
-              <FilterCard
-                label="Murabba No"
-                value={selectedMurabbaNumber || "Select"}
-              >
-                <SearchableSingleSelect
-                  options={murabbaOptions}
-                  selectedValue={selectedMurabbaNumber}
-                  onChange={onMurabbaNumberChange}
-                  disabled={!murabbaOptions?.length}
-                  placeholder="Search Murabba No..."
-                />
-              </FilterCard>
-
-              <FilterCard
-                label="Khasra No"
-                value={selectedParcelNumber || "Select"}
-              >
-                <SearchableSingleSelect
-                  options={khasraOptions}
-                  selectedValue={selectedParcelNumber}
-                  onChange={onParcelNumberChange}
-                  disabled={!selectedMurabbaNumber || !khasraOptions?.length}
-                  placeholder="Search Khasra No..."
-                />
-              </FilterCard>
-            </>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -171,13 +171,16 @@ export default function SubHeader({
 
 function FilterCard({ label, value, children }) {
   return (
-    <div className="relative w-[128px] overflow-visible rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 shadow-sm hover:border-green-600">
-      <p className="text-[9px] text-gray-500">{label}</p>
-      <div className="flex items-center justify-between">
-        <p className="max-w-[108px] truncate text-xs font-semibold text-gray-800">
+    <div
+      className="relative overflow-visible rounded-lg border border-gray-200 bg-white px-2 py-1.5 shadow-sm hover:border-green-600 shrink-0"
+      style={{ width: "clamp(80px, 18vw, 128px)" }}
+    >
+      <p className="text-[8px] sm:text-[9px] text-gray-500 leading-tight truncate">{label}</p>
+      <div className="flex items-center justify-between gap-1">
+        <p className="flex-1 min-w-0 truncate text-[10px] sm:text-xs font-semibold text-gray-800">
           {value}
         </p>
-        <ChevronDown size={13} className="text-gray-400 ml-2 shrink-0" />
+        <ChevronDown size={11} className="shrink-0 text-gray-400" />
       </div>
       {children}
     </div>
