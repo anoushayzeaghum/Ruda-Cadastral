@@ -262,15 +262,15 @@ useEffect(() => {
   };
 
   return (
-    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] h-[460px]">
-      <div className="h-[56px] border-b border-[#d4dbe2] px-4 flex items-center">
-        <h2 className="text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
+    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] rounded-md">
+      <div className="border-b border-[#d4dbe2] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center">
+        <h2 className="text-[14px] sm:text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
           Spatial Query
         </h2>
       </div>
 
-      <div className="p-4 h-[calc(100%-56px)]">
-        <div className="space-y-3">
+      <div className="p-3 sm:p-4">
+        <div className="space-y-2 sm:space-y-3">
           <Select
             classNamePrefix="spatial-select"
             styles={selectStyles}
@@ -370,12 +370,12 @@ useEffect(() => {
             isDisabled={!selectedProjectId || loading || !plotNos.length}
           />
 
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1 sm:pt-2">
             <button
               type="button"
               disabled={!canSearch}
               onClick={handleSearch}
-              className="h-9 rounded bg-green-700 text-white text-sm font-medium shadow-sm hover:bg-green-800 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="h-8 sm:h-9 rounded bg-green-700 text-white text-xs sm:text-sm font-medium shadow-sm hover:bg-green-800 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Search
             </button>
@@ -383,7 +383,7 @@ useEffect(() => {
             <button
               type="button"
               onClick={clearAll}
-              className="h-9 rounded bg-green-700 text-white text-sm font-medium shadow-sm hover:bg-green-800"
+              className="h-8 sm:h-9 rounded bg-green-700 text-white text-xs sm:text-sm font-medium shadow-sm hover:bg-green-800"
             >
               Clear
             </button>

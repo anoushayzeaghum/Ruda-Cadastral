@@ -143,7 +143,7 @@ function SearchableSelect({
             style={{
               left: dropdownPosition.left,
               top: dropdownPosition.top,
-              width: dropdownPosition.width,
+              width: Math.max(dropdownPosition.width, 120),
             }}
             className="fixed z-[9999] overflow-hidden rounded-md border border-[#2f3a4d] bg-white shadow-xl"
           >
@@ -153,15 +153,15 @@ function SearchableSelect({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={`Search ${placeholder}`}
-                className="h-7 w-full rounded border border-gray-300 px-2 text-xs font-semibold text-[#06291f] outline-none"
+                className="h-6 sm:h-7 w-full rounded border border-gray-300 px-1.5 sm:px-2 text-[10px] sm:text-xs font-semibold text-[#06291f] outline-none"
               />
             </div>
 
-            <div className="max-h-52 overflow-y-auto py-1">
+            <div className="max-h-48 sm:max-h-52 overflow-y-auto py-1">
               <button
                 type="button"
                 onClick={() => handleSelect("")}
-                className={`block w-full px-2 py-1.5 text-left text-xs font-semibold text-[#06291f] hover:bg-gray-100 ${
+                className={`block w-full px-1.5 sm:px-2 py-1 sm:py-1.5 text-left text-[10px] sm:text-xs font-semibold text-[#06291f] hover:bg-gray-100 ${
                   value === "" ? "bg-gray-100" : ""
                 }`}
               >
@@ -174,7 +174,7 @@ function SearchableSelect({
                     key={option.value}
                     type="button"
                     onClick={() => handleSelect(option.value)}
-                    className={`block w-full px-2 py-1.5 text-left text-xs font-semibold text-[#06291f] hover:bg-gray-100 ${
+                    className={`block w-full px-1.5 sm:px-2 py-1 sm:py-1.5 text-left text-[10px] sm:text-xs font-semibold text-[#06291f] hover:bg-gray-100 ${
                       String(option.value) === String(value)
                         ? "bg-gray-100"
                         : ""
@@ -184,7 +184,7 @@ function SearchableSelect({
                   </button>
                 ))
               ) : (
-                <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                <div className="px-1.5 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-xs font-semibold text-gray-500">
                   No results found
                 </div>
               )}
@@ -428,17 +428,19 @@ const updateFilter = (key, value) => {
   }));
 
   const filterClassName =
-    "h-8 w-[105px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#06291f] outline-none";
+    "h-7 sm:h-8 shrink-0 rounded-md border border-[#2f3a4d] bg-white px-1.5 sm:px-2 text-[10px] sm:text-xs font-semibold text-[#06291f] outline-none";
 
   return (
-    <div className="absolute left-1/2 top-3 z-20 w-[calc(100vw-4.5rem)] max-w-[720px] -translate-x-1/2">
-      <div className="flex items-center gap-1.5 overflow-x-auto rounded-lg bg-[#06291f] px-2 py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+    <div className="absolute left-1/2 top-2 sm:top-3 z-40 -translate-x-1/2"
+      style={{ width: "calc(100vw - 120px)", maxWidth: "720px" }}
+    >
+      <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto rounded-md sm:rounded-lg bg-[#06291f] px-1.5 sm:px-2 py-1 sm:py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <SearchableSelect
           value={filters.projectId}
           placeholder="Projects"
           options={projectOptions}
           onChange={(value) => updateFilter("projectId", value)}
-          className="h-8 w-[130px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-2 text-xs font-semibold text-[#06291f] outline-none"
+          className="h-7 sm:h-8 w-[100px] sm:w-[130px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-1.5 sm:px-2 text-[10px] sm:text-xs font-semibold text-[#06291f] outline-none"
         />
 
         <SearchableSelect
@@ -447,7 +449,7 @@ const updateFilter = (key, value) => {
           disabled={!filters.projectId}
           options={blockOptions}
           onChange={(value) => updateFilter("block", value)}
-          className={filterClassName}
+          className={`${filterClassName} w-[85px] sm:w-[105px]`}
         />
         <SearchableSelect
           value={filters.plotType}
@@ -455,7 +457,7 @@ const updateFilter = (key, value) => {
           disabled={!filters.projectId}
           options={plotTypeOptions}
           onChange={(value) => updateFilter("plotType", value)}
-          className={filterClassName}
+          className={`${filterClassName} w-[85px] sm:w-[105px]`}
         />
         <SearchableSelect
           value={filters.area}
@@ -463,7 +465,7 @@ const updateFilter = (key, value) => {
           disabled={!filters.projectId}
           options={areaOptions}
           onChange={(value) => updateFilter("area", value)}
-          className={filterClassName}
+          className={`${filterClassName} w-[75px] sm:w-[105px]`}
         />
 
         <SearchableSelect
@@ -472,25 +474,27 @@ const updateFilter = (key, value) => {
           disabled={!filters.projectId}
           options={plotNoOptions}
           onChange={(value) => updateFilter("plotNo", value)}
-          className={filterClassName}
+          className={`${filterClassName} w-[80px] sm:w-[105px]`}
         />
 
         <button
           type="button"
           onClick={onCalendarClick}
           title="Calendar"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
+          className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
         >
-          <CalendarDays size={16} strokeWidth={2.4} />
+          <CalendarDays size={14} strokeWidth={2.4} className="sm:hidden" />
+          <CalendarDays size={16} strokeWidth={2.4} className="hidden sm:block" />
         </button>
 
         <button
           type="button"
           onClick={onReset}
           title="Reset"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
+          className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
         >
-          <RotateCcw size={16} strokeWidth={2.4} />
+          <RotateCcw size={14} strokeWidth={2.4} className="sm:hidden" />
+          <RotateCcw size={16} strokeWidth={2.4} className="hidden sm:block" />
         </button>
       </div>
     </div>

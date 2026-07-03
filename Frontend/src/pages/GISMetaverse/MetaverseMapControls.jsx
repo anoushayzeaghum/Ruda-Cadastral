@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import MetaverseLegend from "./tools/Layers/MetaverseLegend";
 import mapboxgl from "mapbox-gl";
-import { Maximize2, Hand, MapPin, Plus, Minus, List } from "lucide-react";
+import { Hand, MapPin, Plus, Minus, List } from "lucide-react";
 
 export default function MetaverseMapControls({
   map,
@@ -45,21 +45,6 @@ export default function MetaverseMapControls({
     };
   }, [map]);
 
-  const handleFullscreen = () => {
-    const mapElement = map?.getContainer?.();
-    if (!mapElement) return;
-
-    if (!document.fullscreenElement) {
-      mapElement.requestFullscreen?.().then?.(() => {
-        setTimeout(() => map.resize(), 100);
-      });
-    } else {
-      document.exitFullscreen?.().then?.(() => {
-        setTimeout(() => map.resize(), 100);
-      });
-    }
-  };
-
   const handlePan = () => {
     if (!map) return;
 
@@ -93,31 +78,11 @@ export default function MetaverseMapControls({
     );
   };
 
-  useEffect(() => {
-    if (!map) return;
-
-    const handleFullscreenChange = () => {
-      setTimeout(() => {
-        map.resize();
-      }, 100);
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, [map]);
-
   return (
     <div className="absolute right-2 top-2 z-30 flex items-start gap-1.5 sm:right-3 sm:top-3 sm:gap-2">
       <CoordinateBox coords={coords} zoom={zoom} />
 
       <div className="flex flex-col items-center gap-1">
-        <ControlButton title="Fullscreen" onClick={handleFullscreen}>
-          <Maximize2 size={20} />
-        </ControlButton>
-
         <ControlButton title="Pan" onClick={handlePan}>
           <Hand size={20} />
         </ControlButton>
@@ -148,7 +113,7 @@ export default function MetaverseMapControls({
           </button>
         </div>
 
-        <div className="relative mt-10">
+        <div className="relative mt-1">
           <ControlButton
             title="Legend"
             active={showLegend}
@@ -158,7 +123,7 @@ export default function MetaverseMapControls({
           </ControlButton>
 
           {showLegend && (
-            <div className="absolute right-11 top-0 max-w-[calc(100vw-4rem)] sm:max-w-none">
+            <div className="fixed sm:absolute bottom-14 sm:bottom-auto right-2 sm:right-11 top-auto sm:top-0 w-auto max-w-[calc(100vw-1rem)]">
               <MetaverseLegend
                 adminBoundaryVisibility={adminBoundaryVisibility}
                 layerVisibility={layerVisibility}

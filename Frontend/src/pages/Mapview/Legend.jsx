@@ -118,7 +118,7 @@ export default function Legend({
   if (!shouldShow) return null;
 
   return (
-    <aside className="pointer-events-auto absolute bottom-5 right-5 z-30 w-[310px] overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md">
+    <aside className="pointer-events-auto absolute bottom-5 right-2 sm:right-5 z-30 w-[240px] sm:w-[310px] overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md">
       <button
         type="button"
         onClick={() => setCollapsed((value) => !value)}

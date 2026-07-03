@@ -28,44 +28,43 @@ export default function Header() {
 
   return (
     <div
-      className="relative w-full text-white px-5 py-2 shadow-md z-40"
+      className="relative w-full text-white px-3 sm:px-5 py-1.5 sm:py-2 shadow-md z-40"
       style={headerBackgroundStyle}
     >
-      <div className="relative z-10 flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="bg-white rounded-full p-1 flex items-center justify-center shrink-0">
+      <div className="relative z-10 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="bg-white rounded-full p-0.5 sm:p-1 flex items-center justify-center shrink-0">
             <img
               src={rudaFirmLogo}
               alt="RLIMS"
-              className="h-9 w-9 object-contain"
+              className="h-7 w-7 sm:h-9 sm:w-9 object-contain"
             />
           </div>
 
-          <div className="flex items-center gap-3 min-w-0">
-            <h1 className="text-xl font-normal tracking-wide shrink-0">
-              RUDA CADASTRAL MANAGEMENT SYSTEM
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <h1 className="text-xs sm:text-sm md:text-base lg:text-xl font-normal tracking-wide truncate">
+              <span className="hidden sm:inline">RUDA CADASTRAL MANAGEMENT SYSTEM</span>
+              <span className="sm:hidden">RUDA CADASTRAL</span>
             </h1>
-            {/* <span className="text-white/55 text-lg">|</span>
-            <p className="text-base font-normal text-white/90 truncate">
-              RUDA Cadastral Management System
-            </p> */}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             onClick={() => navigate("/")}
-            className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-md flex items-center justify-center transition"
+            className="bg-white/15 hover:bg-white/25 text-white p-1.5 sm:p-2 rounded-md flex items-center justify-center transition"
             aria-label="Go to landing page"
             title="Home"
           >
-            <Home size={18} />
+            <Home size={15} className="sm:hidden" />
+            <Home size={18} className="hidden sm:block" />
           </button>
 
           <IconButton
             title="Logout"
             onClick={handleLogout}
-            icon={<LogOut size={18} />}
+            icon={<LogOut size={15} className="sm:hidden" />}
+            iconLg={<LogOut size={18} className="hidden sm:block" />}
           />
         </div>
       </div>
@@ -73,16 +72,17 @@ export default function Header() {
   );
 }
 
-function IconButton({ title, icon, onClick }) {
+function IconButton({ title, icon, iconLg, onClick }) {
   return (
     <button
       type="button"
       title={title}
       aria-label={title}
       onClick={onClick}
-      className="h-9 w-9 rounded-lg bg-white/15 border border-white/25 text-white flex items-center justify-center shadow-sm transition hover:bg-white/25 hover:border-white/40"
+      className="h-7 w-7 sm:h-9 sm:w-9 rounded-lg bg-white/15 border border-white/25 text-white flex items-center justify-center shadow-sm transition hover:bg-white/25 hover:border-white/40"
     >
       {icon}
+      {iconLg}
     </button>
   );
 }
