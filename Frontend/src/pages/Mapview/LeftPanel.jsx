@@ -28,6 +28,22 @@ import RudaMozaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTab
 import ProposedRoadAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProposedRoadAttribute";
 import GeodeticNetworkAttribute from "../GISMetaverse/tools/Layers/AttributeTable/GeodeticNetworkAttribute";
 import MauzaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/MauzaBoundaryAttribute";
+
+// Hook — true when viewport width is below the sm breakpoint (640 px)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 640,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  return isMobile;
+}
 import KhasraBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/KhasraBoundaryAttribute";
 import SquareBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/SquareBoundaryAttribute";
 import DistrictBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/DistrictBoundaryAttribute";
@@ -127,6 +143,7 @@ export default function LeftPanel({
   const [openAttributeTable, setOpenAttributeTable] = useState(null);
   const [dropdownOpenByKey, setDropdownOpenByKey] = useState({});
   const [layerRecordCache, setLayerRecordCache] = useState({});
+  const isMobile = useIsMobile();
 
   const toggleDropdownForKey = (key) =>
     setDropdownOpenByKey((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -414,56 +431,73 @@ export default function LeftPanel({
     toggleLayer("proposedRoads");
   };
   return (
-    <div className="pointer-events-none absolute left-1.5 sm:left-3 top-3 sm:top-5 z-30 flex items-start gap-1.5 sm:gap-2">
-      {/* Separate icon buttons. No combined background wrapper. */}
-      <div className="pointer-events-auto flex flex-col gap-1">
-        <PanelIcon
-          title="Layer Manager"
-          active={activePanel === "layers"}
-          onClick={() =>
-            setActivePanel(activePanel === "layers" ? "" : "layers")
-          }
-          icon={<Layers size={15} className="sm:hidden" />}
-          iconLg={<Layers size={18} className="hidden sm:block" />}
-        />
-        <PanelIcon
-          title="Vector Boundaries"
-          active={activePanel === "vectorBoundaries"}
-          onClick={() =>
-            setActivePanel(
-              activePanel === "vectorBoundaries" ? "" : "vectorBoundaries",
-            )
-          }
-          icon={<Map size={15} className="sm:hidden" />}
-          iconLg={<Map size={18} className="hidden sm:block" />}
-        />
-        <PanelIcon
-          title="Toolbox"
-          active={activePanel === "toolbox"}
-          onClick={() =>
-            setActivePanel(activePanel === "toolbox" ? "" : "toolbox")
-          }
-          icon={<Wrench size={15} className="sm:hidden" />}
-          iconLg={<Wrench size={18} className="hidden sm:block" />}
-        />
-        <PanelIcon
-          title="Raster Data"
-          active={activePanel === "rasterData"}
-          onClick={() =>
-            setActivePanel(activePanel === "rasterData" ? "" : "rasterData")
-          }
-          icon={<ImageIcon size={15} className="sm:hidden" />}
-          iconLg={<ImageIcon size={18} className="hidden sm:block" />}
-        />
-        <PanelIcon
-          title="Basemap"
-          active={activePanel === "basemap"}
-          onClick={() =>
-            setActivePanel(activePanel === "basemap" ? "" : "basemap")
-          }
-          icon={<Satellite size={15} className="sm:hidden" />}
-          iconLg={<Satellite size={18} className="hidden sm:block" />}
-        />
+    <>
+      {/* Icon toolbar - positioned left on desktop, bottom on mobile */}
+      <div className={`pointer-events-none absolute z-30 ${
+        isMobile 
+          ? 'bottom-3 left-1/2 -translate-x-1/2 flex-row' 
+          : 'left-1.5 sm:left-3 top-3 sm:top-5 flex-col'
+      } flex items-start gap-1.5 sm:gap-2`}>
+        <div className="pointer-events-auto flex gap-1 sm:flex-col sm:gap-1">
+          <PanelIcon
+            title="Layer Manager"
+            active={activePanel === "layers"}
+            onClick={() =>
+              setActivePanel(activePanel === "layers" ? "" : "layers")
+            }
+            icon={<Layers size={15} className="sm:hidden" />}
+            iconLg={<Layers size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Vector Boundaries"
+            active={activePanel === "vectorBoundaries"}
+            onClick={() =>
+              setActivePanel(
+                activePanel === "vectorBoundaries" ? "" : "vectorBoundaries",
+              )
+            }
+            icon={<Map size={15} className="sm:hidden" />}
+            iconLg={<Map size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Toolbox"
+            active={activePanel === "toolbox"}
+            onClick={() =>
+              setActivePanel(activePanel === "toolbox" ? "" : "toolbox")
+            }
+            icon={<Wrench size={15} className="sm:hidden" />}
+            iconLg={<Wrench size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Raster Data"
+            active={activePanel === "rasterData"}
+            onClick={() =>
+              setActivePanel(activePanel === "rasterData" ? "" : "rasterData")
+            }
+            icon={<ImageIcon size={15} className="sm:hidden" />}
+            iconLg={<ImageIcon size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Basemap"
+            active={activePanel === "basemap"}
+            onClick={() =>
+              setActivePanel(activePanel === "basemap" ? "" : "basemap")
+            }
+            icon={<Satellite size={15} className="sm:hidden" />}
+            iconLg={<Satellite size={18} className="hidden sm:block" />}
+          />
+          
+          {/* Close button for mobile - only shown when a panel is active */}
+          {isMobile && activePanel && (
+            <PanelIcon
+              title="Close Panel"
+              active={false}
+              onClick={() => setActivePanel("")}
+              icon={<X size={15} />}
+              iconLg={<X size={18} />}
+            />
+          )}
+        </div>
       </div>
 
       {openAttributeTable && (
@@ -482,14 +516,38 @@ export default function LeftPanel({
         </div>
       )}
 
+      {/* Panel content - bottom sheet on mobile, left-side panel on desktop */}
       {activePanel && (
-        <div
-          className="pointer-events-auto max-h-[calc(100vh-120px)] sm:max-h-[calc(100vh-160px)] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl"
-          style={{ width: "min(280px, calc(100vw - 60px))" }}
-        >
+        <>
+          {/* Mobile backdrop overlay */}
+          {isMobile && (
+            <div
+              className="pointer-events-auto fixed inset-0 z-30 bg-black/40"
+              onClick={() => setActivePanel("")}
+            />
+          )}
+          <div
+            className={`pointer-events-auto z-40 overflow-hidden border border-[#13593f] bg-[#06291f] text-white shadow-2xl ${
+              isMobile
+                ? 'fixed bottom-0 left-0 right-0 rounded-t-xl'
+                : 'absolute left-1.5 sm:left-3 top-3 sm:top-5 ml-[calc(28px+6px)] sm:ml-[calc(36px+8px)] rounded-md'
+            }`}
+            style={
+              isMobile
+                ? { maxHeight: '70vh' }
+                : { width: "min(280px, calc(100vw - 60px))", maxHeight: "calc(100vh - 120px)" }
+            }
+          >
+            {/* Mobile drag handle */}
+            {isMobile && (
+              <div className="flex justify-center py-2">
+                <div className="h-1 w-10 rounded-full bg-white/30" />
+              </div>
+            )}
           {activePanel === "layers" && (
             <Panel title="Layer Manager" onClose={() => setActivePanel("")}>
-              <div className="max-h-[calc(100vh-185px)] sm:max-h-[calc(100vh-205px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div className="overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" 
+                style={isMobile ? { maxHeight: 'calc(70vh - 100px)' } : { maxHeight: 'calc(100vh - 185px)' }}>
                 <RudaBoundaryLayers
                   rudaPhases={rudaPhases}
                   rudaSectionOpen={rudaSectionOpen}
@@ -562,7 +620,8 @@ export default function LeftPanel({
 
           {activePanel === "vectorBoundaries" && (
             <Panel title="Vector Boundaries" onClose={() => setActivePanel("")}>
-              <div className="max-h-[calc(100vh-205px)] sm:max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div className="overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                style={isMobile ? { maxHeight: 'calc(70vh - 100px)' } : { maxHeight: 'calc(100vh - 205px)' }}>
                 <VectorBoundaryLayers
                   items={VECTOR_BOUNDARY_LAYERS}
                   getLayerVisible={getLayerVisible}
@@ -583,7 +642,8 @@ export default function LeftPanel({
           )}
 
           {activePanel === "toolbox" && (
-            <div className="max-h-[calc(100vh-160px)] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <div className="overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              style={isMobile ? { maxHeight: 'calc(70vh - 60px)' } : { maxHeight: 'calc(100vh - 160px)' }}>
               {/* Close button header */}
               <div className="flex items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-white">
@@ -641,7 +701,8 @@ export default function LeftPanel({
 
           {activePanel === "rasterData" && (
             <Panel title="Raster Data" onClose={() => setActivePanel("")}>
-              <div className="max-h-[calc(100vh-205px)] sm:max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div className="overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                style={isMobile ? { maxHeight: 'calc(70vh - 100px)' } : { maxHeight: 'calc(100vh - 205px)' }}>
                 <RasterDataLayers
                   items={RASTER_DATA_LAYERS}
                   getLayerVisible={getLayerVisible}
@@ -653,8 +714,9 @@ export default function LeftPanel({
             </Panel>
           )}
           </div>
+        </>
       )}
-    </div>
+    </>
   );
 }
 
