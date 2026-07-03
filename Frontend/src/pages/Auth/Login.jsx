@@ -22,7 +22,7 @@ export default function Login() {
     try {
       setIsLoading(true);
 
-      const response = await fetch("http://127.0.0.1:8000/api/login-user/", {
+      const response = await fetch("https://rudametaverse.nespakprogresscenter.com/api/login-user/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

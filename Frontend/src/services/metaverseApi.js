@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  import.meta.env.VITE_API_BASE_URL || "https://rudametaverse.nespakprogresscenter.com/api/";
 
 const unwrapApiData = (data) => data?.data || data?.results || data;
 

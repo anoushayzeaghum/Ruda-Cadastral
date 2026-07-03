@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: "https://rudametaverse.nespakprogresscenter.com/api/",
 });
 
 const extractPayload = (res) => res?.data?.data ?? res?.data ?? [];

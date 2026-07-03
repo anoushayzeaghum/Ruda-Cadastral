@@ -2,22 +2,42 @@ from .base import *
 
 DEBUG = False
 
-ALLOWED_HOSTS = os.environ.get(
-    "DJANGO_ALLOWED_HOSTS",
-    "sdasurvey.cloud,www.sdasurvey.cloud"
-).split(",")
-
-# IMPORTANT: origins must NOT contain path or trailing slash
-CORS_ALLOWED_ORIGINS = [
-    "https://sdasurvey.cloud",
-    "https://www.sdasurvey.cloud",
+ALLOWED_HOSTS = [
+    "rudametaverse.nespakprogresscenter.com",
+    "10.1.10.1",
+    "localhost",
+    "127.0.0.1", "10.1.12.1"
 ]
 
-# Example: Use DATABASE_URL or env vars later; keeping simple here
-# DATABASES = {...}
+DATABASES = {
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": "ruda_cadastral",
+        "USER": "postgres",
+        "PASSWORD": "Postgres",
+        "HOST": "10.1.10.1",
+        "PORT": "5432",
+    }
+}
 
-SECURE_BROWSER_XSS_FILTER = True
+CORS_ALLOWED_ORIGINS = [
+    "http://rudametaverse.nespakprogresscenter.com",
+    "https://rudametaverse.nespakprogresscenter.com",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://rudametaverse.nespakprogresscenter.com",
+    "https://rudametaverse.nespakprogresscenter.com",
+]
+
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-X_FRAME_OPTIONS = "DENY"
 
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = "DENY"
