@@ -39,10 +39,10 @@ export default function SubHeader({
   const parcelDropdownMeta = getParcelDropdownMeta(viewBy);
 
   return (
-    <div className="absolute top-2 sm:top-4 left-1/2 z-30 -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md"
-      style={{ maxWidth: "calc(100vw - 72px)", width: "max-content" }}
+    <div className="absolute top-2 sm:top-4 left-1/2 z-30 -translate-x-1/2 overflow-visible rounded-lg sm:rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md"
+      style={{ maxWidth: "calc(100vw - 16px)", width: "max-content" }}
     >
-      <div className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-1.5 sm:py-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-1 sm:py-2 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <FilterCard
           label="District — ضلع"
           value={getMultiValueDisplay({
@@ -172,15 +172,15 @@ export default function SubHeader({
 function FilterCard({ label, value, children }) {
   return (
     <div
-      className="relative overflow-visible rounded-lg border border-gray-200 bg-white px-2 py-1.5 shadow-sm hover:border-green-600 shrink-0"
-      style={{ width: "clamp(80px, 18vw, 128px)" }}
+      className="relative overflow-visible rounded-md sm:rounded-lg border border-gray-200 bg-white px-1.5 sm:px-2 py-1 sm:py-1.5 shadow-sm hover:border-green-600 shrink-0"
+      style={{ minWidth: "70px", width: "clamp(70px, 16vw, 128px)" }}
     >
-      <p className="text-[8px] sm:text-[9px] text-gray-500 leading-tight truncate">{label}</p>
-      <div className="flex items-center justify-between gap-1">
-        <p className="flex-1 min-w-0 truncate text-[10px] sm:text-xs font-semibold text-gray-800">
+      <p className="text-[7px] sm:text-[9px] text-gray-500 leading-tight truncate">{label}</p>
+      <div className="flex items-center justify-between gap-0.5 sm:gap-1">
+        <p className="flex-1 min-w-0 truncate text-[9px] sm:text-xs font-semibold text-gray-800">
           {value}
         </p>
-        <ChevronDown size={11} className="shrink-0 text-gray-400" />
+        <ChevronDown size={10} className="shrink-0 text-gray-400 sm:w-[11px] sm:h-[11px]" />
       </div>
       {children}
     </div>
@@ -260,27 +260,27 @@ function MultiSelectDropdown({ options, selectedValues, onToggle, disabled }) {
       />
 
       {open && !disabled && (
-        <div className="absolute left-0 top-full mt-1 z-[999] max-h-64 w-full overflow-auto rounded-md border border-gray-200 bg-white p-2 shadow-xl">
+        <div className="absolute left-0 top-full mt-1 z-[999] max-h-64 w-[clamp(140px,40vw,200px)] sm:w-full overflow-auto rounded-md border border-gray-200 bg-white p-1.5 sm:p-2 shadow-xl">
           {options.length ? (
             options.map((option) => {
               const checked = safeSelectedValues.includes(String(option.value));
               return (
                 <label
                   key={option.value}
-                  className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-gray-50"
+                  className="flex cursor-pointer items-center gap-1.5 sm:gap-2 rounded px-1.5 sm:px-2 py-1 sm:py-1.5 text-[11px] sm:text-sm hover:bg-gray-50"
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => onToggle(option.value)}
-                    className="h-4 w-4 rounded border-gray-300 text-green-700 focus:ring-green-500"
+                    className="h-3 w-3 sm:h-4 sm:w-4 rounded border-gray-300 text-green-700 focus:ring-green-500"
                   />
                   <span className="truncate text-gray-700">{option.label}</span>
                 </label>
               );
             })
           ) : (
-            <div className="px-2 py-1.5 text-sm text-gray-500">No options</div>
+            <div className="px-1.5 sm:px-2 py-1 sm:py-1.5 text-[11px] sm:text-sm text-gray-500">No options</div>
           )}
         </div>
       )}
@@ -326,17 +326,17 @@ function SearchableSingleSelect({
       />
 
       {open && !disabled && (
-        <div className="absolute left-0 top-full mt-1 z-[999] w-full rounded-md border border-gray-200 bg-white p-2 shadow-xl">
+        <div className="absolute left-0 top-full mt-1 z-[999] w-[clamp(140px,40vw,200px)] sm:w-full rounded-md border border-gray-200 bg-white p-1.5 sm:p-2 shadow-xl">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="mb-2 w-full rounded border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-green-600"
+            className="mb-1.5 sm:mb-2 w-full rounded border border-gray-300 px-1.5 sm:px-2 py-1 sm:py-1.5 text-[11px] sm:text-sm outline-none focus:border-green-600"
             autoFocus
           />
 
-          <div className="max-h-64 overflow-auto">
+          <div className="max-h-48 sm:max-h-64 overflow-auto">
             <button
               type="button"
               onClick={() => {
@@ -344,7 +344,7 @@ function SearchableSingleSelect({
                 setOpen(false);
                 setQuery("");
               }}
-              className={`block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-gray-50 ${
+              className={`block w-full rounded px-1.5 sm:px-2 py-1 sm:py-1.5 text-left text-[11px] sm:text-sm hover:bg-gray-50 ${
                 !selectedValue
                   ? "bg-green-50 text-green-700 font-medium"
                   : "text-gray-700"
@@ -366,7 +366,7 @@ function SearchableSingleSelect({
                       setOpen(false);
                       setQuery("");
                     }}
-                    className={`block w-full rounded px-2 py-1.5 text-left text-sm hover:bg-gray-50 ${
+                    className={`block w-full rounded px-1.5 sm:px-2 py-1 sm:py-1.5 text-left text-[11px] sm:text-sm hover:bg-gray-50 ${
                       isSelected
                         ? "bg-green-50 text-green-700 font-medium"
                         : "text-gray-700"
@@ -377,7 +377,7 @@ function SearchableSingleSelect({
                 );
               })
             ) : (
-              <div className="px-2 py-1.5 text-sm text-gray-500">
+              <div className="px-1.5 sm:px-2 py-1 sm:py-1.5 text-[11px] sm:text-sm text-gray-500">
                 No matching options
               </div>
             )}
