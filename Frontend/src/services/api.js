@@ -176,10 +176,11 @@ export const importTehsil = async ({ file }) => {
   return res.data;
 };
 
-export const getMauzas = async (tehsil) => {
+export const getMauzas = async (tehsil_id) => {
   const params = {};
-  if (tehsil !== undefined && tehsil !== null && tehsil !== "") {
-    params.tehsil = tehsil;
+
+  if (tehsil_id !== undefined && tehsil_id !== null && tehsil_id !== "") {
+    params.tehsil_id = tehsil_id;
   }
 
   const res = await API.get("/mauza/", {

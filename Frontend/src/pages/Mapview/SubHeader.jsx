@@ -17,7 +17,7 @@ export default function SubHeader({
 
   const districts = Array.isArray(filters.districts) ? filters.districts : [];
   const tehsils = Array.isArray(filters.tehsils) ? filters.tehsils : [];
-  const mauzas = Array.isArray(filters.mauzas) ? filters.mauzas : [];
+  const rawMauzas = Array.isArray(filters.mauzas) ? filters.mauzas : [];
 
   const selectedDistrict = Array.isArray(filters.selectedDistrict)
     ? filters.selectedDistrict
@@ -25,6 +25,14 @@ export default function SubHeader({
   const selectedTehsil = Array.isArray(filters.selectedTehsil)
     ? filters.selectedTehsil
     : [];
+
+  const selectedTehsilLookup = buildSelectedTehsilLookup(
+    tehsils,
+    selectedTehsil,
+  );
+  const mauzas = rawMauzas.filter((mauza) =>
+    mauzaBelongsToSelectedTehsil(mauza, selectedTehsilLookup),
+  );
 
   const selectedMauza = filters.selectedMauza ?? "";
   const viewBy = filters.viewBy ?? "";
@@ -177,7 +185,9 @@ function FilterCard({ label, value, children }) {
       className="relative rounded-md sm:rounded-lg border border-gray-200 bg-white px-1.5 sm:px-2 py-1 sm:py-1.5 shadow-sm hover:border-green-600 shrink-0"
       style={{ minWidth: "68px", width: "clamp(68px, 15vw, 120px)" }}
     >
-      <p className="text-[7px] sm:text-[9px] text-gray-500 leading-tight truncate">{label}</p>
+      <p className="text-[7px] sm:text-[9px] text-gray-500 leading-tight truncate">
+        {label}
+      </p>
       <div className="flex items-center justify-between gap-0.5 sm:gap-1">
         <p className="flex-1 min-w-0 truncate text-[9px] sm:text-[11px] font-semibold text-gray-800">
           {value}
@@ -188,7 +198,6 @@ function FilterCard({ label, value, children }) {
     </div>
   );
 }
-
 
 function getViewByDisplay(viewBy) {
   const labels = {
@@ -207,7 +216,9 @@ function getParcelDropdownMeta(viewBy) {
     acre: { label: "Acre No", placeholder: "Search Acre No..." },
   };
 
-  return meta[viewBy] || { label: "Parcel No", placeholder: "Search Parcel No..." };
+  return (
+    meta[viewBy] || { label: "Parcel No", placeholder: "Search Parcel No..." }
+  );
 }
 
 function NativeSelectOverlay({ value, onChange, disabled, children }) {
@@ -221,6 +232,55 @@ function NativeSelectOverlay({ value, onChange, disabled, children }) {
       {children}
     </select>
   );
+}
+
+const normalizeFilterValue = (value) =>
+  value === undefined || value === null
+    ? ""
+    : String(value).trim().toLowerCase();
+
+function buildSelectedTehsilLookup(tehsils = [], selectedTehsil = []) {
+  const lookup = new Set();
+
+  selectedTehsil.forEach((value) => {
+    const normalized = normalizeFilterValue(value);
+    if (normalized) lookup.add(normalized);
+  });
+
+  tehsils.forEach((tehsil) => {
+    const candidateValues = [
+      tehsil?.id,
+      tehsil?.gid,
+      tehsil?.tehsil_id,
+      tehsil?.tehsil,
+      tehsil?.name,
+    ];
+
+    const isSelected = candidateValues.some((value) =>
+      lookup.has(normalizeFilterValue(value)),
+    );
+
+    if (!isSelected) return;
+
+    candidateValues.forEach((value) => {
+      const normalized = normalizeFilterValue(value);
+      if (normalized) lookup.add(normalized);
+    });
+  });
+
+  return lookup;
+}
+
+function mauzaBelongsToSelectedTehsil(mauza = {}, selectedTehsilLookup) {
+  if (!selectedTehsilLookup?.size) return false;
+
+  return [
+    mauza?.tehsil_id,
+    mauza?.tehsil,
+    mauza?.tehsil_name,
+    mauza?.tehsil_gid,
+    mauza?.t_id,
+  ].some((value) => selectedTehsilLookup.has(normalizeFilterValue(value)));
 }
 
 function getMultiValueDisplay({ options, selected, idKey, labelKey }) {
@@ -258,7 +318,8 @@ function MultiSelectDropdown({ options, selectedValues, onToggle, disabled }) {
       if (
         containerRef.current?.contains(e.target) ||
         dropdownRef.current?.contains(e.target)
-      ) return;
+      )
+        return;
       setOpen(false);
     };
     window.addEventListener("resize", calcPos);
@@ -269,28 +330,45 @@ function MultiSelectDropdown({ options, selectedValues, onToggle, disabled }) {
     };
   }, [open]);
 
-  const safeSelectedValues = Array.isArray(selectedValues) ? selectedValues : [];
+  const safeSelectedValues = Array.isArray(selectedValues)
+    ? selectedValues
+    : [];
 
   return (
     <div ref={containerRef} className="absolute inset-0">
       <button
         type="button"
-        onClick={() => { if (!disabled) { setOpen((prev) => !prev); } }}
+        onClick={() => {
+          if (!disabled) {
+            setOpen((prev) => !prev);
+          }
+        }}
         className="absolute inset-0 bg-transparent cursor-pointer"
         disabled={disabled}
         aria-label="Open multi-select filter"
       />
-      {open && !disabled && dropPos && typeof document !== "undefined" &&
+      {open &&
+        !disabled &&
+        dropPos &&
+        typeof document !== "undefined" &&
         createPortal(
           <div
             ref={dropdownRef}
-            style={{ position: "fixed", left: dropPos.left, top: dropPos.top, width: dropPos.width, zIndex: 9999 }}
+            style={{
+              position: "fixed",
+              left: dropPos.left,
+              top: dropPos.top,
+              width: dropPos.width,
+              zIndex: 9999,
+            }}
             className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-xl"
           >
             <div className="max-h-[240px] overflow-y-auto p-1.5">
               {options.length ? (
                 options.map((option) => {
-                  const checked = safeSelectedValues.includes(String(option.value));
+                  const checked = safeSelectedValues.includes(
+                    String(option.value),
+                  );
                   return (
                     <label
                       key={option.value}
@@ -302,12 +380,16 @@ function MultiSelectDropdown({ options, selectedValues, onToggle, disabled }) {
                         onChange={() => onToggle(option.value)}
                         className="h-3 w-3 rounded border-gray-300 text-green-700"
                       />
-                      <span className="truncate text-gray-700">{option.label}</span>
+                      <span className="truncate text-gray-700">
+                        {option.label}
+                      </span>
                     </label>
                   );
                 })
               ) : (
-                <div className="px-2 py-1.5 text-[11px] text-gray-500">No options</div>
+                <div className="px-2 py-1.5 text-[11px] text-gray-500">
+                  No options
+                </div>
               )}
             </div>
           </div>,
@@ -350,7 +432,8 @@ function SearchableSingleSelect({
       if (
         containerRef.current?.contains(e.target) ||
         dropdownRef.current?.contains(e.target)
-      ) return;
+      )
+        return;
       setOpen(false);
       setQuery("");
     };
@@ -370,16 +453,27 @@ function SearchableSingleSelect({
     <div ref={containerRef} className="absolute inset-0">
       <button
         type="button"
-        onClick={() => { if (!disabled) setOpen((prev) => !prev); }}
+        onClick={() => {
+          if (!disabled) setOpen((prev) => !prev);
+        }}
         className="absolute inset-0 bg-transparent cursor-pointer"
         disabled={disabled}
         aria-label="Open selector"
       />
-      {open && !disabled && dropPos && typeof document !== "undefined" &&
+      {open &&
+        !disabled &&
+        dropPos &&
+        typeof document !== "undefined" &&
         createPortal(
           <div
             ref={dropdownRef}
-            style={{ position: "fixed", left: dropPos.left, top: dropPos.top, width: dropPos.width, zIndex: 9999 }}
+            style={{
+              position: "fixed",
+              left: dropPos.left,
+              top: dropPos.top,
+              width: dropPos.width,
+              zIndex: 9999,
+            }}
             className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-xl"
           >
             <div className="p-1.5 border-b border-gray-100">
@@ -395,19 +489,28 @@ function SearchableSingleSelect({
             <div className="max-h-[220px] overflow-auto">
               <button
                 type="button"
-                onClick={() => { onChange(""); setOpen(false); setQuery(""); }}
+                onClick={() => {
+                  onChange("");
+                  setOpen(false);
+                  setQuery("");
+                }}
                 className={`block w-full px-2 py-1.5 text-left text-[11px] sm:text-xs hover:bg-gray-50 ${!selectedValue ? "bg-green-50 text-green-700 font-medium" : "text-gray-700"}`}
               >
                 -- Select --
               </button>
               {filteredOptions.length ? (
                 filteredOptions.map((opt) => {
-                  const isSelected = String(opt.value) === String(selectedValue);
+                  const isSelected =
+                    String(opt.value) === String(selectedValue);
                   return (
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => { onChange(String(opt.value)); setOpen(false); setQuery(""); }}
+                      onClick={() => {
+                        onChange(String(opt.value));
+                        setOpen(false);
+                        setQuery("");
+                      }}
                       className={`block w-full px-2 py-1.5 text-left text-[11px] sm:text-xs hover:bg-gray-50 ${isSelected ? "bg-green-50 text-green-700 font-medium" : "text-gray-700"}`}
                     >
                       {opt.label}
@@ -415,7 +518,9 @@ function SearchableSingleSelect({
                   );
                 })
               ) : (
-                <div className="px-2 py-1.5 text-[11px] text-gray-500">No matching options</div>
+                <div className="px-2 py-1.5 text-[11px] text-gray-500">
+                  No matching options
+                </div>
               )}
             </div>
           </div>,

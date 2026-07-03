@@ -138,7 +138,7 @@ export const VECTOR_LAYER_THEME = {
   },
   geodeticNetwork: {
     circle: "#1d4ed8",
-    stroke: "#dbeafe",
+    stroke: "#ffffff",
     label: "#0f2f5f",
   },
   controlPoints: {
@@ -163,9 +163,33 @@ export const makeLabelExpression = (fields = [], fallback = "") => [
 
 export const VECTOR_LABEL_FIELDS = {
   mauza: makeLabelExpression(["mauza", "Mauza", "MAUZA", "name", "Name"]),
-  khasra: makeLabelExpression(["kh", "KH", "k", "K", "khasra", "khasra_no", "khasra_id", "name"]),
-  murabba: makeLabelExpression(["m", "M", "mn", "murabba", "murabba_no", "murabba_id", "name"]),
-  square: makeLabelExpression(["sq", "SQ", "square", "square_no", "name", "gid"]),
+  khasra: makeLabelExpression([
+    "kh",
+    "KH",
+    "k",
+    "K",
+    "khasra",
+    "khasra_no",
+    "khasra_id",
+    "name",
+  ]),
+  murabba: makeLabelExpression([
+    "m",
+    "M",
+    "mn",
+    "murabba",
+    "murabba_no",
+    "murabba_id",
+    "name",
+  ]),
+  square: makeLabelExpression([
+    "sq",
+    "SQ",
+    "square",
+    "square_no",
+    "name",
+    "gid",
+  ]),
   acre: makeLabelExpression(["acre", "acre_no", "ac", "name", "gid"]),
   trijunction: [
     "to-string",
@@ -176,17 +200,53 @@ export const VECTOR_LABEL_FIELDS = {
       ["get", "point_no"],
       [
         "concat",
-        ["coalesce", ["get", "m1"], ["get", "M1"], ["get", "moza1"], ["get", "mauza1"], ""],
+        [
+          "coalesce",
+          ["get", "m1"],
+          ["get", "M1"],
+          ["get", "moza1"],
+          ["get", "mauza1"],
+          "",
+        ],
         " / ",
-        ["coalesce", ["get", "m2"], ["get", "M2"], ["get", "moza2"], ["get", "mauza2"], ""],
+        [
+          "coalesce",
+          ["get", "m2"],
+          ["get", "M2"],
+          ["get", "moza2"],
+          ["get", "mauza2"],
+          "",
+        ],
         " / ",
-        ["coalesce", ["get", "m3"], ["get", "M3"], ["get", "moza3"], ["get", "mauza3"], ""],
+        [
+          "coalesce",
+          ["get", "m3"],
+          ["get", "M3"],
+          ["get", "moza3"],
+          ["get", "mauza3"],
+          "",
+        ],
       ],
       "",
     ],
   ],
-  fieldPoints: makeLabelExpression(["name", "Name", "code", "Code", "point_no", "gm_type", "gid"]),
-  geodeticNetwork: makeLabelExpression(["name", "Name", "NAME", "code", "Code", "CODE"]),
+  fieldPoints: makeLabelExpression([
+    "name",
+    "Name",
+    "code",
+    "Code",
+    "point_no",
+    "gm_type",
+    "gid",
+  ]),
+  geodeticNetwork: makeLabelExpression([
+    "name",
+    "Name",
+    "NAME",
+    "code",
+    "Code",
+    "CODE",
+  ]),
 };
 
 export const getBoundaryTheme = (level) => {
@@ -633,7 +693,11 @@ export const mapboxPointTypeExpression = [
 ];
 
 export const TRI_JUNCTION_TJ_FILTER = ["==", mapboxPointTypeExpression, "TJ"];
-export const TRI_JUNCTION_BURJI_FILTER = ["!=", mapboxPointTypeExpression, "TJ"];
+export const TRI_JUNCTION_BURJI_FILTER = [
+  "!=",
+  mapboxPointTypeExpression,
+  "TJ",
+];
 
 export const isValidLngLatCoordinate = (coordinate) => {
   if (!Array.isArray(coordinate) || coordinate.length < 2) return false;
