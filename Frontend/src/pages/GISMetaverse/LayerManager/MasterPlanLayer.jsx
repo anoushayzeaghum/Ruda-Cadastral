@@ -25,7 +25,7 @@ const MASTER_PLAN_FILL_COLOR = [
     ],
     0,
   ],
-  "#8fb3ff",
+  "#2563eb",
 
   // Commercial plots - yellow
   [
@@ -118,7 +118,7 @@ const MASTER_PLAN_FILL_COLOR = [
       0,
     ],
   ],
-  "#8fbc8f",
+  "#15803d",
 
   // Roads inside master plan - soft red/pink, separate roads layer can still be unchecked
   [
@@ -142,10 +142,10 @@ const MASTER_PLAN_FILL_COLOR = [
     ],
     0,
   ],
-  "#e89a95",
+  "#ef4444",
 
   // Other / public / unknown plots - grey
-  "#c8c0bd",
+  "#9ca3af",
 ];
 
 export function addMasterPlanLayer(map, data, color = null) {
@@ -158,7 +158,7 @@ export function addMasterPlanLayer(map, data, color = null) {
       source: SOURCES.masterPlan,
       paint: {
         "fill-color": MASTER_PLAN_FILL_COLOR,
-        "fill-opacity": 0.9,
+        "fill-opacity": 0.45,
       },
     });
   } else {
@@ -167,7 +167,7 @@ export function addMasterPlanLayer(map, data, color = null) {
       "fill-color",
       MASTER_PLAN_FILL_COLOR,
     );
-    map.setPaintProperty(LAYERS.masterPlanFill, "fill-opacity", 0.9);
+    map.setPaintProperty(LAYERS.masterPlanFill, "fill-opacity", 0.45);
   }
 
   if (!map.getLayer(LAYERS.masterPlanLine)) {

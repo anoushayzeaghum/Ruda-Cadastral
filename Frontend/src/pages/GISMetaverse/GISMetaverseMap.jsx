@@ -251,6 +251,7 @@ export default function GISMetaverseMap({
 
   const mapContainerRef = useRef(null);
   const introHasRunRef = useRef(false);
+  const masterPlanLoadSeqRef = useRef(0);
   useEffect(() => {
     if (mapRef.current) return;
 
@@ -566,6 +567,8 @@ export default function GISMetaverseMap({
     const map = mapRef.current;
     if (!map || !filters?.projectId) return;
 
+    const currentLoadSeq = ++masterPlanLoadSeqRef.current;
+
     const run = async () => {
       const hasPlotFilter =
         !!filters.block ||
@@ -580,10 +583,19 @@ export default function GISMetaverseMap({
         !!filters.tr_own ||
         !!filters.site_plan;
 
-      if (!hasPlotFilter && !layerVisibility.masterPlan) {
+      // Master Plan Boundary should be controlled only by its checkbox.
+      // Previously, plot filters could load/show this source even when the
+      // checkbox was off, and older async responses could repaint it later.
+      if (!layerVisibility.masterPlan) {
         if (map.getSource(SOURCES.masterPlan)) {
           map.getSource(SOURCES.masterPlan).setData(emptyFC);
         }
+
+        setLayerVisibility(
+          map,
+          [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
+          false,
+        );
         return;
       }
 
@@ -602,6 +614,10 @@ export default function GISMetaverseMap({
         site_plan: filters.site_plan || undefined,
       });
 
+      // Ignore stale requests. This prevents an older master-plan request
+      // from drawing a second/different-styled version after the correct one.
+      if (currentLoadSeq !== masterPlanLoadSeqRef.current) return;
+
       addMasterPlanLayer(map, plotGeoJSON);
 
       setLayerVisibility(
@@ -612,7 +628,7 @@ export default function GISMetaverseMap({
 
       applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
 
-      if (hasPlotFilter || layerVisibility.masterPlan) {
+      if (hasPlotFilter) {
         fitGeoJSON(map, plotGeoJSON);
       }
     };
@@ -633,9 +649,6 @@ export default function GISMetaverseMap({
     filters.tr_own,
     filters.site_plan,
     layerVisibility.masterPlan,
-    layerVisibility.boundaryOpacity,
-    layerVisibility.masterPlanOpacity,
-    adminBoundaryVisibility,
     mapRef,
   ]);
 
