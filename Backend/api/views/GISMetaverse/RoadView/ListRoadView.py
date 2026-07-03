@@ -32,18 +32,20 @@ class ListRoadView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = Road.objects.all()
+            queryset = Road.objects.exclude(geom__isnull=True).order_by("gid")
 
             if project_id:
                 queryset = queryset.filter(project_id=project_id)
-            
+
             if block_id:
                 queryset = queryset.filter(block_id=block_id)
-            
+
             if name:
                 queryset = queryset.filter(name__icontains=name)
 
             if block:
+                # Match either the related Block.block value or the road table's own block FK id.
+                # This keeps the endpoint safe even when the block relation is incomplete.
                 queryset = queryset.filter(block__block__icontains=block)
 
             if road_type:
