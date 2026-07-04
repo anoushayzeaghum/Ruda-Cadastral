@@ -33,7 +33,7 @@ const IMAGERY_LAYERS = [
     color: "#a855f7",
     sourceId: "gis-jan2023-source",
     layerId: "gis-jan2023-layer",
-    tileUrl: "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+    tileUrl: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
   },
   {
     id: "june2023",
@@ -41,7 +41,7 @@ const IMAGERY_LAYERS = [
     color: "#3b82f6",
     sourceId: "gis-june2023-source",
     layerId: "gis-june2023-layer",
-    tileUrl: "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+    tileUrl: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
   },
   {
     id: "nov2024",
@@ -49,7 +49,7 @@ const IMAGERY_LAYERS = [
     color: "#ef4444",
     sourceId: "gis-nov2024-source",
     layerId: "gis-nov2024-layer",
-    tileUrl: "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+    tileUrl: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
   },
   {
     id: "apr2026",
@@ -57,7 +57,7 @@ const IMAGERY_LAYERS = [
     color: "#f59e0b",
     sourceId: "gis-apr2026-source",
     layerId: "gis-apr2026-layer",
-    tileUrl: "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+    tileUrl: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
   },
 ];
 

@@ -13,7 +13,7 @@ export const restoreHanduGujranOrthoLayer = ({ map, visible, opacity }) => {
     if (!map.getSource(HANDU_GUJRAN_ORTHO_SOURCE)) {
       map.addSource(HANDU_GUJRAN_ORTHO_SOURCE, {
         type: "raster",
-        tiles: ["http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png"],
+        tiles: ["https://rudametaverse.nespakprogresscenter.com/tiles/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png"],
         tileSize: 256,
       });
     }

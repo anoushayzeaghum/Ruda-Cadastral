@@ -108,18 +108,18 @@ const CB_BOUNDS = [
 // Make sure these mbtiles are available in your TileServer data directory.
 //
 // Expected TileServer paths:
-// http://localhost:8081/data/Chaharbagh_DSM/{z}/{x}/{y}.png
-// http://localhost:8081/data/Chaharbagh_DTM/{z}/{x}/{y}.png
-// http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png
+// https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DSM/{z}/{x}/{y}.png
+// https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DTM/{z}/{x}/{y}.png
+// https://rudametaverse.nespakprogresscenter.com/tiles/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png
 
 const DSM_TILE_URL =
-  "http://localhost:8081/data/Chaharbagh_DSM/{z}/{x}/{y}.png";
+  "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DSM/{z}/{x}/{y}.png";
 
 const DTM_TILE_URL =
-  "http://localhost:8081/data/Chaharbagh_DTM/{z}/{x}/{y}.png";
+  "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DTM/{z}/{x}/{y}.png";
 
 const ORTHO_TILE_URL =
-  "http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
+  "https://rudametaverse.nespakprogresscenter.com/tiles/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
 
 // Topo_CB_1.geojson is already in WGS84 (CRS84) — no reprojection needed.
 

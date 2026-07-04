@@ -15,7 +15,7 @@ import { readAreaSqft } from "./AttributeTable/areaUtils";
 const MASAWI_SOURCE = "gis-handu-gujran-ortho-source";
 const MASAWI_LAYER = "gis-handu-gujran-ortho-layer";
 const MASAWI_TILE_URL =
-  "http://localhost:8081/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
+  "https://rudametaverse.nespakprogresscenter.com/tiles/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
 
 const MASAWI_BOUNDS = [
   [74.42562653088396, 31.60509230706726],

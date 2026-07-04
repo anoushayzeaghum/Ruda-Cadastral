@@ -31,7 +31,7 @@ const IMAGERY = [
     short: "Jan 2023",
     sourceId: "cd-jan2023-src",
     layerId: "cd-jan2023-lyr",
-    url: "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
     color: "#a855f7",
   },
   {
@@ -40,7 +40,7 @@ const IMAGERY = [
     short: "Jun 2023",
     sourceId: "cd-june2023-src",
     layerId: "cd-june2023-lyr",
-    url: "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
     color: "#3b82f6",
   },
   {
@@ -49,7 +49,7 @@ const IMAGERY = [
     short: "Nov 2024",
     sourceId: "cd-nov2024-src",
     layerId: "cd-nov2024-lyr",
-    url: "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
     color: "#ef4444",
   },
   {
@@ -58,7 +58,7 @@ const IMAGERY = [
     short: "Apr 2026",
     sourceId: "cd-apr2026-src",
     layerId: "cd-apr2026-lyr",
-    url: "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
     color: "#f59e0b",
   },
 ];
