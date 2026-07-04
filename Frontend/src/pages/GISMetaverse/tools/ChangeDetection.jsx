@@ -31,7 +31,7 @@ const IMAGERY = [
     short: "Jan 2023",
     sourceId: "cd-jan2023-src",
     layerId: "cd-jan2023-lyr",
-    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_AsBuilt_Jan2023//{z}/{x}/{y}.png",
     color: "#a855f7",
   },
   {
@@ -40,7 +40,7 @@ const IMAGERY = [
     short: "Jun 2023",
     sourceId: "cd-june2023-src",
     layerId: "cd-june2023-lyr",
-    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Ortho_June2023/{z}/{x}/{y}.png",
     color: "#3b82f6",
   },
   {
@@ -49,7 +49,7 @@ const IMAGERY = [
     short: "Nov 2024",
     sourceId: "cd-nov2024-src",
     layerId: "cd-nov2024-lyr",
-    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Ortho_Nov2024/{z}/{x}/{y}.png",
     color: "#ef4444",
   },
   {
