@@ -20,9 +20,12 @@ const BOUNDS = [
 const STUDY_FIT = { padding: 24, maxZoom: 17.5, duration: 0 };
 
 const EXPANDED_PANEL_CLASS =
-  "fixed z-[70] inset-x-0 mx-auto flex flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#06291f] shadow-2xl"
+  "fixed z-[10002] inset-x-0 mx-auto flex flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#06291f] shadow-2xl"
   + " w-[min(860px,96vw)]"
-  + " top-[64px] bottom-[16px]";
+  + " top-[16px] bottom-[16px]";
+
+const EXPANDED_BACKDROP_CLASS =
+  "fixed inset-0 z-[10001] bg-black/70 backdrop-blur-sm";
 
 const IMAGERY = [
   {
@@ -31,7 +34,7 @@ const IMAGERY = [
     short: "Jan 2023",
     sourceId: "cd-jan2023-src",
     layerId: "cd-jan2023-lyr",
-    url: "http://localhost:8081/data/Chahar_Bagh_Jan2023/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_AsBuilt_Jan2023/{z}/{x}/{y}.png",
     color: "#a855f7",
   },
   {
@@ -40,7 +43,7 @@ const IMAGERY = [
     short: "Jun 2023",
     sourceId: "cd-june2023-src",
     layerId: "cd-june2023-lyr",
-    url: "http://localhost:8081/data/Chahar_Bagh_June2023/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Ortho_June2023/{z}/{x}/{y}.png",
     color: "#3b82f6",
   },
   {
@@ -49,7 +52,7 @@ const IMAGERY = [
     short: "Nov 2024",
     sourceId: "cd-nov2024-src",
     layerId: "cd-nov2024-lyr",
-    url: "http://localhost:8081/data/Chahar_Bagh_Nov2024/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Ortho_Nov2024/{z}/{x}/{y}.png",
     color: "#ef4444",
   },
   {
@@ -58,12 +61,12 @@ const IMAGERY = [
     short: "Apr 2026",
     sourceId: "cd-apr2026-src",
     layerId: "cd-apr2026-lyr",
-    url: "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
     color: "#f59e0b",
   },
 ];
 
-export default function ChangeDetection({ map, onClose }) {
+export default function ChangeDetection({ map, onClose, onExpandedChange }) {
   const containerRef = useRef(null);
   const containerLeftRef = useRef(null);
   const containerRightRef = useRef(null);
@@ -82,6 +85,16 @@ export default function ChangeDetection({ map, onClose }) {
   const [expanded, setExpanded] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [reportErr, setReportErr] = useState("");
+
+  useEffect(() => {
+    if (typeof onExpandedChange !== "function") return;
+
+    onExpandedChange(expanded);
+
+    return () => {
+      onExpandedChange(false);
+    };
+  }, [expanded, onExpandedChange]);
 
   const handleClose = useCallback(() => {
     if (expanded) {
@@ -708,7 +721,7 @@ export default function ChangeDetection({ map, onClose }) {
       {/* ── Expanded overlay backdrop ── */}
       {expanded && (
         <div
-          className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm"
+          className={EXPANDED_BACKDROP_CLASS}
           onClick={() => setExpanded(false)}
         />
       )}
