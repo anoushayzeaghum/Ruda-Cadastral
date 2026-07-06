@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
-import { Box, Layers, X } from "lucide-react";
-import { ThreeDExtrusionManager, ThreeDLayerManager } from "./Society3DLayers";
+import { Box, Building2, Layers, X } from "lucide-react";
+import {
+  ThreeDExtrusionManager,
+  ThreeDLayerManager,
+  ThreeDBIMModel,
+} from "./Society3DLayers";
 
 // Hook — true when viewport width is below the sm breakpoint (640 px)
 function useIsMobile() {
@@ -20,6 +24,7 @@ function useIsMobile() {
 
 const tools = [
   { id: "layers", label: "3D Layer Manager", icon: Layers },
+  { id: "bim", label: "3D BIM Model", icon: Building2 },
   { id: "extrusion", label: "3D Extrusion", icon: Box },
 ];
 
@@ -37,6 +42,10 @@ export default function Society3DLeftToolbar({
   selectedProject,
   extrusion,
   setExtrusion,
+  bimPanelOpen,
+  setBimPanelOpen,
+  bimLayers,
+  setBimLayers,
   selectedFeature,
   onApplyToSelected,
   onClearExtrusions,
@@ -146,6 +155,14 @@ export default function Society3DLeftToolbar({
                 basemap={basemap}
                 setBasemap={setBasemap}
                 selectedProject={selectedProject}
+                onClose={() => setActivePanel(null)}
+              />
+            )}
+
+            {activePanel === "bim" && (
+              <ThreeDBIMModel
+                bimLayers={bimLayers}
+                setBimLayers={setBimLayers}
                 onClose={() => setActivePanel(null)}
               />
             )}
