@@ -5,8 +5,7 @@ import Basemaps from "../FlyToDedicated/tools/Basemaps";
 import FlyTo from "../FlyToDedicated/tools/FlyTo";
 import SegmentMeasurement from "../FlyToDedicated/tools/SegmentMeasurement";
 import LayersPanel from "../FlyToDedicated/tools/Layers/MasterPlan";
-import FlyToFilter from "../FlyToDedicated/tools/Filter";
-import { LAYERS } from "./LayerManager/FlyToLayerConfig";
+import FlyToFilter from "../FlyToDedicated/Layers/FlyToFilter";
 import AttributeTable from "./AttributeTable";
 
 export default function FlyToLeftToolbar({
@@ -42,7 +41,20 @@ export default function FlyToLeftToolbar({
             setFilters((prev) => ({
               ...prev,
               ...applied,
+              selectedPlotId: applied.selectedPlotId || "",
+              selectedPlotGid: applied.selectedPlotGid || "",
+              selectedPlotGeometry: applied.selectedPlotGeometry || null,
+              flyToPlotTrigger: Date.now(),
             }));
+
+            // Filter selection should show/fly to the plot only.
+            // It must not open the block boundary layer automatically.
+            setLayerVisibility((prev) => ({
+              ...prev,
+              masterPlan: true,
+              blockBoundary: false,
+            }));
+
             setBottomPanel(null);
           }}
         />
@@ -74,26 +86,25 @@ export default function FlyToLeftToolbar({
             onSelectPlot={(plotData) => {
               setFilters((prev) => ({
                 ...prev,
+                ...plotData,
                 projectId: plotData.projectId || prev.projectId,
-                block: "", // Clear block to avoid mismatches
-                plotType: "", // Clear plotType to avoid mismatches
-                area: "", // Clear area
-                plotNo: plotData.plotNo,
+                block: plotData.block || "",
+                plotType: plotData.plotType || "",
+                area: plotData.area || "",
+                plotNo: plotData.plotNo || "",
+                selectedPlotId: plotData.selectedPlotId || "",
+                selectedPlotGid: plotData.selectedPlotGid || "",
+                selectedPlotGeometry: plotData.selectedPlotGeometry || null,
+                flyToPlotTrigger: Date.now(),
               }));
 
-              // Ensure master plan layers are visible so highlight and marker appear
-              if (map) {
-                setLayerVisibility(
-                  map,
-                  [
-                    LAYERS.masterPlanFill,
-                    LAYERS.masterPlanLine,
-                    LAYERS.masterPlanHover,
-                    LAYERS.masterPlanLabel,
-                  ],
-                  true,
-                );
-              }
+              // This is React state, not the Mapbox helper.
+              // Keep the exact row identity and only make the plot layer visible.
+              setLayerVisibility((prev) => ({
+                ...prev,
+                masterPlan: true,
+                blockBoundary: false,
+              }));
             }}
         />
       </div>

@@ -204,7 +204,15 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
         <div className="flex gap-2 pt-2">
           <button
             type="button"
-            onClick={() => onApply?.(selected)}
+            onClick={() =>
+              onApply?.({
+                ...selected,
+                selectedPlotId: "",
+                selectedPlotGid: "",
+                selectedPlotGeometry: null,
+                flyToPlotTrigger: Date.now(),
+              })
+            }
             className="h-8 flex-1 rounded bg-[#8bd66f] text-xs font-bold text-black transition hover:brightness-110"
           >
             Apply

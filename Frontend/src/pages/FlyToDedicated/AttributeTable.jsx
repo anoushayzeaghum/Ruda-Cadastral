@@ -32,6 +32,20 @@ function zoomToGeometry(map, geometry) {
   }
 }
 
+function getPlotId(props = {}, fallbackId) {
+  return (
+    props.gid ||
+    props.id ||
+    props.plot_id ||
+    props.plotId ||
+    props.plot_gid ||
+    props.objectid ||
+    props.OBJECTID ||
+    fallbackId ||
+    ""
+  );
+}
+
 export default function AttributeTable({ map, onClose, onSelectPlot, filters }) {
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState([]);
@@ -77,6 +91,7 @@ export default function AttributeTable({ map, onClose, onSelectPlot, filters }) 
           name: props.name || "-",
           area: props.plot_area || props.area || "-",
           geometry: f?.geometry || props.geometry || null,
+          plotId: getPlotId(props, f?.id),
           raw: props,
         };
       });
@@ -168,10 +183,30 @@ export default function AttributeTable({ map, onClose, onSelectPlot, filters }) 
                     zoomToGeometry(map, r.geometry);
                     if (onSelectPlot) {
                       onSelectPlot({
-                        projectId: r.raw?.project_id || r.raw?.project || "",
-                        block: r.block !== "-" ? r.block : "",
-                        plotType: r.plot_type !== "-" ? r.plot_type : "",
-                        plotNo: r.plot_no !== "-" ? r.plot_no : "",
+                        projectId:
+                          r.raw?.project_id ||
+                          r.raw?.project ||
+                          filters?.projectId ||
+                          "",
+                        block:
+                          r.raw?.block ||
+                          r.raw?.block_name ||
+                          (r.block !== "-" ? r.block : ""),
+                        plotType:
+                          r.raw?.type ||
+                          r.raw?.plot_type ||
+                          (r.plot_type !== "-" ? r.plot_type : ""),
+                        area:
+                          r.raw?.plot_area ||
+                          r.raw?.area ||
+                          (r.area !== "-" ? r.area : ""),
+                        plotNo:
+                          r.raw?.plot_no ||
+                          (r.plot_no !== "-" ? r.plot_no : ""),
+                        selectedPlotId: r.plotId || "",
+                        selectedPlotGid: r.raw?.gid || "",
+                        selectedPlotGeometry: r.geometry || null,
+                        flyToPlotTrigger: Date.now(),
                       });
                     }
                   }}

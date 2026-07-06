@@ -194,7 +194,13 @@ const handleChange = (key, value) => {
 };
 
   const handleApply = () => {
-    onApply?.(selected);
+    onApply?.({
+      ...selected,
+      selectedPlotId: "",
+      selectedPlotGid: "",
+      selectedPlotGeometry: null,
+      flyToPlotTrigger: Date.now(),
+    });
   };
 
   const handleClear = () => {
@@ -206,7 +212,13 @@ const handleChange = (key, value) => {
       plotNo: "",
     };
     setSelected(cleared);
-    onApply?.(cleared);
+    onApply?.({
+      ...cleared,
+      selectedPlotId: "",
+      selectedPlotGid: "",
+      selectedPlotGeometry: null,
+      flyToPlotTrigger: Date.now(),
+    });
   };
 
   /* ---------------- mapped options ---------------- */
