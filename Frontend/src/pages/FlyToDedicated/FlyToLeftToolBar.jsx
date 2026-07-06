@@ -5,7 +5,7 @@ import Basemaps from "../FlyToDedicated/tools/Basemaps";
 import FlyTo from "../FlyToDedicated/tools/FlyTo";
 import SegmentMeasurement from "../FlyToDedicated/tools/SegmentMeasurement";
 import LayersPanel from "../FlyToDedicated/tools/Layers/MasterPlan";
-import FlyToFilter from "../FlyToDedicated/Layers/FlyToFilter";
+import FlyToFilter from "../FlyToDedicated/tools/Filter";
 import AttributeTable from "./AttributeTable";
 
 export default function FlyToLeftToolbar({
