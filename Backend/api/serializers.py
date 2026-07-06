@@ -753,17 +753,45 @@ class PlotSerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 # Road Serializer
 # --------------------------------------------------------
+
 class RoadSerializer(GeoFeatureModelSerializer):
-
-    project_name = serializers.CharField(
-        source="project.name",
-        read_only=True
+    # IMPORTANT:
+    # The road table can contain project_id/block_id values even when the
+    # related Project/Block row is missing or not enforced by a DB FK.
+    # Do not serialize FK objects directly here, otherwise /api/road/ can
+    # crash with a 500 when DRF tries to read project.name or block.name.
+    project = serializers.IntegerField(
+        source="project_id",
+        required=False,
+        allow_null=True,
+    )
+    block = serializers.IntegerField(
+        source="block_id",
+        required=False,
+        allow_null=True,
     )
 
-    block_name = serializers.CharField(
-        source="block.name",
-        read_only=True
-    )
+    project_name = serializers.SerializerMethodField()
+    block_name = serializers.SerializerMethodField()
+    block_label = serializers.SerializerMethodField()
+
+    def get_project_name(self, obj):
+        try:
+            return obj.project.name if obj.project_id and obj.project else None
+        except Exception:
+            return None
+
+    def get_block_name(self, obj):
+        try:
+            return obj.block.name if obj.block_id and obj.block else None
+        except Exception:
+            return None
+
+    def get_block_label(self, obj):
+        try:
+            return obj.block.block if obj.block_id and obj.block else None
+        except Exception:
+            return None
 
     class Meta:
         model = Road
@@ -779,12 +807,14 @@ class RoadSerializer(GeoFeatureModelSerializer):
 
             "block",
             "block_name",
+            "block_label",
 
             "dimension",
             "type",
             "row",
             "geom",
         )
+
 
 # --------------------------------------------------------
 # CameraLocation Serializer

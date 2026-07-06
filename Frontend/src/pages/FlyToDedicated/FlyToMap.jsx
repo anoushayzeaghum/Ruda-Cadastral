@@ -60,7 +60,11 @@ import { addRoadLayer } from "./LayerManager/RoadLayer";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-function applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility) {
+function applyMetaverseLayerStyles(
+  map,
+  layerVisibility,
+  adminBoundaryVisibility,
+) {
   applyFlyToLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
   // applyRudaMauzaBoundaryStyle(
   //   map,
@@ -91,6 +95,144 @@ async function loadAssetGeoJSON(paths = []) {
   throw lastError || new Error("Intro GeoJSON could not be loaded");
 }
 
+const normalizeFilterValue = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+const getFeatureProp = (feature, keys = []) => {
+  const props = feature?.properties || {};
+
+  for (const key of keys) {
+    const value = props?.[key];
+
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
+const featureHasValue = (feature, keys, expected) => {
+  if (!expected) return true;
+
+  const props = feature?.properties || {};
+  const expectedValue = normalizeFilterValue(expected);
+
+  return keys.some((key) => {
+    const value = props?.[key];
+    return normalizeFilterValue(value) === expectedValue;
+  });
+};
+
+const getFeatureUniqueId = (feature) =>
+  getFeatureProp(feature, [
+    "__flyToId",
+    "gid",
+    "id",
+    "plot_id",
+    "plotId",
+    "plot_gid",
+    "objectid",
+    "OBJECTID",
+  ]) ?? feature?.id;
+
+const getGeometryKey = (geometry) => {
+  if (!geometry?.coordinates) return "";
+
+  try {
+    return JSON.stringify(geometry.coordinates);
+  } catch (err) {
+    return "";
+  }
+};
+
+const getSelectedPlotFeatures = (features = [], filters = {}) => {
+  const selectedId =
+    filters.selectedPlotId ||
+    filters.selectedPlotGid ||
+    filters.plotId ||
+    filters.plotGid ||
+    filters.gid;
+
+  if (selectedId) {
+    const exactIdMatches = features.filter(
+      (feature) =>
+        normalizeFilterValue(getFeatureUniqueId(feature)) ===
+        normalizeFilterValue(selectedId),
+    );
+
+    if (exactIdMatches.length) return exactIdMatches.slice(0, 1);
+  }
+
+  const selectedGeometryKey = getGeometryKey(filters.selectedPlotGeometry);
+
+  if (selectedGeometryKey) {
+    const exactGeometryMatches = features.filter(
+      (feature) => getGeometryKey(feature.geometry) === selectedGeometryKey,
+    );
+
+    if (exactGeometryMatches.length) return exactGeometryMatches.slice(0, 1);
+  }
+
+  if (!filters.plotNo) return [];
+
+  return features.filter(
+    (feature) =>
+      featureHasValue(
+        feature,
+        ["plot_no", "plotNo", "plot_number", "plotNumber"],
+        filters.plotNo,
+      ) &&
+      featureHasValue(
+        feature,
+        ["block", "block_name", "blockName", "name", "block_no", "blockNo"],
+        filters.block,
+      ) &&
+      featureHasValue(
+        feature,
+        ["type", "plot_type", "plotType", "land_use", "landuse"],
+        filters.plotType,
+      ) &&
+      featureHasValue(
+        feature,
+        ["plot_area", "area", "plotArea", "area_marla"],
+        filters.area,
+      ),
+  );
+};
+
+const withFlyToSelectionKeys = (geojson) => ({
+  ...(geojson || emptyFC),
+  features: (geojson?.features || []).map((feature, index) => {
+    const flyToId = String(getFeatureUniqueId(feature) ?? index);
+
+    return {
+      ...feature,
+      properties: {
+        ...(feature.properties || {}),
+        __flyToId: flyToId,
+        __flyToGeometryKey: getGeometryKey(feature.geometry),
+      },
+    };
+  }),
+});
+
+const buildExactFeatureFilter = (features = []) => {
+  const ids = features
+    .map((feature) => feature?.properties?.__flyToId)
+    .filter(
+      (value) =>
+        value !== undefined && value !== null && String(value).trim() !== "",
+    )
+    .map((value) => String(value));
+
+  if (!ids.length) return ["==", ["get", "__flyToId"], "__none__"];
+
+  return ["any", ...ids.map((id) => ["==", ["get", "__flyToId"], id])];
+};
+
 export default function GISMetaverseMap({
   mapRef,
   isMapReady,
@@ -110,7 +252,7 @@ export default function GISMetaverseMap({
     const handleZoom = () => {
       const zoom = map.getZoom();
       const isVisible = zoom >= 15 && zoom <= 18;
-      
+
       if (plotMarkersRef.current) {
         plotMarkersRef.current.forEach((marker) => {
           const el = marker.getElement();
@@ -139,8 +281,7 @@ export default function GISMetaverseMap({
     const projectGeoJSON = await getProjectGeoJSON(projectId);
     addProjectBoundaryLayer(map, projectGeoJSON);
 
-    const shouldShowBlockBoundary =
-      !!layerVisibility.blockBoundary || !!filters?.block;
+    const shouldShowBlockBoundary = !!layerVisibility.blockBoundary;
 
     if (shouldShowBlockBoundary) {
       const blockGeoJSON = await getBlocksGeoJSON(
@@ -409,7 +550,7 @@ export default function GISMetaverseMap({
         return;
       }
 
-    const projectGeoJSON = await getProjectGeoJSON(filters.projectId);
+      const projectGeoJSON = await getProjectGeoJSON(filters.projectId);
 
       if (map.getSource("project-boundary")) {
         map.getSource("project-boundary").setData(projectGeoJSON);
@@ -423,15 +564,24 @@ export default function GISMetaverseMap({
         addNotifiedBoundaryLayer(map, projectGeoJSON);
       }
 
-      // 🔥 ALWAYS re-fly even same project
-      fitGeoJSON(map, projectGeoJSON);
+      const hasPlotTarget =
+        !!filters.plotNo ||
+        !!filters.selectedPlotId ||
+        !!filters.selectedPlotGid ||
+        !!filters.selectedPlotGeometry;
+
+      // Project-only Fly To should zoom to project. Plot/filter selection should be
+      // handled by the plot-selection effect so it can zoom to the exact plot.
+      if (!hasPlotTarget) {
+        fitGeoJSON(map, projectGeoJSON);
+      }
 
       updateLayerVisibility((prev) => ({
         ...prev,
         boundary: true,
-        masterPlan: false,
-        blockBoundary: false,
-        roads: false,
+        masterPlan: hasPlotTarget ? prev.masterPlan : false,
+        blockBoundary: hasPlotTarget ? false : prev.blockBoundary,
+        roads: hasPlotTarget ? prev.roads : false,
       }));
     };
 
@@ -453,11 +603,7 @@ export default function GISMetaverseMap({
       addNotifiedBoundaryLayer(map, projectGeoJSON);
       setLayerVisibility(map, [LAYERS.notifiedBoundaryLine], true);
 
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
@@ -475,8 +621,7 @@ export default function GISMetaverseMap({
     if (!map || !filters?.projectId) return;
 
     const run = async () => {
-      const shouldShowBlockBoundary =
-        !!layerVisibility.blockBoundary || !!filters.block;
+      const shouldShowBlockBoundary = !!layerVisibility.blockBoundary;
 
       if (!shouldShowBlockBoundary) {
         if (map.getSource(SOURCES.block)) {
@@ -503,13 +648,9 @@ export default function GISMetaverseMap({
         true,
       );
 
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
 
-      if (filters.block || layerVisibility.blockBoundary) {
+      if (layerVisibility.blockBoundary) {
         fitGeoJSON(map, blockGeoJSON);
       }
     };
@@ -564,9 +705,11 @@ export default function GISMetaverseMap({
       }
 
       // Always fetch the ENTIRE project so the context never disappears
-      const plotGeoJSON = await getPlotsGeoJSON({
-        project_id: filters.projectId,
-      });
+      const plotGeoJSON = withFlyToSelectionKeys(
+        await getPlotsGeoJSON({
+          project_id: filters.projectId,
+        }),
+      );
 
       addMasterPlanLayer(map, plotGeoJSON);
 
@@ -575,53 +718,38 @@ export default function GISMetaverseMap({
         LAYERS.masterPlanFill,
         LAYERS.masterPlanLine,
         LAYERS.masterPlanHover,
-        LAYERS.masterPlanLabel
-      ].forEach(id => {
+        LAYERS.masterPlanLabel,
+      ].forEach((id) => {
         if (map.getLayer(id)) map.moveLayer(id);
       });
 
-      // Highlight the specific plot boundaries if filtered by plotNo
+      const targetFeatures = getSelectedPlotFeatures(
+        plotGeoJSON?.features || [],
+        filters,
+      );
+
+      // Highlight only the exact selected plot. Do not highlight every plot
+      // that shares the same plot number in other blocks.
       if (map.getLayer(LAYERS.masterPlanHover)) {
-        if (filters.plotNo && plotGeoJSON && plotGeoJSON.features && plotGeoJSON.features.length > 0) {
-          let targetFeatures = plotGeoJSON.features.filter(
-            (f) => String(f.properties?.plot_no) === String(filters.plotNo)
+        if (filters.plotNo && targetFeatures.length > 0) {
+          map.setFilter(
+            LAYERS.masterPlanHover,
+            buildExactFeatureFilter(targetFeatures),
           );
-
-          if (filters.block) {
-            targetFeatures = targetFeatures.filter(
-              (f) => String(f.properties?.block || f.properties?.name) === String(filters.block)
-            );
-          }
-          if (filters.area) {
-            targetFeatures = targetFeatures.filter(
-              (f) => String(f.properties?.plot_area) === String(filters.area)
-            );
-          }
-          if (filters.plotType) {
-            targetFeatures = targetFeatures.filter(
-              (f) => String(f.properties?.type) === String(filters.plotType)
-            );
-          }
-
-          if (targetFeatures.length > 0) {
-            const gids = targetFeatures.map(f => String(f.properties?.gid || f.id));
-            const filterExpr = ["any", ...gids.map(gid => ["==", ["to-string", ["get", "gid"]], gid])];
-
-            map.setFilter(LAYERS.masterPlanHover, filterExpr);
-            map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 1);
-            map.setPaintProperty(LAYERS.masterPlanHover, "line-color", "#00ffaa");
-          } else {
-            map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
-            map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "gid"]], "__none__"]);
-          }
+          map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 1);
+          map.setPaintProperty(LAYERS.masterPlanHover, "line-color", "#00ffaa");
         } else {
           map.setPaintProperty(LAYERS.masterPlanHover, "line-opacity", 0);
-          map.setFilter(LAYERS.masterPlanHover, ["==", ["to-string", ["get", "gid"]], "__none__"]);
+          map.setFilter(LAYERS.masterPlanHover, [
+            "==",
+            ["to-string", ["get", "gid"]],
+            "__none__",
+          ]);
         }
       }
 
-      // Add rotating marker if filtering by plotNo
-      if (filters.plotNo && plotGeoJSON && plotGeoJSON.features) {
+      // Add the rotating marker only on the exact selected plot.
+      if (filters.plotNo && targetFeatures.length > 0) {
         // Inject keyframes into document if not present
         if (!document.getElementById("plot-marker-styles")) {
           const style = document.createElement("style");
@@ -644,49 +772,32 @@ export default function GISMetaverseMap({
           document.head.appendChild(style);
         }
 
-        let targetFeatures = plotGeoJSON.features.filter(
-          (f) => String(f.properties?.plot_no) === String(filters.plotNo)
-        );
-
-        if (filters.block) {
-          targetFeatures = targetFeatures.filter(
-            (f) => String(f.properties?.block || f.properties?.name) === String(filters.block)
-          );
-        }
-        if (filters.area) {
-          targetFeatures = targetFeatures.filter(
-            (f) => String(f.properties?.plot_area) === String(filters.area)
-          );
-        }
-        if (filters.plotType) {
-          targetFeatures = targetFeatures.filter(
-            (f) => String(f.properties?.type) === String(filters.plotType)
-          );
-        }
-
         targetFeatures.forEach((feature) => {
           if (feature.geometry) {
             const center = turf.centroid(feature);
-            
+
             // Initial zoom check for creation
             const currentZoom = map.getZoom();
             const isVisible = currentZoom >= 15 && currentZoom <= 18;
-            
+
             // Mapbox marker wrapper (receives position transforms)
             const el = document.createElement("div");
             el.style.width = "40px";
             el.style.height = "40px";
             el.style.position = "absolute";
             el.style.display = isVisible ? "block" : "none";
-            
+
             // Inner animated container
             const inner = document.createElement("div");
             inner.className = "flyto-marker-inner";
             inner.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#003580" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 100%; height: 100%; display: block;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3" fill="white"></circle></svg>`;
-            
+
             el.appendChild(inner);
 
-            const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+            const marker = new mapboxgl.Marker({
+              element: el,
+              anchor: "bottom",
+            })
               .setLngLat(center.geometry.coordinates)
               .addTo(map);
             plotMarkersRef.current.push(marker);
@@ -700,24 +811,14 @@ export default function GISMetaverseMap({
         true,
       );
 
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
 
       if (hasPlotFilter || layerVisibility.masterPlan) {
-        if (filters.plotNo && plotGeoJSON && plotGeoJSON.features) {
-          let targetFeatures = plotGeoJSON.features.filter(
-            (f) => String(f.properties?.plot_no) === String(filters.plotNo)
-          );
-          if (filters.block) targetFeatures = targetFeatures.filter(f => String(f.properties?.block || f.properties?.name) === String(filters.block));
-          if (filters.area) targetFeatures = targetFeatures.filter(f => String(f.properties?.plot_area) === String(filters.area));
-          if (filters.plotType) targetFeatures = targetFeatures.filter(f => String(f.properties?.type) === String(filters.plotType));
-          
-          if (targetFeatures.length > 0) {
-            fitGeoJSON(map, { type: "FeatureCollection", features: targetFeatures });
-          }
+        if (filters.plotNo && targetFeatures.length > 0) {
+          fitGeoJSON(map, {
+            type: "FeatureCollection",
+            features: targetFeatures,
+          });
         } else if (!filters.block) {
           // If no specific plot or block is focused, zoom out to show the whole project
           fitGeoJSON(map, plotGeoJSON);
@@ -740,6 +841,13 @@ export default function GISMetaverseMap({
     filters.tr_cate,
     filters.tr_own,
     filters.site_plan,
+    filters.selectedPlotId,
+    filters.selectedPlotGid,
+    filters.plotId,
+    filters.plotGid,
+    filters.gid,
+    filters.selectedPlotGeometry,
+    filters.flyToPlotTrigger,
     layerVisibility.masterPlan,
     layerVisibility.boundaryOpacity,
     layerVisibility.masterPlanOpacity,
@@ -809,11 +917,7 @@ export default function GISMetaverseMap({
         adminBoundaryVisibility.geodeticNetwork,
       );
 
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
@@ -858,7 +962,7 @@ export default function GISMetaverseMap({
     setLayerVisibility(
       map,
       [LAYERS.blockFill, LAYERS.blockLine, LAYERS.blockLabel],
-      !!layerVisibility.blockBoundary || !!filters.block,
+      !!layerVisibility.blockBoundary,
     );
 
     setLayerVisibility(
@@ -951,11 +1055,7 @@ export default function GISMetaverseMap({
         addCameraLocationsLayer(map, data);
       }
 
-      applyMetaverseLayerStyles(
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-      );
+      applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
     };
 
     if (map.isStyleLoaded()) run();
@@ -999,3 +1099,4 @@ export default function GISMetaverseMap({
 
   return <div ref={mapContainerRef} className="h-full w-full" />;
 }
+

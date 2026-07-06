@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import FlyToHeader from "./FlyToHeader";
 import FlyToMap from "./FlyToMap";
-import Basemaps from "../../pages/FlyToDedicated/tools/Basemaps";
 import FlyToLeftToolbar from "./FlyToLeftToolbar";
 import FlyToSubHeader from "./FlyToSubHeader";
 import FlyToMapControls from "./FlyToMapControls";
@@ -110,12 +109,6 @@ export default function FlyToDashboard() {
           setLayerVisibility={setLayerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}
           onIntroComplete={handleIntroComplete}
-        /> 
-        <Basemaps
-          map={mapRef.current}
-          rebuildAllLayers={() => {
-            mapRef.current?.fire("rebuild-layers");
-          }}
         />
 
         {/* <FlyToSubHeader
@@ -153,3 +146,4 @@ export default function FlyToDashboard() {
     </div>
   );
 }
+

@@ -10,6 +10,21 @@ const cell = (...values) => {
   return "-";
 };
 
+const isNumericId = (value) => {
+  if (typeof value === "number") return true;
+  if (typeof value !== "string") return false;
+  return /^\d+(\.\d+)?$/.test(value.trim());
+};
+
+const nameCell = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+    if (isNumericId(value)) continue;
+    return value;
+  }
+  return "-";
+};
+
 const rowsFromGeojson = (geojson, mapper) =>
   (geojson?.features || []).map((feature, index) => ({
     id: getProps(feature).gid || feature.id || index + 1,
@@ -22,9 +37,18 @@ export default function MauzaBoundaryAttribute({ map, geojson, onClose }) {
   const rows = rowsFromGeojson(geojson, (feature) => {
     const props = getProps(feature);
     return {
-      mauza: cell(props.mauza, props.Mauza, props.moza, props.Moza, props.name, props.Name),
-      district: cell(props.district, props.District),
-      tehsil: cell(props.tehsil, props.Tehsil),
+      mauza: nameCell(
+        props.mauza_name,
+        props.mauza,
+        props.Mauza,
+        props.moza,
+        props.Moza,
+        props.Mouza,
+        props.name,
+        props.Name,
+      ),
+      district: nameCell(props.district_name, props.District, props.district),
+      tehsil: nameCell(props.tehsil_name, props.Tehsil, props.tehsil),
       area_sqft: formatNumber(readAreaSqft(feature)),
     };
   });
@@ -39,10 +63,10 @@ export default function MauzaBoundaryAttribute({ map, geojson, onClose }) {
       columns={[
         { key: "sr", label: "Sr No." },
         { key: "mauza", label: "Mauza Name" },
-        { key: "district", label: "District" },
         { key: "tehsil", label: "Tehsil" },
         { key: "area_sqft", label: "Area (sq ft)" },
       ]}
     />
   );
 }
+

@@ -98,3 +98,4 @@ export function addBlockLayer(map, data) {
     map.setLayoutProperty(LAYERS.blockLabel, "text-field", blockNameExpression);
   }
 }
+

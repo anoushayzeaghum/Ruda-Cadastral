@@ -1,13 +1,9 @@
 import axios from "axios";
 
 const API_BASE =
-<<<<<<< HEAD
 
   import.meta.env.VITE_API_BASE_URL || "https://rudametaverse.nespakprogresscenter.com/api";
 
-=======
-  import.meta.env.VITE_API_BASE_URL || "https://rudametaverse.nespakprogresscenter.com/api";
->>>>>>> f0848d9 (Configure TileServer GL for production)
 
 const unwrapApiData = (data) => data?.data || data?.results || data;
 

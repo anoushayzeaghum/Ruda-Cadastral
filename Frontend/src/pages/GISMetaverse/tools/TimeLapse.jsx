@@ -22,9 +22,12 @@ const BOUNDS = [
 const STUDY_FIT = { padding: 12, maxZoom: 17.5, duration: 0 };
 
 const EXPANDED_PANEL_CLASS =
-  "fixed z-[70] inset-x-0 mx-auto flex flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#06291f] shadow-2xl"
+  "fixed z-[10002] inset-x-0 mx-auto flex flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#06291f] shadow-2xl"
   + " w-[min(860px,96vw)]"
-  + " top-[64px] bottom-[16px]";
+  + " top-[16px] bottom-[16px]";
+
+const EXPANDED_BACKDROP_CLASS =
+  "fixed inset-0 z-[10001] bg-black/70 backdrop-blur-sm";
 
 const TIMELINE = [
   {
@@ -32,7 +35,7 @@ const TIMELINE = [
     date: "January 2023",
     sourceId: "tl-jan2023-src",
     layerId: "tl-jan2023-lyr",
-    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_AsBuilt_Jan2023//{z}/{x}/{y}.png",
+    url: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_AsBuilt_Jan2023/{z}/{x}/{y}.png",
     color: "#a855f7",
   },
   {
@@ -89,7 +92,7 @@ function canvasToImage(canvas) {
   });
 }
 
-export default function TimeLapse({ map, onClose }) {
+export default function TimeLapse({ map, onClose, onExpandedChange }) {
   const miniMapRef   = useRef(null);
   const containerRef = useRef(null);
   const mapLoadedRef = useRef(false);
@@ -103,6 +106,16 @@ export default function TimeLapse({ map, onClose }) {
   const [recording,      setRecording]      = useState(false);
   const [recordProgress, setRecordProgress] = useState(0);
   const [recordError,    setRecordError]    = useState("");
+
+  useEffect(() => {
+    if (typeof onExpandedChange !== "function") return;
+
+    onExpandedChange(expanded);
+
+    return () => {
+      onExpandedChange(false);
+    };
+  }, [expanded, onExpandedChange]);
 
   const handleClose = useCallback(() => {
     if (expanded) {
@@ -364,7 +377,7 @@ export default function TimeLapse({ map, onClose }) {
     <div className={`p-3 ${expanded ? "min-h-0 flex-1 flex flex-col overflow-y-auto overscroll-contain" : ""}`}>
       <p className="text-white/60 mb-3 text-[11px]">
         View the construction captured progress through drone
-        imagery. 
+        imagery.
       </p>
 
       {/* Mini Map */}
@@ -542,7 +555,7 @@ export default function TimeLapse({ map, onClose }) {
       {/* Backdrop when expanded */}
       {expanded && (
         <div
-          className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm"
+          className={EXPANDED_BACKDROP_CLASS}
           onClick={() => setExpanded(false)}
         />
       )}
@@ -595,4 +608,3 @@ export default function TimeLapse({ map, onClose }) {
     </>
   );
 }
-

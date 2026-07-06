@@ -10,6 +10,21 @@ const cell = (...values) => {
   return "-";
 };
 
+const isNumericId = (value) => {
+  if (typeof value === "number") return true;
+  if (typeof value !== "string") return false;
+  return /^\d+(\.\d+)?$/.test(value.trim());
+};
+
+const nameCell = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+    if (isNumericId(value)) continue;
+    return value;
+  }
+  return "-";
+};
+
 const rowsFromGeojson = (geojson, mapper) =>
   (geojson?.features || []).map((feature, index) => ({
     id: getProps(feature).gid || feature.id || index + 1,
@@ -51,10 +66,21 @@ export default function KhasraBoundaryAttribute({ map, geojson, onClose }) {
         props.name,
         props.Name,
       ),
-      mauza: cell(props.mauza, props.Mauza, props.moza, props.Moza),
-      district: cell(props.district, props.District),
-      tehsil: cell(props.tehsil, props.Tehsil),
-      assessment_circle: cell(props.asse_cir, props.assessment_circle, props.Assessment_Circle),
+      mauza: nameCell(
+        props.mauza_name,
+        props.mauza,
+        props.Mauza,
+        props.moza,
+        props.Moza,
+        props.Mouza,
+      ),
+      district: nameCell(props.district_name, props.District, props.district),
+      tehsil: nameCell(props.tehsil_name, props.Tehsil, props.tehsil),
+      assessment_circle: cell(
+        props.asse_cir,
+        props.assessment_circle,
+        props.Assessment_Circle,
+      ),
       type: normalizeType(props.type),
       karam: cell(props.karam),
       khasra_no: cell(props.kh, props.KH, props.khasra_no, props.khasra_id),
@@ -74,7 +100,6 @@ export default function KhasraBoundaryAttribute({ map, geojson, onClose }) {
         { key: "sr", label: "Sr No." },
         { key: "khasra_name", label: "Khasra Name" },
         { key: "mauza", label: "Mauza" },
-        { key: "district", label: "District" },
         { key: "tehsil", label: "Tehsil" },
         { key: "assessment_circle", label: "Assessment Circle" },
         { key: "type", label: "Type" },
@@ -86,3 +111,4 @@ export default function KhasraBoundaryAttribute({ map, geojson, onClose }) {
     />
   );
 }
+

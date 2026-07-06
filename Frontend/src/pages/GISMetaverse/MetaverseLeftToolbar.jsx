@@ -1,5 +1,5 @@
 // MetaverseLeftToolbar.jsx
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Layers,
   Drone,
@@ -62,6 +62,7 @@ export default function MetaverseLeftToolbar({
 }) {
   const navigate = useNavigate();
   const [followEnabled, setFollowEnabled] = useState(false);
+  const [expandedTool, setExpandedTool] = useState(null);
 
   useEffect(() => {
     if (!followEnabled || !map || !navigator.geolocation) return;
@@ -82,6 +83,34 @@ export default function MetaverseLeftToolbar({
   }, [followEnabled, map]);
 
   const activeToolIndex = tools.findIndex((t) => t.id === activeTool);
+
+  const handleToolExpandedChange = useCallback((toolId, isExpanded) => {
+    setExpandedTool((current) => {
+      if (isExpanded) return toolId;
+      return current === toolId ? null : current;
+    });
+  }, []);
+
+  const handleDroneImageryExpandedChange = useCallback(
+    (isExpanded) => handleToolExpandedChange("droneImagery", isExpanded),
+    [handleToolExpandedChange],
+  );
+
+  const handleTimeLapseExpandedChange = useCallback(
+    (isExpanded) => handleToolExpandedChange("timeLapse", isExpanded),
+    [handleToolExpandedChange],
+  );
+
+  const handleChangeDetectionExpandedChange = useCallback(
+    (isExpanded) => handleToolExpandedChange("changeDetection", isExpanded),
+    [handleToolExpandedChange],
+  );
+
+  useEffect(() => {
+    setExpandedTool(null);
+  }, [activeTool]);
+
+  const isActiveToolExpanded = expandedTool === activeTool;
 
   const panelTop =
     activeToolIndex >= 0
@@ -160,9 +189,9 @@ export default function MetaverseLeftToolbar({
       {/* TOOL PANELS (FILTER, IMPORT, etc.) */}
       {activeTool && activeTool !== "layers" && (
         <div
-          className="absolute z-30 bg-[#06291f] text-white border border-[#13593f] rounded-md shadow-2xl
+          className={`${isActiveToolExpanded ? "z-[10000]" : "z-30"} absolute bg-[#06291f] text-white border border-[#13593f] rounded-md shadow-2xl
           sm:left-14 sm:w-[320px]
-          bottom-0 left-0 right-0 sm:bottom-auto"
+          bottom-0 left-0 right-0 sm:bottom-auto`}
           style={{
             top: window.innerWidth >= 640 ? `${panelTop}px` : undefined,
           }}
@@ -189,15 +218,26 @@ export default function MetaverseLeftToolbar({
           {activeTool === "droneImagery" && (
             <>
               <PanelHeader title="Drone Imagery" onClose={() => setActiveTool(null)} />
-              <DroneImagery map={map} />
+              <DroneImagery
+                map={map}
+                onExpandedChange={handleDroneImageryExpandedChange}
+              />
             </>
           )}
 
           {activeTool === "timeLapse" && (
-            <TimeLapse map={map} onClose={() => setActiveTool(null)} />
+            <TimeLapse
+              map={map}
+              onClose={() => setActiveTool(null)}
+              onExpandedChange={handleTimeLapseExpandedChange}
+            />
           )}
           {activeTool === "changeDetection" && (
-            <ChangeDetection map={map} onClose={() => setActiveTool(null)} />
+            <ChangeDetection
+              map={map}
+              onClose={() => setActiveTool(null)}
+              onExpandedChange={handleChangeDetectionExpandedChange}
+            />
           )}
           {activeTool === "import" && (
             <Import map={map} onClose={() => setActiveTool(null)} />

@@ -33,7 +33,7 @@ const IMAGERY_LAYERS = [
     color: "#a855f7",
     sourceId: "gis-jan2023-source",
     layerId: "gis-jan2023-layer",
-    tileUrl: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_AsBuilt_Jan2023//{z}/{x}/{y}.png",
+    tileUrl: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_AsBuilt_Jan2023/{z}/{x}/{y}.png",
   },
   {
     id: "june2023",
@@ -61,7 +61,7 @@ const IMAGERY_LAYERS = [
   },
 ];
 
-export default function DroneImagery({ map }) {
+export default function DroneImagery({ map, onExpandedChange }) {
   // ── Tab state: "imagery" | "videos" ──────────────────────────────────────
   const [activeTab, setActiveTab] = useState("imagery");
 
@@ -83,6 +83,16 @@ export default function DroneImagery({ map }) {
   const [dragging, setDragging] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof onExpandedChange !== "function") return;
+
+    onExpandedChange(expanded);
+
+    return () => {
+      onExpandedChange(false);
+    };
+  }, [expanded, onExpandedChange]);
 
   const flyToChaharbagh = () => {
     if (!map) return;
@@ -322,18 +332,18 @@ export default function DroneImagery({ map }) {
             <>
               {expanded && (
                 <div
-                  className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm"
+                  className="fixed inset-0 z-[10001] bg-black/70 backdrop-blur-sm"
                   onClick={() => setExpanded(false)}
                 />
               )}
 
-              <div
-                className={`bg-[#06291f] shadow-xl transition-all duration-300 ${
-                  expanded
-                    ? "fixed z-[70] rounded-xl border border-[#3b4558] overflow-hidden"
-                    : "mt-2 rounded-lg border border-[#3b4558] overflow-hidden"
-                }`}
-                style={
+<div
+  className={`bg-[#06291f] shadow-xl transition-all duration-300 ${
+    expanded
+      ? "fixed z-[10002] rounded-xl border border-[#3b4558] overflow-hidden"
+      : "mt-2 rounded-lg border border-[#3b4558] overflow-hidden"
+  }`}
+style={
                   expanded
                     ? {
                         top: "50%",
@@ -343,7 +353,7 @@ export default function DroneImagery({ map }) {
                       }
                     : {}
                 }
-              >
+>
                 {/* Player header */}
                 <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a3548]">
                   <div className="flex items-center gap-2">

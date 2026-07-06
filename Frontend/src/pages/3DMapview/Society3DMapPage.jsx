@@ -31,6 +31,8 @@ export default function Society3DMapPage() {
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
   const [activePanel, setActivePanel] = useState(null);
+  const [bimPanelOpen, setBimPanelOpen] = useState(false);
+  const [bimLayers, setBimLayers] = useState({ manholesModel: false });
 
   const [extrusion, setExtrusion] = useState({
     heightFeet: 100,
@@ -112,6 +114,10 @@ export default function Society3DMapPage() {
     setActivePanel((prev) => (prev === panelName ? null : panelName));
   };
 
+  useEffect(() => {
+    setBimPanelOpen(activePanel === "bim");
+  }, [activePanel]);
+
   const applyExtrusionToSelected = () => {
     if (!selectedFeature) return;
 
@@ -172,6 +178,10 @@ export default function Society3DMapPage() {
           selectedProject={selectedProjectItem}
           extrusion={extrusion}
           setExtrusion={setExtrusion}
+          bimPanelOpen={bimPanelOpen}
+          setBimPanelOpen={setBimPanelOpen}
+          bimLayers={bimLayers}
+          setBimLayers={setBimLayers}
           selectedFeature={selectedFeature}
           onApplyToSelected={applyExtrusionToSelected}
           onClearExtrusions={clearExtrusions}
@@ -192,3 +202,4 @@ export default function Society3DMapPage() {
     </div>
   );
 }
+
