@@ -1,4 +1,6 @@
-import AdminAttributeTableShell, { formatNumber } from "./AdminAttributeTableShell";
+import AdminAttributeTableShell, {
+  formatNumber,
+} from "./AdminAttributeTableShell";
 import { readAreaSqft } from "./areaUtils";
 
 const getProps = (feature = {}) => feature.properties || feature || {};
@@ -6,6 +8,21 @@ const getProps = (feature = {}) => feature.properties || feature || {};
 const cell = (...values) => {
   for (const value of values) {
     if (value !== null && value !== undefined && value !== "") return value;
+  }
+  return "-";
+};
+
+const isNumericId = (value) => {
+  if (typeof value === "number") return true;
+  if (typeof value !== "string") return false;
+  return /^\d+(\.\d+)?$/.test(value.trim());
+};
+
+const nameCell = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined || value === "") continue;
+    if (isNumericId(value)) continue;
+    return value;
   }
   return "-";
 };
@@ -22,10 +39,23 @@ export default function SquareBoundaryAttribute({ map, geojson, onClose }) {
   const rows = rowsFromGeojson(geojson, (feature) => {
     const props = getProps(feature);
     return {
-      square_layer: cell(props.layer, props.sq, props.square_id, props.name, props.Name),
-      mauza: cell(props.mauza, props.Mauza, props.moza, props.Moza),
-      district: cell(props.district, props.District),
-      tehsil: cell(props.tehsil, props.Tehsil),
+      square_layer: cell(
+        props.layer,
+        props.sq,
+        props.square_id,
+        props.name,
+        props.Name,
+      ),
+      mauza: nameCell(
+        props.mauza_name,
+        props.mauza,
+        props.Mauza,
+        props.moza,
+        props.Moza,
+        props.Mouza,
+      ),
+      district: nameCell(props.district_name, props.District, props.district),
+      tehsil: nameCell(props.tehsil_name, props.Tehsil, props.tehsil),
       area_sqft: formatNumber(readAreaSqft(feature)),
     };
   });
@@ -41,7 +71,6 @@ export default function SquareBoundaryAttribute({ map, geojson, onClose }) {
         { key: "sr", label: "Sr No." },
         { key: "square_layer", label: "Square Layer" },
         { key: "mauza", label: "Mauza" },
-        { key: "district", label: "District" },
         { key: "tehsil", label: "Tehsil" },
         { key: "area_sqft", label: "Area (sq ft)" },
       ]}
