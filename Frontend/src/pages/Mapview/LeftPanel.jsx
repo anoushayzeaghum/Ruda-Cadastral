@@ -29,6 +29,35 @@ import ProposedRoadAttribute from "../GISMetaverse/tools/Layers/AttributeTable/P
 import GeodeticNetworkAttribute from "../GISMetaverse/tools/Layers/AttributeTable/GeodeticNetworkAttribute";
 import MauzaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/MauzaBoundaryAttribute";
 
+const getMauzaName = (selectedMauza) => {
+  if (!selectedMauza) return "";
+  return (
+    selectedMauza?.mauza ??
+    selectedMauza?.name ??
+    selectedMauza?.Mauza ??
+    selectedMauza?.moza ??
+    selectedMauza?.mouza ??
+    ""
+  ).trim();
+};
+
+const ORTHO_TILE_NAME_BY_MAUZA = {
+  "handu gujran": "Handu_Gujran_Ortho",
+  "lakho dair": "Lakho_Dair_Ortho",
+};
+
+const getOrthoTileNameFromMauzaName = (mauzaName = "") => {
+  const normalized = String(mauzaName || "").trim().toLowerCase();
+  return ORTHO_TILE_NAME_BY_MAUZA[normalized] || "";
+};
+
+const getOrthoTileUrlFromMauza = (selectedMauza) => {
+  const tileName = getOrthoTileNameFromMauzaName(getMauzaName(selectedMauza));
+  return tileName
+    ? `https://rudametaverse.nespakprogresscenter.com/tiles/data/${tileName}/{z}/{x}/{y}.png`
+    : "";
+};
+
 // Hook — true when viewport width is below the sm breakpoint (640 px)
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(
@@ -85,7 +114,7 @@ const VECTOR_BOUNDARY_LAYERS = [
   { key: "fieldPoints", label: "Field Points" },
 ];
 
-const RASTER_DATA_LAYERS = [{ key: "handuGujranOrtho", label: "Massavi" }];
+const RASTER_DATA_LAYERS = [{ key: "mussaviLayer", label: "Massavi" }];
 
 const RUDA_PHASE_COLORS = [
   "#6bb7e8",
@@ -189,7 +218,7 @@ export default function LeftPanel({
       triJunctionPoints: "#e11d48",
       fieldPoints: "#2563eb",
       murabbaLayer: "#facc15",
-      handuGujranOrtho: "#9be37b",
+      mussaviLayer: "#9be37b",
     };
     return defaults[layerKey] || "#9be37b";
   };
@@ -205,6 +234,13 @@ export default function LeftPanel({
 
   const selectedMauzaId =
     selectedMauza?.mauza_id ?? selectedMauza?.id ?? selectedMauza?.gid;
+
+  const massaviTileUrl = getOrthoTileUrlFromMauza(selectedMauza);
+  const massaviLayerDisabled = !massaviTileUrl;
+  const rasterLayerItems = RASTER_DATA_LAYERS.map((item) => ({
+    ...item,
+    disabled: item.key === "mussaviLayer" ? massaviLayerDisabled : false,
+  }));
 
   const loadLayerRecords = async (key) => {
     if (layerRecordCache[key]?.loaded) return;
@@ -837,7 +873,7 @@ export default function LeftPanel({
                   }
                 >
                   <RasterDataLayers
-                    items={RASTER_DATA_LAYERS}
+                    items={rasterLayerItems}
                     getLayerVisible={getLayerVisible}
                     getLayerOpacity={getLayerOpacity}
                     toggleLayer={toggleLayer}
@@ -1353,12 +1389,14 @@ function AdminLayerRow({
   color,
   isOpen,
   isLast,
+  disabled,
   onToggle,
   onOpacity,
   onColor,
   onDropdownToggle,
   onTable,
 }) {
+  const handleToggle = disabled ? undefined : onToggle;
   return (
     <div
       className={`bg-[#06291f] px-2.5 py-2 ${isLast ? "" : "border-b border-[#0c3d2d]"}`}
@@ -1367,8 +1405,9 @@ function AdminLayerRow({
         <input
           type="checkbox"
           checked={!!checked}
-          onChange={onToggle}
-          className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
+          onChange={handleToggle}
+          disabled={disabled}
+          className="h-3.5 w-3.5 shrink-0 accent-[#9be37b] disabled:cursor-not-allowed disabled:opacity-40"
         />
         {onColor && <SmallColorPicker color={color} onChange={onColor} />}
         <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
@@ -1412,12 +1451,18 @@ function AdminLayerRow({
           max="100"
           value={opacity}
           onChange={(e) => onOpacity(Number(e.target.value))}
-          className="h-1.5 min-w-0 flex-1 accent-[#9be37b]"
+          disabled={disabled}
+          className="h-1.5 min-w-0 flex-1 accent-[#9be37b] disabled:cursor-not-allowed disabled:opacity-40"
         />
         <span className="w-9 shrink-0 text-right text-[11px] font-medium text-white/60">
           {opacity}%
         </span>
       </div>
+      {disabled && (
+        <p className="mt-2 px-6 text-[11px] leading-snug text-white/60">
+          Select a supported Mauza to enable the Massavi raster layer.
+        </p>
+      )}
     </div>
   );
 }

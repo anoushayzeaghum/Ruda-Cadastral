@@ -1,6 +1,6 @@
 import {
-  HANDU_GUJRAN_ORTHO_SOURCE,
-  HANDU_GUJRAN_ORTHO_LAYER,
+  ORTHO_SOURCE,
+  ORTHO_LAYER,
 } from "./layerConfig";
 
 export const HANDU_GUJRAN_BOUNDS = [
@@ -8,21 +8,26 @@ export const HANDU_GUJRAN_BOUNDS = [
   [74.43545280361002, 31.6112165411359],
 ];
 
-export const restoreHanduGujranOrthoLayer = ({ map, visible, opacity }) => {
-  if (visible) {
-    if (!map.getSource(HANDU_GUJRAN_ORTHO_SOURCE)) {
-      map.addSource(HANDU_GUJRAN_ORTHO_SOURCE, {
+export const restoreOrthoLayer = ({ map, visible, opacity, tileUrl }) => {
+  if (visible && tileUrl) {
+    if (!map.getSource(ORTHO_SOURCE)) {
+      map.addSource(ORTHO_SOURCE, {
         type: "raster",
-        tiles: ["https://rudametaverse.nespakprogresscenter.com/tiles/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png"],
+        tiles: [tileUrl],
         tileSize: 256,
       });
+    } else {
+      const source = map.getSource(ORTHO_SOURCE);
+      if (source && typeof source.setTiles === "function") {
+        source.setTiles([tileUrl]);
+      }
     }
 
-    if (!map.getLayer(HANDU_GUJRAN_ORTHO_LAYER)) {
+    if (!map.getLayer(ORTHO_LAYER)) {
       map.addLayer({
-        id: HANDU_GUJRAN_ORTHO_LAYER,
+        id: ORTHO_LAYER,
         type: "raster",
-        source: HANDU_GUJRAN_ORTHO_SOURCE,
+        source: ORTHO_SOURCE,
         paint: {
           "raster-opacity": opacity,
         },
@@ -31,13 +36,15 @@ export const restoreHanduGujranOrthoLayer = ({ map, visible, opacity }) => {
         },
       });
     } else {
-      map.setLayoutProperty(HANDU_GUJRAN_ORTHO_LAYER, "visibility", "visible");
-      map.setPaintProperty(HANDU_GUJRAN_ORTHO_LAYER, "raster-opacity", opacity);
+      map.setLayoutProperty(ORTHO_LAYER, "visibility", "visible");
+      map.setPaintProperty(ORTHO_LAYER, "raster-opacity", opacity);
     }
     return;
   }
 
-  if (map.getLayer(HANDU_GUJRAN_ORTHO_LAYER)) {
-    map.setLayoutProperty(HANDU_GUJRAN_ORTHO_LAYER, "visibility", "none");
+  if (map.getLayer(ORTHO_LAYER)) {
+    map.setLayoutProperty(ORTHO_LAYER, "visibility", "none");
   }
 };
+
+export const restoreHanduGujranOrthoLayer = restoreOrthoLayer;
