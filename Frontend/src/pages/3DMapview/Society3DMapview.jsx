@@ -23,6 +23,7 @@ import {
   getRoadGeoJSON,
   getSpotLevelGeoJSON,
 } from "./api";
+import CesiumBIMModel from "./CesiumBIMModel";
 
 if (import.meta.env.VITE_CESIUM_TOKEN) {
   Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_TOKEN;
@@ -193,6 +194,8 @@ export default function Society3DMapview({
   basemap,
   extrusion,
   appliedExtrusions,
+  bimLayers,
+  bimModelConfig,
   onFeatureSelect,
   clearSelectionSignal,
 }) {
@@ -207,6 +210,8 @@ export default function Society3DMapview({
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [mapError, setMapError] = useState("");
+  const [bimStatus, setBimStatus] = useState({ status: "idle", message: "" });
+  const [bimPlacementGeoJSON, setBimPlacementGeoJSON] = useState(emptyFeatureCollection());
 
   const selectedProjectId = useMemo(() => getProjectId(selectedProject), [selectedProject]);
 
@@ -286,6 +291,7 @@ export default function Society3DMapview({
       clearSelection();
 
       if (!selectedProjectId) {
+        setBimPlacementGeoJSON(emptyFeatureCollection());
         lastFlyKeyRef.current = "default-pakistan";
         resetCamera(viewerRef.current);
         return;
@@ -364,6 +370,7 @@ export default function Society3DMapview({
         }
 
         const zoomTarget = getBestZoomTarget(loadedGeoJSONByKey, flyTarget);
+        setBimPlacementGeoJSON(zoomTarget?.features?.length ? zoomTarget : flyTarget || emptyFeatureCollection());
         const flyKey = `project-${selectedProjectId}`;
         if (zoomTarget?.features?.length && lastFlyKeyRef.current !== flyKey) {
           lastFlyKeyRef.current = flyKey;
@@ -505,6 +512,15 @@ export default function Society3DMapview({
     <div className="absolute inset-0 bg-slate-900">
       <div ref={containerRef} className="h-full w-full" />
 
+      <CesiumBIMModel
+        viewer={viewerRef.current}
+        isReady={isReady}
+        visible={bimLayers?.manholesModel === true}
+        model={bimModelConfig}
+        targetGeoJSON={bimPlacementGeoJSON}
+        onStatusChange={setBimStatus}
+      />
+
       <div className="absolute left-2 top-[100px] z-30 flex flex-col gap-1">
         <MapTool title="Fly to Project" onClick={flyToSelectedProject} icon={<LocateFixed size={20} strokeWidth={2.2} />} />
         <MapTool title="Zoom In" onClick={() => zoomBy(-0.35)} icon={<Plus size={20} strokeWidth={2.2} />} />
@@ -520,6 +536,20 @@ export default function Society3DMapview({
       {isLoading && (
         <div className="absolute left-1/2 top-24 z-30 -translate-x-1/2 rounded-full bg-slate-950/80 px-4 py-2 text-xs font-semibold text-white shadow">
           Loading 3D layers...
+        </div>
+      )}
+
+      {bimStatus.message && bimStatus.status !== "idle" && (
+        <div
+          className={`absolute left-1/2 top-[136px] z-30 max-w-xl -translate-x-1/2 rounded-lg border px-4 py-2 text-xs font-semibold shadow ${
+            bimStatus.status === "error"
+              ? "border-red-300 bg-red-50 text-red-700"
+              : bimStatus.status === "warning"
+                ? "border-amber-300 bg-amber-50 text-amber-700"
+                : "border-cyan-300 bg-cyan-50 text-cyan-700"
+          }`}
+        >
+          {bimStatus.message}
         </div>
       )}
 

@@ -51,7 +51,7 @@ export default function Society3DLeftToolbar({
   onClearExtrusions,
 }) {
   const isMobile = useIsMobile();
-  
+
   const activeToolIndex = tools.findIndex((tool) => tool.id === activePanel);
   const panelTop =
     activeToolIndex >= 0
@@ -72,11 +72,13 @@ export default function Society3DLeftToolbar({
       `}</style>
 
       {/* Tool buttons - bottom center on mobile, left side on desktop */}
-      <div className={`absolute z-40 ${
-        isMobile 
-          ? 'bottom-3 left-1/2 -translate-x-1/2 flex-row' 
-          : 'left-2 top-5 flex-col'
-      } flex gap-1`}>
+      <div
+        className={`absolute z-40 ${
+          isMobile
+            ? "bottom-3 left-1/2 -translate-x-1/2 flex-row"
+            : "left-2 top-5 flex-col"
+        } flex gap-1`}
+      >
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isActive = activePanel === tool.id;
@@ -99,7 +101,7 @@ export default function Society3DLeftToolbar({
             </button>
           );
         })}
-        
+
         {/* Close button for mobile - only shown when a panel is active */}
         {isMobile && activePanel && (
           <button
@@ -123,19 +125,19 @@ export default function Society3DLeftToolbar({
               onClick={() => setActivePanel(null)}
             />
           )}
-          
+
           <div
             className={`z-50 overflow-hidden ${
               isMobile
-                ? 'fixed bottom-0 left-0 right-0 rounded-t-xl'
-                : 'absolute left-14 rounded-md'
+                ? "fixed bottom-0 left-0 right-0 rounded-t-xl"
+                : "absolute left-14 rounded-md"
             }`}
             style={
               isMobile
-                ? { maxHeight: '70vh' }
+                ? { maxHeight: "70vh" }
                 : {
                     top: `${panelTop}px`,
-                    width: '330px',
+                    width: "330px",
                     animation: "society3dPanelDrop 220ms ease-out both",
                     transformOrigin: "top left",
                   }
@@ -147,7 +149,7 @@ export default function Society3DLeftToolbar({
                 <div className="h-1 w-10 rounded-full bg-white/30" />
               </div>
             )}
-            
+
             {activePanel === "layers" && (
               <ThreeDLayerManager
                 layers={layers}
