@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, Search, Map, Building, FileText } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +22,7 @@ export default function Login() {
     try {
       setIsLoading(true);
 
-      const response = await fetch("https://rudametaverse.nespakprogresscenter.com/api/login-user/", {
+      const response = await fetch(`${API_BASE_URL}/login-user/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
