@@ -6,6 +6,7 @@ import LandRevenueRecord from "./Layers/LandRevenueRecord";
 // import Miscellaneous from "./Layers/Miscellaneous";
 import NotifiedBoundaries from "./Layers/NotifiedBoundaries";
 import AdministrativeBoundaries from "./Layers/AdministrativeBoundaries";
+import RUDAMasterPlan from "./Layers/RUDAMasterPlan";
 import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
 
 export default function LayersPanel({
@@ -25,6 +26,7 @@ export default function LayersPanel({
         adminBoundaryVisibility={adminBoundaryVisibility}
         setAdminBoundaryVisibility={setAdminBoundaryVisibility}
       />
+      <RUDAMasterPlan />
       <MasterPlan
         map={map}
         selectedProjectId={filters?.projectId}
