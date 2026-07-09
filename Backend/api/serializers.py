@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from .models import *
-
+import time
 
 # --------------------------------------------------------
 # MyUser Serializer
@@ -695,12 +695,16 @@ class PlotSerializer(GeoFeatureModelSerializer):
 
     project_name = serializers.CharField(
         source="project.name",
-        read_only=True
+        read_only=True,
+        allow_null=True,
+        default=None,
     )
 
     block_name = serializers.CharField(
         source="block.name",
-        read_only=True
+        read_only=True,
+        allow_null=True,
+        default=None,
     )
 
     class Meta:

@@ -1,8 +1,8 @@
 from ..common_imports import *
-from rest_framework.decorators import action
-from rest_framework.response import Response
-import traceback
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 
+@method_decorator(cache_page(60 * 10), name="list")
 class ListKhasraView(viewsets.ViewSet):
     queryset = Khasra.objects.all()
     serializer_class = KhasraSerializer
@@ -71,29 +71,133 @@ class ListKhasraView(viewsets.ViewSet):
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()
 
-    @action(detail=True, methods=['get'], url_path='geojson', url_name='geojson')
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="geojson",
+        url_name="geojson",
+    )
     def geojson(self, request, pk=None):
-        """Return Khasra boundary as GeoJSON"""
-        try:
-            khasra = Khasra.objects.filter(gid=pk).first()
 
-            if not khasra:
-                return ApiResponse(
-                    status=status.HTTP_404_NOT_FOUND,
-                    message="Khasra not found.",
-                    http_status=status.HTTP_404_NOT_FOUND,
-                ).create_response()
+        start = time.time()
 
-            serializer = KhasraSerializer(khasra)
+        cache_key = f"khasra_geojson_{pk}"
+        cached = cache.get(cache_key)
+
+        if cached:
+            print(
+                "CACHE:",
+                round((time.time() - start) * 1000, 2),
+                "ms"
+            )
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
                 message="Khasra GeoJSON found.",
-                data=serializer.data,
+                data=cached,
+                http_status=status.HTTP_200_OK,
+            ).create_response()
+
+        try:
+
+            db_start = time.time()
+
+            with connection.cursor() as cursor:
+
+                cursor.execute("""
+                    SELECT
+                        gid,
+                        join_shp,
+                        dist_id,
+                        tehsil_id,
+                        mauza_id,
+                        kc,
+                        kc_id,
+                        pc,
+                        pc_id,
+                        hadbust_no,
+                        asse_cir,
+                        karam,
+                        type,
+                        sq,
+                        kh,
+                        sk,
+                        khasra_id,
+                        khewat_id,
+                        khatoni_no,
+                        dc_rate,
+                        remarks,
+                        b,
+                        ST_AsGeoJSON(geom)::json
+                    FROM khasra
+                    WHERE gid = %s
+                """, [pk])
+
+                row = cursor.fetchone()
+
+            print(
+                "DB + ST_AsGeoJSON:",
+                round((time.time() - db_start) * 1000, 2),
+                "ms"
+            )
+
+            if not row:
+                return ApiResponse(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message="Khasra not found.",
+                    data=[],
+                    http_status=status.HTTP_404_NOT_FOUND,
+                ).create_response()
+
+            feature = {
+                "type": "Feature",
+                "id": row[0],
+                "geometry": row[22],
+                "properties": {
+                    "gid": row[0],
+                    "join_shp": row[1],
+                    "district_id": row[2],
+                    "tehsil_id": row[3],
+                    "mauza_id": row[4],
+                    "kc": row[5],
+                    "kc_id": row[6],
+                    "pc": row[7],
+                    "pc_id": row[8],
+                    "hadbust_no": row[9],
+                    "asse_cir": row[10],
+                    "karam": float(row[11]) if row[11] is not None else None,
+                    "type": row[12],
+                    "sq": row[13],
+                    "kh": row[14],
+                    "sk": row[15],
+                    "khasra_id": row[16],
+                    "khewat_id": row[17],
+                    "khatoni_no": row[18],
+                    "dc_rate": row[19],
+                    "remarks": row[20],
+                    "b": row[21],
+                },
+            }
+
+            cache.set(cache_key, feature, 60 * 60)
+
+            print(
+                "TOTAL:",
+                round((time.time() - start) * 1000, 2),
+                "ms"
+            )
+
+            return ApiResponse(
+                status=status.HTTP_200_OK,
+                message="Khasra GeoJSON found.",
+                data=feature,
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
         except Exception as e:
+
+            print(traceback.format_exc())
+
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
