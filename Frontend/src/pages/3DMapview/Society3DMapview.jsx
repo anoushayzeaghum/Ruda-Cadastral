@@ -1,60 +1,37 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as Cesium from "cesium";
 import "cesium/Build/Cesium/Widgets/widgets.css";
-import { Expand, Home, Layers, LocateFixed, Minus, Plus, RotateCcw } from "lucide-react";
+import { Expand, LocateFixed, Minus, Plus, RotateCcw } from "lucide-react";
 
 import {
   addGeoJSONLayer,
   applyBasemap,
   DEFAULT_VIEW,
   emptyFeatureCollection,
+  flyToBounds,
   flyToGeoJSON,
-  getFeatureId,
   setEntityHighlighted,
 } from "./cesiumHelpers";
 import {
   getBuildingGeoJSON,
   getContourGeoJSON,
-  getDistrictBoundary,
   getGreenSpaceGeoJSON,
   getMasterPlanGeoJSON,
-  getMauzaBoundary,
   getPlotGeoJSON,
+  getProjectBoundaryGeoJSON,
+  getProjectId,
   getRoadGeoJSON,
-  getSocietyBoundaryGeoJSON,
-  getSocietyId,
   getSpotLevelGeoJSON,
-  getTehsilBoundary,
 } from "./api";
+import CesiumBIMModel from "./CesiumBIMModel";
 
 if (import.meta.env.VITE_CESIUM_TOKEN) {
   Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_TOKEN;
 }
 
-const ADMIN_LAYER_CONFIG = {
-  district: {
-    name: "District Boundary",
-    fillColor: "#14532d",
-    outlineColor: "#2563eb",
-    opacity: 0.05,
-  },
-  tehsil: {
-    name: "Tehsil Boundary",
-    fillColor: "#166534",
-    outlineColor: "#1d4ed8",
-    opacity: 0.05,
-  },
-  mauza: {
-    name: "Mauza Boundary",
-    fillColor: "#15803d",
-    outlineColor: "#1e40af",
-    opacity: 0.08,
-  },
-};
-
-const SOCIETY_LAYER_CONFIG = {
-  societyBoundary: {
-    name: "Society Boundary",
+const PROJECT_LAYER_CONFIG = {
+  projectBoundary: {
+    name: "Project Boundary",
     fillColor: "#16a34a",
     outlineColor: "#064e3b",
     opacity: 0.25,
@@ -67,7 +44,7 @@ const SOCIETY_LAYER_CONFIG = {
     smartStyle: true,
   },
   plots3d: {
-    name: "3D Master Plan Visualization",
+    name: "3D Project Model",
     fillColor: "#22d3ee",
     outlineColor: "#0e7490",
     opacity: 0.88,
@@ -129,15 +106,96 @@ function cloneFeatureWithLayer(feature, layerKey) {
   };
 }
 
+function parsePossibleGeometry(value) {
+  if (!value) return null;
+  if (typeof value !== "string") return value;
+
+  try {
+    const parsed = JSON.parse(value);
+    return parsed?.type ? parsed : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function projectToFeatureCollection(project) {
+  if (!project) return emptyFeatureCollection();
+
+  const payload = project?.data?.data ?? project?.data ?? project;
+
+  if (payload?.type === "FeatureCollection") return payload;
+
+  if (payload?.type === "Feature") {
+    return {
+      type: "FeatureCollection",
+      features: [payload],
+    };
+  }
+
+  const geometry = parsePossibleGeometry(
+    payload?.geometry ||
+      payload?.geom ||
+      payload?.the_geom ||
+      payload?.boundary ||
+      payload?.project_boundary ||
+      payload?.properties?.geometry ||
+      payload?.properties?.geom ||
+      null,
+  );
+
+  if (!geometry) return emptyFeatureCollection();
+
+  const properties = { ...(payload.properties || payload) };
+  delete properties.geometry;
+  delete properties.geom;
+  delete properties.the_geom;
+  delete properties.boundary;
+  delete properties.project_boundary;
+
+  return {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        id: payload.gid ?? payload.id ?? payload.project_id,
+        geometry,
+        properties,
+      },
+    ],
+  };
+}
+
+function isValidGeoJSON(geojson) {
+  return Boolean(geojson?.features?.length);
+}
+
+function getBestZoomTarget(loadedGeoJSONByKey = {}, fallbackGeoJSON = emptyFeatureCollection()) {
+  // Zoom to the actual 3D model first, not only the larger project boundary.
+  // This keeps the camera centered on the loaded buildings/plots.
+  const priority = [
+    "plots3d",
+    "buildings3d",
+    "masterPlan",
+    "roads",
+    "greenSpaces",
+    "projectBoundary",
+  ];
+
+  for (const key of priority) {
+    if (isValidGeoJSON(loadedGeoJSONByKey[key])) return loadedGeoJSONByKey[key];
+  }
+
+  return isValidGeoJSON(fallbackGeoJSON) ? fallbackGeoJSON : emptyFeatureCollection();
+}
+
 export default function Society3DMapview({
-  selectedDistrict,
-  selectedTehsil,
-  selectedMauza,
-  selectedSociety,
+  selectedProject,
   layers,
   basemap,
   extrusion,
   appliedExtrusions,
+  bimLayers,
+  bimModelConfig,
   onFeatureSelect,
   clearSelectionSignal,
 }) {
@@ -147,13 +205,15 @@ export default function Society3DMapview({
   const layerEntitiesRef = useRef({});
   const selectedEntityRef = useRef(null);
   const dataCacheRef = useRef({});
-  const flyDoneRef = useRef({});
+  const lastFlyKeyRef = useRef("");
 
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [mapError, setMapError] = useState("");
+  const [bimStatus, setBimStatus] = useState({ status: "idle", message: "" });
+  const [bimPlacementGeoJSON, setBimPlacementGeoJSON] = useState(emptyFeatureCollection());
 
-  const selectedSocietyId = useMemo(() => getSocietyId(selectedSociety), [selectedSociety]);
+  const selectedProjectId = useMemo(() => getProjectId(selectedProject), [selectedProject]);
 
   useEffect(() => {
     if (!containerRef.current || viewerRef.current) return;
@@ -178,7 +238,7 @@ export default function Society3DMapview({
     viewer.scene.screenSpaceCameraController.enableCollisionDetection = true;
     viewer.scene.globe.enableLighting = false;
 
-    applyBasemap(viewer, basemap || "Satellite");
+    applyBasemap(viewer, basemap || "Streets");
     resetCamera(viewer);
 
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
@@ -226,88 +286,63 @@ export default function Society3DMapview({
 
     let cancelled = false;
 
-    const loadAdminLayers = async () => {
-      setMapError("");
-      clearLayers(["district", "tehsil", "mauza"]);
-
-      try {
-        const tasks = [];
-
-        if (selectedDistrict) {
-          tasks.push({ key: "district", promise: getDistrictBoundary(selectedDistrict) });
-        }
-        if (selectedTehsil) {
-          tasks.push({ key: "tehsil", promise: getTehsilBoundary(selectedTehsil) });
-        }
-        if (selectedMauza) {
-          tasks.push({ key: "mauza", promise: getMauzaBoundary(selectedMauza) });
-        }
-
-        if (!tasks.length) return;
-        setIsLoading(true);
-
-        let lastGeoJSON = null;
-        for (const task of tasks) {
-          const geojson = await task.promise;
-          if (cancelled) return;
-
-          lastGeoJSON = geojson?.features?.length ? geojson : lastGeoJSON;
-          drawLayer(task.key, geojson || emptyFeatureCollection(), ADMIN_LAYER_CONFIG[task.key]);
-        }
-
-        if (lastGeoJSON?.features?.length && !selectedSocietyId) {
-          flyToGeoJSON(viewerRef.current, lastGeoJSON, { pitch: -50 });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error("3D admin layer error", error);
-          setMapError("Failed to load administrative boundary layers.");
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    };
-
-    loadAdminLayers();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedDistrict, selectedTehsil, selectedMauza, selectedSocietyId, isReady]);
-
-  useEffect(() => {
-    if (!viewerRef.current || !isReady) return;
-
-    let cancelled = false;
-
-    const loadSocietyLayers = async () => {
-      clearLayers(Object.keys(SOCIETY_LAYER_CONFIG));
+    const loadProjectLayers = async () => {
+      clearLayers(Object.keys(PROJECT_LAYER_CONFIG));
       clearSelection();
 
-      if (!selectedSocietyId) return;
+      if (!selectedProjectId) {
+        setBimPlacementGeoJSON(emptyFeatureCollection());
+        lastFlyKeyRef.current = "default-pakistan";
+        resetCamera(viewerRef.current);
+        return;
+      }
 
       try {
         setIsLoading(true);
         setMapError("");
 
+        const selectedProjectGeoJSON = projectToFeatureCollection(selectedProject);
+
         const loaders = {
-          societyBoundary: () => getSocietyBoundaryGeoJSON(selectedSocietyId),
-          masterPlan: () => getMasterPlanGeoJSON(selectedSocietyId),
-          plots3d: () => getPlotGeoJSON(selectedSocietyId),
-          buildings3d: () => getBuildingGeoJSON(selectedSocietyId),
-          roads: () => getRoadGeoJSON(selectedSocietyId),
-          greenSpaces: () => getGreenSpaceGeoJSON(selectedSocietyId),
-          spotLevel: () => getSpotLevelGeoJSON(selectedSocietyId),
-          contours: () => getContourGeoJSON(selectedSocietyId),
+          projectBoundary: async () => {
+            if (selectedProjectGeoJSON.features.length) return selectedProjectGeoJSON;
+            return getProjectBoundaryGeoJSON(selectedProjectId);
+          },
+          masterPlan: () => getMasterPlanGeoJSON(selectedProjectId),
+          plots3d: () => getPlotGeoJSON(selectedProjectId),
+          buildings3d: () => getBuildingGeoJSON(selectedProjectId),
+          roads: () => getRoadGeoJSON(selectedProjectId),
+          greenSpaces: () => getGreenSpaceGeoJSON(selectedProjectId),
+          spotLevel: () => getSpotLevelGeoJSON(selectedProjectId),
+          contours: () => getContourGeoJSON(selectedProjectId),
         };
 
-        let flyTarget = null;
+        const boundaryCacheKey = `${selectedProjectId}:projectBoundary`;
+        let flyTarget = selectedProjectGeoJSON.features.length
+          ? selectedProjectGeoJSON
+          : dataCacheRef.current[boundaryCacheKey];
 
-        for (const key of Object.keys(SOCIETY_LAYER_CONFIG)) {
+        if (!flyTarget) {
+          try {
+            flyTarget = await loaders.projectBoundary();
+            dataCacheRef.current[boundaryCacheKey] = flyTarget;
+          } catch (error) {
+            console.warn("Could not load project boundary for zoom", error);
+            flyTarget = emptyFeatureCollection();
+          }
+        }
+
+        if (cancelled) return;
+
+        const loadedGeoJSONByKey = {};
+
+        for (const key of Object.keys(PROJECT_LAYER_CONFIG)) {
           if (!layerVisible(layers, key)) continue;
 
-          const cacheKey = `${selectedSocietyId}:${key}`;
-          let geojson = dataCacheRef.current[cacheKey];
+          const cacheKey = `${selectedProjectId}:${key}`;
+          let geojson = key === "projectBoundary" && selectedProjectGeoJSON.features.length
+            ? selectedProjectGeoJSON
+            : dataCacheRef.current[cacheKey];
 
           if (!geojson) {
             try {
@@ -321,39 +356,46 @@ export default function Society3DMapview({
 
           if (cancelled) return;
 
-          if (!flyTarget && key === "societyBoundary" && geojson?.features?.length) {
-            flyTarget = geojson;
-          }
+          loadedGeoJSONByKey[key] = geojson;
 
           drawLayer(key, geojson, {
-            ...SOCIETY_LAYER_CONFIG[key],
-            opacity: layerOpacity(layers, key, SOCIETY_LAYER_CONFIG[key].opacity * 100),
-            defaultHeightFeet: extrusion.heightFeet,
+            ...PROJECT_LAYER_CONFIG[key],
+            opacity: layerOpacity(layers, key, PROJECT_LAYER_CONFIG[key].opacity * 100),
+            defaultHeightFeet: 35,
+            heightBoostFeet: extrusion?.appliedHeightFeet || 0,
             extrusionOverrides: appliedExtrusions,
+            smoothExtrusion: key === "plots3d" || key === "buildings3d",
+            smoothDuration: 850,
           });
         }
 
-        const flyKey = `society-${selectedSocietyId}`;
-        if (flyTarget?.features?.length && !flyDoneRef.current[flyKey]) {
-          flyDoneRef.current[flyKey] = true;
-          flyToGeoJSON(viewerRef.current, flyTarget, { pitch: -42, duration: 1.4 });
+        const zoomTarget = getBestZoomTarget(loadedGeoJSONByKey, flyTarget);
+        setBimPlacementGeoJSON(zoomTarget?.features?.length ? zoomTarget : flyTarget || emptyFeatureCollection());
+        const flyKey = `project-${selectedProjectId}`;
+        if (zoomTarget?.features?.length && lastFlyKeyRef.current !== flyKey) {
+          lastFlyKeyRef.current = flyKey;
+          flyToGeoJSON(viewerRef.current, zoomTarget, {
+            pitch: -38,
+            duration: 1.4,
+            padding: 0.12,
+          });
         }
       } catch (error) {
         if (!cancelled) {
-          console.error("3D society layer error", error);
-          setMapError("Failed to load society 3D layers.");
+          console.error("3D project layer error", error);
+          setMapError("Failed to load project 3D layers.");
         }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     };
 
-    loadSocietyLayers();
+    loadProjectLayers();
 
     return () => {
       cancelled = true;
     };
-  }, [selectedSocietyId, layers, isReady, extrusion.heightFeet, appliedExtrusions]);
+  }, [selectedProjectId, selectedProject, layers, isReady, extrusion?.appliedHeightFeet, appliedExtrusions]);
 
   const drawLayer = (key, geojson, config) => {
     const viewer = viewerRef.current;
@@ -373,6 +415,9 @@ export default function Society3DMapview({
       extrude: config.extrude,
       defaultHeightFeet: config.defaultHeightFeet,
       extrusionOverrides: config.extrusionOverrides,
+      heightBoostFeet: config.heightBoostFeet,
+      smoothExtrusion: config.smoothExtrusion,
+      smoothDuration: config.smoothDuration,
       smartStyle: config.smartStyle,
     });
 
@@ -413,12 +458,43 @@ export default function Society3DMapview({
     else viewer.camera.zoomOut(distance);
   };
 
-  const flyToSelectedSociety = () => {
+  const flyToSelectedProject = async () => {
     const viewer = viewerRef.current;
-    if (!viewer || !selectedSocietyId) return;
+    if (!viewer || !selectedProjectId) return;
 
-    const geojson = dataCacheRef.current[`${selectedSocietyId}:societyBoundary`];
-    if (geojson?.features?.length) flyToGeoJSON(viewer, geojson, { pitch: -42 });
+    const cachedTargets = {
+      plots3d: dataCacheRef.current[`${selectedProjectId}:plots3d`],
+      buildings3d: dataCacheRef.current[`${selectedProjectId}:buildings3d`],
+      masterPlan: dataCacheRef.current[`${selectedProjectId}:masterPlan`],
+      roads: dataCacheRef.current[`${selectedProjectId}:roads`],
+      greenSpaces: dataCacheRef.current[`${selectedProjectId}:greenSpaces`],
+      projectBoundary: dataCacheRef.current[`${selectedProjectId}:projectBoundary`],
+    };
+
+    let zoomTarget = getBestZoomTarget(cachedTargets, projectToFeatureCollection(selectedProject));
+
+    if (!zoomTarget?.features?.length) {
+      try {
+        zoomTarget = await getPlotGeoJSON(selectedProjectId);
+        dataCacheRef.current[`${selectedProjectId}:plots3d`] = zoomTarget;
+      } catch (error) {
+        console.warn("Could not load 3D model for zoom", error);
+      }
+    }
+
+    if (!zoomTarget?.features?.length) {
+      try {
+        zoomTarget = await getProjectBoundaryGeoJSON(selectedProjectId);
+        dataCacheRef.current[`${selectedProjectId}:projectBoundary`] = zoomTarget;
+      } catch (error) {
+        console.warn("Could not zoom to selected project", error);
+        return;
+      }
+    }
+
+    if (zoomTarget?.features?.length) {
+      flyToGeoJSON(viewer, zoomTarget, { pitch: -38, padding: 0.12 });
+    }
   };
 
   const toggleFullscreen = async () => {
@@ -436,14 +512,21 @@ export default function Society3DMapview({
     <div className="absolute inset-0 bg-slate-900">
       <div ref={containerRef} className="h-full w-full" />
 
-      <div className="absolute right-4 top-24 z-20 flex flex-col gap-2">
-        <MapTool title="Layer Manager" icon={<Layers size={17} />} />
-        <MapTool title="Reset Camera" onClick={() => resetCamera(viewerRef.current)} icon={<Home size={17} />} />
-        <MapTool title="Fly to Society" onClick={flyToSelectedSociety} icon={<LocateFixed size={17} />} />
-        <MapTool title="Zoom In" onClick={() => zoomBy(-0.35)} icon={<Plus size={19} />} />
-        <MapTool title="Zoom Out" onClick={() => zoomBy(0.35)} icon={<Minus size={19} />} />
-        <MapTool title="Fullscreen" onClick={toggleFullscreen} icon={<Expand size={17} />} />
-        <MapTool title="Clear Selection" onClick={clearSelection} icon={<RotateCcw size={17} />} />
+      <CesiumBIMModel
+        viewer={viewerRef.current}
+        isReady={isReady}
+        visible={bimLayers?.manholesModel === true}
+        model={bimModelConfig}
+        targetGeoJSON={bimPlacementGeoJSON}
+        onStatusChange={setBimStatus}
+      />
+
+      <div className="absolute left-2 top-[100px] z-30 flex flex-col gap-1">
+        <MapTool title="Fly to Project" onClick={flyToSelectedProject} icon={<LocateFixed size={20} strokeWidth={2.2} />} />
+        <MapTool title="Zoom In" onClick={() => zoomBy(-0.35)} icon={<Plus size={20} strokeWidth={2.2} />} />
+        <MapTool title="Zoom Out" onClick={() => zoomBy(0.35)} icon={<Minus size={20} strokeWidth={2.2} />} />
+        <MapTool title="Fullscreen" onClick={toggleFullscreen} icon={<Expand size={20} strokeWidth={2.2} />} />
+        <MapTool title="Clear Selection" onClick={clearSelection} icon={<RotateCcw size={20} strokeWidth={2.2} />} />
       </div>
 
       <div className="absolute bottom-4 right-4 z-20 rounded-lg bg-slate-950/80 px-3 py-2 text-[11px] font-semibold text-white shadow">
@@ -453,6 +536,20 @@ export default function Society3DMapview({
       {isLoading && (
         <div className="absolute left-1/2 top-24 z-30 -translate-x-1/2 rounded-full bg-slate-950/80 px-4 py-2 text-xs font-semibold text-white shadow">
           Loading 3D layers...
+        </div>
+      )}
+
+      {bimStatus.message && bimStatus.status !== "idle" && (
+        <div
+          className={`absolute left-1/2 top-[136px] z-30 max-w-xl -translate-x-1/2 rounded-lg border px-4 py-2 text-xs font-semibold shadow ${
+            bimStatus.status === "error"
+              ? "border-red-300 bg-red-50 text-red-700"
+              : bimStatus.status === "warning"
+                ? "border-amber-300 bg-amber-50 text-amber-700"
+                : "border-cyan-300 bg-cyan-50 text-cyan-700"
+          }`}
+        >
+          {bimStatus.message}
         </div>
       )}
 
@@ -467,6 +564,16 @@ export default function Society3DMapview({
 
 function resetCamera(viewer) {
   if (!viewer) return;
+
+  if (DEFAULT_VIEW.bounds) {
+    flyToBounds(viewer, DEFAULT_VIEW.bounds, {
+      duration: 0.9,
+      pitch: -55,
+      padding: 0.04,
+    });
+    return;
+  }
+
   viewer.camera.flyTo({
     destination: Cesium.Cartesian3.fromDegrees(DEFAULT_VIEW.lon, DEFAULT_VIEW.lat, DEFAULT_VIEW.height),
     duration: 0.9,
@@ -478,14 +585,18 @@ function resetCamera(viewer) {
   });
 }
 
-function MapTool({ title, icon, onClick }) {
+function MapTool({ title, icon, onClick, isActive = false }) {
   return (
     <button
       type="button"
       title={title}
       aria-label={title}
       onClick={onClick}
-      className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-slate-900/90 text-white shadow-lg transition hover:bg-green-700"
+      className={`flex h-9 w-9 items-center justify-center rounded-md border text-white shadow-md transition ${
+        isActive
+          ? "border-[#9be37b] bg-[#0a3327]"
+          : "border-[#0c3d2d] bg-[#06291f] hover:bg-[#0a3327]"
+      }`}
     >
       {icon}
     </button>

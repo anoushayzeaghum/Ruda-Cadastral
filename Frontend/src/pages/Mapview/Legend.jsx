@@ -17,8 +17,8 @@ const RUDA_PHASE_COLORS = [
 ];
 
 const roadLegendItems = [
-  { label: "Primary Roads (300'-Wide)", color: "#19598d", width: 5 },
-  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 4 },
+  { label: "Primary Roads (300'-Wide)", color: "#c92020", width: 2 },
+  { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 3 },
   { label: "Tertiary Roads", color: "#ff9800", width: 3 },
   { label: "Tertiary Roads (80'-Wide)", color: "#ff5722", width: 2.5 },
   { label: "Uti Walk Cycle", color: "#8bc34a", width: 2 },
@@ -118,7 +118,7 @@ export default function Legend({
   if (!shouldShow) return null;
 
   return (
-    <aside className="pointer-events-auto absolute bottom-5 right-5 z-30 w-[310px] overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md">
+    <aside className="pointer-events-auto absolute bottom-5 right-2 sm:right-5 z-30 w-[240px] sm:w-[310px] overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md">
       <button
         type="button"
         onClick={() => setCollapsed((value) => !value)}

@@ -16,6 +16,8 @@ import ProtectedRoute from "./pages/Auth/ProtectedRoute";
 import LandingPage from "./pages/LandingPage/LandingPage";
 import SocietyMapPage from "./pages/SocietyMapDashboard/SocietyMapPage";
 import Society3DMapPage from "./pages/3DMapview/Society3DMapPage";
+import MetaverseDashboard from "./pages/GISMetaverse/MetaverseDashboard";
+import FlyToDashboard from "./pages/FlyToDedicated/FlyToDashboard";
 
 const AppRoutes = () => {
   return (
@@ -25,14 +27,23 @@ const AppRoutes = () => {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Dashboard />} />
+          {/* Main page after login */}
+          <Route path="/" element={<LandingPage />} />
+
+          {/* Optional direct landing route */}
+          <Route path="/landing" element={<LandingPage />} />
+
+          {/* Admin dashboard */}
           <Route path="/dashboard" element={<Dashboard />} />
+
           <Route path="/demarcation" element={<Demarcation />} />
           <Route path="/mapview" element={<MapPage />} />
           <Route path="/cadastral-map" element={<MapPage />} />
-          <Route path="/landing" element={<LandingPage />} />
           <Route path="/society-map" element={<SocietyMapPage />} />
           <Route path="/society-3d" element={<Society3DMapPage />} />
+          <Route path="/gis-metaverse" element={<MetaverseDashboard />} />
+          <Route path="/flyto-dashboard" element={<FlyToDashboard />} />
+
           <Route path="/area" element={<AreaLayout />}>
             <Route path="district" element={<District />} />
             <Route path="tehsil" element={<Tehsil />} />

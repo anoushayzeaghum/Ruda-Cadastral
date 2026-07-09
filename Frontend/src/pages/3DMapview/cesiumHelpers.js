@@ -1,9 +1,16 @@
 import * as Cesium from "cesium";
 
 export const DEFAULT_VIEW = {
+  // Pakistan default extent. The dashboard opens here before any selection is made.
   lon: 74.2484,
-  lat: 31.6176,
+  lat: 9.6176,
   height: 45000,
+  bounds: {
+    west: 60.8729,
+    south: 23.6345,
+    east: 77.8375,
+    north: 37.0841,
+  },
 };
 
 export function emptyFeatureCollection() {
@@ -132,86 +139,81 @@ function getLandUseValue(feature) {
 function getStyleFromLandUse(feature) {
   const landUse = getLandUseValue(feature);
 
-  if (!landUse) return null;
-
   if (landUse === "residential plot" || /\bresidential\b/.test(landUse)) {
-    return {
-      category: "residential",
-      label: "Residential Plot",
-      fillColor: "#0d6efd",
-      outlineColor: "#002a6a",
-      opacity: 1,
-      extrude: true,
-    };
-  }
-
-  if (landUse === "commercial plot" || /\bcommercial\b/.test(landUse)) {
-    return {
-      category: "commercial",
-      label: "Commercial Plot",
-      fillColor: "#efb400",
-      outlineColor: "#c49300",
-      opacity: 1,
-      extrude: true,
-    };
-  }
-
-  if (landUse === "green belt" || /green\s*belt/.test(landUse)) {
-    return {
-      category: "greenBelt",
-      label: "Green Belt",
-      fillColor: "#24ba74",
-      outlineColor: "#14532d",
-      opacity: 1,
-      extrude: false,
-      heightMeters: 0,
-    };
-  }
-
-  if (landUse === "barren land" || /barren/.test(landUse)) {
-    return {
-      category: "barrenLand",
-      label: "Barren Land",
-      fillColor: "#92400e",
-      outlineColor: "#451a03",
-      opacity: 1,
-      extrude: false,
-      heightMeters: 0,
-    };
-  }
-
-  if (
-    landUse === "road" ||
-    /\broad\b|street|avenue|boulevard|drive|walkway|right of way|row/.test(
-      landUse,
-    )
-  ) {
-    return {
-      category: "road",
-      label: "Road",
-      fillColor: "#ef4444",
-      outlineColor: "#7f1d1d",
-      opacity: 1,
-      extrude: false,
-      heightMeters: 0,
-    };
-  }
-
-  if (landUse === "park" || /\bpark\b|garden|playground/.test(landUse)) {
-    return {
-      category: "park",
-      label: "Park",
-      fillColor: "#14532d",
-      outlineColor: "#052e16",
-      opacity: 1,
-      extrude: false,
-      heightMeters: 0,
-    };
-  }
-
-  return null;
+  return {
+    category: "residential",
+    label: "Residential Plot",
+    fillColor: "#f59e0b",
+    outlineColor: "#b45309",
+    opacity: 1,
+    extrude: true,
+  };
 }
 
+if (landUse === "commercial plot" || /\bcommercial\b/.test(landUse)) {
+  return {
+    category: "commercial",
+    label: "Commercial Plot",
+    fillColor: "#ef4444",
+    outlineColor: "#991b1b",
+    opacity: 1,
+    extrude: true,
+  };
+}
+
+if (landUse === "green belt" || /green\s*belt/.test(landUse)) {
+  return {
+    category: "greenBelt",
+    label: "Green Belt",
+    fillColor: "#16a34a",
+    outlineColor: "#14532d",
+    opacity: 1,
+    extrude: false,
+    heightMeters: 0,
+  };
+}
+
+if (landUse === "barren land" || /barren/.test(landUse)) {
+  return {
+    category: "barrenLand",
+    label: "Barren Land",
+    fillColor: "#a8a29e",
+    outlineColor: "#57534e",
+    opacity: 1,
+    extrude: false,
+    heightMeters: 0,
+  };
+}
+
+if (
+  landUse === "road" ||
+  /\broad\b|street|avenue|boulevard|drive|walkway|right of way|row/.test(
+    landUse,
+  )
+) {
+  return {
+    category: "road",
+    label: "Road",
+    fillColor: "#374151",
+    outlineColor: "#06291f",
+    opacity: 1,
+    extrude: false,
+    heightMeters: 0,
+  };
+}
+
+if (landUse === "park" || /\bpark\b|garden|playground/.test(landUse)) {
+  return {
+    category: "park",
+    label: "Park",
+    fillColor: "#065f46",
+    outlineColor: "#022c22",
+    opacity: 1,
+    extrude: false,
+    heightMeters: 0,
+  };
+}
+}
 function getSearchableProperties(feature) {
   const props = feature?.properties || {};
   return [
@@ -553,15 +555,34 @@ export function getBoundsFromGeoJSON(geojson) {
   };
 }
 
-export function flyToGeoJSON(viewer, geojson, options = {}) {
-  const bounds = getBoundsFromGeoJSON(geojson);
+function expandBounds(bounds, paddingRatio = 0.18) {
+  if (!bounds) return null;
+
+  const minSpan = 0.002;
+  const lonSpan = Math.max(bounds.east - bounds.west, minSpan);
+  const latSpan = Math.max(bounds.north - bounds.south, minSpan);
+  const lonPadding = lonSpan * paddingRatio;
+  const latPadding = latSpan * paddingRatio;
+
+  return {
+    west: Math.max(bounds.west - lonPadding, -180),
+    south: Math.max(bounds.south - latPadding, -90),
+    east: Math.min(bounds.east + lonPadding, 180),
+    north: Math.min(bounds.north + latPadding, 90),
+  };
+}
+
+export function flyToBounds(viewer, bounds, options = {}) {
   if (!viewer || !bounds) return;
 
+  const paddedBounds = expandBounds(bounds, options.padding ?? 0.18);
+  if (!paddedBounds) return;
+
   const rectangle = Cesium.Rectangle.fromDegrees(
-    bounds.west,
-    bounds.south,
-    bounds.east,
-    bounds.north,
+    paddedBounds.west,
+    paddedBounds.south,
+    paddedBounds.east,
+    paddedBounds.north,
   );
 
   viewer.camera.flyTo({
@@ -573,6 +594,11 @@ export function flyToGeoJSON(viewer, geojson, options = {}) {
       roll: 0,
     },
   });
+}
+
+export function flyToGeoJSON(viewer, geojson, options = {}) {
+  const bounds = getBoundsFromGeoJSON(geojson);
+  flyToBounds(viewer, bounds, options);
 }
 
 function color(cssColor, alpha = 1) {
@@ -643,19 +669,35 @@ function createPolygonEntity(
     : options.opacity;
   const material = color(fillColor, finalOpacity);
   const outlineColor = color(
-    smartStyle?.outlineColor || options.outlineColor || "#111827",
+    smartStyle?.outlineColor || options.outlineColor || "#06291f",
     1,
   );
 
   const shouldExtrude =
     Boolean(options.extrude) && smartStyle?.extrude !== false;
-  const extrudedHeight = shouldExtrude
+
+  const baseExtrudedHeight = shouldExtrude
     ? Number(
         override?.heightMeters ??
           smartStyle?.heightMeters ??
           getHeightMeters(feature, options.defaultHeightFeet),
       )
     : undefined;
+
+  const heightBoostFeet = Number(options.heightBoostFeet || 0);
+  const heightBoostMeters =
+    Number.isFinite(heightBoostFeet) && heightBoostFeet > 0
+      ? heightBoostFeet * 0.3048
+      : 0;
+
+  const extrudedHeight = shouldExtrude
+    ? Math.max(Number(baseExtrudedHeight || 0) + heightBoostMeters, 0)
+    : undefined;
+
+  const initialExtrudedHeight =
+    shouldExtrude && options.smoothExtrusion && heightBoostMeters > 0
+      ? Math.max(Number(baseExtrudedHeight || 0), 0)
+      : extrudedHeight;
 
   const entity = viewer.entities.add({
     name: smartStyle?.label || options.name,
@@ -666,7 +708,7 @@ function createPolygonEntity(
       outlineColor,
       outlineWidth: options.outlineWidth || 1,
       height: 0,
-      extrudedHeight,
+      extrudedHeight: initialExtrudedHeight,
       closeTop: true,
       closeBottom: true,
       shadows: Cesium.ShadowMode.DISABLED,
@@ -679,6 +721,8 @@ function createPolygonEntity(
       ...(feature.properties || {}),
       _visualCategory: smartStyle?.category,
       _visualHeightMeters: extrudedHeight ?? 0,
+      _baseHeightMeters: baseExtrudedHeight ?? 0,
+      _heightBoostFeet: heightBoostFeet,
     },
   };
   entity.featureId = featureId;
@@ -686,7 +730,46 @@ function createPolygonEntity(
   entity.originalMaterial = material;
   entity.originalOutlineColor = outlineColor;
 
+  if (
+    entity.polygon &&
+    shouldExtrude &&
+    options.smoothExtrusion &&
+    heightBoostMeters > 0 &&
+    Number.isFinite(extrudedHeight)
+  ) {
+    animatePolygonExtrusion(entity, initialExtrudedHeight || 0, extrudedHeight, options.smoothDuration || 700);
+  }
+
   return entity;
+}
+
+export function animatePolygonExtrusion(entity, fromHeight = 0, toHeight = 0, duration = 700) {
+  if (!entity?.polygon) return;
+
+  const startHeight = Number(fromHeight || 0);
+  const endHeight = Number(toHeight || 0);
+  const animationDuration = Math.max(Number(duration || 700), 120);
+  const startedAt = performance.now();
+
+  const easeOutCubic = (value) => 1 - Math.pow(1 - value, 3);
+
+  const step = (now) => {
+    if (!entity?.polygon) return;
+
+    const progress = Math.min((now - startedAt) / animationDuration, 1);
+    const eased = easeOutCubic(progress);
+    const currentHeight = startHeight + (endHeight - startHeight) * eased;
+
+    entity.polygon.extrudedHeight = currentHeight;
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      entity.polygon.extrudedHeight = endHeight;
+    }
+  };
+
+  requestAnimationFrame(step);
 }
 
 function createLineEntity(
@@ -902,6 +985,6 @@ export function applyBasemap(viewer, basemap) {
   };
 
   viewer.imageryLayers.addImageryProvider(
-    providers[basemap] || providers.Satellite,
+    providers[basemap] || providers.Streets,
   );
 }

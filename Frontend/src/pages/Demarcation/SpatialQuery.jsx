@@ -1,220 +1,389 @@
-import React, { useEffect, useState } from "react";
-import { getDistricts, getTehsils, getMauzas } from "../../services/api";
+import React, { useEffect, useMemo, useState } from "react";
+import Select from "react-select";
+import {
+  getBlocks,
+  getPlotOptions,
+  getProjects,
+} from "../../services/metaverseApi";
+
+const toOption = (item, valueKeys = [], labelKeys = []) => {
+  const value = valueKeys
+    .map((key) => item?.[key])
+    .find((v) => v !== undefined && v !== null && v !== "");
+  const label = labelKeys
+    .map((key) => item?.[key])
+    .find((v) => v !== undefined && v !== null && v !== "");
+  return {
+    value,
+    label: label || String(value || "Select"),
+    raw: item,
+  };
+};
+
+const selectStyles = {
+  control: (base, state) => ({
+    ...base,
+    minHeight: "38px",
+    height: "38px",
+    borderColor: state.isFocused ? "#0c6d30" : "#d5dbe1",
+    boxShadow: state.isFocused ? "0 0 0 1px #0a5a27" : "none",
+    borderRadius: "4px",
+    fontSize: "14px",
+    color: "#4b5563",
+    "&:hover": {
+      borderColor: state.isFocused ? "#0c6d30" : "#d5dbe1",
+    },
+  }),
+  valueContainer: (base) => ({
+    ...base,
+    height: "38px",
+    padding: "0 12px",
+  }),
+  input: (base) => ({
+    ...base,
+    margin: 0,
+    padding: 0,
+  }),
+  indicatorsContainer: (base) => ({
+    ...base,
+    height: "38px",
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: "#4b5563",
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: "#4b5563",
+  }),
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
 
 export default function SpatialQuery({
   filters = {},
   onFiltersChange = () => {},
-  parcelOptions = [],
 }) {
-  const [districts, setDistricts] = useState([]);
-  const [tehsils, setTehsils] = useState([]);
-  const [mauzas, setMauzas] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [blocks, setBlocks] = useState([]);
+  const [plotTypes, setPlotTypes] = useState([]);
+  const [plotNos, setPlotNos] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const selectedProjectId =
+    filters?.selectedProject?.value || filters?.projectId || "";
+  const selectedBlockId =
+    filters?.selectedBlock?.raw?.gid || filters?.blockId || "";
+  const selectedBlockName =
+    filters?.selectedBlock?.raw?.block || filters?.block || "";
 
   useEffect(() => {
-    async function loadDistricts() {
+    let mounted = true;
+
+    async function loadProjects() {
       try {
-        const res = await getDistricts();
-        setDistricts(
-          res.map((it) => ({
-            value: it.id ?? it.pk ?? it.district_i ?? it.i,
-            label: it.name ?? it.district_name ?? it.title ?? String(it.id),
-          })),
+        const res = await getProjects();
+        if (!mounted) return;
+        setProjects(
+          res
+            .map((item) =>
+              toOption(
+                item,
+                ["gid", "id", "project_id"],
+                ["name", "brief_name", "type"],
+              ),
+            )
+            .filter((item) => item.value !== undefined && item.value !== null)
+            .sort((a, b) => (a.label || "").localeCompare(b.label || "")) 
         );
-      } catch (e) {
-        setDistricts([]);
+      } catch (error) {
+        console.error("Failed to load projects", error);
+        if (mounted) setProjects([]);
       }
     }
-    loadDistricts();
+
+    loadProjects();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    async function loadTehsils() {
-      const id = filters?.selectedDistrictOptions?.value ?? null;
-      if (!id) {
-        setTehsils([]);
+    let mounted = true;
+
+    async function loadBlocks() {
+      if (!selectedProjectId) {
+        setBlocks([]);
         return;
       }
+
       try {
-        const res = await getTehsils(id);
-        setTehsils(
-          res.map((it) => ({
-            value: it.id ?? it.pk ?? it.tehsil_i ?? it.i,
-            label: it.name ?? it.tehsil_name ?? it.title ?? String(it.id),
-          })),
+        const res = await getBlocks(selectedProjectId);
+        if (!mounted) return;
+        setBlocks(
+          res
+            .map((item) =>
+              toOption(
+                item,
+                ["gid", "block_id", "id", "block"],
+                ["block", "name"],
+              ),
+            )
+            .filter((item) => item.value !== undefined && item.value !== null)
+            .sort((a, b) => (a.label || "").localeCompare(b.label || ""))
         );
-      } catch (e) {
-        setTehsils([]);
+      } catch (error) {
+        console.error("Failed to load blocks", error);
+        if (mounted) setBlocks([]);
       }
     }
-    loadTehsils();
-  }, [filters?.selectedDistrictOptions]);
 
-  useEffect(() => {
-    async function loadMauzas() {
-      const id = filters?.selectedTehsilOptions?.value ?? null;
-      if (!id) {
-        setMauzas([]);
-        return;
-      }
-      try {
-        const fc = await getMauzas(id);
-        const list = (fc?.features || []).map((f) => ({
-          value: f.properties?.id ?? f.id ?? f.properties?.gid,
-          label:
-            f.properties?.mauza ||
-            f.properties?.mauza_name ||
-            f.properties?.name ||
-            String(f.properties?.id ?? f.id),
-          raw: f,
-        }));
-        setMauzas(list);
-      } catch (e) {
-        setMauzas([]);
-      }
+    loadBlocks();
+    return () => {
+      mounted = false;
+    };
+  }, [selectedProjectId]);
+
+useEffect(() => {
+  let mounted = true;
+
+  async function loadPlotOptions() {
+    if (!selectedProjectId) {
+      setPlotTypes([]);
+      setPlotNos([]);
+      return;
     }
-    loadMauzas();
-  }, [filters?.selectedTehsilOptions]);
 
-  function handleChange(key, value) {
-    onFiltersChange({ [key]: value });
+    setLoading(true);
+
+    try {
+      //
+      // STEP 1
+      // Project + Block => Plot Types
+      //
+      const typeRes = await getPlotOptions({
+        project_id: selectedProjectId,
+        block_id: selectedBlockId || undefined,
+        block: selectedBlockName || undefined,
+      });
+
+      if (!mounted) return;
+
+      setPlotTypes(
+        [...new Set(typeRes.plotTypes || [])].sort((a, b) =>
+          a.localeCompare(b, undefined, {
+            numeric: true,
+            sensitivity: "base",
+          }),
+        ),
+      );
+
+      //
+      // STEP 2
+      // Project + Block + Plot Type => Plot Nos
+      //
+      if (filters?.plotType) {
+        const plotRes = await getPlotOptions({
+          project_id: selectedProjectId,
+          block_id: selectedBlockId || undefined,
+          block: selectedBlockName || undefined,
+          type: filters.plotType,
+        });
+
+        if (!mounted) return;
+
+        setPlotNos(
+          [...new Set(plotRes.plotNos || [])].sort((a, b) =>
+            a.localeCompare(b, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            }),
+          ),
+        );
+      } else {
+        setPlotNos([]);
+      }
+    } catch (err) {
+      console.error(err);
+
+      if (mounted) {
+        setPlotTypes([]);
+        setPlotNos([]);
+      }
+    } finally {
+      if (mounted) setLoading(false);
+    }
   }
 
-  function clearAll() {
-    onFiltersChange({
-      selectedDistrictOptions: null,
-      selectedTehsilOptions: null,
-      selectedMauzaDetails: null,
+  loadPlotOptions();
+
+  return () => {
+    mounted = false;
+  };
+}, [
+  selectedProjectId,
+  selectedBlockId,
+  selectedBlockName,
+  filters?.plotType,
+]);
+
+  const canSearch = useMemo(
+    () => Boolean(selectedProjectId),
+    [selectedProjectId],
+  );
+
+  const update = (patch) => onFiltersChange(patch);
+
+  const clearAll = () => {
+    update({
+      selectedProject: null,
+      selectedBlock: null,
+      projectId: "",
+      projectName: "",
+      blockId: "",
+      block: "",
+      plotType: "",
+      plotNo: "",
       selectedParcelNumber: "",
+      searchNonce: Date.now(),
     });
-  }
+  };
+
+  const handleSearch = () => {
+    update({
+      projectId: selectedProjectId,
+      blockId: selectedBlockId,
+      block: selectedBlockName,
+      selectedParcelNumber: filters?.plotNo || "",
+      searchNonce: Date.now(),
+    });
+  };
 
   return (
-    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] h-[460px]">
-      <div className="h-[56px] border-b border-[#d4dbe2] px-4 flex items-center">
-        <h2 className="text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
+    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] rounded-md">
+      <div className="border-b border-[#d4dbe2] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center">
+        <h2 className="text-[14px] sm:text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
           Spatial Query
         </h2>
       </div>
 
-      <div className="p-4 h-[calc(100%-56px)]">
-        <div className="space-y-3">
-
-          <select
-            className="inputStyle"
-            value={filters?.selectedDistrictOptions?.value ?? ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              const opt =
-                districts.find((d) => String(d.value) === String(v)) ?? null;
-              handleChange("selectedDistrictOptions", opt);
-              handleChange("selectedTehsilOptions", null);
-              handleChange("selectedMauzaDetails", null);
+      <div className="p-3 sm:p-4">
+        <div className="space-y-2 sm:space-y-3">
+          <Select
+            classNamePrefix="spatial-select"
+            styles={selectStyles}
+            options={projects}
+            value={
+              projects.find(
+                (item) => String(item.value) === String(selectedProjectId),
+              ) || null
+            }
+            onChange={(opt) => {
+              update({
+                selectedProject: opt,
+                projectId: opt?.value || "",
+                projectName: opt?.label || "",
+                selectedBlock: null,
+                blockId: "",
+                block: "",
+                plotType: "",
+                plotNo: "",
+                selectedParcelNumber: "",
+              });
             }}
-            disabled={!districts.length}
-          >
-            <option value="">Select District</option>
-            {districts.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Select Project"
+            isSearchable
+            isDisabled={!projects.length}
+          />
 
-          <select
-            className="inputStyle"
-            value={filters?.selectedTehsilOptions?.value ?? ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              const opt =
-                tehsils.find((d) => String(d.value) === String(v)) ?? null;
-              handleChange("selectedTehsilOptions", opt);
-              handleChange("selectedMauzaDetails", null);
+          <Select
+            classNamePrefix="spatial-select"
+            styles={selectStyles}
+            options={blocks}
+            value={
+              blocks.find(
+                (item) =>
+                  String(item.value) ===
+                  String(
+                    filters?.selectedBlock?.value || selectedBlockName || "",
+                  ),
+              ) || null
+            }
+            onChange={(opt) => {
+              update({
+                selectedBlock: opt,
+                blockId: opt?.raw?.gid || "",
+                block: opt?.raw?.block || "",
+                plotType: "",
+                plotNo: "",
+                selectedParcelNumber: "",
+              });
             }}
-            disabled={!tehsils.length}
-          >
-            <option value="">Select Tehsil</option>
-            {tehsils.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Select Block"
+            isSearchable
+            isDisabled={!selectedProjectId || !blocks.length}
+          />
 
-          <select
-            className="inputStyle"
-            value={filters?.selectedMauzaDetails?.value ?? ""}
-            onChange={(e) => {
-              const v = e.target.value;
-              const opt =
-                mauzas.find((d) => String(d.value) === String(v)) ?? null;
-
-              const normalized = opt
-                ? {
-                    value: opt.value, // fixed
-                    label: opt.label, // fixed
-                    id: opt.value,
-                    mauza: opt.label,
-                    mauza_id: opt.value,
-                    raw: opt.raw,
-                  }
-                : null;
-
-              handleChange("selectedMauzaDetails", normalized);
+          <Select
+            classNamePrefix="spatial-select"
+            styles={selectStyles}
+            options={plotTypes.map((type) => ({ value: type, label: type }))}
+            value={
+              filters?.plotType
+                ? { value: filters.plotType, label: filters.plotType }
+                : null
+            }
+            onChange={(opt) => {
+              update({
+                plotType: opt?.value || "",
+                plotNo: "",
+                selectedParcelNumber: "",
+              });
             }}
-            disabled={!mauzas.length}
-          >
-            <option value="">Select Mauza</option>
-            {mauzas.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Select Plot Type"
+            isSearchable
+            isDisabled={!selectedProjectId || loading || !plotTypes.length}
+          />
+          
+          <Select
+            classNamePrefix="spatial-select"
+            styles={selectStyles}
+            options={plotNos.map((plotNo) => ({
+              value: plotNo,
+              label: plotNo,
+            }))}
+            value={
+              filters?.plotNo
+                ? { value: filters.plotNo, label: filters.plotNo }
+                : null
+            }
+            onChange={(opt) =>
+              update({
+                plotNo: opt?.value || "",
+                selectedParcelNumber: opt?.value || "",
+              })
+            }
+            placeholder="Select Plot No"
+            isSearchable
+            isDisabled={!selectedProjectId || loading || !plotNos.length}
+          />
 
-          <select
-            className="inputStyle"
-            value={filters?.viewBy ?? "khasra"}
-            onChange={(e) => {
-              handleChange("viewBy", e.target.value);
-              handleChange("selectedParcelNumber", "");
-            }}
-          >
-            <option value="khasra">View By: Khasra</option>
-            <option value="murabba">View By: Murabba</option>
-            <option value="parcel">View By: Parcel ID</option>
-          </select>
-
-          <div>
-            <input
-              list="parcel-suggestions"
-              className="inputStyle"
-              placeholder="Search khasra / murabba"
-              value={filters?.selectedParcelNumber ?? ""}
-              onChange={(e) =>
-                handleChange("selectedParcelNumber", e.target.value)
-              }
-            />
-            <datalist id="parcel-suggestions">
-              {parcelOptions.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </datalist>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 pt-1 sm:pt-2">
             <button
               type="button"
-              className="h-9 rounded bg-green-700 text-white text-sm font-medium shadow-sm hover:bg-green-800"
+              disabled={!canSearch}
+              onClick={handleSearch}
+              className="h-8 sm:h-9 rounded bg-green-700 text-white text-xs sm:text-sm font-medium shadow-sm hover:bg-green-800 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              Show
+              Search
             </button>
 
             <button
               type="button"
               onClick={clearAll}
-              className="h-9 rounded bg-green-700 text-white text-sm font-medium shadow-sm hover:bg-green-800"
+              className="h-8 sm:h-9 rounded bg-green-700 text-white text-xs sm:text-sm font-medium shadow-sm hover:bg-green-800"
             >
               Clear
             </button>

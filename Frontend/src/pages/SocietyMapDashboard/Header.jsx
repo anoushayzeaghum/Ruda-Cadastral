@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogOut, Home} from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 import { useNavigate } from "react-router-dom";
 
@@ -47,11 +47,14 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <IconButton
-            title="Dashboard"
-            onClick={() => navigate("/dashboard")}
-            icon={<LayoutDashboard size={18} />}
-          />
+          <button
+                  onClick={() => navigate("/")}
+                  className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-md flex items-center justify-center transition"
+                  aria-label="Go to landing page"
+                  title="Home"
+                >
+                  <Home size={18} />
+                </button>
 
           <IconButton
             title="Logout"

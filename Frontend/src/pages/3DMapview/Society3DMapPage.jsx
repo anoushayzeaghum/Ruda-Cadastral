@@ -3,14 +3,59 @@ import { useEffect, useMemo, useState } from "react";
 import Society3DHeader from "./Society3DHeader";
 import Society3DSubHeader from "./Society3DSubHeader";
 import Society3DMapview from "./Society3DMapview";
-import Society3DLayerPanel from "./Society3DLayerPanel";
-import Society3DExtrusionPanel from "./Society3DExtrusionPanel";
+import Society3DLeftToolbar from "./Society3DLeftToolbar";
 import Society3DInfoPanel from "./Society3DInfoPanel";
-import { getDistricts, getItemId, getLabel, getMauzaId, getMauzas, getSocieties, getSocietyId, getTehsils } from "./api";
+import { getItemId, getProjects } from "./api";
 import { getFeatureId } from "./cesiumHelpers";
 
+const envNumber = (value, fallback = null) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const envString = (value, fallback = "") => {
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return fallback;
+  }
+  return String(value).trim();
+};
+
+const CHAHAR_BAGH_BIM_MODEL = {
+  name: "Chahar Bagh Manholes BIM Model",
+
+  // Your processed Cesium ion asset id.
+  // Keep the fallback so the model works after you add only VITE_CESIUM_TOKEN.
+  ionAssetId: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_ION_ASSET_ID, 5025136),
+
+  // Optional self-hosted 3D Tiles fallback.
+  tilesetUrl: envString(import.meta.env.VITE_CHAHAR_BAGH_BIM_TILESET_URL),
+
+  // Because the RVT projection/georeferencing is wrong, the model is manually moved.
+  // If lon/lat are empty, the code uses the selected project boundary center.
+  longitude: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_LON),
+  latitude: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_LAT),
+  height: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_HEIGHT, 0),
+
+  // Use these only when the model needs fine alignment after it appears in Lahore.
+  heading: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_HEADING, 0),
+  pitch: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_PITCH, 0),
+  roll: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_ROLL, 0),
+  scale: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_SCALE, 1),
+
+  // translate-to-target fixes the common case where the processed tileset appears
+  // somewhere else on the globe and must be shifted to the selected project.
+  // origin-at-target can be tried if the tileset was created around a local origin.
+  placementMode: envString(
+    import.meta.env.VITE_CHAHAR_BAGH_BIM_PLACEMENT_MODE,
+    "translate-to-target",
+  ),
+
+  flyTo: true,
+};
+
+
 const initialLayers = {
-  societyBoundary: { visible: false, opacity: 35 },
+  projectBoundary: { visible: false, opacity: 35 },
   masterPlan: { visible: false, opacity: 15 },
   plots3d: { visible: false, opacity: 100 },
   buildings3d: { visible: false, opacity: 100 },
@@ -21,18 +66,19 @@ const initialLayers = {
 };
 
 export default function Society3DMapPage() {
-  const filters = useSociety3DFilters();
-
-  const [societies, setSocieties] = useState([]);
-  const [selectedSocietyId, setSelectedSocietyId] = useState("");
-  const [societyLoading, setSocietyLoading] = useState(false);
-  const [societyError, setSocietyError] = useState("");
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState("");
+  const [projectLoading, setProjectLoading] = useState(false);
+  const [projectError, setProjectError] = useState("");
 
   const [layers, setLayers] = useState(initialLayers);
-  const [basemap, setBasemap] = useState("Satellite");
+  const [basemap, setBasemap] = useState("Streets");
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
+  const [activePanel, setActivePanel] = useState(null);
+  const [bimPanelOpen, setBimPanelOpen] = useState(false);
+  const [bimLayers, setBimLayers] = useState({ manholesModel: false });
 
   const [extrusion, setExtrusion] = useState({
     heightFeet: 100,
@@ -44,74 +90,80 @@ export default function Society3DMapPage() {
   useEffect(() => {
     let mounted = true;
 
-    const loadSocieties = async () => {
-      setSelectedSocietyId("");
-      setSelectedFeature(null);
-      setInfoPanelOpen(false);
-      setClearSelectionSignal((prev) => prev + 1);
-      setSocietyError("");
-      setSocieties([]);
-      setLayers(initialLayers);
-      setAppliedExtrusions({});
-
-      if (!filters.selectedMauza) return;
-
+    const loadProjects = async () => {
       try {
-        setSocietyLoading(true);
-        const selectedMauzaObject = filters.mauzas.find(
-          (mauza) => String(getMauzaId(mauza)) === String(filters.selectedMauza),
-        );
-        const mauzaName = getLabel(selectedMauzaObject, ["mauza", "name", "mauza_name"], "");
-        const data = await getSocieties({ mauza_id: filters.selectedMauza, mauza: mauzaName });
+        setProjectLoading(true);
+        setProjectError("");
+        const data = await getProjects();
 
-        if (mounted) setSocieties(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Failed to load 3D societies", error);
+        if (!mounted) return;
+        setProjects(Array.isArray(data) ? data : []);
+        setSelectedProject("");
+      } catch (err) {
+        console.error("Failed to load projects", err);
         if (mounted) {
-          setSocieties([]);
-          setSocietyError("Failed to load societies for selected mauza.");
+          setProjects([]);
+          setProjectError("Failed to load projects.");
         }
       } finally {
-        if (mounted) setSocietyLoading(false);
+        if (mounted) setProjectLoading(false);
       }
     };
 
-    loadSocieties();
+    loadProjects();
 
     return () => {
       mounted = false;
     };
-  }, [filters.selectedMauza]);
+  }, []);
 
-  const selectedSociety = useMemo(() => {
-    if (!selectedSocietyId) return null;
-    return societies.find((society) => String(getSocietyId(society)) === String(selectedSocietyId)) || null;
-  }, [societies, selectedSocietyId]);
+  const selectedProjectItem = useMemo(() => {
+    if (!selectedProject) return null;
+    return (
+      projects.find((project) => String(getItemId(project)) === String(selectedProject)) ||
+      null
+    );
+  }, [projects, selectedProject]);
 
-  useEffect(() => {
+  const handleProjectChange = (projectId) => {
+    setSelectedProject(projectId);
     setSelectedFeature(null);
     setInfoPanelOpen(false);
     setClearSelectionSignal((prev) => prev + 1);
     setAppliedExtrusions({});
+    setBimLayers({ manholesModel: false });
 
+    if (!projectId) {
+      setLayers(initialLayers);
+      return;
+    }
+
+    // Nothing loads on page start. After user selects a project, show its boundary and 3D model.
     setLayers((prev) => ({
       ...prev,
-      societyBoundary: { ...prev.societyBoundary, visible: Boolean(selectedSociety) },
-      // Keep the flat purple master plan off by default so it does not cover the colored 3D visualization.
+      projectBoundary: { ...prev.projectBoundary, visible: true },
       masterPlan: { ...prev.masterPlan, visible: false },
-      plots3d: { ...prev.plots3d, visible: Boolean(selectedSociety) },
+      plots3d: { ...prev.plots3d, visible: true },
       buildings3d: { ...prev.buildings3d, visible: false },
       roads: { ...prev.roads, visible: false },
       greenSpaces: { ...prev.greenSpaces, visible: false },
       spotLevel: { ...prev.spotLevel, visible: false },
       contours: { ...prev.contours, visible: false },
     }));
-  }, [selectedSociety]);
+  };
 
   const handleFeatureSelect = (feature) => {
     setSelectedFeature(feature);
     setInfoPanelOpen(Boolean(feature));
   };
+
+  const handleToolPanelToggle = (panelName) => {
+    setActivePanel((prev) => (prev === panelName ? null : panelName));
+  };
+
+  useEffect(() => {
+    setBimPanelOpen(activePanel === "bim");
+  }, [activePanel]);
 
   const applyExtrusionToSelected = () => {
     if (!selectedFeature) return;
@@ -145,172 +197,57 @@ export default function Society3DMapPage() {
 
       <main className="relative min-h-0 flex-1 overflow-hidden">
         <Society3DMapview
-          selectedDistrict={filters.selectedDistrict}
-          selectedTehsil={filters.selectedTehsil}
-          selectedMauza={filters.selectedMauza}
-          selectedSociety={selectedSociety}
+          selectedProject={selectedProjectItem}
           layers={layers}
           basemap={basemap}
           extrusion={extrusion}
           appliedExtrusions={appliedExtrusions}
+          bimLayers={bimLayers}
+          bimModelConfig={CHAHAR_BAGH_BIM_MODEL}
+          activePanel={activePanel}
+          onToolPanelToggle={handleToolPanelToggle}
           onFeatureSelect={handleFeatureSelect}
           clearSelectionSignal={clearSelectionSignal}
         />
 
         <Society3DSubHeader
-          districts={filters.districts}
-          tehsils={filters.tehsils}
-          mauzas={filters.mauzas}
-          societies={societies}
-          selectedDistrict={filters.selectedDistrict}
-          selectedTehsil={filters.selectedTehsil}
-          selectedMauza={filters.selectedMauza}
-          selectedSociety={selectedSocietyId}
-          loading={{ ...filters.loading, societies: societyLoading }}
-          onDistrictChange={filters.setSelectedDistrict}
-          onTehsilChange={filters.setSelectedTehsil}
-          onMauzaChange={filters.setSelectedMauza}
-          onSocietyChange={setSelectedSocietyId}
+          projects={projects}
+          selectedProject={selectedProject}
+          onProjectChange={handleProjectChange}
+          loading={{ projects: projectLoading }}
         />
 
-        {/* <Society3DExtrusionPanel
-          extrusion={extrusion}
-          setExtrusion={setExtrusion}
-          selectedFeature={selectedFeature}
-          onApplyToSelected={applyExtrusionToSelected}
-          onClearExtrusions={clearExtrusions}
-        /> */}
-
-        <Society3DLayerPanel
+        <Society3DLeftToolbar
+          activePanel={activePanel}
+          setActivePanel={setActivePanel}
           layers={layers}
           setLayers={setLayers}
           basemap={basemap}
           setBasemap={setBasemap}
-          selectedSociety={selectedSociety}
+          selectedProject={selectedProjectItem}
+          extrusion={extrusion}
+          setExtrusion={setExtrusion}
+          bimPanelOpen={bimPanelOpen}
+          setBimPanelOpen={setBimPanelOpen}
+          bimLayers={bimLayers}
+          setBimLayers={setBimLayers}
+          selectedFeature={selectedFeature}
+          onApplyToSelected={applyExtrusionToSelected}
+          onClearExtrusions={clearExtrusions}
         />
 
-        <Society3DInfoPanel feature={selectedFeature} isOpen={infoPanelOpen} onClose={closeInfoPanel} />
+        <Society3DInfoPanel
+          feature={selectedFeature}
+          isOpen={infoPanelOpen}
+          onClose={closeInfoPanel}
+        />
 
-        {societyError && (
+        {projectError && (
           <div className="absolute left-1/2 top-[88px] z-40 -translate-x-1/2 rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 shadow">
-            {societyError}
+            {projectError}
           </div>
         )}
       </main>
     </div>
   );
-}
-
-function useSociety3DFilters() {
-  const [districts, setDistricts] = useState([]);
-  const [tehsils, setTehsils] = useState([]);
-  const [mauzas, setMauzas] = useState([]);
-
-  const [selectedDistrict, setSelectedDistrictValue] = useState("");
-  const [selectedTehsil, setSelectedTehsilValue] = useState("");
-  const [selectedMauza, setSelectedMauzaValue] = useState("");
-
-  const [loading, setLoading] = useState({
-    districts: false,
-    tehsils: false,
-    mauzas: false,
-  });
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadDistricts = async () => {
-      try {
-        setLoading((prev) => ({ ...prev, districts: true }));
-        const data = await getDistricts();
-        if (mounted) setDistricts(data);
-      } catch (error) {
-        console.error("Failed to load 3D districts", error);
-        if (mounted) setDistricts([]);
-      } finally {
-        if (mounted) setLoading((prev) => ({ ...prev, districts: false }));
-      }
-    };
-
-    loadDistricts();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadTehsils = async () => {
-      setTehsils([]);
-      setMauzas([]);
-      setSelectedTehsilValue("");
-      setSelectedMauzaValue("");
-
-      if (!selectedDistrict) return;
-
-      try {
-        setLoading((prev) => ({ ...prev, tehsils: true }));
-        const data = await getTehsils(selectedDistrict);
-        if (mounted) setTehsils(data);
-      } catch (error) {
-        console.error("Failed to load 3D tehsils", error);
-        if (mounted) setTehsils([]);
-      } finally {
-        if (mounted) setLoading((prev) => ({ ...prev, tehsils: false }));
-      }
-    };
-
-    loadTehsils();
-
-    return () => {
-      mounted = false;
-    };
-  }, [selectedDistrict]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadMauzas = async () => {
-      setMauzas([]);
-      setSelectedMauzaValue("");
-
-      if (!selectedTehsil) return;
-
-      try {
-        setLoading((prev) => ({ ...prev, mauzas: true }));
-        const data = await getMauzas(selectedTehsil);
-        if (mounted) setMauzas(data);
-      } catch (error) {
-        console.error("Failed to load 3D mauzas", error);
-        if (mounted) setMauzas([]);
-      } finally {
-        if (mounted) setLoading((prev) => ({ ...prev, mauzas: false }));
-      }
-    };
-
-    loadMauzas();
-
-    return () => {
-      mounted = false;
-    };
-  }, [selectedTehsil]);
-
-  const setSelectedDistrict = (value) => setSelectedDistrictValue(value);
-  const setSelectedTehsil = (value) => setSelectedTehsilValue(value);
-  const setSelectedMauza = (value) => setSelectedMauzaValue(value);
-
-  return {
-    districts,
-    tehsils,
-    mauzas,
-    selectedDistrict,
-    selectedTehsil,
-    selectedMauza,
-    loading,
-    setSelectedDistrict,
-    setSelectedTehsil,
-    setSelectedMauza,
-  };
 }

@@ -5,11 +5,10 @@ export default function MainLayout() {
   const location = useLocation();
   const filters = useCadastralFilters();
   const isMapRoute = location.pathname === "/mapview";
-
   return (
     <div className="app-layout">
       <main className="app-layout__main">
-        <Outlet context={isMapRoute ? { filters } : {}} />
+        <Outlet context={{ filters }} />
       </main>
     </div>
   );

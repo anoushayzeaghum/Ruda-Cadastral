@@ -23,6 +23,7 @@ export default function MapControls({
   map,
   fullscreenTargetRef,
   onLocationClick,
+  compact = false,
 }) {
   const markerRef = useRef(null);
   const [coords, setCoords] = useState("");
@@ -244,29 +245,31 @@ export default function MapControls({
   }, [map]);
 
   const buttonBase =
-    "flex h-10 w-10 items-center justify-center text-white transition focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-offset-1 focus:ring-offset-slate-900";
+    "flex h-8 w-8 items-center justify-center text-white transition focus:outline-none focus:ring-1 focus:ring-green-300 focus:ring-offset-1 focus:ring-offset-slate-900";
 
   const singleButtonClass = (active = false) =>
-    `${buttonBase} rounded-lg border shadow-lg ${
-      active
-        ? "border-green-300 bg-[#0f3d2e]"
-        : "border-slate-600/80 bg-[#1f2937] hover:bg-[#0f3d2e]"
+    `${buttonBase} rounded-lg border shadow-lg ${active
+      ? "border-green-300 bg-[#0f3d2e]"
+      : "border-slate-600/80 bg-[#1f2937] hover:bg-[#0f3d2e]"
     }`;
 
   const groupedButtonClass = `${buttonBase} bg-[#1f2937] hover:bg-[#0f3d2e]`;
 
   return (
-    <div className="pointer-events-none absolute right-3 top-5 z-40 flex items-start gap-2">
+    <div
+      className={`pointer-events-none absolute z-40 flex items-start gap-1.5 transition-all duration-200 ${compact ? "right-72 top-4 scale-90" : "right-1 top-4"
+        }`}
+    >
       <div className="flex flex-col items-end gap-1">
-        <div className="rounded bg-slate-900/90 px-2 py-1 text-[10px] font-semibold leading-none text-white shadow-lg backdrop-blur-sm">
+        <div className="rounded bg-slate-900/90 px-1.5 py-0.5 text-[9px] font-medium leading-none text-white shadow-lg backdrop-blur-sm">
           {coords}
         </div>
-        <div className="rounded bg-slate-900/90 px-2 py-1 text-[10px] font-semibold leading-none text-white shadow-lg backdrop-blur-sm">
+        <div className="rounded bg-slate-900/90 px-1.5 py-0.5 text-[9px] font-medium leading-none text-white shadow-lg backdrop-blur-sm">
           Zoom Level: {zoom}
         </div>
       </div>
 
-      <div className="pointer-events-auto flex flex-col gap-2">
+      <div className="pointer-events-auto flex flex-col gap-1">
         <button
           type="button"
           title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
@@ -293,14 +296,13 @@ export default function MapControls({
           aria-label="Location / marker"
           onClick={handleLocation}
           disabled={isLocating}
-          className={`${singleButtonClass(activeTool === "marker")} ${
-            isLocating ? "cursor-wait opacity-80" : ""
-          }`}
+          className={`${singleButtonClass(activeTool === "marker")} ${isLocating ? "cursor-wait opacity-80" : ""
+            }`}
         >
           <MapPin size={19} />
         </button>
 
-        <div className="overflow-hidden rounded-lg border border-slate-600/80 bg-[#1f2937] shadow-lg">
+        <div className="overflow-hidden rounded-md border border-slate-600/80 bg-[#1f2937] shadow-md">
           <button
             type="button"
             title="Zoom in"
@@ -308,7 +310,7 @@ export default function MapControls({
             onClick={zoomIn}
             className={`${groupedButtonClass} border-b border-slate-600/80`}
           >
-            <Plus size={18} strokeWidth={2.8} />
+            <Plus size={16} strokeWidth={2.5} />
           </button>
           <button
             type="button"
@@ -317,7 +319,7 @@ export default function MapControls({
             onClick={zoomOut}
             className={groupedButtonClass}
           >
-            <Minus size={18} strokeWidth={2.8} />
+            <Minus size={16} strokeWidth={2.5} />
           </button>
         </div>
       </div>

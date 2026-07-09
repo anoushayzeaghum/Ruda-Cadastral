@@ -11,6 +11,8 @@ import {
   CheckCircle,
   Download,
   X,
+  Map,
+  Layers,
 } from "lucide-react";
 
 export default function ParcelPanel({
@@ -19,6 +21,101 @@ export default function ParcelPanel({
   onClose = () => {},
 }) {
   const [activeTab, setActiveTab] = useState("parcelInfo");
+  const isMasterPlan = parcel?.properties?._layerType === "masterPlan";
+
+  if (!isOpen) return null;
+
+  return isMasterPlan
+    ? <MasterPlanPanel parcel={parcel} onClose={onClose} />
+    : <CadastralParcelPanel parcel={parcel} onClose={onClose} isOpen={isOpen} activeTab={activeTab} setActiveTab={setActiveTab} />;
+}
+
+/* ── Master Plan Information Panel ─────────────────────────────────────── */
+
+function MasterPlanPanel({ parcel, onClose }) {
+  const p = parcel?.properties ?? {};
+
+  const areaAcres = typeof p._area_acres === "number" ? p._area_acres : null;
+  const areaKanal = areaAcres !== null ? (areaAcres * 8).toFixed(3) : null;
+  const areaM2    = typeof p._area_m2   === "number" ? p._area_m2.toFixed(0) : null;
+
+  // Use shape_area from backend if our computed area isn't available
+  const displayArea = areaKanal
+    ? `${areaKanal} kanal`
+    : (p.shape_area ?? p.area ?? "N/A");
+
+  const landUseColor = {
+    "Residential Plot": "bg-amber-100 text-amber-800 border-amber-300",
+    "Commercial Plot":  "bg-red-100 text-red-800 border-red-300",
+    "Green Belt":       "bg-green-100 text-green-800 border-green-300",
+    "Barren Land":      "bg-stone-100 text-stone-700 border-stone-300",
+    "Road":             "bg-gray-200 text-gray-700 border-gray-400",
+    "Park":             "bg-emerald-100 text-emerald-800 border-emerald-300",
+  };
+  const landUseCls = landUseColor[p.land_use] ?? "bg-indigo-100 text-indigo-800 border-indigo-300";
+
+  return (
+    <div className="absolute left-3 top-24 z-20 w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-170px)]">
+      {/* header */}
+      <div className="flex items-center justify-between gap-2 bg-[#0f3d2e] px-3 py-2.5">
+        <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-white min-w-0">
+          <Map className="text-white shrink-0" size={18} />
+          <span className="truncate">Master Plan Information</span>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="ml-1 rounded-lg p-1.5 text-white transition hover:bg-white/10"
+          aria-label="Close panel"
+        >
+          <X size={19} />
+        </button>
+      </div>
+
+      {/* body */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Land use badge */}
+        <div className="flex items-center gap-3">
+          <Layers size={16} className="text-slate-400 shrink-0" />
+          <span className={`text-xs font-bold px-3 py-1 rounded-full border ${landUseCls}`}>
+            {p.land_use || "Unknown Land Use"}
+          </span>
+        </div>
+
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+          <MPRow label="Area" value={displayArea} />
+          {areaM2 && <MPRow label="Area (m²)" value={`${areaM2} m²`} />}
+          {p.land_type  && <MPRow label="Land Type"  value={p.land_type} />}
+          {p.height     && <MPRow label="Height"     value={p.height} />}
+        </div>
+
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1">Location</h3>
+          {p.society  && <MPRow label="Society"  value={p.society} />}
+          {p.district && <MPRow label="District" value={p.district} />}
+          {p.tehsil   && <MPRow label="Tehsil"   value={p.tehsil} />}
+          {p.mauza    && <MPRow label="Mauza"    value={p.mauza} />}
+          {!p.society && !p.district && !p.tehsil && !p.mauza && (
+            <p className="text-xs text-slate-400">No location attributes available</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MPRow({ label, value }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-[11px] font-medium text-slate-500 shrink-0">{label}</span>
+      <span className="text-[12px] font-semibold text-slate-900 text-right">{value}</span>
+    </div>
+  );
+}
+
+/* ── Original Cadastral Parcel Panel (unchanged) ────────────────────────── */
+
+function CadastralParcelPanel({ parcel, onClose, isOpen, activeTab, setActiveTab }) {
 
   const areaAcres =
     typeof parcel?.properties?._area_acres === "number"

@@ -17,30 +17,75 @@ import {
   CircleDot,
   Network,
   Route,
+  Image as ImageIcon,
+  X,
+  Table2,
 } from "lucide-react";
+import Measurement from "../GISMetaverse/tools/Measurement";
+
+import RudaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaBoundaryAttribute";
+import RudaMozaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaMozaBoundaryAttribute";
+import ProposedRoadAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProposedRoadAttribute";
+import GeodeticNetworkAttribute from "../GISMetaverse/tools/Layers/AttributeTable/GeodeticNetworkAttribute";
+import MauzaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/MauzaBoundaryAttribute";
+
+// Hook — true when viewport width is below the sm breakpoint (640 px)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < 640,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  return isMobile;
+}
+import KhasraBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/KhasraBoundaryAttribute";
+import SquareBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/SquareBoundaryAttribute";
+import DistrictBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/DistrictBoundaryAttribute";
+import TehsilBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TehsilBoundaryAttribute";
+import AcreBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/AcreBoundaryAttribute";
+import TriJunctionPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TriJunctionPointsAttribute";
+import FieldPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/FieldPointsAttribute";
 
 const BASEMAPS = [
   {
     name: "Satellite",
-    preview: "bg-[linear-gradient(135deg,#314b33,#8b7c52,#2c4a59)]",
+    preview:
+      "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/4640/3075",
   },
   {
     name: "Streets",
-    preview: "bg-[linear-gradient(135deg,#f0eadb,#d8d1bb,#b6c4b5)]",
+    preview:
+      "https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/13/4640/3075",
   },
   {
     name: "Light",
-    preview: "bg-[linear-gradient(135deg,#f8fafc,#e2e8f0,#cbd5e1)]",
+    preview: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6",
   },
   {
     name: "Dark",
-    preview: "bg-[linear-gradient(135deg,#0f172a,#334155,#111827)]",
+    preview: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21",
   },
   {
     name: "Outdoors",
-    preview: "bg-[linear-gradient(135deg,#6f9f55,#d5c17b,#7ba98f)]",
+    preview: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
   },
 ];
+
+const VECTOR_BOUNDARY_LAYERS = [
+  { key: "khasraLayer", label: "Khasra Boundary" },
+  { key: "squareLayer", label: "Square Boundary" },
+  { key: "acreLayer", label: "Acre Boundary" },
+  { key: "triJunctionPoints", label: "Tri Junction Points" },
+  { key: "fieldPoints", label: "Field Points" },
+];
+
+const RASTER_DATA_LAYERS = [{ key: "handuGujranOrtho", label: "Massavi" }];
 
 const RUDA_PHASE_COLORS = [
   "#6bb7e8",
@@ -72,6 +117,7 @@ const getRudaPhaseColor = (phaseId) => {
 };
 
 export default function LeftPanel({
+  map,
   layers,
   setLayers,
   rudaPhases,
@@ -83,20 +129,42 @@ export default function LeftPanel({
   basemap,
   setBasemap,
   selectedMauza,
+  selectedDistrict = [],
+  selectedTehsil = [],
   selectedFilterLayers = [],
+  loadedParcelsGeojson = null,
 }) {
   const [activePanel, setActivePanel] = useState("layers");
+  const [rudaSectionOpen, setRudaSectionOpen] = useState(true);
   const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
   const hasMauza = !!selectedMauza;
   const initializedOpacityKeysRef = useRef(new Set());
+  const [openAttributeTable, setOpenAttributeTable] = useState(null);
+  const [dropdownOpenByKey, setDropdownOpenByKey] = useState({});
+  const [layerRecordCache, setLayerRecordCache] = useState({});
+  const isMobile = useIsMobile();
+
+  const toggleDropdownForKey = (key) =>
+    setDropdownOpenByKey((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const [rudaProposedRoads, setRudaProposedRoads] = useState([]);
   const [proposedDropdownOpen, setProposedDropdownOpen] = useState(false);
 
+  const [layerAvailability, setLayerAvailability] = useState({
+    khasra: false,
+    square: false,
+    acre: false,
+    murabba: false,
+  });
+
   const getDefaultOpacityForSelectedLayer = (item) => {
     const text = `${item?.key || ""} ${item?.label || ""}`.toLowerCase();
 
-    if (text.includes("district") || text.includes("tehsil") || text.includes("mauza")) {
+    if (
+      text.includes("district") ||
+      text.includes("tehsil") ||
+      text.includes("mauza")
+    ) {
       return 0;
     }
 
@@ -107,6 +175,114 @@ export default function LeftPanel({
     return 100;
   };
 
+  const getDefaultColorForLayer = (layerKey) => {
+    const defaults = {
+      rudaBoundary: "#22c55e",
+      proposedRoads: "#ef4444",
+      geodeticNetwork: "#d81d1d",
+      districtBoundary: "#f59e0b",
+      tehsilBoundary: "#06b6d4",
+      mauzaBoundary: "#a3e635",
+      khasraLayer: "#f97316",
+      squareLayer: "#8b5cf6",
+      acreLayer: "#14b8a6",
+      triJunctionPoints: "#e11d48",
+      fieldPoints: "#2563eb",
+      murabbaLayer: "#facc15",
+      handuGujranOrtho: "#9be37b",
+    };
+    return defaults[layerKey] || "#9be37b";
+  };
+
+  const getLayerColor = (layerKey) => {
+    const value = layers?.[layerKey];
+    return typeof value === "object" && value.color
+      ? value.color
+      : getDefaultColorForLayer(layerKey);
+  };
+
+  const setLayerColor = (layerKey, color) => updateLayer(layerKey, { color });
+
+  const selectedMauzaId =
+    selectedMauza?.mauza_id ?? selectedMauza?.id ?? selectedMauza?.gid;
+
+  const loadLayerRecords = async (key) => {
+    if (layerRecordCache[key]?.loaded) return;
+
+    try {
+      const api = await import("../../services/api");
+      let geojson = null;
+
+      if (key === "districtBoundary") {
+        const items = Array.isArray(selectedDistrict)
+          ? selectedDistrict
+          : selectedDistrict
+            ? [selectedDistrict]
+            : [];
+        const features = [];
+        for (const d of items) {
+          const id = d?.id ?? d?.gid ?? d;
+          if (!id) continue;
+          const gj = await api.getDistrictBoundary(id);
+          features.push(...(gj?.features || []));
+        }
+        geojson = { type: "FeatureCollection", features };
+      } else if (key === "tehsilBoundary") {
+        const items = Array.isArray(selectedTehsil)
+          ? selectedTehsil
+          : selectedTehsil
+            ? [selectedTehsil]
+            : [];
+        const features = [];
+        for (const t of items) {
+          const id = t?.id ?? t?.gid ?? t;
+          if (!id) continue;
+          const gj = await api.getTehsilBoundary(id);
+          features.push(...(gj?.features || []));
+        }
+        geojson = { type: "FeatureCollection", features };
+      } else if (key === "mauzaBoundary") {
+        geojson = selectedMauzaId
+          ? await api.getMauzaBoundary(selectedMauzaId)
+          : null;
+      } else if (key === "khasraLayer") {
+        geojson = selectedMauzaId
+          ? await api.getKhasras(selectedMauzaId)
+          : loadedParcelsGeojson;
+      } else if (key === "squareLayer") {
+        geojson = selectedMauzaId
+          ? await api.getSquares(selectedMauzaId)
+          : loadedParcelsGeojson;
+      } else if (key === "acreLayer") {
+        geojson = selectedMauzaId
+          ? await api.getAcres(selectedMauzaId)
+          : loadedParcelsGeojson;
+      } else if (key === "triJunctionPoints") {
+        geojson = await api.getTrijunctionPoints();
+      } else if (key === "fieldPoints") {
+        geojson = selectedMauzaId
+          ? await api.getFieldPoints(selectedMauzaId)
+          : null;
+      }
+
+      setLayerRecordCache((prev) => ({
+        ...prev,
+        [key]: {
+          loaded: true,
+          geojson: geojson || { type: "FeatureCollection", features: [] },
+        },
+      }));
+    } catch (error) {
+      console.error(`Failed to load ${key} records`, error);
+      setLayerRecordCache((prev) => ({
+        ...prev,
+        [key]: {
+          loaded: true,
+          geojson: { type: "FeatureCollection", features: [] },
+        },
+      }));
+    }
+  };
 
   const selectedLayerItems = useMemo(
     () => selectedFilterLayers.filter((item) => item?.label && item?.key),
@@ -118,8 +294,9 @@ export default function LeftPanel({
       const next = { ...prev };
 
       const rudaLayerDefaults = {
-        rudaBoundary: 10,
+        rudaBoundary: 70,
         proposedRoads: 100,
+        geodeticNetwork: 100,
       };
 
       Object.entries(rudaLayerDefaults).forEach(([key, opacity]) => {
@@ -127,17 +304,17 @@ export default function LeftPanel({
 
         const current = next[key];
         next[key] = {
-          ...(typeof current === "object"
-            ? current
-            : { visible: !!current }),
+          ...(typeof current === "object" ? current : { visible: !!current }),
           opacity,
+          color: getDefaultColorForLayer(key),
         };
         initializedOpacityKeysRef.current.add(key);
         changed = true;
       });
 
       selectedLayerItems.forEach((item) => {
-        if (!item?.key || initializedOpacityKeysRef.current.has(item.key)) return;
+        if (!item?.key || initializedOpacityKeysRef.current.has(item.key))
+          return;
 
         const current = next[item.key];
         next[item.key] = {
@@ -145,6 +322,7 @@ export default function LeftPanel({
             ? current
             : { visible: current === undefined ? true : !!current }),
           opacity: getDefaultOpacityForSelectedLayer(item),
+          color: getDefaultColorForLayer(item.key),
         };
         initializedOpacityKeysRef.current.add(item.key);
         changed = true;
@@ -154,14 +332,18 @@ export default function LeftPanel({
     });
   }, [selectedLayerItems, setLayers]);
 
-
   const updateLayer = (layerKey, patch) => {
     setLayers((prev) => ({
       ...prev,
       [layerKey]: {
         ...(typeof prev?.[layerKey] === "object"
           ? prev[layerKey]
-          : { visible: !!prev?.[layerKey], opacity: 100 }),
+          : {
+              visible: !!prev?.[layerKey],
+              opacity: 100,
+              color: getDefaultColorForLayer(layerKey),
+            }),
+        color: getLayerColor(layerKey),
         ...patch,
       },
     }));
@@ -182,6 +364,16 @@ export default function LeftPanel({
   const toggleLayer = (layerKey) =>
     updateLayer(layerKey, { visible: !getLayerVisible(layerKey) });
 
+  const toggleVectorBoundaryLayer = (layerKey) => {
+    const forceLoadKeys = new Set(["khasraLayer", "murabbaLayer"]);
+    const nextVisible = !getLayerVisible(layerKey);
+
+    updateLayer(layerKey, {
+      visible: nextVisible,
+      ...(forceLoadKeys.has(layerKey) ? { forceLoad: nextVisible } : {}),
+    });
+  };
+
   const getRudaPhaseId = (phase) => phase?.gid ?? phase?.id ?? phase?.oid;
 
   const getAllRudaPhaseIds = () =>
@@ -192,7 +384,10 @@ export default function LeftPanel({
   const toggleRudaBoundaryLayer = () => {
     const willOpen = !getLayerVisible("rudaBoundary");
 
-    if (willOpen && (!selectedRudaPhaseIds || selectedRudaPhaseIds.length === 0)) {
+    if (
+      willOpen &&
+      (!selectedRudaPhaseIds || selectedRudaPhaseIds.length === 0)
+    ) {
       setSelectedRudaPhaseIds(getAllRudaPhaseIds());
     }
 
@@ -235,9 +430,7 @@ export default function LeftPanel({
 
         if (!mounted) return;
 
-        const ids = (list || []).map(
-          (r) => r.gid ?? r.id ?? r.oid
-        );
+        const ids = (list || []).map((r) => r.gid ?? r.id ?? r.oid);
 
         setRudaProposedRoads(list || []);
         setSelectedProposedRoadIds(ids); // select all by default
@@ -268,77 +461,249 @@ export default function LeftPanel({
     toggleLayer("proposedRoads");
   };
   return (
-    <div className="pointer-events-none absolute left-3 top-24 z-30 flex items-start gap-2">
-      {/* Separate icon buttons. No combined background wrapper. */}
-      <div className="pointer-events-auto flex flex-col gap-2">
-        <PanelIcon
-          title="Layer Manager"
-          active={activePanel === "layers"}
-          onClick={() =>
-            setActivePanel(activePanel === "layers" ? "" : "layers")
-          }
-          icon={<Layers size={18} />}
-        />
-        <PanelIcon
-          title="Toolbox"
-          active={activePanel === "toolbox"}
-          onClick={() =>
-            setActivePanel(activePanel === "toolbox" ? "" : "toolbox")
-          }
-          icon={<Wrench size={18} />}
-        />
-        <PanelIcon
-          title="Map Background"
-          active={activePanel === "basemap"}
-          onClick={() =>
-            setActivePanel(activePanel === "basemap" ? "" : "basemap")
-          }
-          icon={<Satellite size={18} />}
-        />
+    <>
+      {/* Icon toolbar - positioned left on desktop, bottom on mobile */}
+      <div
+        className={`pointer-events-none absolute z-30 ${
+          isMobile
+            ? "bottom-3 left-1/2 -translate-x-1/2 flex-row"
+            : "left-1.5 sm:left-3 top-3 sm:top-5 flex-col"
+        } flex items-start gap-1.5 sm:gap-2`}
+      >
+        <div className="pointer-events-auto flex gap-1 sm:flex-col sm:gap-1">
+          <PanelIcon
+            title="Layer Manager"
+            active={activePanel === "layers"}
+            onClick={() =>
+              setActivePanel(activePanel === "layers" ? "" : "layers")
+            }
+            icon={<Layers size={15} className="sm:hidden" />}
+            iconLg={<Layers size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Vector Boundaries"
+            active={activePanel === "vectorBoundaries"}
+            onClick={() =>
+              setActivePanel(
+                activePanel === "vectorBoundaries" ? "" : "vectorBoundaries",
+              )
+            }
+            icon={<Map size={15} className="sm:hidden" />}
+            iconLg={<Map size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Toolbox"
+            active={activePanel === "toolbox"}
+            onClick={() =>
+              setActivePanel(activePanel === "toolbox" ? "" : "toolbox")
+            }
+            icon={<Wrench size={15} className="sm:hidden" />}
+            iconLg={<Wrench size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Raster Data"
+            active={activePanel === "rasterData"}
+            onClick={() =>
+              setActivePanel(activePanel === "rasterData" ? "" : "rasterData")
+            }
+            icon={<ImageIcon size={15} className="sm:hidden" />}
+            iconLg={<ImageIcon size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Basemap"
+            active={activePanel === "basemap"}
+            onClick={() =>
+              setActivePanel(activePanel === "basemap" ? "" : "basemap")
+            }
+            icon={<Satellite size={15} className="sm:hidden" />}
+            iconLg={<Satellite size={18} className="hidden sm:block" />}
+          />
+
+          {/* Close button for mobile - only shown when a panel is active */}
+          {isMobile && activePanel && (
+            <PanelIcon
+              title="Close Panel"
+              active={false}
+              onClick={() => setActivePanel("")}
+              icon={<X size={15} />}
+              iconLg={<X size={18} />}
+            />
+          )}
+        </div>
       </div>
 
-      {activePanel && (
-        <div className="pointer-events-auto w-[320px] max-h-[calc(100vh-170px)] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-800 shadow-2xl">
-          {activePanel === "layers" && (
-            <Panel title="Layer Manager">
-              <div className="max-h-[calc(100vh-225px)] overflow-y-auto px-3 pb-3">
-                <RudaBoundaryLayers
-                  rudaPhases={rudaPhases}
-                  selectedRudaPhaseIds={selectedRudaPhaseIds}
-                  setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
-                  rudaDropdownOpen={rudaDropdownOpen}
-                  setRudaDropdownOpen={setRudaDropdownOpen}
-                  getLayerVisible={getLayerVisible}
-                  getLayerOpacity={getLayerOpacity}
-                  toggleLayer={toggleLayer}
-                  toggleRudaBoundaryLayer={toggleRudaBoundaryLayer}
-                  updateLayer={updateLayer}
-                />
-                <RudaProposedRoadsLayers
-                  rudaProposedRoads={rudaProposedRoads}
-                  selectedProposedRoadIds={selectedProposedRoadIds}
-                  setSelectedProposedRoadIds={setSelectedProposedRoadIds}
-                  proposedDropdownOpen={proposedDropdownOpen}
-                  setProposedDropdownOpen={setProposedDropdownOpen}
-                  getLayerVisible={getLayerVisible}
-                  getLayerOpacity={getLayerOpacity}
-                  toggleLayer={toggleLayer}
-                  toggleProposedRoadLayer={toggleProposedRoadLayer}
-                  updateLayer={updateLayer}
-                  getAllProposedRoadIds={getAllProposedRoadIds}
-                />
+      {openAttributeTable && (
+        <div className="pointer-events-auto">
+          {openAttributeTable === "rudaBoundary" && (
+            <RudaBoundaryAttribute
+              map={map}
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "proposedRoads" && (
+            <ProposedRoadAttribute
+              map={map}
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "geodeticNetwork" && (
+            <GeodeticNetworkAttribute
+              map={map}
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "mauzaBoundary" && (
+            <MauzaBoundaryAttribute
+              map={map}
+              geojson={
+                layerRecordCache.mauzaBoundary?.geojson || loadedParcelsGeojson
+              }
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "khasraLayer" && (
+            <KhasraBoundaryAttribute
+              map={map}
+              geojson={
+                layerRecordCache.khasraLayer?.geojson || loadedParcelsGeojson
+              }
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "squareLayer" && (
+            <SquareBoundaryAttribute
+              map={map}
+              geojson={
+                layerRecordCache.squareLayer?.geojson || loadedParcelsGeojson
+              }
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "districtBoundary" && (
+            <DistrictBoundaryAttribute
+              map={map}
+              geojson={layerRecordCache.districtBoundary?.geojson}
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "tehsilBoundary" && (
+            <TehsilBoundaryAttribute
+              map={map}
+              geojson={layerRecordCache.tehsilBoundary?.geojson}
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "acreLayer" && (
+            <AcreBoundaryAttribute
+              map={map}
+              geojson={
+                layerRecordCache.acreLayer?.geojson || loadedParcelsGeojson
+              }
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "triJunctionPoints" && (
+            <TriJunctionPointsAttribute
+              map={map}
+              geojson={layerRecordCache.triJunctionPoints?.geojson}
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+          {openAttributeTable === "fieldPoints" && (
+            <FieldPointsAttribute
+              map={map}
+              geojson={layerRecordCache.fieldPoints?.geojson}
+              onClose={() => setOpenAttributeTable(null)}
+            />
+          )}
+        </div>
+      )}
 
-                {selectedLayerItems.length > 0 && (
-                  <SelectedAdministrativeLayers
-                    items={selectedLayerItems}
+      {/* Panel content - bottom sheet on mobile, left-side panel on desktop */}
+      {activePanel && (
+        <>
+          {/* Mobile backdrop overlay */}
+          {isMobile && (
+            <div
+              className="pointer-events-auto fixed inset-0 z-30 bg-black/40"
+              onClick={() => setActivePanel("")}
+            />
+          )}
+          <div
+            className={`pointer-events-auto z-40 overflow-hidden border border-[#13593f] bg-[#06291f] text-white shadow-2xl ${
+              isMobile
+                ? "fixed bottom-0 left-0 right-0 rounded-t-xl"
+                : "absolute left-1.5 sm:left-3 top-3 sm:top-5 ml-[calc(28px+6px)] sm:ml-[calc(36px+8px)] rounded-md"
+            }`}
+            style={
+              isMobile
+                ? { maxHeight: "70vh" }
+                : {
+                    width: "min(280px, calc(100vw - 60px))",
+                    maxHeight: "calc(100vh - 120px)",
+                  }
+            }
+          >
+            {/* Mobile drag handle */}
+            {isMobile && (
+              <div className="flex justify-center py-2">
+                <div className="h-1 w-10 rounded-full bg-white/30" />
+              </div>
+            )}
+            {activePanel === "layers" && (
+              <Panel title="Layer Manager" onClose={() => setActivePanel("")}>
+                <div
+                  className="overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  style={
+                    isMobile
+                      ? { maxHeight: "calc(70vh - 100px)" }
+                      : { maxHeight: "calc(100vh - 185px)" }
+                  }
+                >
+                  <RudaBoundaryLayers
+                    rudaPhases={rudaPhases}
+                    rudaSectionOpen={rudaSectionOpen}
+                    setRudaSectionOpen={setRudaSectionOpen}
+                    selectedRudaPhaseIds={selectedRudaPhaseIds}
+                    setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
+                    rudaDropdownOpen={rudaDropdownOpen}
+                    setRudaDropdownOpen={setRudaDropdownOpen}
+                    rudaProposedRoads={rudaProposedRoads}
+                    selectedProposedRoadIds={selectedProposedRoadIds}
+                    setSelectedProposedRoadIds={setSelectedProposedRoadIds}
+                    proposedDropdownOpen={proposedDropdownOpen}
+                    setProposedDropdownOpen={setProposedDropdownOpen}
                     getLayerVisible={getLayerVisible}
                     getLayerOpacity={getLayerOpacity}
                     toggleLayer={toggleLayer}
+                    toggleRudaBoundaryLayer={toggleRudaBoundaryLayer}
+                    toggleProposedRoadLayer={toggleProposedRoadLayer}
                     updateLayer={updateLayer}
+                    getLayerColor={getLayerColor}
+                    setLayerColor={setLayerColor}
+                    openAttributeTable={setOpenAttributeTable}
+                    getAllProposedRoadIds={getAllProposedRoadIds}
                   />
-                )}
 
-                {/* <SectionTitle title="Mauza Based Layers" open />
+                  {selectedLayerItems.length > 0 && (
+                    <SelectedAdministrativeLayers
+                      items={selectedLayerItems}
+                      getLayerVisible={getLayerVisible}
+                      getLayerOpacity={getLayerOpacity}
+                      toggleLayer={toggleLayer}
+                      updateLayer={updateLayer}
+                      getLayerColor={getLayerColor}
+                      setLayerColor={setLayerColor}
+                      dropdownOpenByKey={dropdownOpenByKey}
+                      toggleDropdownForKey={toggleDropdownForKey}
+                      openAttributeTable={setOpenAttributeTable}
+                      layerRecordCache={layerRecordCache}
+                      loadLayerRecords={loadLayerRecords}
+                      loadedParcelsGeojson={loadedParcelsGeojson}
+                    />
+                  )}
+
+                  {/* <SectionTitle title="Mauza Based Layers" open />
                 <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
                   <LayerRow
                     icon={<Network size={15} />}
@@ -361,225 +726,302 @@ export default function LeftPanel({
                     showOpacity={false}
                   />
                 </div> */}
+                </div>
+              </Panel>
+            )}
 
-                <SectionTitle title="Imagery & Terrain Layers" open />
-                <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-2">
-                  <LayerRow
-                    icon={<Map size={15} />}
-                    label="Orthophoto Imagery"
-                    checked={getLayerVisible("ortho")}
-                    opacity={getLayerOpacity("ortho")}
-                    onToggle={() => toggleLayer("ortho")}
-                    onOpacity={(value) => updateLayer("ortho", { opacity: value })}
-                  />
-                  <LayerRow
-                    icon={<Map size={15} />}
-                    label="Digital Surface Model (DSM)"
-                    checked={getLayerVisible("dsm")}
-                    opacity={getLayerOpacity("dsm")}
-                    onToggle={() => toggleLayer("dsm")}
-                    onOpacity={(value) => updateLayer("dsm", { opacity: value })}
-                  />
-                  <LayerRow
-                    icon={<Map size={15} />}
-                    label="Digital Terrain Model (DTM)"
-                    checked={getLayerVisible("dtm")}
-                    opacity={getLayerOpacity("dtm")}
-                    onToggle={() => toggleLayer("dtm")}
-                    onOpacity={(value) => updateLayer("dtm", { opacity: value })}
+            {activePanel === "vectorBoundaries" && (
+              <Panel
+                title="Vector Boundaries"
+                onClose={() => setActivePanel("")}
+              >
+                <div
+                  className="overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  style={
+                    isMobile
+                      ? { maxHeight: "calc(70vh - 100px)" }
+                      : { maxHeight: "calc(100vh - 205px)" }
+                  }
+                >
+                  <VectorBoundaryLayers
+                    items={VECTOR_BOUNDARY_LAYERS}
+                    getLayerVisible={getLayerVisible}
+                    getLayerOpacity={getLayerOpacity}
+                    toggleLayer={toggleVectorBoundaryLayer}
+                    updateLayer={updateLayer}
+                    getLayerColor={getLayerColor}
+                    setLayerColor={setLayerColor}
+                    dropdownOpenByKey={dropdownOpenByKey}
+                    toggleDropdownForKey={toggleDropdownForKey}
+                    openAttributeTable={setOpenAttributeTable}
+                    layerRecordCache={layerRecordCache}
+                    loadLayerRecords={loadLayerRecords}
+                    loadedParcelsGeojson={loadedParcelsGeojson}
                   />
                 </div>
-              </div>
-            </Panel>
-          )}
+              </Panel>
+            )}
 
-          {activePanel === "toolbox" && (
-            <Panel title="Toolbox">
-              <div className="px-3 pb-1 pt-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                  Measurement Tools
-                </p>
-              </div>
-              <div className="grid grid-cols-3 gap-2 px-3 pb-3">
-                <ToolboxButton
-                  icon={<Ruler size={18} />}
-                  label="Distance"
-                  active={getLayerVisible("measure")}
-                  description="Click to measure line distance. Right-click to clear."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("measure");
-                    // Deactivate other drawing tools when activating this one
-                    if (willActivate) {
-                      updateLayer("measureArea", { visible: false });
-                      updateLayer("measureBearing", { visible: false });
-                      updateLayer("coordPicker", { visible: false });
-                    }
-                    toggleLayer("measure");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<SquareDashedIcon size={18} />}
-                  label="Area"
-                  active={getLayerVisible("measureArea")}
-                  description="Click to draw a polygon and calculate area. Right-click to close & finish."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("measureArea");
-                    if (willActivate) {
-                      updateLayer("measure", { visible: false });
-                      updateLayer("measureBearing", { visible: false });
-                      updateLayer("coordPicker", { visible: false });
-                    }
-                    toggleLayer("measureArea");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<Compass size={18} />}
-                  label="Bearing"
-                  active={getLayerVisible("measureBearing")}
-                  description="Click two points to measure the bearing angle between them."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("measureBearing");
-                    if (willActivate) {
-                      updateLayer("measure", { visible: false });
-                      updateLayer("measureArea", { visible: false });
-                      updateLayer("coordPicker", { visible: false });
-                    }
-                    toggleLayer("measureBearing");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<Crosshair size={18} />}
-                  label="Coordinates"
-                  active={getLayerVisible("coordPicker")}
-                  description="Click anywhere to copy the exact coordinates of that point."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("coordPicker");
-                    if (willActivate) {
-                      updateLayer("measure", { visible: false });
-                      updateLayer("measureArea", { visible: false });
-                      updateLayer("measureBearing", { visible: false });
-                    }
-                    toggleLayer("coordPicker");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<CircleDot size={18} />}
-                  label="Buffer"
-                  active={getLayerVisible("measureBuffer")}
-                  description="Click a point to draw a 500 m buffer zone around it."
-                  onClick={() => {
-                    const willActivate = !getLayerVisible("measureBuffer");
-                    if (willActivate) {
-                      updateLayer("measure", { visible: false });
-                      updateLayer("measureArea", { visible: false });
-                      updateLayer("measureBearing", { visible: false });
-                      updateLayer("coordPicker", { visible: false });
-                    }
-                    toggleLayer("measureBuffer");
-                  }}
-                />
-                <ToolboxButton
-                  icon={<Printer size={18} />}
-                  label="Print Map"
-                  description="Export the current map view as a PNG image."
-                  onClick={() => toggleLayer("printMap")}
-                />
-              </div>
-
-              {/* Active tool hint */}
-              {(getLayerVisible("measure") ||
-                getLayerVisible("measureArea") ||
-                getLayerVisible("measureBearing") ||
-                getLayerVisible("coordPicker") ||
-                getLayerVisible("measureBuffer")) && (
-                <div className="mx-3 mb-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] leading-snug text-blue-700">
-                  {getLayerVisible("measure") &&
-                    "📏 Click points to measure distance. Right-click to clear."}
-                  {getLayerVisible("measureArea") &&
-                    "🔲 Click to draw polygon vertices. Right-click to close and calculate area."}
-                  {getLayerVisible("measureBearing") &&
-                    "🧭 Click the start point, then the end point to measure bearing."}
-                  {getLayerVisible("coordPicker") &&
-                    "📍 Click anywhere on the map to get precise coordinates."}
-                  {getLayerVisible("measureBuffer") &&
-                    "⭕ Click a location to draw a 500 m buffer zone around it."}
-                </div>
-              )}
-            </Panel>
-          )}
-
-          {activePanel === "basemap" && (
-            <Panel title="Map Background">
-              <div className="grid grid-cols-2 gap-2 p-3">
-                {BASEMAPS.map((item) => (
+            {activePanel === "toolbox" && (
+              <div
+                className="overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                style={
+                  isMobile
+                    ? { maxHeight: "calc(70vh - 60px)" }
+                    : { maxHeight: "calc(100vh - 160px)" }
+                }
+              >
+                {/* Close button header */}
+                <div className="flex items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-white">
+                    Toolbox
+                  </h3>
                   <button
-                    key={item.name}
                     type="button"
-                    onClick={() => setBasemap(item.name)}
-                    className={`overflow-hidden rounded-lg border text-left transition ${
-                      basemap === item.name
-                        ? "border-green-700 bg-green-50"
-                        : "border-slate-200 bg-white hover:bg-slate-50"
-                    }`}
+                    onClick={() => setActivePanel("")}
+                    title="Close panel"
+                    aria-label="Close panel"
+                    className="flex h-6 w-6 items-center justify-center rounded text-white/50 transition hover:bg-[#0a3327] hover:text-white"
                   >
-                    <div className={`h-16 w-full ${item.preview}`} />
-                    <div className="flex items-center justify-between px-2 py-2 text-xs font-semibold text-slate-800">
-                      <span className="flex items-center gap-1.5">
-                        <Map size={14} />
-                        {item.name}
-                      </span>
-                      {basemap === item.name && (
-                        <span className="text-green-700">✓</span>
-                      )}
-                    </div>
+                    <X size={14} />
                   </button>
-                ))}
+                </div>
+                <Measurement map={map} />
               </div>
-            </Panel>
-          )}
-        </div>
+            )}
+
+            {activePanel === "basemap" && (
+              <Panel title="Basemap" onClose={() => setActivePanel("")}>
+                <div className="grid grid-cols-2 gap-2 p-3">
+                  {BASEMAPS.map((item) => (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() => setBasemap(item.name)}
+                      className={`overflow-hidden rounded-lg border text-left transition ${
+                        basemap === item.name
+                          ? "border-[#9be37b] bg-[#083526]"
+                          : "border-[#104c39] bg-[#031a14] hover:bg-[#0a3327]"
+                      }`}
+                    >
+                      <div className="relative h-16 w-full overflow-hidden">
+                        <img
+                          src={item.preview}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between px-2 py-2 text-xs font-semibold text-white">
+                        <span className="flex items-center gap-1.5">
+                          <Map size={14} />
+                          {item.name}
+                        </span>
+                        {basemap === item.name && (
+                          <span className="text-[#9be37b]">✓</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </Panel>
+            )}
+
+            {activePanel === "rasterData" && (
+              <Panel title="Raster Data" onClose={() => setActivePanel("")}>
+                <div
+                  className="overflow-y-auto px-3 pb-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  style={
+                    isMobile
+                      ? { maxHeight: "calc(70vh - 100px)" }
+                      : { maxHeight: "calc(100vh - 205px)" }
+                  }
+                >
+                  <RasterDataLayers
+                    items={RASTER_DATA_LAYERS}
+                    getLayerVisible={getLayerVisible}
+                    getLayerOpacity={getLayerOpacity}
+                    toggleLayer={toggleLayer}
+                    updateLayer={updateLayer}
+                  />
+                </div>
+              </Panel>
+            )}
+          </div>
+        </>
       )}
+    </>
+  );
+}
+
+function RasterDataLayers({
+  items,
+  getLayerVisible,
+  getLayerOpacity,
+  toggleLayer,
+  updateLayer,
+}) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
+      <div className="flex items-center gap-2 border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
+        <h4 className="text-[12px] font-semibold leading-tight text-white">
+          Raster Layers
+        </h4>
+      </div>
+
+      <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
+        {items.map((item, index) => (
+          <AdminLayerRow
+            key={item.key}
+            label={item.label}
+            checked={getLayerVisible(item.key)}
+            opacity={getLayerOpacity(item.key)}
+            isLast={index === items.length - 1}
+            onToggle={() => toggleLayer(item.key)}
+            onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
+const getFeatureProps = (feature = {}) => feature.properties || feature || {};
+const featureLabel = (feature = {}, fallback = "Feature") => {
+  const props = getFeatureProps(feature);
+  return (
+    props.name ||
+    props.Name ||
+    props.mauza ||
+    props.Mauza ||
+    props.join_shp ||
+    props.kh ||
+    props.sq ||
+    props.acre ||
+    props.type ||
+    `${fallback} ${props.gid || feature.id || ""}`
+  );
+};
+
+function SmallColorPicker({ color, onChange }) {
+  return (
+    <label
+      title="Change layer color"
+      className="relative flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-sm border border-white/30 hover:ring-1 hover:ring-[#9be37b]"
+      style={{ backgroundColor: color || "#9be37b" }}
+    >
+      <input
+        type="color"
+        value={color || "#9be37b"}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 cursor-pointer opacity-0"
+      />
+    </label>
+  );
+}
+
+function LayerDropdownPanel({
+  geojson,
+  loadingText = "Loading records...",
+  emptyText = "No records found",
+}) {
+  const features = geojson?.features || [];
+  return (
+    <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+      <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {!geojson ? (
+          <p className="px-1 py-1 text-[11px] text-white/50">{loadingText}</p>
+        ) : features.length === 0 ? (
+          <p className="px-1 py-1 text-[11px] text-white/50">{emptyText}</p>
+        ) : (
+          <>
+            <div className="border-b border-[#0c3d2d] pb-1.5 text-[12px] font-semibold text-white">
+              Total: {features.length}
+            </div>
+            {features.slice(0, 100).map((feature, index) => (
+              <div
+                key={getFeatureProps(feature).gid || feature.id || index}
+                className="truncate border-b border-[#0c3d2d]/70 py-1.5 text-[12px] font-medium text-white/85 last:border-b-0"
+              >
+                {featureLabel(feature, "Record")}
+              </div>
+            ))}
+            {features.length > 100 && (
+              <div className="py-1.5 text-[11px] text-white/50">
+                Showing first 100 records
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function RudaBoundaryLayers({
   rudaPhases,
+  rudaSectionOpen,
+  setRudaSectionOpen,
   selectedRudaPhaseIds,
   setSelectedRudaPhaseIds,
   rudaDropdownOpen,
   setRudaDropdownOpen,
+  rudaProposedRoads,
+  selectedProposedRoadIds,
+  setSelectedProposedRoadIds,
+  proposedDropdownOpen,
+  setProposedDropdownOpen,
   getLayerVisible,
   getLayerOpacity,
   toggleLayer,
   toggleRudaBoundaryLayer,
+  toggleProposedRoadLayer,
   updateLayer,
+  getLayerColor,
+  setLayerColor,
+  openAttributeTable,
+  getAllProposedRoadIds,
 }) {
+  const [geodeticDropdownOpen, setGeodeticDropdownOpen] = useState(false);
+
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
-        <h4 className="text-[12px] font-semibold leading-tight text-slate-700">
+    <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
+      <button
+        type="button"
+        onClick={() => setRudaSectionOpen((open) => !open)}
+        className="flex w-full items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5 text-left transition hover:bg-[#0a3327]"
+      >
+        <h4 className="text-[12px] font-semibold leading-tight text-white">
           RUDA Boundaries
         </h4>
-      </div>
+        <ChevronDown
+          size={16}
+          strokeWidth={2.6}
+          className={`text-white/70 transition ${rudaSectionOpen ? "rotate-180" : ""}`}
+        />
+      </button>
 
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <RudaLayerRow
+      {rudaSectionOpen && (
+        <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
+          <AdminLayerRow
+            layerKey="rudaBoundary"
             label="RUDA Boundary"
             checked={getLayerVisible("rudaBoundary")}
             opacity={getLayerOpacity("rudaBoundary")}
+            color={getLayerColor("rudaBoundary")}
             isOpen={rudaDropdownOpen}
             onToggle={toggleRudaBoundaryLayer}
-            onOpacity={(value) => updateLayer("rudaBoundary", { opacity: value })}
+            onOpacity={(value) =>
+              updateLayer("rudaBoundary", { opacity: value })
+            }
             onDropdownToggle={() => setRudaDropdownOpen((s) => !s)}
+            onTable={() => openAttributeTable("rudaBoundary")}
           />
 
           {rudaDropdownOpen && (
-            <div className="border-b border-slate-100 bg-slate-50 px-3 py-2">
-              <div className="max-h-44 overflow-y-auto rounded-lg border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
+            <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+              <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {(rudaPhases || []).length === 0 ? (
-                  <p className="px-1 py-1 text-[11px] font-medium text-slate-500">
+                  <p className="px-1 py-1 text-[11px] font-medium text-white/50">
                     No phases found
                   </p>
                 ) : (
@@ -594,73 +1036,69 @@ function RudaBoundaryLayers({
                       const allChecked =
                         allIds.length > 0 &&
                         allIds.every((id) => selectedIdSet.has(String(id)));
-
                       return (
-                        <div className="mb-1 flex items-center justify-between border-b border-slate-100 pb-1.5">
+                        <div className="mb-1 flex items-center justify-between border-b border-[#0c3d2d] pb-1.5">
                           <label className="flex items-center gap-2">
                             <input
                               type="checkbox"
                               checked={allChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedRudaPhaseIds(allIds);
-                                } else {
-                                  setSelectedRudaPhaseIds([]);
-                                }
-                              }}
-                              className="h-3.5 w-3.5 shrink-0 accent-green-700"
+                              onChange={(e) =>
+                                setSelectedRudaPhaseIds(
+                                  e.target.checked ? allIds : [],
+                                )
+                              }
+                              className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
                             />
-                            <span className="text-[12px] font-semibold leading-tight text-slate-700">
+                            <span className="text-[12px] font-semibold leading-tight text-white">
                               Select All
                             </span>
                           </label>
-
                           <button
                             type="button"
                             onClick={() => setSelectedRudaPhaseIds([])}
-                            className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-green-700 hover:bg-green-50"
+                            className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#9be37b] hover:bg-[#0a3327]"
                           >
                             Reset
                           </button>
                         </div>
                       );
                     })()}
-
                     {(rudaPhases || []).map((phase) => {
                       const id = phase.gid ?? phase.id ?? phase.oid;
-                      const name = phase.name ?? phase.folderpath ?? `Phase ${id}`;
-                      const selectedIdSet = new Set(
-                        (selectedRudaPhaseIds || []).map((value) => String(value)),
-                      );
-                      const checked = selectedIdSet.has(String(id));
-
+                      const name =
+                        phase.name ?? phase.folderpath ?? `Phase ${id}`;
+                      const checked = new Set(
+                        (selectedRudaPhaseIds || []).map((value) =>
+                          String(value),
+                        ),
+                      ).has(String(id));
                       return (
                         <label
                           key={id}
-                          className="flex items-center gap-2 border-b border-slate-50 py-1.5 last:border-b-0"
+                          className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0"
                         >
                           <input
                             type="checkbox"
                             checked={!!checked}
-                            onChange={() => {
-                              if (checked) {
-                                setSelectedRudaPhaseIds((prev) =>
-                                  (prev || []).filter((x) => String(x) !== String(id)),
-                                );
-                              } else {
-                                setSelectedRudaPhaseIds((prev) => [
-                                  ...(prev || []),
-                                  id,
-                                ]);
-                              }
-                            }}
-                            className="h-3.5 w-3.5 shrink-0 accent-green-700"
+                            onChange={() =>
+                              checked
+                                ? setSelectedRudaPhaseIds((prev) =>
+                                    (prev || []).filter(
+                                      (x) => String(x) !== String(id),
+                                    ),
+                                  )
+                                : setSelectedRudaPhaseIds((prev) => [
+                                    ...(prev || []),
+                                    id,
+                                  ])
+                            }
+                            className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
                           />
                           <span
-                            className="h-3.5 w-5 shrink-0 rounded-sm border border-slate-500"
+                            className="h-3.5 w-3.5 shrink-0 rounded-sm border border-white/50"
                             style={{ backgroundColor: getRudaPhaseColor(id) }}
                           />
-                          <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-slate-700">
+                          <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
                             {name}
                           </span>
                         </label>
@@ -672,195 +1110,180 @@ function RudaBoundaryLayers({
             </div>
           )}
 
-          {/* <AdminLayerRow
+          <AdminLayerRow
+            layerKey="proposedRoads"
             label="Proposed Roads"
             checked={getLayerVisible("proposedRoads")}
             opacity={getLayerOpacity("proposedRoads")}
-            isLast
-            onToggle={() => toggleLayer("proposedRoads")}
-            onOpacity={(value) => updateLayer("proposedRoads", { opacity: value })}
-          /> */}
-      </div>
+            color={getLayerColor("proposedRoads")}
+            isOpen={proposedDropdownOpen}
+            onToggle={toggleProposedRoadLayer}
+            onOpacity={(value) =>
+              updateLayer("proposedRoads", { opacity: value })
+            }
+            onDropdownToggle={() => setProposedDropdownOpen((s) => !s)}
+            onTable={() => openAttributeTable("proposedRoads")}
+          />
+
+          {proposedDropdownOpen && (
+            <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+              <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {(rudaProposedRoads || []).length === 0 ? (
+                  <p className="px-1 py-1 text-[11px] text-white/50">
+                    No proposed roads found
+                  </p>
+                ) : (
+                  <>
+                    <div className="mb-1 flex items-center justify-between border-b border-[#0c3d2d] pb-1.5">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={
+                            (selectedProposedRoadIds || []).length ===
+                            rudaProposedRoads.length
+                          }
+                          onChange={(e) =>
+                            setSelectedProposedRoadIds(
+                              e.target.checked ? getAllProposedRoadIds() : [],
+                            )
+                          }
+                          className="h-3.5 w-3.5 accent-[#9be37b]"
+                        />
+                        <span className="text-[12px] font-semibold leading-tight text-white">
+                          Select All
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedProposedRoadIds([])}
+                        className="rounded px-1.5 py-0.5 text-[11px] font-semibold text-[#9be37b] hover:bg-[#0a3327]"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                    {(rudaProposedRoads || []).map((road) => {
+                      const id = road.gid ?? road.id ?? road.oid;
+                      const name = road.name ?? road.layer ?? `Road ${id}`;
+                      const checked = (selectedProposedRoadIds || []).includes(
+                        id,
+                      );
+                      return (
+                        <label
+                          key={id}
+                          className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              checked
+                                ? setSelectedProposedRoadIds((prev) =>
+                                    (prev || []).filter((x) => x !== id),
+                                  )
+                                : setSelectedProposedRoadIds((prev) => [
+                                    ...(prev || []),
+                                    id,
+                                  ])
+                            }
+                            className="h-3.5 w-3.5 accent-[#9be37b]"
+                          />
+                          <span className="truncate text-[12px] font-medium leading-tight text-white/85">
+                            {name}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          <AdminLayerRow
+            layerKey="geodeticNetwork"
+            label="Geodetic Network"
+            checked={getLayerVisible("geodeticNetwork")}
+            opacity={getLayerOpacity("geodeticNetwork")}
+            color={getLayerColor("geodeticNetwork")}
+            isOpen={geodeticDropdownOpen}
+            onToggle={() => toggleLayer("geodeticNetwork")}
+            onOpacity={(value) =>
+              updateLayer("geodeticNetwork", { opacity: value })
+            }
+            onColor={(value) => setLayerColor("geodeticNetwork", value)}
+            onDropdownToggle={() => setGeodeticDropdownOpen((s) => !s)}
+            onTable={() => openAttributeTable("geodeticNetwork")}
+          />
+          {geodeticDropdownOpen && (
+            <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2 text-[12px] text-white/80">
+              Open the attribute table to view all geodetic points.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-function RudaProposedRoadsLayers({
-  rudaProposedRoads,
-  selectedProposedRoadIds,
-  setSelectedProposedRoadIds,
-  proposedDropdownOpen,
-  setProposedDropdownOpen,
+function VectorBoundaryLayers({
+  items,
   getLayerVisible,
   getLayerOpacity,
   toggleLayer,
-  toggleProposedRoadLayer,
   updateLayer,
-  getAllProposedRoadIds,
+  getLayerColor,
+  setLayerColor,
+  dropdownOpenByKey,
+  toggleDropdownForKey,
+  openAttributeTable,
+  layerRecordCache,
+  loadLayerRecords,
+  loadedParcelsGeojson,
 }) {
+  const getGeojsonForKey = (key) =>
+    layerRecordCache?.[key]?.geojson ||
+    (key === "khasraLayer" || key === "squareLayer" || key === "acreLayer"
+      ? loadedParcelsGeojson
+      : null);
+
+  const tableKeyFor = (key) => key;
+
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
-        <h4 className="text-[12px] font-semibold text-slate-700">
-          RUDA Proposed Roads
+    <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
+      <div className="flex items-center gap-2 border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
+        <h4 className="text-[12px] font-semibold leading-tight text-white">
+          Vector Boundaries
         </h4>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <RudaLayerRow
-          label="Proposed Roads"
-          checked={getLayerVisible("proposedRoads")}
-          opacity={getLayerOpacity("proposedRoads")}
-          isOpen={proposedDropdownOpen}
-          onToggle={toggleProposedRoadLayer}
-          onOpacity={(value) =>
-            updateLayer("proposedRoads", { opacity: value })
-          }
-          onDropdownToggle={() =>
-            setProposedDropdownOpen((s) => !s)
-          }
-        />
-
-        {proposedDropdownOpen && (
-          <div className="border-b border-slate-100 bg-slate-50 px-3 py-2">
-            <div className="max-h-44 overflow-y-auto rounded-lg border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
-
-              {(rudaProposedRoads || []).length === 0 ? (
-                <p className="px-1 py-1 text-[11px] text-slate-500">
-                  No proposed roads found
-                </p>
-              ) : (
-                <>
-                  {/* Select All */}
-                  <div className="mb-1 flex items-center justify-between border-b border-slate-100 pb-1.5">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={
-                          (selectedProposedRoadIds || []).length ===
-                          rudaProposedRoads.length
-                        }
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedProposedRoadIds(
-                              getAllProposedRoadIds()
-                            );
-                          } else {
-                            setSelectedProposedRoadIds([]);
-                          }
-                        }}
-                        className="h-3.5 w-3.5 accent-green-700"
-                      />
-                      <span className="text-[12px] font-semibold">
-                        Select All
-                      </span>
-                    </label>
-
-                    <button
-                      onClick={() => setSelectedProposedRoadIds([])}
-                      className="text-[11px] text-green-700"
-                    >
-                      Reset
-                    </button>
-                  </div>
-
-                  {/* List */}
-                  {(rudaProposedRoads || []).map((road) => {
-                    const id = road.gid ?? road.id ?? road.oid;
-                    const name = road.name ?? `Road ${id}`;
-
-                    const checked = (selectedProposedRoadIds || []).includes(id);
-
-                    return (
-                      <label
-                        key={id}
-                        className="flex items-center gap-2 py-1.5"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            if (checked) {
-                              setSelectedProposedRoadIds((prev) =>
-                                prev.filter((x) => x !== id)
-                              );
-                            } else {
-                              setSelectedProposedRoadIds((prev) => [
-                                ...prev,
-                                id,
-                              ]);
-                            }
-                          }}
-                          className="h-3.5 w-3.5 accent-green-700"
-                        />
-                        <span className="truncate text-[12px]">
-                          {name}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-function RudaLayerRow({
-  label,
-  checked,
-  opacity,
-  isOpen,
-  onToggle,
-  onOpacity,
-  onDropdownToggle,
-}) {
-  return (
-    <div className="border-b border-slate-100 bg-white px-2.5 py-2">
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={!!checked}
-          onChange={onToggle}
-          className="h-4 w-4 shrink-0 accent-green-700"
-        />
-
-        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-slate-700">
-          {label}
-        </span>
-
-        <div className="flex shrink-0 items-center gap-1.5 text-slate-800">
-          <button
-            type="button"
-            title="Show RUDA phases"
-            aria-label="Show RUDA phases"
-            onClick={onDropdownToggle}
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
-          >
-            <ChevronDown
-              size={16}
-              fill="currentColor"
-              strokeWidth={2.6}
-              className={`transition ${isOpen ? "rotate-180" : ""}`}
+      <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
+        {items.map((item, index) => (
+          <div key={item.key}>
+            <AdminLayerRow
+              layerKey={item.key}
+              label={item.label}
+              checked={getLayerVisible(item.key)}
+              opacity={getLayerOpacity(item.key)}
+              color={getLayerColor(item.key)}
+              isOpen={!!dropdownOpenByKey?.[item.key]}
+              isLast={index === items.length - 1}
+              onToggle={() => toggleLayer(item.key)}
+              onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+              onColor={(value) => setLayerColor(item.key, value)}
+              onDropdownToggle={() => {
+                toggleDropdownForKey(item.key);
+                loadLayerRecords(item.key);
+              }}
+              onTable={() => {
+                loadLayerRecords(item.key);
+                openAttributeTable(tableKeyFor(item.key));
+              }}
             />
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-0.5 flex items-center gap-2 pl-6">
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value={opacity}
-          onChange={(e) => onOpacity(Number(e.target.value))}
-          className="h-1.5 min-w-0 flex-1 accent-green-700"
-        />
-        <span className="w-9 shrink-0 text-right text-[11px] font-medium text-slate-600">
-          {opacity}%
-        </span>
+            {dropdownOpenByKey?.[item.key] && (
+              <LayerDropdownPanel geojson={getGeojsonForKey(item.key)} />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -872,89 +1295,126 @@ function SelectedAdministrativeLayers({
   getLayerOpacity,
   toggleLayer,
   updateLayer,
+  getLayerColor,
+  setLayerColor,
+  dropdownOpenByKey,
+  toggleDropdownForKey,
+  openAttributeTable,
+  layerRecordCache,
+  loadLayerRecords,
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2.5">
-        <h4 className="text-[12px] font-semibold leading-tight text-slate-700">
+    <div className="mt-3 overflow-hidden rounded-md border border-[#13593f] bg-[#031a14] shadow-md">
+      <div className="flex items-center gap-2 border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
+        <h4 className="text-[12px] font-semibold leading-tight text-white">
           Selected Administrative Layers
         </h4>
       </div>
 
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          {items.map((item, index) => (
+      <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] shadow-sm">
+        {items.map((item, index) => (
+          <div key={item.key}>
             <AdminLayerRow
-              key={item.key}
+              layerKey={item.key}
               label={item.label}
               checked={getLayerVisible(item.key)}
               opacity={getLayerOpacity(item.key)}
+              color={getLayerColor(item.key)}
+              isOpen={!!dropdownOpenByKey?.[item.key]}
               isLast={index === items.length - 1}
               onToggle={() => toggleLayer(item.key)}
               onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+              onColor={(value) => setLayerColor(item.key, value)}
+              onDropdownToggle={() => {
+                toggleDropdownForKey(item.key);
+                loadLayerRecords(item.key);
+              }}
+              onTable={() => {
+                loadLayerRecords(item.key);
+                openAttributeTable(item.key);
+              }}
             />
-          ))}
+            {dropdownOpenByKey?.[item.key] && (
+              <LayerDropdownPanel
+                geojson={layerRecordCache?.[item.key]?.geojson}
+              />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
-function AdminLayerRow({ label, checked, opacity, isLast, onToggle, onOpacity }) {
+function AdminLayerRow({
+  label,
+  checked,
+  opacity,
+  color,
+  isOpen,
+  isLast,
+  onToggle,
+  onOpacity,
+  onColor,
+  onDropdownToggle,
+  onTable,
+}) {
   return (
     <div
-      className={`bg-white px-2.5 py-2 ${
-        isLast ? "" : "border-b border-slate-100"
-      }`}
+      className={`bg-[#06291f] px-2.5 py-2 ${isLast ? "" : "border-b border-[#0c3d2d]"}`}
     >
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
           checked={!!checked}
           onChange={onToggle}
-          className="h-4 w-4 shrink-0 accent-green-700"
+          className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
         />
-
-        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-slate-700">
+        {onColor && <SmallColorPicker color={color} onChange={onColor} />}
+        <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
           {label}
         </span>
-
-        <div className="flex shrink-0 items-center gap-1.5 text-slate-800">
-          <button
-            type="button"
-            title="Layer info"
-            aria-label="Layer info"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
-          >
-            <Info size={14} fill="currentColor" strokeWidth={2.2} />
-          </button>
-          <button
-            type="button"
-            title="Zoom/Search layer"
-            aria-label="Zoom/Search layer"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
-          >
-            <Search size={15} strokeWidth={2.6} />
-          </button>
-          <button
-            type="button"
-            title="Layer options"
-            aria-label="Layer options"
-            className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-slate-100"
-          >
-            <ChevronDown size={16} fill="currentColor" strokeWidth={2.6} />
-          </button>
+        <div className="flex shrink-0 items-center gap-1.5 text-white/75">
+          {onTable && (
+            <button
+              type="button"
+              title="Attribute table"
+              aria-label="Attribute table"
+              onClick={onTable}
+              className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
+            >
+              <Table2 size={14} strokeWidth={2.4} />
+            </button>
+          )}
+          {onDropdownToggle && (
+            <button
+              type="button"
+              title="Layer details"
+              aria-label="Layer details"
+              onClick={onDropdownToggle}
+              className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-[#0a3327]"
+            >
+              <ChevronDown
+                size={16}
+                fill="currentColor"
+                strokeWidth={2.6}
+                className={`transition ${isOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="mt-0.5 flex items-center gap-2 pl-6">
+      <div className="mt-1 flex items-center gap-2 pl-6">
         <input
           type="range"
           min="0"
           max="100"
           value={opacity}
           onChange={(e) => onOpacity(Number(e.target.value))}
-          className="h-1.5 min-w-0 flex-1 accent-green-700"
+          className="h-1.5 min-w-0 flex-1 accent-[#9be37b]"
         />
-        <span className="w-9 shrink-0 text-right text-[11px] font-medium text-slate-600">
+        <span className="w-9 shrink-0 text-right text-[11px] font-medium text-white/60">
           {opacity}%
         </span>
       </div>
@@ -962,31 +1422,43 @@ function AdminLayerRow({ label, checked, opacity, isLast, onToggle, onOpacity })
   );
 }
 
-function PanelIcon({ title, icon, active, onClick }) {
+function PanelIcon({ title, icon, iconLg, active, onClick }) {
   return (
     <button
       type="button"
       title={title}
       aria-label={title}
       onClick={onClick}
-      className={`flex h-10 w-10 items-center justify-center rounded-lg border shadow-lg transition ${
+      className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border shadow-md transition ${
         active
-          ? "border-green-300 bg-[#0f3d2e] text-white"
-          : "border-slate-300 bg-white text-[#0f3d2e] hover:border-green-700 hover:bg-green-50"
+          ? "border-[#9be37b] bg-[#083526] text-white"
+          : "border-[#104c39] bg-[#031a14] text-white hover:bg-[#0a3327]"
       }`}
     >
       {icon}
+      {iconLg}
     </button>
   );
 }
 
-function Panel({ title, children }) {
+function Panel({ title, children, onClose }) {
   return (
     <div>
-      <div className="flex items-center justify-between border-b border-slate-200 bg-[#0f3d2e] px-3 py-2.5">
+      <div className="flex items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-white">
           {title}
         </h3>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            title="Close panel"
+            aria-label="Close panel"
+            className="flex h-6 w-6 items-center justify-center rounded text-white/50 transition hover:bg-[#0a3327] hover:text-white"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
       {children}
     </div>
@@ -995,7 +1467,7 @@ function Panel({ title, children }) {
 
 function SectionTitle({ title, open }) {
   return (
-    <div className="mt-3 flex items-center justify-between px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-700">
+    <div className="mt-3 flex items-center justify-between px-1 pb-2 text-xs font-semibold uppercase tracking-wide text-white/70">
       <span>{title}</span>
       <ChevronRight size={15} className={open ? "rotate-90" : ""} />
     </div>
@@ -1016,23 +1488,23 @@ function LayerRow({
 }) {
   return (
     <div
-      className={`rounded-md border border-slate-200 bg-white p-2 ${disabled ? "opacity-55" : ""}`}
+      className={`rounded-md border border-[#0c3d2d] bg-[#06291f] p-2 ${disabled ? "opacity-55" : ""}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-slate-800">
+        <label className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-white/85">
           <input
             type="checkbox"
             checked={!!checked}
             onChange={onToggle}
             disabled={disabled}
-            className="h-4 w-4 accent-green-700"
+            className="h-4 w-4 accent-[#9be37b]"
           />
-          <span className="text-green-700">{icon}</span>
+          <span className="text-[#9be37b]">{icon}</span>
           <span className="truncate">{label}</span>
         </label>
         <div className="flex shrink-0 items-center gap-2">
           {showOpacity && (
-            <span className="text-xs font-semibold text-slate-600">
+            <span className="text-xs font-semibold text-white/60">
               {opacity}%
             </span>
           )}
@@ -1048,11 +1520,11 @@ function LayerRow({
           value={opacity}
           disabled={disabled}
           onChange={(e) => onOpacity(Number(e.target.value))}
-          className="mt-0.5 h-1.5 w-full accent-green-700"
+          className="mt-0.5 h-1.5 w-full accent-[#9be37b]"
         />
       )}
       {disabled && disabledText && (
-        <p className="mt-1 text-[10px] text-slate-500">{disabledText}</p>
+        <p className="mt-1 text-[10px] text-white/50">{disabledText}</p>
       )}
     </div>
   );
@@ -1067,11 +1539,13 @@ function ToolboxButton({ icon, label, active, onClick, description }) {
       aria-label={label}
       className={`flex flex-col items-center justify-center gap-1 rounded-md border p-2 transition ${
         active
-          ? "border-green-700 bg-green-50 text-green-800 shadow-inner"
-          : "border-slate-200 bg-white text-slate-800 hover:border-green-700 hover:bg-green-50"
+          ? "border-[#9be37b] bg-[#083526] text-white shadow-inner"
+          : "border-[#104c39] bg-[#031a14] text-white/85 hover:bg-[#0a3327]"
       }`}
     >
-      <span className={active ? "text-green-800" : "text-green-700"}>{icon}</span>
+      <span className={active ? "text-[#9be37b]" : "text-white/80"}>
+        {icon}
+      </span>
       <span className="text-center text-[10px] font-medium leading-tight">
         {label}
       </span>

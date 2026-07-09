@@ -1,3 +1,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes markerRotate {
+  0% { transform: perspective(400px) rotateY(0deg) translateY(0px); }
+  50% { transform: perspective(400px) rotateY(180deg) translateY(-10px); }
+  100% { transform: perspective(400px) rotateY(360deg) translateY(0px); }
+}
+
+.rotating-plot-marker-wrapper {
+  width: 45px !important;
+  height: 45px !important;
+  margin-top: -22px !important;
+  display: block !important;
+}
+
+.rotating-plot-marker {
+  width: 45px !important;
+  height: 45px !important;
+  display: block !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300ffaa" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3" fill="white"></circle></svg>');
+  background-size: contain !important;
+  background-position: center bottom !important;
+  background-repeat: no-repeat !important;
+  animation: markerRotate 2.5s ease-in-out infinite;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0px 8px 4px rgba(0,0,0,0.4));
+}
+

@@ -120,11 +120,13 @@ User = get_user_model()
 # Hierarchy starts from District
 # --------------------------------------------------------
 
+# --------------------------------------------------------
+# District
+# --------------------------------------------------------
 class District(models.Model):
-
     gid = models.AutoField(primary_key=True)
     objectid = models.FloatField(null=True, blank=True)
-    id = models.FloatField()
+    id = models.FloatField( unique=True, db_index=True, )
     name = models.CharField(max_length=50)
     extent = models.CharField(max_length=100, null=True, blank=True)
     shape_star = models.FloatField(null=True, blank=True)
@@ -140,25 +142,31 @@ class District(models.Model):
 
 
 # --------------------------------------------------------
-# Tehsil Administrative Boundary
+# Tehsil
 # District → Tehsil
 # --------------------------------------------------------
-
 class Tehsil(models.Model):
-
     gid = models.AutoField(primary_key=True)
     objectid = models.IntegerField(null=True, blank=True)
     id = models.FloatField()
     name = models.CharField(max_length=50)
-    district = models.CharField(max_length=50)
-    district_i = models.IntegerField(null=True, blank=True)
+
+    district = models.ForeignKey(
+        District,
+        on_delete=models.CASCADE,
+        db_column="district_i",
+        related_name="tehsils",
+        null=True,
+        blank=True,
+    )
+
     extent = models.CharField(max_length=100, null=True, blank=True)
     shape_star = models.FloatField(null=True, blank=True)
     shape_stle = models.FloatField(null=True, blank=True)
     geom = gis_models.MultiPolygonField(srid=4326)
 
     def __str__(self):
-        return f"{self.name} ({self.district})"
+        return self.name
 
     class Meta:
         managed = False
@@ -166,19 +174,25 @@ class Tehsil(models.Model):
 
 
 # --------------------------------------------------------
-# Mauza Administrative Boundary
+# Mauza
 # District → Tehsil → Mauza
 # --------------------------------------------------------
-
 class Mauza(models.Model):
-
     gid = models.AutoField(primary_key=True)
 
-    district = models.CharField(max_length=100)
-    dist_id = models.FloatField()
+    district = models.ForeignKey(
+        District,
+        on_delete=models.CASCADE,
+        db_column="dist_id",
+        related_name="mauzas",
+    )
 
-    tehsil = models.CharField(max_length=100)
-    tehsil_id = models.FloatField()
+    tehsil = models.ForeignKey(
+        Tehsil,
+        on_delete=models.CASCADE,
+        db_column="tehsil_id",
+        related_name="mauzas",
+    )
 
     kc = models.CharField(max_length=100, null=True, blank=True)
     kc_id = models.IntegerField(null=True, blank=True)
@@ -187,8 +201,11 @@ class Mauza(models.Model):
     pc_id = models.IntegerField(null=True, blank=True)
 
     mauza = models.CharField(max_length=100)
-    mauza_id = models.FloatField()
-
+    mauza_id = models.FloatField(
+        unique=True,
+        null=True,
+        blank=True,
+    )
     geom = gis_models.MultiPolygonField(srid=4326)
 
     def __str__(self):
@@ -200,67 +217,50 @@ class Mauza(models.Model):
 
 
 # --------------------------------------------------------
-# Murabba Administrative Boundary
-# District → Tehsil → Mauza → Murabba
-# --------------------------------------------------------
-
-class Murabba(models.Model):
-
-    gid = models.AutoField(primary_key=True)
-
-    district = models.CharField(max_length=50)
-    dist_id = models.FloatField()
-
-    tehsil = models.CharField(max_length=50)
-    tehsil_id = models.FloatField()
-
-    kc = models.CharField(max_length=50, null=True, blank=True)
-    kc_id = models.FloatField(null=True, blank=True)
-
-    pc = models.CharField(max_length=50, null=True, blank=True)
-    pc_id = models.FloatField(null=True, blank=True)
-
-    mauza = models.CharField(max_length=50)
-    mauza_id = models.FloatField()
-
-    murabba_no = models.IntegerField(db_column="m")
-    sheets = models.CharField(max_length=50)
-
-    geom = gis_models.MultiPolygonField(srid=4326)
-
-    def __str__(self):
-        return f"{self.mauza} - Murabba {self.murabba_no}"
-
-    class Meta:
-        managed = False
-        db_table = "murabba"
-
-
-# --------------------------------------------------------
-# Khasra Administrative Boundary - New Format
+# Khasra
 # District → Tehsil → Mauza → Khasra
 # --------------------------------------------------------
-
 class Khasra(models.Model):
-
     gid = models.AutoField(primary_key=True)
 
     join_shp = models.CharField(max_length=50, null=True, blank=True)
 
-    district = models.CharField(max_length=50, null=True, blank=True)
-    dist_id = models.FloatField(null=True, blank=True)
+    district = models.ForeignKey(
+        District,
+        db_column="dist_id",
+        to_field="id",
+        related_name="khasras",
+        db_constraint=False,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
 
-    tehsil = models.CharField(max_length=50, null=True, blank=True)
-    tehsil_id = models.FloatField(null=True, blank=True)
+    tehsil = models.ForeignKey(
+        Tehsil,
+        on_delete=models.CASCADE,
+        db_column="tehsil_id",
+        related_name="khasras",
+        null=True,
+        blank=True,
+    )
+
+    mauza = models.ForeignKey(
+        Mauza,
+        db_column="mauza_id",
+        to_field="mauza_id",
+        related_name="khasras",
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+        null=True,
+        blank=True,
+    )
 
     kc = models.CharField(max_length=254, null=True, blank=True)
     kc_id = models.FloatField(null=True, blank=True)
 
     pc = models.CharField(max_length=100, null=True, blank=True)
     pc_id = models.FloatField(null=True, blank=True)
-
-    mauza = models.CharField(max_length=100, null=True, blank=True)
-    mauza_id = models.FloatField(null=True, blank=True)
 
     hadbust_no = models.IntegerField(null=True, blank=True)
     asse_cir = models.CharField(max_length=100, null=True, blank=True)
@@ -269,7 +269,7 @@ class Khasra(models.Model):
         max_digits=20,
         decimal_places=10,
         null=True,
-        blank=True
+        blank=True,
     )
 
     type = models.CharField(max_length=50, null=True, blank=True)
@@ -296,6 +296,52 @@ class Khasra(models.Model):
         managed = False
         db_table = "khasra"
 
+    
+# --------------------------------------------------------
+# Trijunction Boundary
+# --------------------------------------------------------
+
+class Trijunction(models.Model):
+    gid = models.IntegerField(primary_key=True)
+
+    type = models.CharField(max_length=20, null=True, blank=True)
+
+    m1 = models.CharField(max_length=50, null=True, blank=True)
+    m1_id = models.FloatField(null=True, blank=True)
+
+    m2 = models.CharField(max_length=50, null=True, blank=True)
+    m2_id = models.FloatField(null=True, blank=True)
+
+    m3 = models.CharField(max_length=50, null=True, blank=True)
+    m3_id = models.FloatField(null=True, blank=True)
+
+    # FK to Mauza
+    mauza = models.ForeignKey(
+        Mauza,
+        db_column="mauza_id",
+        to_field="mauza_id",
+        related_name="trijunctions",
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+        null=True,
+        blank=True,
+    )
+
+    layer = models.CharField(max_length=254, null=True, blank=True)
+
+    geom = gis_models.MultiPointField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"Trijunction {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "trijunction"
+
 # --------------------------------------------------------
 # Society Administrative Boundary
 # --------------------------------------------------------
@@ -308,13 +354,10 @@ class Society(models.Model):
     source = models.CharField(max_length=255, null=True, blank=True)
     feat_count = models.IntegerField(null=True, blank=True)
     area = models.FloatField(null=True, blank=True)
-
     society = models.CharField(max_length=255, null=True, blank=True)
     society_id = models.IntegerField(null=True, blank=True)
-
     district = models.CharField(max_length=100, null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
-
     tehsil = models.CharField(max_length=100, null=True, blank=True)
     tehsil_id = models.IntegerField(null=True, blank=True)
 
@@ -337,7 +380,6 @@ class MasterPlan(models.Model):
 
     gid = models.AutoField(primary_key=True)
     geom = gis_models.GeometryField(srid=4326)
-
     society_id = models.IntegerField(null=True, blank=True)
     mauza_id = models.IntegerField(null=True, blank=True)
     dist_id = models.IntegerField(null=True, blank=True)
@@ -355,43 +397,43 @@ class MasterPlan(models.Model):
 # =========================
 # SPOT LEVEL
 # =========================
-class SpotLevel(models.Model):
+# class SpotLevel(models.Model):
 
-    gid = models.AutoField(primary_key=True)
-    geom = gis_models.GeometryField(srid=4326)
+#     gid = models.AutoField(primary_key=True)
+#     geom = gis_models.GeometryField(srid=4326)
+#     society_id = models.IntegerField(null=True, blank=True)
+#     project_id = models.IntegerField(null=True, blank=True) 
+#     mauza_id = models.IntegerField(null=True, blank=True)
+#     dist_id = models.IntegerField(null=True, blank=True)
+#     tehsil_id = models.IntegerField(null=True, blank=True)
 
-    society_id = models.IntegerField(null=True, blank=True)
-    mauza_id = models.IntegerField(null=True, blank=True)
-    dist_id = models.IntegerField(null=True, blank=True)
-    tehsil_id = models.IntegerField(null=True, blank=True)
+#     def __str__(self):
+#         return f"SpotLevel {self.gid}"
 
-    def __str__(self):
-        return f"SpotLevel {self.gid}"
+#     class Meta:
+#         managed = False
+#         db_table = "spot_level"
 
-    class Meta:
-        managed = False
-        db_table = "spot_level"
+# # =========================
+# # CONTOUR
+# # =========================
 
-# =========================
-# CONTOUR
-# =========================
+# class Contour(models.Model):
 
-class Contour(models.Model):
+#     gid = models.AutoField(primary_key=True)
+#     geom = gis_models.GeometryField(srid=4326)
+#     society_id = models.IntegerField(null=True, blank=True)
+#     project_id = models.IntegerField(null=True, blank=True) 
+#     mauza_id = models.IntegerField(null=True, blank=True)
+#     dist_id = models.IntegerField(null=True, blank=True)
+#     tehsil_id = models.IntegerField(null=True, blank=True)
+#     elevation = models.CharField(max_length=100, null=True, blank=True)
+#     def __str__(self):
+#         return f"Contour {self.gid}"
 
-    gid = models.AutoField(primary_key=True)
-    geom = gis_models.GeometryField(srid=4326)
-
-    society_id = models.IntegerField(null=True, blank=True)
-    mauza_id = models.IntegerField(null=True, blank=True)
-    dist_id = models.IntegerField(null=True, blank=True)
-    tehsil_id = models.IntegerField(null=True, blank=True)
-
-    def __str__(self):
-        return f"Contour {self.gid}"
-
-    class Meta:
-        managed = False
-        db_table = "contour"
+#     class Meta:
+#         managed = False
+#         db_table = "contour"
 
 # =========================
 # RUDA PROPOSED ROADS
@@ -453,35 +495,763 @@ class RudaBoundary(models.Model):
         managed = False
         db_table = "ruda_boundary"
 
-# --------------------------------------------------------
-# Trijunction Boundary
-# --------------------------------------------------------
 
-class Trijunction(models.Model):
+# =========================
+# Square
+# =========================
 
-    gid = models.AutoField(primary_key=True)
+class Square(models.Model):
+    gid = models.IntegerField(primary_key=True)
 
-    type = models.CharField(max_length=20, null=True, blank=True)
+    district = models.ForeignKey(
+        District,
+        on_delete=models.CASCADE,
+        db_column="dist_id",
+        related_name="squares",
+        null=True,
+        blank=True,
+    )
 
-    m1 = models.CharField(max_length=50, null=True, blank=True)
-    m1_id = models.FloatField(null=True, blank=True)
+    tehsil = models.ForeignKey(
+        Tehsil,
+        on_delete=models.CASCADE,
+        db_column="tehsil_id",
+        related_name="squares",
+        null=True,
+        blank=True,
+    )
 
-    m2 = models.CharField(max_length=50, null=True, blank=True)
-    m2_id = models.FloatField(null=True, blank=True)
+    mauza = models.ForeignKey(
+        Mauza,
+        db_column="mauza_id",
+        to_field="mauza_id",     # <-- IMPORTANT
+        on_delete=models.DO_NOTHING,
+        related_name="squares",
+        db_constraint=False,     # because database FK does not exist
+        null=True,
+        blank=True,
+    )
 
-    m3 = models.CharField(max_length=50, null=True, blank=True)
-    m3_id = models.FloatField(null=True, blank=True)
+    kc = models.CharField(max_length=254, null=True, blank=True)
+    kc_id = models.FloatField(null=True, blank=True)
+
+    pc = models.CharField(max_length=254, null=True, blank=True)
+    pc_id = models.FloatField(null=True, blank=True)
+
+    sq = models.FloatField(null=True, blank=True)
+    square_id = models.FloatField(null=True, blank=True)
 
     layer = models.CharField(max_length=254, null=True, blank=True)
-    path = models.CharField(max_length=254, null=True, blank=True)
 
-    geom = gis_models.GeometryField(srid=4326)
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
-        names = [self.m1, self.m2, self.m3]
-        names = [n for n in names if n]
-        return " - ".join(names) if names else f"Trijunction {self.gid}"
+        return (
+            f"{self.mauza.mauza} - SQ {self.sq}"
+            if self.mauza else f"Square {self.gid}"
+        )
 
     class Meta:
         managed = False
-        db_table = "trijunction"
+        db_table = "square"
+
+# --------------------------------------------------------
+# Acre
+# District → Tehsil → Mauza → Acre
+# --------------------------------------------------------
+
+class Acre(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    district = models.ForeignKey(
+        District,
+        on_delete=models.CASCADE,
+        db_column="dist_id",
+        related_name="acres",
+        null=True,
+        blank=True,
+    )
+
+    tehsil = models.ForeignKey(
+        Tehsil,
+        on_delete=models.CASCADE,
+        db_column="tehsil_id",
+        related_name="acres",
+        null=True,
+        blank=True,
+    )
+
+    mauza = models.ForeignKey(
+        Mauza,
+        db_column="mauza_id",
+        to_field="mauza_id",     # <-- IMPORTANT
+        on_delete=models.DO_NOTHING,
+        related_name="acres",
+        db_constraint=False,     # because database FK does not exist
+        null=True,
+        blank=True,
+    )
+
+    sq = models.FloatField(null=True, blank=True)
+    acre = models.FloatField(null=True, blank=True)
+
+    layer = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return (
+            f"{self.mauza} - {self.acre} Acre"
+            if self.mauza
+            else f"Acre {self.gid}"
+        )
+
+    class Meta:
+        managed = False
+        db_table = "acre"
+
+# =========================
+# FieldPoints
+# =========================
+class FieldPoints(models.Model):
+    gid = models.IntegerField(primary_key=True)
+
+    name = models.CharField(
+        max_length=6,
+        null=True,
+        blank=True,
+    )
+
+    easting = models.DecimalField(
+        max_digits=20,
+        decimal_places=8,
+        null=True,
+        blank=True,
+    )
+
+    northing = models.DecimalField(
+        max_digits=20,
+        decimal_places=8,
+        null=True,
+        blank=True,
+    )
+
+    elevation = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+    )
+
+    # FK to Mauza
+    mauza = models.ForeignKey(
+        Mauza,
+        db_column="mauza_id",
+        to_field="mauza_id",
+        on_delete=models.DO_NOTHING,
+        related_name="fieldpoints",
+        db_constraint=False,
+        null=True,
+        blank=True,
+    )
+
+    layer = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPointField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name if self.name else f"FieldPoint {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "fieldpoints"
+        
+# =========================
+# Geodetic Network
+# =========================
+class GeodeticNetwork(models.Model):
+
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=100, null=True, blank=True)
+
+    # Actual DB columns are easting_(m and northing_(
+    # Keep Python/API field names clean as easting_m / northing_m.
+    easting_m = models.FloatField(db_column="easting_m", null=True, blank=True)
+    northing_m = models.FloatField(db_column="northing_m", null=True, blank=True)
+
+    code = models.CharField(max_length=50, null=True, blank=True)
+
+    elevation = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.PointField(srid=4326)
+
+    def __str__(self):
+        return self.name if self.name else f"Geodetic {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "geodeticnetwork"
+
+
+# =========================
+# Project
+# =========================
+class Project(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    type = models.CharField(max_length=100, null=True, blank=True)
+
+    brief_name = models.CharField(max_length=100, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(srid=4326, null=True, blank=True)
+
+    def __str__(self):
+        return self.name or f"Project {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "project"
+
+
+
+# =========================
+# Project Mauza
+# =========================
+class ProjectMauza(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        db_column="project_id",
+        related_name="project_mauzas"
+    )
+
+    mauza = models.ForeignKey(
+        Mauza,
+        db_column="mauza_id",
+        to_field="mauza_id",
+        related_name="project_mauzas",
+        on_delete=models.DO_NOTHING,
+        db_constraint=False,
+        null=True,
+        blank=True,
+    )
+
+    khasra = models.ForeignKey(
+        Khasra,
+        on_delete=models.CASCADE,
+        db_column="khasra_id",
+        related_name="project_mauzas",
+        null=True,
+        blank=True
+    )
+
+    square_id = models.FloatField(
+        db_column="square_id",
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        managed = True
+        db_table = "project_mauza"
+
+    def __str__(self):
+        return (
+            f"Project={self.project_id}, "
+            f"Mauza={self.mauza_id}, "
+            f"Khasra={self.khasra_id}"
+        )
+
+# =========================
+# Block
+# =========================
+
+class Block(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    area = models.FloatField(null=True, blank=True)
+
+    block = models.CharField(max_length=100, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(srid=4326, null=True, blank=True)
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        db_column="project_id",
+        related_name="blocks",
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.block or self.name or f"Block {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "block"
+
+# =========================
+# Block Level
+# =========================
+
+class BlockLevel(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    block = models.CharField(max_length=255, null=True, blank=True)
+
+    dimension = models.CharField(max_length=255, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(srid=4326, null=True, blank=True)
+
+    def __str__(self):
+        return self.name or f"BlockLevel {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "block_level"
+# =========================
+# Plot
+# =========================
+class Plot(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(max_length=255, null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
+
+    project = models.ForeignKey(
+        Project,
+        db_column="project_id",
+        to_field="gid",
+        on_delete=models.DO_NOTHING,
+        related_name="plots",
+        null=True,
+        blank=True,
+    )
+
+    block = models.ForeignKey(
+        Block,
+        db_column="block_id",
+        to_field="gid",
+        on_delete=models.DO_NOTHING,
+        related_name="plots",
+        null=True,
+        blank=True,
+    )
+
+    plot_no = models.CharField(max_length=100, null=True, blank=True)
+    plot_area = models.CharField(max_length=100, null=True, blank=True)
+
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_area = models.FloatField(null=True, blank=True)
+    dimension = models.CharField(max_length=255, null=True, blank=True)
+
+    parkfront = models.CharField(max_length=50, null=True, blank=True)
+    rd_ft = models.CharField(max_length=50, null=True, blank=True)
+    storey = models.CharField(max_length=50, null=True, blank=True)
+    rd_facing = models.CharField(max_length=50, null=True, blank=True)
+
+    h = models.IntegerField(null=True, blank=True)
+
+    demar = models.CharField(max_length=255, null=True, blank=True)
+
+    possession = models.CharField(max_length=255, null=True, blank=True)
+    poss_st = models.CharField(max_length=255, null=True, blank=True)
+
+    canceled = models.CharField(max_length=50, null=True, blank=True)
+
+    site_plan = models.CharField(max_length=255, null=True, blank=True)
+
+    unique_id = models.IntegerField(null=True, blank=True)
+
+    tr_srno = models.IntegerField(null=True, blank=True)
+    tr_own = models.TextField(null=True, blank=True)
+    tr_p_no = models.CharField(max_length=255, null=True, blank=True)
+    tr_cate = models.CharField(max_length=255, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return self.plot_no or self.name or f"Plot {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "plot"
+
+# =========================
+# Spot Level
+# =========================
+class SpotLevel(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    geom = gis_models.GeometryField(srid=4326)
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        db_column="project_id",
+        related_name="spot_levels",
+        null=True,
+        blank=True,
+    )
+
+    district = models.ForeignKey(
+        District,
+        on_delete=models.CASCADE,
+        db_column="dist_id",
+        related_name="spot_levels",
+        null=True,
+        blank=True,
+    )
+
+    tehsil = models.ForeignKey(
+        Tehsil,
+        on_delete=models.CASCADE,
+        db_column="tehsil_id",
+        related_name="spot_levels",
+        null=True,
+        blank=True,
+    )
+
+    mauza = models.ForeignKey(
+        Mauza,
+        on_delete=models.CASCADE,
+        db_column="mauza_id",
+        related_name="spot_levels",
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return f"SpotLevel {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "spot_level"
+
+
+# =========================
+# Contour
+# =========================
+class Contour(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    geom = gis_models.GeometryField(srid=4326)
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        db_column="project_id",
+        related_name="contours",
+        null=True,
+        blank=True,
+    )
+
+    district = models.ForeignKey(
+        District,
+        on_delete=models.CASCADE,
+        db_column="dist_id",
+        related_name="contours",
+        null=True,
+        blank=True,
+    )
+
+    tehsil = models.ForeignKey(
+        Tehsil,
+        on_delete=models.CASCADE,
+        db_column="tehsil_id",
+        related_name="contours",
+        null=True,
+        blank=True,
+    )
+
+    mauza = models.ForeignKey(
+        Mauza,
+        on_delete=models.CASCADE,
+        db_column="mauza_id",
+        related_name="contours",
+        null=True,
+        blank=True,
+    )
+
+    elevation = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return f"Contour {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "contour"
+# =========================
+# Road
+# =========================
+class Road(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        db_column="project_id",
+        related_name="roads",
+        null=True,
+        blank=True,
+    )
+
+    block = models.ForeignKey(
+        Block,
+        on_delete=models.CASCADE,
+        db_column="block_id",
+        related_name="roads",
+        null=True,
+        blank=True,
+    )
+
+    dimension = models.CharField(max_length=100, null=True, blank=True)
+    type = models.CharField(max_length=255, null=True, blank=True)
+    row = models.CharField(max_length=100, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return self.name or f"Road {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "road"
+
+# =========================
+# Camera Location
+# =========================
+class CameraLocation(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    sr_no = models.IntegerField(
+        db_column="sr_no_",
+        null=True,
+        blank=True,
+    )
+
+    project = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    camera = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    # FK
+    project_fk = models.ForeignKey(
+        Project,
+        db_column="project_id",
+        to_field="gid",
+        on_delete=models.DO_NOTHING,
+        related_name="camera_locations",
+        db_constraint=False,
+        null=True,
+        blank=True,
+    )
+
+    y = models.FloatField(null=True, blank=True)
+    x = models.FloatField(null=True, blank=True)
+
+    coordinate = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    iframe_lin = models.TextField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.camera or f"Camera {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "cameralocation"
+
+# =========================
+# SWPoint
+# =========================
+class SWPoint(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    type = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
+    name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+
+    project = models.ForeignKey(
+        Project,
+        db_column="project_id",
+        to_field="gid",
+        on_delete=models.DO_NOTHING,
+        related_name="sw_points",
+        db_constraint=False,   # because managed=False table
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return self.name or f"SWPoint {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "swpoint"
+
+# =========================
+# WSL
+# =========================
+class WSL(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True
+    )
+
+    dia = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True
+    )
+
+    type = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True
+    )
+
+    name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+
+    project = models.ForeignKey(
+        Project,
+        db_column="project_id",
+        to_field="gid",
+        on_delete=models.DO_NOTHING,
+        related_name="water_supply_lines",
+        db_constraint=False,
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True
+    )
+
+    def __str__(self):
+        return self.name or f"WSL {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "wsl"
+
+# =========================
+# WSPoint
+# =========================
+class WSPoint(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    type = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    project = models.ForeignKey(
+        "Project",
+        db_column="project_id",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="water_supply_points",
+    )
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"WS Point {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "wspoint"

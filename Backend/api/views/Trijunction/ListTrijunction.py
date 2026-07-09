@@ -13,20 +13,20 @@ class ListTrijunctionView(viewsets.ViewSet):
             m1 = request.query_params.get("m1")
             m2 = request.query_params.get("m2")
             m3 = request.query_params.get("m3")
-            mauza = request.query_params.get("mauza")
             junction_type = request.query_params.get("type")
+            mauza_id = request.query_params.get("mauza_id")
 
             if gid:
-                trijunction = Trijunction.objects.filter(gid=gid).first()
+                obj = Trijunction.objects.filter(gid=gid).first()
 
-                if not trijunction:
+                if not obj:
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
                         message="Trijunction not found.",
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
-                serializer = TrijunctionSerializer(trijunction)
+                serializer = TrijunctionSerializer(obj)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
@@ -49,12 +49,8 @@ class ListTrijunctionView(viewsets.ViewSet):
             if junction_type:
                 queryset = queryset.filter(type__iexact=junction_type)
 
-            # TJ points -> use ONLY m3 as mauza name
-            if junction_type and junction_type.upper() == "TJ" and mauza:
-                queryset = queryset.filter(m3__iexact=mauza)
-
-            # B points -> no mauza filter, show all control points
-            # so do nothing extra here
+            if mauza_id:
+                queryset = queryset.filter(mauza_id=mauza_id)
 
             serializer = TrijunctionSerializer(queryset, many=True)
 
@@ -72,20 +68,19 @@ class ListTrijunctionView(viewsets.ViewSet):
                 data=str(e),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()
-
     @action(detail=True, methods=["get"], url_path="geojson", url_name="geojson")
     def geojson(self, request, pk=None):
         try:
-            trijunction = Trijunction.objects.filter(gid=pk).first()
+            obj = Trijunction.objects.filter(gid=pk).first()
 
-            if not trijunction:
+            if not obj:
                 return ApiResponse(
                     status=status.HTTP_404_NOT_FOUND,
                     message="Trijunction not found.",
                     http_status=status.HTTP_404_NOT_FOUND,
                 ).create_response()
 
-            serializer = TrijunctionSerializer(trijunction)
+            serializer = TrijunctionSerializer(obj)
 
             return ApiResponse(
                 status=status.HTTP_200_OK,

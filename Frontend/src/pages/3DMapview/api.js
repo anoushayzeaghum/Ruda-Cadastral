@@ -1,18 +1,4 @@
 import axios from "axios";
-import {
-  getDistricts as baseGetDistricts,
-  getTehsils as baseGetTehsils,
-  getMauzas as baseGetMauzas,
-  getSocieties as baseGetSocieties,
-  getDistrictBoundary as baseGetDistrictBoundary,
-  getTehsilBoundary as baseGetTehsilBoundary,
-  getMauzaBoundary as baseGetMauzaBoundary,
-  getSocietyGeoJSON as baseGetSocietyGeoJSON,
-  getSocietyBoundaryGeoJSONBySocietyId as baseGetSocietyBoundaryGeoJSONBySocietyId,
-  getMasterPlanGeoJSON as baseGetMasterPlanGeoJSON,
-  getSpotLevelGeoJSON as baseGetSpotLevelGeoJSON,
-  getContourGeoJSON as baseGetContourGeoJSON,
-} from "../../services/api";
 
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api",
@@ -39,9 +25,11 @@ export function normalizeFeatureCollection(data) {
     ? payload
     : Array.isArray(payload?.results)
       ? payload.results
-      : Array.isArray(payload?.features)
-        ? payload.features
-        : [];
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload?.features)
+          ? payload.features
+          : [];
 
   const features = rows
     .map((item) => {
@@ -58,7 +46,7 @@ export function normalizeFeatureCollection(data) {
 
       return {
         type: "Feature",
-        id: item?.id ?? item?.gid ?? item?.objectid ?? item?.mauza_id ?? item?.society_id,
+        id: item?.gid ?? item?.id ?? item?.objectid ?? item?.project_id,
         geometry,
         properties,
       };
@@ -82,11 +70,9 @@ export function collectionToItems(data) {
     return payload.features.map((feature) => ({
       id:
         feature.id ??
-        feature.properties?.id ??
         feature.properties?.gid ??
-        feature.properties?.objectid ??
-        feature.properties?.mauza_id ??
-        feature.properties?.society_id,
+        feature.properties?.id ??
+        feature.properties?.project_id,
       geometry: feature.geometry ?? null,
       ...(feature.properties || {}),
       properties: feature.properties || {},
@@ -96,7 +82,7 @@ export function collectionToItems(data) {
   if (payload?.type === "Feature") {
     return [
       {
-        id: payload.id ?? payload.properties?.id,
+        id: payload.id ?? payload.properties?.gid ?? payload.properties?.id,
         geometry: payload.geometry ?? null,
         ...(payload.properties || {}),
         properties: payload.properties || {},
@@ -109,55 +95,19 @@ export function collectionToItems(data) {
 
 export function getItemId(item) {
   return (
-    item?.id ??
+    item?.project_id ??
     item?.gid ??
+    item?.id ??
     item?.objectid ??
-    item?.district_i ??
-    item?.district_id ??
-    item?.dist_id ??
-    item?.tehsil_id ??
-    item?.mauza_id ??
-    item?.society_id ??
-    item?.properties?.id ??
+    item?.properties?.project_id ??
     item?.properties?.gid ??
-    item?.properties?.objectid ??
-    item?.properties?.district_i ??
-    item?.properties?.district_id ??
-    item?.properties?.dist_id ??
-    item?.properties?.tehsil_id ??
-    item?.properties?.mauza_id ??
-    item?.properties?.society_id
+    item?.properties?.id ??
+    item?.properties?.objectid
   );
 }
 
-export function getMauzaId(mauza) {
-  return (
-    mauza?.mauza_id ??
-    mauza?.properties?.mauza_id ??
-    mauza?.id ??
-    mauza?.gid ??
-    mauza?.objectid ??
-    mauza?.properties?.id ??
-    mauza?.properties?.gid ??
-    mauza?.properties?.objectid
-  );
-}
-
-export function getSocietyId(society) {
-  return (
-    society?.society_id ??
-    society?.properties?.society_id ??
-    society?.gid ??
-    society?.id ??
-    society?.objectid ??
-    society?.properties?.gid ??
-    society?.properties?.id ??
-    society?.properties?.objectid
-  );
-}
-
-export function getSocietyPk(society) {
-  return society?.gid ?? society?.id ?? society?.objectid ?? society?.properties?.gid;
+export function getProjectId(project) {
+  return getItemId(project);
 }
 
 export function getLabel(item, keys = [], fallback = "N/A") {
@@ -172,7 +122,11 @@ export function getLabel(item, keys = [], fallback = "N/A") {
 }
 
 const sortByLabel = (items, keys) =>
-  [...items].sort((a, b) => getLabel(a, keys, "").localeCompare(getLabel(b, keys, ""), undefined, { numeric: true }));
+  [...items].sort((a, b) =>
+    getLabel(a, keys, "").localeCompare(getLabel(b, keys, ""), undefined, {
+      numeric: true,
+    }),
+  );
 
 async function tryOptionalGeoJson(requests = []) {
   for (const request of requests) {
@@ -188,127 +142,111 @@ async function tryOptionalGeoJson(requests = []) {
   return emptyFeatureCollection();
 }
 
-// ---------------------------
-// Admin dropdown APIs
-// These call your existing working API file.
-// ---------------------------
+export async function getProjects() {
+  const requests = [
+    { url: "/project/" },
+    { url: "/projects/" },
+  ];
 
-export async function getDistricts() {
-  const data = await baseGetDistricts();
-  return sortByLabel(collectionToItems(data), ["name", "district", "district_name"]);
-}
-
-export async function getTehsils(districtId) {
-  // Your backend expects district_i, and your existing api.js already sends it correctly.
-  const data = await baseGetTehsils(districtId);
-  return sortByLabel(collectionToItems(data), ["name", "tehsil", "tehsil_name"]);
-}
-
-export async function getMauzas(tehsilId) {
-  // Your backend expects tehsil, and your existing api.js already sends it correctly.
-  const data = await baseGetMauzas(tehsilId);
-  return sortByLabel(collectionToItems(data), ["mauza", "name", "mauza_name"]);
-}
-
-export async function getSocieties(filters = {}) {
-  let data = await baseGetSocieties(filters);
-  let items = collectionToItems(data);
-
-  // Fallback: if combined mauza_id + mauza returns nothing, try only mauza name.
-  if (!items.length && filters?.mauza) {
-    data = await baseGetSocieties({ mauza: filters.mauza });
-    items = collectionToItems(data);
+  for (const request of requests) {
+    try {
+      const res = await API.get(request.url);
+      const items = collectionToItems(res);
+      if (items.length) return sortByLabel(items, ["name", "brief_name", "project", "title"]);
+    } catch (error) {
+      // Try next fallback endpoint.
+    }
   }
 
-  return sortByLabel(items, ["society", "name", "society_name"]);
+  return [];
 }
 
-// ---------------------------
-// Boundary APIs
-// ---------------------------
-
-export async function getDistrictBoundary(id) {
-  return normalizeFeatureCollection(await baseGetDistrictBoundary(id));
+export async function getProjectBoundaryGeoJSON(projectId) {
+  return tryOptionalGeoJson([
+    { url: `/project/${projectId}/` },
+    { url: "/project/", params: { id: projectId } },
+    { url: "/project/", params: { gid: projectId } },
+    { url: "/project/", params: { project_id: projectId } },
+    { url: "/projects/", params: { id: projectId } },
+    { url: "/projects/", params: { gid: projectId } },
+    { url: "/projects/", params: { project_id: projectId } },
+  ]);
 }
 
-export async function getTehsilBoundary(id) {
-  return normalizeFeatureCollection(await baseGetTehsilBoundary(id));
+export async function getMasterPlanGeoJSON(projectId) {
+  const masterPlan = await tryOptionalGeoJson([
+    { url: "/masterplan/", params: { project_id: projectId } },
+    { url: "/master-plan/", params: { project_id: projectId } },
+    { url: "/masterplans/", params: { project_id: projectId } },
+  ]);
+
+  if (masterPlan.features.length) return masterPlan;
+
+  // Fallback for your current project database where the actual master plan polygons are in plot.
+  return getPlotGeoJSON(projectId, false);
 }
 
-export async function getMauzaBoundary(id) {
-  return normalizeFeatureCollection(await baseGetMauzaBoundary(id));
-}
+export async function getPlotGeoJSON(projectId, allowMasterPlanFallback = true) {
+  const plots = await tryOptionalGeoJson([
+    { url: "/plot/", params: { project_id: projectId } },
+    { url: "/plots/", params: { project_id: projectId } },
+    { url: "/parcels/", params: { project_id: projectId } },
+  ]);
 
-export async function getSocietyBoundaryGeoJSON(societyId, society = null) {
-  // Prefer society_id because your requirement is society-based fetching.
-  let geojson = await baseGetSocietyBoundaryGeoJSONBySocietyId(societyId);
-  geojson = normalizeFeatureCollection(geojson);
+  if (plots.features.length) return plots;
 
-  if (geojson.features.length) return geojson;
-
-  // Fallback only when society_id returns empty and gid/objectid is available.
-  const gid = society?.gid ?? society?.id ?? society?.objectid ?? society?.properties?.gid;
-  if (gid) {
-    return normalizeFeatureCollection(await baseGetSocietyGeoJSON(gid));
+  if (allowMasterPlanFallback) {
+    return tryOptionalGeoJson([
+      { url: "/masterplan/", params: { project_id: projectId } },
+      { url: "/master-plan/", params: { project_id: projectId } },
+      { url: "/masterplans/", params: { project_id: projectId } },
+    ]);
   }
 
   return emptyFeatureCollection();
 }
 
-// ---------------------------
-// Society 3D layer APIs
-// Existing backend layers are fetched by society_id.
-// ---------------------------
-
-export async function getMasterPlanGeoJSON(societyId) {
-  return normalizeFeatureCollection(await baseGetMasterPlanGeoJSON({ society_id: societyId }));
-}
-
-export async function getSpotLevelGeoJSON(societyId) {
-  return normalizeFeatureCollection(await baseGetSpotLevelGeoJSON({ society_id: societyId }));
-}
-
-export async function getContourGeoJSON(societyId) {
-  return normalizeFeatureCollection(await baseGetContourGeoJSON({ society_id: societyId }));
-}
-
-// If you do not have separate plot/building/road/green-space APIs yet,
-// these will safely return empty data instead of breaking the whole dashboard.
-// For now, 3D plots fall back to masterplan, because your current society data
-// appears to store the parcel layout inside masterplan.
-
-export async function getPlotGeoJSON(societyId) {
-  const plots = await tryOptionalGeoJson([
-    { url: "/plots/", params: { society_id: societyId } },
-    { url: "/plot/", params: { society_id: societyId } },
-    { url: "/parcels/", params: { society_id: societyId } },
+export async function getBuildingGeoJSON(projectId) {
+  const buildings = await tryOptionalGeoJson([
+    { url: "/buildings/", params: { project_id: projectId } },
+    { url: "/building/", params: { project_id: projectId } },
+    { url: "/building-footprints/", params: { project_id: projectId } },
   ]);
 
-  if (plots.features.length) return plots;
+  if (buildings.features.length) return buildings;
 
-  return getMasterPlanGeoJSON(societyId);
+  // If you do not have a separate building table, use plot polygons for 3D buildings.
+  return getPlotGeoJSON(projectId, true);
 }
 
-export async function getBuildingGeoJSON(societyId) {
+export async function getRoadGeoJSON(projectId) {
   return tryOptionalGeoJson([
-    { url: "/buildings/", params: { society_id: societyId } },
-    { url: "/building/", params: { society_id: societyId } },
-    { url: "/building-footprints/", params: { society_id: societyId } },
+    { url: "/road/", params: { project_id: projectId } },
+    { url: "/roads/", params: { project_id: projectId } },
+    { url: "/road-centerline/", params: { project_id: projectId } },
   ]);
 }
 
-export async function getRoadGeoJSON(societyId) {
+export async function getGreenSpaceGeoJSON(projectId) {
   return tryOptionalGeoJson([
-    { url: "/roads/", params: { society_id: societyId } },
-    { url: "/road/", params: { society_id: societyId } },
-    { url: "/road-centerline/", params: { society_id: societyId } },
+    { url: "/green-spaces/", params: { project_id: projectId } },
+    { url: "/greenspaces/", params: { project_id: projectId } },
+    { url: "/green-space/", params: { project_id: projectId } },
+    { url: "/parks/", params: { project_id: projectId } },
   ]);
 }
 
-export async function getGreenSpaceGeoJSON(societyId) {
+export async function getSpotLevelGeoJSON(projectId) {
   return tryOptionalGeoJson([
-    { url: "/green-spaces/", params: { society_id: societyId } },
-    { url: "/greenspaces/", params: { society_id: societyId } },
-    { url: "/green-space/", params: { society_id: societyId } },
+    { url: "/spot-level/", params: { project_id: projectId } },
+    { url: "/spotlevel/", params: { project_id: projectId } },
+    { url: "/spot-levels/", params: { project_id: projectId } },
+  ]);
+}
+
+export async function getContourGeoJSON(projectId) {
+  return tryOptionalGeoJson([
+    { url: "/contour/", params: { project_id: projectId } },
+    { url: "/contours/", params: { project_id: projectId } },
   ]);
 }

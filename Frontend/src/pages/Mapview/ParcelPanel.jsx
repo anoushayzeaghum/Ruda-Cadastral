@@ -16,7 +16,7 @@ import {
 export default function ParcelPanel({
   parcel = null,
   isOpen = false,
-  onClose = () => {},
+  onClose = () => { },
 }) {
   const [activeTab, setActiveTab] = useState("parcelInfo");
 
@@ -25,8 +25,9 @@ export default function ParcelPanel({
       ? parcel.properties._area_acres
       : null;
 
-  const areaKanal = areaAcres !== null ? (areaAcres * 8).toFixed(2) : null;
-  const areaMarla = areaAcres !== null ? (areaAcres * 160).toFixed(2) : null;
+  const areaSqFt =
+    areaAcres !== null ? (areaAcres * 43560).toFixed(2) : null;
+
   const rawLandType = parcel?.properties?.type ?? "N/A";
 
   const formatLandType = (type) => {
@@ -57,11 +58,13 @@ export default function ParcelPanel({
     mauza: parcel?.properties?.mauza ?? parcel?.properties?.mauza_name ?? "N/A",
 
     area:
-      areaKanal !== null
-        ? `${areaKanal} Kanal`
-        : (parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A"),
+      areaSqFt !== null
+        ? `${Number(areaSqFt).toLocaleString()} sq ft`
+        : parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A",
 
-    agricultureArea: areaMarla !== null ? `${areaMarla} Marla` : "N/A",
+    agricultureArea:
+      areaSqFt !== null ? `${Number(areaSqFt).toLocaleString()} sq ft` : "N/A",
+
     landType: formatLandType(rawLandType),
     parcelId: parcel?.id ?? parcel?.properties?.gid ?? "N/A",
     rthIff: parcel?.properties?.rthIff ?? "N/A",
@@ -81,7 +84,7 @@ export default function ParcelPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute right-3 top-24 z-20 w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-170px)]">
+    <div className="absolute right-1 sm:right-3 top-16 sm:top-24 z-20 w-[calc(100vw-60px)] xs:w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-130px)] sm:max-h-[calc(100vh-170px)]">
       <div className="border-b border-slate-200">
         <div className="flex items-center justify-between gap-2 bg-[#0f3d2e] px-3 py-2.5">
           <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-white min-w-0">
@@ -105,11 +108,31 @@ export default function ParcelPanel({
           </div>
         </div>
 
-        <div className="flex gap-2 px-4 pt-3 pb-3">
-          <TabButton label="Parcel Info" value="parcelInfo" active={activeTab} onChange={setActiveTab} />
-          <TabButton label="Ownership" value="ownership" active={activeTab} onChange={setActiveTab} />
-          <TabButton label="Land Use" value="landUse" active={activeTab} onChange={setActiveTab} />
-          <TabButton label="Documents" value="documents" active={activeTab} onChange={setActiveTab} />
+        <div className="flex gap-1 sm:gap-2 px-3 sm:px-4 pt-2 sm:pt-3 pb-2 sm:pb-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <TabButton
+            label="Parcel Info"
+            value="parcelInfo"
+            active={activeTab}
+            onChange={setActiveTab}
+          />
+          <TabButton
+            label="Ownership"
+            value="ownership"
+            active={activeTab}
+            onChange={setActiveTab}
+          />
+          <TabButton
+            label="Land Use"
+            value="landUse"
+            active={activeTab}
+            onChange={setActiveTab}
+          />
+          <TabButton
+            label="Documents"
+            value="documents"
+            active={activeTab}
+            onChange={setActiveTab}
+          />
         </div>
       </div>
 
@@ -121,7 +144,10 @@ export default function ParcelPanel({
                 {parcel?.properties?._layerType === "murabba" ? (
                   <>
                     <span className="text-slate-700 text-[12px] font-medium leading-tight">
-                      Murabba No: <strong className="text-slate-900">{parcelData.murabbaNo}</strong>
+                      Murabba No:{" "}
+                      <strong className="text-slate-900">
+                        {parcelData.murabbaNo}
+                      </strong>
                     </span>
                     <ChevronDown size={16} className="text-slate-400 shrink-0" />
                   </>
@@ -129,12 +155,18 @@ export default function ParcelPanel({
                   <>
                     <div className="flex items-center gap-6 flex-wrap min-w-0">
                       <span className="text-slate-700 text-[12px] font-medium leading-tight whitespace-nowrap">
-                        Khasra No: <strong className="text-slate-900">{parcelData.khasraNo}</strong>
+                        Khasra No:{" "}
+                        <strong className="text-slate-900">
+                          {parcelData.khasraNo}
+                        </strong>
                       </span>
 
                       {showMurabbaWithKhasra && (
                         <span className="ml-14 text-slate-700 text-[12px] font-medium leading-tight whitespace-nowrap">
-                          Murabba No: <strong className="text-slate-900">{parcelData.murabbaNo}</strong>
+                          Murabba No:{" "}
+                          <strong className="text-slate-900">
+                            {parcelData.murabbaNo}
+                          </strong>
                         </span>
                       )}
                     </div>
@@ -151,11 +183,15 @@ export default function ParcelPanel({
                   <p className="text-[12px] font-medium leading-tight text-slate-500 flex items-center gap-1">
                     <Ruler size={12} /> Area
                   </p>
-                  <p className="text-[13px] font-semibold leading-tight text-slate-900">{parcelData.area}</p>
+                  <p className="text-[13px] font-semibold leading-tight text-slate-900">
+                    {parcelData.area}
+                  </p>
                 </div>
 
                 <div>
-                  <p className="text-[12px] font-medium leading-tight text-slate-500">Land Type</p>
+                  <p className="text-[12px] font-medium leading-tight text-slate-500">
+                    Land Type
+                  </p>
                   <span className="bg-green-700 text-white text-[12px] px-3 py-1 rounded-md inline-flex items-center">
                     {parcelData.landType}
                   </span>
@@ -173,7 +209,11 @@ export default function ParcelPanel({
 
               <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-slate-200">
                 <InfoBlock
-                  label={parcel?.properties?._layerType === "murabba" ? "Sheet" : "Parcel ID"}
+                  label={
+                    parcel?.properties?._layerType === "murabba"
+                      ? "Sheet"
+                      : "Parcel ID"
+                  }
                   value={
                     parcel?.properties?._layerType === "murabba"
                       ? parcel?.properties?.sheets ?? parcelData.parcelId
@@ -192,9 +232,13 @@ export default function ParcelPanel({
               <div className="flex items-center justify-between text-[11px] text-slate-600">
                 {timelineData.map((item, index) => (
                   <div key={index} className="flex flex-col items-center flex-1">
-                    <span className="font-semibold text-slate-700">{item.year}</span>
+                    <span className="font-semibold text-slate-700">
+                      {item.year}
+                    </span>
                     <div className="w-3 h-3 bg-green-600 rounded-full mt-2 mb-2" />
-                    <span className="text-center text-[11px] text-slate-600">{item.label}</span>
+                    <span className="text-center text-[11px] text-slate-600">
+                      {item.label}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -218,8 +262,12 @@ export default function ParcelPanel({
 function InfoBlock({ label, value }) {
   return (
     <div>
-      <p className="text-[12px] font-medium leading-tight text-slate-500">{label}</p>
-      <p className="text-[13px] font-semibold leading-tight text-slate-900">{value}</p>
+      <p className="text-[12px] font-medium leading-tight text-slate-500">
+        {label}
+      </p>
+      <p className="text-[13px] font-semibold leading-tight text-slate-900">
+        {value}
+      </p>
     </div>
   );
 }
@@ -230,11 +278,10 @@ function TabButton({ label, value, active, onChange }) {
   return (
     <button
       onClick={() => onChange(value)}
-      className={`text-[12px] px-3 py-1.5 rounded-md font-semibold leading-tight transition ${
-        isActive
+      className={`text-[10px] sm:text-[12px] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md font-semibold leading-tight transition shrink-0 ${isActive
           ? "bg-green-700 text-white"
           : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-      }`}
+        }`}
     >
       {label}
     </button>

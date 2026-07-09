@@ -14,3 +14,5 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+Backend/api/migrations/0017_delete_murabba.py
+*.mbtiles

@@ -12,6 +12,16 @@ export default function Tehsil() {
 
   const itemsPerPage = 10;
 
+  const fetchTehsils = async () => {
+    try {
+      setLoading(true);
+      const res = await getTehsils();
+      setItems(res || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetch = async () => {
       try {
@@ -100,7 +110,7 @@ export default function Tehsil() {
             </select>
           </div>
 
-          <div className="col-span-5">
+          {/* <div className="col-span-5">
             <label className="block text-xs text-gray-500 mb-1">
               TEHSIL NAME
             </label>
@@ -108,13 +118,15 @@ export default function Tehsil() {
               className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
               placeholder="Enter tehsil name"
             />
-          </div>
+          </div> */}
 
-          <div className="col-span-3 flex gap-3 justify-end">
+          <div className="col-span-8 flex gap-3 justify-end">
             <ImportModal
               title="Import Tehsil"
               open={showImport}
               onClose={() => setShowImport(false)}
+              type="tehsil"
+              onSuccess={fetchTehsils}
             />
             <button
               onClick={() => setShowImport(true)}

@@ -1,0 +1,502 @@
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { CalendarDays, RotateCcw } from "lucide-react";
+import {
+  getBlocks,
+  getPlotOptions,
+  getProjects,
+} from "../../services/metaverseApi";
+
+const normalizeSortValue = (value) => String(value ?? "").trim();
+
+const getFirstNumber = (value) => {
+  const match = normalizeSortValue(value).match(/\d+/);
+  return match ? Number(match[0]) : null;
+};
+
+const naturalSort = (items = [], getValue = (item) => item) =>
+  [...items].sort((a, b) => {
+    const av = normalizeSortValue(getValue(a));
+    const bv = normalizeSortValue(getValue(b));
+
+    const an = getFirstNumber(av);
+    const bn = getFirstNumber(bv);
+
+    if (an !== null && bn !== null && an !== bn) return an - bn;
+    if (an !== null && bn === null) return -1;
+    if (an === null && bn !== null) return 1;
+
+    return av.localeCompare(bv, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+  });
+
+const uniqueSorted = (items = []) =>
+  naturalSort([...new Set(items.filter(Boolean))]);
+
+function SearchableSelect({
+  value,
+  placeholder,
+  disabled,
+  options = [],
+  onChange,
+  className,
+}) {
+  const buttonRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [dropdownPosition, setDropdownPosition] = useState(null);
+
+  const selectedOption = options.find(
+    (option) => String(option.value) === String(value),
+  );
+
+  const filteredOptions = options.filter((option) =>
+    String(option.label ?? "")
+      .toLowerCase()
+      .includes(search.trim().toLowerCase()),
+  );
+
+  const updateDropdownPosition = () => {
+    if (!buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownPosition({
+      left: rect.left,
+      top: rect.bottom + 4,
+      width: rect.width,
+    });
+  };
+
+  useEffect(() => {
+    if (!open) return;
+
+    updateDropdownPosition();
+
+    const handleOutsideClick = (event) => {
+      if (
+        buttonRef.current?.contains(event.target) ||
+        dropdownRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+
+      setOpen(false);
+      setSearch("");
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("scroll", updateDropdownPosition, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+      setSearch("");
+    }
+  }, [disabled]);
+
+  const handleToggle = () => {
+    if (disabled) return;
+
+    setOpen((prev) => {
+      const nextOpen = !prev;
+      if (nextOpen) setSearch("");
+      return nextOpen;
+    });
+  };
+
+  const handleSelect = (nextValue) => {
+    onChange(nextValue);
+    setOpen(false);
+    setSearch("");
+  };
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        disabled={disabled}
+        onClick={handleToggle}
+        className={`${className} flex items-center justify-between gap-1 disabled:cursor-not-allowed disabled:opacity-60`}
+      >
+        <span className="truncate">{selectedOption?.label || placeholder}</span>
+        <span className="text-[10px] leading-none">▾</span>
+      </button>
+
+      {open &&
+        dropdownPosition &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={{
+              left: dropdownPosition.left,
+              top: dropdownPosition.top,
+              width: Math.max(dropdownPosition.width, 120),
+            }}
+            className="fixed z-[9999] overflow-hidden rounded-md border border-[#2f3a4d] bg-white shadow-xl"
+          >
+            <div className="border-b border-gray-200 p-1">
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={`Search ${placeholder}`}
+                className="h-6 sm:h-7 w-full rounded border border-gray-300 px-1.5 sm:px-2 text-[10px] sm:text-xs font-semibold text-[#06291f] outline-none"
+              />
+            </div>
+
+            <div className="max-h-48 sm:max-h-52 overflow-y-auto py-1">
+              <button
+                type="button"
+                onClick={() => handleSelect("")}
+                className={`block w-full px-1.5 sm:px-2 py-1 sm:py-1.5 text-left text-[10px] sm:text-xs font-semibold text-[#06291f] hover:bg-gray-100 ${
+                  value === "" ? "bg-gray-100" : ""
+                }`}
+              >
+                {placeholder}
+              </button>
+
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleSelect(option.value)}
+                    className={`block w-full px-1.5 sm:px-2 py-1 sm:py-1.5 text-left text-[10px] sm:text-xs font-semibold text-[#06291f] hover:bg-gray-100 ${
+                      String(option.value) === String(value)
+                        ? "bg-gray-100"
+                        : ""
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))
+              ) : (
+                <div className="px-1.5 sm:px-2 py-1 sm:py-1.5 text-[10px] sm:text-xs font-semibold text-gray-500">
+                  No results found
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+export default function MetaverseSubHeader({
+  filters,
+  setFilters,
+  setLayerVisibility,
+  onReset,
+  onCalendarClick,
+}) {
+  const [projects, setProjects] = useState([]);
+  const [blocks, setBlocks] = useState([]);
+  const [options, setOptions] = useState({
+    plotTypes: [],
+    plotNos: [],
+    areas: [],
+  });
+
+  useEffect(() => {
+    getProjects()
+      .then((data) => {
+        setProjects(
+          naturalSort(
+            data,
+            (project) =>
+              project.brief_name || project.name || project.gid || project.id,
+          ),
+        );
+      })
+      .catch((err) => {
+        console.error("PROJECTS ERROR:", err);
+      });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadBlocks = async () => {
+      if (!filters.projectId) {
+        setBlocks([]);
+        return;
+      }
+
+      try {
+        const data = await getBlocks(filters.projectId);
+        if (!cancelled)
+          setBlocks(
+            naturalSort(data, (block) => block.block || block.gid || block.id),
+          );
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setBlocks([]);
+      }
+    };
+
+    loadBlocks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters.projectId]);
+
+  useEffect(() => {
+  let cancelled = false;
+
+  const load = async () => {
+    if (!filters.projectId) {
+      setOptions({
+        plotTypes: [],
+        areas: [],
+        plotNos: [],
+      });
+      return;
+    }
+
+    try {
+      let plotTypes = [];
+      let areas = [];
+      let plotNos = [];
+
+      // Project + Block -> Plot Types
+      const typeRes = await getPlotOptions({
+        project_id: filters.projectId,
+        block: filters.block,
+      });
+
+      plotTypes = uniqueSorted(
+        typeRes.plotTypes || []
+      );
+
+      // Project + Block + Plot Type -> Areas
+      if (filters.plotType) {
+        const areaRes = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block,
+          type: filters.plotType,
+        });
+
+        areas = uniqueSorted(
+          areaRes.areas || []
+        );
+      }
+
+      // Project + Block + Plot Type + Area -> Plot Nos
+      if (filters.plotType && filters.area) {
+        const plotNoRes = await getPlotOptions({
+          project_id: filters.projectId,
+          block: filters.block,
+          type: filters.plotType,
+          plot_area: filters.area,
+        });
+
+        plotNos = uniqueSorted(
+          plotNoRes.plotNos || []
+        );
+      }
+
+      if (!cancelled) {
+        setOptions({
+          plotTypes,
+          areas,
+          plotNos,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  load();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  filters.projectId,
+  filters.block,
+  filters.plotType,
+  filters.area,
+]);
+
+const updateFilter = (key, value) => {
+  setFilters(prev => {
+    const next = {
+      ...prev,
+      [key]: value,
+    };
+
+    if (key === "projectId") {
+      next.block = "";
+      next.plotType = "";
+      next.area = "";
+      next.plotNo = "";
+    }
+
+    if (key === "block") {
+      next.plotType = "";
+      next.area = "";
+      next.plotNo = "";
+    }
+
+    if (key === "plotType") {
+      next.area = "";
+      next.plotNo = "";
+    }
+
+    if (key === "area") {
+      next.plotNo = "";
+    }
+
+    return next;
+  });
+};
+  const projectOptions = projects.map((p) => ({
+    value: String(p.gid || p.id),
+    label: p.brief_name || p.name,
+  }));
+
+  const blockOptions = blocks.map((b) => ({
+    value: String(b.block),
+    label: b.block,
+  }));
+
+  const areaToMarla = (value) => {
+    const text = String(value || "")
+      .toLowerCase()
+      .trim();
+
+    const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
+
+    if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
+    if (text.includes("kanal")) return number * 20; // 1 kanal = 20 marla
+    if (text.includes("marla")) return number;
+
+    return number;
+  };
+
+  const areaOptions = (options.areas || [])
+    .map((area) => ({
+      value: String(area),
+      label: area,
+    }))
+    .sort((a, b) => {
+      const av = areaToMarla(a.label);
+      const bv = areaToMarla(b.label);
+
+      // primary sort: actual size
+      if (av !== bv) return av - bv;
+
+      // secondary: unit priority (optional but makes it stable)
+      const unitRank = (label) => {
+        const l = label.toLowerCase();
+        if (l.includes("marla")) return 1;
+        if (l.includes("kanal")) return 2;
+        if (l.includes("acre")) return 3;
+        return 4;
+      };
+
+      const unitDiff = unitRank(a.label) - unitRank(b.label);
+      if (unitDiff !== 0) return unitDiff;
+
+      return a.label.localeCompare(b.label);
+    });
+
+  const plotTypeOptions = options.plotTypes?.map((type) => ({
+    value: String(type),
+    label: type,
+  }));
+
+  const plotNoOptions = options.plotNos?.map((plotNo) => ({
+    value: String(plotNo),
+    label: plotNo,
+  }));
+
+  const filterClassName =
+    "h-7 sm:h-8 shrink-0 rounded-md border border-[#2f3a4d] bg-white px-1.5 sm:px-2 text-[10px] sm:text-xs font-semibold text-[#06291f] outline-none";
+
+  return (
+    <div className="absolute left-1/2 top-2 sm:top-3 z-40 -translate-x-1/2"
+      style={{ width: "calc(100vw - 120px)", maxWidth: "720px" }}
+    >
+      <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto rounded-md sm:rounded-lg bg-[#06291f] px-1.5 sm:px-2 py-1 sm:py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <SearchableSelect
+          value={filters.projectId}
+          placeholder="Projects"
+          options={projectOptions}
+          onChange={(value) => updateFilter("projectId", value)}
+          className="h-7 sm:h-8 w-[100px] sm:w-[130px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-1.5 sm:px-2 text-[10px] sm:text-xs font-semibold text-[#06291f] outline-none"
+        />
+
+        <SearchableSelect
+          value={filters.block}
+          placeholder="Block No"
+          disabled={!filters.projectId}
+          options={blockOptions}
+          onChange={(value) => updateFilter("block", value)}
+          className={`${filterClassName} w-[85px] sm:w-[105px]`}
+        />
+        <SearchableSelect
+          value={filters.plotType}
+          placeholder="Plot Type"
+          disabled={!filters.projectId}
+          options={plotTypeOptions}
+          onChange={(value) => updateFilter("plotType", value)}
+          className={`${filterClassName} w-[85px] sm:w-[105px]`}
+        />
+        <SearchableSelect
+          value={filters.area}
+          placeholder="Area"
+          disabled={!filters.projectId}
+          options={areaOptions}
+          onChange={(value) => updateFilter("area", value)}
+          className={`${filterClassName} w-[75px] sm:w-[105px]`}
+        />
+
+        <SearchableSelect
+          value={filters.plotNo}
+          placeholder="Plot No"
+          disabled={!filters.projectId}
+          options={plotNoOptions}
+          onChange={(value) => updateFilter("plotNo", value)}
+          className={`${filterClassName} w-[80px] sm:w-[105px]`}
+        />
+
+        <button
+          type="button"
+          onClick={onCalendarClick}
+          title="Calendar"
+          className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
+        >
+          <CalendarDays size={14} strokeWidth={2.4} className="sm:hidden" />
+          <CalendarDays size={16} strokeWidth={2.4} className="hidden sm:block" />
+        </button>
+
+        <button
+          type="button"
+          onClick={onReset}
+          title="Reset"
+          className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
+        >
+          <RotateCcw size={14} strokeWidth={2.4} className="sm:hidden" />
+          <RotateCcw size={16} strokeWidth={2.4} className="hidden sm:block" />
+        </button>
+      </div>
+    </div>
+  );
+}

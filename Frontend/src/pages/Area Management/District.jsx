@@ -8,22 +8,25 @@ export default function District() {
   const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState("");
 
+  const fetchDistricts = async () => {
+    try {
+      setLoading(true);
+      const res = await getDistricts();
+      setItems(res || []);
+    } catch (err) {
+      console.error("Failed to load districts:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        setLoading(true);
-        const res = await getDistricts();
-        setItems(res || []);
-      } catch (err) {
-        console.error("Failed to load districts:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetch();
-
+    fetchDistricts();
   }, []);
+
+  const handleImportSuccess = () => {
+    fetchDistricts();
+  };
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -32,54 +35,52 @@ export default function District() {
     return items.filter((item) => {
       const district = String(item.district ?? item.name ?? "").toLowerCase();
       const districtId = String(
-        item.district_id ?? item.dist_id ?? item.id ?? item.gid ?? "",
+        item.district_id ?? item.dist_id ?? item.id ?? item.gid ?? ""
       ).toLowerCase();
-      return (
-        district.includes(q) ||
-        districtId.includes(q)
-      );
+
+      return district.includes(q) || districtId.includes(q);
     });
   }, [items, search]);
 
   return (
     <div className="space-y-6">
+
+      {/* HEADER CARD */}
       <div className="rounded-lg border p-6 bg-white dark:bg-[#07111a]">
         <h2 className="text-xl font-semibold">District — Add / Edit</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Import a new district or edit an existing one.
+          Import a new district or view existing ones.
         </p>
 
-        <div className="mt-6 grid grid-cols-12 gap-4 items-center">
-          <div className="col-span-6">
-            <label className="block text-xs text-gray-500 mb-1">
-              DISTRICT NAME
-            </label>
-            <input
-              className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
-              placeholder="Enter district name"
-            />
-          </div>
+        <div className="mt-6 flex justify-end gap-3">
 
-          <div className="col-span-6 flex gap-3 justify-end">
-            <ImportModal
-              title="Import District"
-              open={showImport}
-              onClose={() => setShowImport(false)}
-            />
-            <button
-              onClick={() => setShowImport(true)}
-              className="bg-red-600 text-white px-4 py-2 rounded-md"
-            >
-              Import District
-            </button>
-            <button className="border px-4 py-2 rounded-md">Clear</button>
-          </div>
+          <ImportModal
+            title="Import District"
+            open={showImport}
+            onClose={() => setShowImport(false)}
+            type="district"
+            onSuccess={handleImportSuccess}
+          />
+
+          <button
+            onClick={() => setShowImport(true)}
+            className="bg-red-600 text-white px-4 py-2 rounded-md"
+          >
+            Import District
+          </button>
+
+          <button className="border px-4 py-2 rounded-md">
+            Clear
+          </button>
+
         </div>
       </div>
 
+      {/* LIST TABLE */}
       <div className="rounded-lg border p-6 bg-white dark:bg-[#07111a]">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">District List</h3>
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -103,6 +104,7 @@ export default function District() {
                   <th className="py-3 text-right">Action</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredItems.map((d, idx) => (
                   <tr
@@ -113,7 +115,7 @@ export default function District() {
                     <td className="py-3">{d.district ?? d.name ?? "-"}</td>
                     <td className="py-3">
                       {String(
-                        d.district_id ?? d.dist_id ?? d.id ?? d.gid ?? "",
+                        d.district_id ?? d.dist_id ?? d.id ?? d.gid ?? ""
                       ).toUpperCase()}
                     </td>
                     <td className="py-3 text-right">

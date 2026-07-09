@@ -1,122 +1,124 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Header from "./Header";
 import DemarcationMap from "./DemarcationMap";
 import LandUseBreakdown from "./LandUseBreakdown";
 import SpatialQuery from "./SpatialQuery";
 import Legend from "./Legend";
 import PlotDetails from "./PlotDetails";
-import SelectedPlots from "./SelectedPlots";
+
+const getLandUseLabel = (feature) => {
+  const props = feature?.properties || {};
+  return props.type || props.land_use || props.name || "Other";
+};
+
+const buildLandUseSummary = (geojson) => {
+  const counts = new Map();
+  (geojson?.features || []).forEach((feature) => {
+    const label = getLandUseLabel(feature);
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+
+  const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
+
+  return [...counts.entries()]
+    .map(([label, count]) => ({
+      label,
+      count,
+      percentage: total ? Math.round((count / total) * 100) : 0,
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+};
 
 export default function Demarcation() {
   const [darkMode, setDarkMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // filters for SpatialQuery/Map
   const [filters, setFilters] = useState({
-    selectedDistrictOptions: null,
-    selectedTehsilOptions: null,
-    selectedMauzaDetails: null,
-    viewBy: "khasra",
+    selectedProject: null,
+    selectedBlock: null,
+    projectId: "",
+    projectName: "",
+    blockId: "",
+    block: "",
+    plotType: "",
+    plotNo: "",
     selectedParcelNumber: "",
+    searchNonce: 0,
   });
 
-  const [loadedParcelsGeojson, setLoadedParcelsGeojson] = useState(null);
-  const [selectedParcel, setSelectedParcel] = useState(null);
+  const [loadedPlotsGeojson, setLoadedPlotsGeojson] = useState(null);
+  const [selectedPlot, setSelectedPlot] = useState(null);
 
-  const toggleSidebar = () => {
-    setSidebarOpen((prev) => !prev);
+  const landUseSummary = useMemo(
+    () => buildLandUseSummary(loadedPlotsGeojson),
+    [loadedPlotsGeojson],
+  );
+
+  const handleFiltersChange = (partial) => {
+    setFilters((prev) => ({ ...prev, ...partial }));
   };
 
+  const handlePlotSelect = useCallback((feature) => {
+    setSelectedPlot(feature || null);
+    const props = feature?.properties || {};
+    setFilters((prev) => ({
+      ...prev,
+      plotNo: props.plot_no ? String(props.plot_no) : prev.plotNo,
+      selectedParcelNumber: props.plot_no ? String(props.plot_no) : "",
+    }));
+  }, []);
+
   return (
-    <div className="h-screen flex flex-col bg-[#f4f4f4] font-sans text-[#4a4a4a] overflow-hidden">
+    <div className="flex flex-col bg-[#f4f4f4] font-sans text-[#4a4a4a] min-h-screen lg:h-screen lg:overflow-hidden">
       <Header
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         sidebarOpen={sidebarOpen}
-        toggleSidebar={toggleSidebar}
+        toggleSidebar={() => setSidebarOpen((prev) => !prev)}
       />
 
-      <div className="p-3 flex-1 overflow-hidden">
-        <div className="grid grid-cols-12 gap-3 h-full">
+      <div className="p-2 sm:p-3 flex-1 lg:overflow-hidden">
+        {/* Mobile Layout - Scrollable, stacked in specific order */}
+        <div className="flex flex-col lg:hidden gap-2 pb-4">
+          {/* 1. Spatial Query */}
+          <SpatialQuery filters={filters} onFiltersChange={handleFiltersChange} />
+
+          {/* 2. Plot Details */}
+          <PlotDetails parcel={selectedPlot} filters={filters} />
+
+          {/* 3. Map */}
           <DemarcationMap
             filters={filters}
-            onFiltersChange={setFilters}
-            onParcelSelect={(feature) => {
-              setSelectedParcel(feature);
-              const props = feature?.properties || {};
-              const num =
-                filters?.viewBy === "khasra"
-                  ? (props.k ??
-                    props.K ??
-                    props.khasra ??
-                    props.khasra_no ??
-                    props.khasra_id ??
-                    null)
-                  : (props.m ??
-                    props.mn ??
-                    props.murabba ??
-                    props.murabba_no ??
-                    props.murabba_id ??
-                    null);
-
-              setFilters((f) => ({
-                ...f,
-                selectedParcelNumber: num ? String(num) : "",
-              }));
-            }}
-            onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
+            onParcelSelect={handlePlotSelect}
+            onFeaturesLoaded={setLoadedPlotsGeojson}
           />
 
-          <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3 min-h-0">
-            <LandUseBreakdown />
-            <PlotDetails parcel={selectedParcel} />
-            {/* <SelectedPlots /> */}
+          {/* 4. Legend */}
+          <Legend items={landUseSummary} selectedParcelNumber={filters.selectedParcelNumber} />
+
+          {/* 5. Landuse Breakdown */}
+          <LandUseBreakdown items={landUseSummary} selectedProjectName={filters.projectName} />
+        </div>
+
+        {/* Desktop Layout - Grid with original order */}
+        <div className="hidden lg:grid lg:grid-cols-12 gap-3 h-full">
+          {/* Map - 6 cols */}
+          <DemarcationMap
+            filters={filters}
+            onParcelSelect={handlePlotSelect}
+            onFeaturesLoaded={setLoadedPlotsGeojson}
+          />
+
+          {/* Left Panel - 3 cols */}
+          <div className="flex flex-col gap-3 min-h-0 lg:col-span-3">
+            <LandUseBreakdown items={landUseSummary} selectedProjectName={filters.projectName} />
+            <PlotDetails parcel={selectedPlot} filters={filters} />
           </div>
 
-          <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3 min-h-0">
-            <SpatialQuery
-              filters={filters}
-              onFiltersChange={(partial) =>
-                setFilters((prev) => ({ ...prev, ...partial }))
-              }
-              parcelOptions={(() => {
-                if (!loadedParcelsGeojson?.features) return [];
-                const seen = new Set();
-                const list = [];
-                loadedParcelsGeojson.features.forEach((f) => {
-                  const p = f?.properties || {};
-                  const val =
-                    filters?.viewBy === "khasra"
-                      ? (p.k ??
-                        p.K ??
-                        p.khasra ??
-                        p.khasra_no ??
-                        p.khasra_id ??
-                        f.id)
-                      : (p.m ??
-                        p.mn ??
-                        p.murabba ??
-                        p.murabba_no ??
-                        p.murabba_id ??
-                        f.id);
-                  if (val == null) return;
-                  const s = String(val);
-                  if (!seen.has(s)) {
-                    seen.add(s);
-                    list.push({ value: s, label: s });
-                  }
-                });
-                list.sort((a, b) => {
-                  const na = Number(a.value);
-                  const nb = Number(b.value);
-                  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
-                  return a.value.localeCompare(b.value);
-                });
-                return list;
-              })()}
-            />
-
-            <Legend selectedParcelNumber={filters.selectedParcelNumber} />
+          {/* Right Panel - 3 cols */}
+          <div className="flex flex-col gap-3 min-h-0 lg:col-span-3">
+            <SpatialQuery filters={filters} onFiltersChange={handleFiltersChange} />
+            <Legend items={landUseSummary} selectedParcelNumber={filters.selectedParcelNumber} />
           </div>
         </div>
       </div>

@@ -135,12 +135,8 @@ export default function useCadastralFilters() {
           selectedTehsil.map((tehsil) => getMauzas(tehsil)),
         );
 
-        console.log("Responses from API:", responses);
-
-        // Extract features correctly
         const allFeatures = responses.flatMap((fc) => fc.features);
 
-        // Convert GeoJSON → flat object
         const data = allFeatures.map((f) => ({
           id: f.id,
           mauza_id: f.id, // or f.properties.mauza_id if exists
@@ -150,11 +146,13 @@ export default function useCadastralFilters() {
 
         const unique = dedupeBy(data, "mauza_id");
 
-        console.log("Flattened mauza data:", unique);
+        // Filter mauzas to only those belonging to the currently selected district(s)
+        const filtered = unique.filter((m) =>
+          selectedDistrict.includes(String(m.dist_id ?? m.district_id ?? ""))
+        );
 
-        setMauzas(sortByLabel(unique, "mauza"));
         if (!ignore) {
-          setMauzas(sortByLabel(data, "mauza"));
+          setMauzas(sortByLabel(filtered.length ? filtered : unique, "mauza"));
         }
       } catch {
         if (!ignore) {

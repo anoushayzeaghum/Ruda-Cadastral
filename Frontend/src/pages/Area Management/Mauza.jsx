@@ -9,25 +9,30 @@ export default function Mauza() {
   const [showImport, setShowImport] = useState(false);
   const [showFields, setShowFields] = useState(false);
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        setLoading(true);
-        const res = await getMauzas();
-        const features = res?.features ?? [];
-        const props = features.map((f) => ({
-          ...(f.properties || {}),
-          mauza_id: f.properties?.mauza_id ?? f.id, // 🔥 fallback from id_field
-        }));
-        setItems(props);
-      } catch (err) {
-        console.error("Failed to load mauzas:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchMauzas = async () => {
+    try {
+      setLoading(true);
 
-    fetch();
+      const res = await getMauzas();
+
+      const features = res?.features ?? [];
+
+      const props = features.map((f) => ({
+        ...(f.properties || {}),
+        mauza_id: f.properties?.mauza_id ?? f.id,
+      }));
+
+      setItems(props);
+    } catch (err) {
+      console.error("Failed to load mauzas:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMauzas();
+
     (async () => {
       try {
         const t = await getTehsils();
@@ -36,7 +41,7 @@ export default function Mauza() {
         console.error(e);
       }
     })();
-  }, []);
+}, []);
 
   return (
     <div className="space-y-6">
@@ -59,7 +64,7 @@ export default function Mauza() {
             </select>
           </div>
 
-          <div className="col-span-5">
+          {/* <div className="col-span-5">
             <label className="block text-xs text-gray-500 mb-1">
               MOUZA NAME
             </label>
@@ -67,13 +72,15 @@ export default function Mauza() {
               className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
               placeholder="Enter mauza name"
             />
-          </div>
+          </div> */}
 
-          <div className="col-span-3 flex gap-3 justify-end">
+           <div className="col-span-8 flex gap-3 justify-end">
             <ImportModal
               title="Import Mauza"
               open={showImport}
               onClose={() => setShowImport(false)}
+              type="mauza"
+              onSuccess={fetchMauzas}
             />
             <button
               onClick={() => setShowImport(true)}

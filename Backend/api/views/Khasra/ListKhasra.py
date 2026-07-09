@@ -1,6 +1,7 @@
 from ..common_imports import *
 from rest_framework.decorators import action
 from rest_framework.response import Response
+import traceback
 
 class ListKhasraView(viewsets.ViewSet):
     queryset = Khasra.objects.all()
@@ -8,30 +9,24 @@ class ListKhasraView(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
-
+        
         try:
-            khasra_id = request.query_params.get("id")
+            gid = request.query_params.get("gid") or request.query_params.get("id")
+            mauza_id = request.query_params.get("mauza_id")
+            tehsil_id = request.query_params.get("tehsil_id")
+            dist_id = request.query_params.get("dist_id")
 
-            # Support both mauza name or id (mauza_id)
-            mauza = request.query_params.get("mauza") or request.query_params.get("mauza_id")
+            if gid:
+                obj = Khasra.objects.filter(gid=gid).first()
 
-            murabba = request.query_params.get("m")
-
-            # Support both tehsil name or id (tehsil_id)
-            tehsil = request.query_params.get("tehsil") or request.query_params.get("tehsil_id")
-
-            # Single khasra
-            if khasra_id:
-                khasra = Khasra.objects.filter(id=khasra_id).first()
-
-                if not khasra:
+                if not obj:
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
                         message="Khasra not found.",
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
-                serializer = KhasraSerializer(khasra)
+                serializer = KhasraSerializer(obj)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
@@ -40,64 +35,35 @@ class ListKhasraView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            # Filter by Mauza
-            elif mauza:
-                # mauza can be name or numeric id
-                try:
-                    mauza_int = int(mauza)
-                    queryset = Khasra.objects.filter(mauza_id=mauza_int)
-                except Exception:
-                    queryset = Khasra.objects.filter(mauza=mauza)
+            queryset = Khasra.objects.select_related(
+                "district",
+                "tehsil",
+                "mauza"
+            )
 
-                serializer = KhasraSerializer(queryset, many=True)
+            if dist_id:
+                queryset = queryset.filter(district_id=dist_id)
 
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Khasras found for Mauza.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
+            if tehsil_id:
+                queryset = queryset.filter(tehsil_id=tehsil_id)
 
-            # Filter by Murabba
-            elif murabba:
-                queryset = Khasra.objects.filter(m=murabba)
+            if mauza_id:
+                queryset = queryset.filter(mauza_id=mauza_id)
 
-                serializer = KhasraSerializer(queryset, many=True)
+            serializer = KhasraSerializer(queryset, many=True)
 
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Khasras found for Murabba.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
-
-            # Filter by Tehsil
-            elif tehsil:
-                queryset = Khasra.objects.filter(tehsil=tehsil)
-
-                serializer = KhasraSerializer(queryset, many=True)
-
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="Khasras found for Tehsil.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
-
-            # Return all
-            else:
-                queryset = Khasra.objects.all()
-
-                serializer = KhasraSerializer(queryset, many=True)
-
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="All Khasras found.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
+            return ApiResponse(
+                status=status.HTTP_200_OK,
+                message="Khasra data fetched successfully.",
+                data=serializer.data,
+                http_status=status.HTTP_200_OK,
+            ).create_response()
 
         except Exception as e:
+            print("\n========== KHASRA ERROR ==========")
+            print(traceback.format_exc())
+            print("=================================\n")
+
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
