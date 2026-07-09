@@ -111,3 +111,4 @@ export default function KhasraBoundaryAttribute({ map, geojson, onClose }) {
     />
   );
 }
+

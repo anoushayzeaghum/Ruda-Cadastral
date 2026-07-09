@@ -1393,7 +1393,7 @@ export default function MapView({
           map.addSource(ORTHO_SOURCE, {
             type: "raster",
             tiles: [
-              "http://localhost:8081/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
+              "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_Ortho/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
           });
@@ -1424,7 +1424,7 @@ export default function MapView({
           map.addSource(DSM_SOURCE, {
             type: "raster",
             tiles: [
-              "http://localhost:8081/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
+              "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
           });
@@ -1455,7 +1455,7 @@ export default function MapView({
           map.addSource(DTM_SOURCE, {
             type: "raster",
             tiles: [
-              "http://localhost:8081/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
+              "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
             ],
             tileSize: 256,
           });

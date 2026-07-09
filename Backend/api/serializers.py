@@ -753,6 +753,7 @@ class PlotSerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 # Road Serializer
 # --------------------------------------------------------
+
 class RoadSerializer(GeoFeatureModelSerializer):
     # IMPORTANT:
     # The road table can contain project_id/block_id values even when the
@@ -813,6 +814,7 @@ class RoadSerializer(GeoFeatureModelSerializer):
             "row",
             "geom",
         )
+
 
 # --------------------------------------------------------
 # CameraLocation Serializer
@@ -946,4 +948,4 @@ class WSPointSerializer(GeoFeatureModelSerializer):
             "project_id",
             "project_name",
             "geom",
-        )   
+        )

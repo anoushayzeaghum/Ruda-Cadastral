@@ -679,3 +679,4 @@ export {
   setLayerPaintProperty,
   applyFlyToLayerOpacities,
 };
+

@@ -1,9 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
 });
-
 const extractPayload = (res) => res?.data?.data ?? res?.data ?? [];
 
 const extractCollection = (payload) => {
@@ -141,7 +140,16 @@ const normalizeGeoJson = (res) => {
 ///////////////////////////////////////////////////////
 
 export const getDistricts = async () => {
+  const start = performance.now();
+
   const res = await API.get("/district/");
+
+  console.log(
+    "District API:",
+    (performance.now() - start).toFixed(2),
+    "ms"
+  );
+
   return normalizeData(res);
 };
 
@@ -267,18 +275,43 @@ export const importMurabba = async ({ file }) => {
 ///////////////////////////////////////////////////////
 
 export const getDistrictBoundary = async (id) => {
+
+  const start = performance.now();
+
   const res = await API.get(`/district/${id}/geojson`);
-  return normalizeGeoJson(res);
+
+  const apiTime = performance.now() - start; 
+
+  const normalizeStart = performance.now();
+
+  const geojson = normalizeGeoJson(res);
+
+  return geojson;
 };
 
 export const getTehsilBoundary = async (id) => {
+
+  const start = performance.now();
+
   const res = await API.get(`/tehsil/${id}/geojson`);
-  return normalizeGeoJson(res);
+
+  const normalizeStart = performance.now();
+
+  const geojson = normalizeGeoJson(res);
+
+  return geojson;
 };
 
 export const getMauzaBoundary = async (id) => {
+  const start = performance.now();
+
   const res = await API.get(`/mauza/${id}/geojson`);
-  return normalizeGeoJson(res);
+
+  const normalizeStart = performance.now();
+
+  const geojson = normalizeGeoJson(res);
+
+  return geojson;
 };
 
 export const getKhasraBoundary = async (id) => {

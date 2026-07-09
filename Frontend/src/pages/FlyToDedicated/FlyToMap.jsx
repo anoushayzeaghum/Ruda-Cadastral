@@ -1099,3 +1099,4 @@ export default function GISMetaverseMap({
 
   return <div ref={mapContainerRef} className="h-full w-full" />;
 }
+

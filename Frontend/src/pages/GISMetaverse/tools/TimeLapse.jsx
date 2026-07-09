@@ -608,3 +608,4 @@ export default function TimeLapse({ map, onClose, onExpandedChange }) {
     </>
   );
 }
+

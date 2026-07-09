@@ -1,0 +1,31 @@
+{
+  "options": {
+    "paths": {
+      "root": "",
+      "mbtiles": "data"
+    }
+  },
+  "data": {
+    "Chaharbagh_DSM": {
+      "mbtiles": "Chaharbagh_DSM.mbtiles"
+    },
+    "Chaharbagh_DTM": {
+      "mbtiles": "Chaharbagh_DTM.mbtiles"
+    },
+    "Chaharbagh_Ortho": {
+      "mbtiles": "Chaharbagh_Ortho.mbtiles"
+    },
+    "Chahar_Bagh_AsBuilt_Jan2023": {
+      "mbtiles": "Chahar_Bagh_AsBuilt_Jan2023.mbtiles"
+    },
+    "Chahar_Bagh_Ortho_June2023": {
+      "mbtiles": "Chahar_Bagh_Ortho_June2023.mbtiles"
+    },
+    "Chahar_Bagh_Ortho_Nov2024": {
+      "mbtiles": "Chahar_Bagh_Ortho_Nov2024.mbtiles"
+    },
+    "Handu_Gujran_Ortho": {
+      "mbtiles": "Handu_Gujran_Ortho.mbtiles"
+    }
+  }
+}

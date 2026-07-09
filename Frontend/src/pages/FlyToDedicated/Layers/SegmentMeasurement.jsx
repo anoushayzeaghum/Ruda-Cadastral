@@ -227,3 +227,4 @@ export default function SegmentMeasurement({ map }) {
     </div>
   );
 }
+

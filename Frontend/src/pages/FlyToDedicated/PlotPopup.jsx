@@ -395,3 +395,4 @@ export function setupVectorClickPopups({
 export function setupPlotClickPopup(options) {
   return setupVectorClickPopups(options);
 }
+

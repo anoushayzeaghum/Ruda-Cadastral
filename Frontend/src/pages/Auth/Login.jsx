@@ -11,7 +11,7 @@ import {
   FileText,
 } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +31,7 @@ export default function Login() {
     try {
       setIsLoading(true);
 
-      const response = await fetch("http://127.0.0.1:8000/api/login-user/", {
+      const response = await fetch(`${API_BASE_URL}/login-user/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -65,7 +65,7 @@ export default function Login() {
         }),
       );
 
-      navigate("/dashboard");
+      navigate("/landing");
     } catch (error) {
       console.error("Login error:", error);
       alert("Something went wrong while logging in.");

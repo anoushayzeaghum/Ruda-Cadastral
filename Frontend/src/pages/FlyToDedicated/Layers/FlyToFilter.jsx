@@ -229,3 +229,4 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
     </div>
   );
 }
+

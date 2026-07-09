@@ -15,4 +15,11 @@ build/
 .DS_Store
 Thumbs.db
 Backend/api/migrations/0017_delete_murabba.py
-*.mbtiles
+Backend/gunicorn.log
+Backend/staticfiles/
+*.log
+
+# Large media files
+Frontend/public/*.mp4
+Frontend/Raster Data/*.mbtiles
+tileserver/data/*.mbtiles

@@ -67,3 +67,4 @@ export default function RudaMozaBoundaryAttribute({ map, onClose }) {
     />
   );
 }
+

@@ -4,7 +4,7 @@ import axios from "axios";
 import mapboxgl from "mapbox-gl";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  import.meta.env.VITE_API_BASE_URL || "https://rudametaverse.nespakprogresscenter.com/api";
 
 function extendBounds(bounds, coords) {
   if (!Array.isArray(coords)) return;
@@ -229,3 +229,4 @@ export default function AttributeTable({ map, onClose, onSelectPlot, filters }) 
     </div>
   );
 }
+
