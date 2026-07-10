@@ -1246,3 +1246,141 @@ class ProposedRoadNetworkSerializer(GeoFeatureModelSerializer):
             "geom",
         )
 
+# =================================================================================================
+# IMPORTED LAND TABLE SERIALIZERS
+# =================================================================================================
+
+# --------------------------------------------------------
+# State Land Serializer
+# DB table: stateland
+# --------------------------------------------------------
+class StateLandSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = StateLand
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
+            "khasra",
+            "sub_khasra",
+            "khasra_lab",
+            "remarks",
+            "state_land",
+            "area_sqft",
+            "date_",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# RTW Alignment Serializer
+# DB table: rtwalignment
+# --------------------------------------------------------
+class RtwAlignmentSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RtwAlignment
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "package",
+            "length",
+            "area_sqft",
+            "area_ac225",
+            "date_",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Possession Land Serializer
+# DB table: possessionland
+# --------------------------------------------------------
+class PossessionLandSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = PossessionLand
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
+            "khasra",
+            "khasra_lab",
+            "award_zone",
+            "projects",
+            "l_type",
+            "land_owner",
+            "lp_name",
+            "remarks",
+            "date_",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Awarded Land Serializer
+# DB table: awardedland
+# --------------------------------------------------------
+class AwardedLandSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = AwardedLand
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
+            "khasra",
+            "sub_khasra",
+            "khasra_lab",
+            "agri_river",
+            "land_type",
+            "remarks",
+            "area_sqft",
+            "date_",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RTW Package Serializer
+# DB table: rtwpackage
+# --------------------------------------------------------
+class RtwPackageSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RtwPackage
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "layer",
+            "map_name",
+            "name",
+            "package",
+            "area_acres",
+            "closed",
+            "label_pos",
+            "ruda_phase",
+            "area_sqkm",
+            "aaa",
+            "geom",
+        )
+
