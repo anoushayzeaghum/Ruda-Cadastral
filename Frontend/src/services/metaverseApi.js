@@ -497,3 +497,29 @@ export const getProposedRoadNetworkGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/proposed-road-network/`);
   return unwrapGeoJSON(res.data);
 };
+
+// ------------------------------ Imported Administrative Boundary Layers ------------------------------
+export const getRtwPackageGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/rtwpackage/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRtwAlignmentGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/rtwalignment/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getStateLandGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/stateland/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getAwardedLandGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/awardedland/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getPossessionLandGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/possessionland/`);
+  return unwrapGeoJSON(res.data);
+};
