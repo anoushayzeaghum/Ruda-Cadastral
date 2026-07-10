@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from api.views import *
+from api.views.RudaMasterPlan import *
 
 router = DefaultRouter()
 
@@ -156,6 +157,62 @@ router.register(r"wspoint-features-cb1/delete", DeleteWSPointView, basename="del
 router.register(r"project-mauza", ListProjectMauzaView, basename="project-mauza")
 router.register(r"project-mauza/create", CreateProjectMauzaView, basename="create-project-mauza")
 router.register(r"project-mauza/delete", DeleteProjectMauzaView, basename="delete-project-mauza")
+
+# ------------------------------ RUDA Master Plan Views ------------------------------
+router.register(r"city-level-service", ListCityLevelServiceView, basename="city-level-service")
+router.register(r"city-level-service/create", CreateCityLevelServiceView, basename="create-city-level-service")
+router.register(r"city-level-service/update", UpdateCityLevelServiceView, basename="update-city-level-service")
+router.register(r"city-level-service/delete", DeleteCityLevelServiceView, basename="delete-city-level-service")
+
+router.register(r"forest-boundary", ListForestBoundaryView, basename="forest-boundary")
+router.register(r"forest-boundary/create", CreateForestBoundaryView, basename="create-forest-boundary")
+router.register(r"forest-boundary/update", UpdateForestBoundaryView, basename="update-forest-boundary")
+router.register(r"forest-boundary/delete", DeleteForestBoundaryView, basename="delete-forest-boundary")
+
+router.register(r"precient-boundary", ListPrecientBoundaryView, basename="precient-boundary")
+router.register(r"precient-boundary/create", CreatePrecientBoundaryView, basename="create-precient-boundary")
+router.register(r"precient-boundary/update", UpdatePrecientBoundaryView, basename="update-precient-boundary")
+router.register(r"precient-boundary/delete", DeletePrecientBoundaryView, basename="delete-precient-boundary")
+
+router.register(r"river", ListRiverView, basename="river")
+router.register(r"river/create", CreateRiverView, basename="create-river")
+router.register(r"river/update", UpdateRiverView, basename="update-river")
+router.register(r"river/delete", DeleteRiverView, basename="delete-river")
+
+router.register(r"river-ravi", ListRiverRaviView, basename="river-ravi")
+router.register(r"river-ravi/create", CreateRiverRaviView, basename="create-river-ravi")
+router.register(r"river-ravi/update", UpdateRiverRaviView, basename="update-river-ravi")
+router.register(r"river-ravi/delete", DeleteRiverRaviView, basename="delete-river-ravi")
+
+router.register(r"ruda-jurisdiction", ListRudaJurisdictionView, basename="ruda-jurisdiction")
+router.register(r"ruda-jurisdiction/create", CreateRudaJurisdictionView, basename="create-ruda-jurisdiction")
+router.register(r"ruda-jurisdiction/update", UpdateRudaJurisdictionView, basename="update-ruda-jurisdiction")
+router.register(r"ruda-jurisdiction/delete", DeleteRudaJurisdictionView, basename="delete-ruda-jurisdiction")
+
+router.register(r"city-level-service-points", ListCityLevelServicePointsView, basename="city-level-service-points")
+router.register(r"city-level-service-points/create", CreateCityLevelServicePointsView, basename="create-city-level-service-points")
+router.register(r"city-level-service-points/update", UpdateCityLevelServicePointsView, basename="update-city-level-service-points")
+router.register(r"city-level-service-points/delete", DeleteCityLevelServicePointsView, basename="delete-city-level-service-points")
+
+router.register(r"mp-principle-zoning", ListMpPrincipleZoningView, basename="mp-principle-zoning")
+router.register(r"mp-principle-zoning/create", CreateMpPrincipleZoningView, basename="create-mp-principle-zoning")
+router.register(r"mp-principle-zoning/update", UpdateMpPrincipleZoningView, basename="update-mp-principle-zoning")
+router.register(r"mp-principle-zoning/delete", DeleteMpPrincipleZoningView, basename="delete-mp-principle-zoning")
+
+router.register(r"existing-forest", ListExistingForestView, basename="existing-forest")
+router.register(r"existing-forest/create", CreateExistingForestView, basename="create-existing-forest")
+router.register(r"existing-forest/update", UpdateExistingForestView, basename="update-existing-forest")
+router.register(r"existing-forest/delete", DeleteExistingForestView, basename="delete-existing-forest")
+
+router.register(r"ruda-planning-boundary", ListRudaPlanningBoundaryView, basename="ruda-planning-boundary")
+router.register(r"ruda-planning-boundary/create", CreateRudaPlanningBoundaryView, basename="create-ruda-planning-boundary")
+router.register(r"ruda-planning-boundary/update", UpdateRudaPlanningBoundaryView, basename="update-ruda-planning-boundary")
+router.register(r"ruda-planning-boundary/delete", DeleteRudaPlanningBoundaryView, basename="delete-ruda-planning-boundary")
+
+router.register(r"proposed-road-network", ListProposedRoadNetworkView, basename="proposed-road-network")
+router.register(r"proposed-road-network/create", CreateProposedRoadNetworkView, basename="create-proposed-road-network")
+router.register(r"proposed-road-network/update", UpdateProposedRoadNetworkView, basename="update-proposed-road-network")
+router.register(r"proposed-road-network/delete", DeleteProposedRoadNetworkView, basename="delete-proposed-road-network")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
