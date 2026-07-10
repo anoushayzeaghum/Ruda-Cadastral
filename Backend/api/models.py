@@ -1255,3 +1255,298 @@ class WSPoint(models.Model):
     class Meta:
         managed = False
         db_table = "wspoint"
+
+# =========================
+# Existing Forest
+# =========================
+class ExistingForest(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+    type = models.CharField(max_length=100, null=True, blank=True)
+    source = models.CharField(max_length=255, null=True, blank=True)
+    lu_type = models.CharField(max_length=100, null=True, blank=True)
+    status = models.CharField(max_length=100, null=True, blank=True)
+    comments = models.TextField(null=True, blank=True)
+
+    area_sqfee = models.FloatField(null=True, blank=True)
+    area_acre = models.FloatField(null=True, blank=True)
+    area_225ac = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Existing Forest {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "existing_forest"
+        
+# =========================
+# RUDA MP Principle Zoning
+# =========================
+class MpPrincipleZoning(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    area225a = models.FloatField(null=True, blank=True)
+    zoning_cat = models.CharField(max_length=255, null=True, blank=True)
+    area_sqft = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.zoning_cat or f"MP Principle Zoning {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "mp_principle_zoning"
+
+# =========================
+# City Level Service
+# =========================
+class CityLevelService(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    layer = models.CharField(max_length=26, null=True, blank=True)
+    gm_type = models.CharField(max_length=17, null=True, blank=True)
+    elevation = models.SmallIntegerField(null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    area_225ac = models.FloatField(null=True, blank=True)
+    type = models.CharField(max_length=254, null=True, blank=True)
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"City Level Service {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "city_level_service"
+
+
+# =========================
+# Forest Boundary
+# =========================
+class ForestBoundary(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.FloatField(null=True, blank=True)
+    objectid = models.FloatField(null=True, blank=True)
+    f_zone = models.CharField(max_length=100, null=True, blank=True)
+    f_circle = models.CharField(max_length=100, null=True, blank=True)
+    f_div = models.CharField(max_length=100, null=True, blank=True)
+    f_name = models.CharField(max_length=100, null=True, blank=True)
+    gps_area = models.FloatField(null=True, blank=True)
+    gross_area = models.FloatField(null=True, blank=True)
+    f_type = models.CharField(max_length=100, null=True, blank=True)
+    legal_stat = models.CharField(max_length=50, null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_area = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.f_name or f"Forest Boundary {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "forest_boundary"
+
+
+# =========================
+# Precient Boundary
+# =========================
+class PrecientBoundary(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    area_acre = models.FloatField(null=True, blank=True)
+    phases = models.CharField(max_length=100, null=True, blank=True)
+    phases_new = models.CharField(max_length=100, null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_area = models.FloatField(null=True, blank=True)
+    area_sqft = models.FloatField(null=True, blank=True)
+    area_225ac = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Precient Boundary {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "precient_boundary"
+
+
+# =========================
+# River
+# =========================
+class River(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    layer = models.CharField(max_length=17, null=True, blank=True)
+    name = models.CharField(max_length=60, null=True, blank=True)
+    area_sqft = models.FloatField(null=True, blank=True)
+    area_225ac = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"River {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "river"
+
+
+# =========================
+# River Ravi
+# =========================
+class RiverRavi(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=254, null=True, blank=True)
+    type = models.CharField(max_length=254, null=True, blank=True)
+    area = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"River Ravi {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "river_ravi"
+
+
+# =========================
+# RUDA Jurisdiction
+# =========================
+class RudaJurisdiction(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.FloatField(null=True, blank=True)
+    area_usacr = models.FloatField(null=True, blank=True)
+    phases = models.CharField(max_length=50, null=True, blank=True)
+    districts = models.CharField(max_length=50, null=True, blank=True)
+    name = models.CharField(max_length=50, null=True, blank=True)
+    tehsils = models.CharField(max_length=100, null=True, blank=True)
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"RUDA Jurisdiction {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "ruda_jurisdiction"
+
+
+# =========================
+# City Level Service Points
+# =========================
+class CityLevelServicePoints(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    layer = models.CharField(max_length=26, null=True, blank=True)
+    gm_type = models.CharField(max_length=21, null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    area_225ac = models.FloatField(null=True, blank=True)
+    type = models.CharField(max_length=254, null=True, blank=True)
+    orig_fid = models.FloatField(null=True, blank=True)
+    elevation = models.SmallIntegerField(null=True, blank=True)
+
+    geom = gis_models.GeometryField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"City Level Service Point {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "city_level_service_points"
+
+# =========================
+# RUDA Planning Boundary
+# =========================
+class RudaPlanningBoundary(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    area_usacr = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=50, null=True, blank=True)
+    area_sqft = models.FloatField(null=True, blank=True)
+    area_225ac = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"RUDA Planning Boundary {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "ruda_planning_boundary"
+
+
+# =========================
+# Proposed Road Network
+# =========================
+class ProposedRoadNetwork(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    gm_layer = models.CharField(max_length=32, null=True, blank=True)
+    gm_type = models.CharField(max_length=17, null=True, blank=True)
+    elevation = models.SmallIntegerField(null=True, blank=True)
+    layer = models.CharField(max_length=254, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.layer or self.gm_layer or f"Proposed Road Network {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "proposed_road_network"
+
