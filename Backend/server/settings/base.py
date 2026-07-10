@@ -141,3 +141,11 @@ REST_FRAMEWORK = {
 
 # CORS (keep empty here, override in local/prod)
 CORS_ALLOWED_ORIGINS = []
+
+# Cache
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "ruda-cache",
+    }
+}

@@ -1,7 +1,8 @@
 from ..common_imports import *
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 
+@method_decorator(cache_page(60 * 10), name="list")
 class ListRudaBoundaryView(viewsets.ViewSet):
     queryset = RudaBoundary.objects.all()
     serializer_class = RudaBoundarySerializer
@@ -77,29 +78,116 @@ class ListRudaBoundaryView(viewsets.ViewSet):
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()
 
-    @action(detail=True, methods=['get'], url_path='geojson', url_name='geojson')
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="geojson",
+        url_name="geojson",
+    )
     def geojson(self, request, pk=None):
-        """Return RudaBoundary boundary as GeoJSON"""
-        try:
-            ruda_boundary = RudaBoundary.objects.filter(gid=pk).first()
 
-            if not ruda_boundary:
-                return ApiResponse(
-                    status=status.HTTP_404_NOT_FOUND,
-                    message="RudaBoundary not found.",
-                    http_status=status.HTTP_404_NOT_FOUND,
-                ).create_response()
+        start = time.time()
 
-            serializer = RudaBoundarySerializer(ruda_boundary)
+        cache_key = f"ruda_boundary_geojson_{pk}"
+        cached = cache.get(cache_key)
+
+        if cached:
+            print(
+                "CACHE:",
+                round((time.time() - start) * 1000, 2),
+                "ms"
+            )
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
                 message="RudaBoundary GeoJSON found.",
-                data=serializer.data,
+                data=cached,
+                http_status=status.HTTP_200_OK,
+            ).create_response()
+
+        try:
+
+            db_start = time.time()
+
+            with connection.cursor() as cursor:
+
+                cursor.execute("""
+                    SELECT
+                        gid,
+                        oid,
+                        name,
+                        folderpath,
+                        symbolid,
+                        altmode,
+                        base,
+                        clamped,
+                        extruded,
+                        snippet,
+                        popupinfo,
+                        shape_leng,
+                        shape_area,
+                        ST_AsGeoJSON(geom)::json
+                    FROM ruda_boundary
+                    WHERE gid = %s
+                """, [pk])
+
+                row = cursor.fetchone()
+
+            print(
+                "DB + ST_AsGeoJSON:",
+                round((time.time() - db_start) * 1000, 2),
+                "ms"
+            )
+
+            if not row:
+                return ApiResponse(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message="RudaBoundary not found.",
+                    data=[],
+                    http_status=status.HTTP_404_NOT_FOUND,
+                ).create_response()
+
+            feature = {
+                "type": "Feature",
+                "id": row[0],
+                "geometry": row[13],
+                "properties": {
+                    "gid": row[0],
+                    "oid": float(row[1]) if row[1] is not None else None,
+                    "name": row[2],
+                    "folderpath": row[3],
+                    "symbolid": float(row[4]) if row[4] is not None else None,
+                    "altmode": row[5],
+                    "base": float(row[6]) if row[6] is not None else None,
+                    "clamped": row[7],
+                    "extruded": row[8],
+                    "snippet": row[9],
+                    "popupinfo": row[10],
+                    "shape_leng": float(row[11]) if row[11] is not None else None,
+                    "shape_area": float(row[12]) if row[12] is not None else None,
+                },
+            }
+
+            cache.set(cache_key, feature, 60 * 60)
+
+            print(
+                "TOTAL:",
+                round((time.time() - start) * 1000, 2),
+                "ms"
+            )
+
+            return ApiResponse(
+                status=status.HTTP_200_OK,
+                message="RudaBoundary GeoJSON found.",
+                data=feature,
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
         except Exception as e:
+            import traceback
+
+            print(traceback.format_exc())
+
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",

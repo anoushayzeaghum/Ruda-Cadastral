@@ -1,7 +1,7 @@
 from ...common_imports import *
 from django.db.models import Q
 
-
+import traceback
 class ListPlotView(viewsets.ViewSet):
     queryset = Plot.objects.all()
     serializer_class = PlotSerializer
@@ -80,9 +80,12 @@ class ListPlotView(viewsets.ViewSet):
             ).create_response()
 
         except Exception as e:
+            print(traceback.format_exc())
+
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
                 data=str(e),
+                error_traceback=traceback.format_exc(),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()
