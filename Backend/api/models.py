@@ -1628,7 +1628,7 @@ class StateLand(models.Model):
     remarks = models.CharField(max_length=35, null=True, blank=True)
     state_land = models.CharField(max_length=254, null=True, blank=True)
     area_sqft = models.IntegerField(null=True, blank=True)
-    date_ = models.DateField(db_column="date_", null=True, blank=True)
+    date = models.DateField(db_column="date", null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(
         srid=4326,
@@ -1655,7 +1655,7 @@ class RtwAlignment(models.Model):
     length = models.CharField(max_length=254, null=True, blank=True)
     area_sqft = models.FloatField(null=True, blank=True)
     area_ac225 = models.FloatField(null=True, blank=True)
-    date_ = models.DateField(db_column="date_", null=True, blank=True)
+    date = models.DateField(db_column="date", null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(
         srid=4326,
@@ -1692,7 +1692,7 @@ class PossessionLand(models.Model):
     land_owner = models.CharField(max_length=254, null=True, blank=True)
     lp_name = models.CharField(max_length=254, null=True, blank=True)
     remarks = models.CharField(max_length=254, null=True, blank=True)
-    date_ = models.CharField(db_column="date_", max_length=50, null=True, blank=True)
+    date = models.CharField(db_column="date", max_length=50, null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(
         srid=4326,
@@ -1728,7 +1728,7 @@ class AwardedLand(models.Model):
     land_type = models.CharField(max_length=254, null=True, blank=True)
     remarks = models.CharField(max_length=254, null=True, blank=True)
     area_sqft = models.FloatField(null=True, blank=True)
-    date_ = models.DateField(db_column="date_", null=True, blank=True)
+    date = models.DateField(db_column="date", null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(
         srid=4326,
@@ -1769,7 +1769,7 @@ class RtwPackage(models.Model):
     )
 
     def __str__(self):
-        return self.package or self.name or f"RtwPackage {self.gid}"
+        return self.package or self.name or f"RtwPackage {self.date}"
 
     class Meta:
         managed = False

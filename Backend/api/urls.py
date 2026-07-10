@@ -3,11 +3,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from api.views import *
 from api.views.RudaMasterPlan import *
-from api.views.RudaMasterPlan.StateLandView import *
-from api.views.RudaMasterPlan.RtwAlignmentView import *
-from api.views.RudaMasterPlan.PossessionLandView import *
-from api.views.RudaMasterPlan.AwardedLandView import *
-from api.views.RudaMasterPlan.RtwPackageView import *
+from api.views.GISMetaverse import *
+
 
 router = DefaultRouter()
 

@@ -1273,7 +1273,7 @@ class StateLandSerializer(GeoFeatureModelSerializer):
             "remarks",
             "state_land",
             "area_sqft",
-            "date_",
+            "date",
             "geom",
         )
 
@@ -1295,7 +1295,7 @@ class RtwAlignmentSerializer(GeoFeatureModelSerializer):
             "length",
             "area_sqft",
             "area_ac225",
-            "date_",
+            "date",
             "geom",
         )
 
@@ -1325,7 +1325,7 @@ class PossessionLandSerializer(GeoFeatureModelSerializer):
             "land_owner",
             "lp_name",
             "remarks",
-            "date_",
+            "date",
             "geom",
         )
 
@@ -1354,7 +1354,7 @@ class AwardedLandSerializer(GeoFeatureModelSerializer):
             "land_type",
             "remarks",
             "area_sqft",
-            "date_",
+            "date",
             "geom",
         )
 
