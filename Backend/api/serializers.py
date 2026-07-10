@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from .models import *
-import time
+
 
 # --------------------------------------------------------
 # MyUser Serializer
@@ -695,16 +695,12 @@ class PlotSerializer(GeoFeatureModelSerializer):
 
     project_name = serializers.CharField(
         source="project.name",
-        read_only=True,
-        allow_null=True,
-        default=None,
+        read_only=True
     )
 
     block_name = serializers.CharField(
         source="block.name",
-        read_only=True,
-        allow_null=True,
-        default=None,
+        read_only=True
     )
 
     class Meta:
@@ -953,3 +949,247 @@ class WSPointSerializer(GeoFeatureModelSerializer):
             "project_name",
             "geom",
         )
+
+# -----------------------------------------------------------------------------------------------------------
+# ***RUDA LMASTER PLAN SERIALIZERS***
+# -----------------------------------------------------------------------------------------------------------
+
+# --------------------------------------------------------
+# Existing Forest Serializer
+# --------------------------------------------------------
+class ExistingForestSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ExistingForest
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "type",
+            "source",
+            "lu_type",
+            "status",
+            "comments",
+            "area_sqfee",
+            "area_acre",
+            "area_225ac",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# RUDA Mp Principle Zoning Serializer
+# --------------------------------------------------------
+class MpPrincipleZoningSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = MpPrincipleZoning
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "area225a",
+            "zoning_cat",
+            "area_sqft",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# City Level Service Serializer
+# --------------------------------------------------------
+class CityLevelServiceSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = CityLevelService
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "layer",
+            "gm_type",
+            "elevation",
+            "name",
+            "area_225ac",
+            "type",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Forest Boundary Serializer
+# --------------------------------------------------------
+class ForestBoundarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ForestBoundary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "f_zone",
+            "f_circle",
+            "f_div",
+            "f_name",
+            "gps_area",
+            "gross_area",
+            "f_type",
+            "legal_stat",
+            "shape_leng",
+            "shape_area",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Precient Boundary Serializer
+# --------------------------------------------------------
+class PrecientBoundarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = PrecientBoundary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "area_acre",
+            "phases",
+            "phases_new",
+            "shape_leng",
+            "shape_area",
+            "area_sqft",
+            "area_225ac",
+            "name",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# River Serializer
+# --------------------------------------------------------
+class RiverSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = River
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "layer",
+            "name",
+            "area_sqft",
+            "area_225ac",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# River Ravi Serializer
+# --------------------------------------------------------
+class RiverRaviSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RiverRavi
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "type",
+            "area",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# RUDA Jurisdiction Serializer
+# --------------------------------------------------------
+class RudaJurisdictionSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RudaJurisdiction
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "area_usacr",
+            "phases",
+            "districts",
+            "name",
+            "tehsils",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# City Level Service Points Serializer
+# --------------------------------------------------------
+class CityLevelServicePointsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = CityLevelServicePoints
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "layer",
+            "gm_type",
+            "name",
+            "area_225ac",
+            "type",
+            "orig_fid",
+            "elevation",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RUDA Planning Boundary Serializer
+# --------------------------------------------------------
+class RudaPlanningBoundarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RudaPlanningBoundary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "area_usacr",
+            "name",
+            "area_sqft",
+            "area_225ac",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Proposed Road Network Serializer
+# --------------------------------------------------------
+class ProposedRoadNetworkSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ProposedRoadNetwork
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "gm_layer",
+            "gm_type",
+            "elevation",
+            "layer",
+            "geom",
+        )
+
