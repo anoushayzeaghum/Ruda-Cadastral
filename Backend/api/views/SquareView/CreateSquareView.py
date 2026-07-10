@@ -1,6 +1,5 @@
 from ..common_imports import *
 
-
 class CreateSquareView(viewsets.ViewSet):
     queryset = Square.objects.all()
     serializer_class = SquareSerializer
