@@ -26,7 +26,7 @@ export default function LayersPanel({
         adminBoundaryVisibility={adminBoundaryVisibility}
         setAdminBoundaryVisibility={setAdminBoundaryVisibility}
       />
-      <RUDAMasterPlan />
+      <RUDAMasterPlan map={map} />
       <MasterPlan
         map={map}
         selectedProjectId={filters?.projectId}

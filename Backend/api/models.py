@@ -180,11 +180,30 @@ class Tehsil(models.Model):
 class Mauza(models.Model):
     gid = models.AutoField(primary_key=True)
 
+    # Raw text columns from the imported Mauza shapefile.
+    # These are kept separate from the FK fields below so the old API behavior
+    # does not break.
+    district_text = models.CharField(
+        db_column="district",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    tehsil_text = models.CharField(
+        db_column="tehsil",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
     district = models.ForeignKey(
         District,
         on_delete=models.CASCADE,
         db_column="dist_id",
         related_name="mauzas",
+        null=True,
+        blank=True,
     )
 
     tehsil = models.ForeignKey(
@@ -192,13 +211,14 @@ class Mauza(models.Model):
         on_delete=models.CASCADE,
         db_column="tehsil_id",
         related_name="mauzas",
+        null=True,
+        blank=True,
     )
 
     kc = models.CharField(max_length=100, null=True, blank=True)
     kc_id = models.IntegerField(null=True, blank=True)
 
     pc = models.CharField(max_length=100, null=True, blank=True)
-    pc_id = models.IntegerField(null=True, blank=True)
 
     mauza = models.CharField(max_length=100)
     mauza_id = models.FloatField(
@@ -206,6 +226,13 @@ class Mauza(models.Model):
         null=True,
         blank=True,
     )
+
+    notified_b = models.CharField(max_length=100, null=True, blank=True)
+    proposed_b = models.CharField(max_length=100, null=True, blank=True)
+    new_ext = models.CharField(max_length=100, null=True, blank=True)
+    prepared_b = models.CharField(max_length=100, null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
+
     geom = gis_models.MultiPolygonField(srid=4326)
 
     def __str__(self):
@@ -215,7 +242,6 @@ class Mauza(models.Model):
         managed = False
         db_table = "mauza"
 
-
 # --------------------------------------------------------
 # Khasra
 # District → Tehsil → Mauza → Khasra
@@ -223,7 +249,34 @@ class Mauza(models.Model):
 class Khasra(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    join_shp = models.CharField(max_length=50, null=True, blank=True)
+    # Raw text columns from the imported Khasra shapefile.
+    # These are intentionally named *_text so they do not conflict with the
+    # existing FK attributes named district, tehsil, and mauza.
+    district_text = models.CharField(
+        db_column="district",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    tehsil_text = models.CharField(
+        db_column="tehsil",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    mauza_text = models.CharField(
+        db_column="mauza",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    remarks = models.CharField(max_length=100, null=True, blank=True)
+    area_sqft = models.FloatField(null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_area = models.FloatField(null=True, blank=True)
 
     district = models.ForeignKey(
         District,
@@ -265,6 +318,8 @@ class Khasra(models.Model):
     hadbust_no = models.IntegerField(null=True, blank=True)
     asse_cir = models.CharField(max_length=100, null=True, blank=True)
 
+    type = models.CharField(max_length=50, null=True, blank=True)
+
     karam = models.DecimalField(
         max_digits=20,
         decimal_places=10,
@@ -272,19 +327,17 @@ class Khasra(models.Model):
         blank=True,
     )
 
-    type = models.CharField(max_length=50, null=True, blank=True)
-
     sq = models.IntegerField(null=True, blank=True)
     kh = models.IntegerField(null=True, blank=True)
     sk = models.CharField(max_length=20, null=True, blank=True)
+
+    join_shp = models.CharField(max_length=50, null=True, blank=True)
 
     khasra_id = models.FloatField(null=True, blank=True)
     khewat_id = models.FloatField(null=True, blank=True)
     khatoni_no = models.FloatField(null=True, blank=True)
 
     dc_rate = models.FloatField(null=True, blank=True)
-    remarks = models.CharField(max_length=100, null=True, blank=True)
-
     b = models.CharField(max_length=50, null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(srid=4326)
@@ -295,6 +348,7 @@ class Khasra(models.Model):
     class Meta:
         managed = False
         db_table = "khasra"
+    
 
     
 # --------------------------------------------------------

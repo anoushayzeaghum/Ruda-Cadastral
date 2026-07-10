@@ -441,3 +441,59 @@ export const getPlotOptions = async (params = {}) => {
 
   return response.json();
 };
+
+// ------------------------------ RUDA Master Plan Layers ------------------------------
+export const getCityLevelServiceGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/city-level-service/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getForestBoundaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/forest-boundary/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getPrecientBoundaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/precient-boundary/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRiverGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/river/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRiverRaviGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/river-ravi/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRudaJurisdictionGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ruda-jurisdiction/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getCityLevelServicePointsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/city-level-service-points/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getMpPrincipleZoningGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/mp-principle-zoning/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getExistingForestGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/existing-forest/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRudaPlanningBoundaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ruda-planning-boundary/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getProposedRoadNetworkGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/proposed-road-network/`);
+  return unwrapGeoJSON(res.data);
+};

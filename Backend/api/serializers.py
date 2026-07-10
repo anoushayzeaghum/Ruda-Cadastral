@@ -152,15 +152,34 @@ class TehsilSerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 
 class MauzaSerializer(GeoFeatureModelSerializer):
-    district_name = serializers.CharField(
-        source="district.name",
-        read_only=True
+    # Keep the old field names "district" and "tehsil", but read them from the
+    # raw FK id values to avoid unnecessary FK lookups during GeoJSON output.
+    district = serializers.IntegerField(
+        source="district_id",
+        read_only=True,
+        allow_null=True,
     )
 
-    tehsil_name = serializers.CharField(
-        source="tehsil.name",
-        read_only=True
+    tehsil = serializers.IntegerField(
+        source="tehsil_id",
+        read_only=True,
+        allow_null=True,
     )
+
+    district_name = serializers.SerializerMethodField()
+    tehsil_name = serializers.SerializerMethodField()
+
+    def get_district_name(self, obj):
+        try:
+            return obj.district.name if obj.district else obj.district_text
+        except Exception:
+            return obj.district_text
+
+    def get_tehsil_name(self, obj):
+        try:
+            return obj.tehsil.name if obj.tehsil else obj.tehsil_text
+        except Exception:
+            return obj.tehsil_text
 
     class Meta:
         model = Mauza
@@ -169,23 +188,36 @@ class MauzaSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "district",       # FK value
-            "district_id",    # same value as dist_id column
+
+            # Raw shapefile text columns.
+            "district_text",
+            "tehsil_text",
+
+            # Existing FK/id fields used by the current API and frontend.
+            "district",
+            "district_id",
             "district_name",
 
-            "tehsil",         # FK value
-            "tehsil_id",      # same value as tehsil_id column
+            "tehsil",
+            "tehsil_id",
             "tehsil_name",
 
             "kc",
             "kc_id",
             "pc",
-            "pc_id",
+
             "mauza",
             "mauza_id",
+
+            # New Mauza shapefile columns.
+            "notified_b",
+            "proposed_b",
+            "new_ext",
+            "prepared_b",
+            "remarks",
+
             "geom",
         )
-
 
 # --------------------------------------------------------
 # Khasra Serializer - New Format
@@ -198,13 +230,22 @@ class KhasraSerializer(GeoFeatureModelSerializer):
     mauza_name = serializers.SerializerMethodField()
 
     def get_district_name(self, obj):
-        return obj.district.name if obj.district else None
+        try:
+            return obj.district.name if obj.district else obj.district_text
+        except Exception:
+            return obj.district_text
 
     def get_tehsil_name(self, obj):
-        return obj.tehsil.name if obj.tehsil else None
+        try:
+            return obj.tehsil.name if obj.tehsil else obj.tehsil_text
+        except Exception:
+            return obj.tehsil_text
 
     def get_mauza_name(self, obj):
-        return obj.mauza.mauza if obj.mauza else None
+        try:
+            return obj.mauza.mauza if obj.mauza else obj.mauza_text
+        except Exception:
+            return obj.mauza_text
 
     class Meta:
         model = Khasra
@@ -213,8 +254,13 @@ class KhasraSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "join_shp",
 
+            # Raw shapefile text columns.
+            "district_text",
+            "tehsil_text",
+            "mauza_text",
+
+            # Existing FK/id fields used by the current API and frontend.
             "district_id",
             "tehsil_id",
             "mauza_id",
@@ -222,6 +268,11 @@ class KhasraSerializer(GeoFeatureModelSerializer):
             "district_name",
             "tehsil_name",
             "mauza_name",
+
+            "remarks",
+            "area_sqft",
+            "shape_leng",
+            "shape_area",
 
             "kc",
             "kc_id",
@@ -236,15 +287,17 @@ class KhasraSerializer(GeoFeatureModelSerializer):
             "kh",
             "sk",
 
+            "join_shp",
+
             "khasra_id",
             "khewat_id",
             "khatoni_no",
             "dc_rate",
-            "remarks",
             "b",
 
             "geom",
         )
+
 # --------------------------------------------------------
 # Society Serializer
 # District → Tehsil → Mauza → Society
