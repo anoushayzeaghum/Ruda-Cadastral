@@ -15,6 +15,11 @@ const SOURCES = {
   rudaMauzaBoundary: "metaverse-ruda-mauza-boundary-source",
   proposedRoads: "metaverse-proposed-roads-source",
   geodeticNetwork: "metaverse-geodetic-network-source",
+  rtwPackage: "metaverse-rtw-package-source",
+  rtwAlignment: "metaverse-rtw-alignment-source",
+  stateLand: "metaverse-state-land-source",
+  awardedLand: "metaverse-awarded-land-source",
+  possessionLand: "metaverse-possession-land-source",
   introBoundary: "metaverse-intro-boundary-source",
   introLabel: "metaverse-intro-label-source",
   notifiedBoundary: "metaverse-notified-boundary-source",
@@ -50,6 +55,21 @@ const LAYERS = {
   proposedRoadsLine: "metaverse-proposed-roads-line",
   geodeticNetworkCircle: "metaverse-geodetic-network-circle",
   geodeticNetworkLabel: "metaverse-geodetic-network-label",
+  rtwPackageFill: "metaverse-rtw-package-fill",
+  rtwPackageLine: "metaverse-rtw-package-line",
+  rtwPackageLabel: "metaverse-rtw-package-label",
+  rtwAlignmentFill: "metaverse-rtw-alignment-fill",
+  rtwAlignmentLine: "metaverse-rtw-alignment-line",
+  rtwAlignmentLabel: "metaverse-rtw-alignment-label",
+  stateLandFill: "metaverse-state-land-fill",
+  stateLandLine: "metaverse-state-land-line",
+  stateLandLabel: "metaverse-state-land-label",
+  awardedLandFill: "metaverse-awarded-land-fill",
+  awardedLandLine: "metaverse-awarded-land-line",
+  awardedLandLabel: "metaverse-awarded-land-label",
+  possessionLandFill: "metaverse-possession-land-fill",
+  possessionLandLine: "metaverse-possession-land-line",
+  possessionLandLabel: "metaverse-possession-land-label",
   contoursLabel: "metaverse-contours-label",
   waterSupplyLinesLabel: "metaverse-water-supply-lines-label",
   introBoundaryFill: "metaverse-intro-boundary-fill",
@@ -90,6 +110,11 @@ const INTRO_CLEAR_SOURCES = [
   SOURCES.rudaMauzaBoundary,
   SOURCES.proposedRoads,
   SOURCES.geodeticNetwork,
+  SOURCES.rtwPackage,
+  SOURCES.rtwAlignment,
+  SOURCES.stateLand,
+  SOURCES.awardedLand,
+  SOURCES.possessionLand,
   SOURCES.notifiedBoundary,
 ];
 
@@ -440,6 +465,46 @@ function applyRuntimeLayerColors(map) {
       ],
     },
     {
+      key: "rtwPackage",
+      paints: [
+        [LAYERS.rtwPackageFill, "fill-color"],
+        [LAYERS.rtwPackageLine, "line-color"],
+        [LAYERS.rtwPackageLabel, "text-color"],
+      ],
+    },
+    {
+      key: "rtwAlignment",
+      paints: [
+        [LAYERS.rtwAlignmentFill, "fill-color"],
+        [LAYERS.rtwAlignmentLine, "line-color"],
+        [LAYERS.rtwAlignmentLabel, "text-color"],
+      ],
+    },
+    {
+      key: "stateLand",
+      paints: [
+        [LAYERS.stateLandFill, "fill-color"],
+        [LAYERS.stateLandLine, "line-color"],
+        [LAYERS.stateLandLabel, "text-color"],
+      ],
+    },
+    {
+      key: "awardedLand",
+      paints: [
+        [LAYERS.awardedLandFill, "fill-color"],
+        [LAYERS.awardedLandLine, "line-color"],
+        [LAYERS.awardedLandLabel, "text-color"],
+      ],
+    },
+    {
+      key: "possessionLand",
+      paints: [
+        [LAYERS.possessionLandFill, "fill-color"],
+        [LAYERS.possessionLandLine, "line-color"],
+        [LAYERS.possessionLandLabel, "text-color"],
+      ],
+    },
+    {
       key: "waterSupplyPoints",
       paints: [
         [LAYERS.waterSupplyPointsCircle, "circle-color"],
@@ -558,6 +623,32 @@ function applyMetaverseLayerOpacities(
     adminBoundaryVisibility,
     "proposedRoadsOpacity",
     "proposedRoads",
+  );
+
+  const rtwPackageOpacity = getRuntimeOpacity(
+    adminBoundaryVisibility,
+    "rtwPackageOpacity",
+    "rtwPackage",
+  );
+  const rtwAlignmentOpacity = getRuntimeOpacity(
+    adminBoundaryVisibility,
+    "rtwAlignmentOpacity",
+    "rtwAlignment",
+  );
+  const stateLandOpacity = getRuntimeOpacity(
+    adminBoundaryVisibility,
+    "stateLandOpacity",
+    "stateLand",
+  );
+  const awardedLandOpacity = getRuntimeOpacity(
+    adminBoundaryVisibility,
+    "awardedLandOpacity",
+    "awardedLand",
+  );
+  const possessionLandOpacity = getRuntimeOpacity(
+    adminBoundaryVisibility,
+    "possessionLandOpacity",
+    "possessionLand",
   );
 
   setLayerPaintProperty(
@@ -791,6 +882,18 @@ function applyMetaverseLayerOpacities(
     "text-opacity",
     geodeticNetworkOpacity,
   );
+
+  [
+    { fill: LAYERS.rtwPackageFill, line: LAYERS.rtwPackageLine, label: LAYERS.rtwPackageLabel, opacity: rtwPackageOpacity },
+    { fill: LAYERS.rtwAlignmentFill, line: LAYERS.rtwAlignmentLine, label: LAYERS.rtwAlignmentLabel, opacity: rtwAlignmentOpacity },
+    { fill: LAYERS.stateLandFill, line: LAYERS.stateLandLine, label: LAYERS.stateLandLabel, opacity: stateLandOpacity },
+    { fill: LAYERS.awardedLandFill, line: LAYERS.awardedLandLine, label: LAYERS.awardedLandLabel, opacity: awardedLandOpacity },
+    { fill: LAYERS.possessionLandFill, line: LAYERS.possessionLandLine, label: LAYERS.possessionLandLabel, opacity: possessionLandOpacity },
+  ].forEach(({ fill, line, label, opacity }) => {
+    setLayerPaintProperty(map, fill, "fill-opacity", 0.35 * opacity);
+    setLayerPaintProperty(map, line, "line-opacity", opacity);
+    setLayerPaintProperty(map, label, "text-opacity", opacity);
+  });
 
   applyRuntimeLayerColors(map);
 }

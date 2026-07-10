@@ -27,6 +27,11 @@ from .GISMetaverse.SWPointView import *
 from .GISMetaverse.WSLView import *
 from .GISMetaverse.WSPointView import *
 from .GISMetaverse.ProjectMauzaView import *
+from .GISMetaverse.RtwAlignmentView import *
+from .GISMetaverse.RtwPackageView import *
+from .GISMetaverse.PossessionLandView import *
+from .GISMetaverse.StateLandView import *
+from .GISMetaverse.AwardedLandView import *
 
 # Ruda MasterPlan
 from .RudaMasterPlan.CityLevelServiceView import *
