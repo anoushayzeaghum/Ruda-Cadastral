@@ -1,3 +1,4 @@
+import Society3DMapUploadPage from "./pages/Cesium3DModelUpload/Society3DMapPage";
 import { Routes, Route } from "react-router-dom";
 import React from "react";
 import MainLayout from "./layouts/MainLayout";
@@ -43,6 +44,7 @@ const AppRoutes = () => {
           <Route path="/society-3d" element={<Society3DMapPage />} />
           <Route path="/gis-metaverse" element={<MetaverseDashboard />} />
           <Route path="/flyto-dashboard" element={<FlyToDashboard />} />
+          <Route path="/society-3d-upload" element={<Society3DMapUploadPage />} />
 
           <Route path="/area" element={<AreaLayout />}>
             <Route path="district" element={<District />} />
@@ -50,6 +52,10 @@ const AppRoutes = () => {
             <Route path="mauza" element={<Mauza />} />
             <Route path="khasra" element={<Khasra />} />
             <Route path="murabba" element={<Murabba />} />
+            <Route
+              path="society-3d-upload"
+              element={<Society3DMapUploadPage />}
+            />
           </Route>
         </Route>
       </Route>
