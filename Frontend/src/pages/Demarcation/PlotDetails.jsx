@@ -382,9 +382,9 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
   };
 
   return (
-    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] flex flex-col min-h-0 max-h-[355px]">
-      <div className="h-[62px] border-b border-[#d4dbe2] px-4 flex items-center justify-between gap-3">
-        <h2 className="text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
+    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] flex flex-col min-h-0 rounded-md">
+      <div className="border-b border-[#d4dbe2] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-3">
+        <h2 className="text-[14px] sm:text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
           Plot Details
         </h2>
 
@@ -392,18 +392,18 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
           <div className="relative">
             <button
               onClick={() => setShowPrintOptions((prev) => !prev)}
-              className="text-[12px] font-semibold tracking-wider text-white bg-green-700 px-3 py-2 rounded hover:bg-[#165c2d] transition"
+              className="text-[11px] sm:text-[12px] font-semibold tracking-wider text-white bg-green-700 px-2 sm:px-3 py-1.5 sm:py-2 rounded hover:bg-[#165c2d] transition"
               type="button"
             >
               Print
             </button>
 
             {showPrintOptions && (
-              <div className="absolute right-0 top-[38px] z-50 w-[210px] bg-white border border-gray-300 rounded shadow-lg overflow-hidden">
+              <div className="absolute right-0 top-[34px] sm:top-[38px] z-50 w-[200px] sm:w-[210px] bg-white border border-gray-300 rounded shadow-lg overflow-hidden">
                 <button
                   type="button"
                   onClick={handlePrintReport}
-                  className="w-full text-left px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 text-[12px] sm:text-[13px] text-gray-700 hover:bg-gray-100"
                 >
                   Print Report
                 </button>
@@ -414,7 +414,7 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
                     setShowPrintOptions(false);
                     handlePrintOfficialDemarcation();
                   }}
-                  className="w-full text-left px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100"
+                  className="w-full text-left px-3 py-2 text-[12px] sm:text-[13px] text-gray-700 hover:bg-gray-100"
                 >
                   Print Official Demarcation
                 </button>
@@ -424,17 +424,17 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
         )}
       </div>
 
-      <div className="p-4 h-full overflow-auto">
+      <div className="p-3 sm:p-4 overflow-auto max-h-[280px] sm:max-h-[350px]">
         {!parcel ? (
-          <div className="flex h-full items-center justify-center text-gray-400 text-sm">
+          <div className="flex items-center justify-center py-6 text-gray-400 text-sm">
             No plot selected.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-1.5 sm:space-y-2">
             {fields.map(([label, value]) => (
-              <div key={label} className="flex justify-between items-start gap-3 p-2 bg-gray-50 rounded">
-                <div className="text-sm text-gray-600 shrink-0">{label}</div>
-                <div className="font-medium text-sm text-gray-800 text-right whitespace-pre-line break-words">
+              <div key={label} className="flex justify-between items-start gap-2 sm:gap-3 p-1.5 sm:p-2 bg-gray-50 rounded">
+                <div className="text-[11px] sm:text-sm text-gray-600 shrink-0">{label}</div>
+                <div className="font-medium text-[11px] sm:text-sm text-gray-800 text-right whitespace-pre-line break-words">
                   {String(value)}
                 </div>
               </div>

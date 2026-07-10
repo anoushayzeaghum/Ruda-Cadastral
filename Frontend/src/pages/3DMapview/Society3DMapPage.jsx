@@ -8,6 +8,52 @@ import Society3DInfoPanel from "./Society3DInfoPanel";
 import { getItemId, getProjects } from "./api";
 import { getFeatureId } from "./cesiumHelpers";
 
+const envNumber = (value, fallback = null) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const envString = (value, fallback = "") => {
+  if (value === undefined || value === null || String(value).trim() === "") {
+    return fallback;
+  }
+  return String(value).trim();
+};
+
+const CHAHAR_BAGH_BIM_MODEL = {
+  name: "Chahar Bagh Manholes BIM Model",
+
+  // Your processed Cesium ion asset id.
+  // Keep the fallback so the model works after you add only VITE_CESIUM_TOKEN.
+  ionAssetId: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_ION_ASSET_ID, 5025136),
+
+  // Optional self-hosted 3D Tiles fallback.
+  tilesetUrl: envString(import.meta.env.VITE_CHAHAR_BAGH_BIM_TILESET_URL),
+
+  // Because the RVT projection/georeferencing is wrong, the model is manually moved.
+  // If lon/lat are empty, the code uses the selected project boundary center.
+  longitude: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_LON),
+  latitude: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_LAT),
+  height: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_HEIGHT, 0),
+
+  // Use these only when the model needs fine alignment after it appears in Lahore.
+  heading: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_HEADING, 0),
+  pitch: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_PITCH, 0),
+  roll: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_ROLL, 0),
+  scale: envNumber(import.meta.env.VITE_CHAHAR_BAGH_BIM_SCALE, 1),
+
+  // translate-to-target fixes the common case where the processed tileset appears
+  // somewhere else on the globe and must be shifted to the selected project.
+  // origin-at-target can be tried if the tileset was created around a local origin.
+  placementMode: envString(
+    import.meta.env.VITE_CHAHAR_BAGH_BIM_PLACEMENT_MODE,
+    "translate-to-target",
+  ),
+
+  flyTo: true,
+};
+
+
 const initialLayers = {
   projectBoundary: { visible: false, opacity: 35 },
   masterPlan: { visible: false, opacity: 15 },
@@ -85,6 +131,7 @@ export default function Society3DMapPage() {
     setInfoPanelOpen(false);
     setClearSelectionSignal((prev) => prev + 1);
     setAppliedExtrusions({});
+    setBimLayers({ manholesModel: false });
 
     if (!projectId) {
       setLayers(initialLayers);
@@ -155,6 +202,8 @@ export default function Society3DMapPage() {
           basemap={basemap}
           extrusion={extrusion}
           appliedExtrusions={appliedExtrusions}
+          bimLayers={bimLayers}
+          bimModelConfig={CHAHAR_BAGH_BIM_MODEL}
           activePanel={activePanel}
           onToolPanelToggle={handleToolPanelToggle}
           onFeatureSelect={handleFeatureSelect}

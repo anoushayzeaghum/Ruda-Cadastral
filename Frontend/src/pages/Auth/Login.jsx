@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, Search, Map, Building, FileText } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Search,
+  Map,
+  Building,
+  FileText,
+} from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export default function Login() {
@@ -66,7 +75,7 @@ export default function Login() {
   };
 
   return (
-    <div 
+    <div
       className="relative min-h-screen w-full bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/ruda_bg.png')" }}
     >
@@ -92,8 +101,11 @@ export default function Login() {
 
             <div className="mt-8 text-center">
               <h1 className="mx-auto max-w-xl text-4xl font-semibold leading-[1.05] tracking-tight text-white sm:text-5xl">
-                CADASTRAL MANAGEMENT{" "}
-                <span className="block text-sky-200">MADE SIMPLE.</span>
+                GIS METAVERSE{" "}
+                <span className="block text-sky-200 text-2xl">
+                  {" "}
+                  CADASTRAL MANAGEMENT SYSTEM
+                </span>
               </h1>
             </div>
 
@@ -107,11 +119,19 @@ export default function Login() {
                 <span>Map-based insights</span>
               </div>
               <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-left">
-                <Building size={18} className="text-white/70" strokeWidth={1.5} />
+                <Building
+                  size={18}
+                  className="text-white/70"
+                  strokeWidth={1.5}
+                />
                 <span>Ownership &amp; land use</span>
               </div>
               <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-left">
-                <FileText size={18} className="text-white/70" strokeWidth={1.5} />
+                <FileText
+                  size={18}
+                  className="text-white/70"
+                  strokeWidth={1.5}
+                />
                 <span>Reports &amp; exports</span>
               </div>
             </div>

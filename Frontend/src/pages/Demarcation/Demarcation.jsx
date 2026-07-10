@@ -69,7 +69,7 @@ export default function Demarcation() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-[#f4f4f4] font-sans text-[#4a4a4a] overflow-hidden">
+    <div className="flex flex-col bg-[#f4f4f4] font-sans text-[#4a4a4a] min-h-screen lg:h-screen lg:overflow-hidden">
       <Header
         darkMode={darkMode}
         setDarkMode={setDarkMode}
@@ -77,20 +77,46 @@ export default function Demarcation() {
         toggleSidebar={() => setSidebarOpen((prev) => !prev)}
       />
 
-      <div className="p-3 flex-1 overflow-hidden">
-        <div className="grid grid-cols-12 gap-3 h-full">
+      <div className="p-2 sm:p-3 flex-1 lg:overflow-hidden">
+        {/* Mobile Layout - Scrollable, stacked in specific order */}
+        <div className="flex flex-col lg:hidden gap-2 pb-4">
+          {/* 1. Spatial Query */}
+          <SpatialQuery filters={filters} onFiltersChange={handleFiltersChange} />
+
+          {/* 2. Plot Details */}
+          <PlotDetails parcel={selectedPlot} filters={filters} />
+
+          {/* 3. Map */}
           <DemarcationMap
             filters={filters}
             onParcelSelect={handlePlotSelect}
             onFeaturesLoaded={setLoadedPlotsGeojson}
           />
 
-          <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3 min-h-0">
+          {/* 4. Legend */}
+          <Legend items={landUseSummary} selectedParcelNumber={filters.selectedParcelNumber} />
+
+          {/* 5. Landuse Breakdown */}
+          <LandUseBreakdown items={landUseSummary} selectedProjectName={filters.projectName} />
+        </div>
+
+        {/* Desktop Layout - Grid with original order */}
+        <div className="hidden lg:grid lg:grid-cols-12 gap-3 h-full">
+          {/* Map - 6 cols */}
+          <DemarcationMap
+            filters={filters}
+            onParcelSelect={handlePlotSelect}
+            onFeaturesLoaded={setLoadedPlotsGeojson}
+          />
+
+          {/* Left Panel - 3 cols */}
+          <div className="flex flex-col gap-3 min-h-0 lg:col-span-3">
             <LandUseBreakdown items={landUseSummary} selectedProjectName={filters.projectName} />
             <PlotDetails parcel={selectedPlot} filters={filters} />
           </div>
 
-          <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3 min-h-0">
+          {/* Right Panel - 3 cols */}
+          <div className="flex flex-col gap-3 min-h-0 lg:col-span-3">
             <SpatialQuery filters={filters} onFiltersChange={handleFiltersChange} />
             <Legend items={landUseSummary} selectedParcelNumber={filters.selectedParcelNumber} />
           </div>

@@ -15,8 +15,10 @@ export default function Society3DSubHeader({
     ) || "Select";
 
   return (
-    <div className="absolute left-1/2 top-4 z-30 w-fit max-w-[calc(100vw-120px)] -translate-x-1/2 overflow-visible rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md">
-      <div className="flex w-fit items-center justify-center gap-2 px-2 py-2">
+    <div className="absolute left-1/2 top-2 sm:top-4 z-30 w-fit -translate-x-1/2 overflow-visible rounded-lg sm:rounded-xl border border-white/40 bg-[#0f3d2e] shadow-xl backdrop-blur-md"
+      style={{ maxWidth: "calc(100vw - 16px)" }}
+    >
+      <div className="flex w-fit items-center justify-center gap-1 sm:gap-2 px-1 sm:px-2 py-1 sm:py-2">
         <FilterCard label="Project — منصوبہ" value={loading.projects ? "Loading..." : projectName}>
           <select
             value={selectedProject}
@@ -43,13 +45,15 @@ export default function Society3DSubHeader({
 
 function FilterCard({ label, value, children }) {
   return (
-    <div className="relative w-[180px] overflow-visible rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 shadow-sm transition hover:border-green-600">
-      <p className="text-[9px] text-gray-500">{label}</p>
-      <div className="flex items-center justify-between">
-        <p className="max-w-[150px] truncate text-xs font-semibold text-gray-800">
+    <div className="relative overflow-visible rounded-md sm:rounded-lg border border-gray-200 bg-white px-2 sm:px-2.5 py-1 sm:py-1.5 shadow-sm transition hover:border-green-600"
+      style={{ minWidth: "140px", width: "clamp(140px, 40vw, 180px)" }}
+    >
+      <p className="text-[8px] sm:text-[9px] text-gray-500 truncate">{label}</p>
+      <div className="flex items-center justify-between gap-1">
+        <p className="flex-1 min-w-0 truncate text-[10px] sm:text-xs font-semibold text-gray-800">
           {value}
         </p>
-        <ChevronDown size={13} className="ml-2 shrink-0 text-gray-400" />
+        <ChevronDown size={11} className="ml-1 sm:ml-2 shrink-0 text-gray-400 sm:w-[13px] sm:h-[13px]" />
       </div>
       {children}
     </div>
