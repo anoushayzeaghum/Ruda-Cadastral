@@ -3,6 +3,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from api.views import *
 from api.views.RudaMasterPlan import *
+from api.views.GISMetaverse import *
+
 
 router = DefaultRouter()
 
@@ -213,6 +215,34 @@ router.register(r"proposed-road-network", ListProposedRoadNetworkView, basename=
 router.register(r"proposed-road-network/create", CreateProposedRoadNetworkView, basename="create-proposed-road-network")
 router.register(r"proposed-road-network/update", UpdateProposedRoadNetworkView, basename="update-proposed-road-network")
 router.register(r"proposed-road-network/delete", DeleteProposedRoadNetworkView, basename="delete-proposed-road-network")
+
+
+# ------------------------------ Imported Land Table Views ------------------------------
+router.register(r"stateland", ListStateLandView, basename="stateland")
+router.register(r"stateland/create", CreateStateLandView, basename="create-stateland")
+router.register(r"stateland/update", UpdateStateLandView, basename="update-stateland")
+router.register(r"stateland/delete", DeleteStateLandView, basename="delete-stateland")
+
+router.register(r"rtwalignment", ListRtwAlignmentView, basename="rtwalignment")
+router.register(r"rtwalignment/create", CreateRtwAlignmentView, basename="create-rtwalignment")
+router.register(r"rtwalignment/update", UpdateRtwAlignmentView, basename="update-rtwalignment")
+router.register(r"rtwalignment/delete", DeleteRtwAlignmentView, basename="delete-rtwalignment")
+
+router.register(r"possessionland", ListPossessionLandView, basename="possessionland")
+router.register(r"possessionland/create", CreatePossessionLandView, basename="create-possessionland")
+router.register(r"possessionland/update", UpdatePossessionLandView, basename="update-possessionland")
+router.register(r"possessionland/delete", DeletePossessionLandView, basename="delete-possessionland")
+
+router.register(r"awardedland", ListAwardedLandView, basename="awardedland")
+router.register(r"awardedland/create", CreateAwardedLandView, basename="create-awardedland")
+router.register(r"awardedland/update", UpdateAwardedLandView, basename="update-awardedland")
+router.register(r"awardedland/delete", DeleteAwardedLandView, basename="delete-awardedland")
+
+
+router.register(r"rtwpackage", ListRtwPackageView, basename="rtwpackage")
+router.register(r"rtwpackage/create", CreateRtwPackageView, basename="create-rtwpackage")
+router.register(r"rtwpackage/update", UpdateRtwPackageView, basename="update-rtwpackage")
+router.register(r"rtwpackage/delete", DeleteRtwPackageView, basename="delete-rtwpackage")
 
 urlpatterns = [
     path('admin/', admin.site.urls),

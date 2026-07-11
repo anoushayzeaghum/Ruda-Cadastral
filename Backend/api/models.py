@@ -1604,3 +1604,174 @@ class ProposedRoadNetwork(models.Model):
         managed = False
         db_table = "proposed_road_network"
 
+# =================================================================================================
+# IMPORTED LAND TABLES
+# These models map directly to the existing PostGIS tables. Table names are kept unchanged.
+# =================================================================================================
+
+# =========================
+# State Land
+# DB table: stateland
+# =========================
+class StateLand(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    district = models.CharField(max_length=254, null=True, blank=True)
+    tehsil = models.CharField(max_length=254, null=True, blank=True)
+    mouza = models.CharField(max_length=254, null=True, blank=True)
+
+    square = models.SmallIntegerField(null=True, blank=True)
+    khasra = models.SmallIntegerField(null=True, blank=True)
+    sub_khasra = models.SmallIntegerField(null=True, blank=True)
+    khasra_lab = models.CharField(max_length=254, null=True, blank=True)
+
+    remarks = models.CharField(max_length=35, null=True, blank=True)
+    state_land = models.CharField(max_length=254, null=True, blank=True)
+    area_sqft = models.IntegerField(null=True, blank=True)
+    date = models.DateField(db_column="date", null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.khasra_lab or f"StateLand {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "stateland"
+
+
+# =========================
+# RTW Alignment
+# DB table: rtwalignment
+# =========================
+class RtwAlignment(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    package = models.CharField(max_length=254, null=True, blank=True)
+    length = models.CharField(max_length=254, null=True, blank=True)
+    area_sqft = models.FloatField(null=True, blank=True)
+    area_ac225 = models.FloatField(null=True, blank=True)
+    date = models.DateField(db_column="date", null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.package or f"RtwAlignment {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "rtwalignment"
+
+
+# =========================
+# Possession Land
+# DB table: possessionland
+# =========================
+class PossessionLand(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    district = models.CharField(max_length=254, null=True, blank=True)
+    tehsil = models.CharField(max_length=254, null=True, blank=True)
+    mouza = models.CharField(max_length=254, null=True, blank=True)
+
+    square = models.FloatField(null=True, blank=True)
+    khasra = models.FloatField(null=True, blank=True)
+    khasra_lab = models.CharField(max_length=254, null=True, blank=True)
+
+    award_zone = models.CharField(max_length=254, null=True, blank=True)
+    projects = models.CharField(max_length=254, null=True, blank=True)
+    l_type = models.CharField(max_length=254, null=True, blank=True)
+    land_owner = models.CharField(max_length=254, null=True, blank=True)
+    lp_name = models.CharField(max_length=254, null=True, blank=True)
+    remarks = models.CharField(max_length=254, null=True, blank=True)
+    date = models.CharField(db_column="date", max_length=50, null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.khasra_lab or f"PossessionLand {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "possessionland"
+
+
+# =========================
+# Awarded Land
+# DB table: awardedland
+# =========================
+class AwardedLand(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    district = models.CharField(max_length=254, null=True, blank=True)
+    tehsil = models.CharField(max_length=254, null=True, blank=True)
+    mouza = models.CharField(max_length=254, null=True, blank=True)
+
+    square = models.FloatField(null=True, blank=True)
+    khasra = models.FloatField(null=True, blank=True)
+    sub_khasra = models.FloatField(null=True, blank=True)
+    khasra_lab = models.CharField(max_length=254, null=True, blank=True)
+
+    agri_river = models.CharField(max_length=254, null=True, blank=True)
+    land_type = models.CharField(max_length=254, null=True, blank=True)
+    remarks = models.CharField(max_length=254, null=True, blank=True)
+    area_sqft = models.FloatField(null=True, blank=True)
+    date = models.DateField(db_column="date", null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.khasra_lab or f"AwardedLand {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "awardedland"
+
+# =========================
+# RTW Package
+# DB table: rtwpackage
+# =========================
+class RtwPackage(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    layer = models.CharField(max_length=254, null=True, blank=True)
+    map_name = models.CharField(max_length=254, null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    package = models.CharField(max_length=254, null=True, blank=True)
+
+    area_acres = models.FloatField(null=True, blank=True)
+    closed = models.CharField(max_length=50, null=True, blank=True)
+    label_pos = models.CharField(max_length=254, null=True, blank=True)
+    ruda_phase = models.CharField(max_length=254, null=True, blank=True)
+    area_sqkm = models.FloatField(null=True, blank=True)
+    aaa = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.package or self.name or f"RtwPackage {self.date}"
+
+    class Meta:
+        managed = False
+        db_table = "rtwpackage"
+

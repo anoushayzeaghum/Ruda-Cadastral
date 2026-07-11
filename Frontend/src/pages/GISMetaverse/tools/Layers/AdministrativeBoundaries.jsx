@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import mapboxgl from "mapbox-gl";
@@ -6,7 +7,17 @@ import RudaBoundaryAttribute from "./AttributeTable/RudaBoundaryAttribute";
 import RudaMozaBoundaryAttribute from "./AttributeTable/RudaMozaBoundaryAttribute";
 import GeodeticNetworkAttribute from "./AttributeTable/GeodeticNetworkAttribute";
 import ProposedRoadAttribute from "./AttributeTable/ProposedRoadAttribute";
-import { formatNumber, getMapSourceGeoJSON } from "./AttributeTable/AdminAttributeTableShell";
+import RtwPackageAttribute from "./AttributeTable/RtwPackageAttribute";
+import RtwAlignmentAttribute from "./AttributeTable/RtwAlignmentAttribute";
+import StateLandAttribute from "./AttributeTable/StateLandAttribute";
+import AwardedLandAttribute from "./AttributeTable/AwardedLandAttribute";
+import PossessionLandAttribute from "./AttributeTable/PossessionLandAttribute";
+import { addRtwPackageLayer } from "../../LayerManager/RtwPackageLayer";
+import { addRtwAlignmentLayer } from "../../LayerManager/RtwAlignmentLayer";
+import { addStateLandLayer } from "../../LayerManager/StateLandLayer";
+import { addAwardedLandLayer } from "../../LayerManager/AwardedLandLayer";
+import { addPossessionLandLayer } from "../../LayerManager/PossessionLandLayer";
+import { API_BASE, formatNumber, getMapSourceGeoJSON, unwrapGeoJSON } from "./AttributeTable/AdminAttributeTableShell";
 import { readAreaSqft, sqftToAcres } from "./AttributeTable/areaUtils";
 
 const RUDA_BOUNDARY_LAYER_IDS = [
@@ -21,6 +32,69 @@ const ADMIN_LAYER_COLORS = {
   rudaMauzaBoundary: "#0f3d2e",
   geodeticNetwork: "#ef4444",
   proposedRoads: "#19598d",
+  rtwPackage: "#f59e0b",
+  rtwAlignment: "#38bdf8",
+  stateLand: "#22c55e",
+  awardedLand: "#a855f7",
+  possessionLand: "#ef4444",
+};
+
+
+
+const IMPORTED_ADMIN_LAYER_CONFIGS = {
+  rtwPackage: {
+    endpoint: "rtwpackage",
+    addLayer: addRtwPackageLayer,
+    layerIds: [
+      "metaverse-rtw-package-fill",
+      "metaverse-rtw-package-line",
+      "metaverse-rtw-package-label",
+    ],
+  },
+  rtwAlignment: {
+    endpoint: "rtwalignment",
+    addLayer: addRtwAlignmentLayer,
+    layerIds: [
+      "metaverse-rtw-alignment-fill",
+      "metaverse-rtw-alignment-line",
+      "metaverse-rtw-alignment-label",
+    ],
+  },
+  stateLand: {
+    endpoint: "stateland",
+    addLayer: addStateLandLayer,
+    layerIds: [
+      "metaverse-state-land-fill",
+      "metaverse-state-land-line",
+      "metaverse-state-land-label",
+    ],
+  },
+  awardedLand: {
+    endpoint: "awardedland",
+    addLayer: addAwardedLandLayer,
+    layerIds: [
+      "metaverse-awarded-land-fill",
+      "metaverse-awarded-land-line",
+      "metaverse-awarded-land-label",
+    ],
+  },
+  possessionLand: {
+    endpoint: "possessionland",
+    addLayer: addPossessionLandLayer,
+    layerIds: [
+      "metaverse-possession-land-fill",
+      "metaverse-possession-land-line",
+      "metaverse-possession-land-label",
+    ],
+  },
+};
+
+const setLayerIdsVisibility = (map, layerIds = [], visible) => {
+  layerIds.forEach((layerId) => {
+    if (map?.getLayer?.(layerId)) {
+      map.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
+    }
+  });
 };
 
 const setPaint = (map, layerId, property, value) => {
@@ -48,6 +122,36 @@ const applyAdministrativeLayerColor = (map, key, color) => {
     case "geodeticNetwork":
       setPaint(map, "metaverse-geodetic-network-circle", "circle-color", color);
       setPaint(map, "metaverse-geodetic-network-label", "text-color", color);
+      break;
+
+    case "rtwPackage":
+      setPaint(map, "metaverse-rtw-package-fill", "fill-color", color);
+      setPaint(map, "metaverse-rtw-package-line", "line-color", color);
+      setPaint(map, "metaverse-rtw-package-label", "text-color", color);
+      break;
+
+    case "rtwAlignment":
+      setPaint(map, "metaverse-rtw-alignment-fill", "fill-color", color);
+      setPaint(map, "metaverse-rtw-alignment-line", "line-color", color);
+      setPaint(map, "metaverse-rtw-alignment-label", "text-color", color);
+      break;
+
+    case "stateLand":
+      setPaint(map, "metaverse-state-land-fill", "fill-color", color);
+      setPaint(map, "metaverse-state-land-line", "line-color", color);
+      setPaint(map, "metaverse-state-land-label", "text-color", color);
+      break;
+
+    case "awardedLand":
+      setPaint(map, "metaverse-awarded-land-fill", "fill-color", color);
+      setPaint(map, "metaverse-awarded-land-line", "line-color", color);
+      setPaint(map, "metaverse-awarded-land-label", "text-color", color);
+      break;
+
+    case "possessionLand":
+      setPaint(map, "metaverse-possession-land-fill", "fill-color", color);
+      setPaint(map, "metaverse-possession-land-line", "line-color", color);
+      setPaint(map, "metaverse-possession-land-label", "text-color", color);
       break;
 
     default:
@@ -103,6 +207,36 @@ const applyAdministrativeLayerOpacity = (map, key, opacity = 100) => {
 
     case "proposedRoads":
       setPaint(map, "metaverse-proposed-roads-line", "line-opacity", o);
+      break;
+
+    case "rtwPackage":
+      setPaint(map, "metaverse-rtw-package-fill", "fill-opacity", 0.35 * o);
+      setPaint(map, "metaverse-rtw-package-line", "line-opacity", o);
+      setPaint(map, "metaverse-rtw-package-label", "text-opacity", o);
+      break;
+
+    case "rtwAlignment":
+      setPaint(map, "metaverse-rtw-alignment-fill", "fill-opacity", 0.35 * o);
+      setPaint(map, "metaverse-rtw-alignment-line", "line-opacity", o);
+      setPaint(map, "metaverse-rtw-alignment-label", "text-opacity", o);
+      break;
+
+    case "stateLand":
+      setPaint(map, "metaverse-state-land-fill", "fill-opacity", 0.35 * o);
+      setPaint(map, "metaverse-state-land-line", "line-opacity", o);
+      setPaint(map, "metaverse-state-land-label", "text-opacity", o);
+      break;
+
+    case "awardedLand":
+      setPaint(map, "metaverse-awarded-land-fill", "fill-opacity", 0.35 * o);
+      setPaint(map, "metaverse-awarded-land-line", "line-opacity", o);
+      setPaint(map, "metaverse-awarded-land-label", "text-opacity", o);
+      break;
+
+    case "possessionLand":
+      setPaint(map, "metaverse-possession-land-fill", "fill-opacity", 0.35 * o);
+      setPaint(map, "metaverse-possession-land-line", "line-opacity", o);
+      setPaint(map, "metaverse-possession-land-label", "text-opacity", o);
       break;
 
     default:
@@ -216,6 +350,11 @@ export default function AdministrativeBoundaries({
   const [rudaMauzaDropdownOpen, setRudaMauzaDropdownOpen] = useState(false);
   const [geodeticDropdownOpen, setGeodeticDropdownOpen] = useState(false);
   const [proposedRoadsDropdownOpen, setProposedRoadsDropdownOpen] = useState(false);
+  const [rtwPackageDropdownOpen, setRtwPackageDropdownOpen] = useState(false);
+  const [rtwAlignmentDropdownOpen, setRtwAlignmentDropdownOpen] = useState(false);
+  const [stateLandDropdownOpen, setStateLandDropdownOpen] = useState(false);
+  const [awardedLandDropdownOpen, setAwardedLandDropdownOpen] = useState(false);
+  const [possessionLandDropdownOpen, setPossessionLandDropdownOpen] = useState(false);
   const [activeAttributeTable, setActiveAttributeTable] = useState(null);
 
   // Keep editable colors local to this panel so changing colors does NOT update
@@ -223,6 +362,11 @@ export default function AdministrativeBoundaries({
   const [editableColors, setEditableColors] = useState({
     rudaMauzaBoundary: ADMIN_LAYER_COLORS.rudaMauzaBoundary,
     geodeticNetwork: ADMIN_LAYER_COLORS.geodeticNetwork,
+    rtwPackage: ADMIN_LAYER_COLORS.rtwPackage,
+    rtwAlignment: ADMIN_LAYER_COLORS.rtwAlignment,
+    stateLand: ADMIN_LAYER_COLORS.stateLand,
+    awardedLand: ADMIN_LAYER_COLORS.awardedLand,
+    possessionLand: ADMIN_LAYER_COLORS.possessionLand,
   });
 
   // Keep opacity local to this panel. Changing the slider should only repaint
@@ -233,6 +377,11 @@ export default function AdministrativeBoundaries({
     rudaMauzaBoundary: adminBoundaryVisibility?.rudaMauzaBoundaryOpacity ?? 100,
     geodeticNetwork: adminBoundaryVisibility?.geodeticNetworkOpacity ?? 100,
     proposedRoads: adminBoundaryVisibility?.proposedRoadsOpacity ?? 100,
+    rtwPackage: adminBoundaryVisibility?.rtwPackageOpacity ?? 100,
+    rtwAlignment: adminBoundaryVisibility?.rtwAlignmentOpacity ?? 100,
+    stateLand: adminBoundaryVisibility?.stateLandOpacity ?? 100,
+    awardedLand: adminBoundaryVisibility?.awardedLandOpacity ?? 100,
+    possessionLand: adminBoundaryVisibility?.possessionLandOpacity ?? 100,
   });
 
   const ADMIN_SOURCE_IDS = {
@@ -240,6 +389,11 @@ export default function AdministrativeBoundaries({
     rudaMauzaBoundary: "metaverse-ruda-mauza-boundary-source",
     geodeticNetwork: "metaverse-geodetic-network-source",
     proposedRoads: "metaverse-proposed-roads-source",
+    rtwPackage: "metaverse-rtw-package-source",
+    rtwAlignment: "metaverse-rtw-alignment-source",
+    stateLand: "metaverse-state-land-source",
+    awardedLand: "metaverse-awarded-land-source",
+    possessionLand: "metaverse-possession-land-source",
   };
 
   const rudaPhases = adminBoundaryVisibility?.rudaPhases || [];
@@ -337,6 +491,9 @@ export default function AdministrativeBoundaries({
         "geodeticNetwork",
         editableColors.geodeticNetwork,
       );
+      ["rtwPackage", "rtwAlignment", "stateLand", "awardedLand", "possessionLand"].forEach((key) => {
+        applyAdministrativeLayerColor(map, key, editableColors[key]);
+      });
     };
 
     applyColors();
@@ -349,8 +506,18 @@ export default function AdministrativeBoundaries({
     map,
     editableColors.rudaMauzaBoundary,
     editableColors.geodeticNetwork,
+    editableColors.rtwPackage,
+    editableColors.rtwAlignment,
+    editableColors.stateLand,
+    editableColors.awardedLand,
+    editableColors.possessionLand,
     adminBoundaryVisibility?.rudaMauzaBoundary,
     adminBoundaryVisibility?.geodeticNetwork,
+    adminBoundaryVisibility?.rtwPackage,
+    adminBoundaryVisibility?.rtwAlignment,
+    adminBoundaryVisibility?.stateLand,
+    adminBoundaryVisibility?.awardedLand,
+    adminBoundaryVisibility?.possessionLand,
   ]);
 
   useEffect(() => {
@@ -377,6 +544,9 @@ export default function AdministrativeBoundaries({
         "proposedRoads",
         editableOpacities.proposedRoads,
       );
+      ["rtwPackage", "rtwAlignment", "stateLand", "awardedLand", "possessionLand"].forEach((key) => {
+        applyAdministrativeLayerOpacity(map, key, editableOpacities[key]);
+      });
     };
 
     applyOpacities();
@@ -391,10 +561,84 @@ export default function AdministrativeBoundaries({
     editableOpacities.rudaMauzaBoundary,
     editableOpacities.geodeticNetwork,
     editableOpacities.proposedRoads,
+    editableOpacities.rtwPackage,
+    editableOpacities.rtwAlignment,
+    editableOpacities.stateLand,
+    editableOpacities.awardedLand,
+    editableOpacities.possessionLand,
     adminBoundaryVisibility?.rudaBoundary,
     adminBoundaryVisibility?.rudaMauzaBoundary,
     adminBoundaryVisibility?.geodeticNetwork,
     adminBoundaryVisibility?.proposedRoads,
+    adminBoundaryVisibility?.rtwPackage,
+    adminBoundaryVisibility?.rtwAlignment,
+    adminBoundaryVisibility?.stateLand,
+    adminBoundaryVisibility?.awardedLand,
+    adminBoundaryVisibility?.possessionLand,
+  ]);
+
+
+
+  useEffect(() => {
+    if (!map) return undefined;
+
+    let cancelled = false;
+
+    const loadImportedLayer = async (key) => {
+      const config = IMPORTED_ADMIN_LAYER_CONFIGS[key];
+      if (!config) return;
+
+      const visible = Boolean(adminBoundaryVisibility?.[key]);
+
+      if (!visible) {
+        setLayerIdsVisibility(map, config.layerIds, false);
+        return;
+      }
+
+      try {
+        const res = await axios.get(`${API_BASE}/${config.endpoint}/`);
+        if (cancelled) return;
+
+        const geojson = unwrapGeoJSON(res.data);
+        config.addLayer(
+          map,
+          geojson,
+          editableColors[key] || ADMIN_LAYER_COLORS[key],
+          getOpacityRatio(editableOpacities[key]),
+        );
+        setLayerIdsVisibility(map, config.layerIds, true);
+
+        if (adminBoundaryVisibility?._zoomTo === key) {
+          setTimeout(() => zoomToBoundarySource(key), 250);
+        }
+      } catch (error) {
+        console.error(`${key} layer load error:`, error);
+      }
+    };
+
+    Object.keys(IMPORTED_ADMIN_LAYER_CONFIGS).forEach(loadImportedLayer);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    map,
+    adminBoundaryVisibility?.rtwPackage,
+    adminBoundaryVisibility?.rtwAlignment,
+    adminBoundaryVisibility?.stateLand,
+    adminBoundaryVisibility?.awardedLand,
+    adminBoundaryVisibility?.possessionLand,
+    adminBoundaryVisibility?._zoomToken,
+    editableColors.rtwPackage,
+    editableColors.rtwAlignment,
+    editableColors.stateLand,
+    editableColors.awardedLand,
+    editableColors.possessionLand,
+    editableOpacities.rtwPackage,
+    editableOpacities.rtwAlignment,
+    editableOpacities.stateLand,
+    editableOpacities.awardedLand,
+    editableOpacities.possessionLand,
   ]);
 
   const zoomToBoundarySource = (key) => {
@@ -596,6 +840,107 @@ export default function AdministrativeBoundaries({
     return [...counts.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0])));
   }, [map, adminBoundaryVisibility?.proposedRoads, proposedRoadsDropdownOpen]);
 
+
+
+  const importedLayerSummaries = useMemo(() => {
+    const summarize = (key) => {
+      const geojson = getLayerGeoJSON(key);
+      const features = geojson.features || [];
+
+      const totalSqft = features.reduce((sum, feature) => {
+        const props = feature?.properties || {};
+        const sqft = Number(props.area_sqft);
+        if (Number.isFinite(sqft)) return sum + sqft;
+
+        const acres = Number(props.area_acres);
+        if (Number.isFinite(acres)) return sum + acres * 43560;
+
+        return sum;
+      }, 0);
+
+      const totalAcres = features.reduce((sum, feature) => {
+        const props = feature?.properties || {};
+        const acres = Number(props.area_acres);
+        if (Number.isFinite(acres)) return sum + acres;
+        return sum;
+      }, 0) || sqftToAcres(totalSqft);
+
+      const uniqueValues = (field) =>
+        new Set(
+          features
+            .map((feature) => feature?.properties?.[field])
+            .filter((value) => value !== undefined && value !== null && value !== ""),
+        ).size;
+
+      return {
+        count: features.length,
+        totalSqft,
+        totalAcres,
+        packages: uniqueValues("package"),
+        phases: uniqueValues("ruda_phase"),
+        mouzas: uniqueValues("mouza"),
+        districts: uniqueValues("district"),
+      };
+    };
+
+    return {
+      rtwPackage: summarize("rtwPackage"),
+      rtwAlignment: summarize("rtwAlignment"),
+      stateLand: summarize("stateLand"),
+      awardedLand: summarize("awardedLand"),
+      possessionLand: summarize("possessionLand"),
+    };
+  }, [
+    map,
+    adminBoundaryVisibility?.rtwPackage,
+    adminBoundaryVisibility?.rtwAlignment,
+    adminBoundaryVisibility?.stateLand,
+    adminBoundaryVisibility?.awardedLand,
+    adminBoundaryVisibility?.possessionLand,
+    rtwPackageDropdownOpen,
+    rtwAlignmentDropdownOpen,
+    stateLandDropdownOpen,
+    awardedLandDropdownOpen,
+    possessionLandDropdownOpen,
+  ]);
+
+  const renderImportedLayerSummary = (summary, options = {}) => (
+    <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
+      <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+        <span>Total Features</span>
+        <span>{summary.count}</span>
+      </div>
+      {options.showPackages && (
+        <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+          <span>Unique Packages</span>
+          <span>{summary.packages}</span>
+        </div>
+      )}
+      {options.showPhases && (
+        <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+          <span>Unique Phases</span>
+          <span>{summary.phases}</span>
+        </div>
+      )}
+      {options.showMouzas && (
+        <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+          <span>Unique Mouzas</span>
+          <span>{summary.mouzas}</span>
+        </div>
+      )}
+      {summary.totalSqft > 0 && (
+        <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+          <span>Total Area (sq ft)</span>
+          <span>{formatNumber(summary.totalSqft)}</span>
+        </div>
+      )}
+      <div className="flex justify-between py-1">
+        <span>Total Area (acres)</span>
+        <span>{formatNumber(summary.totalAcres)}</span>
+      </div>
+    </div>
+  );
+
   const renderAttributeTable = () => {
     const commonProps = {
       map,
@@ -611,6 +956,16 @@ export default function AdministrativeBoundaries({
         return <GeodeticNetworkAttribute {...commonProps} />;
       case "proposedRoads":
         return <ProposedRoadAttribute {...commonProps} />;
+      case "rtwPackage":
+        return <RtwPackageAttribute {...commonProps} />;
+      case "rtwAlignment":
+        return <RtwAlignmentAttribute {...commonProps} />;
+      case "stateLand":
+        return <StateLandAttribute {...commonProps} />;
+      case "awardedLand":
+        return <AwardedLandAttribute {...commonProps} />;
+      case "possessionLand":
+        return <PossessionLandAttribute {...commonProps} />;
       default:
         return null;
     }
@@ -811,6 +1166,108 @@ export default function AdministrativeBoundaries({
               )}
             </div>
           )}
+
+          <LayerItem
+            checked={Boolean(adminBoundaryVisibility.rtwPackage)}
+            color={editableColors.rtwPackage}
+            label="RTW Packages"
+            opacity={editableOpacities.rtwPackage}
+            onChange={() => toggleLayer("rtwPackage")}
+            onOpacityChange={(value) => updateOpacity("rtwPackage", value)}
+            hasDropdown
+            dropdownOpen={rtwPackageDropdownOpen}
+            onDropdownToggle={() => setRtwPackageDropdownOpen((prev) => !prev)}
+            onTableOpen={() => setActiveAttributeTable("rtwPackage")}
+            colorEditable
+            onColorChange={(value) => updateColor("rtwPackage", value)}
+          />
+
+          {rtwPackageDropdownOpen &&
+            renderImportedLayerSummary(importedLayerSummaries.rtwPackage, {
+              showPackages: true,
+              showPhases: true,
+            })}
+
+          <LayerItem
+            checked={Boolean(adminBoundaryVisibility.rtwAlignment)}
+            color={editableColors.rtwAlignment}
+            label="RTW Alignment"
+            opacity={editableOpacities.rtwAlignment}
+            onChange={() => toggleLayer("rtwAlignment")}
+            onOpacityChange={(value) => updateOpacity("rtwAlignment", value)}
+            hasDropdown
+            dropdownOpen={rtwAlignmentDropdownOpen}
+            onDropdownToggle={() => setRtwAlignmentDropdownOpen((prev) => !prev)}
+            onTableOpen={() => setActiveAttributeTable("rtwAlignment")}
+            colorEditable
+            onColorChange={(value) => updateColor("rtwAlignment", value)}
+          />
+
+          {rtwAlignmentDropdownOpen &&
+            renderImportedLayerSummary(importedLayerSummaries.rtwAlignment, {
+              showPackages: true,
+            })}
+
+          <LayerItem
+            checked={Boolean(adminBoundaryVisibility.stateLand)}
+            color={editableColors.stateLand}
+            label="State Land"
+            opacity={editableOpacities.stateLand}
+            onChange={() => toggleLayer("stateLand")}
+            onOpacityChange={(value) => updateOpacity("stateLand", value)}
+            hasDropdown
+            dropdownOpen={stateLandDropdownOpen}
+            onDropdownToggle={() => setStateLandDropdownOpen((prev) => !prev)}
+            onTableOpen={() => setActiveAttributeTable("stateLand")}
+            colorEditable
+            onColorChange={(value) => updateColor("stateLand", value)}
+          />
+
+          {stateLandDropdownOpen &&
+            renderImportedLayerSummary(importedLayerSummaries.stateLand, {
+              showMouzas: true,
+            })}
+
+          <LayerItem
+            checked={Boolean(adminBoundaryVisibility.awardedLand)}
+            color={editableColors.awardedLand}
+            label="Awarded Land"
+            opacity={editableOpacities.awardedLand}
+            onChange={() => toggleLayer("awardedLand")}
+            onOpacityChange={(value) => updateOpacity("awardedLand", value)}
+            hasDropdown
+            dropdownOpen={awardedLandDropdownOpen}
+            onDropdownToggle={() => setAwardedLandDropdownOpen((prev) => !prev)}
+            onTableOpen={() => setActiveAttributeTable("awardedLand")}
+            colorEditable
+            onColorChange={(value) => updateColor("awardedLand", value)}
+          />
+
+          {awardedLandDropdownOpen &&
+            renderImportedLayerSummary(importedLayerSummaries.awardedLand, {
+              showMouzas: true,
+            })}
+
+          <LayerItem
+            checked={Boolean(adminBoundaryVisibility.possessionLand)}
+            color={editableColors.possessionLand}
+            label="Possession Land"
+            opacity={editableOpacities.possessionLand}
+            onChange={() => toggleLayer("possessionLand")}
+            onOpacityChange={(value) => updateOpacity("possessionLand", value)}
+            hasDropdown
+            dropdownOpen={possessionLandDropdownOpen}
+            onDropdownToggle={() => setPossessionLandDropdownOpen((prev) => !prev)}
+            onTableOpen={() => setActiveAttributeTable("possessionLand")}
+            colorEditable
+            onColorChange={(value) => updateColor("possessionLand", value)}
+          />
+
+          {possessionLandDropdownOpen &&
+            renderImportedLayerSummary(importedLayerSummaries.possessionLand, {
+              showMouzas: true,
+            })}
+
         </div>
       )}
 
