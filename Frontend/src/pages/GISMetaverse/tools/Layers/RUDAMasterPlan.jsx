@@ -139,6 +139,7 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
   cityLevelServicesLayer: {
     endpoint: "/city-level-service/",
     fetchGeoJSON: getCityLevelServiceGeoJSON,
+    categorizedServices: true,
   },
   forestBoundary: {
     endpoint: "/forest-boundary/",
@@ -213,6 +214,127 @@ const DEFAULT_RUDA_PROPOSED_ROAD_COLORS =
     colors[item.label] = item.color;
     return colors;
   }, {});
+
+const CITY_LEVEL_SERVICES_LEGEND = [
+  {
+    label: "Command and Control Center",
+    color: "#6f1d9b",
+    values: ["command and control center", "command & control center"],
+  },
+  {
+    label: "Farmer Market",
+    color: "#f4d40a",
+    values: ["farmer market", "farmers market"],
+  },
+  {
+    label: "Freight Terminal",
+    color: "#8b3a2b",
+    values: ["freight terminal"],
+  },
+  {
+    label: "Govt. Office",
+    color: "#ffb3b3",
+    values: ["govt. office", "govt office", "government office"],
+  },
+  {
+    label: "Graveyard",
+    color: "#d7f000",
+    values: ["graveyard"],
+  },
+  {
+    label: "Grid Station",
+    color: "#e35ab7",
+    values: ["grid station"],
+  },
+  {
+    label: "Hospital",
+    color: "#ff1f3d",
+    values: ["hospital"],
+  },
+  {
+    label: "Judicial Complex",
+    color: "#37b34a",
+    values: ["judicial complex"],
+  },
+  {
+    label: "Landfill Site",
+    color: "#cf3b20",
+    values: ["landfill site", "land fill site"],
+  },
+  {
+    label: "Multi Model Bus Terminal",
+    color: "#ff1b2d",
+    values: [
+      "multi model bus terminal",
+      "multi modal bus terminal",
+      "multimodal bus terminal",
+    ],
+  },
+  {
+    label: "Park",
+    color: "#45c83f",
+    values: ["park"],
+  },
+  {
+    label: "Social Housing",
+    color: "#8dbb3f",
+    values: ["social housing"],
+  },
+  {
+    label: "Sports Complex",
+    color: "#d9ea12",
+    values: ["sports complex"],
+  },
+  {
+    label: "Transport Services",
+    color: "#d93bc0",
+    values: ["transport services", "transport service"],
+  },
+  {
+    label: "University",
+    color: "#ff6a00",
+    values: ["university"],
+  },
+];
+
+const CITY_LEVEL_SERVICE_TYPE_EXPRESSION = [
+  "downcase",
+  [
+    "to-string",
+    [
+      "coalesce",
+      ["get", "service_type"],
+      ["get", "service"],
+      ["get", "type"],
+      ["get", "land_use"],
+      ["get", "landuse"],
+      ["get", "category"],
+      ["get", "name"],
+      ["get", "refname"],
+      "other",
+    ],
+  ],
+];
+
+const DEFAULT_CITY_LEVEL_SERVICE_COLORS =
+  CITY_LEVEL_SERVICES_LEGEND.reduce((colors, item) => {
+    colors[item.label] = item.color;
+    return colors;
+  }, {});
+
+const buildCityLevelServiceColorExpression = (
+  serviceColors = DEFAULT_CITY_LEVEL_SERVICE_COLORS,
+) => [
+    "match",
+    CITY_LEVEL_SERVICE_TYPE_EXPRESSION,
+    ...CITY_LEVEL_SERVICES_LEGEND.flatMap((item) =>
+      item.values.flatMap((value) => [
+        value,
+        serviceColors[item.label] || item.color,
+      ]),
+    ),
+    "#22c55e",
+  ];
 
 const buildRoadColorExpression = (roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS) => [
   "match",
@@ -296,28 +418,54 @@ const applyRudaLayerPaint = (
   opacity,
   config = {},
   roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
+  serviceColors = DEFAULT_CITY_LEVEL_SERVICE_COLORS,
 ) => {
   if (!map) return;
 
   const o = getOpacityRatio(opacity);
   const ids = getLayerIds(layerKey);
 
-  setPaint(map, ids.fillId, "fill-color", color);
+  setPaint(
+    map,
+    ids.fillId,
+    "fill-color",
+    config.categorizedServices
+      ? buildCityLevelServiceColorExpression(serviceColors)
+      : color,
+  );
   setPaint(map, ids.fillId, "fill-opacity", 0.35 * o);
 
-  setPaint(map, ids.outlineId, "line-color", color);
+  setPaint(
+    map,
+    ids.outlineId,
+    "line-color",
+    config.categorizedServices
+      ? buildCityLevelServiceColorExpression(serviceColors)
+      : color,
+  );
   setPaint(map, ids.outlineId, "line-opacity", 0.95 * o);
 
   setPaint(
     map,
     ids.lineId,
     "line-color",
-    config.categorized ? buildRoadColorExpression(roadColors) : color,
+    config.categorized
+      ? buildRoadColorExpression(roadColors)
+      : config.categorizedServices
+        ? buildCityLevelServiceColorExpression(serviceColors)
+        : color,
   );
   setPaint(map, ids.lineId, "line-opacity", o);
   setPaint(map, ids.lineId, "line-width", config.lineWidth || 1.8);
 
-  setPaint(map, ids.circleId, "circle-color", color);
+  setPaint(
+    map,
+    ids.circleId,
+    "circle-color",
+    config.categorizedServices
+      ? buildCityLevelServiceColorExpression(serviceColors)
+      : color,
+  );
   setPaint(map, ids.circleId, "circle-opacity", o);
   setPaint(map, ids.circleId, "circle-stroke-opacity", o);
 };
@@ -340,6 +488,7 @@ const addOrUpdateRudaMapLayer = ({
   opacity,
   config = {},
   roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
+  serviceColors = DEFAULT_CITY_LEVEL_SERVICE_COLORS,
 }) => {
   if (!map) return;
 
@@ -364,7 +513,9 @@ const addOrUpdateRudaMapLayer = ({
       filter: POLYGON_FILTER,
       layout: { visibility },
       paint: {
-        "fill-color": color,
+        "fill-color": config.categorizedServices
+          ? buildCityLevelServiceColorExpression(serviceColors)
+          : color,
         "fill-opacity": 0.35 * getOpacityRatio(opacity),
       },
     });
@@ -378,7 +529,9 @@ const addOrUpdateRudaMapLayer = ({
       filter: POLYGON_FILTER,
       layout: { visibility },
       paint: {
-        "line-color": color,
+        "line-color": config.categorizedServices
+          ? buildCityLevelServiceColorExpression(serviceColors)
+          : color,
         "line-width": 1.2,
         "line-opacity": 0.95 * getOpacityRatio(opacity),
       },
@@ -393,7 +546,11 @@ const addOrUpdateRudaMapLayer = ({
       filter: LINE_FILTER,
       layout: { visibility },
       paint: {
-        "line-color": config.categorized ? buildRoadColorExpression(roadColors) : color,
+        "line-color": config.categorized
+          ? buildRoadColorExpression(roadColors)
+          : config.categorizedServices
+            ? buildCityLevelServiceColorExpression(serviceColors)
+            : color,
         "line-width": config.lineWidth || 1.8,
         "line-opacity": getOpacityRatio(opacity),
       },
@@ -409,7 +566,9 @@ const addOrUpdateRudaMapLayer = ({
       layout: { visibility },
       paint: {
         "circle-radius": config.circleRadius || 4.5,
-        "circle-color": color,
+        "circle-color": config.categorizedServices
+          ? buildCityLevelServiceColorExpression(serviceColors)
+          : color,
         "circle-opacity": getOpacityRatio(opacity),
         "circle-stroke-color": "#ffffff",
         "circle-stroke-width": 1,
@@ -418,7 +577,15 @@ const addOrUpdateRudaMapLayer = ({
     });
   }
 
-  applyRudaLayerPaint(map, layerKey, color, opacity, config, roadColors);
+  applyRudaLayerPaint(
+    map,
+    layerKey,
+    color,
+    opacity,
+    config,
+    roadColors,
+    serviceColors,
+  );
   setRudaLayerVisibility(map, layerKey, true);
 };
 
@@ -489,12 +656,16 @@ export default function RUDAMasterPlan({ map }) {
   const [proposedRoadColors, setProposedRoadColors] = useState(
     DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
   );
+  const [cityLevelServiceColors, setCityLevelServiceColors] = useState(
+    DEFAULT_CITY_LEVEL_SERVICE_COLORS,
+  );
 
   const loadedGeoJSONRef = useRef({});
   const requestTokenRef = useRef({});
   const layerStateRef = useRef(layerState);
   const zoomOnLoadRef = useRef({});
   const proposedRoadColorsRef = useRef(proposedRoadColors);
+  const cityLevelServiceColorsRef = useRef(cityLevelServiceColors);
 
   useEffect(() => {
     layerStateRef.current = layerState;
@@ -503,6 +674,10 @@ export default function RUDAMasterPlan({ map }) {
   useEffect(() => {
     proposedRoadColorsRef.current = proposedRoadColors;
   }, [proposedRoadColors]);
+
+  useEffect(() => {
+    cityLevelServiceColorsRef.current = cityLevelServiceColors;
+  }, [cityLevelServiceColors]);
 
   const layerLookup = useMemo(() => {
     const lookup = {};
@@ -584,6 +759,7 @@ export default function RUDAMasterPlan({ map }) {
         opacity: state.opacity ?? 100,
         config,
         roadColors: proposedRoadColorsRef.current,
+        serviceColors: cityLevelServiceColorsRef.current,
       });
 
       if (shouldZoom) zoomToGeoJSON(geojson);
@@ -772,6 +948,7 @@ export default function RUDAMasterPlan({ map }) {
       layerState[layerKey]?.opacity ?? 100,
       RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey],
       proposedRoadColorsRef.current,
+      cityLevelServiceColorsRef.current,
     );
   };
 
@@ -791,6 +968,7 @@ export default function RUDAMasterPlan({ map }) {
       opacity,
       RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey],
       proposedRoadColorsRef.current,
+      cityLevelServiceColorsRef.current,
     );
   };
 
@@ -809,6 +987,27 @@ export default function RUDAMasterPlan({ map }) {
       layerStateRef.current.rudaProposedRoads?.color || "#19598d",
       layerStateRef.current.rudaProposedRoads?.opacity ?? 100,
       RUDA_MASTER_PLAN_LAYER_CONFIG.rudaProposedRoads,
+      nextColors,
+      cityLevelServiceColorsRef.current,
+    );
+  };
+
+  const updateCityLevelServiceColor = (serviceLabel, color) => {
+    const nextColors = {
+      ...cityLevelServiceColorsRef.current,
+      [serviceLabel]: color,
+    };
+
+    cityLevelServiceColorsRef.current = nextColors;
+    setCityLevelServiceColors(nextColors);
+
+    applyRudaLayerPaint(
+      map,
+      "cityLevelServicesLayer",
+      layerStateRef.current.cityLevelServicesLayer?.color || "#22c55e",
+      layerStateRef.current.cityLevelServicesLayer?.opacity ?? 100,
+      RUDA_MASTER_PLAN_LAYER_CONFIG.cityLevelServicesLayer,
+      proposedRoadColorsRef.current,
       nextColors,
     );
   };
@@ -870,9 +1069,23 @@ export default function RUDAMasterPlan({ map }) {
                             opacity={currentLayerState.opacity ?? 100}
                             dropdownOpen={!!currentLayerState.dropdownOpen}
                             categorized={
-                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorized
+                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorized ||
+                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorizedServices
                             }
-                            categorizedColors={proposedRoadColors}
+                            categoryLegend={
+                              layer.key === "rudaProposedRoads"
+                                ? RUDA_PROPOSED_ROAD_LEGEND
+                                : layer.key === "cityLevelServicesLayer"
+                                  ? CITY_LEVEL_SERVICES_LEGEND
+                                  : []
+                            }
+                            categorizedColors={
+                              layer.key === "rudaProposedRoads"
+                                ? proposedRoadColors
+                                : layer.key === "cityLevelServicesLayer"
+                                  ? cityLevelServiceColors
+                                  : {}
+                            }
                             onChange={() => toggleLayer(layer.key)}
                             onColorChange={(value) =>
                               updateLayerColor(layer.key, value)
@@ -915,6 +1128,52 @@ export default function RUDAMasterPlan({ map }) {
                                               aria-label={`Change ${item.label} color`}
                                               onChange={(event) =>
                                                 updateProposedRoadColor(
+                                                  item.label,
+                                                  event.target.value,
+                                                )
+                                              }
+                                              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                                            />
+                                          </label>
+                                          <span className="leading-tight">
+                                            {item.label}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {layer.key === "cityLevelServicesLayer" && (
+                                <div className="mb-2 border-b border-[#343c4c]/70 pb-2">
+                                  <div className="mb-1.5 font-semibold text-white/90">
+                                    City Level Services Classification
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    {CITY_LEVEL_SERVICES_LEGEND.map((item) => {
+                                      const currentColor =
+                                        cityLevelServiceColors[item.label] ||
+                                        item.color;
+
+                                      return (
+                                        <div
+                                          key={item.label}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <label
+                                            className="relative h-4 w-4 shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/40"
+                                            style={{
+                                              backgroundColor: currentColor,
+                                            }}
+                                            title={`Change ${item.label} color`}
+                                          >
+                                            <input
+                                              type="color"
+                                              value={currentColor}
+                                              aria-label={`Change ${item.label} color`}
+                                              onChange={(event) =>
+                                                updateCityLevelServiceColor(
                                                   item.label,
                                                   event.target.value,
                                                 )
@@ -1040,7 +1299,8 @@ function LayerItem({
   opacity,
   dropdownOpen,
   categorized = false,
-  categorizedColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
+  categoryLegend = [],
+  categorizedColors = {},
   onChange,
   onColorChange,
   onOpacityChange,
@@ -1055,10 +1315,10 @@ function LayerItem({
     onColorChange?.(event.target.value);
   };
 
-  const categorizedGradient = `linear-gradient(90deg, ${RUDA_PROPOSED_ROAD_LEGEND
+  const categorizedGradient = `linear-gradient(90deg, ${categoryLegend
     .map((item, index) => {
-      const start = index * (100 / RUDA_PROPOSED_ROAD_LEGEND.length);
-      const end = (index + 1) * (100 / RUDA_PROPOSED_ROAD_LEGEND.length);
+      const start = index * (100 / Math.max(categoryLegend.length, 1));
+      const end = (index + 1) * (100 / Math.max(categoryLegend.length, 1));
       const itemColor = categorizedColors[item.label] || item.color;
       return `${itemColor} ${start}% ${end}%`;
     })
