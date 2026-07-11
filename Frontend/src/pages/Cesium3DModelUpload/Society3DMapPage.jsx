@@ -25,7 +25,7 @@ export default function Society3DMapPage() {
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
   const [activePanel, setActivePanel] = useState(null);
   const [bimPanelOpen, setBimPanelOpen] = useState(false);
-  const [bimLayers, setBimLayers] = useState({ manholesModel: false });
+  const [bimLayers, setBimLayers] = useState({ chaharBaghBim: true });
 
   const [uploadedModel, setUploadedModel] = useState({
     name: "",
@@ -191,6 +191,7 @@ export default function Society3DMapPage() {
           captureMapCenterSignal={captureMapCenterSignal}
           flyToModelSignal={flyToModelSignal}
           onMapCenterCaptured={handleMapCenterCaptured}
+          bimLayers={bimLayers}
           onUploadedModelError={(error) =>
             setUploadedModel((prev) =>
               prev.error === error ? prev : { ...prev, error },

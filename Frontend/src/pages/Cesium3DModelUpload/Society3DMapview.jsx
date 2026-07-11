@@ -17,6 +17,7 @@ import {
   getProjectBoundaryGeoJSON,
   getProjectId,
 } from "./api";
+import { getChaharBaghBimConfig, loadIonBimTileset } from "./cesiumBimHelpers";
 
 if (import.meta.env.VITE_CESIUM_TOKEN) {
   Cesium.Ion.defaultAccessToken = import.meta.env.VITE_CESIUM_TOKEN;
@@ -142,6 +143,7 @@ export default function Society3DMapview({
   flyToModelSignal,
   onMapCenterCaptured,
   onUploadedModelError,
+  bimLayers,
 }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
@@ -151,6 +153,7 @@ export default function Society3DMapview({
   const dataCacheRef = useRef({});
   const lastFlyKeyRef = useRef("");
   const uploadedModelPrimitiveRef = useRef(null);
+  const ionBimTilesetRef = useRef(null);
 
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -417,6 +420,64 @@ export default function Society3DMapview({
       await document.exitFullscreen?.();
     }
   };
+
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer || !isReady) return;
+
+    let cancelled = false;
+    const config = getChaharBaghBimConfig();
+
+    const removeTileset = () => {
+      const current = ionBimTilesetRef.current;
+      if (!current) return;
+      try {
+        viewer.scene.primitives.remove(current);
+      } catch (error) {
+        console.warn("Could not remove Cesium ion BIM tileset", error);
+      }
+      ionBimTilesetRef.current = null;
+    };
+
+    removeTileset();
+
+    if (!bimLayers?.chaharBaghBim) return removeTileset;
+
+    const loadTileset = async () => {
+      try {
+        setMapError("");
+        const tileset = await loadIonBimTileset(viewer, config);
+
+        if (cancelled) {
+          viewer.scene.primitives.remove(tileset);
+          return;
+        }
+
+        ionBimTilesetRef.current = tileset;
+        await viewer.zoomTo(tileset, new Cesium.HeadingPitchRange(
+          Cesium.Math.toRadians(0),
+          Cesium.Math.toRadians(-30),
+          0,
+        ));
+      } catch (error) {
+        console.error("Cesium ion BIM tileset could not be loaded", error);
+        if (!cancelled) {
+          setMapError(
+            error?.message ||
+              "The Cesium ion BIM model could not be loaded. Check the asset ID, token permissions, and placement settings.",
+          );
+        }
+      }
+    };
+
+    loadTileset();
+
+    return () => {
+      cancelled = true;
+      removeTileset();
+    };
+  }, [isReady, bimLayers?.chaharBaghBim]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
