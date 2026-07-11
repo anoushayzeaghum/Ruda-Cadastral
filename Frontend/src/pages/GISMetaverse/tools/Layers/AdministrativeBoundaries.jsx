@@ -125,9 +125,8 @@ const applyAdministrativeLayerColor = (map, key, color) => {
       break;
 
     case "rtwPackage":
-      setPaint(map, "metaverse-rtw-package-fill", "fill-color", color);
-      setPaint(map, "metaverse-rtw-package-line", "line-color", color);
-      setPaint(map, "metaverse-rtw-package-label", "text-color", color);
+      // RTW Packages use a data-driven Mapbox color expression created in
+      // RtwPackageLayer.jsx. Do not replace it with one solid panel color.
       break;
 
     case "rtwAlignment":
@@ -455,12 +454,12 @@ export default function AdministrativeBoundaries({
     const filter =
       adminBoundaryVisibility?.rudaBoundary && hasPhases
         ? [
-            "match",
-            ["to-string", ["get", "_ruda_phase_id"]],
-            selected,
-            true,
-            false,
-          ]
+          "match",
+          ["to-string", ["get", "_ruda_phase_id"]],
+          selected,
+          true,
+          false,
+        ]
         : null;
 
     RUDA_BOUNDARY_LAYER_IDS.forEach((layerId) => {
@@ -491,7 +490,7 @@ export default function AdministrativeBoundaries({
         "geodeticNetwork",
         editableColors.geodeticNetwork,
       );
-      ["rtwPackage", "rtwAlignment", "stateLand", "awardedLand", "possessionLand"].forEach((key) => {
+      ["rtwAlignment", "stateLand", "awardedLand", "possessionLand"].forEach((key) => {
         applyAdministrativeLayerColor(map, key, editableColors[key]);
       });
     };
@@ -719,9 +718,9 @@ export default function AdministrativeBoundaries({
       [key]: !prev[key],
       ...(willBeVisible
         ? {
-            _zoomTo: key,
-            _zoomToken: Date.now(),
-          }
+          _zoomTo: key,
+          _zoomToken: Date.now(),
+        }
         : {}),
     }));
 
@@ -1178,8 +1177,7 @@ export default function AdministrativeBoundaries({
             dropdownOpen={rtwPackageDropdownOpen}
             onDropdownToggle={() => setRtwPackageDropdownOpen((prev) => !prev)}
             onTableOpen={() => setActiveAttributeTable("rtwPackage")}
-            colorEditable
-            onColorChange={(value) => updateColor("rtwPackage", value)}
+          // RTW Package colors are category-driven in RtwPackageLayer.jsx.
           />
 
           {rtwPackageDropdownOpen &&

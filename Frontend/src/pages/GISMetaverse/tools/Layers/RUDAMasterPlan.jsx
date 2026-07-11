@@ -148,6 +148,7 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
   existingForest: {
     endpoint: "/existing-forest/",
     fetchGeoJSON: getExistingForestGeoJSON,
+    categorizedExistingForest: true,
   },
   precinctBoundaryLayer: {
     endpoint: "/precient-boundary/",
@@ -336,6 +337,117 @@ const buildCityLevelServiceColorExpression = (
     "#22c55e",
   ];
 
+const EXISTING_FOREST_LEGEND = [
+  {
+    label: "Brick Kiln",
+    color: "#f2ef72",
+    values: ["brick kiln"],
+  },
+  {
+    label: "Brick Kiln Service Area",
+    color: "#fff2a6",
+    values: ["brick kiln service area"],
+  },
+  {
+    label: "Dumping Site",
+    color: "#ffd8bd",
+    values: ["dumping site"],
+  },
+  {
+    label: "Education",
+    color: "#d7d7bd",
+    values: ["education"],
+  },
+  {
+    label: "Forest",
+    color: "#a6c86a",
+    values: ["forest"],
+  },
+  {
+    label: "Graveyard",
+    color: "#d9f238",
+    values: ["graveyard"],
+  },
+  {
+    label: "Industrial",
+    color: "#ff4fcb",
+    values: ["industrial"],
+  },
+  {
+    label: "Open Land/New Development",
+    color: "#ffd98b",
+    values: [
+      "open land/new development",
+      "open land / new development",
+      "open land",
+      "new development",
+    ],
+  },
+  {
+    label: "Planned Housing",
+    color: "#e5b970",
+    values: ["planned housing"],
+  },
+  {
+    label: "Public Building",
+    color: "#d9c487",
+    values: ["public building"],
+  },
+  {
+    label: "Restricted Area",
+    color: "#b8b8b8",
+    values: ["restricted area"],
+  },
+  {
+    label: "UnPlanned Settlement",
+    color: "#ffb69b",
+    values: [
+      "unplanned settlement",
+      "un planned settlement",
+      "unplanned settlements",
+    ],
+  },
+];
+
+const EXISTING_FOREST_TYPE_EXPRESSION = [
+  "downcase",
+  [
+    "to-string",
+    [
+      "coalesce",
+      ["get", "land_use"],
+      ["get", "landuse"],
+      ["get", "class"],
+      ["get", "classification"],
+      ["get", "category"],
+      ["get", "type"],
+      ["get", "name"],
+      ["get", "refname"],
+      "other",
+    ],
+  ],
+];
+
+const DEFAULT_EXISTING_FOREST_COLORS =
+  EXISTING_FOREST_LEGEND.reduce((colors, item) => {
+    colors[item.label] = item.color;
+    return colors;
+  }, {});
+
+const buildExistingForestColorExpression = (
+  forestColors = DEFAULT_EXISTING_FOREST_COLORS,
+) => [
+    "match",
+    EXISTING_FOREST_TYPE_EXPRESSION,
+    ...EXISTING_FOREST_LEGEND.flatMap((item) =>
+      item.values.flatMap((value) => [
+        value,
+        forestColors[item.label] || item.color,
+      ]),
+    ),
+    "#84cc16",
+  ];
+
 const buildRoadColorExpression = (roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS) => [
   "match",
   ROAD_TYPE_EXPRESSION,
@@ -419,6 +531,7 @@ const applyRudaLayerPaint = (
   config = {},
   roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
   serviceColors = DEFAULT_CITY_LEVEL_SERVICE_COLORS,
+  forestColors = DEFAULT_EXISTING_FOREST_COLORS,
 ) => {
   if (!map) return;
 
@@ -431,7 +544,9 @@ const applyRudaLayerPaint = (
     "fill-color",
     config.categorizedServices
       ? buildCityLevelServiceColorExpression(serviceColors)
-      : color,
+      : config.categorizedExistingForest
+        ? buildExistingForestColorExpression(forestColors)
+        : color,
   );
   setPaint(map, ids.fillId, "fill-opacity", 0.35 * o);
 
@@ -441,7 +556,9 @@ const applyRudaLayerPaint = (
     "line-color",
     config.categorizedServices
       ? buildCityLevelServiceColorExpression(serviceColors)
-      : color,
+      : config.categorizedExistingForest
+        ? buildExistingForestColorExpression(forestColors)
+        : color,
   );
   setPaint(map, ids.outlineId, "line-opacity", 0.95 * o);
 
@@ -453,7 +570,9 @@ const applyRudaLayerPaint = (
       ? buildRoadColorExpression(roadColors)
       : config.categorizedServices
         ? buildCityLevelServiceColorExpression(serviceColors)
-        : color,
+        : config.categorizedExistingForest
+          ? buildExistingForestColorExpression(forestColors)
+          : color,
   );
   setPaint(map, ids.lineId, "line-opacity", o);
   setPaint(map, ids.lineId, "line-width", config.lineWidth || 1.8);
@@ -464,7 +583,9 @@ const applyRudaLayerPaint = (
     "circle-color",
     config.categorizedServices
       ? buildCityLevelServiceColorExpression(serviceColors)
-      : color,
+      : config.categorizedExistingForest
+        ? buildExistingForestColorExpression(forestColors)
+        : color,
   );
   setPaint(map, ids.circleId, "circle-opacity", o);
   setPaint(map, ids.circleId, "circle-stroke-opacity", o);
@@ -489,6 +610,7 @@ const addOrUpdateRudaMapLayer = ({
   config = {},
   roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
   serviceColors = DEFAULT_CITY_LEVEL_SERVICE_COLORS,
+  forestColors = DEFAULT_EXISTING_FOREST_COLORS,
 }) => {
   if (!map) return;
 
@@ -515,7 +637,9 @@ const addOrUpdateRudaMapLayer = ({
       paint: {
         "fill-color": config.categorizedServices
           ? buildCityLevelServiceColorExpression(serviceColors)
-          : color,
+          : config.categorizedExistingForest
+            ? buildExistingForestColorExpression(forestColors)
+            : color,
         "fill-opacity": 0.35 * getOpacityRatio(opacity),
       },
     });
@@ -531,7 +655,9 @@ const addOrUpdateRudaMapLayer = ({
       paint: {
         "line-color": config.categorizedServices
           ? buildCityLevelServiceColorExpression(serviceColors)
-          : color,
+          : config.categorizedExistingForest
+            ? buildExistingForestColorExpression(forestColors)
+            : color,
         "line-width": 1.2,
         "line-opacity": 0.95 * getOpacityRatio(opacity),
       },
@@ -550,7 +676,9 @@ const addOrUpdateRudaMapLayer = ({
           ? buildRoadColorExpression(roadColors)
           : config.categorizedServices
             ? buildCityLevelServiceColorExpression(serviceColors)
-            : color,
+            : config.categorizedExistingForest
+              ? buildExistingForestColorExpression(forestColors)
+              : color,
         "line-width": config.lineWidth || 1.8,
         "line-opacity": getOpacityRatio(opacity),
       },
@@ -568,7 +696,9 @@ const addOrUpdateRudaMapLayer = ({
         "circle-radius": config.circleRadius || 4.5,
         "circle-color": config.categorizedServices
           ? buildCityLevelServiceColorExpression(serviceColors)
-          : color,
+          : config.categorizedExistingForest
+            ? buildExistingForestColorExpression(forestColors)
+            : color,
         "circle-opacity": getOpacityRatio(opacity),
         "circle-stroke-color": "#ffffff",
         "circle-stroke-width": 1,
@@ -585,6 +715,7 @@ const addOrUpdateRudaMapLayer = ({
     config,
     roadColors,
     serviceColors,
+    forestColors,
   );
   setRudaLayerVisibility(map, layerKey, true);
 };
@@ -659,6 +790,9 @@ export default function RUDAMasterPlan({ map }) {
   const [cityLevelServiceColors, setCityLevelServiceColors] = useState(
     DEFAULT_CITY_LEVEL_SERVICE_COLORS,
   );
+  const [existingForestColors, setExistingForestColors] = useState(
+    DEFAULT_EXISTING_FOREST_COLORS,
+  );
 
   const loadedGeoJSONRef = useRef({});
   const requestTokenRef = useRef({});
@@ -666,6 +800,7 @@ export default function RUDAMasterPlan({ map }) {
   const zoomOnLoadRef = useRef({});
   const proposedRoadColorsRef = useRef(proposedRoadColors);
   const cityLevelServiceColorsRef = useRef(cityLevelServiceColors);
+  const existingForestColorsRef = useRef(existingForestColors);
 
   useEffect(() => {
     layerStateRef.current = layerState;
@@ -678,6 +813,10 @@ export default function RUDAMasterPlan({ map }) {
   useEffect(() => {
     cityLevelServiceColorsRef.current = cityLevelServiceColors;
   }, [cityLevelServiceColors]);
+
+  useEffect(() => {
+    existingForestColorsRef.current = existingForestColors;
+  }, [existingForestColors]);
 
   const layerLookup = useMemo(() => {
     const lookup = {};
@@ -760,6 +899,7 @@ export default function RUDAMasterPlan({ map }) {
         config,
         roadColors: proposedRoadColorsRef.current,
         serviceColors: cityLevelServiceColorsRef.current,
+        forestColors: existingForestColorsRef.current,
       });
 
       if (shouldZoom) zoomToGeoJSON(geojson);
@@ -949,6 +1089,7 @@ export default function RUDAMasterPlan({ map }) {
       RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey],
       proposedRoadColorsRef.current,
       cityLevelServiceColorsRef.current,
+      existingForestColorsRef.current,
     );
   };
 
@@ -969,6 +1110,7 @@ export default function RUDAMasterPlan({ map }) {
       RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey],
       proposedRoadColorsRef.current,
       cityLevelServiceColorsRef.current,
+      existingForestColorsRef.current,
     );
   };
 
@@ -989,6 +1131,7 @@ export default function RUDAMasterPlan({ map }) {
       RUDA_MASTER_PLAN_LAYER_CONFIG.rudaProposedRoads,
       nextColors,
       cityLevelServiceColorsRef.current,
+      existingForestColorsRef.current,
     );
   };
 
@@ -1008,6 +1151,28 @@ export default function RUDAMasterPlan({ map }) {
       layerStateRef.current.cityLevelServicesLayer?.opacity ?? 100,
       RUDA_MASTER_PLAN_LAYER_CONFIG.cityLevelServicesLayer,
       proposedRoadColorsRef.current,
+      nextColors,
+      existingForestColorsRef.current,
+    );
+  };
+
+  const updateExistingForestColor = (forestLabel, color) => {
+    const nextColors = {
+      ...existingForestColorsRef.current,
+      [forestLabel]: color,
+    };
+
+    existingForestColorsRef.current = nextColors;
+    setExistingForestColors(nextColors);
+
+    applyRudaLayerPaint(
+      map,
+      "existingForest",
+      layerStateRef.current.existingForest?.color || "#84cc16",
+      layerStateRef.current.existingForest?.opacity ?? 100,
+      RUDA_MASTER_PLAN_LAYER_CONFIG.existingForest,
+      proposedRoadColorsRef.current,
+      cityLevelServiceColorsRef.current,
       nextColors,
     );
   };
@@ -1070,21 +1235,26 @@ export default function RUDAMasterPlan({ map }) {
                             dropdownOpen={!!currentLayerState.dropdownOpen}
                             categorized={
                               !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorized ||
-                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorizedServices
+                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorizedServices ||
+                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorizedExistingForest
                             }
                             categoryLegend={
                               layer.key === "rudaProposedRoads"
                                 ? RUDA_PROPOSED_ROAD_LEGEND
                                 : layer.key === "cityLevelServicesLayer"
                                   ? CITY_LEVEL_SERVICES_LEGEND
-                                  : []
+                                  : layer.key === "existingForest"
+                                    ? EXISTING_FOREST_LEGEND
+                                    : []
                             }
                             categorizedColors={
                               layer.key === "rudaProposedRoads"
                                 ? proposedRoadColors
                                 : layer.key === "cityLevelServicesLayer"
                                   ? cityLevelServiceColors
-                                  : {}
+                                  : layer.key === "existingForest"
+                                    ? existingForestColors
+                                    : {}
                             }
                             onChange={() => toggleLayer(layer.key)}
                             onColorChange={(value) =>
@@ -1174,6 +1344,52 @@ export default function RUDAMasterPlan({ map }) {
                                               aria-label={`Change ${item.label} color`}
                                               onChange={(event) =>
                                                 updateCityLevelServiceColor(
+                                                  item.label,
+                                                  event.target.value,
+                                                )
+                                              }
+                                              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                                            />
+                                          </label>
+                                          <span className="leading-tight">
+                                            {item.label}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {layer.key === "existingForest" && (
+                                <div className="mb-2 border-b border-[#343c4c]/70 pb-2">
+                                  <div className="mb-1.5 font-semibold text-white/90">
+                                    Existing Forest Classification
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    {EXISTING_FOREST_LEGEND.map((item) => {
+                                      const currentColor =
+                                        existingForestColors[item.label] ||
+                                        item.color;
+
+                                      return (
+                                        <div
+                                          key={item.label}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <label
+                                            className="relative h-4 w-4 shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/40"
+                                            style={{
+                                              backgroundColor: currentColor,
+                                            }}
+                                            title={`Change ${item.label} color`}
+                                          >
+                                            <input
+                                              type="color"
+                                              value={currentColor}
+                                              aria-label={`Change ${item.label} color`}
+                                              onChange={(event) =>
+                                                updateExistingForestColor(
                                                   item.label,
                                                   event.target.value,
                                                 )
