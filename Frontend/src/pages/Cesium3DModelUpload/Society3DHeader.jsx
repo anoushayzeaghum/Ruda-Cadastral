@@ -38,7 +38,7 @@ export default function Society3DHeader() {
           </div>
 
           <h1 className="truncate text-2xl font-normal tracking-wide">
-            RUDA 3D GEOVERSE
+            RUDA BIM MODEL
           </h1>
         </div>
 

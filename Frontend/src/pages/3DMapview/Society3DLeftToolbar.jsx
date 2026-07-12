@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Box, Building2, Layers, X } from "lucide-react";
+import { Box, Layers, X } from "lucide-react";
 import {
   ThreeDExtrusionManager,
   ThreeDLayerManager,
-  ThreeDBIMModel,
 } from "./Society3DLayers";
 
 // Hook — true when viewport width is below the sm breakpoint (640 px)
@@ -24,7 +23,6 @@ function useIsMobile() {
 
 const tools = [
   { id: "layers", label: "3D Layer Manager", icon: Layers },
-  { id: "bim", label: "3D BIM Model", icon: Building2 },
   { id: "extrusion", label: "3D Extrusion", icon: Box },
 ];
 
@@ -42,10 +40,6 @@ export default function Society3DLeftToolbar({
   selectedProject,
   extrusion,
   setExtrusion,
-  bimPanelOpen,
-  setBimPanelOpen,
-  bimLayers,
-  setBimLayers,
   selectedFeature,
   onApplyToSelected,
   onClearExtrusions,
@@ -73,11 +67,10 @@ export default function Society3DLeftToolbar({
 
       {/* Tool buttons - bottom center on mobile, left side on desktop */}
       <div
-        className={`absolute z-40 ${
-          isMobile
+        className={`absolute z-40 ${isMobile
             ? "bottom-3 left-1/2 -translate-x-1/2 flex-row"
             : "left-2 top-5 flex-col"
-        } flex gap-1`}
+          } flex gap-1`}
       >
         {tools.map((tool) => {
           const Icon = tool.icon;
@@ -90,11 +83,10 @@ export default function Society3DLeftToolbar({
               title={tool.label}
               aria-label={tool.label}
               onClick={() => handleToolClick(tool.id)}
-              className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border text-white shadow-md transition ${
-                isActive
+              className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border text-white shadow-md transition ${isActive
                   ? "border-[#9be37b] bg-[#0a3327]"
                   : "border-[#0c3d2d] bg-[#06291f] hover:bg-[#0a3327]"
-              }`}
+                }`}
             >
               <Icon size={16} strokeWidth={2.2} className="sm:hidden" />
               <Icon size={20} strokeWidth={2.2} className="hidden sm:block" />
@@ -127,20 +119,19 @@ export default function Society3DLeftToolbar({
           )}
 
           <div
-            className={`z-50 overflow-hidden ${
-              isMobile
+            className={`z-50 overflow-hidden ${isMobile
                 ? "fixed bottom-0 left-0 right-0 rounded-t-xl"
                 : "absolute left-14 rounded-md"
-            }`}
+              }`}
             style={
               isMobile
                 ? { maxHeight: "70vh" }
                 : {
-                    top: `${panelTop}px`,
-                    width: "330px",
-                    animation: "society3dPanelDrop 220ms ease-out both",
-                    transformOrigin: "top left",
-                  }
+                  top: `${panelTop}px`,
+                  width: "330px",
+                  animation: "society3dPanelDrop 220ms ease-out both",
+                  transformOrigin: "top left",
+                }
             }
           >
             {/* Mobile drag handle */}
@@ -157,14 +148,6 @@ export default function Society3DLeftToolbar({
                 basemap={basemap}
                 setBasemap={setBasemap}
                 selectedProject={selectedProject}
-                onClose={() => setActivePanel(null)}
-              />
-            )}
-
-            {activePanel === "bim" && (
-              <ThreeDBIMModel
-                bimLayers={bimLayers}
-                setBimLayers={setBimLayers}
                 onClose={() => setActivePanel(null)}
               />
             )}

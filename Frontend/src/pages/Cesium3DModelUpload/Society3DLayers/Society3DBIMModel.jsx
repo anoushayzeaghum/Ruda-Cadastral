@@ -31,9 +31,7 @@ export default function Society3DBIMModel({ bimLayers, setBimLayers, onClose }) 
             <LocateFixed size={14} className="text-[#9be37b]" />
             Cesium ion asset
           </div>
-          <p className="mt-2 text-[11px] text-white/55">
-            Asset ID and placement are read from the VITE_CHAHAR_BAGH_BIM_* environment values.
-          </p>
+          
 
           <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-md border border-[#0c3d2d] bg-[#06291f] px-3 py-2 text-[12px] font-semibold transition hover:border-[#9be37b]">
             <input
