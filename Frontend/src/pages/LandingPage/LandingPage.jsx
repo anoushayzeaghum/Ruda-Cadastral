@@ -531,157 +531,256 @@ export default function LandingPage() {
 
       <section
         id="home"
-        className="relative min-h-[760px] overflow-hidden bg-[#03130f] sm:min-h-[860px] lg:min-h-[920px]"
+        className="relative min-h-[760px] overflow-hidden bg-[#020e0a] sm:min-h-[860px] lg:min-h-[920px]"
       >
+        {/* ── Cinematic Ken Burns slideshow ── */}
         {HERO_SLIDES.map((src, i) => (
           <div
             key={src}
-            className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out will-change-transform"
+            className="absolute inset-0 transition-opacity duration-[2000ms] ease-in-out will-change-transform"
             style={{
               opacity: i === slideIndex ? 1 : 0,
               backgroundImage: `url('${src}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
+              transform: "scale(1.08)",
               animation:
                 i === slideIndex
-                  ? `${i % 2 === 0 ? "heroPanLeft" : "heroPanRight"} 9s ease-in-out forwards`
+                  ? `heroKenBurns${i % 3} 12s ease-in-out forwards`
                   : "none",
             }}
           />
         ))}
 
         <style>{`
-          @keyframes heroPanLeft {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-2.5%, 0, 0); }
+          @keyframes heroKenBurns0 {
+            0%   { transform: scale(1.08) translate3d(0, 0, 0); }
+            100% { transform: scale(1.02) translate3d(-1.5%, -0.5%, 0); }
+          }
+          @keyframes heroKenBurns1 {
+            0%   { transform: scale(1.05) translate3d(-1%, 0, 0); }
+            100% { transform: scale(1.10) translate3d(0.5%, -0.8%, 0); }
+          }
+          @keyframes heroKenBurns2 {
+            0%   { transform: scale(1.10) translate3d(0.5%, -0.5%, 0); }
+            100% { transform: scale(1.04) translate3d(-0.5%, 0.3%, 0); }
           }
 
-          @keyframes heroPanRight {
-            0% { transform: translate3d(-2.5%, 0, 0); }
-            100% { transform: translate3d(0, 0, 0); }
+          @keyframes heroTextReveal {
+            0%   { opacity: 0; transform: translateY(32px) scale(0.97); filter: blur(6px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+          }
+
+          @keyframes heroBadgeFade {
+            0%   { opacity: 0; transform: translateY(14px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+
+          @keyframes heroOrbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33%      { transform: translate(12px, -18px) scale(1.04); }
+            66%      { transform: translate(-8px, 10px) scale(0.97); }
+          }
+
+          @keyframes heroOrbFloat2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            40%      { transform: translate(-15px, 12px) scale(1.06); }
+            70%      { transform: translate(10px, -8px) scale(0.95); }
+          }
+
+          @keyframes heroShimmer {
+            0%   { background-position: -200% center; }
+            100% { background-position: 200% center; }
+          }
+
+          @keyframes slideProgress {
+            0%   { width: 0%; }
+            100% { width: 100%; }
+          }
+
+          @keyframes heroPulseRing {
+            0%   { transform: scale(0.95); opacity: 0.7; }
+            50%  { transform: scale(1.1); opacity: 0.2; }
+            100% { transform: scale(0.95); opacity: 0.7; }
           }
 
           @keyframes decisionCardIn {
-            from {
-              opacity: 0;
-              transform: translateY(18px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
           }
 
           @keyframes decisionFloat {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-          }
-
-          @keyframes platformPulse {
-            0%, 100% {
-              box-shadow: 0 0 0 0 rgba(73, 184, 74, 0.05);
-            }
-            50% {
-              box-shadow: 0 0 38px 2px rgba(73, 184, 74, 0.2);
-            }
+            50%      { transform: translateY(-5px); }
           }
 
           @media (prefers-reduced-motion: reduce) {
-            .hero-motion-safe {
-              animation: none !important;
+            *, *::before, *::after {
+              animation-duration: 0ms !important;
               transition-duration: 0ms !important;
             }
           }
         `}</style>
 
-        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(11,122,59,0.12),transparent_40%),linear-gradient(to_bottom,rgba(1,12,9,0.68),rgba(2,20,14,0.66)_45%,rgba(2,12,9,0.94))]" />
-        <div className="absolute inset-0 z-10 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:46px_46px]" />
+        {/* ── Cinematic overlay stack ── */}
+        <div className="absolute inset-0 z-[5] bg-gradient-to-b from-[#020e0a]/60 via-[#031a13]/55 to-[#020e0a]/95" />
+        <div className="absolute inset-0 z-[6] bg-[radial-gradient(ellipse_70%_50%_at_50%_40%,rgba(11,122,59,0.14),transparent)]" />
+        <div className="absolute inset-0 z-[6] bg-[radial-gradient(circle_at_20%_80%,rgba(73,184,74,0.06),transparent_50%)]" />
+        <div className="pointer-events-none absolute inset-0 z-[7] opacity-[0.035] mix-blend-overlay [background-image:repeating-conic-gradient(rgba(255,255,255,0.06)_0%,transparent_1%,transparent_2%,rgba(255,255,255,0.04)_3%)] [background-size:96px_96px]" />
+        <div className="absolute inset-0 z-[7] opacity-[0.04] [background-image:linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] [background-size:52px_52px]" />
 
+        {/* ── Floating glow orbs ── */}
+        <div
+          className="pointer-events-none absolute -left-32 top-[15%] z-[8] h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(73,184,74,0.12),transparent_65%)] blur-2xl"
+          style={{ animation: "heroOrbFloat 18s ease-in-out infinite" }}
+        />
+        <div
+          className="pointer-events-none absolute -right-24 top-[35%] z-[8] h-[360px] w-[360px] rounded-full bg-[radial-gradient(circle,rgba(56,212,212,0.08),transparent_65%)] blur-2xl"
+          style={{ animation: "heroOrbFloat2 22s ease-in-out infinite" }}
+        />
+        <div
+          className="pointer-events-none absolute bottom-[20%] left-[40%] z-[8] h-[280px] w-[280px] rounded-full bg-[radial-gradient(circle,rgba(143,211,111,0.07),transparent_60%)] blur-3xl"
+          style={{ animation: "heroOrbFloat 14s ease-in-out 3s infinite" }}
+        />
+
+        {/* ── Main hero content ── */}
         <div className="relative z-20 mx-auto flex min-h-[760px] max-w-[1500px] flex-col px-4 pb-28 pt-10 sm:min-h-[860px] sm:px-6 sm:pb-32 sm:pt-14 lg:min-h-[920px] lg:px-8 lg:pb-36">
           <div className="relative flex flex-1 items-center justify-center">
+
+            {/* ── Left decision cards ── */}
             <div className="pointer-events-none absolute inset-y-12 left-0 hidden w-[280px] flex-col justify-center gap-5 xl:flex 2xl:w-[310px]">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
                   area={area}
                   side="left"
-                  delay={index * 140}
+                  delay={800 + index * 180}
                 />
               ))}
             </div>
 
+            {/* ── Right decision cards ── */}
             <div className="pointer-events-none absolute inset-y-12 right-0 hidden w-[280px] flex-col justify-center gap-5 xl:flex 2xl:w-[310px]">
               {DECISION_AREAS.slice(3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
                   area={area}
                   side="right"
-                  delay={(index + 3) * 140}
+                  delay={800 + (index + 3) * 180}
                 />
               ))}
             </div>
 
-            <div
-              className="relative mx-auto w-full max-w-4xl text-center text-white xl:max-w-[760px]"
-              style={{ animation: "platformPulse 6s ease-in-out infinite" }}
-            >
-              <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.17em] text-white/90 backdrop-blur-xl sm:mb-6 sm:px-4 sm:py-2 sm:text-[11px]">
-                <Star size={11} fill="currentColor" className="text-[#8fd36f]" />
-                Integrated GIS • BIM • Digital Twin Platform
+            {/* ── Center hero block ── */}
+            <div className="relative mx-auto w-full max-w-4xl text-center text-white xl:max-w-[780px]">
+
+              {/* Platform badge */}
+              <div
+                className="mx-auto mb-5 inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 backdrop-blur-xl sm:mb-7 sm:px-5 sm:py-2.5"
+                style={{ animation: "heroBadgeFade 800ms ease-out 200ms both" }}
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#49B84A] opacity-75" style={{ animation: "heroPulseRing 2s ease-in-out infinite" }} />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#6fdb5a]" />
+                </span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/80 sm:text-[11px]">
+                  Integrated GIS • BIM • Digital Twin Platform
+                </span>
               </div>
 
-              <div className="mb-4 flex flex-wrap items-center justify-center gap-2 sm:mb-6">
+              {/* Capability pills */}
+              <div
+                className="mb-5 flex flex-wrap items-center justify-center gap-2 sm:mb-7"
+                style={{ animation: "heroBadgeFade 800ms ease-out 400ms both" }}
+              >
                 {["GIS", "BIM", "3D Twin", "Analytics", "Decision Support"].map(
                   (item, index) => (
                     <div
                       key={item}
-                      className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/72 backdrop-blur"
+                      className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-white/60 backdrop-blur-sm transition-all duration-300 hover:border-[#49B84A]/30 hover:bg-[#49B84A]/[0.08] hover:text-white/90 sm:text-[10px]"
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#49B84A]" />
+                      <span className="h-1 w-1 rounded-full bg-[#49B84A] transition-all duration-300 group-hover:h-1.5 group-hover:w-1.5 group-hover:shadow-[0_0_6px_rgba(73,184,74,0.6)]" />
                       {item}
                       {index < 4 && (
-                        <ArrowRight size={9} className="hidden text-white/35 sm:block" />
+                        <ArrowRight size={8} className="text-white/20 transition-colors group-hover:text-[#49B84A]/50" />
                       )}
                     </div>
                   ),
                 )}
               </div>
 
-              <h1 className="text-3xl font-black leading-[1.02] tracking-[-0.035em] drop-shadow-[0_6px_28px_rgba(0,0,0,0.72)] xs:text-4xl sm:text-6xl md:text-7xl lg:text-[78px]">
-                RUDA GIS METAVERSE
-                <span className="mt-1 block text-[#49B84A] sm:mt-2">
-                  &amp; Cadastral Portal
+              {/* Main heading with staggered reveal */}
+              <h1
+                className="text-4xl font-black leading-[0.98] tracking-[-0.04em] xs:text-5xl sm:text-6xl md:text-7xl lg:text-[82px]"
+                style={{ animation: "heroTextReveal 1000ms cubic-bezier(0.16, 1, 0.3, 1) 300ms both" }}
+              >
+                <span className="inline-block bg-gradient-to-b from-white via-white to-white/70 bg-clip-text text-transparent drop-shadow-[0_4px_32px_rgba(0,0,0,0.5)]">
+                  RUDA GIS METAVERSE
+                </span>
+                <span
+                  className="mt-2 block sm:mt-3"
+                  style={{ animation: "heroTextReveal 1000ms cubic-bezier(0.16, 1, 0.3, 1) 550ms both" }}
+                >
+                  <span className="inline-block bg-gradient-to-r from-[#49B84A] via-[#6fdb5a] to-[#38d4a0] bg-clip-text text-transparent drop-shadow-[0_4px_28px_rgba(73,184,74,0.4)]">
+                    &amp; Cadastral Portal
+                  </span>
                 </span>
               </h1>
 
-              <p className="mx-auto mt-5 max-w-2xl px-2 text-xs leading-relaxed text-white/80 xs:text-sm sm:mt-7 sm:text-base md:text-lg">
+              {/* Decorative divider */}
+              <div
+                className="mx-auto mt-6 flex items-center justify-center gap-3 sm:mt-8"
+                style={{ animation: "heroBadgeFade 800ms ease-out 700ms both" }}
+              >
+                <span className="h-px w-10 bg-gradient-to-r from-transparent to-[#49B84A]/40 sm:w-16" />
+                <span className="h-1.5 w-1.5 rotate-45 border border-[#49B84A]/50 bg-[#49B84A]/20" />
+                <span className="h-px w-10 bg-gradient-to-l from-transparent to-[#49B84A]/40 sm:w-16" />
+              </div>
+
+              {/* Subheading */}
+              <p
+                className="mx-auto mt-5 max-w-2xl px-2 text-sm leading-[1.7] text-white/65 sm:mt-7 sm:text-base md:text-lg"
+                style={{
+                  animation: "heroTextReveal 900ms cubic-bezier(0.16, 1, 0.3, 1) 750ms both",
+                  fontWeight: 400,
+                  letterSpacing: "0.01em",
+                }}
+              >
                 A unified geospatial decision-support environment connecting
                 land records, planning, BIM, engineering, investment,
                 infrastructure and sustainability across the RUDA project area.
               </p>
 
-              <div className="mt-6 flex flex-col justify-center gap-2.5 xs:flex-row sm:mt-9 sm:gap-4">
+              {/* CTA buttons */}
+              <div
+                className="mt-7 flex flex-col justify-center gap-3 xs:flex-row sm:mt-10 sm:gap-4"
+                style={{ animation: "heroTextReveal 800ms cubic-bezier(0.16, 1, 0.3, 1) 950ms both" }}
+              >
                 <button
                   onClick={() => {
                     document
                       .querySelector("#apps")
                       ?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="flex items-center justify-center gap-2.5 rounded-full bg-[#0B7A3B] px-6 py-3 text-xs font-black text-white shadow-[0_16px_34px_-15px_rgba(73,184,74,.9)] transition-all hover:-translate-y-1 hover:bg-[#004225] hover:shadow-2xl sm:px-8 sm:py-4 sm:text-base"
+                  className="group relative flex items-center justify-center gap-2.5 overflow-hidden rounded-full bg-gradient-to-r from-[#0B7A3B] via-[#0d8f47] to-[#0B7A3B] px-7 py-3.5 text-xs font-black uppercase tracking-wider text-white shadow-[0_12px_40px_-12px_rgba(73,184,74,0.6)] transition-all duration-500 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-12px_rgba(73,184,74,0.8)] sm:px-9 sm:py-4 sm:text-sm"
                 >
-                  <Map size={17} /> Explore GIS Platforms
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.08] to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" style={{ backgroundSize: "200% 100%", animation: "heroShimmer 2s ease-in-out infinite" }} />
+                  <Map size={16} className="relative" />
+                  <span className="relative">Explore GIS Platforms</span>
                 </button>
 
                 <a
                   href="#about"
-                  className="flex items-center justify-center gap-2.5 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-xs font-bold text-white backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white/20 sm:px-8 sm:py-4 sm:text-base"
+                  className="group flex items-center justify-center gap-2.5 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-white/90 backdrop-blur-xl transition-all duration-500 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.08] sm:px-9 sm:py-4 sm:text-sm"
                 >
-                  Learn More <ArrowRight size={15} />
+                  Learn More
+                  <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
                 </a>
               </div>
             </div>
           </div>
 
+          {/* ── Mobile decision cards ── */}
           <div className="mx-auto mt-7 grid w-full max-w-4xl grid-cols-2 gap-2.5 xl:hidden sm:grid-cols-3">
             {DECISION_AREAS.map((area, index) => (
               <DecisionSupportCard
@@ -693,33 +792,52 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex justify-center gap-2">
+          {/* ── Slide progress indicator ── */}
+          <div className="mt-8 flex items-center justify-center gap-1.5">
             {HERO_SLIDES.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${i === slideIndex
-                  ? "h-2 w-7 bg-[#49B84A]"
-                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
-                  }`}
-              />
+                className={`relative overflow-hidden rounded-full transition-all duration-500 ${
+                  i === slideIndex
+                    ? "h-1.5 w-10 bg-white/15"
+                    : "h-1.5 w-1.5 bg-white/20 hover:bg-white/40"
+                }`}
+              >
+                {i === slideIndex && (
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#49B84A] to-[#6fdb5a]"
+                    style={{ animation: "slideProgress 5s linear forwards" }}
+                    key={`progress-${slideIndex}`}
+                  />
+                )}
+              </button>
             ))}
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/82 backdrop-blur-xl">
-          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2 px-3 py-3 text-center text-white sm:grid-cols-4 sm:gap-4 sm:px-5 sm:py-5">
-            {STATS.map(({ value, label }) => (
-              <div key={label} className="relative py-1">
-                <div className="text-lg font-black text-[#49B84A] xs:text-xl sm:text-3xl">
-                  {value}
+        {/* ── Stats bar ── */}
+        <div className="absolute bottom-0 left-0 right-0 z-30">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#49B84A]/25 to-transparent" />
+          <div className="bg-[#020e0a]/80 backdrop-blur-2xl">
+            <div className="mx-auto grid max-w-5xl grid-cols-2 gap-1 px-3 py-3.5 text-center text-white sm:grid-cols-4 sm:gap-3 sm:px-5 sm:py-5">
+              {STATS.map(({ value, label }, i) => (
+                <div key={label} className="group relative py-1.5 transition-colors duration-300">
+                  {i > 0 && (
+                    <span className="absolute left-0 top-1/2 hidden h-6 w-px -translate-y-1/2 bg-white/[0.07] sm:block" />
+                  )}
+                  <div className="text-lg font-black tracking-tight xs:text-xl sm:text-3xl">
+                    <span className="bg-gradient-to-b from-[#6fdb5a] to-[#49B84A] bg-clip-text text-transparent transition-all duration-300 group-hover:from-[#8fed7a] group-hover:to-[#6fdb5a]">
+                      {value}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-[7px] font-semibold uppercase tracking-[0.16em] text-white/40 transition-colors duration-300 group-hover:text-white/60 xs:text-[8px] sm:mt-1.5 sm:text-[10px]">
+                    {label}
+                  </div>
                 </div>
-                <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
-                  {label}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
