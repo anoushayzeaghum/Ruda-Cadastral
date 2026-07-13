@@ -1,4 +1,4 @@
-import { ensureSource } from "./MetaverseLayerConfig";
+import { ensureSource } from "../MetaverseLayerConfig";
 
 const LABEL_FONT = ["Open Sans Semibold", "Arial Unicode MS Bold"];
 

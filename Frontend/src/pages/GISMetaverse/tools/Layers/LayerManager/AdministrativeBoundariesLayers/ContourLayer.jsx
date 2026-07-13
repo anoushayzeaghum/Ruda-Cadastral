@@ -1,4 +1,4 @@
-import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS, ensureSource } from "../MetaverseLayerConfig";
 
 export function addContourLayer(map, data, color = null) {
   ensureSource(map, SOURCES.contours, data);

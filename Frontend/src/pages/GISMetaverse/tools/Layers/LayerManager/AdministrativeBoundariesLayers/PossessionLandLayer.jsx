@@ -1,7 +1,12 @@
-import { SOURCES, LAYERS } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS } from "../MetaverseLayerConfig";
 import { addImportedPolygonLayer } from "./_importedPolygonLayerFactory";
 
-export function addPossessionLandLayer(map, data, color = "#ef4444", opacity = 1) {
+export function addPossessionLandLayer(
+  map,
+  data,
+  color = "#ef4444",
+  opacity = 1,
+) {
   addImportedPolygonLayer({
     map,
     data,

@@ -5,7 +5,7 @@ import {
   ensureSource,
   makeLabelGeoJSON,
   setLayerVisibility,
-} from "./MetaverseLayerConfig";
+} from "../MetaverseLayerConfig";
 
 export function addIntroBoundaryLayer(map, data, label) {
   ensureSource(map, SOURCES.introBoundary, data);

@@ -1,7 +1,12 @@
-import { SOURCES, LAYERS } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS } from "../MetaverseLayerConfig";
 import { addImportedPolygonLayer } from "./_importedPolygonLayerFactory";
 
-export function addRtwAlignmentLayer(map, data, color = "#38bdf8", opacity = 1) {
+export function addRtwAlignmentLayer(
+  map,
+  data,
+  color = "#38bdf8",
+  opacity = 1,
+) {
   addImportedPolygonLayer({
     map,
     data,

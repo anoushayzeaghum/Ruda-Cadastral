@@ -1,4 +1,4 @@
-import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS, ensureSource } from "../MetaverseLayerConfig";
 
 const MASTER_PLAN_FILL_COLOR = [
   "case",

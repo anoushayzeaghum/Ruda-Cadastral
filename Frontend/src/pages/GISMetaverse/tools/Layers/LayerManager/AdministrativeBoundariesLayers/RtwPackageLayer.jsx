@@ -1,4 +1,4 @@
-import { SOURCES, LAYERS } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS } from "../MetaverseLayerConfig";
 import { addImportedPolygonLayer } from "./_importedPolygonLayerFactory";
 
 const RTW_PACKAGE_COLORS = [
@@ -22,10 +22,10 @@ const normalizeText = (value) =>
 const getPackageCategory = (properties = {}) =>
   normalizeText(
     properties.package ??
-    properties.name ??
-    properties.ruda_phase ??
-    properties.phase ??
-    properties.package_name,
+      properties.name ??
+      properties.ruda_phase ??
+      properties.phase ??
+      properties.package_name,
   ) || "Other";
 
 const buildCategorizedGeoJSON = (data) => {
@@ -33,13 +33,13 @@ const buildCategorizedGeoJSON = (data) => {
     data?.type === "FeatureCollection"
       ? data
       : {
-        type: "FeatureCollection",
-        features: Array.isArray(data?.features)
-          ? data.features
-          : Array.isArray(data)
-            ? data
-            : [],
-      };
+          type: "FeatureCollection",
+          features: Array.isArray(data?.features)
+            ? data.features
+            : Array.isArray(data)
+              ? data
+              : [],
+        };
 
   const categories = [
     ...new Set(
@@ -71,12 +71,7 @@ const buildCategorizedGeoJSON = (data) => {
   };
 };
 
-export function addRtwPackageLayer(
-  map,
-  data,
-  color = "#f59e0b",
-  opacity = 1,
-) {
+export function addRtwPackageLayer(map, data, color = "#f59e0b", opacity = 1) {
   const categorizedData = buildCategorizedGeoJSON(data);
 
   addImportedPolygonLayer({
@@ -92,12 +87,7 @@ export function addRtwPackageLayer(
     color: ["coalesce", ["get", "__rtwPackageColor"], color],
 
     opacity,
-    labelFields: [
-      "__rtwPackageCategory",
-      "package",
-      "name",
-      "ruda_phase",
-    ],
+    labelFields: ["__rtwPackageCategory", "package", "name", "ruda_phase"],
     lineWidth: 1.8,
   });
 }

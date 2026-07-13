@@ -1,4 +1,4 @@
-import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS, ensureSource } from "../MetaverseLayerConfig";
 
 const BLOCK_COLORS = [
   "#7c3aed",

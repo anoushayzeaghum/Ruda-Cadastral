@@ -7,7 +7,7 @@ import {
   normalizeGeometryCollections,
   prepareRudaGeoJSONForDisplay,
   prepareProposedRoadsGeoJSONForDisplay,
-} from "./MetaverseLayerConfig";
+} from "../MetaverseLayerConfig";
 
 export function addRudaBoundaryLayer(map, data) {
   ensureSource(map, SOURCES.rudaBoundary, prepareRudaGeoJSONForDisplay(data));

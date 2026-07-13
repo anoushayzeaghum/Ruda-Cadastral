@@ -1,4 +1,4 @@
-import { SOURCES, LAYERS } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS } from "../MetaverseLayerConfig";
 import { addImportedPolygonLayer } from "./_importedPolygonLayerFactory";
 
 export function addStateLandLayer(map, data, color = "#22c55e", opacity = 1) {

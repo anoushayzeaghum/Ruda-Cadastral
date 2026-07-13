@@ -3,7 +3,7 @@ import {
   LAYERS,
   ensureSource,
   normalizeGeometryCollections,
-} from "./MetaverseLayerConfig";
+} from "../MetaverseLayerConfig";
 
 const DEFAULT_UTILITY_STYLES = {
   waterSupplyPoints: { color: "#42a5f5", opacity: 100 },
@@ -59,7 +59,12 @@ export function addWaterSupplyPointsLayer(map, data) {
     });
   } else {
     setPaint(map, LAYERS.waterSupplyPointsCircle, "circle-color", style.color);
-    setPaint(map, LAYERS.waterSupplyPointsCircle, "circle-opacity", opacityRatio);
+    setPaint(
+      map,
+      LAYERS.waterSupplyPointsCircle,
+      "circle-opacity",
+      opacityRatio,
+    );
     setPaint(
       map,
       LAYERS.waterSupplyPointsCircle,
@@ -181,7 +186,12 @@ export function addSewagePointsLayer(map, data) {
   } else {
     setPaint(map, LAYERS.sewagePointsCircle, "circle-color", style.color);
     setPaint(map, LAYERS.sewagePointsCircle, "circle-opacity", opacityRatio);
-    setPaint(map, LAYERS.sewagePointsCircle, "circle-stroke-opacity", opacityRatio);
+    setPaint(
+      map,
+      LAYERS.sewagePointsCircle,
+      "circle-stroke-opacity",
+      opacityRatio,
+    );
   }
 
   if (!map.getLayer(LAYERS.sewagePointsLabel)) {

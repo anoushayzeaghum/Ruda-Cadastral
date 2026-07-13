@@ -1,4 +1,4 @@
-import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS, ensureSource } from "../MetaverseLayerConfig";
 
 export function addSpotLevelLayer(map, data, color = "#65c96b") {
   ensureSource(map, SOURCES.spotLevel, data);

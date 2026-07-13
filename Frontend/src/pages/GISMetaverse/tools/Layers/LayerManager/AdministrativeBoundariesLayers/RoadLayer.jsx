@@ -1,4 +1,4 @@
-import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS, ensureSource } from "../MetaverseLayerConfig";
 
 export function addRoadLayer(map, data) {
   ensureSource(map, SOURCES.roads, data);

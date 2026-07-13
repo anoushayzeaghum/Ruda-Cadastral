@@ -1,4 +1,4 @@
-import { SOURCES, LAYERS, ensureSource } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS, ensureSource } from "../MetaverseLayerConfig";
 
 const GEODETIC_POINT_COLOR = "#ef4444";
 const GEODETIC_POINT_STROKE = "#fee2e2";

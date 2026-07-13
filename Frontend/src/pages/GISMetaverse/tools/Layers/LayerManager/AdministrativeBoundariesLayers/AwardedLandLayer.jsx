@@ -1,4 +1,4 @@
-import { SOURCES, LAYERS } from "./MetaverseLayerConfig";
+import { SOURCES, LAYERS } from "../MetaverseLayerConfig";
 import { addImportedPolygonLayer } from "./_importedPolygonLayerFactory";
 
 export function addAwardedLandLayer(map, data, color = "#a855f7", opacity = 1) {
