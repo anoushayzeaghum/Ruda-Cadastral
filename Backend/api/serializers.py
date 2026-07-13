@@ -1384,3 +1384,451 @@ class RtwPackageSerializer(GeoFeatureModelSerializer):
             "geom",
         )
 
+#-----------------------------------------
+# Branch Canal Serializer
+#-----------------------------------------
+
+class BranchCanalSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = BranchCanal
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#-----------------------------------------
+# Distributary Serializer
+#-----------------------------------------
+class DistributarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Distributary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#---------------------------------------------
+# Existing Drains Serializer
+#---------------------------------------------
+class ExistingDrainsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ExistingDrains
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "kml_folder",
+            "length",
+            "shape_leng",
+            "geom",
+        )
+
+#---------------------------------------------
+# Irrigation Network Serializer
+#---------------------------------------------
+class IrrigationNetworkSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = IrrigationNetwork
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#----------------------------------------------
+# Katar Band WWTP Serializer
+#----------------------------------------------
+class KatarBandWWTPSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KatarBandWWTP
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "area",
+            "geom",
+        )
+
+#-----------------------------------------------
+# Link Canal Serializer
+#-----------------------------------------------
+class LinkCanalSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LinkCanal
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#-----------------------------------------------
+# Proposed WWTP Serializer
+#-----------------------------------------------
+
+class ProposedWWTPSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ProposedWWTP
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "area",
+            "descriptio",
+            "geom",
+        )
+
+#-----------------------------------------------
+# SWTP Site Serializer
+#-----------------------------------------------
+class SWTPSiteSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = SWTPSite
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "id",
+            "name",
+            "sq_ft",
+            "marla",
+            "kanal",
+            "acres",
+            "geom",
+        )
+
+#-----------------------------------------------
+# WWTP Sites Serializer
+#-----------------------------------------------
+
+class WWTPSitesSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = WWTPSites
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "site_type",
+            "shape_leng",
+            "shape_area",
+            "created_us",
+            "created_da",
+            "last_edite",
+            "last_edi_1",
+            "area",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RTW Package Serializer
+# DB table: rtwpackage
+# --------------------------------------------------------
+
+class AbdulHakeemMotorwayM3Serializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = AbdulHakeemMotorwayM3
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "kml_style",
+            "tessellate",
+            "name_1",
+            "name_2",
+            "shape_leng",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RTW Package Serializer
+# DB table: rtwpackage
+# --------------------------------------------------------
+
+class HardoSohalMuslimRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = HardoSohalMuslimRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "row",
+            "category",
+            "name",
+            "length_km",
+            "remarks",
+            "kacha_pacc",
+            "shape_leng",
+            "geom",
+        )
+
+
+class JinnahAvenueRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = JinnahAvenueRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "row",
+            "category",
+            "name",
+            "length_km",
+            "remarks",
+            "kacha_pacc",
+            "shape_leng",
+            "geom",
+        )
+
+
+class KalaKhataJiInterchangeSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KalaKhataJiInterchange
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "kml_style",
+            "tessellate",
+            "shape_leng",
+            "geom",
+        )
+
+
+class KatarBundRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KatarBundRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "old",
+            "name",
+            "folderpath",
+            "symbolid",
+            "altmode",
+            "base",
+            "clamped",
+            "extruded",
+            "snippet",
+            "popupinfo",
+            "shape_leng",
+            "row",
+            "buffer",
+            "geom",
+        )
+
+
+class LahoreBypassSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreBypass
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "old",
+            "name",
+            "folderpath",
+            "symbolid",
+            "altmode",
+            "base",
+            "clamped",
+            "extruded",
+            "snippet",
+            "popupinfo",
+            "shape_leng",
+            "row",
+            "buffer",
+            "geom",
+        )
+
+
+class SialkotMotorwaySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = SialkotMotorway
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "label",
+            "length_km",
+            "shape_leng",
+            "geom",
+        )
+
+
+class TransportationRoadsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = TransportationRoads
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "type",
+            "name",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# Lahore Ring Road Serializer
+# DB table: lahoreringroad
+# --------------------------------------------------------
+class LahoreRingRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreRingRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "fid",
+            "entity_name",
+            "layer",
+            "color",
+            "linetype",
+            "elevation",
+            "linewt",
+            "refname",
+            "orig_fid",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )

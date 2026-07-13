@@ -1,9 +1,8 @@
 import axios from "axios";
 
 const API_BASE =
-
-  import.meta.env.VITE_API_BASE_URL || "https://rudametaverse.nespakprogresscenter.com/api";
-
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://rudametaverse.nespakprogresscenter.com/api";
 
 const unwrapApiData = (data) => data?.data || data?.results || data;
 
@@ -495,6 +494,46 @@ export const getRudaPlanningBoundaryGeoJSON = async () => {
 
 export const getProposedRoadNetworkGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/proposed-road-network/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getTransportationRoadsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/transportation-roads/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getLahoreBypassGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/lahore-bypass/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getJinnahAvenueRoadGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/jinnah-avenue-road/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getHardoSohalMuslimRoadGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/hardo-sohal-muslim-road/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getKatarBundRoadGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/katar-bund-road/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getKalaKhataJiInterchangeGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/kala-khata-ji-interchange/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getSialkotMotorwayGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/sialkot-motorway/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getAbdulHakeemMotorwayM3GeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/abdul-hakeem-motorway-m3/`);
   return unwrapGeoJSON(res.data);
 };
 

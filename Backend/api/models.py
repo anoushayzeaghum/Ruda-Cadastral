@@ -1775,3 +1775,674 @@ class RtwPackage(models.Model):
         managed = False
         db_table = "rtwpackage"
 
+# =========================
+# Branch Canal
+# DB table: branchcanal
+# =========================
+
+class BranchCanal(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.IntegerField(null=True, blank=True)
+    objectid = models.IntegerField(null=True, blank=True)
+    imis_code = models.CharField(max_length=50, null=True, blank=True)
+    division = models.CharField(max_length=255, null=True, blank=True)
+    parent_ch = models.CharField(max_length=255, null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
+
+    zone = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="zone_",
+    )
+
+    circle = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    canal_type = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        db_column="type_",
+    )
+
+    gca = models.CharField(max_length=100, null=True, blank=True)
+    cca = models.CharField(max_length=100, null=True, blank=True)
+
+    designed_d = models.FloatField(null=True, blank=True)
+    tail_rd = models.FloatField(null=True, blank=True)
+    a_tail_g = models.FloatField(null=True, blank=True)
+    a_tail_d = models.FloatField(null=True, blank=True)
+
+    flow_type = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="flow_type_",
+    )
+
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_le_1 = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Branch Canal {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "branch_canal"
+
+#----------------------------------------
+# Distributary
+# DB table: distributary
+
+class Distributary(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.IntegerField(null=True, blank=True)
+    objectid = models.IntegerField(null=True, blank=True)
+    imis_code = models.CharField(max_length=50, null=True, blank=True)
+    division = models.CharField(max_length=255, null=True, blank=True)
+    parent_ch = models.CharField(max_length=255, null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
+
+    zone = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="zone_",
+    )
+
+    circle = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    canal_type = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        db_column="type_",
+    )
+
+    gca = models.CharField(max_length=100, null=True, blank=True)
+    cca = models.CharField(max_length=100, null=True, blank=True)
+    designed_d = models.FloatField(null=True, blank=True)
+    tail_rd = models.FloatField(null=True, blank=True)
+    a_tail_g = models.FloatField(null=True, blank=True)
+    a_tail_d = models.FloatField(null=True, blank=True)
+
+    flow_type = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="flow_type_",
+    )
+
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_le_1 = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Distributary {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "distributary"
+
+#--------------------------------------------
+# Existing Drains
+# DB table: existing_drains
+
+class ExistingDrains(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.IntegerField(null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    layer = models.CharField(max_length=255, null=True, blank=True)
+    kml_folder = models.CharField(max_length=255, null=True, blank=True)
+    length = models.FloatField(null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Existing Drain {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "existing_drains"
+    
+#--------------------------------------------
+# Irrigation Network
+# DB table: irrigation_network
+class IrrigationNetwork(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.IntegerField(null=True, blank=True)
+    objectid = models.IntegerField(null=True, blank=True)
+    imis_code = models.CharField(max_length=50, null=True, blank=True)
+    division = models.CharField(max_length=255, null=True, blank=True)
+    parent_ch = models.CharField(max_length=255, null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
+
+    zone = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="zone_",
+    )
+
+    circle = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    canal_type = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        db_column="type_",
+    )
+
+    gca = models.CharField(max_length=100, null=True, blank=True)
+    cca = models.CharField(max_length=100, null=True, blank=True)
+
+    designed_d = models.FloatField(null=True, blank=True)
+    tail_rd = models.FloatField(null=True, blank=True)
+    a_tail_g = models.FloatField(null=True, blank=True)
+    a_tail_d = models.FloatField(null=True, blank=True)
+
+    flow_type = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="flow_type_",
+    )
+
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_le_1 = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Irrigation Network {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "irrigation_network"
+
+#--------------------------------------------
+# Katar Band WWTP
+# DB table: katar_band_wwtp
+class KatarBandWWTP(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+    area = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Katar Band WWTP {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "katar_band_wwtp"
+
+#--------------------------------------------
+# Link Canal
+# DB table: link_canal
+class LinkCanal(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.IntegerField(null=True, blank=True)
+    objectid = models.IntegerField(null=True, blank=True)
+    imis_code = models.CharField(max_length=50, null=True, blank=True)
+    division = models.CharField(max_length=255, null=True, blank=True)
+    parent_ch = models.CharField(max_length=255, null=True, blank=True)
+    remarks = models.TextField(null=True, blank=True)
+
+    zone = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="zone_",
+    )
+
+    circle = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    canal_type = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        db_column="type_",
+    )
+
+    gca = models.CharField(max_length=100, null=True, blank=True)
+    cca = models.CharField(max_length=100, null=True, blank=True)
+
+    designed_d = models.FloatField(null=True, blank=True)
+    tail_rd = models.FloatField(null=True, blank=True)
+    a_tail_g = models.FloatField(null=True, blank=True)
+    a_tail_d = models.FloatField(null=True, blank=True)
+
+    flow_type = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="flow_type_",
+    )
+
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_le_1 = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Link Canal {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "link_canal"
+
+#-------------------------------------------------------
+# Proposed WWTP
+# DB table: proposed_wwtp
+class ProposedWWTP(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(max_length=255, null=True, blank=True)
+    area = models.FloatField(null=True, blank=True)
+    descriptio = models.TextField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Proposed WWTP {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "proposed_wwtp"
+
+#-------------------------------------------------------
+# SWTP Site
+# DB table: swtp_site   
+class SWTPSite(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    id = models.IntegerField(null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    sq_ft = models.FloatField(null=True, blank=True)
+    marla = models.FloatField(null=True, blank=True)
+    kanal = models.FloatField(null=True, blank=True)
+    acres = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"SWTP Site {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "swtp_site"
+
+#-------------------------------------------------------
+# WWTP Sites
+# DB table: wwtp_sites
+class WWTPSites(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.IntegerField(null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+
+    site_type = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        db_column="type",
+    )
+
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_area = models.FloatField(null=True, blank=True)
+
+    created_us = models.CharField(max_length=255, null=True, blank=True)
+    created_da = models.CharField(max_length=255, null=True, blank=True)
+    last_edite = models.CharField(max_length=255, null=True, blank=True)
+    last_edi_1 = models.CharField(max_length=255, null=True, blank=True)
+
+    area = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"WWTP Site {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "wwtp_sites"
+
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class AbdulHakeemMotorwayM3(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    layer = models.CharField(max_length=17, null=True, blank=True)
+    kml_style = models.CharField(max_length=15, null=True, blank=True)
+    tessellate = models.IntegerField(null=True, blank=True)
+    name_1 = models.CharField(max_length=254, null=True, blank=True)
+    name_2 = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or self.name_1 or self.name_2 or f"AbdulHakeemMotorwayM3 {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "abdulhakeemmotorwaym3"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class HardoSohalMuslimRoad(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.FloatField(null=True, blank=True)
+    row = models.FloatField(null=True, blank=True)
+    category = models.CharField(max_length=254, null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    length_km = models.CharField(max_length=254, null=True, blank=True)
+    remarks = models.CharField(max_length=254, null=True, blank=True)
+    kacha_pacc = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"HardoSohalMuslimRoad {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "hardosohalmuslimroad"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class JinnahAvenueRoad(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.FloatField(null=True, blank=True)
+    row = models.FloatField(null=True, blank=True)
+    category = models.CharField(max_length=254, null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    length_km = models.CharField(max_length=254, null=True, blank=True)
+    remarks = models.CharField(max_length=254, null=True, blank=True)
+    kacha_pacc = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"JinnahAvenueRoad {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "jinnahavenueroad"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class KalaKhataJiInterchange(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=12, null=True, blank=True)
+    layer = models.CharField(max_length=17, null=True, blank=True)
+    kml_style = models.CharField(max_length=15, null=True, blank=True)
+    tessellate = models.FloatField(null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"KalaKhataJiInterchange {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "kalakhatajiinterchange"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class KatarBundRoad(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    oid = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    folderpath = models.CharField(max_length=254, null=True, blank=True)
+    symbolid = models.FloatField(null=True, blank=True)
+    altmode = models.IntegerField(null=True, blank=True)
+    base = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    clamped = models.IntegerField(null=True, blank=True)
+    extruded = models.IntegerField(null=True, blank=True)
+    snippet = models.CharField(max_length=254, null=True, blank=True)
+    popupinfo = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    row = models.CharField(max_length=254, null=True, blank=True)
+    buffer = models.CharField(max_length=254, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"KatarBundRoad {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "katarbundroad"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class LahoreBypass(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    oid = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    folderpath = models.CharField(max_length=254, null=True, blank=True)
+    symbolid = models.FloatField(null=True, blank=True)
+    altmode = models.IntegerField(null=True, blank=True)
+    base = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    clamped = models.IntegerField(null=True, blank=True)
+    extruded = models.IntegerField(null=True, blank=True)
+    snippet = models.CharField(max_length=254, null=True, blank=True)
+    popupinfo = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    row = models.CharField(max_length=254, null=True, blank=True)
+    buffer = models.CharField(max_length=254, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"LahoreBypass {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "lahorebypass"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class SialkotMotorway(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.FloatField(null=True, blank=True)
+    objectid = models.FloatField(null=True, blank=True)
+    label = models.CharField(max_length=150, null=True, blank=True)
+    length_km = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.label or f"SialkotMotorway {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "sialkotmotorway"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class TransportationRoads(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.FloatField(null=True, blank=True)
+    objectid = models.FloatField(null=True, blank=True)
+    type = models.CharField(max_length=22, null=True, blank=True)
+    name = models.CharField(max_length=63, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    shape_le_1 = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or self.type or f"TransportationRoads {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "transportationroads"
+
+#--------------------------------------------------
+# LahoreRingRoad
+# DB table: lahoreringroad
+
+class LahoreRingRoad(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.IntegerField(null=True, blank=True)
+    objectid = models.IntegerField(null=True, blank=True)
+    fid = models.IntegerField(
+        db_column="fid_",
+        null=True,
+        blank=True,
+    )
+
+    entity_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="entity",
+    )
+
+    layer = models.CharField(max_length=255, null=True, blank=True)
+    color = models.IntegerField(null=True, blank=True)
+    linetype = models.CharField(max_length=255, null=True, blank=True)
+    elevation = models.FloatField(null=True, blank=True)
+    linewt = models.IntegerField(null=True, blank=True)
+    refname = models.CharField(max_length=255, null=True, blank=True)
+    orig_fid = models.IntegerField(null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_le_1 = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.refname or f"Lahore Ring Road {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "lahoreringroad"
