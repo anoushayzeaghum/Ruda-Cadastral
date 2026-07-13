@@ -12,12 +12,17 @@ import RtwAlignmentAttribute from "./AttributeTable/RtwAlignmentAttribute";
 import StateLandAttribute from "./AttributeTable/StateLandAttribute";
 import AwardedLandAttribute from "./AttributeTable/AwardedLandAttribute";
 import PossessionLandAttribute from "./AttributeTable/PossessionLandAttribute";
-import { addRtwPackageLayer } from "../../LayerManager/RtwPackageLayer";
-import { addRtwAlignmentLayer } from "../../LayerManager/RtwAlignmentLayer";
-import { addStateLandLayer } from "../../LayerManager/StateLandLayer";
-import { addAwardedLandLayer } from "../../LayerManager/AwardedLandLayer";
-import { addPossessionLandLayer } from "../../LayerManager/PossessionLandLayer";
-import { API_BASE, formatNumber, getMapSourceGeoJSON, unwrapGeoJSON } from "./AttributeTable/AdminAttributeTableShell";
+import { addRtwPackageLayer } from "./LayerManager/AdministrativeBoundariesLayers/RtwPackageLayer";
+import { addRtwAlignmentLayer } from "./LayerManager/AdministrativeBoundariesLayers/RtwAlignmentLayer";
+import { addStateLandLayer } from "./LayerManager/AdministrativeBoundariesLayers/StateLandLayer";
+import { addAwardedLandLayer } from "./LayerManager/AdministrativeBoundariesLayers/AwardedLandLayer";
+import { addPossessionLandLayer } from "./LayerManager/AdministrativeBoundariesLayers/PossessionLandLayer";
+import {
+  API_BASE,
+  formatNumber,
+  getMapSourceGeoJSON,
+  unwrapGeoJSON,
+} from "./AttributeTable/AdminAttributeTableShell";
 import { readAreaSqft, sqftToAcres } from "./AttributeTable/areaUtils";
 
 const RUDA_BOUNDARY_LAYER_IDS = [
@@ -38,8 +43,6 @@ const ADMIN_LAYER_COLORS = {
   awardedLand: "#a855f7",
   possessionLand: "#ef4444",
 };
-
-
 
 const IMPORTED_ADMIN_LAYER_CONFIGS = {
   rtwPackage: {
@@ -92,7 +95,11 @@ const IMPORTED_ADMIN_LAYER_CONFIGS = {
 const setLayerIdsVisibility = (map, layerIds = [], visible) => {
   layerIds.forEach((layerId) => {
     if (map?.getLayer?.(layerId)) {
-      map.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
+      map.setLayoutProperty(
+        layerId,
+        "visibility",
+        visible ? "visible" : "none",
+      );
     }
   });
 };
@@ -348,12 +355,15 @@ export default function AdministrativeBoundaries({
   const [rudaPhaseDropdownOpen, setRudaPhaseDropdownOpen] = useState(false);
   const [rudaMauzaDropdownOpen, setRudaMauzaDropdownOpen] = useState(false);
   const [geodeticDropdownOpen, setGeodeticDropdownOpen] = useState(false);
-  const [proposedRoadsDropdownOpen, setProposedRoadsDropdownOpen] = useState(false);
+  const [proposedRoadsDropdownOpen, setProposedRoadsDropdownOpen] =
+    useState(false);
   const [rtwPackageDropdownOpen, setRtwPackageDropdownOpen] = useState(false);
-  const [rtwAlignmentDropdownOpen, setRtwAlignmentDropdownOpen] = useState(false);
+  const [rtwAlignmentDropdownOpen, setRtwAlignmentDropdownOpen] =
+    useState(false);
   const [stateLandDropdownOpen, setStateLandDropdownOpen] = useState(false);
   const [awardedLandDropdownOpen, setAwardedLandDropdownOpen] = useState(false);
-  const [possessionLandDropdownOpen, setPossessionLandDropdownOpen] = useState(false);
+  const [possessionLandDropdownOpen, setPossessionLandDropdownOpen] =
+    useState(false);
   const [activeAttributeTable, setActiveAttributeTable] = useState(null);
 
   // Keep editable colors local to this panel so changing colors does NOT update
@@ -454,12 +464,12 @@ export default function AdministrativeBoundaries({
     const filter =
       adminBoundaryVisibility?.rudaBoundary && hasPhases
         ? [
-          "match",
-          ["to-string", ["get", "_ruda_phase_id"]],
-          selected,
-          true,
-          false,
-        ]
+            "match",
+            ["to-string", ["get", "_ruda_phase_id"]],
+            selected,
+            true,
+            false,
+          ]
         : null;
 
     RUDA_BOUNDARY_LAYER_IDS.forEach((layerId) => {
@@ -490,9 +500,11 @@ export default function AdministrativeBoundaries({
         "geodeticNetwork",
         editableColors.geodeticNetwork,
       );
-      ["rtwAlignment", "stateLand", "awardedLand", "possessionLand"].forEach((key) => {
-        applyAdministrativeLayerColor(map, key, editableColors[key]);
-      });
+      ["rtwAlignment", "stateLand", "awardedLand", "possessionLand"].forEach(
+        (key) => {
+          applyAdministrativeLayerColor(map, key, editableColors[key]);
+        },
+      );
     };
 
     applyColors();
@@ -543,7 +555,13 @@ export default function AdministrativeBoundaries({
         "proposedRoads",
         editableOpacities.proposedRoads,
       );
-      ["rtwPackage", "rtwAlignment", "stateLand", "awardedLand", "possessionLand"].forEach((key) => {
+      [
+        "rtwPackage",
+        "rtwAlignment",
+        "stateLand",
+        "awardedLand",
+        "possessionLand",
+      ].forEach((key) => {
         applyAdministrativeLayerOpacity(map, key, editableOpacities[key]);
       });
     };
@@ -575,8 +593,6 @@ export default function AdministrativeBoundaries({
     adminBoundaryVisibility?.awardedLand,
     adminBoundaryVisibility?.possessionLand,
   ]);
-
-
 
   useEffect(() => {
     if (!map) return undefined;
@@ -718,9 +734,9 @@ export default function AdministrativeBoundaries({
       [key]: !prev[key],
       ...(willBeVisible
         ? {
-          _zoomTo: key,
-          _zoomToken: Date.now(),
-        }
+            _zoomTo: key,
+            _zoomToken: Date.now(),
+          }
         : {}),
     }));
 
@@ -832,14 +848,19 @@ export default function AdministrativeBoundaries({
     (geojson.features || []).forEach((feature) => {
       const props = feature?.properties || {};
       const type =
-        props.type || props.road_type || props.layer || props.name || props.refname || "Other";
+        props.type ||
+        props.road_type ||
+        props.layer ||
+        props.name ||
+        props.refname ||
+        "Other";
       counts.set(type, (counts.get(type) || 0) + 1);
     });
 
-    return [...counts.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+    return [...counts.entries()].sort((a, b) =>
+      String(a[0]).localeCompare(String(b[0])),
+    );
   }, [map, adminBoundaryVisibility?.proposedRoads, proposedRoadsDropdownOpen]);
-
-
 
   const importedLayerSummaries = useMemo(() => {
     const summarize = (key) => {
@@ -857,18 +878,21 @@ export default function AdministrativeBoundaries({
         return sum;
       }, 0);
 
-      const totalAcres = features.reduce((sum, feature) => {
-        const props = feature?.properties || {};
-        const acres = Number(props.area_acres);
-        if (Number.isFinite(acres)) return sum + acres;
-        return sum;
-      }, 0) || sqftToAcres(totalSqft);
+      const totalAcres =
+        features.reduce((sum, feature) => {
+          const props = feature?.properties || {};
+          const acres = Number(props.area_acres);
+          if (Number.isFinite(acres)) return sum + acres;
+          return sum;
+        }, 0) || sqftToAcres(totalSqft);
 
       const uniqueValues = (field) =>
         new Set(
           features
             .map((feature) => feature?.properties?.[field])
-            .filter((value) => value !== undefined && value !== null && value !== ""),
+            .filter(
+              (value) => value !== undefined && value !== null && value !== "",
+            ),
         ).size;
 
       return {
@@ -1144,7 +1168,9 @@ export default function AdministrativeBoundaries({
             onOpacityChange={(value) => updateOpacity("proposedRoads", value)}
             hasDropdown
             dropdownOpen={proposedRoadsDropdownOpen}
-            onDropdownToggle={() => setProposedRoadsDropdownOpen((prev) => !prev)}
+            onDropdownToggle={() =>
+              setProposedRoadsDropdownOpen((prev) => !prev)
+            }
             onTableOpen={() => setActiveAttributeTable("proposedRoads")}
           />
 
@@ -1177,7 +1203,7 @@ export default function AdministrativeBoundaries({
             dropdownOpen={rtwPackageDropdownOpen}
             onDropdownToggle={() => setRtwPackageDropdownOpen((prev) => !prev)}
             onTableOpen={() => setActiveAttributeTable("rtwPackage")}
-          // RTW Package colors are category-driven in RtwPackageLayer.jsx.
+            // RTW Package colors are category-driven in RtwPackageLayer.jsx.
           />
 
           {rtwPackageDropdownOpen &&
@@ -1195,7 +1221,9 @@ export default function AdministrativeBoundaries({
             onOpacityChange={(value) => updateOpacity("rtwAlignment", value)}
             hasDropdown
             dropdownOpen={rtwAlignmentDropdownOpen}
-            onDropdownToggle={() => setRtwAlignmentDropdownOpen((prev) => !prev)}
+            onDropdownToggle={() =>
+              setRtwAlignmentDropdownOpen((prev) => !prev)
+            }
             onTableOpen={() => setActiveAttributeTable("rtwAlignment")}
             colorEditable
             onColorChange={(value) => updateColor("rtwAlignment", value)}
@@ -1255,7 +1283,9 @@ export default function AdministrativeBoundaries({
             onOpacityChange={(value) => updateOpacity("possessionLand", value)}
             hasDropdown
             dropdownOpen={possessionLandDropdownOpen}
-            onDropdownToggle={() => setPossessionLandDropdownOpen((prev) => !prev)}
+            onDropdownToggle={() =>
+              setPossessionLandDropdownOpen((prev) => !prev)
+            }
             onTableOpen={() => setActiveAttributeTable("possessionLand")}
             colorEditable
             onColorChange={(value) => updateColor("possessionLand", value)}
@@ -1265,7 +1295,6 @@ export default function AdministrativeBoundaries({
             renderImportedLayerSummary(importedLayerSummaries.possessionLand, {
               showMouzas: true,
             })}
-
         </div>
       )}
 

@@ -334,6 +334,42 @@ router.register(r"lahore-ring-road/create", CreateLahoreRingRoadView, basename="
 router.register(r"lahore-ring-road/update", UpdateLahoreRingRoadView, basename="update-lahore-ring-road",)
 router.register(r"lahore-ring-road/delete", DeleteLahoreRingRoadView, basename="delete-lahore-ring-road",)
 
+
+router.register(r"Bridgess", ListBridgesView, basename="Bridgess",)
+router.register(r"Bridgess/create", CreateBridgesView, basename="create-Bridgess",)
+router.register(r"Bridgess/update", UpdateBridgesView, basename="update-Bridgess",)
+router.register(r"Bridgess/delete", DeleteBridgesView, basename="delete-Bridgess",)
+
+router.register(r"ganja-kalan-truck-stand", ListGanjaKalanTruckStandView, basename="ganja-kalan-truck-stand",)
+router.register(r"ganja-kalan-truck-stand/create", CreateGanjaKalanTruckStandView, basename="create-ganja-kalan-truck-stand",)
+router.register(r"ganja-kalan-truck-stand/update", UpdateGanjaKalanTruckStandView, basename="update-ganja-kalan-truck-stand",)
+router.register(r"ganja-kalan-truck-stand/delete", DeleteGanjaKalanTruckStandView, basename="delete-ganja-kalan-truck-stand",)
+
+router.register(r"lahore-rapid-mass-transit", ListLahoreRapidMassTransitView, basename="lahore-rapid-mass-transit",)
+router.register(r"lahore-rapid-mass-transit/create", CreateLahoreRapidMassTransitView, basename="create-lahore-rapid-mass-transit",)
+router.register(r"lahore-rapid-mass-transit/update", UpdateLahoreRapidMassTransitView, basename="update-lahore-rapid-mass-transit",)
+router.register(r"lahore-rapid-mass-transit/delete", DeleteLahoreRapidMassTransitView, basename="delete-lahore-rapid-mass-transit",)
+
+router.register(r"orange-track", ListOrangeTrackView, basename="orange-track",)
+router.register(r"orange-track/create", CreateOrangeTrackView, basename="create-orange-track",)
+router.register(r"orange-track/update", UpdateOrangeTrackView, basename="update-orange-track",)
+router.register(r"orange-track/delete", DeleteOrangeTrackView, basename="delete-orange-track",)
+
+router.register(r"railway-line", ListRailwayLineView, basename="railway-line",)
+router.register(r"railway-line/create", CreateRailwayLineView, basename="create-railway-line",)
+router.register(r"railway-line/update", UpdateRailwayLineView, basename="update-railway-line",)
+router.register(r"railway-line/delete", DeleteRailwayLineView, basename="delete-railway-line",)
+
+router.register(r"railway-stations", ListRailwayStationsView, basename="railway-stations",)
+router.register(r"railway-stations/create", CreateRailwayStationsView, basename="create-railway-stations",)
+router.register(r"railway-stations/update", UpdateRailwayStationsView, basename="update-railway-stations",)
+router.register(r"railway-stations/delete", DeleteRailwayStationsView, basename="delete-railway-stations",)
+
+router.register(r"hudiara-drain", ListHudiaraDrainView, basename="hudiara-drain",)
+router.register(r"hudiara-drain/create", CreateHudiaraDrainView, basename="create-hudiara-drain",)
+router.register(r"hudiara-drain/update", UpdateHudiaraDrainView, basename="update-hudiara-drain",)
+router.register(r"hudiara-drain/delete", DeleteHudiaraDrainView, basename="delete-hudiara-drain",)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 

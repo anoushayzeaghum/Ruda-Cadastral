@@ -29,33 +29,33 @@ import {
   waitForMapMove,
   setLayerVisibility,
   applyMetaverseLayerOpacities,
-} from "./LayerManager/MetaverseLayerConfig";
+} from "./tools/Layers/LayerManager/MetaverseLayerConfig";
 import {
   addIntroBoundaryLayer,
   clearIntroBoundaryLayer,
-} from "./LayerManager/IntroBoundaryLayer";
+} from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/IntroBoundaryLayer";
 import {
   addProjectBoundaryLayer,
   addNotifiedBoundaryLayer,
-} from "./LayerManager/ProjectBoundaryLayer";
-import { addBlockLayer } from "./LayerManager/BlockLayer";
-import { addMasterPlanLayer } from "./LayerManager/MasterPlanLayer";
-import { addSpotLevelLayer } from "./LayerManager/SpotLevelLayer";
-import { addContourLayer } from "./LayerManager/ContourLayer";
-import { addRoadLayer } from "./LayerManager/RoadLayer";
+} from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/ProjectBoundaryLayer";
+import { addBlockLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/BlockLayer";
+import { addMasterPlanLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/MasterPlanLayer";
+import { addSpotLevelLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/SpotLevelLayer";
+import { addContourLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/ContourLayer";
+import { addRoadLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/RoadLayer";
 import {
   addWaterSupplyPointsLayer,
   addWaterSupplyLinesLayer,
   addSewagePointsLayer,
   addCameraLocationsLayer,
-} from "./LayerManager/UtilitiesLayer";
+} from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/UtilitiesLayer";
 import {
   addRudaBoundaryLayer,
   addRudaMauzaBoundaryLayer,
   addProposedRoadsLayer,
   applyRudaMauzaBoundaryStyle,
-} from "./LayerManager/AdministrativeBoundaryLayer";
-import { addGeodeticNetworkLayer } from "./LayerManager/GeodeticLayer";
+} from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/AdministrativeBoundaryLayer";
+import { addGeodeticNetworkLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/GeodeticLayer";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -593,7 +593,11 @@ export default function GISMetaverseMap({
 
         setLayerVisibility(
           map,
-          [LAYERS.masterPlanFill, LAYERS.masterPlanLine, LAYERS.masterPlanLabel],
+          [
+            LAYERS.masterPlanFill,
+            LAYERS.masterPlanLine,
+            LAYERS.masterPlanLabel,
+          ],
           false,
         );
         return;
