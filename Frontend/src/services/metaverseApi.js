@@ -502,6 +502,11 @@ export const getTransportationRoadsGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getLahoreRingRoadGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/lahore-ring-road/`);
+  return unwrapGeoJSON(res.data);
+};
+
 export const getLahoreBypassGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/lahore-bypass/`);
   return unwrapGeoJSON(res.data);
@@ -534,6 +539,53 @@ export const getSialkotMotorwayGeoJSON = async () => {
 
 export const getAbdulHakeemMotorwayM3GeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/abdul-hakeem-motorway-m3/`);
+  return unwrapGeoJSON(res.data);
+};
+
+// ------------------------------ Irrigation System Layers ------------------------------
+export const getIrrigationNetworkGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/irrigation-network/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getExistingDrainsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/existing-drains/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getLinkCanalGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/link-canal/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getBranchCanalGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/branch-canal/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getDistributaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/distributary/`);
+  return unwrapGeoJSON(res.data);
+};
+
+// ------------------------------ WWTP Layers ------------------------------
+export const getProposedWWTPGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/proposed-wwtp/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getWWTPSitesGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/wwtp-sites/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getKatarBandWWTPGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/katar-band-wwtp/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getSWTPSiteGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/swtp-site/`);
   return unwrapGeoJSON(res.data);
 };
 

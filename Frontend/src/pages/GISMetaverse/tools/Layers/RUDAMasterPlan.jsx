@@ -22,6 +22,16 @@ import {
   getRudaPlanningBoundaryGeoJSON,
   getSialkotMotorwayGeoJSON,
   getTransportationRoadsGeoJSON,
+  getLahoreRingRoadGeoJSON,
+  getIrrigationNetworkGeoJSON,
+  getExistingDrainsGeoJSON,
+  getLinkCanalGeoJSON,
+  getBranchCanalGeoJSON,
+  getDistributaryGeoJSON,
+  getProposedWWTPGeoJSON,
+  getWWTPSitesGeoJSON,
+  getKatarBandWWTPGeoJSON,
+  getSWTPSiteGeoJSON,
 } from "../../../../services/metaverseApi";
 
 const RUDA_MASTER_PLAN_GROUPS = [
@@ -54,6 +64,11 @@ const RUDA_MASTER_PLAN_GROUPS = [
         key: "transportationRoads",
         label: "Transportation Roads",
         color: "#e11d48",
+      },
+      {
+        key: "lahoreRingRoad",
+        label: "Lahore Ring Road",
+        color: "#dc2626",
       },
       {
         key: "lahoreBypass",
@@ -89,6 +104,63 @@ const RUDA_MASTER_PLAN_GROUPS = [
         key: "abdulHakeemMotorwayM3",
         label: "Abdul Hakeem Motorway M-3",
         color: "#ec4899",
+      },
+    ],
+  },
+  {
+    key: "irrigationSystem",
+    label: "Irrigation System",
+    children: [
+      {
+        key: "irrigationNetwork",
+        label: "Irrigation Network",
+        color: "#2563eb",
+      },
+      {
+        key: "existingDrains",
+        label: "Existing Drains",
+        color: "#64748b",
+      },
+      {
+        key: "linkCanal",
+        label: "Link Canal",
+        color: "#0ea5e9",
+      },
+      {
+        key: "branchCanal",
+        label: "Branch Canal",
+        color: "#16a34a",
+      },
+      {
+        key: "distributary",
+        label: "Distributary",
+        color: "#84cc16",
+      },
+    ],
+  },
+  {
+    key: "wwtp",
+    label: "WWTP",
+    children: [
+      {
+        key: "proposedWWTP",
+        label: "Proposed WWTP",
+        color: "#f97316",
+      },
+      {
+        key: "wwtpSite",
+        label: "WWTP Site",
+        color: "#8b5cf6",
+      },
+      {
+        key: "katarbandWWTP",
+        label: "Katarband WWTP",
+        color: "#ec4899",
+      },
+      {
+        key: "swtpSite",
+        label: "SWTP Site",
+        color: "#14b8a6",
       },
     ],
   },
@@ -184,6 +256,11 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     fetchGeoJSON: getTransportationRoadsGeoJSON,
     lineWidth: 3,
   },
+  lahoreRingRoad: {
+    endpoint: "/lahore-ring-road/",
+    fetchGeoJSON: getLahoreRingRoadGeoJSON,
+    lineWidth: 3,
+  },
   lahoreBypass: {
     endpoint: "/lahore-bypass/",
     fetchGeoJSON: getLahoreBypassGeoJSON,
@@ -218,6 +295,47 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     endpoint: "/abdul-hakeem-motorway-m3/",
     fetchGeoJSON: getAbdulHakeemMotorwayM3GeoJSON,
     lineWidth: 3,
+  },
+  irrigationNetwork: {
+    endpoint: "/irrigation-network/",
+    fetchGeoJSON: getIrrigationNetworkGeoJSON,
+    lineWidth: 2.8,
+  },
+  existingDrains: {
+    endpoint: "/existing-drains/",
+    fetchGeoJSON: getExistingDrainsGeoJSON,
+    lineWidth: 2.8,
+  },
+  linkCanal: {
+    endpoint: "/link-canal/",
+    fetchGeoJSON: getLinkCanalGeoJSON,
+    lineWidth: 2.8,
+  },
+  branchCanal: {
+    endpoint: "/branch-canal/",
+    fetchGeoJSON: getBranchCanalGeoJSON,
+    lineWidth: 2.8,
+  },
+  distributary: {
+    endpoint: "/distributary/",
+    fetchGeoJSON: getDistributaryGeoJSON,
+    lineWidth: 2.8,
+  },
+  proposedWWTP: {
+    endpoint: "/proposed-wwtp/",
+    fetchGeoJSON: getProposedWWTPGeoJSON,
+  },
+  wwtpSite: {
+    endpoint: "/wwtp-sites/",
+    fetchGeoJSON: getWWTPSitesGeoJSON,
+  },
+  katarbandWWTP: {
+    endpoint: "/katar-band-wwtp/",
+    fetchGeoJSON: getKatarBandWWTPGeoJSON,
+  },
+  swtpSite: {
+    endpoint: "/swtp-site/",
+    fetchGeoJSON: getSWTPSiteGeoJSON,
   },
   cityLevelServicesPoints: {
     endpoint: "/city-level-service-points/",
