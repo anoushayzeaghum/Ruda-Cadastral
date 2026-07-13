@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import { Box, Layers, X } from "lucide-react";
-import {
-  ThreeDExtrusionManager,
-  ThreeDLayerManager,
-} from "./Society3DLayers";
+import { Building2, Layers, Upload, X } from "lucide-react";
+import { ThreeDLayerManager, ThreeDBIMModel } from "./Society3DLayers";
+import Society3DModelUploadPanel from "./Society3DModelUploadPanel";
 
 // Hook — true when viewport width is below the sm breakpoint (640 px)
 function useIsMobile() {
@@ -23,7 +21,8 @@ function useIsMobile() {
 
 const tools = [
   { id: "layers", label: "3D Layer Manager", icon: Layers },
-  { id: "extrusion", label: "3D Extrusion", icon: Box },
+  { id: "bim", label: "3D BIM Model", icon: Building2 },
+  { id: "upload", label: "Upload 3D Model", icon: Upload },
 ];
 
 const TOOL_BUTTON_SIZE = 36;
@@ -38,14 +37,19 @@ export default function Society3DLeftToolbar({
   basemap,
   setBasemap,
   selectedProject,
-  extrusion,
-  setExtrusion,
-  selectedFeature,
-  onApplyToSelected,
-  onClearExtrusions,
+  bimPanelOpen,
+  setBimPanelOpen,
+  bimLayers,
+  setBimLayers,
+  uploadedModel,
+  onModelFileSelect,
+  onModelSettingsChange,
+  onUseMapCenter,
+  onFlyToModel,
+  onRemoveModel,
 }) {
   const isMobile = useIsMobile();
-
+  
   const activeToolIndex = tools.findIndex((tool) => tool.id === activePanel);
   const panelTop =
     activeToolIndex >= 0
@@ -66,12 +70,11 @@ export default function Society3DLeftToolbar({
       `}</style>
 
       {/* Tool buttons - bottom center on mobile, left side on desktop */}
-      <div
-        className={`absolute z-40 ${isMobile
-            ? "bottom-3 left-1/2 -translate-x-1/2 flex-row"
-            : "left-2 top-5 flex-col"
-          } flex gap-1`}
-      >
+      <div className={`absolute z-40 ${
+        isMobile 
+          ? 'bottom-3 left-1/2 -translate-x-1/2 flex-row' 
+          : 'left-2 top-5 flex-col'
+      } flex gap-1`}>
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isActive = activePanel === tool.id;
@@ -83,17 +86,18 @@ export default function Society3DLeftToolbar({
               title={tool.label}
               aria-label={tool.label}
               onClick={() => handleToolClick(tool.id)}
-              className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border text-white shadow-md transition ${isActive
+              className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border text-white shadow-md transition ${
+                isActive
                   ? "border-[#9be37b] bg-[#0a3327]"
                   : "border-[#0c3d2d] bg-[#06291f] hover:bg-[#0a3327]"
-                }`}
+              }`}
             >
               <Icon size={16} strokeWidth={2.2} className="sm:hidden" />
               <Icon size={20} strokeWidth={2.2} className="hidden sm:block" />
             </button>
           );
         })}
-
+        
         {/* Close button for mobile - only shown when a panel is active */}
         {isMobile && activePanel && (
           <button
@@ -117,21 +121,22 @@ export default function Society3DLeftToolbar({
               onClick={() => setActivePanel(null)}
             />
           )}
-
+          
           <div
-            className={`z-50 overflow-hidden ${isMobile
-                ? "fixed bottom-0 left-0 right-0 rounded-t-xl"
-                : "absolute left-14 rounded-md"
-              }`}
+            className={`z-50 overflow-hidden ${
+              isMobile
+                ? 'fixed bottom-0 left-0 right-0 rounded-t-xl'
+                : 'absolute left-14 rounded-md'
+            }`}
             style={
               isMobile
-                ? { maxHeight: "70vh" }
+                ? { maxHeight: '70vh' }
                 : {
-                  top: `${panelTop}px`,
-                  width: "330px",
-                  animation: "society3dPanelDrop 220ms ease-out both",
-                  transformOrigin: "top left",
-                }
+                    top: `${panelTop}px`,
+                    width: '330px',
+                    animation: "society3dPanelDrop 220ms ease-out both",
+                    transformOrigin: "top left",
+                  }
             }
           >
             {/* Mobile drag handle */}
@@ -140,7 +145,7 @@ export default function Society3DLeftToolbar({
                 <div className="h-1 w-10 rounded-full bg-white/30" />
               </div>
             )}
-
+            
             {activePanel === "layers" && (
               <ThreeDLayerManager
                 layers={layers}
@@ -152,13 +157,22 @@ export default function Society3DLeftToolbar({
               />
             )}
 
-            {activePanel === "extrusion" && (
-              <ThreeDExtrusionManager
-                extrusion={extrusion}
-                setExtrusion={setExtrusion}
-                selectedFeature={selectedFeature}
-                onApplyToSelected={onApplyToSelected}
-                onClearExtrusions={onClearExtrusions}
+            {activePanel === "bim" && (
+              <ThreeDBIMModel
+                bimLayers={bimLayers}
+                setBimLayers={setBimLayers}
+                onClose={() => setActivePanel(null)}
+              />
+            )}
+
+            {activePanel === "upload" && (
+              <Society3DModelUploadPanel
+                model={uploadedModel}
+                onFileSelect={onModelFileSelect}
+                onSettingsChange={onModelSettingsChange}
+                onUseMapCenter={onUseMapCenter}
+                onFlyToModel={onFlyToModel}
+                onRemoveModel={onRemoveModel}
                 onClose={() => setActivePanel(null)}
               />
             )}
@@ -168,3 +182,4 @@ export default function Society3DLeftToolbar({
     </>
   );
 }
+

@@ -26,6 +26,7 @@ import {
   Linkedin,
   Instagram,
   ExternalLink,
+  UploadCloud,
 } from "lucide-react";
 
 const HERO_SLIDES = [
@@ -80,6 +81,15 @@ const GIS_APPS = [
     route: "/society-3d",
     gradientFrom: "#49B84A",
     gradientTo: "#0B7A3B",
+  },
+  {
+    icon: <UploadCloud size={22} />,
+    title: "3D BIM Model Viewer",
+    desc: "Upload and position GLB or glTF models on the Cesium globe, manage BIM visibility, and explore project boundaries in an interactive 3D environment.",
+    img: "/s7.png",
+    route: "/society-3d-upload",
+    gradientFrom: "#0B7A3B",
+    gradientTo: "#00351F",
   },
   {
     icon: <FileText size={22} />,
@@ -313,11 +323,10 @@ export default function LandingPage() {
       </div>
 
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolled
+        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
             ? "bg-white shadow-lg"
             : "bg-white/95 backdrop-blur-sm shadow-sm"
-        }`}
+          }`}
       >
         <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-14 sm:h-16 md:h-20">
           <a href="#home" className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -333,11 +342,10 @@ export default function LandingPage() {
               <a
                 key={href}
                 href={href}
-                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
-                  activeSection === href.slice(1)
+                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
                     ? "bg-[#0B7A3B] text-white"
                     : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
-                }`}
+                  }`}
               >
                 {label}
               </a>
@@ -419,11 +427,10 @@ export default function LandingPage() {
               key={i}
               onClick={() => setSlideIndex(i)}
               aria-label={`Slide ${i + 1}`}
-              className={`rounded-full transition-all duration-300 ${
-                i === slideIndex
+              className={`rounded-full transition-all duration-300 ${i === slideIndex
                   ? "w-6 h-2 bg-[#49B84A]"
                   : "w-2 h-2 bg-white/40 hover:bg-white/70"
-              }`}
+                }`}
             />
           ))}
         </div>
