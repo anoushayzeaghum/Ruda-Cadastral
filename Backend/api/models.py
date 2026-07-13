@@ -2190,8 +2190,8 @@ class AbdulHakeemMotorwayM3(models.Model):
         db_table = "abdulhakeemmotorwaym3"
 
 # =========================
-# AbdulHakeemMotorwayM3
-# DB table: abdulhakeemmotorwaym3
+# HardoSohalMuslimRoad
+# DB table: hardosohalmuslimroad
 # =========================
 
 class HardoSohalMuslimRoad(models.Model):
@@ -2220,11 +2220,11 @@ class HardoSohalMuslimRoad(models.Model):
         db_table = "hardosohalmuslimroad"
 
 # =========================
-# AbdulHakeemMotorwayM3
-# DB table: abdulhakeemmotorwaym3
+# JinnahAvenue
+# DB table: jinnahavenue
 # =========================
 
-class JinnahAvenueRoad(models.Model):
+class JinnahAvenue(models.Model):
     gid = models.AutoField(primary_key=True)
 
     objectid = models.FloatField(null=True, blank=True)
@@ -2243,18 +2243,18 @@ class JinnahAvenueRoad(models.Model):
     )
 
     def __str__(self):
-        return self.name or f"JinnahAvenueRoad {self.gid}"
+        return self.name or f"JinnahAvenue {self.gid}"
 
     class Meta:
         managed = False
-        db_table = "jinnahavenueroad"
+        db_table = "jinnahavenue"
 
 # =========================
-# AbdulHakeemMotorwayM3
+# kalakhataiinterchange
 # DB table: abdulhakeemmotorwaym3
 # =========================
 
-class KalaKhataJiInterchange(models.Model):
+class KalaKhataiInterchange(models.Model):
     gid = models.AutoField(primary_key=True)
 
     objectid = models.FloatField(null=True, blank=True)
@@ -2271,11 +2271,11 @@ class KalaKhataJiInterchange(models.Model):
     )
 
     def __str__(self):
-        return self.name or f"KalaKhataJiInterchange {self.gid}"
+        return self.name or f"KalaKhataiInterchange {self.gid}"
 
     class Meta:
         managed = False
-        db_table = "kalakhatajiinterchange"
+        db_table = "kalakhataiinterchange"
 
 # =========================
 # AbdulHakeemMotorwayM3
@@ -2331,8 +2331,6 @@ class LahoreBypass(models.Model):
     snippet = models.CharField(max_length=254, null=True, blank=True)
     popupinfo = models.CharField(max_length=254, null=True, blank=True)
     shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
-    row = models.CharField(max_length=254, null=True, blank=True)
-    buffer = models.CharField(max_length=254, null=True, blank=True)
 
     geom = gis_models.MultiLineStringField(
         srid=4326,

@@ -1,20 +1,20 @@
 from ...common_imports import *
 
 
-class DeleteJinnahAvenueRoadView(viewsets.ViewSet):
-    queryset = JinnahAvenueRoad.objects.all()
-    serializer_class = JinnahAvenueRoadSerializer
+class DeleteKalaKhataiInterchangeView(viewsets.ViewSet):
+    queryset = KalaKhataiInterchange.objects.all()
+    serializer_class = KalaKhataiInterchangeSerializer
     permission_classes = [AllowAny]
 
     def destroy(self, request, *args, **kwargs):
         record_id = kwargs.get("pk")
 
         try:
-            record = JinnahAvenueRoad.objects.get(gid=record_id)
-        except JinnahAvenueRoad.DoesNotExist:
+            record = KalaKhataiInterchange.objects.get(gid=record_id)
+        except KalaKhataiInterchange.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="JinnahAvenueRoad not found.",
+                message="KalaKhataiInterchange not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
@@ -23,14 +23,14 @@ class DeleteJinnahAvenueRoadView(viewsets.ViewSet):
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="JinnahAvenueRoad deleted successfully.",
+                message="KalaKhataiInterchange deleted successfully.",
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
         except ProtectedError:
             return ApiResponse(
                 status=status.HTTP_400_BAD_REQUEST,
-                message="Cannot delete this JinnahAvenueRoad because it is linked to other records.",
+                message="Cannot delete this KalaKhataiInterchange because it is linked to other records.",
                 http_status=status.HTTP_400_BAD_REQUEST,
             ).create_response()
 

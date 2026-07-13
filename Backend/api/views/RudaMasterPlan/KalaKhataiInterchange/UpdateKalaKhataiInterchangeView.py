@@ -1,25 +1,25 @@
 from ...common_imports import *
 
 
-class UpdateKalaKhataJiInterchangeView(viewsets.ViewSet):
-    queryset = KalaKhataJiInterchange.objects.all()
-    serializer_class = KalaKhataJiInterchangeSerializer
+class UpdateKalaKhataiInterchangeView(viewsets.ViewSet):
+    queryset = KalaKhataiInterchange.objects.all()
+    serializer_class = KalaKhataiInterchangeSerializer
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
         record_id = kwargs.get("pk")
 
         try:
-            record = KalaKhataJiInterchange.objects.get(gid=record_id)
-        except KalaKhataJiInterchange.DoesNotExist:
+            record = KalaKhataiInterchange.objects.get(gid=record_id)
+        except KalaKhataiInterchange.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="KalaKhataJiInterchange not found.",
+                message="KalaKhataiInterchange not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            serializer = KalaKhataJiInterchangeSerializer(
+            serializer = KalaKhataiInterchangeSerializer(
                 record,
                 data=request.data,
                 partial=True,
@@ -29,7 +29,7 @@ class UpdateKalaKhataJiInterchangeView(viewsets.ViewSet):
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="KalaKhataJiInterchange updated successfully.",
+                message="KalaKhataiInterchange updated successfully.",
                 data=serializer.data,
                 http_status=status.HTTP_200_OK,
             ).create_response()

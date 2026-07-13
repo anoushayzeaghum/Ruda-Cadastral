@@ -8,7 +8,7 @@ class ListLahoreBypassView(viewsets.ViewSet):
     queryset = LahoreBypass.objects.all()
     serializer_class = LahoreBypassSerializer
     permission_classes = [AllowAny]
-    filter_fields = ['oid_', 'name', 'folderpath', 'symbolid', 'altmode', 'clamped', 'extruded', 'row', 'buffer']
+    filter_fields = ['oid', 'name', 'folderpath', 'symbolid', 'altmode', 'clamped', 'extruded']
 
     def list(self, request, *args, **kwargs):
         try:
