@@ -118,7 +118,6 @@ class ListMauzaView(viewsets.ViewSet):
                         kc,
                         kc_id,
                         pc,
-                        pc_id,
                         mauza,
                         mauza_id,
                         ST_AsGeoJSON(geom)::json
@@ -144,8 +143,8 @@ class ListMauzaView(viewsets.ViewSet):
 
             feature = {
                 "type": "Feature",
-                "id": row[8],
-                "geometry": row[9],
+                "id": row[7],
+                "geometry": row[8],
                 "properties": {
                     "gid": row[0],
                     "district_id": row[1],
@@ -153,9 +152,8 @@ class ListMauzaView(viewsets.ViewSet):
                     "kc": row[3],
                     "kc_id": row[4],
                     "pc": row[5],
-                    "pc_id": row[6],
-                    "mauza": row[7],
-                    "mauza_id": row[8],
+                    "mauza": row[6],
+                    "mauza_id": row[7],
                 },
             }
 
@@ -183,5 +181,6 @@ class ListMauzaView(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
                 data=str(e),
+                error_traceback=traceback.format_exc(),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()
