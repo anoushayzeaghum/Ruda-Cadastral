@@ -45,7 +45,17 @@ from .RudaMasterPlan.MpPrincipleZoningView import *
 from .RudaMasterPlan.ExistingForestView import *
 from .RudaMasterPlan.RudaPlanningBoundaryView import *
 from .RudaMasterPlan.ProposedRoadNetworkView import *
-from .RudaMasterPlan.ProposedRoadNetworkView import *
+
+from .RudaMasterPlan.BranchCanalView import *
+from .RudaMasterPlan.DistributaryView import *
+from .RudaMasterPlan.ExistingDrainsView import *
+from .RudaMasterPlan.IrrigationNetworkView import *
+from .RudaMasterPlan.KatarBandWWTPView import *
+from .RudaMasterPlan.LinkCanalView import *
+from .RudaMasterPlan.ProposedWWTPView import *
+from .RudaMasterPlan.SWTPSiteView import *
+from .RudaMasterPlan.WWTPSitesView import *
+
 from .RudaMasterPlan.AbdulHakeemMotorwayM3 import *
 from .RudaMasterPlan.HardoSohalMuslimRoad import *
 from .RudaMasterPlan.JinnahAvenueRoad import *
