@@ -1384,3 +1384,243 @@ class RtwPackageSerializer(GeoFeatureModelSerializer):
             "geom",
         )
 
+#-----------------------------------------
+# Branch Canal Serializer
+#-----------------------------------------
+
+class BranchCanalSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = BranchCanal
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#-----------------------------------------
+# Distributary Serializer
+#-----------------------------------------
+class DistributarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Distributary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#---------------------------------------------
+# Existing Drains Serializer
+#---------------------------------------------
+class ExistingDrainsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ExistingDrains
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "kml_folder",
+            "length",
+            "shape_leng",
+            "geom",
+        )
+
+#---------------------------------------------
+# Irrigation Network Serializer
+#---------------------------------------------
+class IrrigationNetworkSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = IrrigationNetwork
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#----------------------------------------------
+# Katar Band WWTP Serializer
+#----------------------------------------------
+class KatarBandWWTPSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KatarBandWWTP
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "area",
+            "geom",
+        )
+
+#-----------------------------------------------
+# Link Canal Serializer
+#-----------------------------------------------
+class LinkCanalSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LinkCanal
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#-----------------------------------------------
+# Proposed WWTP Serializer
+#-----------------------------------------------
+
+class ProposedWWTPSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ProposedWWTP
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "area",
+            "descriptio",
+            "geom",
+        )
+
+#-----------------------------------------------
+# SWTP Site Serializer
+#-----------------------------------------------
+class SWTPSiteSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = SWTPSite
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "id",
+            "name",
+            "sq_ft",
+            "marla",
+            "kanal",
+            "acres",
+            "geom",
+        )
+
+#-----------------------------------------------
+# WWTP Sites Serializer
+#-----------------------------------------------
+
+class WWTPSitesSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = WWTPSites
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "site_type",
+            "shape_leng",
+            "shape_area",
+            "created_us",
+            "created_da",
+            "last_edite",
+            "last_edi_1",
+            "area",
+            "geom",
+        )

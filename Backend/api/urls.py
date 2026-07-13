@@ -244,6 +244,51 @@ router.register(r"rtwpackage/create", CreateRtwPackageView, basename="create-rtw
 router.register(r"rtwpackage/update", UpdateRtwPackageView, basename="update-rtwpackage")
 router.register(r"rtwpackage/delete", DeleteRtwPackageView, basename="delete-rtwpackage")
 
+router.register(r"branch-canal", ListBranchCanalView, basename="branch-canal",)
+router.register(r"branch-canal/create", CreateBranchCanalView, basename="create-branch-canal",)
+router.register(r"branch-canal/update", UpdateBranchCanalView, basename="update-branch-canal",)
+router.register(r"branch-canal/delete", DeleteBranchCanalView, basename="delete-branch-canal",)
+
+router.register(r"distributary", ListDistributaryView, basename="distributary",)
+router.register(r"distributary/create", CreateDistributaryView, basename="create-distributary",)
+router.register(r"distributary/update", UpdateDistributaryView, basename="update-distributary",)
+router.register(r"distributary/delete", DeleteDistributaryView, basename="delete-distributary",)
+
+router.register(r"existing-drains", ListExistingDrainsView, basename="existing-drains",)
+router.register(r"existing-drains/create", CreateExistingDrainsView, basename="create-existing-drains",)
+router.register(r"existing-drains/update", UpdateExistingDrainsView, basename="update-existing-drains",)
+router.register(r"existing-drains/delete", DeleteExistingDrainsView, basename="delete-existing-drains",)
+
+router.register(r"irrigation-network", ListIrrigationNetworkView, basename="irrigation-network",)
+router.register(r"irrigation-network/create", CreateIrrigationNetworkView, basename="create-irrigation-network",)
+router.register(r"irrigation-network/update", UpdateIrrigationNetworkView, basename="update-irrigation-network",)
+router.register(r"irrigation-network/delete", DeleteIrrigationNetworkView, basename="delete-irrigation-network",)
+
+router.register(r"katar-band-wwtp", ListKatarBandWWTPView, basename="katar-band-wwtp",)
+router.register(r"katar-band-wwtp/create", CreateKatarBandWWTPView, basename="create-katar-band-wwtp",)
+router.register(r"katar-band-wwtp/update", UpdateKatarBandWWTPView, basename="update-katar-band-wwtp",)
+router.register(r"katar-band-wwtp/delete", DeleteKatarBandWWTPView, basename="delete-katar-band-wwtp",)
+
+router.register(r"link-canal", ListLinkCanalView, basename="link-canal",)
+router.register(r"link-canal/create", CreateLinkCanalView, basename="create-link-canal",)
+router.register(r"link-canal/update", UpdateLinkCanalView, basename="update-link-canal",)
+router.register(r"link-canal/delete", DeleteLinkCanalView, basename="delete-link-canal",)
+
+router.register(r"proposed-wwtp", ListProposedWWTPView, basename="proposed-wwtp",)
+router.register(r"proposed-wwtp/create", CreateProposedWWTPView, basename="create-proposed-wwtp",)
+router.register(r"proposed-wwtp/update", UpdateProposedWWTPView, basename="update-proposed-wwtp",)
+router.register( r"proposed-wwtp/delete", DeleteProposedWWTPView, basename="delete-proposed-wwtp",)
+
+router.register(r"swtp-site", ListSWTPSiteView, basename="swtp-site",)
+router.register(r"swtp-site/create", CreateSWTPSiteView, basename="create-swtp-site",)
+router.register(r"swtp-site/update", UpdateSWTPSiteView, basename="update-swtp-site",)
+router.register(r"swtp-site/delete", DeleteSWTPSiteView, basename="delete-swtp-site",)
+
+router.register(r"wwtp-sites", ListWWTPSitesView, basename="wwtp-sites",)
+router.register(r"wwtp-sites/create", CreateWWTPSitesView, basename="create-wwtp-sites",)
+router.register(r"wwtp-sites/update", UpdateWWTPSitesView, basename="update-wwtp-sites",)
+router.register(r"wwtp-sites/delete", DeleteWWTPSitesView, basename="delete-wwtp-sites",)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 
