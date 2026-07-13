@@ -8,7 +8,7 @@ class ListKatarBundRoadView(viewsets.ViewSet):
     queryset = KatarBundRoad.objects.all()
     serializer_class = KatarBundRoadSerializer
     permission_classes = [AllowAny]
-    filter_fields = ['oid_', 'name', 'folderpath', 'symbolid', 'altmode', 'clamped', 'extruded', 'row', 'buffer']
+    filter_fields = ['oid', 'name', 'folderpath', 'symbolid', 'altmode', 'clamped', 'extruded', 'row', 'buffer']
 
     def list(self, request, *args, **kwargs):
         try:

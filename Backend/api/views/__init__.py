@@ -58,8 +58,8 @@ from .RudaMasterPlan.WWTPSitesView import *
 
 from .RudaMasterPlan.AbdulHakeemMotorwayM3 import *
 from .RudaMasterPlan.HardoSohalMuslimRoad import *
-from .RudaMasterPlan.JinnahAvenueRoad import *
-from .RudaMasterPlan.KalaKhataJiInterchange import *
+from .RudaMasterPlan.JinnahAvenue import *
+from .RudaMasterPlan.KalaKhataiInterchange import *
 from .RudaMasterPlan.KatarBundRoad import *
 from .RudaMasterPlan.LahoreBypass import *
 from .RudaMasterPlan.SialkotMotorway import *

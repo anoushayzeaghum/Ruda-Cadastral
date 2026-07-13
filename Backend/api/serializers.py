@@ -1676,10 +1676,10 @@ class HardoSohalMuslimRoadSerializer(GeoFeatureModelSerializer):
         )
 
 
-class JinnahAvenueRoadSerializer(GeoFeatureModelSerializer):
+class JinnahAvenueSerializer(GeoFeatureModelSerializer):
 
     class Meta:
-        model = JinnahAvenueRoad
+        model = JinnahAvenue
         geo_field = "geom"
         id_field = "gid"
 
@@ -1697,10 +1697,10 @@ class JinnahAvenueRoadSerializer(GeoFeatureModelSerializer):
         )
 
 
-class KalaKhataJiInterchangeSerializer(GeoFeatureModelSerializer):
+class KalaKhataiInterchangeSerializer(GeoFeatureModelSerializer):
 
     class Meta:
-        model = KalaKhataJiInterchange
+        model = KalaKhataiInterchange
         geo_field = "geom"
         id_field = "gid"
 
@@ -1725,7 +1725,7 @@ class KatarBundRoadSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "old",
+            "oid",
             "name",
             "folderpath",
             "symbolid",
@@ -1751,7 +1751,7 @@ class LahoreBypassSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "old",
+            "oid",
             "name",
             "folderpath",
             "symbolid",
@@ -1762,8 +1762,6 @@ class LahoreBypassSerializer(GeoFeatureModelSerializer):
             "snippet",
             "popupinfo",
             "shape_leng",
-            "row",
-            "buffer",
             "geom",
         )
 

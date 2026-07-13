@@ -1,4 +1,0 @@
-from .CreateKalaKhataJiInterchangeView import CreateKalaKhataJiInterchangeView
-from .UpdateKalaKhataJiInterchangeView import UpdateKalaKhataJiInterchangeView
-from .DeleteKalaKhataJiInterchangeView import DeleteKalaKhataJiInterchangeView
-from .ListKalaKhataJiInterchangeView import ListKalaKhataJiInterchangeView
