@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import RudaLogo from "../../assets/RUDA L&M.png";
 import {
   Map,
   BarChart3,
@@ -52,6 +53,64 @@ const STATS = [
   { value: "137", label: "Mauzas Covered" },
   { value: "340 km²", label: "Project Area" },
   { value: "99.8%", label: "Data Accuracy" },
+];
+
+
+const DECISION_AREAS = [
+  {
+    key: "land",
+    number: "01",
+    title: "Land & Estate Management",
+    shortTitle: "Land & Estate",
+    icon: MapPin,
+    accent: "#8fd36f",
+    bullets: ["Parcel & Khasra intelligence", "Ownership and compensation", "Asset inventory management"],
+  },
+  {
+    key: "planning",
+    number: "02",
+    title: "Architecture & Urban Planning",
+    shortTitle: "Urban Planning",
+    icon: Layers,
+    accent: "#54c7ec",
+    bullets: ["Master planning and zoning", "3D city visualization", "Scenario-based planning"],
+  },
+  {
+    key: "development",
+    number: "03",
+    title: "Development & Building Control",
+    shortTitle: "Development Control",
+    icon: Box,
+    accent: "#c084fc",
+    bullets: ["Building approvals", "Progress monitoring", "Digital records and compliance"],
+  },
+  {
+    key: "engineering",
+    number: "04",
+    title: "Engineering & Infrastructure",
+    shortTitle: "Engineering",
+    icon: Database,
+    accent: "#f5b942",
+    bullets: ["Roads, bridges and utilities", "Drainage and water networks", "Asset maintenance planning"],
+  },
+  {
+    key: "commercial",
+    number: "05",
+    title: "Commercial & Business Strategy",
+    shortTitle: "Commercial Strategy",
+    icon: BarChart3,
+    accent: "#38d4d4",
+    bullets: ["Investment opportunity mapping", "Land-value intelligence", "Feasibility and market analysis"],
+  },
+  {
+    key: "sustainability",
+    number: "06",
+    title: "Sustainability & Social Impact",
+    shortTitle: "Sustainability",
+    icon: Shield,
+    accent: "#a3e635",
+    bullets: ["Environmental monitoring", "Green infrastructure", "Community and social impact"],
+  },
 ];
 
 const GIS_APPS = [
@@ -257,6 +316,83 @@ function AppCard({ icon, title, desc, img, route, color, gradientFrom, gradientT
   );
 }
 
+
+function DecisionSupportCard({
+  area,
+  side = "left",
+  delay = 0,
+  compact = false,
+}) {
+  const Icon = area.icon;
+
+  return (
+    <div
+      className={`group relative overflow-hidden border border-white/20 bg-[#031a14]/72 text-white shadow-[0_18px_55px_-22px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:border-white/35 hover:bg-[#06291f]/88 ${compact ? "rounded-xl p-3" : "rounded-2xl p-4"
+        }`}
+      style={{
+        animation: `decisionCardIn 700ms ease-out ${delay}ms both, decisionFloat 6s ease-in-out ${delay + 900}ms infinite`,
+      }}
+    >
+      {!compact && (
+        <span
+          className={`absolute top-1/2 hidden h-px w-10 -translate-y-1/2 lg:block ${side === "left" ? "-right-10" : "-left-10"
+            }`}
+          style={{
+            background: `linear-gradient(${side === "left" ? "to right" : "to left"}, ${area.accent}, transparent)`,
+          }}
+        />
+      )}
+
+      <div
+        className="absolute inset-y-0 left-0 w-[3px]"
+        style={{ backgroundColor: area.accent }}
+      />
+
+      <div className="flex items-start gap-3">
+        <div
+          className={`${compact ? "h-9 w-9" : "h-11 w-11"} flex shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10`}
+          style={{ color: area.accent }}
+        >
+          <Icon size={compact ? 18 : 21} strokeWidth={2.1} />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className="text-[10px] font-black tracking-[0.18em]"
+              style={{ color: area.accent }}
+            >
+              {area.number}
+            </span>
+            <span className="h-px flex-1 bg-white/15" />
+          </div>
+
+          <h3 className={`${compact ? "mt-1 text-[11px]" : "mt-1.5 text-sm"} font-black uppercase leading-tight tracking-wide`}>
+            {compact ? area.shortTitle : area.title}
+          </h3>
+
+          {!compact && (
+            <ul className="mt-2 space-y-1">
+              {area.bullets.map((bullet) => (
+                <li
+                  key={bullet}
+                  className="flex items-start gap-1.5 text-[10px] leading-snug text-white/67"
+                >
+                  <span
+                    className="mt-[5px] h-1 w-1 shrink-0 rounded-full"
+                    style={{ backgroundColor: area.accent }}
+                  />
+                  {bullet}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MapStatCard({ value, label, positionClass }) {
   return (
     <div className={`absolute z-10 ${positionClass}`}>
@@ -324,16 +460,16 @@ export default function LandingPage() {
 
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
-            ? "bg-white shadow-lg"
-            : "bg-white/95 backdrop-blur-sm shadow-sm"
+          ? "bg-white shadow-lg"
+          : "bg-white/95 backdrop-blur-sm shadow-sm"
           }`}
       >
         <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-14 sm:h-16 md:h-20">
           <a href="#home" className="flex items-center gap-2 sm:gap-3 shrink-0">
             <img
-              src="/Ruda_logo.jpg"
+              src={RudaLogo}
               alt="RUDA"
-              className="h-8 sm:h-10 md:h-12 w-auto rounded object-contain"
+              className="h-10 sm:h-12 md:h-16 w-auto object-contain"
             />
           </a>
 
@@ -343,8 +479,8 @@ export default function LandingPage() {
                 key={href}
                 href={href}
                 className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
-                    ? "bg-[#0B7A3B] text-white"
-                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                  ? "bg-[#0B7A3B] text-white"
+                  : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
                   }`}
               >
                 {label}
@@ -395,94 +531,191 @@ export default function LandingPage() {
 
       <section
         id="home"
-        className="relative h-[520px] xs:h-[580px] sm:min-h-[88vh] md:min-h-[92vh] flex items-center justify-center overflow-hidden"
+        className="relative min-h-[760px] overflow-hidden bg-[#03130f] sm:min-h-[860px] lg:min-h-[920px]"
       >
         {HERO_SLIDES.map((src, i) => (
           <div
             key={src}
-            className="absolute inset-0 transition-opacity duration-[1800ms] ease-in-out"
+            className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out will-change-transform"
             style={{
               opacity: i === slideIndex ? 1 : 0,
               backgroundImage: `url('${src}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               animation:
-                i === slideIndex ? "kenBurns 10s ease-in-out forwards" : "none",
+                i === slideIndex
+                  ? `${i % 2 === 0 ? "heroPanLeft" : "heroPanRight"} 9s ease-in-out forwards`
+                  : "none",
             }}
           />
         ))}
 
         <style>{`
-          @keyframes kenBurns {
-            0%   { transform: scale(1)    translateX(0px)  translateY(0px);  }
-            100% { transform: scale(1.08) translateX(-12px) translateY(-6px); }
+          @keyframes heroPanLeft {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-2.5%, 0, 0); }
+          }
+
+          @keyframes heroPanRight {
+            0% { transform: translate3d(-2.5%, 0, 0); }
+            100% { transform: translate3d(0, 0, 0); }
+          }
+
+          @keyframes decisionCardIn {
+            from {
+              opacity: 0;
+              transform: translateY(18px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes decisionFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+          }
+
+          @keyframes platformPulse {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(73, 184, 74, 0.05);
+            }
+            50% {
+              box-shadow: 0 0 38px 2px rgba(73, 184, 74, 0.2);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .hero-motion-safe {
+              animation: none !important;
+              transition-duration: 0ms !important;
+            }
           }
         `}</style>
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black/85 z-10" />
+        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(11,122,59,0.12),transparent_40%),linear-gradient(to_bottom,rgba(1,12,9,0.68),rgba(2,20,14,0.66)_45%,rgba(2,12,9,0.94))]" />
+        <div className="absolute inset-0 z-10 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:46px_46px]" />
 
-        <div className="absolute bottom-[68px] xs:bottom-[72px] sm:bottom-20 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-          {HERO_SLIDES.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setSlideIndex(i)}
-              aria-label={`Slide ${i + 1}`}
-              className={`rounded-full transition-all duration-300 ${i === slideIndex
-                  ? "w-6 h-2 bg-[#49B84A]"
-                  : "w-2 h-2 bg-white/40 hover:bg-white/70"
-                }`}
-            />
-          ))}
-        </div>
+        <div className="relative z-20 mx-auto flex min-h-[760px] max-w-[1500px] flex-col px-4 pb-28 pt-10 sm:min-h-[860px] sm:px-6 sm:pb-32 sm:pt-14 lg:min-h-[920px] lg:px-8 lg:pb-36">
+          <div className="relative flex flex-1 items-center justify-center">
+            <div className="pointer-events-none absolute inset-y-12 left-0 hidden w-[280px] flex-col justify-center gap-5 xl:flex 2xl:w-[310px]">
+              {DECISION_AREAS.slice(0, 3).map((area, index) => (
+                <DecisionSupportCard
+                  key={area.key}
+                  area={area}
+                  side="left"
+                  delay={index * 140}
+                />
+              ))}
+            </div>
 
-        <div className="relative z-20 max-w-5xl mx-auto px-4 sm:px-5 text-center text-white pt-8 pb-24 sm:py-20 md:py-24">
-          <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur border border-white/20 text-white/90 text-[9px] sm:text-[10px] md:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1 sm:py-1.5 md:py-2 rounded-full mb-3 sm:mb-6 md:mb-8">
-            <Star size={10} fill="currentColor" className="text-[#49B84A]" />
-            Geospatial Platform for RUDA Project Area
+            <div className="pointer-events-none absolute inset-y-12 right-0 hidden w-[280px] flex-col justify-center gap-5 xl:flex 2xl:w-[310px]">
+              {DECISION_AREAS.slice(3).map((area, index) => (
+                <DecisionSupportCard
+                  key={area.key}
+                  area={area}
+                  side="right"
+                  delay={(index + 3) * 140}
+                />
+              ))}
+            </div>
+
+            <div
+              className="relative mx-auto w-full max-w-4xl text-center text-white xl:max-w-[760px]"
+              style={{ animation: "platformPulse 6s ease-in-out infinite" }}
+            >
+              <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.17em] text-white/90 backdrop-blur-xl sm:mb-6 sm:px-4 sm:py-2 sm:text-[11px]">
+                <Star size={11} fill="currentColor" className="text-[#8fd36f]" />
+                Integrated GIS • BIM • Digital Twin Platform
+              </div>
+
+              <div className="mb-4 flex flex-wrap items-center justify-center gap-2 sm:mb-6">
+                {["GIS", "BIM", "3D Twin", "Analytics", "Decision Support"].map(
+                  (item, index) => (
+                    <div
+                      key={item}
+                      className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/72 backdrop-blur"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#49B84A]" />
+                      {item}
+                      {index < 4 && (
+                        <ArrowRight size={9} className="hidden text-white/35 sm:block" />
+                      )}
+                    </div>
+                  ),
+                )}
+              </div>
+
+              <h1 className="text-3xl font-black leading-[1.02] tracking-[-0.035em] drop-shadow-[0_6px_28px_rgba(0,0,0,0.72)] xs:text-4xl sm:text-6xl md:text-7xl lg:text-[78px]">
+                RUDA GIS METAVERSE
+                <span className="mt-1 block text-[#49B84A] sm:mt-2">
+                  &amp; Cadastral Portal
+                </span>
+              </h1>
+
+              <p className="mx-auto mt-5 max-w-2xl px-2 text-xs leading-relaxed text-white/80 xs:text-sm sm:mt-7 sm:text-base md:text-lg">
+                A unified geospatial decision-support environment connecting
+                land records, planning, BIM, engineering, investment,
+                infrastructure and sustainability across the RUDA project area.
+              </p>
+
+              <div className="mt-6 flex flex-col justify-center gap-2.5 xs:flex-row sm:mt-9 sm:gap-4">
+                <button
+                  onClick={() => {
+                    document
+                      .querySelector("#apps")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="flex items-center justify-center gap-2.5 rounded-full bg-[#0B7A3B] px-6 py-3 text-xs font-black text-white shadow-[0_16px_34px_-15px_rgba(73,184,74,.9)] transition-all hover:-translate-y-1 hover:bg-[#004225] hover:shadow-2xl sm:px-8 sm:py-4 sm:text-base"
+                >
+                  <Map size={17} /> Explore GIS Platforms
+                </button>
+
+                <a
+                  href="#about"
+                  className="flex items-center justify-center gap-2.5 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-xs font-bold text-white backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white/20 sm:px-8 sm:py-4 sm:text-base"
+                >
+                  Learn More <ArrowRight size={15} />
+                </a>
+              </div>
+            </div>
           </div>
 
-          <h1 className="text-2xl xs:text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.07] mb-3 sm:mb-6 md:mb-8 tracking-tight">
-            RUDA GIS METAVERSE
-            <span className="block text-[#49B84A] mt-0.5 sm:mt-1 text-3xl xs:text-4xl sm:text-6xl md:text-7xl">
-              & Cadastral Portal
-            </span>
-          </h1>
+          <div className="mx-auto mt-7 grid w-full max-w-4xl grid-cols-2 gap-2.5 xl:hidden sm:grid-cols-3">
+            {DECISION_AREAS.map((area, index) => (
+              <DecisionSupportCard
+                key={area.key}
+                area={area}
+                compact
+                delay={index * 90}
+              />
+            ))}
+          </div>
 
-          <p className="max-w-2xl mx-auto text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl text-white/85 leading-relaxed mb-4 sm:mb-10 md:mb-12 px-2 sm:px-0">
-            A GIS-enabled cadastral platform for parcel mapping, land record
-            visualization, field survey integration and decision support across
-            the RUDA project area.
-          </p>
-
-          <div className="flex flex-col xs:flex-row flex-wrap gap-2 sm:gap-4 justify-center">
-            <button
-              onClick={() => {
-                document
-                  .querySelector("#apps")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="flex items-center justify-center gap-2 sm:gap-3 bg-[#0B7A3B] hover:bg-[#004225] text-white font-black text-xs sm:text-base px-5 sm:px-8 py-2.5 sm:py-4 rounded-full transition-all hover:shadow-2xl hover:-translate-y-1"
-            >
-              <Map size={16} /> Explore GIS Platforms
-            </button>
-
-            <a
-              href="#about"
-              className="flex items-center justify-center gap-2 sm:gap-3 bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold text-xs sm:text-base px-5 sm:px-8 py-2.5 sm:py-4 rounded-full transition-all backdrop-blur"
-            >
-              Learn More <ArrowRight size={14} />
-            </a>
+          <div className="mt-6 flex justify-center gap-2">
+            {HERO_SLIDES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setSlideIndex(i)}
+                aria-label={`Show hero slide ${i + 1}`}
+                className={`rounded-full transition-all duration-300 ${i === slideIndex
+                  ? "h-2 w-7 bg-[#49B84A]"
+                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                  }`}
+              />
+            ))}
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 bg-black/45 backdrop-blur-sm border-t border-white/10 z-20">
-          <div className="max-w-4xl mx-auto px-3 sm:px-5 py-2 sm:py-5 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-white text-center">
+        <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/82 backdrop-blur-xl">
+          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2 px-3 py-3 text-center text-white sm:grid-cols-4 sm:gap-4 sm:px-5 sm:py-5">
             {STATS.map(({ value, label }) => (
-              <div key={label}>
-                <div className="text-lg xs:text-xl sm:text-3xl font-black text-[#49B84A]">
+              <div key={label} className="relative py-1">
+                <div className="text-lg font-black text-[#49B84A] xs:text-xl sm:text-3xl">
                   {value}
                 </div>
-                <div className="text-[8px] xs:text-[9px] sm:text-xs font-semibold text-white/70 mt-0.5 sm:mt-1 uppercase tracking-wide">
+                <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
                   {label}
                 </div>
               </div>
@@ -709,7 +942,7 @@ export default function LandingPage() {
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <img
-                src="/Ruda_logo.jpg"
+                src={RudaLogo}
                 alt="RUDA"
                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain bg-white p-1"
               />
