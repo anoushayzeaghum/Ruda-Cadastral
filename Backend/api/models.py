@@ -1775,3 +1775,245 @@ class RtwPackage(models.Model):
         managed = False
         db_table = "rtwpackage"
 
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class AbdulHakeemMotorwayM3(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    layer = models.CharField(max_length=17, null=True, blank=True)
+    kml_style = models.CharField(max_length=15, null=True, blank=True)
+    tessellate = models.IntegerField(null=True, blank=True)
+    name_1 = models.CharField(max_length=254, null=True, blank=True)
+    name_2 = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or self.name_1 or self.name_2 or f"AbdulHakeemMotorwayM3 {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "abdulhakeemmotorwaym3"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class HardoSohalMuslimRoad(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.FloatField(null=True, blank=True)
+    row = models.FloatField(null=True, blank=True)
+    category = models.CharField(max_length=254, null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    length_km = models.CharField(max_length=254, null=True, blank=True)
+    remarks = models.CharField(max_length=254, null=True, blank=True)
+    kacha_pacc = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"HardoSohalMuslimRoad {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "hardosohalmuslimroad"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class JinnahAvenueRoad(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.FloatField(null=True, blank=True)
+    row = models.FloatField(null=True, blank=True)
+    category = models.CharField(max_length=254, null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    length_km = models.CharField(max_length=254, null=True, blank=True)
+    remarks = models.CharField(max_length=254, null=True, blank=True)
+    kacha_pacc = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"JinnahAvenueRoad {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "jinnahavenueroad"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class KalaKhataJiInterchange(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=12, null=True, blank=True)
+    layer = models.CharField(max_length=17, null=True, blank=True)
+    kml_style = models.CharField(max_length=15, null=True, blank=True)
+    tessellate = models.FloatField(null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"KalaKhataJiInterchange {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "kalakhatajiinterchange"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class KatarBundRoad(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    oid = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    folderpath = models.CharField(max_length=254, null=True, blank=True)
+    symbolid = models.FloatField(null=True, blank=True)
+    altmode = models.IntegerField(null=True, blank=True)
+    base = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    clamped = models.IntegerField(null=True, blank=True)
+    extruded = models.IntegerField(null=True, blank=True)
+    snippet = models.CharField(max_length=254, null=True, blank=True)
+    popupinfo = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    row = models.CharField(max_length=254, null=True, blank=True)
+    buffer = models.CharField(max_length=254, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"KatarBundRoad {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "katarbundroad"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class LahoreBypass(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    oid = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=254, null=True, blank=True)
+    folderpath = models.CharField(max_length=254, null=True, blank=True)
+    symbolid = models.FloatField(null=True, blank=True)
+    altmode = models.IntegerField(null=True, blank=True)
+    base = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    clamped = models.IntegerField(null=True, blank=True)
+    extruded = models.IntegerField(null=True, blank=True)
+    snippet = models.CharField(max_length=254, null=True, blank=True)
+    popupinfo = models.CharField(max_length=254, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    row = models.CharField(max_length=254, null=True, blank=True)
+    buffer = models.CharField(max_length=254, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"LahoreBypass {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "lahorebypass"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class SialkotMotorway(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.FloatField(null=True, blank=True)
+    objectid = models.FloatField(null=True, blank=True)
+    label = models.CharField(max_length=150, null=True, blank=True)
+    length_km = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.label or f"SialkotMotorway {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "sialkotmotorway"
+
+# =========================
+# AbdulHakeemMotorwayM3
+# DB table: abdulhakeemmotorwaym3
+# =========================
+
+class TransportationRoads(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.FloatField(null=True, blank=True)
+    objectid = models.FloatField(null=True, blank=True)
+    type = models.CharField(max_length=22, null=True, blank=True)
+    name = models.CharField(max_length=63, null=True, blank=True)
+    shape_leng = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+    shape_le_1 = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or self.type or f"TransportationRoads {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "transportationroads"
