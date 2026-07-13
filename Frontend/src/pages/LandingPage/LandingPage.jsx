@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import RudaLogo from "../../assets/RUDA L&M.png";
 import {
   Map,
   BarChart3,
@@ -27,18 +28,6 @@ import {
   Instagram,
   ExternalLink,
   UploadCloud,
-  Landmark,
-  Building2,
-  HardHat,
-  Cog,
-  TrendingUp,
-  Leaf,
-  Network,
-  RadioTower,
-  ChartNoAxesCombined,
-  MapPinned,
-  Factory,
-  Trees,
 } from "lucide-react";
 
 const HERO_SLIDES = [
@@ -73,93 +62,55 @@ const DECISION_AREAS = [
     number: "01",
     title: "Land & Estate Management",
     shortTitle: "Land & Estate",
-    icon: Landmark,
+    icon: MapPin,
     accent: "#8fd36f",
-    glow: "rgba(143, 211, 111, 0.22)",
-    bullets: [
-      "Parcel & Khasra intelligence",
-      "Ownership and compensation",
-      "Asset inventory management",
-    ],
+    bullets: ["Parcel & Khasra intelligence", "Ownership and compensation", "Asset inventory management"],
   },
   {
     key: "planning",
     number: "02",
     title: "Architecture & Urban Planning",
     shortTitle: "Urban Planning",
-    icon: Building2,
+    icon: Layers,
     accent: "#54c7ec",
-    glow: "rgba(84, 199, 236, 0.22)",
-    bullets: [
-      "Master planning and zoning",
-      "3D city visualization",
-      "Scenario-based planning",
-    ],
+    bullets: ["Master planning and zoning", "3D city visualization", "Scenario-based planning"],
   },
   {
     key: "development",
     number: "03",
     title: "Development & Building Control",
     shortTitle: "Development Control",
-    icon: HardHat,
+    icon: Box,
     accent: "#c084fc",
-    glow: "rgba(192, 132, 252, 0.22)",
-    bullets: [
-      "Building approvals",
-      "Progress monitoring",
-      "Digital records and compliance",
-    ],
+    bullets: ["Building approvals", "Progress monitoring", "Digital records and compliance"],
   },
   {
     key: "engineering",
     number: "04",
     title: "Engineering & Infrastructure",
     shortTitle: "Engineering",
-    icon: Cog,
+    icon: Database,
     accent: "#f5b942",
-    glow: "rgba(245, 185, 66, 0.22)",
-    bullets: [
-      "Roads, bridges and utilities",
-      "Drainage and water networks",
-      "Asset maintenance planning",
-    ],
+    bullets: ["Roads, bridges and utilities", "Drainage and water networks", "Asset maintenance planning"],
   },
   {
     key: "commercial",
     number: "05",
     title: "Commercial & Business Strategy",
     shortTitle: "Commercial Strategy",
-    icon: TrendingUp,
+    icon: BarChart3,
     accent: "#38d4d4",
-    glow: "rgba(56, 212, 212, 0.22)",
-    bullets: [
-      "Investment opportunity mapping",
-      "Land-value intelligence",
-      "Feasibility and market analysis",
-    ],
+    bullets: ["Investment opportunity mapping", "Land-value intelligence", "Feasibility and market analysis"],
   },
   {
     key: "sustainability",
     number: "06",
     title: "Sustainability & Social Impact",
     shortTitle: "Sustainability",
-    icon: Leaf,
+    icon: Shield,
     accent: "#a3e635",
-    glow: "rgba(163, 230, 53, 0.22)",
-    bullets: [
-      "Environmental monitoring",
-      "Green infrastructure",
-      "Community and social impact",
-    ],
+    bullets: ["Environmental monitoring", "Green infrastructure", "Community and social impact"],
   },
-];
-
-const PLATFORM_CAPABILITIES = [
-  { label: "GIS", icon: MapPinned },
-  { label: "BIM", icon: Box },
-  { label: "3D Twin", icon: RadioTower },
-  { label: "Analytics", icon: ChartNoAxesCombined },
-  { label: "Decision Support", icon: Network },
 ];
 
 const GIS_APPS = [
@@ -376,73 +327,47 @@ function DecisionSupportCard({
 
   return (
     <div
-      className={`group relative overflow-hidden border text-white backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 ${compact ? "rounded-xl px-3 py-2.5" : "rounded-2xl px-4 py-3.5"
+      className={`group relative overflow-hidden border border-white/20 bg-[#031a14]/72 text-white shadow-[0_18px_55px_-22px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:border-white/35 hover:bg-[#06291f]/88 ${compact ? "rounded-xl p-3" : "rounded-2xl p-4"
         }`}
       style={{
-        borderColor: `${area.accent}66`,
-        background:
-          "linear-gradient(135deg, rgba(3,26,20,.88), rgba(6,41,31,.72))",
-        boxShadow: `0 16px 46px -24px ${area.glow}, inset 0 1px 0 rgba(255,255,255,.08)`,
-        animation: `decisionCardIn 700ms ease-out ${delay}ms both, decisionFloat 6s ease-in-out ${delay + 900
-          }ms infinite`,
+        animation: `decisionCardIn 700ms ease-out ${delay}ms both, decisionFloat 6s ease-in-out ${delay + 900}ms infinite`,
       }}
     >
       {!compact && (
-        <>
-          <span
-            className={`absolute top-1/2 hidden h-px w-11 -translate-y-1/2 xl:block ${side === "left" ? "-right-11" : "-left-11"
-              }`}
-            style={{
-              background: `linear-gradient(${side === "left" ? "to right" : "to left"
-                }, ${area.accent}, transparent)`,
-            }}
-          />
-          <span
-            className={`absolute top-1/2 hidden h-2 w-2 -translate-y-1/2 rounded-full xl:block ${side === "left" ? "-right-[47px]" : "-left-[47px]"
-              }`}
-            style={{
-              backgroundColor: area.accent,
-              boxShadow: `0 0 14px ${area.accent}`,
-            }}
-          />
-        </>
+        <span
+          className={`absolute top-1/2 hidden h-px w-10 -translate-y-1/2 lg:block ${side === "left" ? "-right-10" : "-left-10"
+            }`}
+          style={{
+            background: `linear-gradient(${side === "left" ? "to right" : "to left"}, ${area.accent}, transparent)`,
+          }}
+        />
       )}
 
       <div
         className="absolute inset-y-0 left-0 w-[3px]"
-        style={{
-          background: `linear-gradient(to bottom, transparent, ${area.accent}, transparent)`,
-        }}
+        style={{ backgroundColor: area.accent }}
       />
 
       <div className="flex items-start gap-3">
-        <div className="relative shrink-0">
-          <div
-            className={`${compact ? "h-10 w-10" : "h-12 w-12"
-              } flex items-center justify-center rounded-full border bg-[#031a14]/85`}
-            style={{
-              borderColor: area.accent,
-              color: area.accent,
-              boxShadow: `0 0 0 4px ${area.glow}, 0 0 20px ${area.glow}`,
-            }}
-          >
-            <Icon size={compact ? 19 : 23} strokeWidth={1.9} />
-          </div>
-
-          <span
-            className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full border border-[#031a14] px-1 text-[8px] font-black text-[#031a14]"
-            style={{ backgroundColor: area.accent }}
-          >
-            {area.number}
-          </span>
+        <div
+          className={`${compact ? "h-9 w-9" : "h-11 w-11"} flex shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10`}
+          style={{ color: area.accent }}
+        >
+          <Icon size={compact ? 18 : 21} strokeWidth={2.1} />
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3
-            className={`${compact ? "text-[10px]" : "text-[12px]"
-              } font-black uppercase leading-tight tracking-[0.045em]`}
-            style={{ color: area.accent }}
-          >
+          <div className="flex items-center gap-2">
+            <span
+              className="text-[10px] font-black tracking-[0.18em]"
+              style={{ color: area.accent }}
+            >
+              {area.number}
+            </span>
+            <span className="h-px flex-1 bg-white/15" />
+          </div>
+
+          <h3 className={`${compact ? "mt-1 text-[11px]" : "mt-1.5 text-sm"} font-black uppercase leading-tight tracking-wide`}>
             {compact ? area.shortTitle : area.title}
           </h3>
 
@@ -451,14 +376,11 @@ function DecisionSupportCard({
               {area.bullets.map((bullet) => (
                 <li
                   key={bullet}
-                  className="flex items-start gap-1.5 text-[9.5px] leading-snug text-white/68"
+                  className="flex items-start gap-1.5 text-[10px] leading-snug text-white/67"
                 >
                   <span
                     className="mt-[5px] h-1 w-1 shrink-0 rounded-full"
-                    style={{
-                      backgroundColor: area.accent,
-                      boxShadow: `0 0 6px ${area.accent}`,
-                    }}
+                    style={{ backgroundColor: area.accent }}
                   />
                   {bullet}
                 </li>
@@ -467,11 +389,6 @@ function DecisionSupportCard({
           )}
         </div>
       </div>
-
-      <div
-        className="pointer-events-none absolute -bottom-12 -right-12 h-24 w-24 rounded-full opacity-30 blur-2xl transition-opacity duration-500 group-hover:opacity-50"
-        style={{ backgroundColor: area.accent }}
-      />
     </div>
   );
 }
@@ -550,9 +467,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-14 sm:h-16 md:h-20">
           <a href="#home" className="flex items-center gap-2 sm:gap-3 shrink-0">
             <img
-              src="/Ruda_logo.jpg"
+              src={RudaLogo}
               alt="RUDA"
-              className="h-8 sm:h-10 md:h-12 w-auto rounded object-contain"
+              className="h-10 sm:h-12 md:h-16 w-auto object-contain"
             />
           </a>
 
@@ -614,446 +531,195 @@ export default function LandingPage() {
 
       <section
         id="home"
-        className="relative min-h-screen overflow-hidden bg-[#010a07]"
+        className="relative min-h-[760px] overflow-hidden bg-[#03130f] sm:min-h-[860px] lg:min-h-[920px]"
       >
-        {/* ── Background Slides with Cinematic Ken Burns ── */}
         {HERO_SLIDES.map((src, i) => (
           <div
             key={src}
-            className="absolute inset-[-12%] will-change-transform"
+            className="absolute inset-0 transition-opacity duration-[1500ms] ease-in-out will-change-transform"
             style={{
               opacity: i === slideIndex ? 1 : 0,
               backgroundImage: `url('${src}')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-              filter: i === slideIndex ? "saturate(1.1) brightness(0.6)" : "blur(6px) brightness(0.3)",
-              transition: "opacity 2.5s cubic-bezier(0.4,0,0.2,1), filter 2.5s ease",
               animation:
                 i === slideIndex
-                  ? `cinemaKenBurns${i % 3} 14s cubic-bezier(0.25,0.1,0.25,1) forwards`
+                  ? `${i % 2 === 0 ? "heroPanLeft" : "heroPanRight"} 9s ease-in-out forwards`
                   : "none",
             }}
           />
         ))}
 
-        {/* ── All Keyframes ── */}
         <style>{`
-          @keyframes cinemaKenBurns0 {
-            0%   { transform: scale(1.12) translate3d(0, 0, 0); }
-            100% { transform: scale(1.20) translate3d(-2%, -1%, 0); }
-          }
-          @keyframes cinemaKenBurns1 {
-            0%   { transform: scale(1.18) translate3d(-3%, 0, 0); }
-            100% { transform: scale(1.10) translate3d(1%, -1.5%, 0); }
-          }
-          @keyframes cinemaKenBurns2 {
-            0%   { transform: scale(1.10) translate3d(1%, 1%, 0); }
-            100% { transform: scale(1.18) translate3d(-1%, -0.5%, 0); }
+          @keyframes heroPanLeft {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-2.5%, 0, 0); }
           }
 
-          @keyframes heroFadeUp {
-            from { opacity: 0; transform: translateY(50px); filter: blur(10px); }
-            to   { opacity: 1; transform: translateY(0); filter: blur(0px); }
-          }
-          @keyframes heroFadeRight {
-            from { opacity: 0; transform: translateX(-40px); }
-            to   { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes heroScaleIn {
-            from { opacity: 0; transform: scale(0.85); }
-            to   { opacity: 1; transform: scale(1); }
-          }
-          @keyframes heroLineExpand {
-            from { width: 0; }
-            to   { width: 80px; }
-          }
-          @keyframes orbFloat1 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33%      { transform: translate(30px, -40px) scale(1.1); }
-            66%      { transform: translate(-20px, 20px) scale(0.95); }
-          }
-          @keyframes orbFloat2 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33%      { transform: translate(-40px, 30px) scale(0.9); }
-            66%      { transform: translate(25px, -25px) scale(1.05); }
-          }
-          @keyframes orbFloat3 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50%      { transform: translate(20px, -30px) scale(1.15); }
-          }
-          @keyframes pulseGlow {
-            0%, 100% { opacity: 0.4; }
-            50%      { opacity: 0.8; }
-          }
-          @keyframes slideProgress {
-            from { transform: scaleX(0); }
-            to   { transform: scaleX(1); }
-          }
-          @keyframes scanlineMove {
-            0%   { transform: translateY(-100%); }
-            100% { transform: translateY(100vh); }
-          }
-          @keyframes cardSlideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes statReveal {
-            from { opacity: 0; transform: translateY(20px) scale(0.9); }
-            to   { opacity: 1; transform: translateY(0) scale(1); }
-          }
-          @keyframes borderGlow {
-            0%, 100% { opacity: 0.3; }
-            50%      { opacity: 0.7; }
+          @keyframes heroPanRight {
+            0% { transform: translate3d(-2.5%, 0, 0); }
+            100% { transform: translate3d(0, 0, 0); }
           }
 
           @keyframes decisionCardIn {
-            from { opacity: 0; transform: translateY(18px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from {
+              opacity: 0;
+              transform: translateY(18px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
+
           @keyframes decisionFloat {
             0%, 100% { transform: translateY(0); }
-            50%      { transform: translateY(-5px); }
+            50% { transform: translateY(-5px); }
           }
+
           @keyframes platformPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(73, 184, 74, 0.05); }
-            50%      { box-shadow: 0 0 38px 2px rgba(73, 184, 74, 0.2); }
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(73, 184, 74, 0.05);
+            }
+            50% {
+              box-shadow: 0 0 38px 2px rgba(73, 184, 74, 0.2);
+            }
           }
 
           @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after {
-              animation-duration: 0.01ms !important;
-              animation-iteration-count: 1 !important;
-              transition-duration: 0.01ms !important;
+            .hero-motion-safe {
+              animation: none !important;
+              transition-duration: 0ms !important;
             }
           }
         `}</style>
 
-        {/* ── Cinematic Overlay Stack ── */}
-        {/* Heavy bottom-weighted gradient for depth */}
-        <div className="absolute inset-0 z-[11]" style={{
-          background: `
-            linear-gradient(135deg, rgba(0,10,5,0.92) 0%, rgba(0,15,8,0.65) 40%, rgba(0,10,5,0.45) 60%, rgba(0,10,5,0.85) 100%),
-            radial-gradient(ellipse 80% 50% at 30% 50%, rgba(11,122,59,0.08) 0%, transparent 70%)
-          `
-        }} />
+        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(11,122,59,0.12),transparent_40%),linear-gradient(to_bottom,rgba(1,12,9,0.68),rgba(2,20,14,0.66)_45%,rgba(2,12,9,0.94))]" />
+        <div className="absolute inset-0 z-10 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:46px_46px]" />
 
-        {/* Bottom fade to black */}
-        <div className="absolute bottom-0 left-0 right-0 z-[12] h-[35%]" style={{
-          background: "linear-gradient(to top, rgba(1,10,7,1) 0%, rgba(1,10,7,0.8) 40%, transparent 100%)"
-        }} />
+        <div className="relative z-20 mx-auto flex min-h-[760px] max-w-[1500px] flex-col px-4 pb-28 pt-10 sm:min-h-[860px] sm:px-6 sm:pb-32 sm:pt-14 lg:min-h-[920px] lg:px-8 lg:pb-36">
+          <div className="relative flex flex-1 items-center justify-center">
+            <div className="pointer-events-none absolute inset-y-12 left-0 hidden w-[280px] flex-col justify-center gap-5 xl:flex 2xl:w-[310px]">
+              {DECISION_AREAS.slice(0, 3).map((area, index) => (
+                <DecisionSupportCard
+                  key={area.key}
+                  area={area}
+                  side="left"
+                  delay={index * 140}
+                />
+              ))}
+            </div>
 
-        {/* Diagonal accent line */}
-        <div className="absolute inset-0 z-[12] pointer-events-none overflow-hidden">
-          <div className="absolute top-0 right-[30%] w-px h-full opacity-[0.07]"
-            style={{ background: "linear-gradient(to bottom, transparent, #49B84A 30%, #49B84A 70%, transparent)" }}
-          />
-          <div className="absolute top-0 right-[31%] w-px h-full opacity-[0.04]"
-            style={{ background: "linear-gradient(to bottom, transparent, #8fd36f 40%, #8fd36f 60%, transparent)" }}
-          />
-        </div>
+            <div className="pointer-events-none absolute inset-y-12 right-0 hidden w-[280px] flex-col justify-center gap-5 xl:flex 2xl:w-[310px]">
+              {DECISION_AREAS.slice(3).map((area, index) => (
+                <DecisionSupportCard
+                  key={area.key}
+                  area={area}
+                  side="right"
+                  delay={(index + 3) * 140}
+                />
+              ))}
+            </div>
 
-        {/* Scanline effect */}
-        <div className="absolute inset-0 z-[12] pointer-events-none overflow-hidden opacity-[0.015]">
-          <div className="absolute left-0 right-0 h-[200px]"
-            style={{
-              background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(73,184,74,0.4) 2px, rgba(73,184,74,0.4) 4px)",
-              animation: "scanlineMove 8s linear infinite",
-            }}
-          />
-        </div>
-
-        {/* Floating gradient orbs */}
-        <div className="absolute top-[15%] left-[8%] z-[12] h-[300px] w-[300px] rounded-full pointer-events-none opacity-30"
-          style={{
-            background: "radial-gradient(circle, rgba(73,184,74,0.15) 0%, transparent 70%)",
-            animation: "orbFloat1 20s ease-in-out infinite",
-          }}
-        />
-        <div className="absolute top-[55%] right-[5%] z-[12] h-[400px] w-[400px] rounded-full pointer-events-none opacity-20"
-          style={{
-            background: "radial-gradient(circle, rgba(11,122,59,0.12) 0%, transparent 70%)",
-            animation: "orbFloat2 25s ease-in-out infinite",
-          }}
-        />
-        <div className="absolute top-[30%] right-[25%] z-[12] h-[200px] w-[200px] rounded-full pointer-events-none opacity-25"
-          style={{
-            background: "radial-gradient(circle, rgba(143,211,111,0.1) 0%, transparent 70%)",
-            animation: "orbFloat3 15s ease-in-out infinite",
-          }}
-        />
-
-        {/* ── Main Hero Content ── */}
-        <div className="relative z-20 mx-auto flex min-h-screen max-w-[1440px] flex-col justify-between px-5 sm:px-8 lg:px-12">
-
-          {/* ── Upper Hero: Split Layout ── */}
-          <div className="flex flex-1 flex-col lg:flex-row items-center lg:items-center gap-8 lg:gap-0 pt-8 sm:pt-12 lg:pt-16">
-
-            {/* ── LEFT: Hero Text ── */}
-            <div className="w-full lg:w-[55%] xl:w-[50%] text-center lg:text-left">
-
-              {/* Platform badge */}
-              <div
-                className="inline-flex items-center gap-2 rounded-full border border-[#49B84A]/25 bg-[#0B7A3B]/10 px-4 py-2 text-[9px] font-bold uppercase tracking-[0.22em] text-[#8fd36f] backdrop-blur-xl sm:px-5 sm:py-2.5 sm:text-[11px]"
-                style={{ animation: "heroFadeUp 0.8s ease-out 0.2s both" }}
-              >
-                <Star size={12} fill="currentColor" className="drop-shadow-[0_0_8px_rgba(143,211,111,0.7)]" />
-                Integrated GIS • BIM • Digital Twin
+            <div
+              className="relative mx-auto w-full max-w-4xl text-center text-white xl:max-w-[760px]"
+              style={{ animation: "platformPulse 6s ease-in-out infinite" }}
+            >
+              <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.17em] text-white/90 backdrop-blur-xl sm:mb-6 sm:px-4 sm:py-2 sm:text-[11px]">
+                <Star size={11} fill="currentColor" className="text-[#8fd36f]" />
+                Integrated GIS • BIM • Digital Twin Platform
               </div>
 
-              {/* Main Title */}
-              <h1 className="mt-6 sm:mt-8 lg:mt-10">
-                <span
-                  className="block text-4xl font-black leading-[0.95] tracking-[-0.04em] text-white xs:text-5xl sm:text-6xl md:text-7xl lg:text-[76px] xl:text-[86px]"
-                  style={{ animation: "heroFadeUp 1s cubic-bezier(0.22,1,0.36,1) 0.4s both" }}
-                >
-                  RUDA GIS
-                </span>
-                <span
-                  className="mt-1 block text-4xl font-black leading-[0.95] tracking-[-0.04em] xs:text-5xl sm:text-6xl md:text-7xl lg:text-[76px] xl:text-[86px]"
-                  style={{ animation: "heroFadeUp 1s cubic-bezier(0.22,1,0.36,1) 0.55s both" }}
-                >
-                  <span className="bg-gradient-to-r from-[#8fd36f] via-[#49B84A] to-[#2d9d3e] bg-clip-text text-transparent">
-                    METAVERSE
-                  </span>
-                </span>
-                <span
-                  className="mt-2 block text-xl font-bold tracking-[0.12em] uppercase text-white/40 xs:text-2xl sm:text-3xl md:text-4xl"
-                  style={{ animation: "heroFadeUp 1s cubic-bezier(0.22,1,0.36,1) 0.7s both" }}
-                >
-                  & Cadastral Portal
+              <div className="mb-4 flex flex-wrap items-center justify-center gap-2 sm:mb-6">
+                {["GIS", "BIM", "3D Twin", "Analytics", "Decision Support"].map(
+                  (item, index) => (
+                    <div
+                      key={item}
+                      className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/72 backdrop-blur"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#49B84A]" />
+                      {item}
+                      {index < 4 && (
+                        <ArrowRight size={9} className="hidden text-white/35 sm:block" />
+                      )}
+                    </div>
+                  ),
+                )}
+              </div>
+
+              <h1 className="text-3xl font-black leading-[1.02] tracking-[-0.035em] drop-shadow-[0_6px_28px_rgba(0,0,0,0.72)] xs:text-4xl sm:text-6xl md:text-7xl lg:text-[78px]">
+                RUDA GIS METAVERSE
+                <span className="mt-1 block text-[#49B84A] sm:mt-2">
+                  &amp; Cadastral Portal
                 </span>
               </h1>
 
-              {/* Animated accent line */}
-              <div
-                className="mt-5 sm:mt-7 h-[2px] rounded-full mx-auto lg:mx-0 overflow-hidden"
-                style={{
-                  width: "80px",
-                  background: "linear-gradient(90deg, #8fd36f, #49B84A, #0B7A3B)",
-                  animation: "heroLineExpand 1s ease-out 0.9s both",
-                }}
-              />
-
-              {/* Subtitle */}
-              <p
-                className="mt-5 sm:mt-7 max-w-lg mx-auto lg:mx-0 text-sm leading-[1.7] text-white/55 sm:text-base md:text-lg"
-                style={{ animation: "heroFadeUp 0.9s ease-out 1s both" }}
-              >
+              <p className="mx-auto mt-5 max-w-2xl px-2 text-xs leading-relaxed text-white/80 xs:text-sm sm:mt-7 sm:text-base md:text-lg">
                 A unified geospatial decision-support environment connecting
                 land records, planning, BIM, engineering, investment,
                 infrastructure and sustainability across the RUDA project area.
               </p>
 
-              {/* CTA Buttons */}
-              <div
-                className="mt-7 sm:mt-9 flex flex-col sm:flex-row items-center lg:items-start gap-3 sm:gap-4"
-                style={{ animation: "heroFadeUp 0.9s ease-out 1.2s both" }}
-              >
+              <div className="mt-6 flex flex-col justify-center gap-2.5 xs:flex-row sm:mt-9 sm:gap-4">
                 <button
                   onClick={() => {
-                    document.querySelector("#apps")?.scrollIntoView({ behavior: "smooth" });
+                    document
+                      .querySelector("#apps")
+                      ?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="group relative flex items-center gap-3 overflow-hidden rounded-full px-8 py-4 text-sm font-black text-white transition-all duration-300 hover:-translate-y-1 sm:text-base"
-                  style={{
-                    background: "linear-gradient(135deg, #0B7A3B 0%, #004225 100%)",
-                    boxShadow: "0 0 30px rgba(73,184,74,0.25), 0 8px 32px -8px rgba(0,0,0,0.5)",
-                  }}
+                  className="flex items-center justify-center gap-2.5 rounded-full bg-[#0B7A3B] px-6 py-3 text-xs font-black text-white shadow-[0_16px_34px_-15px_rgba(73,184,74,.9)] transition-all hover:-translate-y-1 hover:bg-[#004225] hover:shadow-2xl sm:px-8 sm:py-4 sm:text-base"
                 >
-                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                  <Map size={18} className="relative z-10" />
-                  <span className="relative z-10">Explore GIS Platforms</span>
-                  <ArrowRight size={14} className="relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
+                  <Map size={17} /> Explore GIS Platforms
                 </button>
 
                 <a
                   href="#about"
-                  className="group flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white/80 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-white/30 hover:bg-white/[0.08] hover:text-white sm:text-base"
+                  className="flex items-center justify-center gap-2.5 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-xs font-bold text-white backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white/20 sm:px-8 sm:py-4 sm:text-base"
                 >
-                  Learn More
-                  <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
+                  Learn More <ArrowRight size={15} />
                 </a>
-              </div>
-
-              {/* Platform Capabilities — inline pills */}
-              <div
-                className="mt-8 sm:mt-10 flex flex-wrap items-center justify-center lg:justify-start gap-2"
-                style={{ animation: "heroFadeUp 0.8s ease-out 1.4s both" }}
-              >
-                {PLATFORM_CAPABILITIES.map((item, index) => {
-                  const CapIcon = item.icon;
-                  return (
-                    <div
-                      key={item.label}
-                      className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.1em] text-white/45 transition-all duration-300 hover:border-[#49B84A]/30 hover:text-white/70"
-                    >
-                      <CapIcon size={11} className="text-[#49B84A]/60" />
-                      {item.label}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ── RIGHT: Stats + Visual Panel ── */}
-            <div
-              className="w-full lg:w-[45%] xl:w-[50%] flex items-center justify-center lg:justify-end"
-              style={{ animation: "heroScaleIn 1.2s ease-out 0.6s both" }}
-            >
-              <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl">
-                {/* Glowing border frame */}
-                <div className="absolute -inset-px rounded-2xl sm:rounded-3xl opacity-30"
-                  style={{
-                    background: "linear-gradient(135deg, #49B84A, transparent 40%, transparent 60%, #0B7A3B)",
-                    animation: "borderGlow 4s ease-in-out infinite",
-                  }}
-                />
-
-                {/* Stats panel */}
-                <div className="relative rounded-2xl sm:rounded-3xl border border-white/[0.06] bg-[#010a07]/60 backdrop-blur-2xl p-5 sm:p-7 lg:p-8">
-                  {/* Panel header */}
-                  <div className="flex items-center justify-between mb-5 sm:mb-7">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-[#49B84A] shadow-[0_0_8px_rgba(73,184,74,0.6)]"
-                        style={{ animation: "pulseGlow 2s ease-in-out infinite" }}
-                      />
-                      <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">Project Overview</span>
-                    </div>
-                    <span className="text-[9px] font-mono text-white/20">RUDA.v2.0</span>
-                  </div>
-
-                  {/* Stats grid */}
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                    {STATS.map(({ value, label }, i) => (
-                      <div
-                        key={label}
-                        className="group relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5 sm:p-4 transition-all duration-300 hover:border-[#49B84A]/20 hover:bg-white/[0.04]"
-                        style={{ animation: `statReveal 0.7s ease-out ${1.2 + i * 0.15}s both` }}
-                      >
-                        <div className="text-2xl sm:text-3xl font-black tracking-tight">
-                          <span className="bg-gradient-to-br from-[#8fd36f] to-[#49B84A] bg-clip-text text-transparent">
-                            {value}
-                          </span>
-                        </div>
-                        <div className="mt-1.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.15em] text-white/35">
-                          {label}
-                        </div>
-                        {/* Corner accent */}
-                        <div className="absolute top-0 right-0 h-4 w-4 rounded-tr-xl rounded-bl-xl bg-gradient-to-bl from-[#49B84A]/10 to-transparent" />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Mini slide preview */}
-                  <div className="mt-5 sm:mt-6 flex items-center gap-3">
-                    <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${((slideIndex + 1) / HERO_SLIDES.length) * 100}%`,
-                          background: "linear-gradient(90deg, #8fd36f, #49B84A)",
-                          transition: "width 0.5s ease",
-                        }}
-                      />
-                    </div>
-                    <span className="text-[9px] font-mono text-white/25">
-                      {String(slideIndex + 1).padStart(2, "0")}/{String(HERO_SLIDES.length).padStart(2, "0")}
-                    </span>
-                  </div>
-
-                  {/* Slide dots */}
-                  <div className="mt-3 flex items-center gap-1.5">
-                    {HERO_SLIDES.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setSlideIndex(i)}
-                        aria-label={`Show hero slide ${i + 1}`}
-                        className="rounded-full transition-all duration-500"
-                        style={{
-                          height: "4px",
-                          width: i === slideIndex ? "20px" : "4px",
-                          background: i === slideIndex
-                            ? "linear-gradient(90deg, #8fd36f, #49B84A)"
-                            : "rgba(255,255,255,0.12)",
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           </div>
 
-          {/* ── Bottom: Decision Support Cards — Horizontal Scroll ── */}
-          <div className="pb-6 sm:pb-8 lg:pb-10">
-            {/* Section label */}
-            <div
-              className="mb-4 sm:mb-5 flex items-center gap-3"
-              style={{ animation: "heroFadeRight 0.8s ease-out 1.6s both" }}
-            >
-              <span className="h-px w-8 bg-gradient-to-r from-[#49B84A]/50 to-transparent sm:w-12" />
-              <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/30 sm:text-[10px]">
-                Decision Support Areas
-              </span>
-            </div>
+          <div className="mx-auto mt-7 grid w-full max-w-4xl grid-cols-2 gap-2.5 xl:hidden sm:grid-cols-3">
+            {DECISION_AREAS.map((area, index) => (
+              <DecisionSupportCard
+                key={area.key}
+                area={area}
+                compact
+                delay={index * 90}
+              />
+            ))}
+          </div>
 
-            {/* Cards — horizontal scroll on mobile, grid on desktop */}
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory lg:grid lg:grid-cols-6 lg:overflow-visible lg:pb-0">
-              {DECISION_AREAS.map((area, index) => {
-                const Icon = area.icon;
-                return (
-                  <div
-                    key={area.key}
-                    className="group relative min-w-[200px] flex-shrink-0 snap-start rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-sm p-3.5 transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.04] lg:min-w-0"
-                    style={{
-                      animation: `cardSlideUp 0.6s ease-out ${1.7 + index * 0.1}s both`,
-                    }}
-                  >
-                    {/* Top accent line */}
-                    <div
-                      className="absolute top-0 left-3 right-3 h-[1px] rounded-full"
-                      style={{
-                        background: `linear-gradient(90deg, transparent, ${area.accent}40, transparent)`,
-                      }}
-                    />
+          <div className="mt-6 flex justify-center gap-2">
+            {HERO_SLIDES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setSlideIndex(i)}
+                aria-label={`Show hero slide ${i + 1}`}
+                className={`rounded-full transition-all duration-300 ${i === slideIndex
+                  ? "h-2 w-7 bg-[#49B84A]"
+                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                  }`}
+              />
+            ))}
+          </div>
+        </div>
 
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="flex h-8 w-8 items-center justify-center rounded-lg"
-                        style={{
-                          background: `${area.accent}12`,
-                          border: `1px solid ${area.accent}25`,
-                          color: area.accent,
-                        }}
-                      >
-                        <Icon size={15} strokeWidth={1.8} />
-                      </div>
-                      <div>
-                        <span className="text-[7px] font-black tracking-[0.1em] text-white/20">{area.number}</span>
-                        <h3
-                          className="text-[10px] font-bold leading-tight tracking-wide"
-                          style={{ color: area.accent }}
-                        >
-                          {area.shortTitle}
-                        </h3>
-                      </div>
-                    </div>
-
-                    {/* Bullets — hidden on small, visible on lg */}
-                    <ul className="mt-2.5 hidden space-y-1 lg:block">
-                      {area.bullets.map((b) => (
-                        <li key={b} className="flex items-start gap-1.5 text-[8px] leading-snug text-white/35">
-                          <span
-                            className="mt-[4px] h-1 w-1 shrink-0 rounded-full"
-                            style={{ backgroundColor: area.accent, opacity: 0.5 }}
-                          />
-                          {b}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
+        <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/82 backdrop-blur-xl">
+          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2 px-3 py-3 text-center text-white sm:grid-cols-4 sm:gap-4 sm:px-5 sm:py-5">
+            {STATS.map(({ value, label }) => (
+              <div key={label} className="relative py-1">
+                <div className="text-lg font-black text-[#49B84A] xs:text-xl sm:text-3xl">
+                  {value}
+                </div>
+                <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
+                  {label}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -1061,7 +727,7 @@ export default function LandingPage() {
       <section id="about" className="py-10 sm:py-14 md:py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-5 grid lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-4">
+            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
               About the Platform
             </div>
 
@@ -1144,7 +810,7 @@ export default function LandingPage() {
               Explore RUDA GIS Apps
             </h2>
 
-            <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-4 sm:mb-4" />
+            <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-4 sm:mb-6" />
 
             <p className="max-w-xl mx-auto text-slate-500 text-sm sm:text-base leading-relaxed px-2 sm:px-0">
               Interactive applications for cadastral mapping, land record
@@ -1181,11 +847,11 @@ export default function LandingPage() {
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-5 flex flex-col lg:flex-row items-center gap-8 sm:gap-12">
           <div className="text-white lg:w-1/2 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-4">
+            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
               Live Platform
             </div>
 
-            <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black leading-tight mb-4 sm:mb-4">
+            <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black leading-tight mb-4 sm:mb-6">
               Start Exploring the
               <span className="block text-[#49B84A]">Cadastral Map</span>
             </h2>
@@ -1238,7 +904,7 @@ export default function LandingPage() {
               Platform Features
             </h2>
 
-            <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-4 sm:mb-4" />
+            <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-4 sm:mb-6" />
 
             <p className="max-w-xl mx-auto text-slate-500 text-sm sm:text-base leading-relaxed px-2 sm:px-0">
               Purpose-built GIS capabilities for cadastral operations, field
@@ -1274,9 +940,9 @@ export default function LandingPage() {
       <footer id="contact" className="bg-[#00351f] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-5 pt-10 sm:pt-14 md:pt-16 pb-8 sm:pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-3 mb-4 sm:mb-4">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <img
-                src="/Ruda_logo.jpg"
+                src={RudaLogo}
                 alt="RUDA"
                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain bg-white p-1"
               />
@@ -1287,7 +953,7 @@ export default function LandingPage() {
               />
             </div>
 
-            <p className="text-white/70 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-4">
+            <p className="text-white/70 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6">
               RUDA Cadastral Project is a GIS-enabled initiative for digital
               cadastral mapping, parcel intelligence and spatial decision
               support for the Ravi Urban Development Authority project area.
