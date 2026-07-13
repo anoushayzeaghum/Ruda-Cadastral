@@ -55,3 +55,12 @@ from .RudaMasterPlan.LinkCanalView import *
 from .RudaMasterPlan.ProposedWWTPView import *
 from .RudaMasterPlan.SWTPSiteView import *
 from .RudaMasterPlan.WWTPSitesView import *
+
+from .RudaMasterPlan.AbdulHakeemMotorwayM3 import *
+from .RudaMasterPlan.HardoSohalMuslimRoad import *
+from .RudaMasterPlan.JinnahAvenueRoad import *
+from .RudaMasterPlan.KalaKhataJiInterchange import *
+from .RudaMasterPlan.KatarBundRoad import *
+from .RudaMasterPlan.LahoreBypass import *
+from .RudaMasterPlan.SialkotMotorway import *
+from .RudaMasterPlan.TransportationRoads import *

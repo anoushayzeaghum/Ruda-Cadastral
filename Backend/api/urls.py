@@ -238,7 +238,6 @@ router.register(r"awardedland/create", CreateAwardedLandView, basename="create-a
 router.register(r"awardedland/update", UpdateAwardedLandView, basename="update-awardedland")
 router.register(r"awardedland/delete", DeleteAwardedLandView, basename="delete-awardedland")
 
-
 router.register(r"rtwpackage", ListRtwPackageView, basename="rtwpackage")
 router.register(r"rtwpackage/create", CreateRtwPackageView, basename="create-rtwpackage")
 router.register(r"rtwpackage/update", UpdateRtwPackageView, basename="update-rtwpackage")
@@ -288,6 +287,47 @@ router.register(r"wwtp-sites", ListWWTPSitesView, basename="wwtp-sites",)
 router.register(r"wwtp-sites/create", CreateWWTPSitesView, basename="create-wwtp-sites",)
 router.register(r"wwtp-sites/update", UpdateWWTPSitesView, basename="update-wwtp-sites",)
 router.register(r"wwtp-sites/delete", DeleteWWTPSitesView, basename="delete-wwtp-sites",)
+
+
+router.register(r"abdul-hakeem-motorway-m3", ListAbdulHakeemMotorwayM3View, basename="abdul-hakeem-motorway-m3")
+router.register(r"abdul-hakeem-motorway-m3/create", CreateAbdulHakeemMotorwayM3View, basename="create-abdul-hakeem-motorway-m3")
+router.register(r"abdul-hakeem-motorway-m3/update", UpdateAbdulHakeemMotorwayM3View, basename="update-abdul-hakeem-motorway-m3")
+router.register(r"abdul-hakeem-motorway-m3/delete", DeleteAbdulHakeemMotorwayM3View, basename="delete-abdul-hakeem-motorway-m3")
+
+router.register(r"hardo-sohal-muslim-road", ListHardoSohalMuslimRoadView, basename="hardo-sohal-muslim-road")
+router.register(r"hardo-sohal-muslim-road/create", CreateHardoSohalMuslimRoadView, basename="create-hardo-sohal-muslim-road")
+router.register(r"hardo-sohal-muslim-road/update", UpdateHardoSohalMuslimRoadView, basename="update-hardo-sohal-muslim-road")
+router.register(r"hardo-sohal-muslim-road/delete", DeleteHardoSohalMuslimRoadView, basename="delete-hardo-sohal-muslim-road")
+
+router.register(r"jinnah-avenue-road", ListJinnahAvenueRoadView, basename="jinnah-avenue-road")
+router.register(r"jinnah-avenue-road/create", CreateJinnahAvenueRoadView, basename="create-jinnah-avenue-road")
+router.register(r"jinnah-avenue-road/update", UpdateJinnahAvenueRoadView, basename="update-jinnah-avenue-road")
+router.register(r"jinnah-avenue-road/delete", DeleteJinnahAvenueRoadView, basename="delete-jinnah-avenue-road")
+
+router.register(r"kala-khata-ji-interchange", ListKalaKhataJiInterchangeView, basename="kala-khata-ji-interchange")
+router.register(r"kala-khata-ji-interchange/create", CreateKalaKhataJiInterchangeView, basename="create-kala-khata-ji-interchange")
+router.register(r"kala-khata-ji-interchange/update", UpdateKalaKhataJiInterchangeView, basename="update-kala-khata-ji-interchange")
+router.register(r"kala-khata-ji-interchange/delete", DeleteKalaKhataJiInterchangeView, basename="delete-kala-khata-ji-interchange")
+
+router.register(r"katar-bund-road", ListKatarBundRoadView, basename="katar-bund-road")
+router.register(r"katar-bund-road/create", CreateKatarBundRoadView, basename="create-katar-bund-road")
+router.register(r"katar-bund-road/update", UpdateKatarBundRoadView, basename="update-katar-bund-road")
+router.register(r"katar-bund-road/delete", DeleteKatarBundRoadView, basename="delete-katar-bund-road")
+
+router.register(r"lahore-bypass", ListLahoreBypassView, basename="lahore-bypass")
+router.register(r"lahore-bypass/create", CreateLahoreBypassView, basename="create-lahore-bypass")
+router.register(r"lahore-bypass/update", UpdateLahoreBypassView, basename="update-lahore-bypass")
+router.register(r"lahore-bypass/delete", DeleteLahoreBypassView, basename="delete-lahore-bypass")
+
+router.register(r"sialkot-motorway", ListSialkotMotorwayView, basename="sialkot-motorway")
+router.register(r"sialkot-motorway/create", CreateSialkotMotorwayView, basename="create-sialkot-motorway")
+router.register(r"sialkot-motorway/update", UpdateSialkotMotorwayView, basename="update-sialkot-motorway")
+router.register(r"sialkot-motorway/delete", DeleteSialkotMotorwayView, basename="delete-sialkot-motorway")
+
+router.register(r"transportation-roads", ListTransportationRoadsView, basename="transportation-roads")
+router.register(r"transportation-roads/create", CreateTransportationRoadsView, basename="create-transportation-roads")
+router.register(r"transportation-roads/update", UpdateTransportationRoadsView, basename="update-transportation-roads")
+router.register(r"transportation-roads/delete", DeleteTransportationRoadsView, basename="delete-transportation-roads")
 
 urlpatterns = [
     path('admin/', admin.site.urls),

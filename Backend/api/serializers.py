@@ -1624,3 +1624,182 @@ class WWTPSitesSerializer(GeoFeatureModelSerializer):
             "area",
             "geom",
         )
+
+# --------------------------------------------------------
+# RTW Package Serializer
+# DB table: rtwpackage
+# --------------------------------------------------------
+
+class AbdulHakeemMotorwayM3Serializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = AbdulHakeemMotorwayM3
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "kml_style",
+            "tessellate",
+            "name_1",
+            "name_2",
+            "shape_leng",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RTW Package Serializer
+# DB table: rtwpackage
+# --------------------------------------------------------
+
+class HardoSohalMuslimRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = HardoSohalMuslimRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "row",
+            "category",
+            "name",
+            "length_km",
+            "remarks",
+            "kacha_pacc",
+            "shape_leng",
+            "geom",
+        )
+
+
+class JinnahAvenueRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = JinnahAvenueRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "row",
+            "category",
+            "name",
+            "length_km",
+            "remarks",
+            "kacha_pacc",
+            "shape_leng",
+            "geom",
+        )
+
+
+class KalaKhataJiInterchangeSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KalaKhataJiInterchange
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "kml_style",
+            "tessellate",
+            "shape_leng",
+            "geom",
+        )
+
+
+class KatarBundRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KatarBundRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "oid",
+            "name",
+            "folderpath",
+            "symbolid",
+            "altmode",
+            "base",
+            "clamped",
+            "extruded",
+            "snippet",
+            "popupinfo",
+            "shape_leng",
+            "row",
+            "buffer",
+            "geom",
+        )
+
+
+class LahoreBypassSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreBypass
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "oid",
+            "name",
+            "folderpath",
+            "symbolid",
+            "altmode",
+            "base",
+            "clamped",
+            "extruded",
+            "snippet",
+            "popupinfo",
+            "shape_leng",
+            "row",
+            "buffer",
+            "geom",
+        )
+
+
+class SialkotMotorwaySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = SialkotMotorway
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "label",
+            "length_km",
+            "shape_leng",
+            "geom",
+        )
+
+
+class TransportationRoadsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = TransportationRoads
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "type",
+            "name",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
