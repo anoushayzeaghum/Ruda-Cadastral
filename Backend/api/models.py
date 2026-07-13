@@ -2401,3 +2401,48 @@ class TransportationRoads(models.Model):
     class Meta:
         managed = False
         db_table = "transportationroads"
+
+#--------------------------------------------------
+# LahoreRingRoad
+# DB table: lahoreringroad
+
+class LahoreRingRoad(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.IntegerField(null=True, blank=True)
+    objectid = models.IntegerField(null=True, blank=True)
+    fid = models.IntegerField(
+        db_column="fid_",
+        null=True,
+        blank=True,
+    )
+
+    entity_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="entity",
+    )
+
+    layer = models.CharField(max_length=255, null=True, blank=True)
+    color = models.IntegerField(null=True, blank=True)
+    linetype = models.CharField(max_length=255, null=True, blank=True)
+    elevation = models.FloatField(null=True, blank=True)
+    linewt = models.IntegerField(null=True, blank=True)
+    refname = models.CharField(max_length=255, null=True, blank=True)
+    orig_fid = models.IntegerField(null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_le_1 = models.FloatField(null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.refname or f"Lahore Ring Road {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "lahoreringroad"

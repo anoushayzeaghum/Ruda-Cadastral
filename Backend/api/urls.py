@@ -329,6 +329,11 @@ router.register(r"transportation-roads/create", CreateTransportationRoadsView, b
 router.register(r"transportation-roads/update", UpdateTransportationRoadsView, basename="update-transportation-roads")
 router.register(r"transportation-roads/delete", DeleteTransportationRoadsView, basename="delete-transportation-roads")
 
+router.register(r"lahore-ring-road", ListLahoreRingRoadView, basename="lahore-ring-road",)
+router.register(r"lahore-ring-road/create", CreateLahoreRingRoadView, basename="create-lahore-ring-road",)
+router.register(r"lahore-ring-road/update", UpdateLahoreRingRoadView, basename="update-lahore-ring-road",)
+router.register(r"lahore-ring-road/delete", DeleteLahoreRingRoadView, basename="delete-lahore-ring-road",)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 

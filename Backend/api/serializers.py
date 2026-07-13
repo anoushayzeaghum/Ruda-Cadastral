@@ -1803,3 +1803,32 @@ class TransportationRoadsSerializer(GeoFeatureModelSerializer):
             "shape_le_1",
             "geom",
         )
+
+# --------------------------------------------------------
+# Lahore Ring Road Serializer
+# DB table: lahoreringroad
+# --------------------------------------------------------
+class LahoreRingRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreRingRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "fid",
+            "entity_name",
+            "layer",
+            "color",
+            "linetype",
+            "elevation",
+            "linewt",
+            "refname",
+            "orig_fid",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )

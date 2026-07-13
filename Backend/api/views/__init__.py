@@ -64,3 +64,4 @@ from .RudaMasterPlan.KatarBundRoad import *
 from .RudaMasterPlan.LahoreBypass import *
 from .RudaMasterPlan.SialkotMotorway import *
 from .RudaMasterPlan.TransportationRoads import *
+from .RudaMasterPlan.LahoreRingRoadView import *
