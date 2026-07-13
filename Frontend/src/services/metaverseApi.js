@@ -38,6 +38,47 @@ const unwrapGeoJSON = (data) => {
   return emptyFC();
 };
 
+// Tries the backend route first and only falls back when that route returns 404.
+// This keeps the frontend compatible with the currently registered DRF routes
+// while also supporting route names that match the PostGIS table names.
+const getGeoJSONFromEndpoints = async (endpoints) => {
+  const routes = Array.isArray(endpoints) ? endpoints : [endpoints];
+  let lastError = null;
+
+  for (const endpoint of routes) {
+    try {
+      const res = await axios.get(`${API_BASE}${endpoint}`);
+      return unwrapGeoJSON(res.data);
+    } catch (error) {
+      lastError = error;
+
+      // Do not hide authentication, permission, server, or network errors.
+      if (error?.response?.status !== 404) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+// Exact model/table mappings supplied by the backend.
+// The first route in each list matches the uploaded urls.py.
+// "Bridgess" is retained as the first Bridges route because that is the
+// currently registered backend path; /bridges/ remains as a safe fallback.
+const RUDA_INFRASTRUCTURE_ENDPOINTS = Object.freeze({
+  bridges: ["/Bridgess/", "/bridges/"],
+  ganjakalantruckstand: ["/ganja-kalan-truck-stand/", "/ganjakalantruckstand/"],
+  lahorerapidmasstransit: [
+    "/lahore-rapid-mass-transit/",
+    "/lahorerapidmasstransit/",
+  ],
+  orangetrack: ["/orange-track/", "/orangetrack/"],
+  railwayline: ["/railway-line/", "/railwayline/"],
+  railwaystations: ["/railway-stations/", "/railwaystations/"],
+  hudiaradrain: ["/hudiara-drain/", "/hudiaradrain/"],
+});
+
 export const getProjects = async () => {
   const res = await axios.get(`${API_BASE}/project/`);
   return normalizeFeatures(res.data);
@@ -565,6 +606,43 @@ export const getBranchCanalGeoJSON = async () => {
 
 export const getDistributaryGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/distributary/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getHudiaraDrainGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/hudiara-drain/`);
+  return unwrapGeoJSON(res.data);
+};
+
+// ------------------------------ Transportation Layers ------------------------------
+
+export const getRailwayLineGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/railway-line/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRailwayStationsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/railway-stations/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getOrangeTrackGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/orange-track/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getLahoreRapidMassTransitGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/lahore-rapid-mass-transit/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getBridgesGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/Bridgess/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getGanjaKalanTruckStandGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ganja-kalan-truck-stand/`);
   return unwrapGeoJSON(res.data);
 };
 

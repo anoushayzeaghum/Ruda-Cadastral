@@ -2,6 +2,38 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import mapboxgl from "mapbox-gl";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
+import RudaProposedRoadsLayer, {
+  DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
+  RUDA_PROPOSED_ROAD_LEGEND,
+  getRudaProposedRoadLinePaint,
+} from "./LayerManager/RudaMasterPlanLayers/RoadBridgesTransportLayers/RudaProposedRoadsLayer";
+import TransportationRoadsLayer, {
+  DEFAULT_TRANSPORTATION_ROAD_COLORS,
+  TRANSPORTATION_ROADS_LEGEND,
+  getTransportationRoadCasingPaint,
+  getTransportationRoadLinePaint,
+} from "./LayerManager/RudaMasterPlanLayers/RoadBridgesTransportLayers/TransportationRoadsLayer";
+import {
+  getOrangeTrackCasingPaint,
+  getOrangeTrackLinePaint,
+  getOrangeTrackOverlayPaint,
+} from "./LayerManager/RudaMasterPlanLayers/RoadBridgesTransportLayers/OrangeTrackLayer";
+import {
+  getLahoreRingRoadCasingPaint,
+  getLahoreRingRoadLinePaint,
+} from "./LayerManager/RudaMasterPlanLayers/RoadBridgesTransportLayers/LahoreRingRoadLayer";
+import {
+  getAbdulHakeemMotorwayCasingPaint,
+  getAbdulHakeemMotorwayLinePaint,
+} from "./LayerManager/RudaMasterPlanLayers/RoadBridgesTransportLayers/AbdulHakeemMotorwayM3Layer";
+import {
+  getSialkotMotorwayCasingPaint,
+  getSialkotMotorwayLinePaint,
+} from "./LayerManager/RudaMasterPlanLayers/RoadBridgesTransportLayers/SialkotMotorwayLayer";
+import {
+  getRailwayLineCasingPaint,
+  getRailwayLinePaint,
+} from "./LayerManager/RudaMasterPlanLayers/RoadBridgesTransportLayers/RailwayLineLayer";
 import {
   getAbdulHakeemMotorwayM3GeoJSON,
   getCityLevelServiceGeoJSON,
@@ -28,6 +60,13 @@ import {
   getLinkCanalGeoJSON,
   getBranchCanalGeoJSON,
   getDistributaryGeoJSON,
+  getHudiaraDrainGeoJSON,
+  getRailwayLineGeoJSON,
+  getRailwayStationsGeoJSON,
+  getOrangeTrackGeoJSON,
+  getLahoreRapidMassTransitGeoJSON,
+  getBridgesGeoJSON,
+  getGanjaKalanTruckStandGeoJSON,
   getProposedWWTPGeoJSON,
   getWWTPSitesGeoJSON,
   getKatarBandWWTPGeoJSON,
@@ -68,7 +107,7 @@ const RUDA_MASTER_PLAN_GROUPS = [
       {
         key: "lahoreRingRoad",
         label: "Lahore Ring Road",
-        color: "#dc2626",
+        color: "#f5e600",
       },
       {
         key: "lahoreBypass",
@@ -98,12 +137,12 @@ const RUDA_MASTER_PLAN_GROUPS = [
       {
         key: "sialkotMotorway",
         label: "Sialkot Motorway",
-        color: "#14b8a6",
+        color: "#f59e0b",
       },
       {
         key: "abdulHakeemMotorwayM3",
         label: "Abdul Hakeem Motorway M-3",
-        color: "#ec4899",
+        color: "#f59e0b",
       },
     ],
   },
@@ -135,6 +174,47 @@ const RUDA_MASTER_PLAN_GROUPS = [
         key: "distributary",
         label: "Distributary",
         color: "#84cc16",
+      },
+      {
+        key: "hudiaraDrain",
+        label: "Hudiara Drain",
+        color: "#0891b2",
+      },
+    ],
+  },
+  {
+    key: "transportation",
+    label: "Transportation",
+    children: [
+      {
+        key: "railwayLine",
+        label: "Railway Line",
+        color: "#111111",
+      },
+      {
+        key: "railwayStations",
+        label: "Railway Stations",
+        color: "#7c3aed",
+      },
+      {
+        key: "orangeTrack",
+        label: "Orange Track",
+        color: "#f97316",
+      },
+      {
+        key: "lahoreRapidMassTransit",
+        label: "Lahore Rapid Mass Transit",
+        color: "#dc2626",
+      },
+      {
+        key: "bridges",
+        label: "Bridges",
+        color: "#ca8a04",
+      },
+      {
+        key: "ganjaKalanTruckStand",
+        label: "Ganja Kalan Truck Stand",
+        color: "#0f766e",
       },
     ],
   },
@@ -248,18 +328,26 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
   rudaProposedRoads: {
     endpoint: "/proposed-road-network/",
     fetchGeoJSON: getProposedRoadNetworkGeoJSON,
-    lineWidth: 3,
     categorized: true,
+    categoryLegend: RUDA_PROPOSED_ROAD_LEGEND,
+    LegendComponent: RudaProposedRoadsLayer,
+    getLinePaint: getRudaProposedRoadLinePaint,
   },
   transportationRoads: {
     endpoint: "/transportation-roads/",
     fetchGeoJSON: getTransportationRoadsGeoJSON,
-    lineWidth: 3,
+    categorized: true,
+    categoryLegend: TRANSPORTATION_ROADS_LEGEND,
+    LegendComponent: TransportationRoadsLayer,
+    getLinePaint: getTransportationRoadLinePaint,
+    getCasingPaint: getTransportationRoadCasingPaint,
   },
   lahoreRingRoad: {
     endpoint: "/lahore-ring-road/",
     fetchGeoJSON: getLahoreRingRoadGeoJSON,
-    lineWidth: 3,
+    paintUsesLayerColor: true,
+    getLinePaint: getLahoreRingRoadLinePaint,
+    getCasingPaint: getLahoreRingRoadCasingPaint,
   },
   lahoreBypass: {
     endpoint: "/lahore-bypass/",
@@ -289,12 +377,16 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
   sialkotMotorway: {
     endpoint: "/sialkot-motorway/",
     fetchGeoJSON: getSialkotMotorwayGeoJSON,
-    lineWidth: 3,
+    paintUsesLayerColor: true,
+    getLinePaint: getSialkotMotorwayLinePaint,
+    getCasingPaint: getSialkotMotorwayCasingPaint,
   },
   abdulHakeemMotorwayM3: {
     endpoint: "/abdul-hakeem-motorway-m3/",
     fetchGeoJSON: getAbdulHakeemMotorwayM3GeoJSON,
-    lineWidth: 3,
+    paintUsesLayerColor: true,
+    getLinePaint: getAbdulHakeemMotorwayLinePaint,
+    getCasingPaint: getAbdulHakeemMotorwayCasingPaint,
   },
   irrigationNetwork: {
     endpoint: "/irrigation-network/",
@@ -320,6 +412,48 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     endpoint: "/distributary/",
     fetchGeoJSON: getDistributaryGeoJSON,
     lineWidth: 2.8,
+  },
+  hudiaraDrain: {
+    endpoint: "/hudiara-drain/",
+    fetchGeoJSON: getHudiaraDrainGeoJSON,
+    lineWidth: 2.8,
+  },
+  railwayLine: {
+    endpoint: "/railway-line/",
+    fetchGeoJSON: getRailwayLineGeoJSON,
+    paintUsesLayerColor: true,
+    getLinePaint: getRailwayLinePaint,
+    getCasingPaint: getRailwayLineCasingPaint,
+    casingLineCap: "butt",
+  },
+  railwayStations: {
+    endpoint: "/railway-stations/",
+    fetchGeoJSON: getRailwayStationsGeoJSON,
+    circleRadius: 5,
+  },
+  orangeTrack: {
+    endpoint: "/orange-track/",
+    fetchGeoJSON: getOrangeTrackGeoJSON,
+    paintUsesLayerColor: true,
+    getLinePaint: getOrangeTrackLinePaint,
+    getCasingPaint: getOrangeTrackCasingPaint,
+    getOverlayPaint: getOrangeTrackOverlayPaint,
+    overlayLineCap: "butt",
+  },
+  lahoreRapidMassTransit: {
+    endpoint: "/lahore-rapid-mass-transit/",
+    fetchGeoJSON: getLahoreRapidMassTransitGeoJSON,
+    lineWidth: 3,
+  },
+  bridges: {
+    endpoint: "/bridges/",
+    fetchGeoJSON: getBridgesGeoJSON,
+    lineWidth: 2.8,
+    circleRadius: 5,
+  },
+  ganjaKalanTruckStand: {
+    endpoint: "/ganja-kalan-truck-stand/",
+    fetchGeoJSON: getGanjaKalanTruckStandGeoJSON,
   },
   proposedWWTP: {
     endpoint: "/proposed-wwtp/",
@@ -373,57 +507,6 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     fetchGeoJSON: getMpPrincipleZoningGeoJSON,
   },
 };
-
-const RUDA_PROPOSED_ROAD_LEGEND = [
-  { label: "Ravi Ring Road", color: "#b30000", values: ["ravi ring road"] },
-  { label: "Primary Road", color: "#ff1a1a", values: ["primary road"] },
-  { label: "Secondary Road", color: "#55aa00", values: ["secondary road"] },
-  { label: "Tertiary Road", color: "#f2b705", values: ["tertiary road"] },
-  { label: "Bridge", color: "#ff4fc3", values: ["bridge"] },
-  {
-    label: "Jahangir Tomb Bridge and Flyover",
-    color: "#f4cf78",
-    values: ["jahangir tomb bridge and flyover", "jahangir tomb bridge"],
-  },
-  {
-    label: "Proposed SL-4",
-    color: "#d9a441",
-    values: ["proposed sl-4", "proposed sl4"],
-  },
-  {
-    label: "Promenade Road with Service Road",
-    color: "#c02ad3",
-    values: [
-      "promenade road with service road",
-      "promenade road with servi",
-      "promenade road",
-    ],
-  },
-];
-
-const ROAD_TYPE_EXPRESSION = [
-  "downcase",
-  [
-    "to-string",
-    [
-      "coalesce",
-      ["get", "type"],
-      ["get", "road_type"],
-      ["get", "layer"],
-      ["get", "name"],
-      ["get", "refname"],
-      "other",
-    ],
-  ],
-];
-
-const DEFAULT_RUDA_PROPOSED_ROAD_COLORS = RUDA_PROPOSED_ROAD_LEGEND.reduce(
-  (colors, item) => {
-    colors[item.label] = item.color;
-    return colors;
-  },
-  {},
-);
 
 const CITY_LEVEL_SERVICES_LEGEND = [
   {
@@ -661,19 +744,10 @@ const buildExistingForestColorExpression = (
   "#84cc16",
 ];
 
-const buildRoadColorExpression = (
-  roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
-) => [
-  "match",
-  ROAD_TYPE_EXPRESSION,
-  ...RUDA_PROPOSED_ROAD_LEGEND.flatMap((item) =>
-    item.values.flatMap((value) => [
-      value,
-      roadColors[item.label] || item.color,
-    ]),
-  ),
-  "#19598d",
-];
+const DEFAULT_CATEGORIZED_ROAD_COLORS = {
+  rudaProposedRoads: { ...DEFAULT_RUDA_PROPOSED_ROAD_COLORS },
+  transportationRoads: { ...DEFAULT_TRANSPORTATION_ROAD_COLORS },
+};
 
 const RUDA_MASTER_SOURCE_PREFIX = "metaverse-ruda-master-plan";
 
@@ -708,7 +782,9 @@ const getLayerIds = (layerKey) => {
     sourceId: `${base}-source`,
     fillId: `${base}-fill`,
     outlineId: `${base}-outline`,
+    casingId: `${base}-line-casing`,
     lineId: `${base}-line`,
+    overlayId: `${base}-line-overlay`,
     circleId: `${base}-circle`,
   };
 };
@@ -740,13 +816,79 @@ const normalizeGeoJSON = (geojson) => {
   return { type: "FeatureCollection", features: [] };
 };
 
+const applyPaintObject = (map, layerId, paint = {}) => {
+  Object.entries(paint).forEach(([property, value]) => {
+    setPaint(map, layerId, property, value);
+  });
+};
+
+const getRudaLinePaint = ({
+  layerKey,
+  color,
+  opacityRatio,
+  config,
+  categorizedRoadColors,
+  serviceColors,
+  forestColors,
+}) => {
+  if (typeof config.getLinePaint === "function") {
+    const styleValue = config.paintUsesLayerColor
+      ? color
+      : categorizedRoadColors?.[layerKey] || {};
+
+    return config.getLinePaint(styleValue, opacityRatio);
+  }
+
+  return {
+    "line-color": config.categorizedServices
+      ? buildCityLevelServiceColorExpression(serviceColors)
+      : config.categorizedExistingForest
+        ? buildExistingForestColorExpression(forestColors)
+        : color,
+    "line-width": config.lineWidth || 1.8,
+    "line-opacity": opacityRatio,
+  };
+};
+
+const getRudaCasingPaint = ({
+  layerKey,
+  color,
+  opacityRatio,
+  config,
+  categorizedRoadColors,
+}) => {
+  if (typeof config.getCasingPaint !== "function") return null;
+
+  const styleValue = config.paintUsesLayerColor
+    ? color
+    : categorizedRoadColors?.[layerKey] || {};
+
+  return config.getCasingPaint(styleValue, opacityRatio);
+};
+
+const getRudaOverlayPaint = ({
+  layerKey,
+  color,
+  opacityRatio,
+  config,
+  categorizedRoadColors,
+}) => {
+  if (typeof config.getOverlayPaint !== "function") return null;
+
+  const styleValue = config.paintUsesLayerColor
+    ? color
+    : categorizedRoadColors?.[layerKey] || {};
+
+  return config.getOverlayPaint(styleValue, opacityRatio);
+};
+
 const applyRudaLayerPaint = (
   map,
   layerKey,
   color,
   opacity,
   config = {},
-  roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
+  categorizedRoadColors = DEFAULT_CATEGORIZED_ROAD_COLORS,
   serviceColors = DEFAULT_CITY_LEVEL_SERVICE_COLORS,
   forestColors = DEFAULT_EXISTING_FOREST_COLORS,
 ) => {
@@ -779,20 +921,41 @@ const applyRudaLayerPaint = (
   );
   setPaint(map, ids.outlineId, "line-opacity", 0.95 * o);
 
-  setPaint(
+  const casingPaint = getRudaCasingPaint({
+    layerKey,
+    color,
+    opacityRatio: o,
+    config,
+    categorizedRoadColors,
+  });
+  if (casingPaint) {
+    applyPaintObject(map, ids.casingId, casingPaint);
+  }
+
+  applyPaintObject(
     map,
     ids.lineId,
-    "line-color",
-    config.categorized
-      ? buildRoadColorExpression(roadColors)
-      : config.categorizedServices
-        ? buildCityLevelServiceColorExpression(serviceColors)
-        : config.categorizedExistingForest
-          ? buildExistingForestColorExpression(forestColors)
-          : color,
+    getRudaLinePaint({
+      layerKey,
+      color,
+      opacityRatio: o,
+      config,
+      categorizedRoadColors,
+      serviceColors,
+      forestColors,
+    }),
   );
-  setPaint(map, ids.lineId, "line-opacity", o);
-  setPaint(map, ids.lineId, "line-width", config.lineWidth || 1.8);
+
+  const overlayPaint = getRudaOverlayPaint({
+    layerKey,
+    color,
+    opacityRatio: o,
+    config,
+    categorizedRoadColors,
+  });
+  if (overlayPaint) {
+    applyPaintObject(map, ids.overlayId, overlayPaint);
+  }
 
   setPaint(
     map,
@@ -813,7 +976,14 @@ const setRudaLayerVisibility = (map, layerKey, visible) => {
 
   const ids = getLayerIds(layerKey);
 
-  [ids.fillId, ids.outlineId, ids.lineId, ids.circleId].forEach((layerId) => {
+  [
+    ids.fillId,
+    ids.outlineId,
+    ids.casingId,
+    ids.lineId,
+    ids.overlayId,
+    ids.circleId,
+  ].forEach((layerId) => {
     setLayoutVisibility(map, layerId, visible);
   });
 };
@@ -825,7 +995,7 @@ const addOrUpdateRudaMapLayer = ({
   color,
   opacity,
   config = {},
-  roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
+  categorizedRoadColors = DEFAULT_CATEGORIZED_ROAD_COLORS,
   serviceColors = DEFAULT_CITY_LEVEL_SERVICE_COLORS,
   forestColors = DEFAULT_EXISTING_FOREST_COLORS,
 }) => {
@@ -834,6 +1004,7 @@ const addOrUpdateRudaMapLayer = ({
   const ids = getLayerIds(layerKey);
   const data = normalizeGeoJSON(geojson);
   const visibility = "visible";
+  const opacityRatio = getOpacityRatio(opacity);
 
   if (!map.getSource(ids.sourceId)) {
     map.addSource(ids.sourceId, {
@@ -857,7 +1028,7 @@ const addOrUpdateRudaMapLayer = ({
           : config.categorizedExistingForest
             ? buildExistingForestColorExpression(forestColors)
             : color,
-        "fill-opacity": 0.35 * getOpacityRatio(opacity),
+        "fill-opacity": 0.35 * opacityRatio,
       },
     });
   }
@@ -876,8 +1047,46 @@ const addOrUpdateRudaMapLayer = ({
             ? buildExistingForestColorExpression(forestColors)
             : color,
         "line-width": 1.2,
-        "line-opacity": 0.95 * getOpacityRatio(opacity),
+        "line-opacity": 0.95 * opacityRatio,
       },
+    });
+  }
+
+  const lineLayout =
+    typeof config.getLinePaint === "function"
+      ? {
+          visibility,
+          "line-cap": config.lineCap || "round",
+          "line-join": config.lineJoin || "round",
+        }
+      : { visibility };
+
+  const casingLayout = {
+    ...lineLayout,
+    "line-cap": config.casingLineCap || lineLayout["line-cap"] || "round",
+  };
+
+  const overlayLayout = {
+    ...lineLayout,
+    "line-cap": config.overlayLineCap || lineLayout["line-cap"] || "round",
+  };
+
+  const casingPaint = getRudaCasingPaint({
+    layerKey,
+    color,
+    opacityRatio,
+    config,
+    categorizedRoadColors,
+  });
+
+  if (casingPaint && !map.getLayer(ids.casingId)) {
+    map.addLayer({
+      id: ids.casingId,
+      type: "line",
+      source: ids.sourceId,
+      filter: LINE_FILTER,
+      layout: casingLayout,
+      paint: casingPaint,
     });
   }
 
@@ -887,18 +1096,35 @@ const addOrUpdateRudaMapLayer = ({
       type: "line",
       source: ids.sourceId,
       filter: LINE_FILTER,
-      layout: { visibility },
-      paint: {
-        "line-color": config.categorized
-          ? buildRoadColorExpression(roadColors)
-          : config.categorizedServices
-            ? buildCityLevelServiceColorExpression(serviceColors)
-            : config.categorizedExistingForest
-              ? buildExistingForestColorExpression(forestColors)
-              : color,
-        "line-width": config.lineWidth || 1.8,
-        "line-opacity": getOpacityRatio(opacity),
-      },
+      layout: lineLayout,
+      paint: getRudaLinePaint({
+        layerKey,
+        color,
+        opacityRatio,
+        config,
+        categorizedRoadColors,
+        serviceColors,
+        forestColors,
+      }),
+    });
+  }
+
+  const overlayPaint = getRudaOverlayPaint({
+    layerKey,
+    color,
+    opacityRatio,
+    config,
+    categorizedRoadColors,
+  });
+
+  if (overlayPaint && !map.getLayer(ids.overlayId)) {
+    map.addLayer({
+      id: ids.overlayId,
+      type: "line",
+      source: ids.sourceId,
+      filter: LINE_FILTER,
+      layout: overlayLayout,
+      paint: overlayPaint,
     });
   }
 
@@ -916,10 +1142,10 @@ const addOrUpdateRudaMapLayer = ({
           : config.categorizedExistingForest
             ? buildExistingForestColorExpression(forestColors)
             : color,
-        "circle-opacity": getOpacityRatio(opacity),
+        "circle-opacity": opacityRatio,
         "circle-stroke-color": "#ffffff",
         "circle-stroke-width": 1,
-        "circle-stroke-opacity": getOpacityRatio(opacity),
+        "circle-stroke-opacity": opacityRatio,
       },
     });
   }
@@ -930,7 +1156,7 @@ const addOrUpdateRudaMapLayer = ({
     color,
     opacity,
     config,
-    roadColors,
+    categorizedRoadColors,
     serviceColors,
     forestColors,
   );
@@ -942,7 +1168,14 @@ const removeRudaMapLayer = (map, layerKey) => {
 
   const ids = getLayerIds(layerKey);
 
-  [ids.circleId, ids.lineId, ids.outlineId, ids.fillId].forEach((layerId) => {
+  [
+    ids.circleId,
+    ids.overlayId,
+    ids.lineId,
+    ids.casingId,
+    ids.outlineId,
+    ids.fillId,
+  ].forEach((layerId) => {
     if (map.getLayer(layerId)) {
       map.removeLayer(layerId);
     }
@@ -1001,9 +1234,10 @@ export default function RUDAMasterPlan({ map }) {
   const [layerState, setLayerState] = useState(createInitialLayerState);
   const [activeAttributeLayer, setActiveAttributeLayer] = useState(null);
   const [layerMeta, setLayerMeta] = useState({});
-  const [proposedRoadColors, setProposedRoadColors] = useState(
-    DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
-  );
+  const [categorizedRoadColors, setCategorizedRoadColors] = useState(() => ({
+    rudaProposedRoads: { ...DEFAULT_RUDA_PROPOSED_ROAD_COLORS },
+    transportationRoads: { ...DEFAULT_TRANSPORTATION_ROAD_COLORS },
+  }));
   const [cityLevelServiceColors, setCityLevelServiceColors] = useState(
     DEFAULT_CITY_LEVEL_SERVICE_COLORS,
   );
@@ -1015,7 +1249,7 @@ export default function RUDAMasterPlan({ map }) {
   const requestTokenRef = useRef({});
   const layerStateRef = useRef(layerState);
   const zoomOnLoadRef = useRef({});
-  const proposedRoadColorsRef = useRef(proposedRoadColors);
+  const categorizedRoadColorsRef = useRef(categorizedRoadColors);
   const cityLevelServiceColorsRef = useRef(cityLevelServiceColors);
   const existingForestColorsRef = useRef(existingForestColors);
 
@@ -1024,8 +1258,8 @@ export default function RUDAMasterPlan({ map }) {
   }, [layerState]);
 
   useEffect(() => {
-    proposedRoadColorsRef.current = proposedRoadColors;
-  }, [proposedRoadColors]);
+    categorizedRoadColorsRef.current = categorizedRoadColors;
+  }, [categorizedRoadColors]);
 
   useEffect(() => {
     cityLevelServiceColorsRef.current = cityLevelServiceColors;
@@ -1114,7 +1348,7 @@ export default function RUDAMasterPlan({ map }) {
         color: state.color || layerLookup[layerKey]?.color || "#6bb7e8",
         opacity: state.opacity ?? 100,
         config,
-        roadColors: proposedRoadColorsRef.current,
+        categorizedRoadColors: categorizedRoadColorsRef.current,
         serviceColors: cityLevelServiceColorsRef.current,
         forestColors: existingForestColorsRef.current,
       });
@@ -1304,7 +1538,7 @@ export default function RUDAMasterPlan({ map }) {
       color,
       layerState[layerKey]?.opacity ?? 100,
       RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey],
-      proposedRoadColorsRef.current,
+      categorizedRoadColorsRef.current,
       cityLevelServiceColorsRef.current,
       existingForestColorsRef.current,
     );
@@ -1325,27 +1559,33 @@ export default function RUDAMasterPlan({ map }) {
       layerState[layerKey]?.color || layerLookup[layerKey]?.color,
       opacity,
       RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey],
-      proposedRoadColorsRef.current,
+      categorizedRoadColorsRef.current,
       cityLevelServiceColorsRef.current,
       existingForestColorsRef.current,
     );
   };
 
-  const updateProposedRoadColor = (roadLabel, color) => {
-    const nextColors = {
-      ...proposedRoadColorsRef.current,
+  const updateCategorizedRoadColor = (layerKey, roadLabel, color) => {
+    const nextLayerColors = {
+      ...(categorizedRoadColorsRef.current[layerKey] || {}),
       [roadLabel]: color,
     };
+    const nextColors = {
+      ...categorizedRoadColorsRef.current,
+      [layerKey]: nextLayerColors,
+    };
 
-    proposedRoadColorsRef.current = nextColors;
-    setProposedRoadColors(nextColors);
+    categorizedRoadColorsRef.current = nextColors;
+    setCategorizedRoadColors(nextColors);
 
     applyRudaLayerPaint(
       map,
-      "rudaProposedRoads",
-      layerStateRef.current.rudaProposedRoads?.color || "#19598d",
-      layerStateRef.current.rudaProposedRoads?.opacity ?? 100,
-      RUDA_MASTER_PLAN_LAYER_CONFIG.rudaProposedRoads,
+      layerKey,
+      layerStateRef.current[layerKey]?.color ||
+        layerLookup[layerKey]?.color ||
+        "#19598d",
+      layerStateRef.current[layerKey]?.opacity ?? 100,
+      RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey],
       nextColors,
       cityLevelServiceColorsRef.current,
       existingForestColorsRef.current,
@@ -1367,7 +1607,7 @@ export default function RUDAMasterPlan({ map }) {
       layerStateRef.current.cityLevelServicesLayer?.color || "#22c55e",
       layerStateRef.current.cityLevelServicesLayer?.opacity ?? 100,
       RUDA_MASTER_PLAN_LAYER_CONFIG.cityLevelServicesLayer,
-      proposedRoadColorsRef.current,
+      categorizedRoadColorsRef.current,
       nextColors,
       existingForestColorsRef.current,
     );
@@ -1388,7 +1628,7 @@ export default function RUDAMasterPlan({ map }) {
       layerStateRef.current.existingForest?.color || "#84cc16",
       layerStateRef.current.existingForest?.opacity ?? 100,
       RUDA_MASTER_PLAN_LAYER_CONFIG.existingForest,
-      proposedRoadColorsRef.current,
+      categorizedRoadColorsRef.current,
       cityLevelServiceColorsRef.current,
       nextColors,
     );
@@ -1441,6 +1681,10 @@ export default function RUDAMasterPlan({ map }) {
                     {group.children.map((layer) => {
                       const currentLayerState = layerState[layer.key] || {};
                       const currentLayerMeta = layerMeta[layer.key] || {};
+                      const currentLayerConfig =
+                        RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key] || {};
+                      const CategorizedRoadLegend =
+                        currentLayerConfig.LegendComponent;
 
                       return (
                         <div key={layer.key}>
@@ -1451,25 +1695,21 @@ export default function RUDAMasterPlan({ map }) {
                             opacity={currentLayerState.opacity ?? 100}
                             dropdownOpen={!!currentLayerState.dropdownOpen}
                             categorized={
-                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]
-                                ?.categorized ||
-                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]
-                                ?.categorizedServices ||
-                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]
-                                ?.categorizedExistingForest
+                              !!currentLayerConfig.categorized ||
+                              !!currentLayerConfig.categorizedServices ||
+                              !!currentLayerConfig.categorizedExistingForest
                             }
                             categoryLegend={
-                              layer.key === "rudaProposedRoads"
-                                ? RUDA_PROPOSED_ROAD_LEGEND
-                                : layer.key === "cityLevelServicesLayer"
-                                  ? CITY_LEVEL_SERVICES_LEGEND
-                                  : layer.key === "existingForest"
-                                    ? EXISTING_FOREST_LEGEND
-                                    : []
+                              currentLayerConfig.categoryLegend ||
+                              (layer.key === "cityLevelServicesLayer"
+                                ? CITY_LEVEL_SERVICES_LEGEND
+                                : layer.key === "existingForest"
+                                  ? EXISTING_FOREST_LEGEND
+                                  : [])
                             }
                             categorizedColors={
-                              layer.key === "rudaProposedRoads"
-                                ? proposedRoadColors
+                              currentLayerConfig.categorized
+                                ? categorizedRoadColors[layer.key] || {}
                                 : layer.key === "cityLevelServicesLayer"
                                   ? cityLevelServiceColors
                                   : layer.key === "existingForest"
@@ -1492,50 +1732,19 @@ export default function RUDAMasterPlan({ map }) {
                             <div
                               className={`ml-6 mt-2 max-h-64 rounded-sm border border-[#13593f]/30 bg-[#06291f] px-3 py-2 text-[11px] text-white/70 ${LAYER_PANEL_SCROLL}`}
                             >
-                              {layer.key === "rudaProposedRoads" && (
-                                <div className="mb-2 border-b border-[#343c4c]/70 pb-2">
-                                  <div className="mb-1.5 font-semibold text-white/90">
-                                    Road Classification
-                                  </div>
-                                  <div className="space-y-1.5">
-                                    {RUDA_PROPOSED_ROAD_LEGEND.map((item) => {
-                                      const currentColor =
-                                        proposedRoadColors[item.label] ||
-                                        item.color;
-
-                                      return (
-                                        <div
-                                          key={item.label}
-                                          className="flex items-center gap-2"
-                                        >
-                                          <label
-                                            className="relative h-4 w-8 shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/40"
-                                            style={{
-                                              backgroundColor: currentColor,
-                                            }}
-                                            title={`Change ${item.label} color`}
-                                          >
-                                            <input
-                                              type="color"
-                                              value={currentColor}
-                                              aria-label={`Change ${item.label} color`}
-                                              onChange={(event) =>
-                                                updateProposedRoadColor(
-                                                  item.label,
-                                                  event.target.value,
-                                                )
-                                              }
-                                              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                                            />
-                                          </label>
-                                          <span className="leading-tight">
-                                            {item.label}
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
+                              {CategorizedRoadLegend && (
+                                <CategorizedRoadLegend
+                                  colors={
+                                    categorizedRoadColors[layer.key] || {}
+                                  }
+                                  onColorChange={(roadLabel, color) =>
+                                    updateCategorizedRoadColor(
+                                      layer.key,
+                                      roadLabel,
+                                      color,
+                                    )
+                                  }
+                                />
                               )}
 
                               {layer.key === "cityLevelServicesLayer" && (
