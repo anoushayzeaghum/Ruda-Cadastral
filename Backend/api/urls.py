@@ -299,15 +299,15 @@ router.register(r"hardo-sohal-muslim-road/create", CreateHardoSohalMuslimRoadVie
 router.register(r"hardo-sohal-muslim-road/update", UpdateHardoSohalMuslimRoadView, basename="update-hardo-sohal-muslim-road")
 router.register(r"hardo-sohal-muslim-road/delete", DeleteHardoSohalMuslimRoadView, basename="delete-hardo-sohal-muslim-road")
 
-router.register(r"jinnah-avenue-road", ListJinnahAvenueRoadView, basename="jinnah-avenue-road")
-router.register(r"jinnah-avenue-road/create", CreateJinnahAvenueRoadView, basename="create-jinnah-avenue-road")
-router.register(r"jinnah-avenue-road/update", UpdateJinnahAvenueRoadView, basename="update-jinnah-avenue-road")
-router.register(r"jinnah-avenue-road/delete", DeleteJinnahAvenueRoadView, basename="delete-jinnah-avenue-road")
+router.register(r"jinnah-avenue", ListJinnahAvenueView, basename="jinnah-avenue")
+router.register(r"jinnah-avenue/create", CreateJinnahAvenueView, basename="create-jinnah-avenue")
+router.register(r"jinnah-avenue/update", UpdateJinnahAvenueView, basename="update-jinnah-avenue")
+router.register(r"jinnah-avenue/delete", DeleteJinnahAvenueView, basename="delete-jinnah-avenue")
 
-router.register(r"kala-khata-ji-interchange", ListKalaKhataJiInterchangeView, basename="kala-khata-ji-interchange")
-router.register(r"kala-khata-ji-interchange/create", CreateKalaKhataJiInterchangeView, basename="create-kala-khata-ji-interchange")
-router.register(r"kala-khata-ji-interchange/update", UpdateKalaKhataJiInterchangeView, basename="update-kala-khata-ji-interchange")
-router.register(r"kala-khata-ji-interchange/delete", DeleteKalaKhataJiInterchangeView, basename="delete-kala-khata-ji-interchange")
+router.register(r"kala-khatai-interchange", ListKalaKhataiInterchangeView, basename="kala-khatai-interchange")
+router.register(r"kala-khatai-interchange/create", CreateKalaKhataiInterchangeView, basename="create-kala-khatai-interchange")
+router.register(r"kala-khatai-interchange/update", UpdateKalaKhataiInterchangeView, basename="update-kala-khatai-interchange")
+router.register(r"kala-khatai-interchange/delete", DeleteKalaKhataiInterchangeView, basename="delete-kala-khatai-interchange")
 
 router.register(r"katar-bund-road", ListKatarBundRoadView, basename="katar-bund-road")
 router.register(r"katar-bund-road/create", CreateKatarBundRoadView, basename="create-katar-bund-road")

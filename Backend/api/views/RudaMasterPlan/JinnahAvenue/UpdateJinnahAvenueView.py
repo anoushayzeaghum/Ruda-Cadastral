@@ -1,25 +1,25 @@
 from ...common_imports import *
 
 
-class UpdateJinnahAvenueRoadView(viewsets.ViewSet):
-    queryset = JinnahAvenueRoad.objects.all()
-    serializer_class = JinnahAvenueRoadSerializer
+class UpdateJinnahAvenueView(viewsets.ViewSet):
+    queryset = JinnahAvenue.objects.all()
+    serializer_class = JinnahAvenueSerializer
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
         record_id = kwargs.get("pk")
 
         try:
-            record = JinnahAvenueRoad.objects.get(gid=record_id)
-        except JinnahAvenueRoad.DoesNotExist:
+            record = JinnahAvenue.objects.get(gid=record_id)
+        except JinnahAvenue.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="JinnahAvenueRoad not found.",
+                message="JinnahAvenue not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            serializer = JinnahAvenueRoadSerializer(
+            serializer = JinnahAvenueSerializer(
                 record,
                 data=request.data,
                 partial=True,
@@ -29,7 +29,7 @@ class UpdateJinnahAvenueRoadView(viewsets.ViewSet):
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="JinnahAvenueRoad updated successfully.",
+                message="JinnahAvenue updated successfully.",
                 data=serializer.data,
                 http_status=status.HTTP_200_OK,
             ).create_response()

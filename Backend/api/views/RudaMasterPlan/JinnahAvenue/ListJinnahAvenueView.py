@@ -4,9 +4,9 @@ from django.utils.decorators import method_decorator
 
 
 @method_decorator(cache_page(60 * 10), name="list")
-class ListJinnahAvenueRoadView(viewsets.ViewSet):
-    queryset = JinnahAvenueRoad.objects.all()
-    serializer_class = JinnahAvenueRoadSerializer
+class ListJinnahAvenueView(viewsets.ViewSet):
+    queryset = JinnahAvenue.objects.all()
+    serializer_class = JinnahAvenueSerializer
     permission_classes = [AllowAny]
     filter_fields = ['objectid', 'row', 'category', 'name', 'length_km', 'remarks', 'kacha_pacc']
 
@@ -15,19 +15,19 @@ class ListJinnahAvenueRoadView(viewsets.ViewSet):
             gid = request.query_params.get("gid")
 
             if gid:
-                record = JinnahAvenueRoad.objects.filter(gid=gid).first()
+                record = JinnahAvenue.objects.filter(gid=gid).first()
 
                 if not record:
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
-                        message="JinnahAvenueRoad not found.",
+                        message="JinnahAvenue not found.",
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="JinnahAvenueRoad found.",
-                    data=JinnahAvenueRoadSerializer(record).data,
+                    message="JinnahAvenue found.",
+                    data=JinnahAvenueSerializer(record).data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
@@ -37,14 +37,14 @@ class ListJinnahAvenueRoadView(viewsets.ViewSet):
                 if value not in [None, ""]:
                     filters[field] = value
 
-            queryset = JinnahAvenueRoad.objects.all()
+            queryset = JinnahAvenue.objects.all()
             if filters:
                 queryset = queryset.filter(**filters)
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="JinnahAvenueRoad records found.",
-                data=JinnahAvenueRoadSerializer(queryset, many=True).data,
+                message="JinnahAvenue records found.",
+                data=JinnahAvenueSerializer(queryset, many=True).data,
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
@@ -64,20 +64,20 @@ class ListJinnahAvenueRoadView(viewsets.ViewSet):
     )
     def geojson(self, request, pk=None):
         try:
-            record = JinnahAvenueRoad.objects.filter(gid=pk).first()
+            record = JinnahAvenue.objects.filter(gid=pk).first()
 
             if not record:
                 return ApiResponse(
                     status=status.HTTP_404_NOT_FOUND,
-                    message="JinnahAvenueRoad not found.",
+                    message="JinnahAvenue not found.",
                     data=[],
                     http_status=status.HTTP_404_NOT_FOUND,
                 ).create_response()
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="JinnahAvenueRoad GeoJSON found.",
-                data=JinnahAvenueRoadSerializer(record).data,
+                message="JinnahAvenue GeoJSON found.",
+                data=JinnahAvenueSerializer(record).data,
                 http_status=status.HTTP_200_OK,
             ).create_response()
 

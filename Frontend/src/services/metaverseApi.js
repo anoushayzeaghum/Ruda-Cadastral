@@ -512,8 +512,8 @@ export const getLahoreBypassGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
-export const getJinnahAvenueRoadGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/jinnah-avenue-road/`);
+export const getJinnahAvenueGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/jinnah-avenue/`);
   return unwrapGeoJSON(res.data);
 };
 
@@ -527,8 +527,8 @@ export const getKatarBundRoadGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
-export const getKalaKhataJiInterchangeGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/kala-khata-ji-interchange/`);
+export const getKalaKhataiInterchangeGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/kala-khatai-interchange/`);
   return unwrapGeoJSON(res.data);
 };
 

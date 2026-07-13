@@ -1,21 +1,21 @@
 from ...common_imports import *
 
 
-class CreateJinnahAvenueRoadView(viewsets.ViewSet):
-    queryset = JinnahAvenueRoad.objects.all()
-    serializer_class = JinnahAvenueRoadSerializer
+class CreateKalaKhataiInterchangeView(viewsets.ViewSet):
+    queryset = KalaKhataiInterchange.objects.all()
+    serializer_class = KalaKhataiInterchangeSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         try:
-            serializer = JinnahAvenueRoadSerializer(data=request.data)
+            serializer = KalaKhataiInterchangeSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             record = serializer.save()
 
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
-                message="JinnahAvenueRoad created successfully.",
-                data=JinnahAvenueRoadSerializer(record).data,
+                message="KalaKhataiInterchange created successfully.",
+                data=KalaKhataiInterchangeSerializer(record).data,
                 http_status=status.HTTP_201_CREATED,
             ).create_response()
 

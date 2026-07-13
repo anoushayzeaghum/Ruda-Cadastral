@@ -9,8 +9,8 @@ import {
   getExistingForestGeoJSON,
   getForestBoundaryGeoJSON,
   getHardoSohalMuslimRoadGeoJSON,
-  getJinnahAvenueRoadGeoJSON,
-  getKalaKhataJiInterchangeGeoJSON,
+  getJinnahAvenueGeoJSON,
+  getKalaKhataiInterchangeGeoJSON,
   getKatarBundRoadGeoJSON,
   getLahoreBypassGeoJSON,
   getMpPrincipleZoningGeoJSON,
@@ -91,8 +91,8 @@ const RUDA_MASTER_PLAN_GROUPS = [
         color: "#06b6d4",
       },
       {
-        key: "kalaKhataJiInterchange",
-        label: "Kala Khataj Interchange",
+        key: "kalaKhataiInterchange",
+        label: "Kala Khatai Interchange",
         color: "#f97316",
       },
       {
@@ -266,9 +266,9 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     fetchGeoJSON: getLahoreBypassGeoJSON,
     lineWidth: 3,
   },
-  jinnahAvenueRoad: {
-    endpoint: "/jinnah-avenue-road/",
-    fetchGeoJSON: getJinnahAvenueRoadGeoJSON,
+  jinnahAvenue: {
+    endpoint: "/jinnah-avenue/",
+    fetchGeoJSON: getJinnahAvenueGeoJSON,
     lineWidth: 3,
   },
   hardoSohalMuslimRoad: {
@@ -281,9 +281,9 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     fetchGeoJSON: getKatarBundRoadGeoJSON,
     lineWidth: 3,
   },
-  kalaKhataJiInterchange: {
-    endpoint: "/kala-khata-ji-interchange/",
-    fetchGeoJSON: getKalaKhataJiInterchangeGeoJSON,
+  kalaKhataiInterchange: {
+    endpoint: "/kala-khatai-interchange/",
+    fetchGeoJSON: getKalaKhataiInterchangeGeoJSON,
     lineWidth: 3,
   },
   sialkotMotorway: {
