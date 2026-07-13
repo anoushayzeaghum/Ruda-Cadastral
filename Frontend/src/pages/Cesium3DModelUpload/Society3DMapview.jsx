@@ -58,6 +58,80 @@ function cloneFeatureWithLayer(feature, layerKey) {
   };
 }
 
+function isBimTileFeature(picked) {
+  return Boolean(
+    picked &&
+      typeof picked.getProperty === "function" &&
+      typeof picked.getPropertyIds === "function",
+  );
+}
+
+function safeMetadataValue(value) {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch (error) {
+    return String(value);
+  }
+}
+
+function bimTileFeatureToInfo(feature) {
+  const properties = {};
+  const propertyIds = feature.getPropertyIds?.() || [];
+
+  propertyIds.forEach((propertyId) => {
+    try {
+      properties[propertyId] = safeMetadataValue(feature.getProperty(propertyId));
+    } catch (error) {
+      console.warn(`Could not read BIM property: ${propertyId}`, error);
+    }
+  });
+
+  const preferredIdKeys = [
+    "ElementId",
+    "elementId",
+    "element_id",
+    "Id",
+    "id",
+    "GUID",
+    "Guid",
+    "guid",
+    "GlobalId",
+  ];
+  const idKey = preferredIdKeys.find(
+    (key) => properties[key] !== undefined && properties[key] !== "",
+  );
+
+  return {
+    type: "BIMComponent",
+    id: idKey ? properties[idKey] : `bim-component-${feature._batchId ?? "selected"}`,
+    _layerKey: "BIM Model",
+    _featureType: "bim-component",
+    properties: {
+      ...properties,
+      _layerKey: "BIM Model",
+      _metadataCount: propertyIds.length,
+    },
+  };
+}
+
+function restorePickedSelection(selection) {
+  if (!selection?.target) return;
+
+  if (selection.kind === "bim") {
+    if (selection.originalColor) {
+      selection.target.color = Cesium.Color.clone(selection.originalColor);
+    }
+    return;
+  }
+
+  setEntityHighlighted(selection.target, false);
+}
+
 function parsePossibleGeometry(value) {
   if (!value) return null;
   if (typeof value !== "string") return value;
@@ -190,19 +264,45 @@ export default function Society3DMapview({
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction((movement) => {
       const picked = viewer.scene.pick(movement.position);
-      const entity = picked?.id;
 
-      if (!entity?.featureData) return;
+      restorePickedSelection(selectedEntityRef.current);
+      selectedEntityRef.current = null;
 
-      if (selectedEntityRef.current && selectedEntityRef.current !== entity) {
-        setEntityHighlighted(selectedEntityRef.current, false);
+      // Cesium ion BIM assets are streamed as 3D Tiles. Scene.pick returns a
+      // Cesium3DTileFeature when the tiled asset contains component metadata.
+      if (isBimTileFeature(picked)) {
+        const originalColor = Cesium.Color.clone(
+          picked.color || Cesium.Color.WHITE,
+          new Cesium.Color(),
+        );
+
+        picked.color = Cesium.Color.YELLOW.withAlpha(0.82);
+        selectedEntityRef.current = {
+          kind: "bim",
+          target: picked,
+          originalColor,
+        };
+        onFeatureSelect?.(bimTileFeatureToInfo(picked));
+        return;
       }
 
-      selectedEntityRef.current = entity;
-      setEntityHighlighted(entity, true);
+      const entity = picked?.id;
+      if (entity?.featureData) {
+        setEntityHighlighted(entity, true);
+        selectedEntityRef.current = {
+          kind: "entity",
+          target: entity,
+        };
 
-      const selectedFeature = cloneFeatureWithLayer(entity.featureData, entity.layerKey);
-      onFeatureSelect?.(selectedFeature);
+        const selectedFeature = cloneFeatureWithLayer(
+          entity.featureData,
+          entity.layerKey,
+        );
+        onFeatureSelect?.(selectedFeature);
+        return;
+      }
+
+      onFeatureSelect?.(null);
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
     viewerRef.current = viewer;
@@ -368,10 +468,8 @@ export default function Society3DMapview({
   const clearLayers = (keys) => keys.forEach((key) => clearLayer(key));
 
   const clearSelection = () => {
-    if (selectedEntityRef.current) {
-      setEntityHighlighted(selectedEntityRef.current, false);
-      selectedEntityRef.current = null;
-    }
+    restorePickedSelection(selectedEntityRef.current);
+    selectedEntityRef.current = null;
     onFeatureSelect?.(null);
   };
 
