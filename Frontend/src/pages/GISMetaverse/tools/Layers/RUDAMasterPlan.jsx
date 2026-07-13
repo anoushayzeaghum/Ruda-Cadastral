@@ -3,10 +3,16 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import mapboxgl from "mapbox-gl";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import {
+  getAbdulHakeemMotorwayM3GeoJSON,
   getCityLevelServiceGeoJSON,
   getCityLevelServicePointsGeoJSON,
   getExistingForestGeoJSON,
   getForestBoundaryGeoJSON,
+  getHardoSohalMuslimRoadGeoJSON,
+  getJinnahAvenueRoadGeoJSON,
+  getKalaKhataJiInterchangeGeoJSON,
+  getKatarBundRoadGeoJSON,
+  getLahoreBypassGeoJSON,
   getMpPrincipleZoningGeoJSON,
   getPrecientBoundaryGeoJSON,
   getProposedRoadNetworkGeoJSON,
@@ -14,6 +20,8 @@ import {
   getRiverRaviGeoJSON,
   getRudaJurisdictionGeoJSON,
   getRudaPlanningBoundaryGeoJSON,
+  getSialkotMotorwayGeoJSON,
+  getTransportationRoadsGeoJSON,
 } from "../../../../services/metaverseApi";
 
 const RUDA_MASTER_PLAN_GROUPS = [
@@ -41,6 +49,46 @@ const RUDA_MASTER_PLAN_GROUPS = [
         key: "rudaProposedRoads",
         label: "RUDA Proposed Roads",
         color: "#19598d",
+      },
+      {
+        key: "transportationRoads",
+        label: "Transportation Roads",
+        color: "#e11d48",
+      },
+      {
+        key: "lahoreBypass",
+        label: "Lahore Bypass",
+        color: "#f59e0b",
+      },
+      {
+        key: "jinnahAvenueRoad",
+        label: "Jinnah Avenue Road",
+        color: "#22c55e",
+      },
+      {
+        key: "hardoSohalMuslimRoad",
+        label: "Hardosohal Muslim Road",
+        color: "#a855f7",
+      },
+      {
+        key: "katarBundRoad",
+        label: "Katar Bund Road",
+        color: "#06b6d4",
+      },
+      {
+        key: "kalaKhataJiInterchange",
+        label: "Kala Khataj Interchange",
+        color: "#f97316",
+      },
+      {
+        key: "sialkotMotorway",
+        label: "Sialkot Motorway",
+        color: "#14b8a6",
+      },
+      {
+        key: "abdulHakeemMotorwayM3",
+        label: "Abdul Hakeem Motorway M-3",
+        color: "#ec4899",
       },
     ],
   },
@@ -131,6 +179,46 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     lineWidth: 3,
     categorized: true,
   },
+  transportationRoads: {
+    endpoint: "/transportation-roads/",
+    fetchGeoJSON: getTransportationRoadsGeoJSON,
+    lineWidth: 3,
+  },
+  lahoreBypass: {
+    endpoint: "/lahore-bypass/",
+    fetchGeoJSON: getLahoreBypassGeoJSON,
+    lineWidth: 3,
+  },
+  jinnahAvenueRoad: {
+    endpoint: "/jinnah-avenue-road/",
+    fetchGeoJSON: getJinnahAvenueRoadGeoJSON,
+    lineWidth: 3,
+  },
+  hardoSohalMuslimRoad: {
+    endpoint: "/hardo-sohal-muslim-road/",
+    fetchGeoJSON: getHardoSohalMuslimRoadGeoJSON,
+    lineWidth: 3,
+  },
+  katarBundRoad: {
+    endpoint: "/katar-bund-road/",
+    fetchGeoJSON: getKatarBundRoadGeoJSON,
+    lineWidth: 3,
+  },
+  kalaKhataJiInterchange: {
+    endpoint: "/kala-khata-ji-interchange/",
+    fetchGeoJSON: getKalaKhataJiInterchangeGeoJSON,
+    lineWidth: 3,
+  },
+  sialkotMotorway: {
+    endpoint: "/sialkot-motorway/",
+    fetchGeoJSON: getSialkotMotorwayGeoJSON,
+    lineWidth: 3,
+  },
+  abdulHakeemMotorwayM3: {
+    endpoint: "/abdul-hakeem-motorway-m3/",
+    fetchGeoJSON: getAbdulHakeemMotorwayM3GeoJSON,
+    lineWidth: 3,
+  },
   cityLevelServicesPoints: {
     endpoint: "/city-level-service-points/",
     fetchGeoJSON: getCityLevelServicePointsGeoJSON,
@@ -177,12 +265,13 @@ const RUDA_PROPOSED_ROAD_LEGEND = [
   {
     label: "Jahangir Tomb Bridge and Flyover",
     color: "#f4cf78",
-    values: [
-      "jahangir tomb bridge and flyover",
-      "jahangir tomb bridge",
-    ],
+    values: ["jahangir tomb bridge and flyover", "jahangir tomb bridge"],
   },
-  { label: "Proposed SL-4", color: "#d9a441", values: ["proposed sl-4", "proposed sl4"] },
+  {
+    label: "Proposed SL-4",
+    color: "#d9a441",
+    values: ["proposed sl-4", "proposed sl4"],
+  },
   {
     label: "Promenade Road with Service Road",
     color: "#c02ad3",
@@ -210,11 +299,13 @@ const ROAD_TYPE_EXPRESSION = [
   ],
 ];
 
-const DEFAULT_RUDA_PROPOSED_ROAD_COLORS =
-  RUDA_PROPOSED_ROAD_LEGEND.reduce((colors, item) => {
+const DEFAULT_RUDA_PROPOSED_ROAD_COLORS = RUDA_PROPOSED_ROAD_LEGEND.reduce(
+  (colors, item) => {
     colors[item.label] = item.color;
     return colors;
-  }, {});
+  },
+  {},
+);
 
 const CITY_LEVEL_SERVICES_LEGEND = [
   {
@@ -317,25 +408,27 @@ const CITY_LEVEL_SERVICE_TYPE_EXPRESSION = [
   ],
 ];
 
-const DEFAULT_CITY_LEVEL_SERVICE_COLORS =
-  CITY_LEVEL_SERVICES_LEGEND.reduce((colors, item) => {
+const DEFAULT_CITY_LEVEL_SERVICE_COLORS = CITY_LEVEL_SERVICES_LEGEND.reduce(
+  (colors, item) => {
     colors[item.label] = item.color;
     return colors;
-  }, {});
+  },
+  {},
+);
 
 const buildCityLevelServiceColorExpression = (
   serviceColors = DEFAULT_CITY_LEVEL_SERVICE_COLORS,
 ) => [
-    "match",
-    CITY_LEVEL_SERVICE_TYPE_EXPRESSION,
-    ...CITY_LEVEL_SERVICES_LEGEND.flatMap((item) =>
-      item.values.flatMap((value) => [
-        value,
-        serviceColors[item.label] || item.color,
-      ]),
-    ),
-    "#22c55e",
-  ];
+  "match",
+  CITY_LEVEL_SERVICE_TYPE_EXPRESSION,
+  ...CITY_LEVEL_SERVICES_LEGEND.flatMap((item) =>
+    item.values.flatMap((value) => [
+      value,
+      serviceColors[item.label] || item.color,
+    ]),
+  ),
+  "#22c55e",
+];
 
 const EXISTING_FOREST_LEGEND = [
   {
@@ -428,27 +521,31 @@ const EXISTING_FOREST_TYPE_EXPRESSION = [
   ],
 ];
 
-const DEFAULT_EXISTING_FOREST_COLORS =
-  EXISTING_FOREST_LEGEND.reduce((colors, item) => {
+const DEFAULT_EXISTING_FOREST_COLORS = EXISTING_FOREST_LEGEND.reduce(
+  (colors, item) => {
     colors[item.label] = item.color;
     return colors;
-  }, {});
+  },
+  {},
+);
 
 const buildExistingForestColorExpression = (
   forestColors = DEFAULT_EXISTING_FOREST_COLORS,
 ) => [
-    "match",
-    EXISTING_FOREST_TYPE_EXPRESSION,
-    ...EXISTING_FOREST_LEGEND.flatMap((item) =>
-      item.values.flatMap((value) => [
-        value,
-        forestColors[item.label] || item.color,
-      ]),
-    ),
-    "#84cc16",
-  ];
+  "match",
+  EXISTING_FOREST_TYPE_EXPRESSION,
+  ...EXISTING_FOREST_LEGEND.flatMap((item) =>
+    item.values.flatMap((value) => [
+      value,
+      forestColors[item.label] || item.color,
+    ]),
+  ),
+  "#84cc16",
+];
 
-const buildRoadColorExpression = (roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS) => [
+const buildRoadColorExpression = (
+  roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
+) => [
   "match",
   ROAD_TYPE_EXPRESSION,
   ...RUDA_PROPOSED_ROAD_LEGEND.flatMap((item) =>
@@ -518,8 +615,10 @@ const setLayoutVisibility = (map, layerId, visible) => {
 
 const normalizeGeoJSON = (geojson) => {
   if (geojson?.type === "FeatureCollection") return geojson;
-  if (geojson?.features) return { type: "FeatureCollection", features: geojson.features };
-  if (Array.isArray(geojson)) return { type: "FeatureCollection", features: geojson };
+  if (geojson?.features)
+    return { type: "FeatureCollection", features: geojson.features };
+  if (Array.isArray(geojson))
+    return { type: "FeatureCollection", features: geojson };
   return { type: "FeatureCollection", features: [] };
 };
 
@@ -1234,9 +1333,12 @@ export default function RUDAMasterPlan({ map }) {
                             opacity={currentLayerState.opacity ?? 100}
                             dropdownOpen={!!currentLayerState.dropdownOpen}
                             categorized={
-                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorized ||
-                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorizedServices ||
-                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]?.categorizedExistingForest
+                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]
+                                ?.categorized ||
+                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]
+                                ?.categorizedServices ||
+                              !!RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key]
+                                ?.categorizedExistingForest
                             }
                             categoryLegend={
                               layer.key === "rudaProposedRoads"
@@ -1280,7 +1382,8 @@ export default function RUDAMasterPlan({ map }) {
                                   <div className="space-y-1.5">
                                     {RUDA_PROPOSED_ROAD_LEGEND.map((item) => {
                                       const currentColor =
-                                        proposedRoadColors[item.label] || item.color;
+                                        proposedRoadColors[item.label] ||
+                                        item.color;
 
                                       return (
                                         <div
@@ -1289,7 +1392,9 @@ export default function RUDAMasterPlan({ map }) {
                                         >
                                           <label
                                             className="relative h-4 w-8 shrink-0 cursor-pointer overflow-hidden rounded-sm border border-white/40"
-                                            style={{ backgroundColor: currentColor }}
+                                            style={{
+                                              backgroundColor: currentColor,
+                                            }}
                                             title={`Change ${item.label} color`}
                                           >
                                             <input
@@ -1409,11 +1514,15 @@ export default function RUDAMasterPlan({ map }) {
 
                               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
                                 <span>Status</span>
-                                <span>{currentLayerMeta.status || "Not loaded"}</span>
+                                <span>
+                                  {currentLayerMeta.status || "Not loaded"}
+                                </span>
                               </div>
                               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
                                 <span>Features</span>
-                                <span>{currentLayerMeta.featureCount ?? 0}</span>
+                                <span>
+                                  {currentLayerMeta.featureCount ?? 0}
+                                </span>
                               </div>
                               <div className="flex justify-between gap-3 py-1">
                                 <span>Data source</span>
@@ -1556,9 +1665,9 @@ function LayerItem({
             style={
               categorized
                 ? {
-                  background: categorizedGradient,
-                  borderColor: "rgba(255,255,255,0.6)",
-                }
+                    background: categorizedGradient,
+                    borderColor: "rgba(255,255,255,0.6)",
+                  }
                 : { backgroundColor: color, borderColor: color }
             }
             title={

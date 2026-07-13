@@ -1484,7 +1484,7 @@ class KatarBundRoadSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "oid",
+            "old",
             "name",
             "folderpath",
             "symbolid",
@@ -1510,7 +1510,7 @@ class LahoreBypassSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "oid",
+            "old",
             "name",
             "folderpath",
             "symbolid",

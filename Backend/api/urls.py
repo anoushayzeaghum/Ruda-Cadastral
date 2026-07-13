@@ -243,8 +243,6 @@ router.register(r"rtwpackage/create", CreateRtwPackageView, basename="create-rtw
 router.register(r"rtwpackage/update", UpdateRtwPackageView, basename="update-rtwpackage")
 router.register(r"rtwpackage/delete", DeleteRtwPackageView, basename="delete-rtwpackage")
 
-# Paste this block into api/urls.py after the existing ProposedRoadNetwork registrations.
-# `from api.views.RudaMasterPlan import *` already exposes these view classes.
 
 router.register(r"abdul-hakeem-motorway-m3", ListAbdulHakeemMotorwayM3View, basename="abdul-hakeem-motorway-m3")
 router.register(r"abdul-hakeem-motorway-m3/create", CreateAbdulHakeemMotorwayM3View, basename="create-abdul-hakeem-motorway-m3")
