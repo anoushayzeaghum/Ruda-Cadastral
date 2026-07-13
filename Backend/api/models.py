@@ -2444,3 +2444,392 @@ class LahoreRingRoad(models.Model):
     class Meta:
         managed = False
         db_table = "lahoreringroad"
+
+#--------------------------------------------
+# Bridges 
+#--------------------------------------------
+class Bridges(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    osm_id = models.BigIntegerField(null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    ref = models.CharField(max_length=255, null=True, blank=True)
+
+    bridge_type = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_column="type",
+    )
+
+    oneway = models.IntegerField(null=True, blank=True)
+    bridge = models.IntegerField(null=True, blank=True)
+    maxspeed = models.IntegerField(null=True, blank=True)
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Bridge {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "bridges"
+
+#--------------------------------------------
+# GanjaKalanTruckStand
+#--------------------------------------------
+class GanjaKalanTruckStand(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.IntegerField(null=True, blank=True)
+
+    district = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    tehsil = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    mouza = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    square = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    khasra = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    sub_khasra = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    khasra_lab = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    remarks = models.TextField(
+        null=True,
+        blank=True,
+    )
+
+    area_sqft = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    shape_area = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.mouza or f"Ganja Kalan Truck Stand {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "ganjakalantruckstand"
+
+
+#--------------------------------------------
+# LahoreRapidMassTransit
+#--------------------------------------------
+class LahoreRapidMassTransit(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Lahore Rapid Mass Transit {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "lahorerapidmasstransit"
+
+
+#--------------------------------------------
+# OrangeTrack
+#--------------------------------------------
+class OrangeTrack(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    folderpath = models.CharField(
+        max_length=500,
+        null=True,
+        blank=True,
+    )
+
+    symbolid = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    altmode = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    base = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    clamped = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    extruded = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    snippet = models.TextField(
+        null=True,
+        blank=True,
+    )
+
+    popupinfo = models.TextField(
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Orange Track {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "orangetrack"
+
+#--------------------------------------------
+# Railway Line
+#--------------------------------------------
+
+class RailwayLine(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    shape_le_1 = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    shape_le_2 = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Railway Line {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "railwayline"
+
+#--------------------------------------------
+# Railway Stations
+#--------------------------------------------
+class RailwayStations(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    fid = models.IntegerField(
+        db_column="fid_",
+        null=True,
+        blank=True,
+    )
+
+    entity = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    layer = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    color = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    linetype = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    elevation = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    linewt = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    refname = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    shape_area = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.layer or f"Railway Station {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "railwaystations"
+
+#----------------------------------------------
+# Hudiara Drain
+#----------------------------------------------
+class HudiaraDrain(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    objectid = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    layer = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    drain = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiLineStringField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Hudiara Drain {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "hudiaradrain"

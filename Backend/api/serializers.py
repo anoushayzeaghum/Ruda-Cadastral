@@ -1830,3 +1830,155 @@ class LahoreRingRoadSerializer(GeoFeatureModelSerializer):
             "shape_le_1",
             "geom",
         )
+
+class BridgesSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Bridges
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "osm_id",
+            "name",
+            "ref",
+            "bridge_type",
+            "oneway",
+            "bridge",
+            "maxspeed",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# GanjaKalanTruckStand Serializer
+# DB table: ganjakalantruckstand
+class GanjaKalanTruckStandSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = GanjaKalanTruckStand
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
+            "khasra",
+            "sub_khasra",
+            "khasra_lab",
+            "remarks",
+            "area_sqft",
+            "shape_leng",
+            "shape_area",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# LahoreRapidMassTransit Serializer
+# DB table: lahorerapidmasstransit
+class LahoreRapidMassTransitSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreRapidMassTransit
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "shape_leng",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# OrangeTrack Serializer
+# DB table: orangetrack
+class OrangeTrackSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = OrangeTrack
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "folderpath",
+            "symbolid",
+            "altmode",
+            "base",
+            "clamped",
+            "extruded",
+            "snippet",
+            "popupinfo",
+            "shape_leng",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RailwayLine Serializer
+# DB table: railwayline
+
+class RailwayLineSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RailwayLine
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "name",
+            "shape_leng",
+            "shape_le_1",
+            "shape_le_2",
+            "geom",
+        )
+
+class RailwayStationsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RailwayStations
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "fid",
+            "entity",
+            "layer",
+            "color",
+            "linetype",
+            "elevation",
+            "linewt",
+            "refname",
+            "shape_leng",
+            "shape_area",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# HudiaraDrain Serializer
+# DB table: hudiaradrain
+class HudiaraDrainSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = HudiaraDrain
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "drain",
+            "shape_leng",
+            "geom",
+        )
