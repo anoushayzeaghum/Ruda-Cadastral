@@ -593,8 +593,7 @@ class Square(models.Model):
     pc_id = models.FloatField(null=True, blank=True)
 
     sq = models.FloatField(null=True, blank=True)
-    square_id = models.FloatField(null=True, blank=True)
-
+    
     layer = models.CharField(max_length=254, null=True, blank=True)
 
     geom = gis_models.MultiPolygonField(

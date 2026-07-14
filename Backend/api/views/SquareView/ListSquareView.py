@@ -117,7 +117,6 @@ class ListSquareView(viewsets.ViewSet):
                         pc,
                         pc_id,
                         sq,
-                        square_id,
                         layer,
                         ST_AsGeoJSON(geom)::json
                     FROM square
@@ -154,7 +153,6 @@ class ListSquareView(viewsets.ViewSet):
                     "pc": row[6],
                     "pc_id": row[7],
                     "sq": row[8],
-                    "square_id": row[9],
                     "layer": row[10],
                 },
             }

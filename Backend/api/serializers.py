@@ -589,7 +589,6 @@ class SquareSerializer(GeoFeatureModelSerializer):
             "pc",
             "pc_id",
             "sq",
-            "square_id",
             "layer",
             "geom",
         )
