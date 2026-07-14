@@ -439,11 +439,10 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
 hover:-translate-y-2
 hover:scale-[1.025]
-hover:rotate-[0.2deg] ${
-        compact
+hover:rotate-[0.2deg] ${compact
           ? "min-h-[128px] rounded-xl p-3"
           : "min-h-[154px] rounded-[18px] p-4"
-      }`}
+        }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
         backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.91) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.36) 100%), url('${area.image}')`,
@@ -656,11 +655,10 @@ export default function LandingPage() {
       </div>
 
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white shadow-lg"
-            : "bg-white/95 backdrop-blur-sm shadow-sm"
-        }`}
+        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
+          ? "bg-white shadow-lg"
+          : "bg-white/95 backdrop-blur-sm shadow-sm"
+          }`}
       >
         <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-12 sm:h-14 md:h-14">
           <div
@@ -673,11 +671,10 @@ export default function LandingPage() {
               <a
                 key={href}
                 href={href}
-                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
-                  activeSection === href.slice(1)
-                    ? "bg-[#0B7A3B] text-white"
-                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
-                }`}
+                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
+                  ? "bg-[#0B7A3B] text-white"
+                  : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                  }`}
               >
                 {label}
               </a>
@@ -868,9 +865,9 @@ export default function LandingPage() {
                 </div>
 
                 <h1 className="mt-4 text-3xl font-black leading-[1.02] tracking-[-0.035em] drop-shadow-[0_8px_30px_rgba(0,0,0,.85)] xs:text-4xl sm:text-5xl md:text-6xl 2xl:text-[68px]">
-                  RUDA GIS METAVERSE
+                  RUDA GIS
                   <span className="mt-1 block text-[#70D84F] sm:mt-2">
-                    &amp; Cadastral Portal
+                    METAVERSE
                   </span>
                 </h1>
 
@@ -949,11 +946,10 @@ export default function LandingPage() {
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${
-                  i === slideIndex
-                    ? "h-2 w-7 bg-[#70D84F]"
-                    : "h-2 w-2 bg-white/35 hover:bg-white/70"
-                }`}
+                className={`rounded-full transition-all duration-300 ${i === slideIndex
+                  ? "h-2 w-7 bg-[#70D84F]"
+                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                  }`}
               />
             ))}
           </div>
@@ -1011,7 +1007,7 @@ export default function LandingPage() {
             </div>
 
             <button
-              onClick={() => navigate("/Mapview/MapPage")}
+              onClick={() => navigate("/Mapview")}
               className="mt-7 sm:mt-10 inline-flex items-center gap-2 bg-[#0B7A3B] hover:bg-[#004225] text-white font-bold text-sm sm:text-base px-5 sm:px-7 py-3 sm:py-3.5 rounded-full transition-all hover:shadow-lg"
             >
               Open Cadastral Map <ArrowRight size={15} />
