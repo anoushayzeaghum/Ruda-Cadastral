@@ -714,17 +714,10 @@ export default function LandingPage() {
                 className="text-4xl font-black leading-[0.98] tracking-[-0.04em] xs:text-5xl sm:text-6xl md:text-7xl lg:text-[82px]"
                 style={{ animation: "heroTextReveal 1000ms cubic-bezier(0.16, 1, 0.3, 1) 300ms both" }}
               >
-                <span className="inline-block bg-gradient-to-b from-white via-white to-white/70 bg-clip-text text-transparent drop-shadow-[0_4px_32px_rgba(0,0,0,0.5)]">
+                <span className="inline-block bg-gradient-to-b from-green via-white to-white/70 bg-clip-text text-transparent drop-shadow-[0_4px_32px_rgba(0,0,0,0.5)]">
                   RUDA GIS METAVERSE
                 </span>
-                <span
-                  className="mt-2 block sm:mt-3"
-                  style={{ animation: "heroTextReveal 1000ms cubic-bezier(0.16, 1, 0.3, 1) 550ms both" }}
-                >
-                  <span className="inline-block bg-gradient-to-r from-[#49B84A] via-[#6fdb5a] to-[#38d4a0] bg-clip-text text-transparent drop-shadow-[0_4px_28px_rgba(73,184,74,0.4)]">
-                    &amp; Cadastral Portal
-                  </span>
-                </span>
+
               </h1>
 
               {/* Decorative divider */}
@@ -799,11 +792,10 @@ export default function LandingPage() {
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`relative overflow-hidden rounded-full transition-all duration-500 ${
-                  i === slideIndex
-                    ? "h-1.5 w-10 bg-white/15"
-                    : "h-1.5 w-1.5 bg-white/20 hover:bg-white/40"
-                }`}
+                className={`relative overflow-hidden rounded-full transition-all duration-500 ${i === slideIndex
+                  ? "h-1.5 w-10 bg-white/15"
+                  : "h-1.5 w-1.5 bg-white/20 hover:bg-white/40"
+                  }`}
               >
                 {i === slideIndex && (
                   <span
