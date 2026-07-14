@@ -28,6 +28,10 @@ import {
   Instagram,
   ExternalLink,
   UploadCloud,
+  Radio,
+  Users,
+  Leaf,
+  Workflow,
 } from "lucide-react";
 
 const HERO_SLIDES = [
@@ -55,16 +59,21 @@ const STATS = [
   { value: "99.8%", label: "Data Accuracy" },
 ];
 
-
 const DECISION_AREAS = [
   {
     key: "land",
     number: "01",
-    title: "Land & Estate Management",
+    title: "Land Acquisition & Estate Management",
     shortTitle: "Land & Estate",
     icon: MapPin,
-    accent: "#8fd36f",
-    bullets: ["Parcel & Khasra intelligence", "Ownership and compensation", "Asset inventory management"],
+    accent: "#9BE35C",
+    image: "/LandingCard1.png",
+    bullets: [
+      "Parcel mapping & Khasra management",
+      "Ownership & compensation management",
+      "Estate inventory & asset management",
+      "Mutation & revenue integration",
+    ],
   },
   {
     key: "planning",
@@ -72,26 +81,47 @@ const DECISION_AREAS = [
     title: "Architecture & Urban Planning",
     shortTitle: "Urban Planning",
     icon: Layers,
-    accent: "#54c7ec",
-    bullets: ["Master planning and zoning", "3D city visualization", "Scenario-based planning"],
+    accent: "#3FC6FF",
+    image: "/LandingCard2.png",
+    bullets: [
+      "Master planning & zoning",
+      "3D city modeling & visualization",
+      "Land-use & density analysis",
+      "Urban design & streetscapes",
+      "Scenario planning & simulations",
+    ],
   },
   {
     key: "development",
     number: "03",
     title: "Development & Building Control",
-    shortTitle: "Development Control",
-    icon: Box,
-    accent: "#c084fc",
-    bullets: ["Building approvals", "Progress monitoring", "Digital records and compliance"],
+    shortTitle: "Building Control",
+    icon: ClipboardList,
+    accent: "#B781FF",
+    image: "/LandingCard3.png",
+    bullets: [
+      "Building plan approval system",
+      "Development monitoring",
+      "Building inspections",
+      "Regulatory compliance",
+      "e-Permits & digital records",
+    ],
   },
   {
     key: "engineering",
     number: "04",
-    title: "Engineering & Infrastructure",
+    title: "Engineering",
     shortTitle: "Engineering",
-    icon: Database,
-    accent: "#f5b942",
-    bullets: ["Roads, bridges and utilities", "Drainage and water networks", "Asset maintenance planning"],
+    icon: Zap,
+    accent: "#FFAA22",
+    image: "/LandingCard4.png",
+    bullets: [
+      "Infrastructure design & modeling",
+      "Roads, bridges & interchanges",
+      "Water supply & sewerage networks",
+      "Storm-water drainage",
+      "Asset management & maintenance",
+    ],
   },
   {
     key: "commercial",
@@ -99,18 +129,58 @@ const DECISION_AREAS = [
     title: "Commercial & Business Strategy",
     shortTitle: "Commercial Strategy",
     icon: BarChart3,
-    accent: "#38d4d4",
-    bullets: ["Investment opportunity mapping", "Land-value intelligence", "Feasibility and market analysis"],
+    accent: "#27E1EA",
+    image: "/LandingCard5.png",
+    bullets: [
+      "Investment & opportunity mapping",
+      "Commercial zone management",
+      "Market & feasibility analysis",
+      "Stakeholder & investor portal",
+      "Revenue & financial analytics",
+    ],
   },
   {
     key: "sustainability",
     number: "06",
-    title: "Sustainability & Social Impact",
-    shortTitle: "Sustainability",
-    icon: Shield,
-    accent: "#a3e635",
-    bullets: ["Environmental monitoring", "Green infrastructure", "Community and social impact"],
+    title: "Corporate Social Responsibility (CSR)",
+    shortTitle: "CSR & Sustainability",
+    icon: Leaf,
+    accent: "#9BE84F",
+    image: "/LandingCard6.png",
+    bullets: [
+      "Community engagement",
+      "Social-impact assessment",
+      "Environmental sustainability",
+      "Green & blue infrastructure",
+      "Education, health & well-being",
+    ],
   },
+];
+
+const TOP_PILLARS = [
+  { label: "Integrated Data", icon: Database },
+  { label: "Real-time Monitoring", icon: Radio },
+  { label: "Collaborative Decisions", icon: Users },
+  { label: "Sustainable Future", icon: Leaf },
+];
+
+const RAVI_CITY_PILLARS = [
+  { label: "Transparent ", icon: Shield },
+  { label: "Data-driven ", icon: BarChart3 },
+  { label: "Livability", icon: Users },
+  { label: "Sustainable ", icon: Leaf },
+  // { label: "Transparent Governance", icon: Shield },
+  // { label: "Data-driven Decisions", icon: BarChart3 },
+  // { label: "Better Livability", icon: Users },
+  // { label: "Sustainable Future", icon: Leaf },
+];
+
+const CORE_CAPABILITIES = [
+  { label: "3D Visualization", icon: Box },
+  { label: "Real-time Data", icon: Database },
+  { label: "Analytics", icon: BarChart3 },
+  { label: "Simulation", icon: Workflow },
+  { label: "Scenarios", icon: Layers },
 ];
 
 const GIS_APPS = [
@@ -122,6 +192,7 @@ const GIS_APPS = [
     route: "/Mapview",
     gradientFrom: "#49B84A",
     gradientTo: "#004225",
+    tags: ["Cadastral", "Land Records"],
   },
   {
     icon: <Search size={22} />,
@@ -131,6 +202,7 @@ const GIS_APPS = [
     route: "/gis-metaverse",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
+    tags: ["GIS", "Vector & Raster"],
   },
   {
     icon: <ClipboardList size={22} />,
@@ -140,6 +212,7 @@ const GIS_APPS = [
     route: "/society-3d",
     gradientFrom: "#49B84A",
     gradientTo: "#0B7A3B",
+    tags: ["3D", "Visualization"],
   },
   {
     icon: <UploadCloud size={22} />,
@@ -149,6 +222,7 @@ const GIS_APPS = [
     route: "/society-3d-upload",
     gradientFrom: "#0B7A3B",
     gradientTo: "#00351F",
+    tags: ["BIM", "Cesium"],
   },
   {
     icon: <FileText size={22} />,
@@ -158,6 +232,7 @@ const GIS_APPS = [
     route: "/demarcation",
     gradientFrom: "#49B84A",
     gradientTo: "#0B7A3B",
+    tags: ["Plots", "Reports"],
   },
   {
     icon: <Eye size={22} />,
@@ -167,6 +242,7 @@ const GIS_APPS = [
     route: "/dashboard",
     gradientFrom: "#49B84A",
     gradientTo: "#004225",
+    tags: ["Admin", "Management"],
   },
   {
     icon: <Smartphone size={22} />,
@@ -176,6 +252,7 @@ const GIS_APPS = [
     route: "/flyto-dashboard",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
+    tags: ["Location", "Analytics"],
   },
 ];
 
@@ -249,7 +326,18 @@ function useInView(options = {}) {
   return [ref, visible];
 }
 
-function AppCard({ icon, title, desc, img, route, color, gradientFrom, gradientTo, index, onClick }) {
+function AppCard({
+  icon,
+  title,
+  desc,
+  img,
+  route,
+  gradientFrom,
+  gradientTo,
+  tags = [],
+  index,
+  onClick,
+}) {
   const [ref, visible] = useInView();
   const [hovered, setHovered] = useState(false);
 
@@ -259,124 +347,160 @@ function AppCard({ icon, title, desc, img, route, color, gradientFrom, gradientT
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`group relative bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100
+      className={`group relative flex h-full min-h-[300px] overflow-hidden rounded-[14px] border border-[#197553]/70 bg-[#031812] text-white
+        shadow-[0_18px_45px_-24px_rgba(0,0,0,0.9)]
         transition-all duration-500 ease-out
-        ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}
-        hover:-translate-y-2 hover:shadow-2xl
+        ${visible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}
+        hover:-translate-y-1.5 hover:border-[#48d37a]/90
+        hover:shadow-[0_20px_48px_-18px_rgba(28,191,103,0.42)]
         ${route ? "cursor-pointer" : "cursor-default"}`}
       style={{ transitionDelay: `${(index % 4) * 80}ms` }}
     >
-      <div className="relative h-44 xs:h-48 sm:h-56 overflow-hidden">
-        <img
-          src={img}
-          alt={title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
+      <div className="flex w-full flex-col">
+        <div className="relative h-40 overflow-hidden sm:h-44">
+          <img
+            src={img}
+            alt={title}
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+          />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#031812] via-[#031812]/10 to-black/20" />
 
-        <div className="absolute top-4 left-4 w-10 h-10 rounded-xl bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-white">
-          {icon}
-        </div>
+          <div className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/35 text-white/85 backdrop-blur-md">
+            {icon}
+          </div>
 
-        {route && (
-          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div className="flex items-center gap-1 bg-white/90 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full">
-              Open <ExternalLink size={10} />
+          {route && (
+            <div className="absolute right-3 top-3">
+              <div className="flex items-center gap-1 rounded-full border border-white/20 bg-white/90 px-2.5 py-1 text-[9px] font-bold text-slate-800 shadow-md">
+                Open
+                <ExternalLink size={9} />
+              </div>
             </div>
-          </div>
-        )}
-
-        <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-8">
-          <h3 className="text-white font-black text-base leading-snug drop-shadow-lg">
-            {title}
-          </h3>
+          )}
         </div>
-      </div>
 
-      <div className="p-5">
-        <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+        <div className="relative -mt-7 flex flex-1 flex-col px-4 pb-4 pt-2">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#55d985]/35 bg-gradient-to-br from-[#3cc96f] to-[#0b7a3b] text-white shadow-[0_8px_18px_-9px_rgba(60,201,111,0.9)]">
+              {icon}
+            </div>
 
-        {route && (
-          <div className="mt-4 flex items-center gap-1 text-[#0B7A3B] font-bold text-sm group-hover:gap-2 transition-all">
-            Open App <ArrowRight size={13} />
+            <h3 className="min-w-0 text-[14px] font-black leading-tight text-white sm:text-sm">
+              {title}
+            </h3>
           </div>
-        )}
-      </div>
 
-      <div
-        style={{
-          height: "2px",
-          width: hovered ? "100%" : "0%",
-          background: `linear-gradient(to right, ${gradientFrom}, ${gradientTo})`,
-          transition: "width 500ms ease",
-        }}
-      />
+          <p className="mt-2.5 line-clamp-3 text-[10px] leading-relaxed text-white/65 sm:text-[11px]">
+            {desc}
+          </p>
+
+          <div className="mt-auto flex items-end justify-between gap-3 pt-4">
+            <div className="flex min-w-0 flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-md border border-[#2f9b61]/25 bg-[#0b5b35]/35 px-2 py-1 text-[8px] font-bold text-[#75df9d]"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            {route && (
+              <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#28a863]/70 px-2.5 py-1.5 text-[9px] font-bold text-[#72e49b] transition-all duration-300 group-hover:border-[#5be68c] group-hover:bg-[#0b7a3b]/35 group-hover:text-white">
+                Open App
+                <ArrowRight size={10} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div
+          className="absolute bottom-0 left-0 h-[2px] transition-all duration-500"
+          style={{
+            width: hovered ? "100%" : "0%",
+            background: `linear-gradient(to right, ${gradientFrom}, ${gradientTo})`,
+          }}
+        />
+      </div>
     </article>
   );
 }
 
-
-function DecisionSupportCard({
-  area,
-  side = "left",
-  delay = 0,
-  compact = false,
-}) {
+function DecisionSupportCard({ area, delay = 0, compact = false }) {
   const Icon = area.icon;
+  const [hovered, setHovered] = useState(false);
 
   return (
     <div
-      className={`group relative overflow-hidden border border-white/20 bg-[#031a14]/72 text-white shadow-[0_18px_55px_-22px_rgba(0,0,0,0.85)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:border-white/35 hover:bg-[#06291f]/88 ${compact ? "rounded-xl p-3" : "rounded-2xl p-4"
-        }`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
+hover:-translate-y-2
+hover:scale-[1.025]
+hover:rotate-[0.2deg] ${
+        compact
+          ? "min-h-[128px] rounded-xl p-3"
+          : "min-h-[154px] rounded-[18px] p-4"
+      }`}
       style={{
-        animation: `decisionCardIn 700ms ease-out ${delay}ms both, decisionFloat 6s ease-in-out ${delay + 900}ms infinite`,
+        border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
+        backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.91) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.36) 100%), url('${area.image}')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        boxShadow: hovered
+          ? `0 0 30px ${area.accent}70, 0 22px 55px -20px ${area.accent}CC, inset 0 0 36px ${area.accent}18`
+          : `0 18px 45px -24px ${area.accent}88, inset 0 0 32px rgba(255,255,255,.025)`,
+        animation: `decisionCardIn 700ms ease-out ${delay}ms both`,
       }}
     >
-      {!compact && (
-        <span
-          className={`absolute top-1/2 hidden h-px w-10 -translate-y-1/2 lg:block ${side === "left" ? "-right-10" : "-left-10"
-            }`}
-          style={{
-            background: `linear-gradient(${side === "left" ? "to right" : "to left"}, ${area.accent}, transparent)`,
-          }}
-        />
-      )}
-
       <div
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ backgroundColor: area.accent }}
+        className="absolute inset-x-0 top-0 h-px"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${area.accent}, transparent)`,
+        }}
+      />
+      <div
+        className="absolute -right-12 -top-12 h-28 w-28 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
+        style={{ backgroundColor: `${area.accent}35` }}
       />
 
-      <div className="flex items-start gap-3">
-        <div
-          className={`${compact ? "h-9 w-9" : "h-11 w-11"} flex shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10`}
-          style={{ color: area.accent }}
-        >
-          <Icon size={compact ? 18 : 21} strokeWidth={2.1} />
+      <div className="relative z-10 flex items-start gap-3">
+        <div className="flex shrink-0 flex-col items-center gap-2">
+          <div
+            className={`${compact ? "h-9 w-9 text-sm" : "h-11 w-11 text-base"} flex items-center justify-center rounded-full border-2 font-black`}
+            style={{
+              borderColor: area.accent,
+              color: "white",
+              backgroundColor: `${area.accent}25`,
+              boxShadow: `0 0 20px ${area.accent}38`,
+            }}
+          >
+            {Number(area.number)}
+          </div>
+          <div
+            className={`${compact ? "h-8 w-8" : "h-10 w-10"} flex items-center justify-center rounded-full border bg-black/25`}
+            style={{ borderColor: `${area.accent}90`, color: area.accent }}
+          >
+            <Icon size={compact ? 16 : 19} strokeWidth={2} />
+          </div>
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className="text-[10px] font-black tracking-[0.18em]"
-              style={{ color: area.accent }}
-            >
-              {area.number}
-            </span>
-            <span className="h-px flex-1 bg-white/15" />
-          </div>
-
-          <h3 className={`${compact ? "mt-1 text-[11px]" : "mt-1.5 text-sm"} font-black uppercase leading-tight tracking-wide`}>
+          <h3
+            className={`${compact ? "text-[10px]" : "text-[12px] 2xl:text-[13px]"} font-black uppercase leading-tight tracking-[0.035em]`}
+          >
             {compact ? area.shortTitle : area.title}
           </h3>
 
-          {!compact && (
-            <ul className="mt-2 space-y-1">
-              {area.bullets.map((bullet) => (
+          <ul className={`${compact ? "mt-2 space-y-1" : "mt-2.5 space-y-1"}`}>
+            {area.bullets
+              .slice(0, compact ? 3 : area.bullets.length)
+              .map((bullet) => (
                 <li
                   key={bullet}
-                  className="flex items-start gap-1.5 text-[10px] leading-snug text-white/67"
+                  className={`${compact ? "text-[10px]" : "text-[10px] 2xl:text-[11px]"} flex items-start gap-1.5 leading-snug text-white/[0.82]`}
                 >
                   <span
                     className="mt-[5px] h-1 w-1 shrink-0 rounded-full"
@@ -385,10 +509,81 @@ function DecisionSupportCard({
                   {bullet}
                 </li>
               ))}
-            </ul>
-          )}
+          </ul>
         </div>
       </div>
+    </div>
+  );
+}
+
+function RaviCityVisionPanel() {
+  return (
+    <div className="w-[350px] text-left text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
+      <div className="text-[14px] font-black uppercase leading-[1.08] tracking-[0.06em] text-white/[0.92] 2xl:text-[15px]">
+        <span className="block whitespace-nowrap">Building a Smart,</span>
+        <span className="block whitespace-nowrap">
+          Sustainable &amp; Inclusive
+        </span>
+      </div>
+
+      <div className="mt-1 text-[22px] font-black uppercase leading-none tracking-[0.04em] text-[#70D84F] 2xl:text-[24px]">
+        Ravi City
+      </div>
+
+      <div className="mt-3 grid grid-cols-5 gap-1.5">
+        {RAVI_CITY_PILLARS.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <div
+              key={item.label}
+              className="flex min-w-0 flex-col items-center text-center"
+            >
+              <Icon
+                size={24}
+                strokeWidth={1.9}
+                className="text-[#8FEA67] drop-shadow-[0_0_10px_rgba(143,234,103,0.55)]"
+              />
+
+              <span className="mt-1 max-w-[76px] text-[7px] font-bold uppercase leading-tight tracking-[0.06em] text-white/[0.82] sm:text-[8px]">
+                {item.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function HeroPillar({ item }) {
+  const Icon = item.icon;
+
+  return (
+    <div className="group flex min-w-0 flex-col items-center text-center text-white">
+      <div className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[#49B84A]/70 bg-[#061b17]/[0.78] text-[#8FEA67] shadow-[0_0_26px_rgba(73,184,74,.2)] backdrop-blur-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:border-[#8FEA67] sm:h-12 sm:w-12">
+        <span className="absolute inset-[4px] rounded-full border border-white/10" />
+        <Icon size={19} strokeWidth={1.8} />
+      </div>
+      <span className="mt-1.5 max-w-[82px] text-[7px] font-bold uppercase leading-tight tracking-[0.08em] text-white/[0.76] sm:text-[8px]">
+        {item.label}
+      </span>
+    </div>
+  );
+}
+
+function CapabilityNode({ item }) {
+  const Icon = item.icon;
+
+  return (
+    <div className="group flex w-[70px] flex-col items-center text-center sm:w-[84px]">
+      <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-[#72DFFF]/75 bg-[#041c20]/[0.82] text-[#91E7FF] shadow-[0_0_26px_rgba(61,198,255,.18)] backdrop-blur-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-14 sm:w-14">
+        <span className="absolute inset-[5px] rounded-full border border-white/10" />
+        <Icon size={20} strokeWidth={1.8} />
+      </div>
+      <span className="mt-2 text-[7px] font-bold uppercase leading-tight tracking-[0.07em] text-white/[0.72] sm:text-[8px]">
+        {item.label}
+      </span>
     </div>
   );
 }
@@ -454,34 +649,35 @@ export default function LandingPage() {
     <div className="font-sans text-slate-800 bg-white overflow-x-hidden">
       <div className="bg-gradient-to-r from-[#00351f] via-[#004225] to-[#0B7A3B] text-white text-[9px] xs:text-[10px] sm:text-xs font-semibold tracking-widest flex items-center justify-center gap-2 sm:gap-4 py-1.5 sm:py-2 px-2 text-center">
         <span className="hidden sm:block w-10 md:w-14 h-px bg-white/40 shrink-0" />
-        <span className="leading-tight">RUDA CADASTRAL PROJECT — RAVI URBAN DEVELOPMENT AUTHORITY</span>
+        <span className="leading-tight">
+          RUDA CADASTRAL PROJECT — RAVI URBAN DEVELOPMENT AUTHORITY
+        </span>
         <span className="hidden sm:block w-10 md:w-14 h-px bg-white/40 shrink-0" />
       </div>
 
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
-          ? "bg-white shadow-lg"
-          : "bg-white/95 backdrop-blur-sm shadow-sm"
-          }`}
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white shadow-lg"
+            : "bg-white/95 backdrop-blur-sm shadow-sm"
+        }`}
       >
-        <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-14 sm:h-16 md:h-20">
-          <a href="#home" className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <img
-              src={RudaLogo}
-              alt="RUDA"
-              className="h-10 sm:h-12 md:h-16 w-auto object-contain"
-            />
-          </a>
+        <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-12 sm:h-14 md:h-14">
+          <div
+            className="hidden w-[110px] shrink-0 md:block"
+            aria-hidden="true"
+          />
 
           <nav className="hidden md:flex items-center gap-0.5 lg:gap-1">
             {NAV_LINKS.map(({ href, label }) => (
               <a
                 key={href}
                 href={href}
-                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
-                  ? "bg-[#0B7A3B] text-white"
-                  : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
-                  }`}
+                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
+                  activeSection === href.slice(1)
+                    ? "bg-[#0B7A3B] text-white"
+                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                }`}
               >
                 {label}
               </a>
@@ -531,7 +727,7 @@ export default function LandingPage() {
 
       <section
         id="home"
-        className="relative min-h-[760px] overflow-hidden bg-[#03130f] sm:min-h-[860px] lg:min-h-[920px]"
+        className="relative min-h-[908px] overflow-hidden bg-[#03130f] sm:min-h-[988px] xl:min-h-[874px]"
       >
         {HERO_SLIDES.map((src, i) => (
           <div
@@ -552,13 +748,13 @@ export default function LandingPage() {
 
         <style>{`
           @keyframes heroPanLeft {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-2.5%, 0, 0); }
+            0% { transform: translate3d(0, 0, 0) scale(1.04); }
+            100% { transform: translate3d(-2.2%, 0, 0) scale(1.04); }
           }
 
           @keyframes heroPanRight {
-            0% { transform: translate3d(-2.5%, 0, 0); }
-            100% { transform: translate3d(0, 0, 0); }
+            0% { transform: translate3d(-2.2%, 0, 0) scale(1.04); }
+            100% { transform: translate3d(0, 0, 0) scale(1.04); }
           }
 
           @keyframes decisionCardIn {
@@ -572,18 +768,15 @@ export default function LandingPage() {
             }
           }
 
-          @keyframes decisionFloat {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+          @keyframes platformPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(73, 184, 74, 0.03); }
+            50% { box-shadow: 0 0 46px 2px rgba(73, 184, 74, 0.14); }
           }
 
-          @keyframes platformPulse {
-            0%, 100% {
-              box-shadow: 0 0 0 0 rgba(73, 184, 74, 0.05);
-            }
-            50% {
-              box-shadow: 0 0 38px 2px rgba(73, 184, 74, 0.2);
-            }
+          @keyframes dataLine {
+            0% { opacity: .2; transform: scaleX(.84); }
+            50% { opacity: .85; transform: scaleX(1); }
+            100% { opacity: .2; transform: scaleX(.84); }
           }
 
           @media (prefers-reduced-motion: reduce) {
@@ -594,125 +787,183 @@ export default function LandingPage() {
           }
         `}</style>
 
-        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(11,122,59,0.12),transparent_40%),linear-gradient(to_bottom,rgba(1,12,9,0.68),rgba(2,20,14,0.66)_45%,rgba(2,12,9,0.94))]" />
-        <div className="absolute inset-0 z-10 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.035)_1px,transparent_1px)] [background-size:46px_46px]" />
+        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(20,144,93,0.13),transparent_34%),linear-gradient(to_bottom,rgba(0,8,12,0.74),rgba(0,20,20,0.66)_42%,rgba(1,12,10,0.96))]" />
+        <div className="absolute inset-0 z-10 opacity-25 [background-image:linear-gradient(rgba(104,223,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(104,223,255,.04)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="absolute left-1/2 top-[185px] z-10 h-[390px] w-[58%] -translate-x-1/2 rounded-full bg-[#0B7A3B]/[0.08] blur-[100px]" />
 
-        <div className="relative z-20 mx-auto flex min-h-[760px] max-w-[1500px] flex-col px-4 pb-28 pt-10 sm:min-h-[860px] sm:px-6 sm:pb-32 sm:pt-14 lg:min-h-[920px] lg:px-8 lg:pb-36">
-          <div className="relative flex flex-1 items-center justify-center">
-            <div className="pointer-events-none absolute inset-y-12 left-0 hidden w-[280px] flex-col justify-center gap-5 xl:flex 2xl:w-[310px]">
+        <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-5 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
+          <div className="relative mx-auto w-full max-w-[1600px]">
+            <div className="mx-auto max-w-[1450px] text-center">
+              <div className="text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.84] sm:text-[13px] lg:text-[14px] xl:whitespace-nowrap">
+                An Integrated, Immersive &amp; Intelligent Platform for
+                Planning, Monitoring, Collaboration &amp; Sustainable
+                Development
+              </div>
+
+              <div className="mt-2 flex items-center justify-center gap-3">
+                <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
+                <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#8FEA67] sm:text-[14px]">
+                  One City. One Data. One Platform.
+                </span>
+                <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#8FEA67]/75 sm:w-20" />
+              </div>
+            </div>
+
+            <div className="relative mt-2 min-h-[76px] xl:min-h-[108px]">
+              <div className="absolute left-0 top-0 hidden items-start gap-4 xl:flex">
+                <a href="#home" className="shrink-0" aria-label="RUDA home">
+                  <img
+                    src={RudaLogo}
+                    alt="RUDA"
+                    className="h-28 w-auto object-contain drop-shadow-[0_8px_22px_rgba(0,0,0,0.45)] 2xl:h-28"
+                  />
+                </a>
+
+                <div className="pt-1">
+                  <RaviCityVisionPanel />
+                </div>
+              </div>
+
+              <div className="flex justify-center lg:justify-end lg:pr-2">
+                <div className="grid grid-cols-4 gap-3 sm:gap-4 xl:gap-5">
+                  {TOP_PILLARS.map((item) => (
+                    <HeroPillar key={item.label} item={item} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-1 grid flex-1 items-center gap-5 xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
+            <div className="hidden flex-col gap-3 xl:flex">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
                   area={area}
-                  side="left"
-                  delay={index * 140}
-                />
-              ))}
-            </div>
-
-            <div className="pointer-events-none absolute inset-y-12 right-0 hidden w-[280px] flex-col justify-center gap-5 xl:flex 2xl:w-[310px]">
-              {DECISION_AREAS.slice(3).map((area, index) => (
-                <DecisionSupportCard
-                  key={area.key}
-                  area={area}
-                  side="right"
-                  delay={(index + 3) * 140}
+                  delay={index * 130}
                 />
               ))}
             </div>
 
             <div
-              className="relative mx-auto w-full max-w-4xl text-center text-white xl:max-w-[760px]"
+              className="relative mx-auto w-full max-w-[790px] text-center text-white"
               style={{ animation: "platformPulse 6s ease-in-out infinite" }}
             >
-              <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.17em] text-white/90 backdrop-blur-xl sm:mb-6 sm:px-4 sm:py-2 sm:text-[11px]">
-                <Star size={11} fill="currentColor" className="text-[#8fd36f]" />
-                Integrated GIS • BIM • Digital Twin Platform
+              {/* Move this complete heading section slightly upward */}
+              <div className="transition-transform duration-300 xl:-translate-y-[28px] 2xl:-translate-y-[34px]">
+                <div className="mx-auto inline-flex items-center gap-2 rounded-lg border border-[#45C8FF]/[0.45] bg-[#03191d]/[0.72] px-4 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#77DDFF] shadow-[0_0_26px_rgba(69,200,255,.12)] backdrop-blur-xl sm:text-[11px]">
+                  <Star
+                    size={11}
+                    fill="currentColor"
+                    className="text-[#8FEA67]"
+                  />
+                  Integrated GIS Decision Platform
+                </div>
+
+                <div className="mt-2 text-[8px] font-semibold uppercase tracking-[0.12em] text-white/60 sm:text-[9px]">
+                  Real-time 3D <span className="mx-1 text-[#8FEA67]">|</span>
+                  Interactive <span className="mx-1 text-[#8FEA67]">|</span>
+                  Intelligent <span className="mx-1 text-[#8FEA67]">|</span>
+                  Immersive
+                </div>
+
+                <h1 className="mt-4 text-3xl font-black leading-[1.02] tracking-[-0.035em] drop-shadow-[0_8px_30px_rgba(0,0,0,.85)] xs:text-4xl sm:text-5xl md:text-6xl 2xl:text-[68px]">
+                  RUDA GIS METAVERSE
+                  <span className="mt-1 block text-[#70D84F] sm:mt-2">
+                    &amp; Cadastral Portal
+                  </span>
+                </h1>
+
+                <p className="mx-auto mt-4 max-w-2xl px-2 text-xs leading-relaxed text-white/[0.78] sm:mt-5 sm:text-sm md:text-[15px]">
+                  A unified geospatial decision-support environment connecting
+                  land records, planning, BIM, engineering, investment,
+                  infrastructure and sustainability across the RUDA project
+                  area.
+                </p>
               </div>
 
-              <div className="mb-4 flex flex-wrap items-center justify-center gap-2 sm:mb-6">
-                {["GIS", "BIM", "3D Twin", "Analytics", "Decision Support"].map(
-                  (item, index) => (
-                    <div
-                      key={item}
-                      className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.12em] text-white/72 backdrop-blur"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#49B84A]" />
-                      {item}
-                      {index < 4 && (
-                        <ArrowRight size={9} className="hidden text-white/35 sm:block" />
-                      )}
-                    </div>
-                  ),
-                )}
+              {/* Move capability icons and both buttons downward */}
+              <div className="transition-transform duration-300 xl:translate-y-[30px] 2xl:translate-y-[36px]">
+                <div className="relative mx-auto mt-5 max-w-[610px] sm:mt-6">
+                  <div
+                    className="absolute left-[8%] right-[8%] top-7 hidden h-px origin-center bg-gradient-to-r from-transparent via-[#4CCBFF]/[0.55] to-transparent sm:block"
+                    style={{ animation: "dataLine 3.8s ease-in-out infinite" }}
+                  />
+
+                  <div className="relative flex flex-wrap items-start justify-center gap-x-1 gap-y-3 sm:flex-nowrap sm:justify-between">
+                    {CORE_CAPABILITIES.map((item) => (
+                      <CapabilityNode key={item.label} item={item} />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-col justify-center gap-2.5 xs:flex-row sm:mt-5 sm:gap-4">
+                  <button
+                    onClick={() => {
+                      document
+                        .querySelector("#apps")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="flex items-center justify-center gap-2.5 rounded-full bg-[#0B7A3B] px-6 py-3 text-xs font-black text-white shadow-[0_16px_34px_-15px_rgba(73,184,74,.9)] transition-all hover:-translate-y-1 hover:bg-[#004225] hover:shadow-2xl sm:px-7 sm:py-3.5 sm:text-sm"
+                  >
+                    <Map size={16} />
+                    Explore GIS Platforms
+                  </button>
+
+                  <a
+                    href="#about"
+                    className="flex items-center justify-center gap-2.5 rounded-full border border-white/[0.28] bg-white/[0.08] px-6 py-3 text-xs font-bold text-white backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white/[0.16] sm:px-7 sm:py-3.5 sm:text-sm"
+                  >
+                    Learn More
+                    <ArrowRight size={14} />
+                  </a>
+                </div>
               </div>
+            </div>
 
-              <h1 className="text-3xl font-black leading-[1.02] tracking-[-0.035em] drop-shadow-[0_6px_28px_rgba(0,0,0,0.72)] xs:text-4xl sm:text-6xl md:text-7xl lg:text-[78px]">
-                RUDA GIS METAVERSE
-                <span className="mt-1 block text-[#49B84A] sm:mt-2">
-                  &amp; Cadastral Portal
-                </span>
-              </h1>
-
-              <p className="mx-auto mt-5 max-w-2xl px-2 text-xs leading-relaxed text-white/80 xs:text-sm sm:mt-7 sm:text-base md:text-lg">
-                A unified geospatial decision-support environment connecting
-                land records, planning, BIM, engineering, investment,
-                infrastructure and sustainability across the RUDA project area.
-              </p>
-
-              <div className="mt-6 flex flex-col justify-center gap-2.5 xs:flex-row sm:mt-9 sm:gap-4">
-                <button
-                  onClick={() => {
-                    document
-                      .querySelector("#apps")
-                      ?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="flex items-center justify-center gap-2.5 rounded-full bg-[#0B7A3B] px-6 py-3 text-xs font-black text-white shadow-[0_16px_34px_-15px_rgba(73,184,74,.9)] transition-all hover:-translate-y-1 hover:bg-[#004225] hover:shadow-2xl sm:px-8 sm:py-4 sm:text-base"
-                >
-                  <Map size={17} /> Explore GIS Platforms
-                </button>
-
-                <a
-                  href="#about"
-                  className="flex items-center justify-center gap-2.5 rounded-full border border-white/30 bg-white/10 px-6 py-3 text-xs font-bold text-white backdrop-blur-xl transition-all hover:-translate-y-1 hover:bg-white/20 sm:px-8 sm:py-4 sm:text-base"
-                >
-                  Learn More <ArrowRight size={15} />
-                </a>
-              </div>
+            <div className="hidden flex-col gap-3 xl:flex">
+              {DECISION_AREAS.slice(3).map((area, index) => (
+                <DecisionSupportCard
+                  key={area.key}
+                  area={area}
+                  delay={(index + 3) * 130}
+                />
+              ))}
             </div>
           </div>
 
-          <div className="mx-auto mt-7 grid w-full max-w-4xl grid-cols-2 gap-2.5 xl:hidden sm:grid-cols-3">
+          <div className="mx-auto mt-4 grid w-full max-w-5xl grid-cols-1 gap-3 xs:grid-cols-2 lg:grid-cols-3 xl:hidden">
             {DECISION_AREAS.map((area, index) => (
               <DecisionSupportCard
                 key={area.key}
                 area={area}
                 compact
-                delay={index * 90}
+                delay={index * 80}
               />
             ))}
           </div>
 
-          <div className="mt-6 flex justify-center gap-2">
+          <div className="mt-3 flex justify-center gap-2">
             {HERO_SLIDES.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${i === slideIndex
-                  ? "h-2 w-7 bg-[#49B84A]"
-                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
-                  }`}
+                className={`rounded-full transition-all duration-300 ${
+                  i === slideIndex
+                    ? "h-2 w-7 bg-[#70D84F]"
+                    : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                }`}
               />
             ))}
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/82 backdrop-blur-xl">
+        <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/88 backdrop-blur-xl">
           <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2 px-3 py-3 text-center text-white sm:grid-cols-4 sm:gap-4 sm:px-5 sm:py-5">
             {STATS.map(({ value, label }) => (
               <div key={label} className="relative py-1">
-                <div className="text-lg font-black text-[#49B84A] xs:text-xl sm:text-3xl">
+                <div className="text-lg font-black text-[#70D84F] xs:text-xl sm:text-3xl">
                   {value}
                 </div>
                 <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
@@ -800,7 +1051,7 @@ export default function LandingPage() {
       </section>
 
       <section id="apps" className="py-10 sm:py-14 md:py-16 bg-slate-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-5">
+        <div className="max-w-8xl mx-auto px-4 sm:px-5">
           <div className="text-center mb-7 sm:mb-10">
             <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
               GIS Applications
@@ -818,21 +1069,40 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {GIS_APPS.map(({ icon, title, desc, img, route, gradientFrom, gradientTo }, i) => (
-              <AppCard
-                key={title}
-                index={i}
-                icon={icon}
-                title={title}
-                desc={desc}
-                img={img}
-                route={route}
-                gradientFrom={gradientFrom}
-                gradientTo={gradientTo}
-                onClick={() => route && navigate(route)}
-              />
-            ))}
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-5">
+            {GIS_APPS.map(
+              (
+                {
+                  icon,
+                  title,
+                  desc,
+                  img,
+                  route,
+                  gradientFrom,
+                  gradientTo,
+                  tags,
+                },
+                i,
+              ) => (
+                <div
+                  key={title}
+                  className="w-full xs:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.95rem)]"
+                >
+                  <AppCard
+                    index={i}
+                    icon={icon}
+                    title={title}
+                    desc={desc}
+                    img={img}
+                    route={route}
+                    gradientFrom={gradientFrom}
+                    gradientTo={gradientTo}
+                    tags={tags}
+                    onClick={() => route && navigate(route)}
+                  />
+                </div>
+              ),
+            )}
           </div>
         </div>
       </section>
@@ -978,7 +1248,9 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">Quick Links</h3>
+            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
+              Quick Links
+            </h3>
 
             <div className="flex flex-col gap-2 sm:gap-2.5">
               {NAV_LINKS.map(({ href, label }) => (
@@ -994,7 +1266,9 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">Contact Info</h3>
+            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
+              Contact Info
+            </h3>
 
             <div className="flex flex-col gap-3 sm:gap-4">
               <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
@@ -1015,7 +1289,9 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">Send a Message</h3>
+            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
+              Send a Message
+            </h3>
 
             <form
               className="flex flex-col gap-2.5 sm:gap-3"
