@@ -1904,23 +1904,30 @@ function GroupItem({
 }) {
   return (
     <div className="flex items-center justify-between rounded-sm px-1 py-1 hover:bg-[#0f3d2e]/40">
-      <label className="flex min-w-0 cursor-pointer items-center gap-2">
-        <IndeterminateCheckbox
-          checked={checked}
-          partial={partial}
-          onChange={onChange}
-        />
-        <span className="truncate text-[11px] text-white/90">{label}</span>
-      </label>
+      <div className="flex min-w-0 items-center gap-2">
+  <IndeterminateCheckbox
+    checked={checked}
+    partial={partial}
+    onChange={onChange}
+  />
+
+  <span
+    className="truncate cursor-pointer text-[11px] text-white/90"
+    onClick={onChange}
+  >
+    {label}
+  </span>
+</div>
 
       <button
         type="button"
         onClick={(event) => {
+          event.preventDefault();
           event.stopPropagation();
           onDropdownToggle?.();
         }}
-        className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white"
-        title={`Show ${label} layers`}
+        // className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white"
+        // title={`Show ${label} layers`}
       >
         {dropdownOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
       </button>
