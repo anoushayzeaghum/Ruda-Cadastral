@@ -115,7 +115,7 @@ const RUDA_MASTER_PLAN_GROUPS = [
         color: "#f59e0b",
       },
       {
-        key: "jinnahAvenueRoad",
+        key: "jinnahAvenue",
         label: "Jinnah Avenue Road",
         color: "#22c55e",
       },
@@ -1388,6 +1388,10 @@ export default function RUDAMasterPlan({ map }) {
 
     try {
       const geojson = normalizeGeoJSON(await config.fetchGeoJSON());
+      if (layerKey === "jinnahAvenue") {
+  console.log("Jinnah Avenue GeoJSON:", geojson);
+  console.log("Features:", geojson.features?.length);
+}
 
       if (requestTokenRef.current[layerKey] !== token) return;
 
