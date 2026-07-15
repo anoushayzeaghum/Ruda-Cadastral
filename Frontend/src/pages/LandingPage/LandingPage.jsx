@@ -525,34 +525,41 @@ hover:rotate-[0.2deg] ${compact
 
 function RaviCityVisionPanel() {
   return (
-    <div className="w-[350px] text-left text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
-      <div className="text-[14px] font-black uppercase leading-[1.08] tracking-[0.06em] text-white/[0.92] 2xl:text-[15px]">
-        <span className="block whitespace-nowrap">Building a Smart,</span>
-        <span className="block whitespace-nowrap">
-          Sustainable &amp; Inclusive
-        </span>
+    <div className="flex w-full items-start justify-between">
+      {/* LEFT TEXT */}
+      <div className="text-left text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
+        <div className="text-[16px] font-black uppercase leading-[1.08] tracking-[0.06em] text-white/[0.94] 2xl:text-[18px]">
+          <span className="block whitespace-nowrap">
+            Building a Smart,
+          </span>
+
+          <span className="block whitespace-nowrap">
+            Sustainable &amp; Inclusive
+          </span>
+        </div>
+
+        <div className="mt-1 text-[25px] font-black uppercase leading-none tracking-[0.04em] text-[#70D84F] 2xl:text-[28px]">
+          Ravi City
+        </div>
       </div>
 
-      <div className="mt-1 text-[22px] font-black uppercase leading-none tracking-[0.04em] text-[#70D84F] 2xl:text-[24px]">
-        Ravi City
-      </div>
-
-      <div className="mt-3 grid grid-cols-5 gap-1.5">
+      {/* RIGHT ICONS */}
+      <div className="flex items-start gap-6 pt-2">
         {RAVI_CITY_PILLARS.map((item) => {
           const Icon = item.icon;
 
           return (
             <div
               key={item.label}
-              className="flex min-w-0 flex-col items-center text-center"
+              className="flex min-w-[72px] flex-col items-center text-center"
             >
               <Icon
-                size={24}
+                size={28}
                 strokeWidth={1.9}
                 className="text-[#8FEA67] drop-shadow-[0_0_10px_rgba(143,234,103,0.55)]"
               />
 
-              <span className="mt-1 max-w-[76px] text-[7px] font-bold uppercase leading-tight tracking-[0.06em] text-white/[0.82] sm:text-[8px]">
+              <span className="mt-1.5 text-[8px] font-bold uppercase leading-tight tracking-[0.06em] text-white/[0.86]">
                 {item.label}
               </span>
             </div>
@@ -664,8 +671,8 @@ export default function LandingPage() {
 
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
-            ? "bg-white shadow-lg"
-            : "bg-white/95 backdrop-blur-sm shadow-sm"
+          ? "bg-white shadow-lg"
+          : "bg-white/95 backdrop-blur-sm shadow-sm"
           }`}
       >
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-3 sm:h-14 sm:px-5 md:h-14">
@@ -687,8 +694,8 @@ export default function LandingPage() {
                 key={href}
                 href={href}
                 className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
-                    ? "bg-[#0B7A3B] text-white"
-                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                  ? "bg-[#0B7A3B] text-white"
+                  : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
                   }`}
               >
                 {label}
@@ -817,11 +824,9 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="relative mt-2 min-h-[76px] xl:min-h-[108px]">
-              <div className="absolute left-0 top-0 hidden items-start xl:flex">
-                <div className="pt-1">
-                  <RaviCityVisionPanel />
-                </div>
+            <div className="relative mt-2 min-h-[90px] xl:min-h-[110px]">
+              <div className="absolute inset-x-0 top-0 hidden xl:block">
+                <RaviCityVisionPanel />
               </div>
             </div>
           </div>
@@ -866,12 +871,13 @@ export default function LandingPage() {
                   </span>
 
                 </h1>
-                <div className="text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.84] sm:text-[13px] lg:text-[14px] xl:whitespace-nowrap">
-                  An Integrated, Immersive &amp;
-
-                  Intelligent Platform for
-                  Planning, Monitoring, Collaboration &amp; Sustainable
-                  Development
+                <div className="mx-auto mt-3 max-w-[760px] text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.88] sm:text-[13px] lg:text-[14px]">
+                  <span className="block">
+                    An Integrated, Immersive &amp; Intelligent Platform
+                  </span>
+                  <span className="mt-1 block">
+                    for Planning, Monitoring, Collaboration &amp; Sustainable Development
+                  </span>
                 </div>
 
 
@@ -945,8 +951,8 @@ export default function LandingPage() {
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
                 className={`rounded-full transition-all duration-300 ${i === slideIndex
-                    ? "h-2 w-7 bg-[#70D84F]"
-                    : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                  ? "h-2 w-7 bg-[#70D84F]"
+                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
                   }`}
               />
             ))}
