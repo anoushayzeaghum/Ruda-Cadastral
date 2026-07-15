@@ -35,11 +35,7 @@ class ListKhasraView(viewsets.ViewSet):
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = Khasra.objects.select_related(
-                "district",
-                "tehsil",
-                "mauza"
-            )
+            queryset = Khasra.objects.all()
 
             if dist_id:
                 queryset = queryset.filter(district_id=dist_id)
