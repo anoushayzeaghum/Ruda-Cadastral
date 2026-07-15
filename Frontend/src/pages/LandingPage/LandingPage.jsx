@@ -802,11 +802,7 @@ export default function LandingPage() {
         <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-5 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
           <div className="relative mx-auto w-full max-w-[1600px]">
             <div className="mx-auto max-w-[1450px] text-center">
-              <div className="text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.84] sm:text-[13px] lg:text-[14px] xl:whitespace-nowrap">
-                An Integrated, Immersive &amp; Intelligent Platform for
-                Planning, Monitoring, Collaboration &amp; Sustainable
-                Development
-              </div>
+              
 
               <div className="mt-2 flex items-center justify-center gap-3">
                 <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
@@ -874,7 +870,15 @@ export default function LandingPage() {
                   <span className="mt-1 block text-[#70D84F] sm:mt-2">
                     METAVERSE
                   </span>
+
                 </h1>
+                <div className="text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.84] sm:text-[13px] lg:text-[14px] xl:whitespace-nowrap">
+                An Integrated, Immersive &amp; 
+                
+                Intelligent Platform for
+                Planning, Monitoring, Collaboration &amp; Sustainable
+                Development
+              </div>
 
 
               </div>
@@ -1209,30 +1213,36 @@ export default function LandingPage() {
       <footer id="contact" className="bg-[#00351f] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-5 pt-10 sm:pt-14 md:pt-16 pb-8 sm:pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="mb-4 flex flex-wrap items-center gap-3 sm:mb-6">
-              <img
-                src={RudaLogo}
-                alt="RUDA Land and Management"
-                className="h-11 w-11 rounded-lg bg-white p-1 object-contain sm:h-12 sm:w-12"
-              />
-
-              <img
-                src="/gop_logo.png"
-                alt="Government of Punjab"
-                className="h-11 w-11 rounded-lg bg-white p-1 object-contain sm:h-12 sm:w-12"
-              />
-
-              <img
-                src={NespakLogo}
-                alt="NESPAK"
-                className="h-11 w-16 rounded-lg bg-white p-1.5 object-contain sm:h-12 sm:w-20"
-              />
-
-              <img
-                src={RudaFooterLogo}
-                alt="Ravi Urban Development Authority"
-                className="h-11 w-11 rounded-lg bg-white p-1 object-contain sm:h-12 sm:w-12"
-              />
+            <div className="mb-4 grid grid-cols-4 gap-3 sm:mb-6">
+              {[
+                {
+                  src: RudaLogo,
+                  alt: "RUDA Land and Management",
+                },
+                {
+                  src: "/gop_logo.png",
+                  alt: "Government of Punjab",
+                },
+                {
+                  src: NespakLogo,
+                  alt: "NESPAK",
+                },
+                {
+                  src: RudaFooterLogo,
+                  alt: "Ravi Urban Development Authority",
+                },
+              ].map((logo) => (
+                <div
+                  key={logo.alt}
+                  className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/15 bg-white p-2 shadow-sm sm:h-16 sm:w-16"
+                >
+                  <img
+                    src={logo.src}
+                    alt={logo.alt}
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              ))}
             </div>
 
             <p className="text-white/70 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6">
@@ -1302,35 +1312,40 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
-              Insert Map here
-            </h3>
+            <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
+              <h3 className="font-black text-sm sm:text-base">
+                Office Location
+              </h3>
 
-            <form
-              className="flex flex-col gap-2.5 sm:gap-3"
-              onSubmit={(e) => e.preventDefault()}
-            >
-              {["Your Name", "Your Email", "Subject"].map((ph) => (
-                <input
-                  key={ph}
-                  placeholder={ph}
-                  className="bg-white/10 border border-white/15 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-white placeholder-white/40 outline-none focus:border-[#49B84A] transition-colors"
-                />
-              ))}
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=152-A+Ali+Block+Garden+Town+Lahore+Pakistan"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#8FEA67] transition-colors hover:text-white sm:text-xs"
+              >
+                Open in Maps
+                <ExternalLink size={12} />
+              </a>
+            </div>
 
-              <textarea
-                placeholder="Your Message"
-                rows={3}
-                className="bg-white/10 border border-white/15 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-white placeholder-white/40 outline-none focus:border-[#49B84A] transition-colors resize-none"
+            <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)]">
+              <iframe
+                title="RUDA office location"
+                src="https://www.google.com/maps?q=152-A+Ali+Block+Garden+Town+Lahore+Pakistan&output=embed"
+                className="h-[245px] w-full border-0 sm:h-[270px]"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
               />
 
-              <button
-                type="submit"
-                className="bg-[#0B7A3B] hover:bg-[#49B84A] text-white font-black text-xs sm:text-sm py-2.5 rounded-lg transition-colors"
-              >
-                Send Message
-              </button>
-            </form>
+              <div className="flex items-start gap-2 border-t border-white/10 bg-black/10 px-3 py-3 text-[10px] leading-relaxed text-white/70 sm:text-xs">
+                <MapPin
+                  size={14}
+                  className="mt-0.5 shrink-0 text-[#49B84A]"
+                />
+                <span>152-A, Ali Block, Garden Town, Lahore, Pakistan</span>
+              </div>
+            </div>
           </div>
         </div>
 
