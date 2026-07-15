@@ -1,34 +1,34 @@
 from ..common_imports import *
 
 class UpdateRudaMauzaView(viewsets.ViewSet):
-    queryset = Mauza.objects.all()
-    serializer_class = MauzaSerializer
+    queryset = RudaMauza.objects.all()
+    serializer_class = RudaMauzaSerializer
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
 
         data = request.data
-        mauza_id = kwargs.get("pk")
+        RudaMauza_id = kwargs.get("pk")
 
         try:
-            mauza = Mauza.objects.get(id=mauza_id)
+            RudaMauza = RudaMauza.objects.get(id=RudaMauza_id)
 
-        except Mauza.DoesNotExist:
+        except RudaMauza.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="Mauza not found.",
+                message="RudaMauza not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            serializer = MauzaSerializer(mauza, data=data, partial=True)
+            serializer = RudaMauzaSerializer(RudaMauza, data=data, partial=True)
 
             if serializer.is_valid():
                 serializer.save()
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Mauza updated successfully.",
+                    message="RudaMauza updated successfully.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()

@@ -6,14 +6,14 @@ from django.utils.decorators import method_decorator
 
 @method_decorator(cache_page(60 * 10), name="list")
 class ListRudaMauzaView(viewsets.ViewSet):
-    queryset = Mauza.objects.all()
-    serializer_class = MauzaSerializer
+    queryset = RudaMauza.objects.all()
+    serializer_class = RudaMauzaSerializer
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
 
         try:
-            mauza_id = request.query_params.get("mauza_id") or request.query_params.get("id")
+            RudaMauza_id = request.query_params.get("RudaMauza_id") or request.query_params.get("id")
 
             district_id = (
                 request.query_params.get("district_id")
@@ -22,30 +22,30 @@ class ListRudaMauzaView(viewsets.ViewSet):
 
             tehsil_id = request.query_params.get("tehsil_id")
 
-            # Single Mauza
-            if mauza_id:
+            # Single RudaMauza
+            if RudaMauza_id:
 
-                obj = Mauza.objects.filter(
-                    mauza_id=mauza_id
+                obj = RudaMauza.objects.filter(
+                    RudaMauza_id=RudaMauza_id
                 ).first()
 
                 if not obj:
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
-                        message="Mauza not found.",
+                        message="RudaMauza not found.",
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
-                serializer = MauzaSerializer(obj)
+                serializer = RudaMauzaSerializer(obj)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Mauza found.",
+                    message="RudaMauza found.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = Mauza.objects.all()
+            queryset = RudaMauza.objects.all()
 
             # Filter by district
             if district_id:
@@ -59,11 +59,11 @@ class ListRudaMauzaView(viewsets.ViewSet):
                     tehsil_id=tehsil_id
                 )
 
-            serializer = MauzaSerializer(queryset, many=True)
+            serializer = RudaMauzaSerializer(queryset, many=True)
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="Mauzas found.",
+                message="RudaMauzas found.",
                 data=serializer.data,
                 http_status=status.HTTP_200_OK,
             ).create_response()
@@ -87,7 +87,7 @@ class ListRudaMauzaView(viewsets.ViewSet):
 
         start = time.time()
 
-        cache_key = f"mauza_geojson_{pk}"
+        cache_key = f"RudaMauza_geojson_{pk}"
         cached = cache.get(cache_key)
 
         if cached:
@@ -99,7 +99,7 @@ class ListRudaMauzaView(viewsets.ViewSet):
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="Mauza GeoJSON found.",
+                message="RudaMauza GeoJSON found.",
                 data=cached,
                 http_status=status.HTTP_200_OK,
             ).create_response()
@@ -118,11 +118,11 @@ class ListRudaMauzaView(viewsets.ViewSet):
                         kc,
                         kc_id,
                         pc,
-                        mauza,
-                        mauza_id,
+                        RudaMauza,
+                        RudaMauza_id,
                         ST_AsGeoJSON(geom)::json
-                    FROM mauza
-                    WHERE mauza_id = %s
+                    FROM RudaMauza
+                    WHERE RudaMauza_id = %s
                 """, [pk])
 
                 row = cursor.fetchone()
@@ -136,7 +136,7 @@ class ListRudaMauzaView(viewsets.ViewSet):
             if not row:
                 return ApiResponse(
                     status=status.HTTP_404_NOT_FOUND,
-                    message="Mauza not found.",
+                    message="RudaMauza not found.",
                     data=[],
                     http_status=status.HTTP_404_NOT_FOUND,
                 ).create_response()
@@ -152,8 +152,8 @@ class ListRudaMauzaView(viewsets.ViewSet):
                     "kc": row[3],
                     "kc_id": row[4],
                     "pc": row[5],
-                    "mauza": row[6],
-                    "mauza_id": row[7],
+                    "RudaMauza": row[6],
+                    "RudaMauza_id": row[7],
                 },
             }
 
@@ -167,7 +167,7 @@ class ListRudaMauzaView(viewsets.ViewSet):
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="Mauza GeoJSON found.",
+                message="RudaMauza GeoJSON found.",
                 data=feature,
                 http_status=status.HTTP_200_OK,
             ).create_response()

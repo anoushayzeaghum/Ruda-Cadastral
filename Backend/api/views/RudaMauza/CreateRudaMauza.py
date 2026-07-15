@@ -1,23 +1,23 @@
 from ..common_imports import *
 
 class CreateRudaMauzaView(viewsets.ViewSet):
-    queryset = Mauza.objects.all()
-    serializer_class = MauzaSerializer
+    queryset = RudaMauza.objects.all()
+    serializer_class = RudaMauzaSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         data = request.data
 
         try:
-            serializer = MauzaSerializer(data=data)
+            serializer = RudaMauzaSerializer(data=data)
             serializer.is_valid(raise_exception=True)
 
-            mauza = serializer.save()
+            RudaMauza = serializer.save()
 
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
-                message="Mauza created successfully.",
-                data=MauzaSerializer(mauza).data,
+                message="RudaMauza created successfully.",
+                data=RudaMauzaSerializer(RudaMauza).data,
                 http_status=status.HTTP_201_CREATED,
             ).create_response()
 

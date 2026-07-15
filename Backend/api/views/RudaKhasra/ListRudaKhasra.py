@@ -4,8 +4,8 @@ from django.utils.decorators import method_decorator
 
 @method_decorator(cache_page(60 * 10), name="list")
 class ListRudaKhasraView(viewsets.ViewSet):
-    queryset = Khasra.objects.all()
-    serializer_class = KhasraSerializer
+    queryset = RudaKhasra.objects.all()
+    serializer_class = RudaKhasraSerializer
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
@@ -17,25 +17,25 @@ class ListRudaKhasraView(viewsets.ViewSet):
             dist_id = request.query_params.get("dist_id")
 
             if gid:
-                obj = Khasra.objects.filter(gid=gid).first()
+                obj = RudaKhasra.objects.filter(gid=gid).first()
 
                 if not obj:
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
-                        message="Khasra not found.",
+                        message="RudaKhasra not found.",
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
-                serializer = KhasraSerializer(obj)
+                serializer = RudaKhasraSerializer(obj)
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Khasra found.",
+                    message="RudaKhasra found.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = Khasra.objects.select_related(
+            queryset = RudaKhasra.objects.select_related(
                 "district",
                 "tehsil",
                 "mauza"
@@ -50,17 +50,17 @@ class ListRudaKhasraView(viewsets.ViewSet):
             if mauza_id:
                 queryset = queryset.filter(mauza_id=mauza_id)
 
-            serializer = KhasraSerializer(queryset, many=True)
+            serializer = RudaKhasraSerializer(queryset, many=True)
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="Khasra data fetched successfully.",
+                message="RudaKhasra data fetched successfully.",
                 data=serializer.data,
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
         except Exception as e:
-            print("\n========== KHASRA ERROR ==========")
+            print("\n========== RudaKhasra ERROR ==========")
             print(traceback.format_exc())
             print("=================================\n")
 
@@ -81,7 +81,7 @@ class ListRudaKhasraView(viewsets.ViewSet):
 
         start = time.time()
 
-        cache_key = f"khasra_geojson_{pk}"
+        cache_key = f"RudaKhasra_geojson_{pk}"
         cached = cache.get(cache_key)
 
         if cached:
@@ -93,7 +93,7 @@ class ListRudaKhasraView(viewsets.ViewSet):
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="Khasra GeoJSON found.",
+                message="RudaKhasra GeoJSON found.",
                 data=cached,
                 http_status=status.HTTP_200_OK,
             ).create_response()
@@ -122,14 +122,14 @@ class ListRudaKhasraView(viewsets.ViewSet):
                         sq,
                         kh,
                         sk,
-                        khasra_id,
+                        RudaKhasra_id,
                         khewat_id,
                         khatoni_no,
                         dc_rate,
                         remarks,
                         b,
                         ST_AsGeoJSON(geom)::json
-                    FROM khasra
+                    FROM RudaKhasra
                     WHERE gid = %s
                 """, [pk])
 
@@ -144,7 +144,7 @@ class ListRudaKhasraView(viewsets.ViewSet):
             if not row:
                 return ApiResponse(
                     status=status.HTTP_404_NOT_FOUND,
-                    message="Khasra not found.",
+                    message="RudaKhasra not found.",
                     data=[],
                     http_status=status.HTTP_404_NOT_FOUND,
                 ).create_response()
@@ -170,7 +170,7 @@ class ListRudaKhasraView(viewsets.ViewSet):
                     "sq": row[13],
                     "kh": row[14],
                     "sk": row[15],
-                    "khasra_id": row[16],
+                    "RudaKhasra_id": row[16],
                     "khewat_id": row[17],
                     "khatoni_no": row[18],
                     "dc_rate": row[19],
@@ -189,7 +189,7 @@ class ListRudaKhasraView(viewsets.ViewSet):
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="Khasra GeoJSON found.",
+                message="RudaKhasra GeoJSON found.",
                 data=feature,
                 http_status=status.HTTP_200_OK,
             ).create_response()

@@ -1,37 +1,37 @@
 from ..common_imports import *
 
 class DeleteRudaKhasraView(viewsets.ViewSet):
-    queryset = Khasra.objects.all()
-    serializer_class = KhasraSerializer
+    queryset = RudaKhasra.objects.all()
+    serializer_class = RudaKhasraSerializer
     permission_classes = [AllowAny]
 
     def destroy(self, request, *args, **kwargs):
 
-        khasra_id = kwargs.get("pk")
+        RudaKhasra_id = kwargs.get("pk")
 
         try:
-            khasra = Khasra.objects.get(id=khasra_id)
+            RudaKhasra = RudaKhasra.objects.get(id=RudaKhasra_id)
 
-        except Khasra.DoesNotExist:
+        except RudaKhasra.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="Khasra not found.",
+                message="RudaKhasra not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            khasra.delete()
+            RudaKhasra.delete()
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="Khasra deleted successfully.",
+                message="RudaKhasra deleted successfully.",
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
         except ProtectedError:
             return ApiResponse(
                 status=status.HTTP_400_BAD_REQUEST,
-                message="Cannot delete this Khasra because it is linked to other records.",
+                message="Cannot delete this RudaKhasra because it is linked to other records.",
                 http_status=status.HTTP_400_BAD_REQUEST,
             ).create_response()
 

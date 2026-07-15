@@ -231,6 +231,8 @@ class Mauza(models.Model):
 
     mauza_id = models.FloatField(
         db_column="mauza_id",
+        unique=True,
+        db_index=True,
         null=True,
         blank=True,
     )

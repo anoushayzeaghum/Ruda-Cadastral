@@ -1,34 +1,34 @@
 from ..common_imports import *
 
 class UpdateRudaKhasraView(viewsets.ViewSet):
-    queryset = Khasra.objects.all()
-    serializer_class = KhasraSerializer
+    queryset = RudaKhasra.objects.all()
+    serializer_class = RudaKhasraSerializer
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
 
         data = request.data
-        khasra_id = kwargs.get("pk")
+        RudaKhasra_id = kwargs.get("pk")
 
         try:
-            khasra = Khasra.objects.get(id=khasra_id)
+            RudaKhasra = RudaKhasra.objects.get(id=RudaKhasra_id)
 
-        except Khasra.DoesNotExist:
+        except RudaKhasra.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="Khasra not found.",
+                message="RudaKhasra not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            serializer = KhasraSerializer(khasra, data=data, partial=True)
+            serializer = RudaKhasraSerializer(RudaKhasra, data=data, partial=True)
 
             if serializer.is_valid():
                 serializer.save()
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Khasra updated successfully.",
+                    message="RudaKhasra updated successfully.",
                     data=serializer.data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()

@@ -1,8 +1,8 @@
 from ..common_imports import *
 
 class CreateRudaKhasraView(viewsets.ViewSet):
-    queryset = Khasra.objects.all()
-    serializer_class = KhasraSerializer
+    queryset = RudaKhasra.objects.all()
+    serializer_class = RudaKhasraSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
@@ -10,15 +10,15 @@ class CreateRudaKhasraView(viewsets.ViewSet):
         data = request.data
 
         try:
-            serializer = KhasraSerializer(data=data)
+            serializer = RudaKhasraSerializer(data=data)
             serializer.is_valid(raise_exception=True)
 
-            khasra = serializer.save()
+            RudaKhasra = serializer.save()
 
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
-                message="Khasra created successfully.",
-                data=KhasraSerializer(khasra).data,
+                message="RudaKhasra created successfully.",
+                data=RudaKhasraSerializer(RudaKhasra).data,
                 http_status=status.HTTP_201_CREATED,
             ).create_response()
 
