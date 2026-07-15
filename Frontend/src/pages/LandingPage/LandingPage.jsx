@@ -991,7 +991,7 @@ export default function LandingPage() {
         id="about"
         className="relative overflow-hidden bg-white py-10 sm:py-14 md:py-16"
       >
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-5">
+        <div className="relative mx-auto max-w-7xl px-4 pt-10 sm:px-5">
           <div className="grid items-stretch gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-[#edf8ef] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#004225] sm:px-4 sm:py-2 sm:text-xs">
@@ -1021,30 +1021,44 @@ export default function LandingPage() {
                     icon: BarChart3,
                     title: "Geospatial Data & Metaverse",
                     text: "Transform spatial data into insights, scenarios and planning decisions.",
+                    route: "/gis-metaverse",
                   },
                   {
                     icon: Layers,
                     title: "Cadastral Management",
                     text: "Manage parcels, boundaries, land records and field verification data.",
+                    route: "/Mapview",
                   },
                   {
                     icon: Box,
                     title: "Digital Twin & BIM",
                     text: "Explore terrain, buildings, infrastructure and BIM models in 3D.",
+                    route: "/society-3d-upload",
                   },
                 ].map((item) => {
                   const Icon = item.icon;
+
                   return (
                     <div
                       key={item.title}
-                      className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_34px_-24px_rgba(0,66,37,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-[#49B84A]/60 hover:shadow-[0_18px_38px_-20px_rgba(11,122,59,0.35)]"
+                      onClick={() => navigate(item.route)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          navigate(item.route);
+                        }
+                      }}
+                      className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_34px_-24px_rgba(0,66,37,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-[#49B84A]/60 hover:shadow-[0_18px_38px_-20px_rgba(11,122,59,0.35)]"
                     >
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#0B7A3B] to-[#004225] text-white shadow-lg shadow-[#0B7A3B]/20">
                         <Icon size={18} strokeWidth={2} />
                       </div>
+
                       <h3 className="mt-4 text-[13px] font-black leading-tight text-slate-900 sm:text-sm">
                         {item.title}
                       </h3>
+
                       <p className="mt-2 text-[11px] leading-relaxed text-slate-500 sm:text-xs">
                         {item.text}
                       </p>
@@ -1062,7 +1076,7 @@ export default function LandingPage() {
             </div>
 
             <div className="relative flex h-full flex-col pt-8 lg:pt-12">
-              <div className="mb-1 grid grid-cols-5 gap-2 sm:gap-3">
+              {/* <div className="mb-1 grid grid-cols-5 gap-2 sm:gap-3">
                 {CORE_CAPABILITIES.map((item) => {
                   const Icon = item.icon;
 
@@ -1081,7 +1095,7 @@ export default function LandingPage() {
                     </div>
                   );
                 })}
-              </div>
+              </div> */}
 
               <div className="relative flex-1 overflow-hidden pt-1">
                 <img
