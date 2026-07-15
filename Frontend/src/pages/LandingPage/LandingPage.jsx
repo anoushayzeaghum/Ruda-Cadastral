@@ -447,11 +447,10 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
 hover:-translate-y-2
 hover:scale-[1.025]
-hover:rotate-[0.2deg] ${
-        compact
+hover:rotate-[0.2deg] ${compact
           ? "min-h-[128px] rounded-xl p-3"
           : "min-h-[154px] rounded-[18px] p-4"
-      }`}
+        }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
         backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.91) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.36) 100%), url('${area.image}')`,
@@ -664,28 +663,31 @@ export default function LandingPage() {
       </div>
 
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolled
+        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
             ? "bg-white shadow-lg"
             : "bg-white/95 backdrop-blur-sm shadow-sm"
-        }`}
+          }`}
       >
         <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-12 sm:h-14 md:h-14">
-          <div
-            className="hidden w-[110px] shrink-0 md:block"
-            aria-hidden="true"
-          />
+          <div className="hidden md:flex w-[110px] shrink-0 items-center">
+            <a href="#home" aria-label="RUDA home">
+              <img
+                src={RudaLogo}
+                alt="RUDA"
+                className="h-14 w-auto object-contain"
+              />
+            </a>
+          </div>
 
           <nav className="hidden md:flex items-center gap-0.5 lg:gap-1">
             {NAV_LINKS.map(({ href, label }) => (
               <a
                 key={href}
                 href={href}
-                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
-                  activeSection === href.slice(1)
+                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
                     ? "bg-[#0B7A3B] text-white"
                     : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
-                }`}
+                  }`}
               >
                 {label}
               </a>
@@ -802,7 +804,7 @@ export default function LandingPage() {
         <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-5 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
           <div className="relative mx-auto w-full max-w-[1600px]">
             <div className="mx-auto max-w-[1450px] text-center">
-              
+
 
               <div className="mt-2 flex items-center justify-center gap-3">
                 <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
@@ -814,15 +816,7 @@ export default function LandingPage() {
             </div>
 
             <div className="relative mt-2 min-h-[76px] xl:min-h-[108px]">
-              <div className="absolute left-0 top-0 hidden items-start gap-4 xl:flex">
-                <a href="#home" className="shrink-0" aria-label="RUDA home">
-                  <img
-                    src={RudaLogo}
-                    alt="RUDA"
-                    className="h-28 w-auto object-contain drop-shadow-[0_8px_22px_rgba(0,0,0,0.45)] 2xl:h-28"
-                  />
-                </a>
-
+              <div className="absolute left-0 top-0 hidden xl:block">
                 <div className="pt-1">
                   <RaviCityVisionPanel />
                 </div>
@@ -873,12 +867,12 @@ export default function LandingPage() {
 
                 </h1>
                 <div className="text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.84] sm:text-[13px] lg:text-[14px] xl:whitespace-nowrap">
-                An Integrated, Immersive &amp; 
-                
-                Intelligent Platform for
-                Planning, Monitoring, Collaboration &amp; Sustainable
-                Development
-              </div>
+                  An Integrated, Immersive &amp;
+
+                  Intelligent Platform for
+                  Planning, Monitoring, Collaboration &amp; Sustainable
+                  Development
+                </div>
 
 
               </div>
@@ -950,11 +944,10 @@ export default function LandingPage() {
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${
-                  i === slideIndex
+                className={`rounded-full transition-all duration-300 ${i === slideIndex
                     ? "h-2 w-7 bg-[#70D84F]"
                     : "h-2 w-2 bg-white/35 hover:bg-white/70"
-                }`}
+                  }`}
               />
             ))}
           </div>
@@ -976,137 +969,76 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section
-        id="about"
-        className="relative overflow-hidden bg-white py-10 sm:py-14 md:py-16"
-      >
-        <div className="relative mx-auto max-w-7xl px-4 pt-10 sm:px-5">
-          <div className="grid items-stretch gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#edf8ef] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#004225] sm:px-4 sm:py-2 sm:text-xs">
-                About the Platform
-              </div>
-
-              <h2 className="mt-5 text-3xl font-black leading-[0.98] tracking-[-0.03em] text-slate-900 xs:text-4xl sm:text-5xl lg:text-[58px]">
-                RUDA GIS
-                <span className="mt-1 block text-[#0B7A3B]">METAVERSE</span>
-              </h2>
-
-              <div className="mt-4 h-1.5 w-14 rounded-full bg-[#49B84A] sm:w-16" />
-
-              <p className="mt-6 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base text-justify">
-                A unified geospatial ecosystem that connects cadastral records,
-                planning layers, field information, analytics and immersive 3D
-                environments in one intelligent platform. Through interactive
-                maps, spatial dashboards, and field data workflows, the system
-                improves visibility, coordination, and data-driven
-                decision-making for cadastral operations within the RUDA project
-                area.
-              </p>
-
-              <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                {[
-                  {
-                    icon: BarChart3,
-                    title: "Geospatial Data & Metaverse",
-                    text: "Transform spatial data into insights, scenarios and planning decisions.",
-                    route: "/gis-metaverse",
-                  },
-                  {
-                    icon: Layers,
-                    title: "Cadastral Management",
-                    text: "Manage parcels, boundaries, land records and field verification data.",
-                    route: "/Mapview",
-                  },
-                  {
-                    icon: Box,
-                    title: "Digital Twin & BIM",
-                    text: "Explore terrain, buildings, infrastructure and BIM models in 3D.",
-                    route: "/society-3d-upload",
-                  },
-                ].map((item) => {
-                  const Icon = item.icon;
-
-                  return (
-                    <div
-                      key={item.title}
-                      onClick={() => navigate(item.route)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          navigate(item.route);
-                        }
-                      }}
-                      className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_34px_-24px_rgba(0,66,37,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-[#49B84A]/60 hover:shadow-[0_18px_38px_-20px_rgba(11,122,59,0.35)]"
-                    >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#0B7A3B] to-[#004225] text-white shadow-lg shadow-[#0B7A3B]/20">
-                        <Icon size={18} strokeWidth={2} />
-                      </div>
-
-                      <h3 className="mt-4 text-[13px] font-black leading-tight text-slate-900 sm:text-sm">
-                        {item.title}
-                      </h3>
-
-                      <p className="mt-2 text-[11px] leading-relaxed text-slate-500 sm:text-xs">
-                        {item.text}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <button
-                onClick={() => navigate("/Mapview")}
-                className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#0B7A3B] px-5 py-3 text-sm font-black text-white shadow-[0_14px_28px_-14px_rgba(11,122,59,0.75)] transition-all hover:-translate-y-0.5 hover:bg-[#004225] sm:px-7 sm:py-3.5 sm:text-base"
-              >
-                Explore the Platform <ArrowRight size={16} />
-              </button>
+      <section id="about" className="py-10 sm:py-14 md:py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-5 grid lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
+              About the Platform
             </div>
 
-            <div className="relative flex h-full flex-col pt-8 lg:pt-12">
-              {/* <div className="mb-1 grid grid-cols-5 gap-2 sm:gap-3">
-                {CORE_CAPABILITIES.map((item) => {
-                  const Icon = item.icon;
+            <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight mb-3 sm:mb-4">
+              RUDA GIS
+              <span className="block text-[#0B7A3B]">METAVERSE</span>
+            </h2>
 
-                  return (
-                    <div
-                      key={item.label}
-                      className="flex min-w-0 flex-col items-center text-center"
-                    >
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#8ad9df]/60 bg-[#eefafb] text-[#2f9eaa] shadow-sm sm:h-12 sm:w-12">
-                        <Icon size={18} strokeWidth={1.9} />
-                      </div>
+            <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mb-5 sm:mb-8" />
 
-                      <span className="mt-2 text-[11px] font-normal normal-case leading-relaxed tracking-normal text-slate-600 sm:text-xs">
-                        {item.label}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div> */}
+            <div className="space-y-3 sm:space-y-5 text-slate-600 text-sm sm:text-base leading-relaxed">
+              <p>
+                The RUDA Cadastral Project is designed as a centralized
+                geospatial platform for managing parcel-level information,
+                cadastral boundaries, land records, and field verification data
+                in a structured digital environment.
+              </p>
+              <p>
+                The platform supports planners, survey teams, land record
+                officials, GIS professionals, and decision-makers by bringing
+                cadastral layers, administrative boundaries, survey evidence,
+                imagery, and analytical dashboards into one integrated system.
+              </p>
+              <p>
+                Through interactive maps, spatial dashboards, and field data
+                workflows, the system improves visibility, coordination, and
+                data-driven decision-making for cadastral operations within the
+                RUDA project area.
+              </p>
+            </div>
 
-              <div className="relative flex-1 overflow-hidden pt-1">
-                <img
-                  src="/RudaMasterplanMap.png"
-                  alt="RUDA project map"
-                  className="h-[420px] w-full rounded-[22px] object-contain object-top xs:h-[50px] sm:h-[550px] lg:h-full lg:min-h-[550px]"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    e.currentTarget.nextSibling.style.display = "flex";
-                  }}
-                />
+            <button
+              onClick={() => navigate("/Mapview")}
+              className="mt-7 sm:mt-10 inline-flex items-center gap-2 bg-[#0B7A3B] hover:bg-[#004225] text-white font-bold text-sm sm:text-base px-5 sm:px-7 py-3 sm:py-3.5 rounded-full transition-all hover:shadow-lg"
+            >
+              Open Cadastral Map <ArrowRight size={15} />
+            </button>
+          </div>
 
-                <div className="hidden h-[460px] w-full items-center justify-center rounded-[22px] bg-gradient-to-br from-[#edf8ef] to-[#dff3e6] xs:h-[520px] sm:h-[600px] lg:h-full lg:min-h-[610px]">
-                  <Map size={86} className="text-[#0B7A3B]/30" />
-                </div>
+          <div className="relative mt-6 lg:mt-0">
+            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
+              <img
+                src="/ruda-lahore-map.webp"
+                alt="RUDA project map"
+                className="w-full h-[260px] xs:h-[300px] sm:h-[360px] md:h-[420px] object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextSibling.style.display = "flex";
+                }}
+              />
 
-                <MapStatCard
-                  value="340 Km²"
-                  label="Coverage Area"
-                  positionClass="bottom-6 right-6"
-                />
+              <div className="hidden w-full h-[260px] xs:h-[300px] sm:h-[360px] md:h-[420px] bg-gradient-to-br from-[#004225] to-[#00351f] items-center justify-center">
+                <Map size={80} className="text-white/30" />
               </div>
+
+              <MapStatCard
+                value="340 km²"
+                label="Coverage Area"
+                positionClass="top-2 left-2"
+              />
+
+              <MapStatCard
+                value="2026"
+                label="Active Platform"
+                positionClass="bottom-2 right-2"
+              />
             </div>
           </div>
         </div>
@@ -1274,36 +1206,30 @@ export default function LandingPage() {
       <footer id="contact" className="bg-[#00351f] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-5 pt-10 sm:pt-14 md:pt-16 pb-8 sm:pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="mb-4 grid grid-cols-4 gap-3 sm:mb-6">
-              {[
-                {
-                  src: RudaLogo,
-                  alt: "RUDA Land and Management",
-                },
-                {
-                  src: "/gop_logo.png",
-                  alt: "Government of Punjab",
-                },
-                {
-                  src: NespakLogo,
-                  alt: "NESPAK",
-                },
-                {
-                  src: RudaFooterLogo,
-                  alt: "Ravi Urban Development Authority",
-                },
-              ].map((logo) => (
-                <div
-                  key={logo.alt}
-                  className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/15 bg-white p-2 shadow-sm sm:h-16 sm:w-16"
-                >
-                  <img
-                    src={logo.src}
-                    alt={logo.alt}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-              ))}
+            <div className="mb-4 flex flex-wrap items-center gap-3 sm:mb-6">
+              <img
+                src={RudaLogo}
+                alt="RUDA Land and Management"
+                className="h-11 w-11 rounded-lg bg-white p-1 object-contain sm:h-12 sm:w-12"
+              />
+
+              <img
+                src="/gop_logo.png"
+                alt="Government of Punjab"
+                className="h-11 w-11 rounded-lg bg-white p-1 object-contain sm:h-12 sm:w-12"
+              />
+
+              <img
+                src={NespakLogo}
+                alt="NESPAK"
+                className="h-11 w-16 rounded-lg bg-white p-1.5 object-contain sm:h-12 sm:w-20"
+              />
+
+              <img
+                src={RudaFooterLogo}
+                alt="Ravi Urban Development Authority"
+                className="h-11 w-11 rounded-lg bg-white p-1 object-contain sm:h-12 sm:w-12"
+              />
             </div>
 
             <p className="text-white/70 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6">
@@ -1373,40 +1299,35 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
-              <h3 className="font-black text-sm sm:text-base">
-                Office Location
-              </h3>
+            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
+              Insert Map here
+            </h3>
 
-              <a
-                href="https://www.google.com/maps/search/?api=1&query=152-A+Ali+Block+Garden+Town+Lahore+Pakistan"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#8FEA67] transition-colors hover:text-white sm:text-xs"
-              >
-                Open in Maps
-                <ExternalLink size={12} />
-              </a>
-            </div>
+            <form
+              className="flex flex-col gap-2.5 sm:gap-3"
+              onSubmit={(e) => e.preventDefault()}
+            >
+              {["Your Name", "Your Email", "Subject"].map((ph) => (
+                <input
+                  key={ph}
+                  placeholder={ph}
+                  className="bg-white/10 border border-white/15 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-white placeholder-white/40 outline-none focus:border-[#49B84A] transition-colors"
+                />
+              ))}
 
-            <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)]">
-              <iframe
-                title="RUDA office location"
-                src="https://www.google.com/maps?q=152-A+Ali+Block+Garden+Town+Lahore+Pakistan&output=embed"
-                className="h-[245px] w-full border-0 sm:h-[270px]"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                allowFullScreen
+              <textarea
+                placeholder="Your Message"
+                rows={3}
+                className="bg-white/10 border border-white/15 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-white placeholder-white/40 outline-none focus:border-[#49B84A] transition-colors resize-none"
               />
 
-              <div className="flex items-start gap-2 border-t border-white/10 bg-black/10 px-3 py-3 text-[10px] leading-relaxed text-white/70 sm:text-xs">
-                <MapPin
-                  size={14}
-                  className="mt-0.5 shrink-0 text-[#49B84A]"
-                />
-                <span>152-A, Ali Block, Garden Town, Lahore, Pakistan</span>
-              </div>
-            </div>
+              <button
+                type="submit"
+                className="bg-[#0B7A3B] hover:bg-[#49B84A] text-white font-black text-xs sm:text-sm py-2.5 rounded-lg transition-colors"
+              >
+                Send Message
+              </button>
+            </form>
           </div>
         </div>
 
