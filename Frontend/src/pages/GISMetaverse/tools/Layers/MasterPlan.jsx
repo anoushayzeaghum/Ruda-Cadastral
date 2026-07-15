@@ -214,6 +214,7 @@ const applyAfterLayerLoads = (map, key, style) => {
 
 export default function MasterPlan({
   map,
+  title = "PROJECT MASTER PLAN",
   selectedProjectId,
   layerVisibility,
   setLayerVisibility,
@@ -565,7 +566,7 @@ export default function MasterPlan({
         className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span>MASTER PLAN</span>
+        <span>{title}</span>
         {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
       </button>
 

@@ -356,7 +356,7 @@ export default function GISMetaverseMap({
 
           fitGeoJSON(map, data);
 
-          await waitForMapMove(map, 800);
+          await waitForMapMove(map, 100);
 
           await wait(500);
         }

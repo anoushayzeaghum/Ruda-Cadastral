@@ -34,6 +34,13 @@ import {
   getRailwayLineCasingPaint,
   getRailwayLinePaint,
 } from "./LayerManager/RudaMasterPlanLayers/RoadBridgesTransportLayers/RailwayLineLayer";
+import { getRudaPlanningBoundaryOutlinePaint } from "./LayerManager/RudaMasterPlanLayers/Boundaries/RudaPlanningBoundaryLayer";
+import { getRudaJurisdictionBoundaryOutlinePaint } from "./LayerManager/RudaMasterPlanLayers/Boundaries/RudaJurisdictionBoundaryLayer";
+import {
+  getPrecinctBoundaryLabelLayout,
+  getPrecinctBoundaryLabelPaint,
+  getPrecinctBoundaryOutlinePaint,
+} from "./LayerManager/RudaMasterPlanLayers/Boundaries/PrecinctBoundaryLayer";
 import {
   getAbdulHakeemMotorwayM3GeoJSON,
   getCityLevelServiceGeoJSON,
@@ -71,188 +78,53 @@ import {
   getWWTPSitesGeoJSON,
   getKatarBandWWTPGeoJSON,
   getSWTPSiteGeoJSON,
+  getRudaGeoJSON,
+  getRtwPackageGeoJSON,
+  getRtwAlignmentGeoJSON,
 } from "../../../../services/metaverseApi";
 
 const RUDA_MASTER_PLAN_GROUPS = [
   {
-    key: "rudaBoundaries",
-    label: "RUDA Boundaries",
+    key: "masterPlanningBoundaryGroup",
+    label: "Master Planning Boundary",
+    standalone: true,
     children: [
       {
         key: "rudaPlanningBoundary",
-        label: "RUDA Planning Boundary",
+        label: "Master Planning Boundary",
+        color: "#f4ea00",
+      },
+    ],
+  },
+  {
+    key: "masterPlanPhasesGroup",
+    label: "Master Plan Phases",
+    standalone: true,
+    children: [
+      {
+        key: "masterPlanPhases",
+        label: "Master Plan Phases",
         color: "#6bb7e8",
       },
-      {
-        key: "rudaJurisdictionBoundary",
-        label: "RUDA Jurisdiction Boundary",
-        color: "#f8d56b",
-      },
     ],
   },
   {
-    key: "proposedRoads",
-    label: "Proposed Roads",
+    key: "precinctBoundaryGroup",
+    label: "Precinct Boundary",
+    standalone: true,
     children: [
       {
-        key: "rudaProposedRoads",
-        label: "RUDA Proposed Roads",
-        color: "#19598d",
-      },
-      {
-        key: "transportationRoads",
-        label: "Transportation Roads",
-        color: "#e11d48",
-      },
-      {
-        key: "lahoreRingRoad",
-        label: "Lahore Ring Road",
-        color: "#f5e600",
-      },
-      {
-        key: "lahoreBypass",
-        label: "Lahore Bypass",
-        color: "#f59e0b",
-      },
-      {
-        key: "jinnahAvenue",
-        label: "Jinnah Avenue Road",
-        color: "#22c55e",
-      },
-      {
-        key: "hardoSohalMuslimRoad",
-        label: "Hardosohal Muslim Road",
-        color: "#a855f7",
-      },
-      {
-        key: "katarBundRoad",
-        label: "Katar Bund Road",
-        color: "#06b6d4",
-      },
-      {
-        key: "kalaKhataiInterchange",
-        label: "Kala Khatai Interchange",
-        color: "#f97316",
-      },
-      {
-        key: "sialkotMotorway",
-        label: "Sialkot Motorway",
-        color: "#f59e0b",
-      },
-      {
-        key: "abdulHakeemMotorwayM3",
-        label: "Abdul Hakeem Motorway M-3",
-        color: "#f59e0b",
+        key: "precinctBoundaryLayer",
+        label: "Precinct Boundary",
+        color: "#f4ea00",
       },
     ],
   },
   {
-    key: "irrigationSystem",
-    label: "Irrigation System",
-    children: [
-      {
-        key: "irrigationNetwork",
-        label: "Irrigation Network",
-        color: "#2563eb",
-      },
-      {
-        key: "existingDrains",
-        label: "Existing Drains",
-        color: "#64748b",
-      },
-      {
-        key: "linkCanal",
-        label: "Link Canal",
-        color: "#0ea5e9",
-      },
-      {
-        key: "branchCanal",
-        label: "Branch Canal",
-        color: "#16a34a",
-      },
-      {
-        key: "distributary",
-        label: "Distributary",
-        color: "#84cc16",
-      },
-      {
-        key: "hudiaraDrain",
-        label: "Hudiara Drain",
-        color: "#0891b2",
-      },
-    ],
-  },
-  {
-    key: "transportation",
-    label: "Transportation",
-    children: [
-      {
-        key: "railwayLine",
-        label: "Railway Line",
-        color: "#111111",
-      },
-      {
-        key: "railwayStations",
-        label: "Railway Stations",
-        color: "#7c3aed",
-      },
-      {
-        key: "orangeTrack",
-        label: "Orange Track",
-        color: "#f97316",
-      },
-      {
-        key: "lahoreRapidMassTransit",
-        label: "Lahore Rapid Mass Transit",
-        color: "#dc2626",
-      },
-      {
-        key: "bridges",
-        label: "Bridges",
-        color: "#ca8a04",
-      },
-      {
-        key: "ganjaKalanTruckStand",
-        label: "Ganja Kalan Truck Stand",
-        color: "#0f766e",
-      },
-    ],
-  },
-  {
-    key: "wwtp",
-    label: "WWTP",
-    children: [
-      {
-        key: "proposedWWTP",
-        label: "Proposed WWTP",
-        color: "#f97316",
-      },
-      {
-        key: "wwtpSite",
-        label: "WWTP Site",
-        color: "#8b5cf6",
-      },
-      {
-        key: "katarbandWWTP",
-        label: "Katarband WWTP",
-        color: "#ec4899",
-      },
-      {
-        key: "swtpSite",
-        label: "SWTP Site",
-        color: "#14b8a6",
-      },
-    ],
-  },
-  {
-    key: "cityLevelServices",
+    key: "cityLevelServicesGroup",
     label: "City Level Services",
+    standalone: true,
     children: [
-      {
-        key: "cityLevelServicesPoints",
-        label: "City Level Services Points",
-        color: "#ef4444",
-      },
       {
         key: "cityLevelServicesLayer",
         label: "City Level Services",
@@ -261,69 +133,84 @@ const RUDA_MASTER_PLAN_GROUPS = [
     ],
   },
   {
-    key: "forestBoundaries",
-    label: "Forest Boundaries",
+    key: "cityLevelServicePointsGroup",
+    label: "City Level Services Point",
+    standalone: true,
     children: [
       {
-        key: "forestBoundary",
-        label: "Forest Boundary",
-        color: "#15803d",
-      },
-      {
-        key: "existingForest",
-        label: "Existing Forest",
-        color: "#84cc16",
+        key: "cityLevelServicesPoints",
+        label: "City Level Services Point",
+        color: "#ef4444",
       },
     ],
   },
   {
-    key: "precinctBoundary",
-    label: "Precinct Boundary",
+    key: "riverTrainingWorks",
+    label: "River Training Works - RTW",
     children: [
-      {
-        key: "precinctBoundaryLayer",
-        label: "Precinct Boundary",
-        color: "#a855f7",
-      },
+      { key: "rtwPackages", label: "RTW Packages", color: "#8b5cf6" },
+      { key: "rtwAlignment", label: "RTW Alignment", color: "#ec4899" },
+      { key: "riverBoundaryLayer", label: "River Boundary", color: "#38bdf8" },
+      { key: "riverRavi", label: "River Ravi", color: "#0ea5e9" },
     ],
   },
   {
-    key: "riverBoundary",
-    label: "River Boundary",
+    key: "proposedRoadsGroup",
+    label: "Proposed Roads",
+    standalone: true,
     children: [
-      {
-        key: "riverBoundaryLayer",
-        label: "River Boundary",
-        color: "#38bdf8",
-      },
-      {
-        key: "riverRavi",
-        label: "River Ravi",
-        color: "#0ea5e9",
-      },
+      { key: "rudaProposedRoads", label: "Proposed Roads", color: "#19598d" },
     ],
   },
   {
-    key: "mpPrincipalZoning",
-    label: "MP Principal Zoning",
+    key: "wwtp",
+    label: "WWTP",
     children: [
-      {
-        key: "mpPrincipalZoningLayer",
-        label: "MP Principal Zoning",
-        color: "#f97316",
-      },
+      { key: "proposedWWTP", label: "Proposed WWTP", color: "#f97316" },
+      { key: "wwtpSite", label: "WWTP Sites", color: "#8b5cf6" },
+      { key: "swtpSite", label: "SWTP Sites", color: "#14b8a6" },
     ],
   },
 ];
 
 const RUDA_MASTER_PLAN_LAYER_CONFIG = {
+  masterPlanPhases: {
+    endpoint: "/ruda/",
+    fetchGeoJSON: getRudaGeoJSON,
+    hidePolygonFill: true,
+    paintUsesLayerColor: true,
+    getOutlinePaint: getRudaPlanningBoundaryOutlinePaint,
+    getLinePaint: getRudaPlanningBoundaryOutlinePaint,
+    outlineLineCap: "round",
+    lineCap: "round",
+  },
+  rtwPackages: {
+    endpoint: "/rtwpackage/",
+    fetchGeoJSON: getRtwPackageGeoJSON,
+  },
+  rtwAlignment: {
+    endpoint: "/rtwalignment/",
+    fetchGeoJSON: getRtwAlignmentGeoJSON,
+  },
   rudaPlanningBoundary: {
     endpoint: "/ruda-planning-boundary/",
     fetchGeoJSON: getRudaPlanningBoundaryGeoJSON,
+    hidePolygonFill: true,
+    paintUsesLayerColor: true,
+    getOutlinePaint: getRudaPlanningBoundaryOutlinePaint,
+    getLinePaint: getRudaPlanningBoundaryOutlinePaint,
+    outlineLineCap: "round",
+    lineCap: "round",
   },
   rudaJurisdictionBoundary: {
     endpoint: "/ruda-jurisdiction/",
     fetchGeoJSON: getRudaJurisdictionGeoJSON,
+    hidePolygonFill: true,
+    paintUsesLayerColor: true,
+    getOutlinePaint: getRudaJurisdictionBoundaryOutlinePaint,
+    getLinePaint: getRudaJurisdictionBoundaryOutlinePaint,
+    outlineLineCap: "round",
+    lineCap: "round",
   },
   rudaProposedRoads: {
     endpoint: "/proposed-road-network/",
@@ -493,6 +380,15 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
   precinctBoundaryLayer: {
     endpoint: "/precient-boundary/",
     fetchGeoJSON: getPrecientBoundaryGeoJSON,
+    hidePolygonFill: true,
+    paintUsesLayerColor: true,
+    getOutlinePaint: getPrecinctBoundaryOutlinePaint,
+    getLinePaint: getPrecinctBoundaryOutlinePaint,
+    getLabelLayout: getPrecinctBoundaryLabelLayout,
+    getLabelPaint: getPrecinctBoundaryLabelPaint,
+    labelMinZoom: 10,
+    outlineLineCap: "round",
+    lineCap: "round",
   },
   riverBoundaryLayer: {
     endpoint: "/river/",
@@ -786,6 +682,7 @@ const getLayerIds = (layerKey) => {
     lineId: `${base}-line`,
     overlayId: `${base}-line-overlay`,
     circleId: `${base}-circle`,
+    labelId: `${base}-label`,
   };
 };
 
@@ -850,6 +747,34 @@ const getRudaLinePaint = ({
   };
 };
 
+const getRudaOutlinePaint = ({
+  layerKey,
+  color,
+  opacityRatio,
+  config,
+  categorizedRoadColors,
+  serviceColors,
+  forestColors,
+}) => {
+  if (typeof config.getOutlinePaint === "function") {
+    const styleValue = config.paintUsesLayerColor
+      ? color
+      : categorizedRoadColors?.[layerKey] || {};
+
+    return config.getOutlinePaint(styleValue, opacityRatio);
+  }
+
+  return {
+    "line-color": config.categorizedServices
+      ? buildCityLevelServiceColorExpression(serviceColors)
+      : config.categorizedExistingForest
+        ? buildExistingForestColorExpression(forestColors)
+        : color,
+    "line-width": 1.2,
+    "line-opacity": 0.95 * opacityRatio,
+  };
+};
+
 const getRudaCasingPaint = ({
   layerKey,
   color,
@@ -907,19 +832,26 @@ const applyRudaLayerPaint = (
         ? buildExistingForestColorExpression(forestColors)
         : color,
   );
-  setPaint(map, ids.fillId, "fill-opacity", 0.35 * o);
-
   setPaint(
     map,
-    ids.outlineId,
-    "line-color",
-    config.categorizedServices
-      ? buildCityLevelServiceColorExpression(serviceColors)
-      : config.categorizedExistingForest
-        ? buildExistingForestColorExpression(forestColors)
-        : color,
+    ids.fillId,
+    "fill-opacity",
+    config.hidePolygonFill ? 0 : 0.35 * o,
   );
-  setPaint(map, ids.outlineId, "line-opacity", 0.95 * o);
+
+  applyPaintObject(
+    map,
+    ids.outlineId,
+    getRudaOutlinePaint({
+      layerKey,
+      color,
+      opacityRatio: o,
+      config,
+      categorizedRoadColors,
+      serviceColors,
+      forestColors,
+    }),
+  );
 
   const casingPaint = getRudaCasingPaint({
     layerKey,
@@ -969,6 +901,10 @@ const applyRudaLayerPaint = (
   );
   setPaint(map, ids.circleId, "circle-opacity", o);
   setPaint(map, ids.circleId, "circle-stroke-opacity", o);
+
+  if (typeof config.getLabelPaint === "function") {
+    applyPaintObject(map, ids.labelId, config.getLabelPaint(o));
+  }
 };
 
 const setRudaLayerVisibility = (map, layerKey, visible) => {
@@ -983,6 +919,7 @@ const setRudaLayerVisibility = (map, layerKey, visible) => {
     ids.lineId,
     ids.overlayId,
     ids.circleId,
+    ids.labelId,
   ].forEach((layerId) => {
     setLayoutVisibility(map, layerId, visible);
   });
@@ -1028,27 +965,36 @@ const addOrUpdateRudaMapLayer = ({
           : config.categorizedExistingForest
             ? buildExistingForestColorExpression(forestColors)
             : color,
-        "fill-opacity": 0.35 * opacityRatio,
+        "fill-opacity": config.hidePolygonFill ? 0 : 0.35 * opacityRatio,
       },
     });
   }
 
   if (!map.getLayer(ids.outlineId)) {
+    const outlineLayout =
+      typeof config.getOutlinePaint === "function"
+        ? {
+            visibility,
+            "line-cap": config.outlineLineCap || "round",
+            "line-join": config.outlineLineJoin || "round",
+          }
+        : { visibility };
+
     map.addLayer({
       id: ids.outlineId,
       type: "line",
       source: ids.sourceId,
       filter: POLYGON_FILTER,
-      layout: { visibility },
-      paint: {
-        "line-color": config.categorizedServices
-          ? buildCityLevelServiceColorExpression(serviceColors)
-          : config.categorizedExistingForest
-            ? buildExistingForestColorExpression(forestColors)
-            : color,
-        "line-width": 1.2,
-        "line-opacity": 0.95 * opacityRatio,
-      },
+      layout: outlineLayout,
+      paint: getRudaOutlinePaint({
+        layerKey,
+        color,
+        opacityRatio,
+        config,
+        categorizedRoadColors,
+        serviceColors,
+        forestColors,
+      }),
     });
   }
 
@@ -1150,6 +1096,27 @@ const addOrUpdateRudaMapLayer = ({
     });
   }
 
+  if (
+    typeof config.getLabelLayout === "function" &&
+    !map.getLayer(ids.labelId)
+  ) {
+    map.addLayer({
+      id: ids.labelId,
+      type: "symbol",
+      source: ids.sourceId,
+      filter: POLYGON_FILTER,
+      minzoom: config.labelMinZoom ?? 10,
+      layout: {
+        visibility,
+        ...config.getLabelLayout(),
+      },
+      paint:
+        typeof config.getLabelPaint === "function"
+          ? config.getLabelPaint(opacityRatio)
+          : {},
+    });
+  }
+
   applyRudaLayerPaint(
     map,
     layerKey,
@@ -1169,6 +1136,7 @@ const removeRudaMapLayer = (map, layerKey) => {
   const ids = getLayerIds(layerKey);
 
   [
+    ids.labelId,
     ids.circleId,
     ids.overlayId,
     ids.lineId,
@@ -1389,9 +1357,9 @@ export default function RUDAMasterPlan({ map }) {
     try {
       const geojson = normalizeGeoJSON(await config.fetchGeoJSON());
       if (layerKey === "jinnahAvenue") {
-  console.log("Jinnah Avenue GeoJSON:", geojson);
-  console.log("Features:", geojson.features?.length);
-}
+        console.log("Jinnah Avenue GeoJSON:", geojson);
+        console.log("Features:", geojson.features?.length);
+      }
 
       if (requestTokenRef.current[layerKey] !== token) return;
 
@@ -1669,6 +1637,75 @@ export default function RUDAMasterPlan({ map }) {
             const groupSelection = getGroupSelection(group);
             const isGroupOpen = groupDropdowns[group.key];
 
+            if (group.standalone) {
+              const layer = group.children[0];
+              const currentLayerState = layerState[layer.key] || {};
+              const currentLayerMeta = layerMeta[layer.key] || {};
+              const currentLayerConfig =
+                RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key] || {};
+
+              return (
+                <div key={group.key} className="mt-3 first:mt-1">
+                  <LayerItem
+                    checked={!!currentLayerState.checked}
+                    color={currentLayerState.color || layer.color}
+                    label={layer.label}
+                    opacity={currentLayerState.opacity ?? 100}
+                    dropdownOpen={!!currentLayerState.dropdownOpen}
+                    categorized={
+                      !!currentLayerConfig.categorized ||
+                      !!currentLayerConfig.categorizedServices ||
+                      !!currentLayerConfig.categorizedExistingForest
+                    }
+                    categoryLegend={
+                      currentLayerConfig.categoryLegend ||
+                      (layer.key === "cityLevelServicesLayer"
+                        ? CITY_LEVEL_SERVICES_LEGEND
+                        : [])
+                    }
+                    categorizedColors={
+                      currentLayerConfig.categorized
+                        ? categorizedRoadColors[layer.key] || {}
+                        : layer.key === "cityLevelServicesLayer"
+                          ? cityLevelServiceColors
+                          : {}
+                    }
+                    onChange={() => toggleLayer(layer.key)}
+                    onColorChange={(value) =>
+                      updateLayerColor(layer.key, value)
+                    }
+                    onOpacityChange={(value) =>
+                      updateLayerOpacity(layer.key, value)
+                    }
+                    onDropdownToggle={() => toggleLayerDropdown(layer.key)}
+                  />
+
+                  {currentLayerState.dropdownOpen && (
+                    <div
+                      className={`ml-6 mt-2 max-h-64 rounded-sm border border-[#13593f]/30 bg-[#06291f] px-3 py-2 text-[11px] text-white/70 ${LAYER_PANEL_SCROLL}`}
+                    >
+                      <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                        <span>Status</span>
+                        <span>{currentLayerMeta.status || "Not loaded"}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                        <span>Features</span>
+                        <span>{currentLayerMeta.featureCount ?? 0}</span>
+                      </div>
+                      <div className="flex justify-between gap-3 py-1">
+                        <span>Data source</span>
+                        <span className="truncate text-right">
+                          {currentLayerMeta.endpoint ||
+                            currentLayerConfig.endpoint ||
+                            "Not connected"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <div key={group.key} className="mt-3 first:mt-1">
                 <GroupItem
@@ -1905,19 +1942,19 @@ function GroupItem({
   return (
     <div className="flex items-center justify-between rounded-sm px-1 py-1 hover:bg-[#0f3d2e]/40">
       <div className="flex min-w-0 items-center gap-2">
-  <IndeterminateCheckbox
-    checked={checked}
-    partial={partial}
-    onChange={onChange}
-  />
+        <IndeterminateCheckbox
+          checked={checked}
+          partial={partial}
+          onChange={onChange}
+        />
 
-  <span
-    className="truncate cursor-pointer text-[11px] text-white/90"
-    onClick={onChange}
-  >
-    {label}
-  </span>
-</div>
+        <span
+          className="truncate cursor-pointer text-[11px] text-white/90"
+          onClick={onChange}
+        >
+          {label}
+        </span>
+      </div>
 
       <button
         type="button"

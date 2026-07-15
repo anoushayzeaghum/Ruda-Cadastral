@@ -49,7 +49,7 @@ const HERO_SLIDES = [
 const NAV_LINKS = [
   { href: "#home", label: "Home" },
   { href: "#about", label: "About" },
-  { href: "#apps", label: "GIS Apps" },
+  { href: "#apps", label: "Metaverse Components" },
   { href: "#features", label: "Features" },
   { href: "#contact", label: "Contact" },
 ];
@@ -181,8 +181,19 @@ const RAVI_CITY_PILLARS = [
 
 const GIS_APPS = [
   {
+    icon: <Search size={22} />,
+    title: "RUDA GIS Metaverse",
+    desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
+    img: "/s2.png",
+    route: "/gis-metaverse",
+    gradientFrom: "#0B7A3B",
+    gradientTo: "#004225",
+    tags: ["GIS", "Vector & Raster"],
+  },
+
+  {
     icon: <Layers size={22} />,
-    title: "Cadastral Management System",
+    title: "Land Information System ",
     desc: "Manage and visualize cadastral records, Khasra layers, mauza limits and administrative boundaries in one interactive GIS platform.",
     img: "/s1.png",
     route: "/Mapview",
@@ -191,15 +202,36 @@ const GIS_APPS = [
     tags: ["Cadastral", "Land Records"],
   },
   {
-    icon: <Search size={22} />,
-    title: "GIS Metaverse",
-    desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
-    img: "/s2.png",
-    route: "/gis-metaverse",
+    icon: <Smartphone size={22} />,
+    title: "RUDA Masterplan",
+    desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
+    img: "/s6.png",
+    route: "/flyto-dashboard",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
-    tags: ["GIS", "Vector & Raster"],
+    tags: ["Location", "Analytics"],
   },
+  {
+    icon: <Eye size={22} />,
+    title: "Metaverse KPIs",
+    desc: "Control and manage the complete cadastral system, including users, records, spatial datasets, dashboards, permissions and administrative workflows.",
+    img: "/s5.png",
+    route: "/dashboard",
+    gradientFrom: "#49B84A",
+    gradientTo: "#004225",
+    tags: ["Admin", "Management"],
+  },
+  {
+    icon: <FileText size={22} />,
+    title: "Plot Information System",
+    desc: "Search plots, view demarcation details, verify and generate printable plot reports for cadastral documentation.",
+    img: "/s4.png",
+    route: "/demarcation",
+    gradientFrom: "#49B84A",
+    gradientTo: "#0B7A3B",
+    tags: ["Plots", "Reports"],
+  },
+
   {
     icon: <ClipboardList size={22} />,
     title: "3D GeoVerse",
@@ -219,26 +251,6 @@ const GIS_APPS = [
     gradientFrom: "#0B7A3B",
     gradientTo: "#00351F",
     tags: ["BIM", "Cesium"],
-  },
-  {
-    icon: <FileText size={22} />,
-    title: "Plot Demarcation Hub",
-    desc: "Search plots, view demarcation details, verify and generate printable plot reports for cadastral documentation.",
-    img: "/s4.png",
-    route: "/demarcation",
-    gradientFrom: "#49B84A",
-    gradientTo: "#0B7A3B",
-    tags: ["Plots", "Reports"],
-  },
-  {
-    icon: <Eye size={22} />,
-    title: "System Administration Portal",
-    desc: "Control and manage the complete cadastral system, including users, records, spatial datasets, dashboards, permissions and administrative workflows.",
-    img: "/s5.png",
-    route: "/dashboard",
-    gradientFrom: "#49B84A",
-    gradientTo: "#004225",
-    tags: ["Admin", "Management"],
   },
   {
     icon: <Smartphone size={22} />,
@@ -435,10 +447,11 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
 hover:-translate-y-2
 hover:scale-[1.025]
-hover:rotate-[0.2deg] ${compact
+hover:rotate-[0.2deg] ${
+        compact
           ? "min-h-[128px] rounded-xl p-3"
           : "min-h-[154px] rounded-[18px] p-4"
-        }`}
+      }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
         backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.91) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.36) 100%), url('${area.image}')`,
@@ -645,16 +658,17 @@ export default function LandingPage() {
       <div className="bg-gradient-to-r from-[#00351f] via-[#004225] to-[#0B7A3B] text-white text-[9px] xs:text-[10px] sm:text-xs font-semibold tracking-widest flex items-center justify-center gap-2 sm:gap-4 py-1.5 sm:py-2 px-2 text-center">
         <span className="hidden sm:block w-10 md:w-14 h-px bg-white/40 shrink-0" />
         <span className="leading-tight">
-          RUDA CADASTRAL PROJECT — RAVI URBAN DEVELOPMENT AUTHORITY
+          GIS METAVERSE PLATFORM — RAVI URBAN DEVELOPMENT AUTHORITY
         </span>
         <span className="hidden sm:block w-10 md:w-14 h-px bg-white/40 shrink-0" />
       </div>
 
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
-          ? "bg-white shadow-lg"
-          : "bg-white/95 backdrop-blur-sm shadow-sm"
-          }`}
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white shadow-lg"
+            : "bg-white/95 backdrop-blur-sm shadow-sm"
+        }`}
       >
         <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-12 sm:h-14 md:h-14">
           <div
@@ -667,10 +681,11 @@ export default function LandingPage() {
               <a
                 key={href}
                 href={href}
-                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
-                  ? "bg-[#0B7A3B] text-white"
-                  : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
-                  }`}
+                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
+                  activeSection === href.slice(1)
+                    ? "bg-[#0B7A3B] text-white"
+                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                }`}
               >
                 {label}
               </a>
@@ -931,10 +946,11 @@ export default function LandingPage() {
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${i === slideIndex
-                  ? "h-2 w-7 bg-[#70D84F]"
-                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
-                  }`}
+                className={`rounded-full transition-all duration-300 ${
+                  i === slideIndex
+                    ? "h-2 w-7 bg-[#70D84F]"
+                    : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                }`}
               />
             ))}
           </div>
@@ -964,8 +980,8 @@ export default function LandingPage() {
             </div>
 
             <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight mb-3 sm:mb-4">
-              RUDA Cadastral
-              <span className="block text-[#0B7A3B]">GIS Platform</span>
+              RUDA GIS
+              <span className="block text-[#0B7A3B]">METAVERSE</span>
             </h2>
 
             <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mb-5 sm:mb-8" />
@@ -1034,12 +1050,12 @@ export default function LandingPage() {
       <section id="apps" className="py-10 sm:py-14 md:py-16 bg-slate-50">
         <div className="max-w-8xl mx-auto px-4 sm:px-5">
           <div className="text-center mb-7 sm:mb-10">
-            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
+            {/* <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
               GIS Applications
-            </div>
+            </div> */}
 
             <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 mb-3 sm:mb-4">
-              Explore RUDA GIS Apps
+              RUDA GIS METAVERSE COMPONENTS
             </h2>
 
             <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-4 sm:mb-6" />
@@ -1103,8 +1119,10 @@ export default function LandingPage() {
             </div>
 
             <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black leading-tight mb-4 sm:mb-6">
-              Start Exploring the
-              <span className="block text-[#49B84A]">Cadastral Map</span>
+              Enter Team Names here
+              <span className="block text-[#49B84A]">
+                CEO, COO, ED, Dir, Sir Nizam,Sir Arshad
+              </span>
             </h2>
 
             <p className="text-white/75 text-sm sm:text-base leading-relaxed mb-6 sm:mb-8 max-w-md mx-auto lg:mx-0">
@@ -1152,7 +1170,7 @@ export default function LandingPage() {
             </div>
 
             <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 mb-3 sm:mb-4">
-              Platform Features
+              Metaverse Features
             </h2>
 
             <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-4 sm:mb-6" />
@@ -1267,12 +1285,13 @@ export default function LandingPage() {
             <div className="flex flex-col gap-3 sm:gap-4">
               <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
                 <MapPin size={14} className="shrink-0 mt-0.5 text-[#49B84A]" />
-                Ravi Urban Development Authority, Lahore, Pakistan
+                152-A, Ali Block, Land Accquisition & Estate Management Office,
+                Garden Town, RUDA, Lahore, Pakistan
               </div>
 
               <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
                 <Phone size={14} className="shrink-0 text-[#49B84A]" />
-                +92-42-99333531-6
+                +92-42-99333531-6 Ext. 608
               </div>
 
               <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
@@ -1284,7 +1303,7 @@ export default function LandingPage() {
 
           <div>
             <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
-              Send a Message
+              Insert Map here
             </h3>
 
             <form
@@ -1316,8 +1335,9 @@ export default function LandingPage() {
         </div>
 
         <div className="border-t border-white/10 py-4 sm:py-5 text-center text-white/50 text-[10px] sm:text-xs px-4">
-          © 2026 Ravi Urban Development Authority (RUDA). All Rights Reserved.
-          &nbsp;|&nbsp; Powered by NESPAK Construction Management Division
+          © 2026 GIS Directorate, LA&EM - Ravi Urban Development Authority
+          (RUDA). All Rights Reserved. &nbsp;|&nbsp; Powered by NESPAK
+          Construction Management Division
         </div>
       </footer>
 
