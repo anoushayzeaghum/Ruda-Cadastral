@@ -987,76 +987,123 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="about" className="py-10 sm:py-14 md:py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-5 grid lg:grid-cols-2 gap-8 sm:gap-12 md:gap-16 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
-              About the Platform
-            </div>
-
-            <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight mb-3 sm:mb-4">
-              RUDA GIS
-              <span className="block text-[#0B7A3B]">METAVERSE</span>
-            </h2>
-
-            <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mb-5 sm:mb-8" />
-
-            <div className="space-y-3 sm:space-y-5 text-slate-600 text-sm sm:text-base leading-relaxed">
-              <p>
-                The RUDA Cadastral Project is designed as a centralized
-                geospatial platform for managing parcel-level information,
-                cadastral boundaries, land records, and field verification data
-                in a structured digital environment.
-              </p>
-              <p>
-                The platform supports planners, survey teams, land record
-                officials, GIS professionals, and decision-makers by bringing
-                cadastral layers, administrative boundaries, survey evidence,
-                imagery, and analytical dashboards into one integrated system.
-              </p>
-              <p>
-                Through interactive maps, spatial dashboards, and field data
-                workflows, the system improves visibility, coordination, and
-                data-driven decision-making for cadastral operations within the
-                RUDA project area.
-              </p>
-            </div>
-
-            <button
-              onClick={() => navigate("/Mapview")}
-              className="mt-7 sm:mt-10 inline-flex items-center gap-2 bg-[#0B7A3B] hover:bg-[#004225] text-white font-bold text-sm sm:text-base px-5 sm:px-7 py-3 sm:py-3.5 rounded-full transition-all hover:shadow-lg"
-            >
-              Open Cadastral Map <ArrowRight size={15} />
-            </button>
-          </div>
-
-          <div className="relative mt-6 lg:mt-0">
-            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
-              <img
-                src="/ruda-lahore-map.webp"
-                alt="RUDA project map"
-                className="w-full h-[260px] xs:h-[300px] sm:h-[360px] md:h-[420px] object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                  e.currentTarget.nextSibling.style.display = "flex";
-                }}
-              />
-
-              <div className="hidden w-full h-[260px] xs:h-[300px] sm:h-[360px] md:h-[420px] bg-gradient-to-br from-[#004225] to-[#00351f] items-center justify-center">
-                <Map size={80} className="text-white/30" />
+      <section
+        id="about"
+        className="relative overflow-hidden bg-white py-10 sm:py-14 md:py-16"
+      >
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-5">
+          <div className="grid items-stretch gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#edf8ef] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-[#004225] sm:px-4 sm:py-2 sm:text-xs">
+                About the Platform
               </div>
 
-              <MapStatCard
-                value="340 km²"
-                label="Coverage Area"
-                positionClass="top-2 left-2"
-              />
+              <h2 className="mt-5 text-3xl font-black leading-[0.98] tracking-[-0.03em] text-slate-900 xs:text-4xl sm:text-5xl lg:text-[58px]">
+                RUDA GIS
+                <span className="mt-1 block text-[#0B7A3B]">METAVERSE</span>
+              </h2>
 
-              <MapStatCard
-                value="2026"
-                label="Active Platform"
-                positionClass="bottom-2 right-2"
-              />
+              <div className="mt-4 h-1.5 w-14 rounded-full bg-[#49B84A] sm:w-16" />
+
+              <p className="mt-6 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base text-justify">
+                A unified geospatial ecosystem that connects cadastral records,
+                planning layers, field information, analytics and immersive 3D
+                environments in one intelligent platform. Through interactive
+                maps, spatial dashboards, and field data workflows, the system
+                improves visibility, coordination, and data-driven
+                decision-making for cadastral operations within the RUDA project
+                area.
+              </p>
+
+              <div className="mt-7 grid gap-3 sm:grid-cols-3">
+                {[
+                  {
+                    icon: BarChart3,
+                    title: "Geospatial Data & Metaverse",
+                    text: "Transform spatial data into insights, scenarios and planning decisions.",
+                  },
+                  {
+                    icon: Layers,
+                    title: "Cadastral Management",
+                    text: "Manage parcels, boundaries, land records and field verification data.",
+                  },
+                  {
+                    icon: Box,
+                    title: "Digital Twin & BIM",
+                    text: "Explore terrain, buildings, infrastructure and BIM models in 3D.",
+                  },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={item.title}
+                      className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_34px_-24px_rgba(0,66,37,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-[#49B84A]/60 hover:shadow-[0_18px_38px_-20px_rgba(11,122,59,0.35)]"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#0B7A3B] to-[#004225] text-white shadow-lg shadow-[#0B7A3B]/20">
+                        <Icon size={18} strokeWidth={2} />
+                      </div>
+                      <h3 className="mt-4 text-[13px] font-black leading-tight text-slate-900 sm:text-sm">
+                        {item.title}
+                      </h3>
+                      <p className="mt-2 text-[11px] leading-relaxed text-slate-500 sm:text-xs">
+                        {item.text}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => navigate("/Mapview")}
+                className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#0B7A3B] px-5 py-3 text-sm font-black text-white shadow-[0_14px_28px_-14px_rgba(11,122,59,0.75)] transition-all hover:-translate-y-0.5 hover:bg-[#004225] sm:px-7 sm:py-3.5 sm:text-base"
+              >
+                Explore the Platform <ArrowRight size={16} />
+              </button>
+            </div>
+
+            <div className="relative flex h-full flex-col pt-8 lg:pt-12">
+              <div className="mb-1 grid grid-cols-5 gap-2 sm:gap-3">
+                {CORE_CAPABILITIES.map((item) => {
+                  const Icon = item.icon;
+
+                  return (
+                    <div
+                      key={item.label}
+                      className="flex min-w-0 flex-col items-center text-center"
+                    >
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#8ad9df]/60 bg-[#eefafb] text-[#2f9eaa] shadow-sm sm:h-12 sm:w-12">
+                        <Icon size={18} strokeWidth={1.9} />
+                      </div>
+
+                      <span className="mt-2 text-[11px] font-normal normal-case leading-relaxed tracking-normal text-slate-600 sm:text-xs">
+                        {item.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="relative flex-1 overflow-hidden pt-1">
+                <img
+                  src="/RudaMasterplanMap.png"
+                  alt="RUDA project map"
+                  className="h-[420px] w-full rounded-[22px] object-contain object-top xs:h-[50px] sm:h-[550px] lg:h-full lg:min-h-[550px]"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.nextSibling.style.display = "flex";
+                  }}
+                />
+
+                <div className="hidden h-[460px] w-full items-center justify-center rounded-[22px] bg-gradient-to-br from-[#edf8ef] to-[#dff3e6] xs:h-[520px] sm:h-[600px] lg:h-full lg:min-h-[610px]">
+                  <Map size={86} className="text-[#0B7A3B]/30" />
+                </div>
+
+                <MapStatCard
+                  value="340 Km²"
+                  label="Coverage Area"
+                  positionClass="bottom-6 right-6"
+                />
+              </div>
             </div>
           </div>
         </div>
