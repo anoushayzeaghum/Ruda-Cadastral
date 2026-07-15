@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import RudaLogo from "../../assets/RUDA L&M.png";
+import NespakLogo from "../../assets/Nespak.png";
+import RudaFooterLogo from "../../assets/Ruda.png";
 import {
   Map,
   BarChart3,
@@ -175,13 +177,7 @@ const RAVI_CITY_PILLARS = [
   // { label: "Sustainable Future", icon: Leaf },
 ];
 
-const CORE_CAPABILITIES = [
-  { label: "3D Visualization", icon: Box },
-  { label: "Real-time Data", icon: Database },
-  { label: "Analytics", icon: BarChart3 },
-  { label: "Simulation", icon: Workflow },
-  { label: "Scenarios", icon: Layers },
-];
+
 
 const GIS_APPS = [
   {
@@ -821,13 +817,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="flex justify-center lg:justify-end lg:pr-2">
-                <div className="grid grid-cols-4 gap-3 sm:gap-4 xl:gap-5">
-                  {TOP_PILLARS.map((item) => (
-                    <HeroPillar key={item.label} item={item} />
-                  ))}
-                </div>
-              </div>
+
             </div>
           </div>
 
@@ -871,12 +861,7 @@ export default function LandingPage() {
                   </span>
                 </h1>
 
-                <p className="mx-auto mt-4 max-w-2xl px-2 text-xs leading-relaxed text-white/[0.78] sm:mt-5 sm:text-sm md:text-[15px]">
-                  A unified geospatial decision-support environment connecting
-                  land records, planning, BIM, engineering, investment,
-                  infrastructure and sustainability across the RUDA project
-                  area.
-                </p>
+
               </div>
 
               {/* Move capability icons and both buttons downward */}
@@ -888,7 +873,7 @@ export default function LandingPage() {
                   />
 
                   <div className="relative flex flex-wrap items-start justify-center gap-x-1 gap-y-3 sm:flex-nowrap sm:justify-between">
-                    {CORE_CAPABILITIES.map((item) => (
+                    {TOP_PILLARS.map((item) => (
                       <CapabilityNode key={item.label} item={item} />
                     ))}
                   </div>
@@ -1206,16 +1191,29 @@ export default function LandingPage() {
       <footer id="contact" className="bg-[#00351f] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-5 pt-10 sm:pt-14 md:pt-16 pb-8 sm:pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-3 mb-4 sm:mb-6">
+            <div className="mb-4 flex flex-wrap items-center gap-3 sm:mb-6">
               <img
                 src={RudaLogo}
-                alt="RUDA"
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain bg-white p-1"
+                alt="RUDA Land and Management"
+                className="h-11 w-11 rounded-lg bg-white p-1 object-contain sm:h-12 sm:w-12"
               />
+
               <img
                 src="/gop_logo.png"
-                alt="Govt of Punjab"
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain bg-white p-1"
+                alt="Government of Punjab"
+                className="h-11 w-11 rounded-lg bg-white p-1 object-contain sm:h-12 sm:w-12"
+              />
+
+              <img
+                src={NespakLogo}
+                alt="NESPAK"
+                className="h-11 w-16 rounded-lg bg-white p-1.5 object-contain sm:h-12 sm:w-20"
+              />
+
+              <img
+                src={RudaFooterLogo}
+                alt="Ravi Urban Development Authority"
+                className="h-11 w-11 rounded-lg bg-white p-1 object-contain sm:h-12 sm:w-12"
               />
             </div>
 
