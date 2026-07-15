@@ -12,6 +12,8 @@ import {
   Phone,
   MapPin,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Menu,
   X,
   ArrowRight,
@@ -175,6 +177,45 @@ const RAVI_CITY_PILLARS = [
   // { label: "Data-driven Decisions", icon: BarChart3 },
   // { label: "Better Livability", icon: Users },
   // { label: "Sustainable Future", icon: Leaf },
+];
+
+const TEAM_MEMBERS = [
+  {
+    id: 1,
+    name: "Team Member Name",
+    designation: "Chief Executive Officer",
+    image: "",
+  },
+  {
+    id: 2,
+    name: "Team Member Name",
+    designation: "Chief Operating Officer",
+    image: "",
+  },
+  {
+    id: 3,
+    name: "Team Member Name",
+    designation: "Executive Director",
+    image: "",
+  },
+  {
+    id: 4,
+    name: "Team Member Name",
+    designation: "Director",
+    image: "",
+  },
+  {
+    id: 5,
+    name: "Team Member Name",
+    designation: "Project Lead",
+    image: "",
+  },
+  {
+    id: 6,
+    name: "Team Member Name",
+    designation: "GIS & Digital Twin Lead",
+    image: "",
+  },
 ];
 
 
@@ -602,6 +643,56 @@ function CapabilityNode({ item }) {
   );
 }
 
+function TeamMemberCard({ member, index }) {
+  return (
+    <article
+      className="group relative w-full overflow-hidden rounded-[22px] border border-white/15 bg-white/[0.07] shadow-[0_22px_48px_-26px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#7FE45B]/70 hover:bg-white/[0.11] hover:shadow-[0_28px_64px_-28px_rgba(73,184,74,0.68)]"
+      style={{
+        animation: `teamCardReveal 700ms ease-out ${index * 110}ms both`,
+      }}
+    >
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent opacity-75" />
+      <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#49B84A]/15 blur-3xl transition-transform duration-700 group-hover:scale-150" />
+
+      <div className="relative p-3">
+        <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-[#061b17]">
+          {member.image ? (
+            <img
+              src={member.image}
+              alt={member.name}
+              className="h-44 w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.06] sm:h-48 lg:h-52"
+            />
+          ) : (
+            <div className="flex h-44 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-48 lg:h-52">
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
+                <span className="absolute inset-2 rounded-full border border-white/10" />
+                <Users size={36} strokeWidth={1.5} />
+              </div>
+            </div>
+          )}
+
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#03130f] via-transparent to-transparent opacity-90" />
+
+          <div className="absolute left-3 top-3 flex h-8 min-w-8 items-center justify-center rounded-full border border-white/15 bg-black/35 px-2 text-[9px] font-black tracking-[0.18em] text-white/80 backdrop-blur-md">
+            {String(index + 1).padStart(2, "0")}
+          </div>
+        </div>
+
+        <div className="px-1 pb-1 pt-3 text-center">
+          <h3 className="text-sm font-black tracking-wide text-white sm:text-base">
+            {member.name}
+          </h3>
+          <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#8FEA67] sm:text-[11px]">
+            {member.designation}
+          </p>
+
+          <div className="mx-auto mt-3 h-px w-12 bg-gradient-to-r from-transparent via-[#8FEA67]/70 to-transparent transition-all duration-500 group-hover:w-24" />
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function MapStatCard({ value, label, positionClass }) {
   return (
     <div className={`absolute z-10 ${positionClass}`}>
@@ -630,6 +721,7 @@ export default function LandingPage() {
   const [showTop, setShowTop] = useState(false);
   const [activeSection, setActive] = useState("home");
   const [slideIndex, setSlideIndex] = useState(0);
+  const [teamStartIndex, setTeamStartIndex] = useState(0);
 
   useEffect(() => {
     const onScroll = () => {
@@ -654,6 +746,14 @@ export default function LandingPage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setSlideIndex((i) => (i + 1) % HERO_SLIDES.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTeamStartIndex((current) => (current + 1) % TEAM_MEMBERS.length);
     }, 5000);
 
     return () => clearInterval(timer);
@@ -796,6 +896,28 @@ export default function LandingPage() {
             0% { opacity: .2; transform: scaleX(.84); }
             50% { opacity: .85; transform: scaleX(1); }
             100% { opacity: .2; transform: scaleX(.84); }
+          }
+
+          @keyframes teamCardReveal {
+            from {
+              opacity: 0;
+              transform: translateY(26px) scale(.97);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+
+          @keyframes teamCarouselMove {
+            from {
+              opacity: 0;
+              transform: translateX(-46px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
           }
 
           @media (prefers-reduced-motion: reduce) {
@@ -1169,59 +1291,131 @@ export default function LandingPage() {
       </section>
 
       <section
-        className="relative py-10 sm:py-14 md:py-16 overflow-hidden"
+        className="relative overflow-hidden py-12 sm:py-16 md:py-20"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(0,53,31,0.94) 40%, rgba(0,66,37,0.78) 100%), url('/s3.png')`,
+          backgroundImage: `linear-gradient(135deg, rgba(0,45,27,0.96), rgba(0,66,37,0.86)), url('/s3.png')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-5 flex flex-col lg:flex-row items-center gap-8 sm:gap-12">
-          <div className="text-white lg:w-1/2 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
-              Live Platform
+        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(143,234,103,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(143,234,103,.045)_1px,transparent_1px)] [background-size:38px_38px]" />
+        <div className="absolute left-1/2 top-8 h-64 w-64 -translate-x-1/2 rounded-full bg-[#49B84A]/15 blur-[100px]" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-5">
+          <div className="mx-auto max-w-3xl text-center text-white">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#A4F47F] backdrop-blur-xl sm:text-xs">
+              <Users size={14} />
+              Leadership &amp; Project Team
             </div>
 
-            <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black leading-tight mb-4 sm:mb-6">
-              Enter Team Names here
-              <span className="block text-[#49B84A]">
-                CEO, COO, ED, Dir, Sir Nizam,Sir Arshad
+            <h2 className="mt-5 text-3xl font-black leading-tight tracking-[-0.03em] sm:text-4xl lg:text-5xl">
+              Meet the Team Behind
+              <span className="mt-1 block text-[#70D84F]">
+                RUDA GIS Metaverse
               </span>
             </h2>
 
-            <p className="text-white/75 text-sm sm:text-base leading-relaxed mb-6 sm:mb-8 max-w-md mx-auto lg:mx-0">
-              Access parcel-level data, administrative boundaries, survey layers
-              and more — all in one interactive GIS environment.
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
+              Add each team member’s photograph, name and designation in the
+              cards below. The layout is responsive and ready for your final
+              leadership and project-team information.
             </p>
-
-            <button
-              onClick={() => navigate("/Mapview/MapPage")}
-              className="inline-flex items-center gap-2 sm:gap-3 bg-[#0B7A3B] hover:bg-[#004225] text-white font-black text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-4 rounded-full transition-all hover:shadow-xl hover:-translate-y-1"
-            >
-              <Map size={18} /> Launch Cadastral Map
-            </button>
           </div>
 
-          <div className="lg:w-1/2 w-full grid grid-cols-2 gap-2 sm:gap-3">
-            {[
-              ["2,400+", "Parcels Mapped"],
-              ["137", "Mauzas Covered"],
-              ["340 km²", "Project Area"],
-              ["99.8%", "Data Accuracy"],
-            ].map(([val, lbl]) => (
+          <div className="relative mt-8">
+            <div className="overflow-hidden px-1 sm:px-12">
               <div
-                key={lbl}
-                className="bg-white/10 backdrop-blur border border-white/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white text-center"
+                key={teamStartIndex}
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5"
+                style={{ animation: "teamCarouselMove 620ms ease-out both" }}
               >
-                <div className="text-2xl sm:text-3xl font-black text-[#49B84A] mb-1">
-                  {val}
-                </div>
+                {Array.from({ length: 3 }, (_, offset) => {
+                  const memberIndex =
+                    (teamStartIndex + offset) % TEAM_MEMBERS.length;
+                  const member = TEAM_MEMBERS[memberIndex];
 
-                <div className="text-[9px] sm:text-xs font-semibold text-white/70 uppercase tracking-wide">
-                  {lbl}
-                </div>
+                  return (
+                    <TeamMemberCard
+                      key={`${member.id}-${teamStartIndex}`}
+                      member={member}
+                      index={memberIndex}
+                    />
+                  );
+                })}
               </div>
-            ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setTeamStartIndex(
+                  (current) =>
+                    (current - 1 + TEAM_MEMBERS.length) % TEAM_MEMBERS.length,
+                )
+              }
+              aria-label="Show previous team members"
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-[#06251b]/90 text-white shadow-xl backdrop-blur-xl transition-all hover:-translate-y-[55%] hover:border-[#8FEA67]/70 hover:bg-[#0B7A3B] sm:flex"
+            >
+              <ChevronLeft size={22} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setTeamStartIndex(
+                  (current) => (current + 1) % TEAM_MEMBERS.length,
+                )
+              }
+              aria-label="Show next team members"
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-[#06251b]/90 text-white shadow-xl backdrop-blur-xl transition-all hover:-translate-y-[55%] hover:border-[#8FEA67]/70 hover:bg-[#0B7A3B] sm:flex"
+            >
+              <ChevronRight size={22} />
+            </button>
+
+            <div className="mt-5 flex items-center justify-center gap-3 sm:hidden">
+              <button
+                type="button"
+                onClick={() =>
+                  setTeamStartIndex(
+                    (current) =>
+                      (current - 1 + TEAM_MEMBERS.length) %
+                      TEAM_MEMBERS.length,
+                  )
+                }
+                aria-label="Show previous team members"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/[0.08] text-white backdrop-blur-xl"
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setTeamStartIndex(
+                    (current) => (current + 1) % TEAM_MEMBERS.length,
+                  )
+                }
+                aria-label="Show next team members"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/[0.08] text-white backdrop-blur-xl"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+
+            <div className="mt-5 flex justify-center gap-2">
+              {TEAM_MEMBERS.map((member, index) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  onClick={() => setTeamStartIndex(index)}
+                  aria-label={`Show team member group starting from ${index + 1}`}
+                  className={`h-2 rounded-full transition-all duration-300 ${index === teamStartIndex
+                      ? "w-7 bg-[#8FEA67]"
+                      : "w-2 bg-white/30 hover:bg-white/60"
+                    }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
