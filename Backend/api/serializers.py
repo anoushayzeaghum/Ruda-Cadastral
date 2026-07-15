@@ -150,8 +150,38 @@ class TehsilSerializer(GeoFeatureModelSerializer):
 # Mauza Serializer
 # District → Tehsil → Mauza
 # --------------------------------------------------------
-
 class MauzaSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Mauza
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "dist_id",
+            "tehsil",
+            "tehsil_id",
+            "kc",
+            "kc_id",
+            "mauza",
+            "mauza_id",
+            "pc",
+            "pc_id",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+
+# --------------------------------------------------------
+# Ruda Mauza Serializer
+# District → Tehsil → Mauza
+# --------------------------------------------------------
+
+class RudaMauzaSerializer(GeoFeatureModelSerializer):
     # Keep the old field names "district" and "tehsil", but read them from the
     # raw FK id values to avoid unnecessary FK lookups during GeoJSON output.
     district = serializers.IntegerField(
@@ -182,7 +212,7 @@ class MauzaSerializer(GeoFeatureModelSerializer):
             return obj.tehsil_text
 
     class Meta:
-        model = Mauza
+        model = RudaMauza
         geo_field = "geom"
         id_field = "mauza_id"
 
@@ -218,12 +248,86 @@ class MauzaSerializer(GeoFeatureModelSerializer):
 
             "geom",
         )
-
+        
 # --------------------------------------------------------
-# Khasra Serializer - New Format
+# Khasra Serializer
 # District → Tehsil → Mauza → Khasra
 # --------------------------------------------------------
 class KhasraSerializer(GeoFeatureModelSerializer):
+    district_name = serializers.CharField(
+        source="district",
+        read_only=True,
+        allow_null=True,
+    )
+
+    tehsil_name = serializers.CharField(
+        source="tehsil",
+        read_only=True,
+        allow_null=True,
+    )
+
+    mauza_name = serializers.CharField(
+        source="mauza",
+        read_only=True,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = Khasra
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+
+            # Administrative hierarchy
+            "district",
+            "dist_id",
+            "district_name",
+
+            "tehsil",
+            "tehsil_id",
+            "tehsil_name",
+
+            "kc",
+            "kc_id",
+
+            "pc",
+            "pc_id",
+
+            "mauza",
+            "mauza_id",
+            "mauza_name",
+
+            # Khasra attributes
+            "hadbust_no",
+            "asse_cir",
+            "type",
+            "karam",
+            "sq",
+            "kh",
+            "sk",
+            "join_shp",
+            "khasra_id",
+            "khewat_id",
+            "khatoni_no",
+            "dc_rate",
+            "remarks",
+            "b",
+
+            # Geometry
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+        
+# --------------------------------------------------------
+# Ruda Khasra Serializer - New Format
+# District → Tehsil → Mauza → Khasra
+# --------------------------------------------------------
+class RudaKhasraSerializer(GeoFeatureModelSerializer):
 
     district_name = serializers.SerializerMethodField()
     tehsil_name = serializers.SerializerMethodField()
@@ -248,7 +352,7 @@ class KhasraSerializer(GeoFeatureModelSerializer):
             return obj.mauza_text
 
     class Meta:
-        model = Khasra
+        model = RudaKhasra
         geo_field = "geom"
         id_field = "gid"
 
