@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import RudaLogo from "../../assets/RUDA L&M.png";
+import NespakLogo from "../../assets/Nespak.png";
+import RudaFooterLogo from "../../assets/Ruda.png";
 import {
   Map,
   BarChart3,
@@ -10,6 +12,8 @@ import {
   Phone,
   MapPin,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Menu,
   X,
   ArrowRight,
@@ -52,11 +56,46 @@ const NAV_LINKS = [
   { href: "#contact", label: "Contact" },
 ];
 
-const STATS = [
-  { value: "2,400+", label: "Parcels Mapped" },
-  { value: "137", label: "Mauzas Covered" },
-  { value: "340 km²", label: "Project Area" },
-  { value: "99.8%", label: "Data Accuracy" },
+const STAT_GROUPS = [
+  {
+    key: "lis",
+    title: "Land Information System",
+    stats: [
+      { value: "2", label: "Total Districts" },
+      { value: "10", label: "Total Tehsil" },
+      { value: "173", label: "Total Mauza" },
+      { value: "237,754", label: "Total Khasra" },
+    ],
+  },
+  {
+    key: "metaverse",
+    title: "RUDA Metaverse",
+    stats: [
+      { value: "6", label: "Total Zones" },
+      { value: "5", label: "Total Phases" },
+      { value: "9", label: "Total Precincts" },
+      { value: "70%", label: "Principal Zoning" },
+    ],
+  },
+  {
+    key: "rtw",
+    title: "RTW Packages",
+    stats: [
+      { value: "20", label: "Total Packages" },
+      { value: "19", label: "Total Projects" },
+      { value: "5", label: "Total Phases" },
+    ],
+  },
+  {
+    key: "chaharbagh",
+    title: "Chahar Bagh Phase 1",
+    stats: [
+      { value: "68%", label: "Residential" },
+      { value: "12%", label: "Commercial" },
+      { value: "9%", label: "Green Spaces" },
+      { value: "11%", label: "Utilities" },
+    ],
+  },
 ];
 
 const DECISION_AREAS = [
@@ -181,6 +220,45 @@ const CORE_CAPABILITIES = [
   { label: "Analytics", icon: BarChart3 },
   { label: "Simulation", icon: Workflow },
   { label: "Scenarios", icon: Layers },
+];
+
+const TEAM_MEMBERS = [
+  {
+    id: 1,
+    name: "Team Member Name",
+    designation: "Chief Executive Officer",
+    image: "",
+  },
+  {
+    id: 2,
+    name: "Team Member Name",
+    designation: "Chief Operating Officer",
+    image: "",
+  },
+  {
+    id: 3,
+    name: "Team Member Name",
+    designation: "Executive Director",
+    image: "",
+  },
+  {
+    id: 4,
+    name: "Team Member Name",
+    designation: "Director",
+    image: "",
+  },
+  {
+    id: 5,
+    name: "Team Member Name",
+    designation: "Project Lead",
+    image: "",
+  },
+  {
+    id: 6,
+    name: "Team Member Name",
+    designation: "GIS & Digital Twin Lead",
+    image: "",
+  },
 ];
 
 const GIS_APPS = [
@@ -600,6 +678,56 @@ function CapabilityNode({ item }) {
   );
 }
 
+function TeamMemberCard({ member, index }) {
+  return (
+    <article
+      className="group relative w-full overflow-hidden rounded-[22px] border border-white/15 bg-white/[0.07] shadow-[0_22px_48px_-26px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#7FE45B]/70 hover:bg-white/[0.11] hover:shadow-[0_28px_64px_-28px_rgba(73,184,74,0.68)]"
+      style={{
+        animation: `teamCardReveal 700ms ease-out ${index * 110}ms both`,
+      }}
+    >
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent opacity-75" />
+      <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#49B84A]/15 blur-3xl transition-transform duration-700 group-hover:scale-150" />
+
+      <div className="relative p-3">
+        <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-[#061b17]">
+          {member.image ? (
+            <img
+              src={member.image}
+              alt={member.name}
+              className="h-44 w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.06] sm:h-48 lg:h-52"
+            />
+          ) : (
+            <div className="flex h-44 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-48 lg:h-52">
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
+                <span className="absolute inset-2 rounded-full border border-white/10" />
+                <Users size={36} strokeWidth={1.5} />
+              </div>
+            </div>
+          )}
+
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#03130f] via-transparent to-transparent opacity-90" />
+
+          <div className="absolute left-3 top-3 flex h-8 min-w-8 items-center justify-center rounded-full border border-white/15 bg-black/35 px-2 text-[9px] font-black tracking-[0.18em] text-white/80 backdrop-blur-md">
+            {String(index + 1).padStart(2, "0")}
+          </div>
+        </div>
+
+        <div className="px-1 pb-1 pt-3 text-center">
+          <h3 className="text-sm font-black tracking-wide text-white sm:text-base">
+            {member.name}
+          </h3>
+          <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#8FEA67] sm:text-[11px]">
+            {member.designation}
+          </p>
+
+          <div className="mx-auto mt-3 h-px w-12 bg-gradient-to-r from-transparent via-[#8FEA67]/70 to-transparent transition-all duration-500 group-hover:w-24" />
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function MapStatCard({ value, label, positionClass }) {
   return (
     <div className={`absolute z-10 ${positionClass}`}>
@@ -628,6 +756,10 @@ export default function LandingPage() {
   const [showTop, setShowTop] = useState(false);
   const [activeSection, setActive] = useState("home");
   const [slideIndex, setSlideIndex] = useState(0);
+  const [teamStartIndex, setTeamStartIndex] = useState(0);
+  const [featureStartIndex, setFeatureStartIndex] = useState(0);
+  const [statGroupIndex, setStatGroupIndex] = useState(0);
+  const [statFade, setStatFade] = useState(true);
 
   useEffect(() => {
     const onScroll = () => {
@@ -656,6 +788,34 @@ export default function LandingPage() {
 
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTeamStartIndex((current) => (current + 1) % TEAM_MEMBERS.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStatFade(false);
+      setTimeout(() => {
+        setStatGroupIndex((i) => (i + 1) % STAT_GROUPS.length);
+        setStatFade(true);
+      }, 350);
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const goToStatGroup = (index) => {
+    setStatFade(false);
+    setTimeout(() => {
+      setStatGroupIndex(index);
+      setStatFade(true);
+    }, 350);
+  };
 
   return (
     <div className="font-sans text-slate-800 bg-white overflow-x-hidden">
@@ -789,6 +949,40 @@ export default function LandingPage() {
             0% { opacity: .2; transform: scaleX(.84); }
             50% { opacity: .85; transform: scaleX(1); }
             100% { opacity: .2; transform: scaleX(.84); }
+          }
+
+
+          @keyframes teamCardReveal {
+            from {
+              opacity: 0;
+              transform: translateY(26px) scale(.97);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+
+          @keyframes teamCarouselMove {
+            from {
+              opacity: 0;
+              transform: translateX(-46px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+
+          @keyframes featureCarouselMove {
+            from {
+              opacity: 0;
+              transform: translateX(28px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
           }
 
           @media (prefers-reduced-motion: reduce) {
@@ -972,16 +1166,49 @@ export default function LandingPage() {
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/88 backdrop-blur-xl">
-          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2 px-3 py-3 text-center text-white sm:grid-cols-4 sm:gap-4 sm:px-5 sm:py-5">
-            {STATS.map(({ value, label }) => (
-              <div key={label} className="relative py-1">
-                <div className="text-lg font-black text-[#70D84F] xs:text-xl sm:text-3xl">
-                  {value}
-                </div>
-                <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
-                  {label}
-                </div>
+          <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-6 sm:px-5 sm:py-5">
+            <div className="shrink-0 text-center sm:border-r sm:border-white/15 sm:pr-6 sm:text-left">
+              <div className="animate-pulse text-[11px] font-black uppercase leading-tight tracking-[0.18em] text-[#70D84F] xs:text-xs sm:text-base md:text-lg">
+                {STAT_GROUPS[statGroupIndex].title}
               </div>
+            </div>
+
+            <div
+              className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${
+                STAT_GROUPS[statGroupIndex].stats.length === 3
+                  ? "grid-cols-3"
+                  : "grid-cols-2 sm:grid-cols-4"
+              } ${
+                statFade
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-2"
+              }`}
+            >
+              {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
+                <div key={label} className="relative py-1">
+                  <div className="text-xl font-black text-[#70D84F] xs:text-2xl sm:text-4xl">
+                    {value}
+                  </div>
+                  <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-2 pb-2.5 sm:pb-3.5">
+            {STAT_GROUPS.map((group, i) => (
+              <button
+                key={group.key}
+                onClick={() => goToStatGroup(i)}
+                aria-label={`Show ${group.title} stats`}
+                className={`rounded-full transition-all duration-300 ${
+                  i === statGroupIndex
+                    ? "h-1.5 w-6 bg-[#70D84F]"
+                    : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
+                }`}
+              />
             ))}
           </div>
         </div>
@@ -1181,124 +1408,327 @@ export default function LandingPage() {
       </section>
 
       <section
-        className="relative py-10 sm:py-14 md:py-16 overflow-hidden"
+        className="relative overflow-hidden py-12 sm:py-16 md:py-20"
         style={{
-          backgroundImage: `linear-gradient(to right, rgba(0,53,31,0.94) 40%, rgba(0,66,37,0.78) 100%), url('/s3.png')`,
+          backgroundImage: `linear-gradient(135deg, rgba(0,45,27,0.96), rgba(0,66,37,0.86)), url('/s3.png')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-5 flex flex-col lg:flex-row items-center gap-8 sm:gap-12">
-          <div className="text-white lg:w-1/2 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white/80 text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-4 sm:mb-6">
-              Live Platform
+        <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(143,234,103,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(143,234,103,.045)_1px,transparent_1px)] [background-size:38px_38px]" />
+        <div className="absolute left-1/2 top-8 h-64 w-64 -translate-x-1/2 rounded-full bg-[#49B84A]/15 blur-[100px]" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-5">
+          <div className="mx-auto max-w-3xl text-center text-white">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#A4F47F] backdrop-blur-xl sm:text-xs">
+              <Users size={14} />
+              Leadership &amp; Project Team
             </div>
 
-            <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black leading-tight mb-4 sm:mb-6">
-              Enter Team Names here
-              <span className="block text-[#49B84A]">
-                CEO, COO, ED, Dir, Sir Nizam,Sir Arshad
+            <h2 className="mt-5 text-3xl font-black leading-tight tracking-[-0.03em] sm:text-4xl lg:text-5xl">
+              Meet the Team Behind
+              <span className="mt-1 block text-[#70D84F]">
+                RUDA GIS Metaverse
               </span>
             </h2>
 
-            <p className="text-white/75 text-sm sm:text-base leading-relaxed mb-6 sm:mb-8 max-w-md mx-auto lg:mx-0">
-              Access parcel-level data, administrative boundaries, survey layers
-              and more — all in one interactive GIS environment.
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
+              Add each team member’s photograph, name and designation in the
+              cards below. The layout is responsive and ready for your final
+              leadership and project-team information.
             </p>
-
-            <button
-              onClick={() => navigate("/Mapview/MapPage")}
-              className="inline-flex items-center gap-2 sm:gap-3 bg-[#0B7A3B] hover:bg-[#004225] text-white font-black text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-4 rounded-full transition-all hover:shadow-xl hover:-translate-y-1"
-            >
-              <Map size={18} /> Launch Cadastral Map
-            </button>
           </div>
 
-          <div className="lg:w-1/2 w-full grid grid-cols-2 gap-2 sm:gap-3">
-            {[
-              ["2,400+", "Parcels Mapped"],
-              ["137", "Mauzas Covered"],
-              ["340 km²", "Project Area"],
-              ["99.8%", "Data Accuracy"],
-            ].map(([val, lbl]) => (
+          <div className="relative mt-8">
+            <div className="overflow-hidden px-1 sm:px-12">
               <div
-                key={lbl}
-                className="bg-white/10 backdrop-blur border border-white/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white text-center"
+                key={teamStartIndex}
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5"
+                style={{ animation: "teamCarouselMove 620ms ease-out both" }}
               >
-                <div className="text-2xl sm:text-3xl font-black text-[#49B84A] mb-1">
-                  {val}
-                </div>
+                {Array.from({ length: 3 }, (_, offset) => {
+                  const memberIndex =
+                    (teamStartIndex + offset) % TEAM_MEMBERS.length;
+                  const member = TEAM_MEMBERS[memberIndex];
 
-                <div className="text-[9px] sm:text-xs font-semibold text-white/70 uppercase tracking-wide">
-                  {lbl}
-                </div>
+                  return (
+                    <TeamMemberCard
+                      key={`${member.id}-${teamStartIndex}`}
+                      member={member}
+                      index={memberIndex}
+                    />
+                  );
+                })}
               </div>
-            ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setTeamStartIndex(
+                  (current) =>
+                    (current - 1 + TEAM_MEMBERS.length) % TEAM_MEMBERS.length,
+                )
+              }
+              aria-label="Show previous team members"
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-[#06251b]/90 text-white shadow-xl backdrop-blur-xl transition-all hover:-translate-y-[55%] hover:border-[#8FEA67]/70 hover:bg-[#0B7A3B] sm:flex"
+            >
+              <ChevronLeft size={22} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setTeamStartIndex(
+                  (current) => (current + 1) % TEAM_MEMBERS.length,
+                )
+              }
+              aria-label="Show next team members"
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-[#06251b]/90 text-white shadow-xl backdrop-blur-xl transition-all hover:-translate-y-[55%] hover:border-[#8FEA67]/70 hover:bg-[#0B7A3B] sm:flex"
+            >
+              <ChevronRight size={22} />
+            </button>
+
+            <div className="mt-5 flex items-center justify-center gap-3 sm:hidden">
+              <button
+                type="button"
+                onClick={() =>
+                  setTeamStartIndex(
+                    (current) =>
+                      (current - 1 + TEAM_MEMBERS.length) % TEAM_MEMBERS.length,
+                  )
+                }
+                aria-label="Show previous team members"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/[0.08] text-white backdrop-blur-xl"
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setTeamStartIndex(
+                    (current) => (current + 1) % TEAM_MEMBERS.length,
+                  )
+                }
+                aria-label="Show next team members"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/[0.08] text-white backdrop-blur-xl"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+
+            <div className="mt-5 flex justify-center gap-2">
+              {TEAM_MEMBERS.map((member, index) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  onClick={() => setTeamStartIndex(index)}
+                  aria-label={`Show team member group starting from ${index + 1}`}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === teamStartIndex
+                      ? "w-7 bg-[#8FEA67]"
+                      : "w-2 bg-white/30 hover:bg-white/60"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="features" className="py-10 sm:py-14 md:py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-5">
-          <div className="text-center mb-7 sm:mb-10">
-            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
+      <section
+        id="features"
+        className="relative overflow-hidden bg-[#f7faf8] py-12 sm:py-16 md:py-20"
+      >
+        <div className="absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_18%_22%,rgba(73,184,74,.12),transparent_28%),radial-gradient(circle_at_82%_78%,rgba(11,122,59,.10),transparent_30%)]" />
+        <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(0,66,37,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(0,66,37,.035)_1px,transparent_1px)] [background-size:42px_42px]" />
+
+        <div className="relative mx-auto max-w-[1500px] px-4 sm:px-5 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#0B7A3B]/15 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#004225] shadow-sm sm:text-xs">
+              <Zap size={14} className="text-[#49B84A]" />
               Platform Capabilities
             </div>
 
-            <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 mb-3 sm:mb-4">
-              Metaverse Features
+            <h2 className="mt-5 text-3xl font-black leading-[0.98] tracking-[-0.035em] text-slate-900 xs:text-4xl sm:text-5xl lg:text-[58px]">
+              Built for Smarter
+              <span className="mt-1 block text-[#0B7A3B]">
+                Spatial Decisions
+              </span>
             </h2>
 
-            <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-4 sm:mb-6" />
-
-            <p className="max-w-xl mx-auto text-slate-500 text-sm sm:text-base leading-relaxed px-2 sm:px-0">
-              Purpose-built GIS capabilities for cadastral operations, field
-              verification and land management decision support.
+            <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+              A connected set of GIS, analytics, 3D and data-management tools
+              designed to turn complex cadastral and planning information into
+              clear, actionable intelligence.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-            {FEATURES.map(({ icon, title, desc, bg, iconBg }) => (
+          <div className="relative mt-10 sm:mt-12">
+            <div className="overflow-hidden px-1 sm:px-12 lg:px-14">
               <div
-                key={title}
-                className={`${bg} rounded-2xl p-4 sm:p-5 md:p-7 group hover:shadow-md transition-all`}
+                key={featureStartIndex}
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5"
+                style={{ animation: "featureCarouselMove 450ms ease-out both" }}
               >
-                <div
-                  className={`w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl ${iconBg} flex items-center justify-center text-white mb-3 sm:mb-4 md:mb-5`}
-                >
-                  {icon}
-                </div>
+                {Array.from({ length: 4 }, (_, offset) => {
+                  const featureIndex =
+                    (featureStartIndex + offset) % FEATURES.length;
+                  const { icon, title, desc } = FEATURES[featureIndex];
 
-                <h3 className="font-black text-slate-900 text-xs sm:text-sm md:text-base mb-0 sm:mb-2">
-                  {title}
-                </h3>
+                  return (
+                    <article
+                      key={`${title}-${featureStartIndex}`}
+                      className="group relative min-h-[250px] overflow-hidden rounded-[24px] border border-[#0B7A3B]/10 bg-white p-5 shadow-[0_20px_45px_-30px_rgba(0,66,37,.5)] transition-all duration-500 hover:-translate-y-2 hover:border-[#49B84A]/55 hover:shadow-[0_28px_55px_-28px_rgba(11,122,59,.38)] sm:p-6"
+                    >
+                      <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#49B84A]/10 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:bg-[#49B84A]/20" />
+                      <div className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-[#49B84A] to-[#004225] transition-transform duration-500 group-hover:scale-x-100" />
 
-                <p className="hidden sm:block text-slate-500 text-xs sm:text-[13px] leading-relaxed mt-1.5">
-                  {desc}
-                </p>
+                      <div className="relative flex items-start justify-between gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0B7A3B] to-[#004225] text-white shadow-[0_12px_24px_-12px_rgba(0,66,37,.85)] transition-transform duration-500 group-hover:rotate-3 group-hover:scale-110">
+                          {icon}
+                        </div>
+                        <span className="text-sm font-black tracking-[0.15em] text-[#0B7A3B]/25">
+                          {String(featureIndex + 1).padStart(2, "0")}
+                        </span>
+                      </div>
+
+                      <h3 className="relative mt-5 text-lg font-black text-slate-900">
+                        {title}
+                      </h3>
+                      <p className="relative mt-2 text-sm leading-relaxed text-slate-500">
+                        {desc}
+                      </p>
+
+                      <div className="relative mt-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#0B7A3B]">
+                        Explore capability
+                        <ArrowRight
+                          size={13}
+                          className="transition-transform duration-300 group-hover:translate-x-1.5"
+                        />
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-            ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFeatureStartIndex(
+                  (current) =>
+                    (current - 1 + FEATURES.length) % FEATURES.length,
+                )
+              }
+              aria-label="Show previous platform capabilities"
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#0B7A3B]/15 bg-white text-[#004225] shadow-[0_12px_30px_-12px_rgba(0,66,37,.45)] transition-all hover:-translate-y-[55%] hover:border-[#49B84A]/70 hover:bg-[#0B7A3B] hover:text-white sm:flex"
+            >
+              <ChevronLeft size={22} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFeatureStartIndex(
+                  (current) => (current + 1) % FEATURES.length,
+                )
+              }
+              aria-label="Show next platform capabilities"
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#0B7A3B]/15 bg-white text-[#004225] shadow-[0_12px_30px_-12px_rgba(0,66,37,.45)] transition-all hover:-translate-y-[55%] hover:border-[#49B84A]/70 hover:bg-[#0B7A3B] hover:text-white sm:flex"
+            >
+              <ChevronRight size={22} />
+            </button>
+
+            <div className="mt-6 flex items-center justify-center gap-3 sm:hidden">
+              <button
+                type="button"
+                onClick={() =>
+                  setFeatureStartIndex(
+                    (current) =>
+                      (current - 1 + FEATURES.length) % FEATURES.length,
+                  )
+                }
+                aria-label="Show previous platform capabilities"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#0B7A3B]/15 bg-white text-[#004225] shadow-sm"
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFeatureStartIndex(
+                    (current) => (current + 1) % FEATURES.length,
+                  )
+                }
+                aria-label="Show next platform capabilities"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#0B7A3B]/15 bg-white text-[#004225] shadow-sm"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+
+            <div className="mt-6 flex justify-center gap-2">
+              {FEATURES.map((feature, index) => (
+                <button
+                  key={feature.title}
+                  type="button"
+                  onClick={() => setFeatureStartIndex(index)}
+                  aria-label={`Show capability group starting from ${index + 1}`}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === featureStartIndex
+                      ? "w-7 bg-[#0B7A3B]"
+                      : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       <footer id="contact" className="bg-[#00351f] text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-5 pt-10 sm:pt-14 md:pt-16 pb-8 sm:pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
+        <div className="mx-auto grid max-w-[1420px] grid-cols-1 gap-8 px-8 pb-8 pt-10 sm:grid-cols-2 sm:px-12 sm:pb-12 sm:pt-14 lg:grid-cols-[1.15fr_0.58fr_0.86fr_1.65fr] lg:gap-6 xl:gap-8 xl:px-16">
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-3 mb-4 sm:mb-6">
-              <img
-                src={RudaLogo}
-                alt="RUDA"
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain bg-white p-1"
-              />
-              <img
-                src="/gop_logo.png"
-                alt="Govt of Punjab"
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain bg-white p-1"
-              />
+            <div className="mb-6 flex flex-wrap items-center gap-2 sm:gap-2.5 lg:flex-nowrap lg:gap-2.5 xl:gap-3">
+              {[
+                {
+                  src: RudaFooterLogo,
+                  alt: "Ravi Urban Development Authority",
+                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
+                },
+                {
+                  src: "/gop_logo.png",
+                  alt: "Government of Punjab",
+                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
+                },
+                {
+                  src: NespakLogo,
+                  alt: "NESPAK",
+                  imageClass: "h-[48px] w-[48px] sm:h-[54px] sm:w-[54px]",
+                },
+                {
+                  src: RudaLogo,
+                  alt: "RUDA GIS Directorate",
+                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
+                },
+              ].map((logo) => (
+                <div
+                  key={logo.alt}
+                  className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-white p-1 shadow-[0_8px_20px_-10px_rgba(0,0,0,0.55)] ring-1 ring-white/40 sm:h-[78px] sm:w-[78px]"
+                >
+                  <img
+                    src={logo.src}
+                    alt={logo.alt}
+                    className={`${logo.imageClass} rounded-full object-contain`}
+                  />
+                </div>
+              ))}
             </div>
 
-            <p className="text-white/70 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6">
+            <p className="mb-4 max-w-md text-xs leading-relaxed text-white/70 sm:mb-6 sm:text-sm">
               RUDA Cadastral Project is a GIS-enabled initiative for digital
               cadastral mapping, parcel intelligence and spatial decision
               support for the Ravi Urban Development Authority project area.
@@ -1314,7 +1744,7 @@ export default function LandingPage() {
                 <a
                   key={i}
                   href={href}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-[#49B84A] hover:text-white flex items-center justify-center transition-all"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-all hover:bg-[#49B84A] hover:text-white sm:h-9 sm:w-9"
                 >
                   {icon}
                 </a>
@@ -1322,8 +1752,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div>
-            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
+          <div className="ml-4">
+            <h3 className="mb-4 text-sm font-black sm:mb-5 sm:text-base">
               Quick Links
             </h3>
 
@@ -1332,7 +1762,7 @@ export default function LandingPage() {
                 <a
                   key={href}
                   href={href}
-                  className="text-white/70 hover:text-[#49B84A] text-xs sm:text-sm transition-colors flex items-center gap-2"
+                  className="flex items-center gap-2 text-xs text-white/70 transition-colors hover:text-[#49B84A] sm:text-sm"
                 >
                   <ArrowRight size={11} /> {label}
                 </a>
@@ -1341,64 +1771,68 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
+            <h3 className="mb-4 text-sm font-black sm:mb-5 sm:text-base">
               Contact Info
             </h3>
 
             <div className="flex flex-col gap-3 sm:gap-4">
-              <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
-                <MapPin size={14} className="shrink-0 mt-0.5 text-[#49B84A]" />
-                152-A, Ali Block, Land Accquisition & Estate Management Office,
-                Garden Town, RUDA, Lahore, Pakistan
+              <div className="flex gap-2.5 text-xs text-white/70 sm:text-sm">
+                <MapPin size={14} className="mt-0.5 shrink-0 text-[#49B84A]" />
+                <span>
+                  152-A, Ali Block, Land Accquisition &amp; Estate Management
+                  Office, Garden Town, RUDA, Lahore, Pakistan
+                </span>
               </div>
 
-              <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
+              <div className="flex gap-2.5 text-xs text-white/70 sm:text-sm">
                 <Phone size={14} className="shrink-0 text-[#49B84A]" />
-                +92-42-99333531-6 Ext. 608
+                <span>+92-42-99333531-6 Ext. 608</span>
               </div>
 
-              <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
+              <div className="flex gap-2.5 text-xs text-white/70 sm:text-sm">
                 <Mail size={14} className="shrink-0 text-[#49B84A]" />
-                info@ruda.gov.pk
+                <span>info@ruda.gov.pk</span>
               </div>
             </div>
           </div>
 
-          <div>
-            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
-              Insert Map here
-            </h3>
+          <div className="sm:col-span-2 lg:col-span-1">
+            <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
+              <h3 className="text-sm font-black sm:text-base">
+                Office Location
+              </h3>
 
-            <form
-              className="flex flex-col gap-2.5 sm:gap-3"
-              onSubmit={(e) => e.preventDefault()}
-            >
-              {["Your Name", "Your Email", "Subject"].map((ph) => (
-                <input
-                  key={ph}
-                  placeholder={ph}
-                  className="bg-white/10 border border-white/15 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-white placeholder-white/40 outline-none focus:border-[#49B84A] transition-colors"
-                />
-              ))}
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=152-A+Ali+Block+Garden+Town+Lahore+Pakistan"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#8FEA67] transition-colors hover:text-white sm:text-xs"
+              >
+                Open in Maps
+                <ExternalLink size={12} />
+              </a>
+            </div>
 
-              <textarea
-                placeholder="Your Message"
-                rows={3}
-                className="bg-white/10 border border-white/15 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-white placeholder-white/40 outline-none focus:border-[#49B84A] transition-colors resize-none"
+            <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)]">
+              <iframe
+                title="RUDA office location"
+                src="https://www.google.com/maps?q=152-A+Ali+Block+Garden+Town+Lahore+Pakistan&output=embed"
+                className="h-[270px] w-full border-0 sm:h-[300px] lg:h-[285px] xl:h-[310px]"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
               />
 
-              <button
-                type="submit"
-                className="bg-[#0B7A3B] hover:bg-[#49B84A] text-white font-black text-xs sm:text-sm py-2.5 rounded-lg transition-colors"
-              >
-                Send Message
-              </button>
-            </form>
+              <div className="flex items-start gap-2 border-t border-white/10 bg-black/10 px-3 py-3 text-[10px] leading-relaxed text-white/70 sm:text-xs">
+                <MapPin size={14} className="mt-0.5 shrink-0 text-[#49B84A]" />
+                <span>152-A, Ali Block, Garden Town, Lahore, Pakistan</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="border-t border-white/10 py-4 sm:py-5 text-center text-white/50 text-[10px] sm:text-xs px-4">
-          © 2026 GIS Directorate, LA&EM - Ravi Urban Development Authority
+        <div className="border-t border-white/10 px-4 py-4 text-center text-[10px] text-white/50 sm:py-5 sm:text-xs">
+          © 2026 GIS Directorate, LA&amp;EM - Ravi Urban Development Authority
           (RUDA). All Rights Reserved. &nbsp;|&nbsp; Powered by NESPAK
           Construction Management Division
         </div>
