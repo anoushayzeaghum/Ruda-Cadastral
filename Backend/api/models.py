@@ -3113,3 +3113,59 @@ class HudiaraDrain(models.Model):
     class Meta:
         managed = False
         db_table = "hudiaradrain"
+
+#----------------------------------------------
+# Lahore Transportation Road
+#----------------------------------------------
+class LahoreTransportationRoad(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    oid = models.CharField(
+        db_column="__oid",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    name = models.CharField(
+        db_column="name",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        db_column="shape_leng",
+        null=True,
+        blank=True,
+    )
+
+    type = models.CharField(
+        db_column="type",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    popupinfo = models.TextField(
+        db_column="popupinfo",
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiLineStringField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Road {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "lahore_transportation_roads"

@@ -57,6 +57,8 @@ export default function LayerManager({
   layerRecordCache,
   loadLayerRecords,
   loadedParcelsGeojson,
+  boundaryStatus,
+  setBoundaryStatus,
 }) {
   const [administrativeOpen, setAdministrativeOpen] = useState(true);
   const [rudaOpen, setRudaOpen] = useState(true);
@@ -87,10 +89,10 @@ export default function LayerManager({
         onColor={(value) => setLayerColor(item.key, value)}
         onDropdownToggle={() => {
           toggleDropdownForKey(item.key);
-          loadLayerRecords(item.key);
+          loadLayerRecords(item.key, boundaryStatus);
         }}
         onTable={() => {
-          loadLayerRecords(item.key);
+          loadLayerRecords(item.key, boundaryStatus);
           openAttributeTable(item.key);
         }}
       />
@@ -114,6 +116,44 @@ export default function LayerManager({
         open={administrativeOpen}
         setOpen={setAdministrativeOpen}
       >
+        {/* Verified / Unverified buttons */}
+        <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-3">
+          {/* <div className="rounded-md border border-[#13593f] bg-[#06291f] p-2"> */}
+            {/* <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/70">
+              Boundary Status
+            </div> */}
+
+            <div className="flex justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setBoundaryStatus("verified")}
+                className={`h-7 w-24 px-2 py-0 text-[11px] font-semibold rounded-md transition
+                  ${
+                    boundaryStatus === "verified"
+                      ? "bg-green-600 text-white"
+                      : "border border-[#13593f] bg-[#031a14] text-white/70 hover:bg-[#0a3327]"
+                  }`}
+              >
+                Verified
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBoundaryStatus("unverified")}
+                className={`h-7 w-24 px-2 py-0 text-[11px] font-semibold rounded-md transition
+                  ${
+                    boundaryStatus === "unverified"
+                      ? "bg-red-600 text-white"
+                      : "border border-[#13593f] bg-[#031a14] text-white/70 hover:bg-[#0a3327]"
+                  }`}
+              >
+                Unverified
+              </button>
+            </div>
+          {/* </div> */}
+        </div>
+
+        {/* Existing Layers */}
         {ADMINISTRATIVE_LAYERS.map((item, index) =>
           renderStandardLayer(item, index, ADMINISTRATIVE_LAYERS, true),
         )}

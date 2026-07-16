@@ -382,6 +382,11 @@ router.register(r"hudiara-drain/create", CreateHudiaraDrainView, basename="creat
 router.register(r"hudiara-drain/update", UpdateHudiaraDrainView, basename="update-hudiara-drain",)
 router.register(r"hudiara-drain/delete", DeleteHudiaraDrainView, basename="delete-hudiara-drain",)
 
+router.register(r"lahore-transportation-roads", ListLahoreTransportationRoadView, basename="lahore-transportation-roads",)
+router.register(r"lahore-transportation-roads/create", CreateLahoreTransportationRoadView, basename="create-lahore-transportation-road",)
+router.register(r"lahore-transportation-roads/update", UpdateLahoreTransportationRoadView, basename="update-lahore-transportation-road",)
+router.register(r"lahore-transportation-roads/delete", DeleteLahoreTransportationRoadView, basename="delete-lahore-transportation-road",)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 

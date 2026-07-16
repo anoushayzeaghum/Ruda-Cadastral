@@ -2085,3 +2085,24 @@ class HudiaraDrainSerializer(GeoFeatureModelSerializer):
             "shape_leng",
             "geom",
         )
+
+class LahoreTransportationRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreTransportationRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "oid",
+            "name",
+            "shape_leng",
+            "type",
+            "popupinfo",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
