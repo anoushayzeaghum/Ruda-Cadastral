@@ -149,16 +149,11 @@ export default function LeftPanel({
   const [dropdownOpenByKey, setDropdownOpenByKey] = useState({});
   const [layerRecordCache, setLayerRecordCache] = useState({});
   const isMobile = useIsMobile();
-  
-  const changeBoundaryStatus = (status) => {
-    setBoundaryStatus(status);
 
-    setLayerRecordCache((prev) => {
-      const next = { ...prev };
-      delete next.mauzaBoundary;
-      delete next.khasraLayer;
-      return next;
-    });
+  const changeBoundaryStatus = (status) => {
+    // Do not touch layer visibility here. MapView will reload only the
+    // status-sensitive Mauza and Khasra sources for the selected Mauza.
+    setBoundaryStatus(status);
   };
   const toggleDropdownForKey = (key) =>
     setDropdownOpenByKey((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -223,9 +218,52 @@ export default function LeftPanel({
     selectedMauza?.mauza_id ?? selectedMauza?.id ?? selectedMauza?.gid;
 
   const loadLayerRecords = async (key, boundaryStatus = "verified") => {
-    const cacheKey = `${boundaryStatus}_${key}`;
+    const statusSensitive = ["mauzaBoundary", "khasraLayer"].includes(key);
+    const cacheKey = statusSensitive ? `${boundaryStatus}_${key}` : key;
 
-    if (layerRecordCache[cacheKey]?.loaded) return;
+    const districtSelectionKey = (
+      Array.isArray(selectedDistrict)
+        ? selectedDistrict
+        : selectedDistrict
+          ? [selectedDistrict]
+          : []
+    )
+      .map((item) => item?.id ?? item?.gid ?? item)
+      .filter(Boolean)
+      .map(String)
+      .sort()
+      .join(",");
+
+    const tehsilSelectionKey = (
+      Array.isArray(selectedTehsil)
+        ? selectedTehsil
+        : selectedTehsil
+          ? [selectedTehsil]
+          : []
+    )
+      .map((item) => item?.id ?? item?.gid ?? item)
+      .filter(Boolean)
+      .map(String)
+      .sort()
+      .join(",");
+
+    const selectionKey =
+      key === "districtBoundary"
+        ? districtSelectionKey
+        : key === "tehsilBoundary"
+          ? tehsilSelectionKey
+          : [
+                "mauzaBoundary",
+                "khasraLayer",
+                "squareLayer",
+                "acreLayer",
+                "fieldPoints",
+              ].includes(key)
+            ? String(selectedMauzaId ?? "")
+            : "global";
+
+    const cached = layerRecordCache[cacheKey];
+    if (cached?.loaded && cached.selectionKey === selectionKey) return;
 
     try {
       const api = await import("../../services/api");
@@ -260,40 +298,26 @@ export default function LeftPanel({
         }
         geojson = { type: "FeatureCollection", features };
       } else if (key === "mauzaBoundary") {
-
-          if (boundaryStatus === "verified") {
-
-              geojson = selectedMauzaId
-                  ? await api.getMauzaBoundary(selectedMauzaId)
-                  : null;
-
-          } else {
-            console.log("selectedMauzaId", selectedMauzaId);
-            geojson = selectedMauzaId
-              ? await api.getRudaMauzas(selectedMauzaId)
-              : null;
-
-        }
-
-      }
-
-      else if (key === "khasraLayer") {
-
         if (boundaryStatus === "verified") {
-
-            geojson = selectedMauzaId
-                ? await api.getKhasras(selectedMauzaId)
-                : loadedParcelsGeojson;
-
+          geojson = selectedMauzaId
+            ? await api.getMauzaBoundary(selectedMauzaId)
+            : null;
         } else {
-
-            geojson = selectedMauzaId
-              ? await api.getRudaKhasras(selectedMauzaId)
-              : null;
-
+          geojson = selectedMauzaId
+            ? await api.getRudaMauzas(selectedMauzaId)
+            : null;
         }
-
-    } else if (key === "squareLayer") {
+      } else if (key === "khasraLayer") {
+        if (boundaryStatus === "verified") {
+          geojson = selectedMauzaId
+            ? await api.getKhasras(selectedMauzaId)
+            : loadedParcelsGeojson;
+        } else {
+          geojson = selectedMauzaId
+            ? await api.getRudaKhasras(selectedMauzaId)
+            : null;
+        }
+      } else if (key === "squareLayer") {
         geojson = selectedMauzaId
           ? await api.getSquares(selectedMauzaId)
           : loadedParcelsGeojson;
@@ -313,6 +337,7 @@ export default function LeftPanel({
         ...prev,
         [cacheKey]: {
           loaded: true,
+          selectionKey,
           geojson: geojson || { type: "FeatureCollection", features: [] },
         },
       }));
@@ -322,6 +347,7 @@ export default function LeftPanel({
         ...prev,
         [cacheKey]: {
           loaded: true,
+          selectionKey,
           geojson: { type: "FeatureCollection", features: [] },
         },
       }));
@@ -506,23 +532,21 @@ export default function LeftPanel({
   };
 
   useEffect(() => {
-  if (!selectedMauza) return;
+    if (!selectedMauza) return;
 
-  // Turn on Mauza Boundary
-  updateLayer("mauzaBoundary", {
-    visible: true,
-  });
+    // Initial selection behaviour only. A later Verified/Unverified switch
+    // must not reopen a layer that the user has manually closed.
+    updateLayer("mauzaBoundary", { visible: true });
+    updateLayer("khasraLayer", { visible: true, forceLoad: true });
+  }, [selectedMauza]);
 
-  // Turn on Khasra Boundary
-  updateLayer("khasraLayer", {
-    visible: true,
-    forceLoad: true,
-  });
+  useEffect(() => {
+    if (!selectedMauza) return;
 
-  // Load attribute table data
-  loadLayerRecords("mauzaBoundary", boundaryStatus);
-  loadLayerRecords("khasraLayer", boundaryStatus);
-}, [selectedMauza, boundaryStatus]);
+    // Refresh the status-sensitive records without changing checkbox state.
+    loadLayerRecords("mauzaBoundary", boundaryStatus);
+    loadLayerRecords("khasraLayer", boundaryStatus);
+  }, [selectedMauza, boundaryStatus]);
   return (
     <>
       {/* Icon toolbar - positioned left on desktop, bottom on mobile */}
@@ -608,7 +632,8 @@ export default function LeftPanel({
             <MauzaBoundaryAttribute
               map={map}
               geojson={
-                layerRecordCache[`${boundaryStatus}_mauzaBoundary`]?.geojson || loadedParcelsGeojson
+                layerRecordCache[`${boundaryStatus}_mauzaBoundary`]
+                  ?.geojson || { type: "FeatureCollection", features: [] }
               }
               onClose={() => setOpenAttributeTable(null)}
             />
@@ -617,7 +642,10 @@ export default function LeftPanel({
             <KhasraBoundaryAttribute
               map={map}
               geojson={
-                layerRecordCache[`${boundaryStatus}_khasraLayer`]?.geojson || loadedParcelsGeojson
+                layerRecordCache[`${boundaryStatus}_khasraLayer`]?.geojson || {
+                  type: "FeatureCollection",
+                  features: [],
+                }
               }
               onClose={() => setOpenAttributeTable(null)}
             />
@@ -729,7 +757,7 @@ export default function LeftPanel({
                   loadLayerRecords={loadLayerRecords}
                   loadedParcelsGeojson={loadedParcelsGeojson}
                   boundaryStatus={boundaryStatus}
-                  setBoundaryStatus={changeBoundaryStatus}  
+                  setBoundaryStatus={changeBoundaryStatus}
                 />
               </Panel>
             )}
@@ -808,4 +836,3 @@ function Panel({ title, children, onClose }) {
     </div>
   );
 }
-

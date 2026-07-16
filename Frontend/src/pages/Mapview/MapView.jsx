@@ -154,7 +154,6 @@ export default function MapView({
   onMapReady,
   boundaryStatus = "verified",
 }) {
-
   const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -327,8 +326,8 @@ export default function MapView({
       const mauzaId = getSelectedMauzaId(selectedMauza);
       const mauzaGeojson =
         boundaryStatus === "verified"
-            ? await getMauzaBoundary(mauzaId)
-            : await getRudaMauzas();
+          ? await getMauzaBoundary(mauzaId)
+          : await getRudaMauzas(mauzaId);
 
       if (mauzaGeojson?.features?.length) {
         currentGeojson.current.mauza = mauzaGeojson;
@@ -1368,6 +1367,11 @@ export default function MapView({
         opacity: khasraOpacity,
       });
 
+      // Reapply the current status color after every redraw/style reload.
+      [KHASRA_FILL, KHASRA_LINE, KHASRA_LABEL].forEach((layerId) =>
+        applyColorToMapLayer(layerId, khasraLayerColor),
+      );
+
       currentGeojson.current.khasra = geojson;
 
       ensureSelectedLayers(map);
@@ -1723,7 +1727,7 @@ export default function MapView({
           const geojson =
             boundaryStatus === "verified"
               ? await getMauzaBoundary(mauzaId)
-              : await getRudaMauzas();
+              : await getRudaMauzas(mauzaId);
 
           if (cancelled) return;
 
@@ -2290,6 +2294,7 @@ export default function MapView({
     isMapReady,
     selectedMauza,
     selectedFeatureNumber,
+    boundaryStatus,
     triJunctionPointsVisible,
     fieldPointsVisible,
   ]);
@@ -2307,14 +2312,26 @@ export default function MapView({
       return;
     }
 
+    let cancelled = false;
+
     const loadKhasras = async () => {
       try {
         setIsLoading(true);
         setError("");
 
-        const mauzaId = getSelectedMauzaId(selectedMauza);
+        // Remove the previous source immediately so verified geometry is not
+        // shown while the unverified request (or vice versa) is in flight.
+        clearKhasraLayers();
+        delete currentGeojson.current.khasra;
+        reportLoadedFeatures(emptyFeatureCollection());
 
-        const geojson = await getKhasras(mauzaId);
+        const mauzaId = getSelectedMauzaId(selectedMauza);
+        const geojson =
+          boundaryStatus === "verified"
+            ? await getKhasras(mauzaId)
+            : await getRudaKhasras(mauzaId);
+
+        if (cancelled) return;
 
         if (geojson?.features?.length) {
           drawKhasras(geojson);
@@ -2322,18 +2339,27 @@ export default function MapView({
           clearKhasraLayers();
           delete currentGeojson.current.khasra;
           setFeatureCount(0);
+          reportLoadedFeatures(emptyFeatureCollection());
         }
       } catch (e) {
-        console.error("Khasra load error:", e);
-        setError("Failed to load Khasras");
+        if (!cancelled) {
+          console.error("Khasra load error:", e);
+          setError("Failed to load Khasras");
+          reportLoadedFeatures(emptyFeatureCollection());
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     loadKhasras();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     selectedMauza,
+    boundaryStatus,
     isMapReady,
     viewBy,
     khasraLayerVisible,

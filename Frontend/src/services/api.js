@@ -144,11 +144,7 @@ export const getDistricts = async () => {
 
   const res = await API.get("/district/");
 
-  console.log(
-    "District API:",
-    (performance.now() - start).toFixed(2),
-    "ms"
-  );
+  console.log("District API:", (performance.now() - start).toFixed(2), "ms");
 
   return normalizeData(res);
 };
@@ -275,12 +271,11 @@ export const importMurabba = async ({ file }) => {
 ///////////////////////////////////////////////////////
 
 export const getDistrictBoundary = async (id) => {
-
   const start = performance.now();
 
   const res = await API.get(`/district/${id}/geojson`);
 
-  const apiTime = performance.now() - start; 
+  const apiTime = performance.now() - start;
 
   const normalizeStart = performance.now();
 
@@ -290,7 +285,6 @@ export const getDistrictBoundary = async (id) => {
 };
 
 export const getTehsilBoundary = async (id) => {
-
   const start = performance.now();
 
   const res = await API.get(`/tehsil/${id}/geojson`);
@@ -694,24 +688,28 @@ export const getKhasrasGeoJSON = async (filters = {}) => {
   return getBoundaryGeoJSONByProjectMauzas("/khasra/", filters);
 };
 
-
 ///////////////////////////////////////////////////////
 //////////////// UNVERIFIED APIs //////////////////////
 ///////////////////////////////////////////////////////
 
-export const getRudaMauzas = async (mauzaId) => {
+const getRudaGeoJSONByMauza = async (endpoint, mauzaId) => {
+  const params = {};
 
-  const res = await API.get("/rudamauza/", {
-    params: { mauza_id: mauzaId },
-  });
+  if (mauzaId !== undefined && mauzaId !== null && mauzaId !== "") {
+    params.mauza_id = mauzaId;
+  }
 
-  return normalizeGeoJson(res);
+  const res = await API.get(endpoint, { params });
+  const geojson = normalizeGeoJson(res);
+
+  // Some backend list endpoints may ignore the query parameter and return
+  // every RUDA record. Keep a frontend safety filter so only the Mauza
+  // selected in the subheader can reach the map or attribute table.
+  return filterGeoJSONByMauzaIds(geojson, mauzaId);
 };
 
-export const getRudaKhasras = async (mauzaId) => {
-  const res = await API.get("/rudakhasra/", {
-    params: { mauza_id: mauzaId },
-  });
+export const getRudaMauzas = async (mauzaId) =>
+  getRudaGeoJSONByMauza("/rudamauza/", mauzaId);
 
-  return normalizeGeoJson(res);
-};
+export const getRudaKhasras = async (mauzaId) =>
+  getRudaGeoJSONByMauza("/rudakhasra/", mauzaId);

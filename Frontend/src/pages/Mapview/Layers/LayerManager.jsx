@@ -67,11 +67,18 @@ export default function LayerManager({
   const [proposedDropdownOpen, setProposedDropdownOpen] = useState(false);
   const [geodeticDropdownOpen, setGeodeticDropdownOpen] = useState(false);
 
-  const getGeojsonForKey = (key) =>
-    layerRecordCache?.[key]?.geojson ||
-    (["khasraLayer", "squareLayer", "acreLayer"].includes(key)
-      ? loadedParcelsGeojson
-      : null);
+  const getGeojsonForKey = (key) => {
+    if (["mauzaBoundary", "khasraLayer"].includes(key)) {
+      return layerRecordCache?.[`${boundaryStatus}_${key}`]?.geojson || null;
+    }
+
+    return (
+      layerRecordCache?.[key]?.geojson ||
+      (["squareLayer", "acreLayer"].includes(key)
+        ? loadedParcelsGeojson
+        : null)
+    );
+  };
 
   const renderStandardLayer = (item, index, items, vectorLayer = false) => (
     <div key={item.key}>

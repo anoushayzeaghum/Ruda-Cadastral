@@ -103,8 +103,8 @@ export default function MapPage() {
     geodeticNetwork: { visible: false, opacity: 100, color: "#d81d1d" },
     districtBoundary: { visible: true, opacity: 0, color: "#f59e0b" },
     tehsilBoundary: { visible: true, opacity: 0, color: "#06b6d4" },
-    mauzaBoundary: { visible: true, opacity: 0, color: "#a3e635" },
-    khasraLayer: { visible: false, opacity: 25, color: "#f97316" },
+    mauzaBoundary: { visible: true, opacity: 0, color: "#16a34a" },
+    khasraLayer: { visible: false, opacity: 25, color: "#16a34a" },
     squareLayer: { visible: false, opacity: 35, color: "#8b5cf6" },
     acreLayer: { visible: false, opacity: 35, color: "#14b8a6" },
     murabbaLayer: { visible: false, opacity: 25, color: "#facc15" },
@@ -139,7 +139,29 @@ export default function MapPage() {
     setSelectedParcel(null);
     setParcelPanelOpen(false);
     setLoadedParcelsGeojson(null);
-  }, [filters?.selectedMauza, filters?.viewBy]);
+  }, [filters?.selectedMauza, filters?.viewBy, boundaryStatus]);
+
+  useEffect(() => {
+    const statusColor = boundaryStatus === "unverified" ? "#dc5a5a" : "#16a34a";
+
+    // Only Mauza and Khasra switch between verified and unverified tables.
+    // Preserve visibility/opacity and update just their status color.
+    setLayers((prev) => ({
+      ...prev,
+      mauzaBoundary: {
+        ...(typeof prev.mauzaBoundary === "object"
+          ? prev.mauzaBoundary
+          : { visible: !!prev.mauzaBoundary, opacity: 100 }),
+        color: statusColor,
+      },
+      khasraLayer: {
+        ...(typeof prev.khasraLayer === "object"
+          ? prev.khasraLayer
+          : { visible: !!prev.khasraLayer, opacity: 25 }),
+        color: statusColor,
+      },
+    }));
+  }, [boundaryStatus]);
 
   const murabbaOptions = useMemo(() => {
     if (!isMurabbaBasedKhasra) return [];
