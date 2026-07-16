@@ -543,6 +543,11 @@ export const getTransportationRoadsGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getLahoreTransportationRoadsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/lahore-transportation-roads/`);
+  return unwrapGeoJSON(res.data);
+};
+
 export const getLahoreRingRoadGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/lahore-ring-road/`);
   return unwrapGeoJSON(res.data);
