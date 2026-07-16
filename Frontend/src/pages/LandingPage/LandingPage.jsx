@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
 import RudaFooterLogo from "../../assets/Ruda.png";
+import GopLogo from "../../assets/govtpunjab.png";
 import {
   Map,
   BarChart3,
@@ -779,11 +780,23 @@ export default function LandingPage() {
           <a
             href="#home"
             aria-label="RUDA home"
-            className="flex shrink-0 items-center"
+            className="flex shrink-0 items-center gap-1.5 sm:gap-2"
           >
             <img
               src={RudaLogo}
               alt="RUDA GIS Directorate"
+              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+            />
+
+            <img
+              src={GopLogo}
+              alt="Government of Punjab"
+              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+            />
+
+            <img
+              src={RudaFooterLogo}
+              alt="Ravi Urban Development Authority"
               className="h-10 w-10 object-contain sm:h-12 sm:w-12"
             />
           </a>
@@ -937,16 +950,14 @@ export default function LandingPage() {
             <div className="mx-auto max-w-[1450px] text-center">
 
 
-              <div className="mt-2 flex items-center justify-center gap-3">
-                <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
-                <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#8FEA67] sm:text-[14px]">
-                  One City. One Data. One Platform.
-                </span>
-                <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#8FEA67]/75 sm:w-20" />
+
+              <div className="mx-auto mt-0.1 mb-8 w-full max-w-[1450px] whitespace-nowrap px-1 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white/90 sm:text-[14px] lg:text-[15px] xl:text-[16px]">
+                An Integrated, Immersive &amp; Intelligent Platform for Planning,
+                Monitoring, Collaboration &amp; Sustainable Development
               </div>
             </div>
 
-            <div className="relative mt-2 min-h-[90px] xl:min-h-[110px]">
+            <div className="relative mt-1 min-h-[48px] xl:min-h-[60px]">
               <div className="absolute inset-x-0 top-0 hidden xl:block">
                 <RaviCityVisionPanel />
               </div>
@@ -991,16 +1002,15 @@ export default function LandingPage() {
                   <span className="mt-1 block text-[#70D84F] sm:mt-2">
                     METAVERSE
                   </span>
-
+                  <div className="mt-2 flex items-center justify-center gap-3">
+                    <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
+                    <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#8FEA67] sm:text-[14px]">
+                      One City. One Data. One Platform.
+                    </span>
+                    <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#8FEA67]/75 sm:w-20" />
+                  </div>
                 </h1>
-                <div className="mx-auto mt-3 max-w-[760px] text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.88] sm:text-[13px] lg:text-[14px]">
-                  <span className="block">
-                    An Integrated, Immersive &amp; Intelligent Platform
-                  </span>
-                  <span className="mt-1 block">
-                    for Planning, Monitoring, Collaboration &amp; Sustainable Development
-                  </span>
-                </div>
+
 
 
               </div>
@@ -1410,8 +1420,8 @@ export default function LandingPage() {
                   onClick={() => setTeamStartIndex(index)}
                   aria-label={`Show team member group starting from ${index + 1}`}
                   className={`h-2 rounded-full transition-all duration-300 ${index === teamStartIndex
-                      ? "w-7 bg-[#8FEA67]"
-                      : "w-2 bg-white/30 hover:bg-white/60"
+                    ? "w-7 bg-[#8FEA67]"
+                    : "w-2 bg-white/30 hover:bg-white/60"
                     }`}
                 />
               ))}
