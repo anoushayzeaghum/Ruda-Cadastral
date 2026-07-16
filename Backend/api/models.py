@@ -175,14 +175,104 @@ class Tehsil(models.Model):
 
 # --------------------------------------------------------
 # Mauza
-# District → Tehsil → Mauza
+# Database table: public.mauza
 # --------------------------------------------------------
 class Mauza(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    district = models.CharField(
+        db_column="district",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    dist_id = models.FloatField(
+        db_column="dist_id",
+        null=True,
+        blank=True,
+    )
+
+    tehsil = models.CharField(
+        db_column="tehsil",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    tehsil_id = models.FloatField(
+        db_column="tehsil_id",
+        null=True,
+        blank=True,
+    )
+
+    kc = models.CharField(
+        db_column="kc",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    kc_id = models.FloatField(
+        db_column="kc_id",
+        null=True,
+        blank=True,
+    )
+
+    mauza = models.CharField(
+        db_column="mauza",
+        max_length=150,
+        null=True,
+        blank=True,
+    )
+
+    mauza_id = models.FloatField(
+        db_column="mauza_id",
+        unique=True,
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+
+    pc = models.CharField(
+        db_column="pc",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    pc_id = models.FloatField(
+        db_column="pc_id",
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.mauza or f"Mauza {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "mauza"
+        
+# --------------------------------------------------------
+# Ruda Mauza
+# District → Tehsil → Mauza
+# --------------------------------------------------------
+        
+class RudaMauza(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    # Raw text columns from the imported Mauza shapefile.
-    # These are kept separate from the FK fields below so the old API behavior
-    # does not break.
+   
     district_text = models.CharField(
         db_column="district",
         max_length=100,
@@ -240,13 +330,206 @@ class Mauza(models.Model):
 
     class Meta:
         managed = False
-        db_table = "mauza"
+        db_table = "ruda_mauza"
 
 # --------------------------------------------------------
 # Khasra
+# Database table: public.khasra
 # District → Tehsil → Mauza → Khasra
 # --------------------------------------------------------
 class Khasra(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    # ----------------------------------------------------
+    # Administrative hierarchy
+    # ----------------------------------------------------
+    district = models.CharField(
+        db_column="district",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    dist_id = models.FloatField(
+        db_column="dist_id",
+        null=True,
+        blank=True,
+    )
+
+    tehsil = models.CharField(
+        db_column="tehsil",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    tehsil_id = models.FloatField(
+        db_column="tehsil_id",
+        null=True,
+        blank=True,
+    )
+
+    kc = models.CharField(
+        db_column="kc",
+        max_length=254,
+        null=True,
+        blank=True,
+    )
+
+    kc_id = models.FloatField(
+        db_column="kc_id",
+        null=True,
+        blank=True,
+    )
+
+    pc = models.CharField(
+        db_column="pc",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    pc_id = models.FloatField(
+        db_column="pc_id",
+        null=True,
+        blank=True,
+    )
+
+    mauza = models.CharField(
+        db_column="mauza",
+        max_length=150,
+        null=True,
+        blank=True,
+    )
+
+    mauza_id = models.FloatField(
+        db_column="mauza_id",
+        null=True,
+        blank=True,
+    )
+
+    # ----------------------------------------------------
+    # Khasra attributes
+    # ----------------------------------------------------
+    hadbust_no = models.IntegerField(
+        db_column="hadbust_no",
+        null=True,
+        blank=True,
+    )
+
+    asse_cir = models.CharField(
+        db_column="asse_cir",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    type = models.CharField(
+        db_column="type",
+        max_length=50,
+        null=True,
+        blank=True,
+    )
+
+    karam = models.DecimalField(
+        db_column="karam",
+        max_digits=20,
+        decimal_places=11,
+        null=True,
+        blank=True,
+    )
+
+    sq = models.IntegerField(
+        db_column="sq",
+        null=True,
+        blank=True,
+    )
+
+    kh = models.IntegerField(
+        db_column="kh",
+        null=True,
+        blank=True,
+    )
+
+    sk = models.CharField(
+        db_column="sk",
+        max_length=50,
+        null=True,
+        blank=True,
+    )
+
+    join_shp = models.CharField(
+        db_column="join_shp",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    khasra_id = models.FloatField(
+        db_column="khasra_id",
+        null=True,
+        blank=True,
+    )
+
+    khewat_id = models.FloatField(
+        db_column="khewat_id",
+        null=True,
+        blank=True,
+    )
+
+    khatoni_no = models.FloatField(
+        db_column="khatoni_no",
+        null=True,
+        blank=True,
+    )
+
+    dc_rate = models.FloatField(
+        db_column="dc_rate",
+        null=True,
+        blank=True,
+    )
+
+    remarks = models.TextField(
+        db_column="remarks",
+        null=True,
+        blank=True,
+    )
+
+    b = models.CharField(
+        db_column="b",
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        if self.join_shp:
+            return self.join_shp
+
+        if self.khasra_id is not None:
+            return str(self.khasra_id)
+
+        return f"Khasra {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "khasra"
+    
+# --------------------------------------------------------
+# Ruda Khasra
+# District → Tehsil → Mauza → Khasra
+# --------------------------------------------------------
+class RudaKhasra(models.Model):
     gid = models.AutoField(primary_key=True)
 
     # Raw text columns from the imported Khasra shapefile.
@@ -347,9 +630,7 @@ class Khasra(models.Model):
 
     class Meta:
         managed = False
-        db_table = "khasra"
-    
-
+        db_table = "ruda_khasra"
     
 # --------------------------------------------------------
 # Trijunction Boundary

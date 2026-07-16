@@ -17,7 +17,7 @@ router.register(r'update-user', UserUpdateView, basename='update-user')
 #--------------------------------- District View ---------------------------------
 router.register(r"district", ListDistrictView, basename="district")
 
-#--------------------------------- Mauza View ---------------------------------
+#--------------------------------- Tehsil View ---------------------------------
 router.register(r"tehsil", ListTehsilView, basename="tehsil")
 
 #--------------------------------- Mauza View ---------------------------------
@@ -27,11 +27,23 @@ router.register(r"mauza/update", UpdateMauzaView, basename="update-mauza")
 router.register(r"mauza/delete", DeleteMauzaView, basename="delete-mauza")
 router.register(r"mauza/import", ImportMauzaView, basename="import-mauza")
 
+#--------------------------------- Ruda Mauza View ---------------------------------
+router.register(r"rudamauza", ListRudaMauzaView, basename="rudamauza")
+router.register(r"rudamauza/create", CreateRudaMauzaView, basename="create-ruda-mauza")
+router.register(r"rudamauza/update", UpdateRudaMauzaView, basename="update-ruda-mauza")
+router.register(r"rudamauza/delete", DeleteRudaMauzaView, basename="delete-ruda-mauza")
+
 #--------------------------------- Khasra View ---------------------------------
 router.register(r"khasra", ListKhasraView, basename="khasra")   
 router.register(r"khasra/create", CreateKhasraView, basename="create-khasra")
 router.register(r"khasra/update", UpdateKhasraView, basename="update-khasra")
 router.register(r"khasra/delete", DeleteKhasraView, basename="delete-khasra")
+
+#--------------------------------- Khasra View ---------------------------------
+router.register(r"rudakhasra", ListRudaKhasraView, basename="rudakhasra")   
+router.register(r"rudakhasra/create", CreateRudaKhasraView, basename="create-ruda-khasra")
+router.register(r"rudakhasra/update", UpdateRudaKhasraView, basename="update-ruda-khasra")
+router.register(r"rudakhasra/delete", DeleteRudaKhasraView, basename="delete-ruda-khasra")
 
 #------------------------------ Society View ------------------------------
 router.register(r"society", ListSocietyView, basename="society")

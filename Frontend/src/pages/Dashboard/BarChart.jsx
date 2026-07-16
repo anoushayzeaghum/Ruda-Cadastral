@@ -7,32 +7,22 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import { STRUCTURE_COMPARISON } from "./dashboardData";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 export default function BarChart() {
+  const { categories, series } = STRUCTURE_COMPARISON;
+
   const data = {
-    labels: ["2018", "2019", "2020", "2021", "2022", "2023"],
-    datasets: [
-      {
-        label: "Verified",
-        data: [45, 52, 68, 75, 82, 88],
-        backgroundColor: "rgba(34, 197, 94, 0.85)",
-        borderRadius: 6,
-      },
-      {
-        label: "Pending",
-        data: [30, 28, 22, 18, 14, 10],
-        backgroundColor: "rgba(251, 146, 60, 0.85)",
-        borderRadius: 6,
-      },
-      {
-        label: "Not Verified",
-        data: [25, 20, 10, 7, 4, 2],
-        backgroundColor: "rgba(239, 68, 68, 0.85)",
-        borderRadius: 6,
-      },
-    ],
+    labels: categories,
+    datasets: series.map((s) => ({
+      label: s.label,
+      data: s.data,
+      backgroundColor: s.color,
+      borderRadius: 6,
+      maxBarThickness: 42,
+    })),
   };
 
   const options = {
@@ -59,7 +49,6 @@ export default function BarChart() {
       },
       y: {
         beginAtZero: true,
-        max: 100,
         grid: {
           color: "rgba(255,255,255,0.05)",
         },
@@ -69,14 +58,19 @@ export default function BarChart() {
   };
 
   return (
-    <div className="h-full flex flex-col p-0 rounded-xl bg-white dark:bg-gradient-to-br dark:from-gray-700 dark:to-gray-900 overflow-hidden ring-1 ring-emerald-300/30 shadow-[0_10px_24px_rgba(34,197,94,0.06)]">
+    <div className="h-full flex flex-col p-0 rounded-xl bg-white dark:bg-gradient-to-br dark:from-gray-700 dark:to-gray-900 overflow-hidden ring-1 ring-[#0B7A3B]/20 shadow-sm">
       {/* TITLE */}
-      <h3 className="text-g font-bold text-gray-500 dark:text-white mb-1 px-3 pt-3">
-        Verification Timeline & Status
-      </h3>
+      <div className="px-3 pt-3">
+        <h3 className="text-[15px] font-bold text-gray-800 dark:text-white">
+          Platform Structure
+        </h3>
+        <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
+          RUDA Metaverse vs RTW Packages
+        </p>
+      </div>
 
       {/* CHART */}
-      <div className="flex-1 min-h-0 p-0">
+      <div className="flex-1 min-h-0 p-2">
         <Bar data={data} options={options} />
       </div>
     </div>

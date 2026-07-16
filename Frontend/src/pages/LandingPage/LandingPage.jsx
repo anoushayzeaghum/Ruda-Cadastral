@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
 import RudaFooterLogo from "../../assets/Ruda.png";
-import GopLogo from "../../assets/govtpunjab.png";
 import {
   Map,
   BarChart3,
@@ -57,11 +56,46 @@ const NAV_LINKS = [
   { href: "#contact", label: "Contact" },
 ];
 
-const STATS = [
-  { value: "2,400+", label: "Parcels Mapped" },
-  { value: "137", label: "Mauzas Covered" },
-  { value: "340 km²", label: "Project Area" },
-  { value: "99.8%", label: "Data Accuracy" },
+const STAT_GROUPS = [
+  {
+    key: "lis",
+    title: "Land Information System",
+    stats: [
+      { value: "2", label: "Total Districts" },
+      { value: "10", label: "Total Tehsil" },
+      { value: "173", label: "Total Mauza" },
+      { value: "237,754", label: "Total Khasra" },
+    ],
+  },
+  {
+    key: "metaverse",
+    title: "RUDA Metaverse",
+    stats: [
+      { value: "6", label: "Total Zones" },
+      { value: "5", label: "Total Phases" },
+      { value: "9", label: "Total Precincts" },
+      { value: "70%", label: "Principal Zoning" },
+    ],
+  },
+  {
+    key: "rtw",
+    title: "RTW Packages",
+    stats: [
+      { value: "20", label: "Total Packages" },
+      { value: "19", label: "Total Projects" },
+      { value: "5", label: "Total Phases" },
+    ],
+  },
+  {
+    key: "chaharbagh",
+    title: "Chahar Bagh Phase 1",
+    stats: [
+      { value: "68%", label: "Residential" },
+      { value: "12%", label: "Commercial" },
+      { value: "9%", label: "Green Spaces" },
+      { value: "11%", label: "Utilities" },
+    ],
+  },
 ];
 
 const DECISION_AREAS = [
@@ -180,6 +214,14 @@ const RAVI_CITY_PILLARS = [
   // { label: "Sustainable Future", icon: Leaf },
 ];
 
+const CORE_CAPABILITIES = [
+  { label: "3D Visualization", icon: Box },
+  { label: "Real-time Data", icon: Database },
+  { label: "Analytics", icon: BarChart3 },
+  { label: "Simulation", icon: Workflow },
+  { label: "Scenarios", icon: Layers },
+];
+
 const TEAM_MEMBERS = [
   {
     id: 1,
@@ -218,8 +260,6 @@ const TEAM_MEMBERS = [
     image: "",
   },
 ];
-
-
 
 const GIS_APPS = [
   {
@@ -489,10 +529,11 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
 hover:-translate-y-2
 hover:scale-[1.025]
-hover:rotate-[0.2deg] ${compact
+hover:rotate-[0.2deg] ${
+        compact
           ? "min-h-[128px] rounded-xl p-3"
           : "min-h-[154px] rounded-[18px] p-4"
-        }`}
+      }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
         backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.91) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.36) 100%), url('${area.image}')`,
@@ -567,41 +608,34 @@ hover:rotate-[0.2deg] ${compact
 
 function RaviCityVisionPanel() {
   return (
-    <div className="flex w-full items-start justify-between">
-      {/* LEFT TEXT */}
-      <div className="text-left text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
-        <div className="text-[16px] font-black uppercase leading-[1.08] tracking-[0.06em] text-white/[0.94] 2xl:text-[18px]">
-          <span className="block whitespace-nowrap">
-            Building a Smart,
-          </span>
-
-          <span className="block whitespace-nowrap">
-            Sustainable &amp; Inclusive
-          </span>
-        </div>
-
-        <div className="mt-1 text-[25px] font-black uppercase leading-none tracking-[0.04em] text-[#70D84F] 2xl:text-[28px]">
-          Ravi City
-        </div>
+    <div className="w-[350px] text-left text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
+      <div className="text-[14px] font-black uppercase leading-[1.08] tracking-[0.06em] text-white/[0.92] 2xl:text-[15px]">
+        <span className="block whitespace-nowrap">Building a Smart,</span>
+        <span className="block whitespace-nowrap">
+          Sustainable &amp; Inclusive
+        </span>
       </div>
 
-      {/* RIGHT ICONS */}
-      <div className="flex items-start gap-6 pt-2">
+      <div className="mt-1 text-[22px] font-black uppercase leading-none tracking-[0.04em] text-[#70D84F] 2xl:text-[24px]">
+        Ravi City
+      </div>
+
+      <div className="mt-3 grid grid-cols-5 gap-1.5">
         {RAVI_CITY_PILLARS.map((item) => {
           const Icon = item.icon;
 
           return (
             <div
               key={item.label}
-              className="flex min-w-[72px] flex-col items-center text-center"
+              className="flex min-w-0 flex-col items-center text-center"
             >
               <Icon
-                size={28}
+                size={24}
                 strokeWidth={1.9}
                 className="text-[#8FEA67] drop-shadow-[0_0_10px_rgba(143,234,103,0.55)]"
               />
 
-              <span className="mt-1.5 text-[8px] font-bold uppercase leading-tight tracking-[0.06em] text-white/[0.86]">
+              <span className="mt-1 max-w-[76px] text-[7px] font-bold uppercase leading-tight tracking-[0.06em] text-white/[0.82] sm:text-[8px]">
                 {item.label}
               </span>
             </div>
@@ -723,6 +757,9 @@ export default function LandingPage() {
   const [activeSection, setActive] = useState("home");
   const [slideIndex, setSlideIndex] = useState(0);
   const [teamStartIndex, setTeamStartIndex] = useState(0);
+  const [featureStartIndex, setFeatureStartIndex] = useState(0);
+  const [statGroupIndex, setStatGroupIndex] = useState(0);
+  const [statFade, setStatFade] = useState(true);
 
   useEffect(() => {
     const onScroll = () => {
@@ -760,6 +797,26 @@ export default function LandingPage() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStatFade(false);
+      setTimeout(() => {
+        setStatGroupIndex((i) => (i + 1) % STAT_GROUPS.length);
+        setStatFade(true);
+      }, 350);
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const goToStatGroup = (index) => {
+    setStatFade(false);
+    setTimeout(() => {
+      setStatGroupIndex(index);
+      setStatFade(true);
+    }, 350);
+  };
+
   return (
     <div className="font-sans text-slate-800 bg-white overflow-x-hidden">
       <div className="bg-gradient-to-r from-[#00351f] via-[#004225] to-[#0B7A3B] text-white text-[9px] xs:text-[10px] sm:text-xs font-semibold tracking-widest flex items-center justify-center gap-2 sm:gap-4 py-1.5 sm:py-2 px-2 text-center">
@@ -771,45 +828,28 @@ export default function LandingPage() {
       </div>
 
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
-          ? "bg-white shadow-lg"
-          : "bg-white/95 backdrop-blur-sm shadow-sm"
-          }`}
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white shadow-lg"
+            : "bg-white/95 backdrop-blur-sm shadow-sm"
+        }`}
       >
-        <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-3 sm:h-14 sm:px-5 md:h-14">
-          <a
-            href="#home"
-            aria-label="RUDA home"
-            className="flex shrink-0 items-center gap-1.5 sm:gap-2"
-          >
-            <img
-              src={RudaLogo}
-              alt="RUDA GIS Directorate"
-              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
-            />
-
-            <img
-              src={GopLogo}
-              alt="Government of Punjab"
-              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
-            />
-
-            <img
-              src={RudaFooterLogo}
-              alt="Ravi Urban Development Authority"
-              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
-            />
-          </a>
+        <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-12 sm:h-14 md:h-14">
+          <div
+            className="hidden w-[110px] shrink-0 md:block"
+            aria-hidden="true"
+          />
 
           <nav className="hidden md:flex items-center gap-0.5 lg:gap-1">
             {NAV_LINKS.map(({ href, label }) => (
               <a
                 key={href}
                 href={href}
-                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
-                  ? "bg-[#0B7A3B] text-white"
-                  : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
-                  }`}
+                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
+                  activeSection === href.slice(1)
+                    ? "bg-[#0B7A3B] text-white"
+                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                }`}
               >
                 {label}
               </a>
@@ -911,6 +951,7 @@ export default function LandingPage() {
             100% { opacity: .2; transform: scaleX(.84); }
           }
 
+
           @keyframes teamCardReveal {
             from {
               opacity: 0;
@@ -933,6 +974,17 @@ export default function LandingPage() {
             }
           }
 
+          @keyframes featureCarouselMove {
+            from {
+              opacity: 0;
+              transform: translateX(28px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+
           @media (prefers-reduced-motion: reduce) {
             .hero-motion-safe {
               animation: none !important;
@@ -948,18 +1000,42 @@ export default function LandingPage() {
         <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-5 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
           <div className="relative mx-auto w-full max-w-[1600px]">
             <div className="mx-auto max-w-[1450px] text-center">
+              <div className="text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.84] sm:text-[13px] lg:text-[14px] xl:whitespace-nowrap">
+                An Integrated, Immersive &amp; Intelligent Platform for
+                Planning, Monitoring, Collaboration &amp; Sustainable
+                Development
+              </div>
 
-
-
-              <div className="mx-auto mt-0.1 mb-8 w-full max-w-[1450px] whitespace-nowrap px-1 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white/90 sm:text-[14px] lg:text-[15px] xl:text-[16px]">
-                An Integrated, Immersive &amp; Intelligent Platform for Planning,
-                Monitoring, Collaboration &amp; Sustainable Development
+              <div className="mt-2 flex items-center justify-center gap-3">
+                <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
+                <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#8FEA67] sm:text-[14px]">
+                  One City. One Data. One Platform.
+                </span>
+                <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#8FEA67]/75 sm:w-20" />
               </div>
             </div>
 
-            <div className="relative mt-1 min-h-[48px] xl:min-h-[60px]">
-              <div className="absolute inset-x-0 top-0 hidden xl:block">
-                <RaviCityVisionPanel />
+            <div className="relative mt-2 min-h-[76px] xl:min-h-[108px]">
+              <div className="absolute left-0 top-0 hidden items-start gap-4 xl:flex">
+                <a href="#home" className="shrink-0" aria-label="RUDA home">
+                  <img
+                    src={RudaLogo}
+                    alt="RUDA"
+                    className="h-28 w-auto object-contain drop-shadow-[0_8px_22px_rgba(0,0,0,0.45)] 2xl:h-28"
+                  />
+                </a>
+
+                <div className="pt-1">
+                  <RaviCityVisionPanel />
+                </div>
+              </div>
+
+              <div className="flex justify-center lg:justify-end lg:pr-2">
+                <div className="grid grid-cols-4 gap-3 sm:gap-4 xl:gap-5">
+                  {TOP_PILLARS.map((item) => (
+                    <HeroPillar key={item.label} item={item} />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -1002,17 +1078,14 @@ export default function LandingPage() {
                   <span className="mt-1 block text-[#70D84F] sm:mt-2">
                     METAVERSE
                   </span>
-                  <div className="mt-2 flex items-center justify-center gap-3">
-                    <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
-                    <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#8FEA67] sm:text-[14px]">
-                      One City. One Data. One Platform.
-                    </span>
-                    <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#8FEA67]/75 sm:w-20" />
-                  </div>
                 </h1>
 
-
-
+                <p className="mx-auto mt-4 max-w-2xl px-2 text-xs leading-relaxed text-white/[0.78] sm:mt-5 sm:text-sm md:text-[15px]">
+                  A unified geospatial decision-support environment connecting
+                  land records, planning, BIM, engineering, investment,
+                  infrastructure and sustainability across the RUDA project
+                  area.
+                </p>
               </div>
 
               {/* Move capability icons and both buttons downward */}
@@ -1024,7 +1097,7 @@ export default function LandingPage() {
                   />
 
                   <div className="relative flex flex-wrap items-start justify-center gap-x-1 gap-y-3 sm:flex-nowrap sm:justify-between">
-                    {TOP_PILLARS.map((item) => (
+                    {CORE_CAPABILITIES.map((item) => (
                       <CapabilityNode key={item.label} item={item} />
                     ))}
                   </div>
@@ -1082,26 +1155,60 @@ export default function LandingPage() {
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${i === slideIndex
-                  ? "h-2 w-7 bg-[#70D84F]"
-                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
-                  }`}
+                className={`rounded-full transition-all duration-300 ${
+                  i === slideIndex
+                    ? "h-2 w-7 bg-[#70D84F]"
+                    : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                }`}
               />
             ))}
           </div>
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/88 backdrop-blur-xl">
-          <div className="mx-auto grid max-w-5xl grid-cols-2 gap-2 px-3 py-3 text-center text-white sm:grid-cols-4 sm:gap-4 sm:px-5 sm:py-5">
-            {STATS.map(({ value, label }) => (
-              <div key={label} className="relative py-1">
-                <div className="text-lg font-black text-[#70D84F] xs:text-xl sm:text-3xl">
-                  {value}
-                </div>
-                <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
-                  {label}
-                </div>
+          <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-6 sm:px-5 sm:py-5">
+            <div className="shrink-0 text-center sm:border-r sm:border-white/15 sm:pr-6 sm:text-left">
+              <div className="animate-pulse text-[11px] font-black uppercase leading-tight tracking-[0.18em] text-[#70D84F] xs:text-xs sm:text-base md:text-lg">
+                {STAT_GROUPS[statGroupIndex].title}
               </div>
+            </div>
+
+            <div
+              className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${
+                STAT_GROUPS[statGroupIndex].stats.length === 3
+                  ? "grid-cols-3"
+                  : "grid-cols-2 sm:grid-cols-4"
+              } ${
+                statFade
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-2"
+              }`}
+            >
+              {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
+                <div key={label} className="relative py-1">
+                  <div className="text-xl font-black text-[#70D84F] xs:text-2xl sm:text-4xl">
+                    {value}
+                  </div>
+                  <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-2 pb-2.5 sm:pb-3.5">
+            {STAT_GROUPS.map((group, i) => (
+              <button
+                key={group.key}
+                onClick={() => goToStatGroup(i)}
+                aria-label={`Show ${group.title} stats`}
+                className={`rounded-full transition-all duration-300 ${
+                  i === statGroupIndex
+                    ? "h-1.5 w-6 bg-[#70D84F]"
+                    : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
+                }`}
+              />
             ))}
           </div>
         </div>
@@ -1388,8 +1495,7 @@ export default function LandingPage() {
                 onClick={() =>
                   setTeamStartIndex(
                     (current) =>
-                      (current - 1 + TEAM_MEMBERS.length) %
-                      TEAM_MEMBERS.length,
+                      (current - 1 + TEAM_MEMBERS.length) % TEAM_MEMBERS.length,
                   )
                 }
                 aria-label="Show previous team members"
@@ -1419,10 +1525,11 @@ export default function LandingPage() {
                   type="button"
                   onClick={() => setTeamStartIndex(index)}
                   aria-label={`Show team member group starting from ${index + 1}`}
-                  className={`h-2 rounded-full transition-all duration-300 ${index === teamStartIndex
-                    ? "w-7 bg-[#8FEA67]"
-                    : "w-2 bg-white/30 hover:bg-white/60"
-                    }`}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === teamStartIndex
+                      ? "w-7 bg-[#8FEA67]"
+                      : "w-2 bg-white/30 hover:bg-white/60"
+                  }`}
                 />
               ))}
             </div>
@@ -1430,86 +1537,198 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="features" className="py-10 sm:py-14 md:py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-5">
-          <div className="text-center mb-7 sm:mb-10">
-            <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
+      <section
+        id="features"
+        className="relative overflow-hidden bg-[#f7faf8] py-12 sm:py-16 md:py-20"
+      >
+        <div className="absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_18%_22%,rgba(73,184,74,.12),transparent_28%),radial-gradient(circle_at_82%_78%,rgba(11,122,59,.10),transparent_30%)]" />
+        <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(0,66,37,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(0,66,37,.035)_1px,transparent_1px)] [background-size:42px_42px]" />
+
+        <div className="relative mx-auto max-w-[1500px] px-4 sm:px-5 lg:px-8">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#0B7A3B]/15 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#004225] shadow-sm sm:text-xs">
+              <Zap size={14} className="text-[#49B84A]" />
               Platform Capabilities
             </div>
 
-            <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 mb-3 sm:mb-4">
-              Metaverse Features
+            <h2 className="mt-5 text-3xl font-black leading-[0.98] tracking-[-0.035em] text-slate-900 xs:text-4xl sm:text-5xl lg:text-[58px]">
+              Built for Smarter
+              <span className="mt-1 block text-[#0B7A3B]">
+                Spatial Decisions
+              </span>
             </h2>
 
-            <div className="w-12 sm:w-16 h-1.5 bg-[#49B84A] rounded-full mx-auto mb-4 sm:mb-6" />
-
-            <p className="max-w-xl mx-auto text-slate-500 text-sm sm:text-base leading-relaxed px-2 sm:px-0">
-              Purpose-built GIS capabilities for cadastral operations, field
-              verification and land management decision support.
+            <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+              A connected set of GIS, analytics, 3D and data-management tools
+              designed to turn complex cadastral and planning information into
+              clear, actionable intelligence.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-            {FEATURES.map(({ icon, title, desc, bg, iconBg }) => (
+          <div className="relative mt-10 sm:mt-12">
+            <div className="overflow-hidden px-1 sm:px-12 lg:px-14">
               <div
-                key={title}
-                className={`${bg} rounded-2xl p-4 sm:p-5 md:p-7 group hover:shadow-md transition-all`}
+                key={featureStartIndex}
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5"
+                style={{ animation: "featureCarouselMove 450ms ease-out both" }}
               >
-                <div
-                  className={`w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-xl ${iconBg} flex items-center justify-center text-white mb-3 sm:mb-4 md:mb-5`}
-                >
-                  {icon}
-                </div>
+                {Array.from({ length: 4 }, (_, offset) => {
+                  const featureIndex =
+                    (featureStartIndex + offset) % FEATURES.length;
+                  const { icon, title, desc } = FEATURES[featureIndex];
 
-                <h3 className="font-black text-slate-900 text-xs sm:text-sm md:text-base mb-0 sm:mb-2">
-                  {title}
-                </h3>
+                  return (
+                    <article
+                      key={`${title}-${featureStartIndex}`}
+                      className="group relative min-h-[250px] overflow-hidden rounded-[24px] border border-[#0B7A3B]/10 bg-white p-5 shadow-[0_20px_45px_-30px_rgba(0,66,37,.5)] transition-all duration-500 hover:-translate-y-2 hover:border-[#49B84A]/55 hover:shadow-[0_28px_55px_-28px_rgba(11,122,59,.38)] sm:p-6"
+                    >
+                      <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#49B84A]/10 blur-2xl transition-all duration-500 group-hover:scale-150 group-hover:bg-[#49B84A]/20" />
+                      <div className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-[#49B84A] to-[#004225] transition-transform duration-500 group-hover:scale-x-100" />
 
-                <p className="hidden sm:block text-slate-500 text-xs sm:text-[13px] leading-relaxed mt-1.5">
-                  {desc}
-                </p>
+                      <div className="relative flex items-start justify-between gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0B7A3B] to-[#004225] text-white shadow-[0_12px_24px_-12px_rgba(0,66,37,.85)] transition-transform duration-500 group-hover:rotate-3 group-hover:scale-110">
+                          {icon}
+                        </div>
+                        <span className="text-sm font-black tracking-[0.15em] text-[#0B7A3B]/25">
+                          {String(featureIndex + 1).padStart(2, "0")}
+                        </span>
+                      </div>
+
+                      <h3 className="relative mt-5 text-lg font-black text-slate-900">
+                        {title}
+                      </h3>
+                      <p className="relative mt-2 text-sm leading-relaxed text-slate-500">
+                        {desc}
+                      </p>
+
+                      <div className="relative mt-5 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#0B7A3B]">
+                        Explore capability
+                        <ArrowRight
+                          size={13}
+                          className="transition-transform duration-300 group-hover:translate-x-1.5"
+                        />
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-            ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFeatureStartIndex(
+                  (current) =>
+                    (current - 1 + FEATURES.length) % FEATURES.length,
+                )
+              }
+              aria-label="Show previous platform capabilities"
+              className="absolute left-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#0B7A3B]/15 bg-white text-[#004225] shadow-[0_12px_30px_-12px_rgba(0,66,37,.45)] transition-all hover:-translate-y-[55%] hover:border-[#49B84A]/70 hover:bg-[#0B7A3B] hover:text-white sm:flex"
+            >
+              <ChevronLeft size={22} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFeatureStartIndex(
+                  (current) => (current + 1) % FEATURES.length,
+                )
+              }
+              aria-label="Show next platform capabilities"
+              className="absolute right-0 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#0B7A3B]/15 bg-white text-[#004225] shadow-[0_12px_30px_-12px_rgba(0,66,37,.45)] transition-all hover:-translate-y-[55%] hover:border-[#49B84A]/70 hover:bg-[#0B7A3B] hover:text-white sm:flex"
+            >
+              <ChevronRight size={22} />
+            </button>
+
+            <div className="mt-6 flex items-center justify-center gap-3 sm:hidden">
+              <button
+                type="button"
+                onClick={() =>
+                  setFeatureStartIndex(
+                    (current) =>
+                      (current - 1 + FEATURES.length) % FEATURES.length,
+                  )
+                }
+                aria-label="Show previous platform capabilities"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#0B7A3B]/15 bg-white text-[#004225] shadow-sm"
+              >
+                <ChevronLeft size={20} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFeatureStartIndex(
+                    (current) => (current + 1) % FEATURES.length,
+                  )
+                }
+                aria-label="Show next platform capabilities"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#0B7A3B]/15 bg-white text-[#004225] shadow-sm"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+
+            <div className="mt-6 flex justify-center gap-2">
+              {FEATURES.map((feature, index) => (
+                <button
+                  key={feature.title}
+                  type="button"
+                  onClick={() => setFeatureStartIndex(index)}
+                  aria-label={`Show capability group starting from ${index + 1}`}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === featureStartIndex
+                      ? "w-7 bg-[#0B7A3B]"
+                      : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
       <footer id="contact" className="bg-[#00351f] text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-5 pt-10 sm:pt-14 md:pt-16 pb-8 sm:pb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
+        <div className="mx-auto grid max-w-[1420px] grid-cols-1 gap-8 px-8 pb-8 pt-10 sm:grid-cols-2 sm:px-12 sm:pb-12 sm:pt-14 lg:grid-cols-[1.15fr_0.58fr_0.86fr_1.65fr] lg:gap-6 xl:gap-8 xl:px-16">
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="mb-4 grid grid-cols-4 gap-3 sm:mb-6">
+            <div className="mb-6 flex flex-wrap items-center gap-2 sm:gap-2.5 lg:flex-nowrap lg:gap-2.5 xl:gap-3">
               {[
                 {
-                  src: RudaLogo,
-                  alt: "RUDA Land and Management",
+                  src: RudaFooterLogo,
+                  alt: "Ravi Urban Development Authority",
+                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
                 },
                 {
                   src: "/gop_logo.png",
                   alt: "Government of Punjab",
+                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
                 },
                 {
                   src: NespakLogo,
                   alt: "NESPAK",
+                  imageClass: "h-[48px] w-[48px] sm:h-[54px] sm:w-[54px]",
                 },
                 {
-                  src: RudaFooterLogo,
-                  alt: "Ravi Urban Development Authority",
+                  src: RudaLogo,
+                  alt: "RUDA GIS Directorate",
+                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
                 },
               ].map((logo) => (
                 <div
                   key={logo.alt}
-                  className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/15 bg-white p-2 shadow-sm sm:h-16 sm:w-16"
+                  className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-white p-1 shadow-[0_8px_20px_-10px_rgba(0,0,0,0.55)] ring-1 ring-white/40 sm:h-[78px] sm:w-[78px]"
                 >
                   <img
                     src={logo.src}
                     alt={logo.alt}
-                    className="h-full w-full object-contain"
+                    className={`${logo.imageClass} rounded-full object-contain`}
                   />
                 </div>
               ))}
             </div>
 
-            <p className="text-white/70 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6">
+            <p className="mb-4 max-w-md text-xs leading-relaxed text-white/70 sm:mb-6 sm:text-sm">
               RUDA Cadastral Project is a GIS-enabled initiative for digital
               cadastral mapping, parcel intelligence and spatial decision
               support for the Ravi Urban Development Authority project area.
@@ -1525,7 +1744,7 @@ export default function LandingPage() {
                 <a
                   key={i}
                   href={href}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-[#49B84A] hover:text-white flex items-center justify-center transition-all"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-all hover:bg-[#49B84A] hover:text-white sm:h-9 sm:w-9"
                 >
                   {icon}
                 </a>
@@ -1533,8 +1752,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div>
-            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
+          <div className="ml-4">
+            <h3 className="mb-4 text-sm font-black sm:mb-5 sm:text-base">
               Quick Links
             </h3>
 
@@ -1543,7 +1762,7 @@ export default function LandingPage() {
                 <a
                   key={href}
                   href={href}
-                  className="text-white/70 hover:text-[#49B84A] text-xs sm:text-sm transition-colors flex items-center gap-2"
+                  className="flex items-center gap-2 text-xs text-white/70 transition-colors hover:text-[#49B84A] sm:text-sm"
                 >
                   <ArrowRight size={11} /> {label}
                 </a>
@@ -1552,32 +1771,34 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <h3 className="font-black text-sm sm:text-base mb-4 sm:mb-5">
+            <h3 className="mb-4 text-sm font-black sm:mb-5 sm:text-base">
               Contact Info
             </h3>
 
             <div className="flex flex-col gap-3 sm:gap-4">
-              <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
-                <MapPin size={14} className="shrink-0 mt-0.5 text-[#49B84A]" />
-                152-A, Ali Block, Land Accquisition & Estate Management Office,
-                Garden Town, RUDA, Lahore, Pakistan
+              <div className="flex gap-2.5 text-xs text-white/70 sm:text-sm">
+                <MapPin size={14} className="mt-0.5 shrink-0 text-[#49B84A]" />
+                <span>
+                  152-A, Ali Block, Land Accquisition &amp; Estate Management
+                  Office, Garden Town, RUDA, Lahore, Pakistan
+                </span>
               </div>
 
-              <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
+              <div className="flex gap-2.5 text-xs text-white/70 sm:text-sm">
                 <Phone size={14} className="shrink-0 text-[#49B84A]" />
-                +92-42-99333531-6 Ext. 608
+                <span>+92-42-99333531-6 Ext. 608</span>
               </div>
 
-              <div className="flex gap-3 text-white/70 text-xs sm:text-sm">
+              <div className="flex gap-2.5 text-xs text-white/70 sm:text-sm">
                 <Mail size={14} className="shrink-0 text-[#49B84A]" />
-                info@ruda.gov.pk
+                <span>info@ruda.gov.pk</span>
               </div>
             </div>
           </div>
 
-          <div>
+          <div className="sm:col-span-2 lg:col-span-1">
             <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
-              <h3 className="font-black text-sm sm:text-base">
+              <h3 className="text-sm font-black sm:text-base">
                 Office Location
               </h3>
 
@@ -1596,25 +1817,22 @@ export default function LandingPage() {
               <iframe
                 title="RUDA office location"
                 src="https://www.google.com/maps?q=152-A+Ali+Block+Garden+Town+Lahore+Pakistan&output=embed"
-                className="h-[245px] w-full border-0 sm:h-[270px]"
+                className="h-[270px] w-full border-0 sm:h-[300px] lg:h-[285px] xl:h-[310px]"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 allowFullScreen
               />
 
               <div className="flex items-start gap-2 border-t border-white/10 bg-black/10 px-3 py-3 text-[10px] leading-relaxed text-white/70 sm:text-xs">
-                <MapPin
-                  size={14}
-                  className="mt-0.5 shrink-0 text-[#49B84A]"
-                />
+                <MapPin size={14} className="mt-0.5 shrink-0 text-[#49B84A]" />
                 <span>152-A, Ali Block, Garden Town, Lahore, Pakistan</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-white/10 py-4 sm:py-5 text-center text-white/50 text-[10px] sm:text-xs px-4">
-          © 2026 GIS Directorate, LA&EM - Ravi Urban Development Authority
+        <div className="border-t border-white/10 px-4 py-4 text-center text-[10px] text-white/50 sm:py-5 sm:text-xs">
+          © 2026 GIS Directorate, LA&amp;EM - Ravi Urban Development Authority
           (RUDA). All Rights Reserved. &nbsp;|&nbsp; Powered by NESPAK
           Construction Management Division
         </div>
