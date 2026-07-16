@@ -353,16 +353,42 @@ const addOrUpdateLayer = ({ map, layerKey, geojson, color, config }) => {
 const removeLayer = (map, layerKey) => {
   if (!map) return;
 
+  if (typeof map.getStyle !== "function") return;
+
+  let style;
+
+  try {
+    style = map.getStyle();
+  } catch {
+    return;
+  }
+
+  if (!style) return;
+
   const ids = getIds(layerKey);
 
-  [ids.circleId, ids.lineId, ids.casingId, ids.outlineId, ids.fillId].forEach(
-    (id) => {
-      if (map.getLayer(id)) map.removeLayer(id);
-    },
-  );
+  [
+    ids.circleId,
+    ids.lineId,
+    ids.casingId,
+    ids.outlineId,
+    ids.fillId,
+  ].forEach((id) => {
+    try {
+      if (map.getLayer(id)) {
+        map.removeLayer(id);
+      }
+    } catch (e) {
+      // ignore
+    }
+  });
 
-  if (map.getSource(ids.sourceId)) {
-    map.removeSource(ids.sourceId);
+  try {
+    if (map.getSource(ids.sourceId)) {
+      map.removeSource(ids.sourceId);
+    }
+  } catch (e) {
+    // ignore
   }
 };
 

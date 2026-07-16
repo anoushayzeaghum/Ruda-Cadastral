@@ -96,7 +96,7 @@ export default function MapPage() {
   const [mapboxMap, setMapboxMap] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [parcelPanelOpen, setParcelPanelOpen] = useState(false);
-
+  const [boundaryStatus, setBoundaryStatus] = useState("verified");
   const [layers, setLayers] = useState({
     rudaBoundary: { visible: false, opacity: 70, color: "#22c55e" },
     proposedRoads: { visible: false, opacity: 100, color: "#ef4444" },
@@ -487,6 +487,7 @@ export default function MapPage() {
           onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
           onParcelSelect={handleParcelSelect}
           onMapReady={handleMapReady}
+          boundaryStatus={boundaryStatus}
         />
 
         {/* <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} /> */}
@@ -524,6 +525,8 @@ export default function MapPage() {
           selectedTehsil={filters?.selectedTehsilOptions}
           selectedFilterLayers={selectedFilterLayers}
           loadedParcelsGeojson={loadedParcelsGeojson}
+          boundaryStatus={boundaryStatus}
+          setBoundaryStatus={setBoundaryStatus}
         />
 
         <Legend

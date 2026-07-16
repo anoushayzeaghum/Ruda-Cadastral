@@ -693,3 +693,25 @@ export const getMurabbasGeoJSON = async (filters = {}) => {
 export const getKhasrasGeoJSON = async (filters = {}) => {
   return getBoundaryGeoJSONByProjectMauzas("/khasra/", filters);
 };
+
+
+///////////////////////////////////////////////////////
+//////////////// UNVERIFIED APIs //////////////////////
+///////////////////////////////////////////////////////
+
+export const getRudaMauzas = async (mauzaId) => {
+
+  const res = await API.get("/rudamauza/", {
+    params: { mauza_id: mauzaId },
+  });
+
+  return normalizeGeoJson(res);
+};
+
+export const getRudaKhasras = async (mauzaId) => {
+  const res = await API.get("/rudakhasra/", {
+    params: { mauza_id: mauzaId },
+  });
+
+  return normalizeGeoJson(res);
+};

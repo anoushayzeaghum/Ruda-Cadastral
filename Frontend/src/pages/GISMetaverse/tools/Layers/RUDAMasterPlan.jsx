@@ -1131,7 +1131,22 @@ const addOrUpdateRudaMapLayer = ({
 };
 
 const removeRudaMapLayer = (map, layerKey) => {
+  // map already destroyed
   if (!map) return;
+
+  // map not fully initialized anymore
+  if (typeof map.getStyle !== "function") return;
+
+  let style;
+
+  try {
+    style = map.getStyle();
+  } catch {
+    // map has been removed
+    return;
+  }
+
+  if (!style) return;
 
   const ids = getLayerIds(layerKey);
 
@@ -1143,14 +1158,22 @@ const removeRudaMapLayer = (map, layerKey) => {
     ids.casingId,
     ids.outlineId,
     ids.fillId,
-  ].forEach((layerId) => {
-    if (map.getLayer(layerId)) {
-      map.removeLayer(layerId);
+  ].forEach((id) => {
+    try {
+      if (map.getLayer(id)) {
+        map.removeLayer(id);
+      }
+    } catch (e) {
+      // map already destroyed
     }
   });
 
-  if (map.getSource(ids.sourceId)) {
-    map.removeSource(ids.sourceId);
+  try {
+    if (map.getSource(ids.sourceId)) {
+      map.removeSource(ids.sourceId);
+    }
+  } catch (e) {
+    // ignore
   }
 };
 
@@ -1426,15 +1449,19 @@ export default function RUDAMasterPlan({ map }) {
     };
   }, [map]);
 
-  useEffect(() => {
-    return () => {
-      if (!map) return;
+useEffect(() => {
+  if (!map) return;
 
+  return () => {
+    try {
       Object.keys(RUDA_MASTER_PLAN_LAYER_CONFIG).forEach((layerKey) => {
         removeRudaMapLayer(map, layerKey);
       });
-    };
-  }, [map]);
+    } catch (e) {
+      // map already destroyed
+    }
+  };
+}, [map]);
 
   const getGroupSelection = (group) => {
     const selectedCount = group.children.filter(

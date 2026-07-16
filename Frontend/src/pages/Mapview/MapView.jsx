@@ -19,6 +19,8 @@ import {
   getRudaProposedRoadsGeoJSON,
   getGeodeticNetworkGeoJSON,
   getTrijunctionPoints,
+  getRudaMauzas,
+  getRudaKhasras,
 } from "../../services/api";
 
 import {
@@ -150,7 +152,9 @@ export default function MapView({
   selectedFeatureNumber,
   onFeaturesLoaded,
   onMapReady,
+  boundaryStatus = "verified",
 }) {
+
   const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -321,7 +325,10 @@ export default function MapView({
 
     try {
       const mauzaId = getSelectedMauzaId(selectedMauza);
-      const mauzaGeojson = await getMauzaBoundary(mauzaId);
+      const mauzaGeojson =
+        boundaryStatus === "verified"
+            ? await getMauzaBoundary(mauzaId)
+            : await getRudaMauzas();
 
       if (mauzaGeojson?.features?.length) {
         currentGeojson.current.mauza = mauzaGeojson;
@@ -1713,7 +1720,11 @@ export default function MapView({
         if (selectedMauza) {
           const mauzaId = getSelectedMauzaId(selectedMauza);
 
-          const geojson = await getMauzaBoundary(mauzaId);
+          const geojson =
+            boundaryStatus === "verified"
+              ? await getMauzaBoundary(mauzaId)
+              : await getRudaMauzas();
+
           if (cancelled) return;
 
           if (geojson?.features?.length) {
@@ -1752,6 +1763,7 @@ export default function MapView({
     selectedDistrict,
     selectedTehsil,
     selectedMauza,
+    boundaryStatus,
     isMapReady,
     districtBoundaryVisible,
     tehsilBoundaryVisible,
