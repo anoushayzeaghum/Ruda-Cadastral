@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import mapboxgl from "mapbox-gl";
-import { API_BASE, unwrapGeoJSON } from "./AttributeTable/AdminAttributeTableShell";
+import {
+  API_BASE,
+  unwrapGeoJSON,
+} from "./AttributeTable/AdminAttributeTableShell";
 
 const EMPTY_FC = { type: "FeatureCollection", features: [] };
 
@@ -77,7 +80,13 @@ function addOrUpdateBoundary(map, def, geojson, style) {
       id: def.fill,
       type: "fill",
       source: def.source,
-      filter: ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false],
+      filter: [
+        "match",
+        ["geometry-type"],
+        ["Polygon", "MultiPolygon"],
+        true,
+        false,
+      ],
       paint: {
         "fill-color": style.color,
         "fill-opacity": 0.12 * opacity,
@@ -101,7 +110,11 @@ function addOrUpdateBoundary(map, def, geojson, style) {
         "line-opacity": opacity,
         "line-dasharray": def === LAYERS.rudaNotifiedBoundary ? [2, 2] : [1],
       },
-      layout: { visibility: "visible", "line-cap": "round", "line-join": "round" },
+      layout: {
+        visibility: "visible",
+        "line-cap": "round",
+        "line-join": "round",
+      },
     });
   } else {
     map.setPaintProperty(def.line, "line-color", style.color);
@@ -155,7 +168,8 @@ function fitToData(map, geojson) {
     coords.forEach(walk);
   };
   geojson.features.forEach((feature) => walk(feature?.geometry?.coordinates));
-  if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 13 });
+  if (!bounds.isEmpty())
+    map.fitBounds(bounds, { padding: 60, duration: 900, maxZoom: 13 });
 }
 
 export default function AdministrativeBoundaries({
@@ -206,7 +220,10 @@ export default function AdministrativeBoundaries({
     const response = await axios.get(`${API_BASE}${def.endpoint}`);
     const geojson = unwrapGeoJSON(response.data);
     cache.current[key] = geojson;
-    setFeatureCounts((prev) => ({ ...prev, [key]: geojson.features?.length || 0 }));
+    setFeatureCounts((prev) => ({
+      ...prev,
+      [key]: geojson.features?.length || 0,
+    }));
     return geojson;
   };
 
@@ -271,9 +288,16 @@ export default function AdministrativeBoundaries({
             label={LAYERS.rudaNotifiedBoundary.label}
             style={styles.rudaNotifiedBoundary}
             onChange={() => toggleLayer("rudaNotifiedBoundary")}
-            onStyleChange={(patch) => updateStyle("rudaNotifiedBoundary", patch)}
+            onStyleChange={(patch) =>
+              updateStyle("rudaNotifiedBoundary", patch)
+            }
             detailsOpen={!!detailsOpen.rudaNotifiedBoundary}
-            onDetails={() => setDetailsOpen((prev) => ({ ...prev, rudaNotifiedBoundary: !prev.rudaNotifiedBoundary }))}
+            onDetails={() =>
+              setDetailsOpen((prev) => ({
+                ...prev,
+                rudaNotifiedBoundary: !prev.rudaNotifiedBoundary,
+              }))
+            }
             count={featureCounts.rudaNotifiedBoundary}
           />
 
@@ -291,16 +315,31 @@ export default function AdministrativeBoundaries({
             {phaseOpen && (
               <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] p-2">
                 {PHASE_UI.map((phase) => (
-                  <label key={phase.key} className="flex cursor-pointer items-center gap-2 border-b border-[#343c4c]/60 py-2 last:border-0">
+                  <label
+                    key={phase.key}
+                    className="flex cursor-pointer items-center gap-2 border-b border-[#343c4c]/60 py-2 last:border-0"
+                  >
                     <input
                       type="checkbox"
                       checked={phaseUi[phase.key]}
-                      onChange={() => setPhaseUi((prev) => ({ ...prev, [phase.key]: !prev[phase.key] }))}
+                      onChange={() =>
+                        setPhaseUi((prev) => ({
+                          ...prev,
+                          [phase.key]: !prev[phase.key],
+                        }))
+                      }
                       className="accent-[#65c96b]"
                     />
-                    <span className="h-4 w-4 rounded-sm border border-white/40" style={{ backgroundColor: phase.color }} />
-                    <span className="text-[11px] text-white/85">{phase.label}</span>
-                    <span className="ml-auto text-[9px] text-white/40">UI only</span>
+                    <span
+                      className="h-4 w-4 rounded-sm border border-white/40"
+                      style={{ backgroundColor: phase.color }}
+                    />
+                    <span className="text-[11px] text-white/85">
+                      {phase.label}
+                    </span>
+                    <span className="ml-auto text-[9px] text-white/40">
+                      UI only
+                    </span>
                   </label>
                 ))}
               </div>
@@ -315,7 +354,12 @@ export default function AdministrativeBoundaries({
             onChange={() => toggleLayer("districtBoundary")}
             onStyleChange={(patch) => updateStyle("districtBoundary", patch)}
             detailsOpen={!!detailsOpen.districtBoundary}
-            onDetails={() => setDetailsOpen((prev) => ({ ...prev, districtBoundary: !prev.districtBoundary }))}
+            onDetails={() =>
+              setDetailsOpen((prev) => ({
+                ...prev,
+                districtBoundary: !prev.districtBoundary,
+              }))
+            }
             count={featureCounts.districtBoundary}
           />
 
@@ -327,7 +371,12 @@ export default function AdministrativeBoundaries({
             onChange={() => toggleLayer("tehsilBoundary")}
             onStyleChange={(patch) => updateStyle("tehsilBoundary", patch)}
             detailsOpen={!!detailsOpen.tehsilBoundary}
-            onDetails={() => setDetailsOpen((prev) => ({ ...prev, tehsilBoundary: !prev.tehsilBoundary }))}
+            onDetails={() =>
+              setDetailsOpen((prev) => ({
+                ...prev,
+                tehsilBoundary: !prev.tehsilBoundary,
+              }))
+            }
             count={featureCounts.tehsilBoundary}
           />
         </div>
@@ -352,8 +401,16 @@ function LayerItem({
     <div className="mt-3 first:mt-1">
       <div className="flex items-center justify-between">
         <label className="flex min-w-0 cursor-pointer items-center gap-2">
-          <input type="checkbox" checked={checked} onChange={onChange} className="accent-[#65c96b]" />
-          <span className="relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/50" style={{ backgroundColor: style.color }}>
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={onChange}
+            className="accent-[#65c96b]"
+          />
+          <span
+            className="relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/50"
+            style={{ backgroundColor: style.color }}
+          >
             <input
               type="color"
               value={style.color}
@@ -362,15 +419,29 @@ function LayerItem({
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             />
           </span>
-          <span className="truncate text-[11px]">{loading ? `${label} (Loading...)` : label}</span>
+          <span className="truncate text-[11px]">
+            {loading ? `${label} (Loading...)` : label}
+          </span>
         </label>
 
         <div className="flex items-center gap-1">
-          <button type="button" className="rounded p-0.5 text-white/60 hover:bg-[#0f3d2e]" title={`${label} attribute table`}>
+          <button
+            type="button"
+            className="rounded p-0.5 text-white/60 hover:bg-[#0f3d2e]"
+            title={`${label} attribute table`}
+          >
             <Grid3X3 size={14} />
           </button>
-          <button type="button" onClick={onDetails} className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e]">
-            {detailsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <button
+            type="button"
+            onClick={onDetails}
+            className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e]"
+          >
+            {detailsOpen ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronRight size={14} />
+            )}
           </button>
         </div>
       </div>
@@ -381,15 +452,22 @@ function LayerItem({
           min="0"
           max="100"
           value={style.opacity}
-          onChange={(event) => onStyleChange({ opacity: Number(event.target.value) })}
+          onChange={(event) =>
+            onStyleChange({ opacity: Number(event.target.value) })
+          }
           className="h-[3px] flex-1 cursor-pointer rounded-full bg-[#8fd36f] accent-[#65c96b]"
         />
-        <span className="w-7 text-right text-[11px] text-white/90">{style.opacity}%</span>
+        <span className="w-7 text-right text-[11px] text-white/90">
+          {style.opacity}%
+        </span>
       </div>
 
       {detailsOpen && !children && (
         <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
-          <div className="flex justify-between"><span>Total Features</span><span>{count ?? 0}</span></div>
+          <div className="flex justify-between">
+            <span>Total Features</span>
+            <span>{count ?? 0}</span>
+          </div>
         </div>
       )}
       {children}
