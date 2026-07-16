@@ -2098,7 +2098,7 @@ function LayerItem({
           </span>
 
           <span className="truncate text-[11px]">{label}</span>
-        </label>
+        </label> 
 
         <div className="flex items-center gap-1">
           <button
@@ -2128,6 +2128,7 @@ function LayerItem({
           onChange={(event) => onOpacityChange(Number(event.target.value))}
           className="h-[3px] flex-1 cursor-pointer rounded-full bg-[#8fd36f] accent-[#65c96b]"
         />
+
 
         <span className="w-7 text-right text-[11px] text-white/90">
           {opacity}%
