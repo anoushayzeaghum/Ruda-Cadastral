@@ -53,7 +53,12 @@ const GROUP_ICONS = {
    HEADER — same gradient / logo / actions language as the
    public site header, adapted for the logged-in admin shell.
    ============================================================ */
-function DashboardHeader({ darkMode, setDarkMode, sidebarOpen, toggleSidebar }) {
+function DashboardHeader({
+  darkMode,
+  setDarkMode,
+  sidebarOpen,
+  toggleSidebar,
+}) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -89,7 +94,9 @@ function DashboardHeader({ darkMode, setDarkMode, sidebarOpen, toggleSidebar }) 
 
         <div className="flex items-center gap-2 min-w-0">
           <h1 className="text-base sm:text-xl md:text-2xl font-black tracking-tight text-white truncate">
-            <span className="hidden sm:inline">RUDA GIS — Administration Portal</span>
+            <span className="hidden sm:inline">
+              RUDA GIS — Administration Portal
+            </span>
             <span className="sm:hidden">Admin Portal</span>
           </h1>
         </div>
@@ -147,7 +154,9 @@ function DashboardSidebar({ sidebarOpen }) {
     location.pathname === "/area/khasra" ||
     location.pathname === "/area/murabba";
 
-  const menu = [{ icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" }];
+  const menu = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  ];
   const areaItems = [
     { label: "District", path: "/area/district" },
     { label: "Tehsil", path: "/area/tehsil" },
@@ -230,7 +239,8 @@ function DashboardSidebar({ sidebarOpen }) {
             }`}
           >
             {areaItems.map((it) => {
-              const mauzaIsSelected = it.path === "/area/mauza" && isMauzaGroupPath;
+              const mauzaIsSelected =
+                it.path === "/area/mauza" && isMauzaGroupPath;
               return (
                 <div key={it.label}>
                   <button
@@ -343,7 +353,9 @@ function StatTicker() {
 
         <div
           className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-6 ${
-            group.stats.length === 3 ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-4"
+            group.stats.length === 3
+              ? "grid-cols-3"
+              : "grid-cols-2 sm:grid-cols-4"
           } ${fade ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1.5"}`}
         >
           {group.stats.map(({ value, label }) => (
@@ -365,7 +377,9 @@ function StatTicker() {
               onClick={() => goTo(i)}
               aria-label={`Show ${g.title} stats`}
               className={`rounded-full transition-all duration-300 ${
-                i === index ? "h-1.5 w-5 bg-[#70D84F]" : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
+                i === index
+                  ? "h-1.5 w-5 bg-[#70D84F]"
+                  : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
               }`}
             />
           ))}
@@ -390,7 +404,9 @@ function GroupCard({ group }) {
       px-4 py-4 shadow-sm ring-1 ring-transparent transition-all duration-300 hover:shadow-md ${tone.ring}`}
     >
       <div className="flex items-center gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone.iconWrap}`}>
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone.iconWrap}`}
+        >
           {Icon ? <Icon size={18} /> : null}
         </div>
         <h3 className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100 leading-tight">
@@ -401,7 +417,9 @@ function GroupCard({ group }) {
       <div className={`mt-4 grid ${cols} gap-3`}>
         {group.stats.map((s) => (
           <div key={s.label}>
-            <div className={`text-[18px] font-black tracking-tight leading-none ${tone.value}`}>
+            <div
+              className={`text-[18px] font-black tracking-tight leading-none ${tone.value}`}
+            >
               {s.value}
             </div>
             <div className="mt-1 text-[10.5px] font-medium leading-tight text-slate-500 dark:text-slate-400">
@@ -480,7 +498,8 @@ export default function Dashboard() {
                       Dashboard Overview
                     </h2>
                     <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Land Information System, RUDA Metaverse, RTW Packages &amp; Chahar Bagh — live snapshot
+                      Land Information System, RUDA Metaverse, RTW Packages
+                      &amp; Chahar Bagh — live snapshot
                     </p>
                   </div>
                 </div>
