@@ -33,6 +33,10 @@ router.register(r"rudamauza/create", CreateRudaMauzaView, basename="create-ruda-
 router.register(r"rudamauza/update", UpdateRudaMauzaView, basename="update-ruda-mauza")
 router.register(r"rudamauza/delete", DeleteRudaMauzaView, basename="delete-ruda-mauza")
 
+router.register(r"rudasquare", ListRudaSquareView, basename="rudasquare",)
+router.register(r"rudasquare/create", CreateRudaSquareView, basename="create-ruda-square",)
+router.register(r"rudasquare/update", UpdateRudaSquareView, basename="update-ruda-square",)
+router.register(r"rudasquare/delete", DeleteRudaSquareView, basename="delete-ruda-square",)
 #--------------------------------- Khasra View ---------------------------------
 router.register(r"khasra", ListKhasraView, basename="khasra")   
 router.register(r"khasra/create", CreateKhasraView, basename="create-khasra")

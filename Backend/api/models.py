@@ -3389,3 +3389,44 @@ class LahoreTransportationRoad(models.Model):
     class Meta:
         managed = False
         db_table = "lahore_transportation_roads"
+
+
+class RudaSquare(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    district = models.CharField(
+        max_length=100,
+        db_index=True
+    )
+
+    tehsil = models.CharField(
+        max_length=100,
+        db_index=True
+    )
+
+    mouza = models.CharField(
+        max_length=150,
+        db_index=True
+    )
+
+    square = models.IntegerField(
+        db_index=True
+    )
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326
+    )
+
+    def __str__(self):
+        return f"{self.mouza} - {self.square}"
+
+    class Meta:
+        managed = False
+        db_table = "ruda_square"
+
+        indexes = [
+            models.Index(fields=["district"]),
+            models.Index(fields=["tehsil"]),
+            models.Index(fields=["mouza"]),
+            models.Index(fields=["square"]),
+        ]

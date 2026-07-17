@@ -77,3 +77,5 @@ from .RudaMasterPlan.RailwayStationsView import *
 from .RudaMasterPlan.HudiaraDrainView import *
 
 from .RudaMasterPlan.LahoreTransportationRoadView import *
+
+from .RudaSquare import *
