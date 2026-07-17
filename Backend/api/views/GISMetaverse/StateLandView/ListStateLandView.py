@@ -22,63 +22,127 @@ class ListStateLandView(viewsets.ViewSet):
     ]
 
     def list(self, request, *args, **kwargs):
+
         try:
+
             gid = request.query_params.get("gid")
 
-            queryset = StateLand.objects.only(
-                "gid",
-                "district",
-                "tehsil",
-                "mouza",
-                "square",
-                "khasra",
-                "sub_khasra",
-                "khasra_lab",
-                "remarks",
-                "state_land",
-                "area_sqft",
-                "date",
-                "geom",
-            )
+            filters = []
+            values = []
 
             if gid:
-                obj = queryset.filter(gid=gid).first()
+                filters.append("gid=%s")
+                values.append(gid)
 
-                if not obj:
+            for field in self.filter_fields:
+                value = request.query_params.get(field)
+                if value not in [None, ""]:
+                    filters.append(f"{field}=%s")
+                    values.append(value)
+
+            where_clause = ""
+            if filters:
+                where_clause = "WHERE " + " AND ".join(filters)
+
+            with connection.cursor() as cursor:
+
+                cursor.execute(
+                    f"""
+                    SELECT
+                        gid,
+                        district,
+                        tehsil,
+                        mouza,
+                        square,
+                        khasra,
+                        sub_khasra,
+                        khasra_lab,
+                        remarks,
+                        state_land,
+                        area_sqft,
+                        date,
+                        ST_AsGeoJSON(
+                            ST_SimplifyPreserveTopology(geom,0.00005)
+                        )::json
+                    FROM stateland
+                    {where_clause}
+                    """,
+                    values,
+                )
+
+                rows = cursor.fetchall()
+
+            if gid:
+
+                if not rows:
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
                         message="StateLand not found.",
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
+                row = rows[0]
+
+                feature = {
+                    "type": "Feature",
+                    "id": row[0],
+                    "geometry": row[12],
+                    "properties": {
+                        "gid": row[0],
+                        "district": row[1],
+                        "tehsil": row[2],
+                        "mouza": row[3],
+                        "square": row[4],
+                        "khasra": row[5],
+                        "sub_khasra": row[6],
+                        "khasra_lab": row[7],
+                        "remarks": row[8],
+                        "state_land": row[9],
+                        "area_sqft": row[10],
+                        "date": row[11],
+                    },
+                }
+
                 return ApiResponse(
                     status=status.HTTP_200_OK,
                     message="StateLand found.",
-                    data=StateLandSerializer(obj).data,
+                    data=feature,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            filters = {}
+            features = []
 
-            for field in self.filter_fields:
-                value = request.query_params.get(field)
+            for row in rows:
 
-                if value not in [None, ""]:
-                    filters[field] = value
-
-            if filters:
-                queryset = queryset.filter(**filters)
-
-            serializer = StateLandSerializer(queryset, many=True)
+                features.append({
+                    "type": "Feature",
+                    "id": row[0],
+                    "geometry": row[12],
+                    "properties": {
+                        "gid": row[0],
+                        "district": row[1],
+                        "tehsil": row[2],
+                        "mouza": row[3],
+                        "square": row[4],
+                        "khasra": row[5],
+                        "sub_khasra": row[6],
+                        "khasra_lab": row[7],
+                        "remarks": row[8],
+                        "state_land": row[9],
+                        "area_sqft": row[10],
+                        "date": row[11],
+                    },
+                })
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
                 message="StateLand records found.",
-                data=serializer.data,
+                data=features,
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
         except Exception as e:
+
             import traceback
 
             return ApiResponse(
@@ -127,9 +191,7 @@ class ListStateLandView(viewsets.ViewSet):
                         state_land,
                         area_sqft,
                         date,
-                        ST_AsGeoJSON(
-                            ST_SimplifyPreserveTopology(geom,0.00005)
-                        )::json
+                        ST_AsGeoJSON(geom)::json
                     FROM stateland
                     WHERE gid=%s
                     """,

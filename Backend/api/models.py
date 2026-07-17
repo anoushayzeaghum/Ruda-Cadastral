@@ -1022,18 +1022,40 @@ class GeodeticNetwork(models.Model):
 
     gid = models.AutoField(primary_key=True)
 
-    name = models.CharField(max_length=100, null=True, blank=True)
+    name = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    # Actual DB columns are easting_(m and northing_(
-    # Keep Python/API field names clean as easting_m / northing_m.
-    easting_m = models.FloatField(db_column="easting_m", null=True, blank=True)
-    northing_m = models.FloatField(db_column="northing_m", null=True, blank=True)
+    easting_m = models.FloatField(
+        db_column="easting_m",
+        null=True,
+        blank=True,
+    )
 
-    code = models.CharField(max_length=50, null=True, blank=True)
+    northing_m = models.FloatField(
+        db_column="northing_m",
+        null=True,
+        blank=True,
+    )
 
-    elevation = models.FloatField(null=True, blank=True)
+    code = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    geom = gis_models.PointField(srid=4326)
+    elevation = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.PointField(
+        srid=4326,
+    )
 
     def __str__(self):
         return self.name if self.name else f"Geodetic {self.gid}"
@@ -1041,6 +1063,11 @@ class GeodeticNetwork(models.Model):
     class Meta:
         managed = False
         db_table = "geodeticnetwork"
+
+        indexes = [
+            models.Index(fields=["name"]),
+            models.Index(fields=["code"]),
+        ]
 
 
 # =========================

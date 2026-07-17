@@ -128,9 +128,7 @@ class ListAwardedLandView(viewsets.ViewSet):
                         remarks,
                         area_sqft,
                         date,
-                        ST_AsGeoJSON(
-                            ST_SimplifyPreserveTopology(geom,0.00005)
-                        )::json
+                        ST_AsGeoJSON(geom)::json
                     FROM awardedland
                     WHERE gid=%s
                     """,

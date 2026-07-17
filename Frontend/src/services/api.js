@@ -307,8 +307,33 @@ export const getMauzaBoundary = async (id) => {
 };
 
 export const getKhasraBoundary = async (id) => {
-  const res = await API.get(`/khasra/${id}/geojson`);
-  return normalizeGeoJson(res);
+
+  const start = performance.now();
+
+  const res = await API.get(
+    `/khasra/${id}/geojson`,
+    {
+      headers:{
+        "Accept-Encoding":"gzip"
+      }
+    }
+  );
+
+
+  console.log(
+    "Khasra API:",
+    (performance.now()-start).toFixed(2),
+    "ms"
+  );
+
+
+  return {
+    type:"FeatureCollection",
+    features:[
+      res.data.data
+    ]
+  };
+
 };
 
 export const getMurabbaBoundary = async (id) => {
