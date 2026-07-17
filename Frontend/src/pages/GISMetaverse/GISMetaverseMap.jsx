@@ -202,9 +202,9 @@ function animateIntroContinuously(
         return;
       }
 
-      const overallProgress = Math.min(
-        (currentTime - startedAt) / totalDuration,
-        1,
+      const overallProgress = Math.max(
+        0,
+        Math.min((currentTime - startedAt) / totalDuration, 1),
       );
 
       const scaledProgress = overallProgress * totalSegments;
