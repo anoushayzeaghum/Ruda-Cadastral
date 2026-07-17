@@ -736,3 +736,6 @@ export const getRudaMauzas = async (mauzaId) =>
 
 export const getRudaKhasras = async (mauzaId) =>
   getRudaGeoJSONByMauza("/rudakhasra/", mauzaId);
+
+export const getRudaSquares = async (mauzaId) =>
+  getRudaGeoJSONByMauza("/rudasquare/", mauzaId);

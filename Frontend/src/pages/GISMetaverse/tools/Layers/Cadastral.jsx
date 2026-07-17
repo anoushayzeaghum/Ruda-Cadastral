@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import axios from "axios";
+import {
+  getRudaMauzas,
+  getRudaKhasras,
+  getRudaSquares,
+} from "../../../../services/api";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import MauzaBoundaryAttribute from "./AttributeTable/MauzaBoundaryAttribute";
@@ -815,8 +819,8 @@ export default function Cadastral({ map, selectedProjectId }) {
 
     try {
       // Fetch the complete Mauza model with no project or tehsil filter.
-      const response = await axios.get(`${API_BASE}/mauza/`);
-      const geojson = unwrapGeoJSON(response.data);
+      // const response = await axios.get(`${API_BASE}/mauza/`);
+      const geojson = await getRudaMauzas();
       const allMauzas = uniqueByMauza(geojson?.features || []);
       const completeMauzaGeojson = {
         type: "FeatureCollection",
@@ -861,9 +865,16 @@ export default function Cadastral({ map, selectedProjectId }) {
 
     try {
       // Fetch the complete Square or Khasra model directly.
-      const endpoint = key === "khasra" ? "/khasra/" : "/square/";
-      const response = await axios.get(`${API_BASE}${endpoint}`);
-      const geojson = unwrapGeoJSON(response.data);
+      // const endpoint = key === "khasra" ? "/khasra/" : "/square/";
+      // const response = await axios.get(`${API_BASE}${endpoint}`);
+      // const geojson = unwrapGeoJSON(response.data);
+      let geojson;
+
+      if (key === "khasra") {
+        geojson = await getRudaKhasras();
+      } else {
+        geojson = await getRudaSquares();
+      }
 
       cachedData.current[key] = geojson;
 
