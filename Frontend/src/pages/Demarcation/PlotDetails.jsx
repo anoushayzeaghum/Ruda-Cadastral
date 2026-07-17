@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import commercialPlot12Pdf from "../../assets/Commercial Plot-12.pdf";
 import commercialPlot13Pdf from "../../assets/Commercial Plot-13.pdf";
@@ -11,6 +12,11 @@ const officialDemarcationPdfs = {
   13: commercialPlot13Pdf,
   14: commercialPlot14Pdf,
 };
+
+// Add plot-number => PDF entries here the same way officialDemarcationPdfs is
+// populated above once site plan / part plan files are available per plot.
+const sitePlanPdfs = {};
+const partPlanPdfs = {};
 
 const safeValue = (...values) => {
   for (const value of values) {
@@ -65,6 +71,14 @@ const loadFirstAvailableImage = async (sources = []) => {
 
 export default function PlotDetails({ parcel = null, filters = {} }) {
   const [showPrintOptions, setShowPrintOptions] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(!parcel);
+
+  // Auto-open whenever a plot is selected/filtered, auto-close when cleared.
+  // The user can still manually toggle it in between via the chevron button.
+  useEffect(() => {
+    setIsCollapsed(!parcel);
+  }, [parcel]);
+
   const p = parcel?.properties || {};
 
   const details = {
@@ -114,26 +128,18 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
     ["Remarks", details.remarks],
   ];
 
-  const handlePrintOfficialDemarcation = () => {
-    const plotKey = getPlotPdfKey(details.plotNo);
-    const pdfUrl = officialDemarcationPdfs[plotKey];
-
-    if (!pdfUrl) {
-      alert("Official demarcation is not available for this plot.");
-      return;
-    }
-
+  const printPdfInNewWindow = (pdfUrl, windowTitle) => {
     const printWindow = window.open("", "_blank");
 
     if (!printWindow) {
-      alert("Please allow popups to print official demarcation.");
+      alert("Please allow popups to print.");
       return;
     }
 
     printWindow.document.write(`
       <html>
         <head>
-          <title>Official Demarcation Plot ${plotKey}</title>
+          <title>${windowTitle}</title>
           <style>
             html, body {
               margin: 0;
@@ -156,6 +162,42 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
     `);
 
     printWindow.document.close();
+  };
+
+  const handlePrintOfficialDemarcation = () => {
+    const plotKey = getPlotPdfKey(details.plotNo);
+    const pdfUrl = officialDemarcationPdfs[plotKey];
+
+    if (!pdfUrl) {
+      alert("Official demarcation is not available for this plot.");
+      return;
+    }
+
+    printPdfInNewWindow(pdfUrl, `Official Demarcation Plot ${plotKey}`);
+  };
+
+  const handlePrintSitePlan = () => {
+    const plotKey = getPlotPdfKey(details.plotNo);
+    const pdfUrl = sitePlanPdfs[plotKey];
+
+    if (!pdfUrl) {
+      alert("Site plan is not available for this plot.");
+      return;
+    }
+
+    printPdfInNewWindow(pdfUrl, `Site Plan Plot ${plotKey}`);
+  };
+
+  const handlePrintPartPlan = () => {
+    const plotKey = getPlotPdfKey(details.plotNo);
+    const pdfUrl = partPlanPdfs[plotKey];
+
+    if (!pdfUrl) {
+      alert("Part plan is not available for this plot.");
+      return;
+    }
+
+    printPdfInNewWindow(pdfUrl, `Part Plan Plot ${plotKey}`);
   };
 
   const handlePrintReport = async () => {
@@ -382,66 +424,112 @@ export default function PlotDetails({ parcel = null, filters = {} }) {
   };
 
   return (
-    <div className="bg-white border border-[#b8c2cc] shadow-[0_0_0_1px_rgba(0,0,0,0.02)] flex flex-col min-h-0 rounded-md">
-      <div className="border-b border-[#d4dbe2] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-3">
-        <h2 className="text-[14px] sm:text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
-          Plot Details
-        </h2>
+    <div className="bg-white/95 backdrop-blur-sm border border-[#b8c2cc] shadow-xl flex flex-col min-h-0 rounded-md overflow-hidden">
+      <div className="border-b border-[#d4dbe2] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3">
+        <button
+          type="button"
+          onClick={() => setIsCollapsed((prev) => !prev)}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <h2 className="text-[14px] sm:text-[17px] font-bold uppercase tracking-wide text-[#5b5b5b]">
+            Plot Details
+          </h2>
+          {parcel && (
+            <span className="shrink-0 rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-700 sm:text-[11px]">
+              Plot {details.plotNo}
+            </span>
+          )}
+        </button>
 
-        {parcel && (
-          <div className="relative">
-            <button
-              onClick={() => setShowPrintOptions((prev) => !prev)}
-              className="text-[11px] sm:text-[12px] font-semibold tracking-wider text-white bg-green-700 px-2 sm:px-3 py-1.5 sm:py-2 rounded hover:bg-[#165c2d] transition"
-              type="button"
-            >
-              Print
-            </button>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {parcel && (
+            <div className="relative">
+              <button
+                onClick={() => setShowPrintOptions((prev) => !prev)}
+                className="text-[11px] sm:text-[12px] font-semibold tracking-wider text-white bg-green-700 px-2 sm:px-3 py-1.5 sm:py-2 rounded hover:bg-[#165c2d] transition"
+                type="button"
+              >
+                Print
+              </button>
 
-            {showPrintOptions && (
-              <div className="absolute right-0 top-[34px] sm:top-[38px] z-50 w-[200px] sm:w-[210px] bg-white border border-gray-300 rounded shadow-lg overflow-hidden">
-                <button
-                  type="button"
-                  onClick={handlePrintReport}
-                  className="w-full text-left px-3 py-2 text-[12px] sm:text-[13px] text-gray-700 hover:bg-gray-100"
-                >
-                  Print Report
-                </button>
+              {showPrintOptions && (
+                <div className="absolute right-0 top-[34px] sm:top-[38px] z-50 w-[200px] sm:w-[210px] bg-white border border-gray-300 rounded shadow-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={handlePrintReport}
+                    className="w-full text-left px-3 py-2 text-[12px] sm:text-[13px] text-gray-700 hover:bg-gray-100"
+                  >
+                    Print Report
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPrintOptions(false);
-                    handlePrintOfficialDemarcation();
-                  }}
-                  className="w-full text-left px-3 py-2 text-[12px] sm:text-[13px] text-gray-700 hover:bg-gray-100"
-                >
-                  Print Official Demarcation
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPrintOptions(false);
+                      handlePrintOfficialDemarcation();
+                    }}
+                    className="w-full text-left px-3 py-2 text-[12px] sm:text-[13px] text-gray-700 hover:bg-gray-100"
+                  >
+                    Print Official Demarcation
+                  </button>
 
-      <div className="p-3 sm:p-4 overflow-auto max-h-[280px] sm:max-h-[350px]">
-        {!parcel ? (
-          <div className="flex items-center justify-center py-6 text-gray-400 text-sm">
-            No plot selected.
-          </div>
-        ) : (
-          <div className="space-y-1.5 sm:space-y-2">
-            {fields.map(([label, value]) => (
-              <div key={label} className="flex justify-between items-start gap-2 sm:gap-3 p-1.5 sm:p-2 bg-gray-50 rounded">
-                <div className="text-[11px] sm:text-sm text-gray-600 shrink-0">{label}</div>
-                <div className="font-medium text-[11px] sm:text-sm text-gray-800 text-right whitespace-pre-line break-words">
-                  {String(value)}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPrintOptions(false);
+                      handlePrintSitePlan();
+                    }}
+                    className="w-full text-left px-3 py-2 text-[12px] sm:text-[13px] text-gray-700 hover:bg-gray-100"
+                  >
+                    Print Site Plan
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPrintOptions(false);
+                      handlePrintPartPlan();
+                    }}
+                    className="w-full text-left px-3 py-2 text-[12px] sm:text-[13px] text-gray-700 hover:bg-gray-100"
+                  >
+                    Print Part Plan
+                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsCollapsed((prev) => !prev)}
+            title={isCollapsed ? "Expand" : "Collapse"}
+            className="flex h-7 w-7 items-center justify-center rounded text-[#5b5b5b] transition hover:bg-gray-100 sm:h-8 sm:w-8"
+          >
+            {isCollapsed ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        </div>
       </div>
+
+      {!isCollapsed && (
+        <div className="p-3 sm:p-4 overflow-auto max-h-[280px] sm:max-h-[350px]">
+          {!parcel ? (
+            <div className="flex items-center justify-center py-6 text-gray-400 text-sm">
+              No plot selected.
+            </div>
+          ) : (
+            <div className="space-y-1.5 sm:space-y-2">
+              {fields.map(([label, value]) => (
+                <div key={label} className="flex justify-between items-start gap-2 sm:gap-3 p-1.5 sm:p-2 bg-gray-50 rounded">
+                  <div className="text-[11px] sm:text-sm text-gray-600 shrink-0">{label}</div>
+                  <div className="font-medium text-[11px] sm:text-sm text-gray-800 text-right whitespace-pre-line break-words">
+                    {String(value)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

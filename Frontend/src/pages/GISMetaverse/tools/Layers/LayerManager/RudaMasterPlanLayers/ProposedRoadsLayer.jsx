@@ -1,11 +1,7 @@
 export const RUDA_PROPOSED_ROAD_LEGEND = [
   { label: "Ravi Ring Road", color: "#b30000", values: ["ravi ring road"] },
   { label: "Primary Road", color: "#ff1a1a", values: ["primary road"] },
-  {
-    label: "Secondary Road",
-    color: "#55aa00",
-    values: ["secondary road"],
-  },
+  { label: "Secondary Road", color: "#55aa00", values: ["secondary road"] },
   { label: "Tertiary Road", color: "#f2b705", values: ["tertiary road"] },
   { label: "Bridge", color: "#ff4fc3", values: ["bridge"] },
   {
@@ -69,14 +65,16 @@ export const buildRudaProposedRoadColorExpression = (
 
 export const getRudaProposedRoadLinePaint = (
   roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
-  opacityRatio = 1,
+  opacity = 1,
 ) => ({
   "line-color": buildRudaProposedRoadColorExpression(roadColors),
   "line-width": 3,
-  "line-opacity": opacityRatio,
+  "line-opacity": opacity,
 });
 
-export default function RudaProposedRoadsLayer({
+export const getRudaProposedRoadOutlinePaint = getRudaProposedRoadLinePaint;
+
+export default function ProposedRoadsLayer({
   colors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
   onColorChange,
 }) {
