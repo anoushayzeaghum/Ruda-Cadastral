@@ -381,7 +381,7 @@ export default function DemarcationMap({
   ]);
 
   return (
-    <div className="h-[250px] sm:h-[300px] lg:h-full lg:col-span-6 bg-white border border-[#b8c2cc] relative overflow-hidden rounded-md">
+    <div className="absolute inset-0 h-full w-full bg-white overflow-hidden">
       <div ref={containerRef} className="w-full h-full" />
     </div>
   );
