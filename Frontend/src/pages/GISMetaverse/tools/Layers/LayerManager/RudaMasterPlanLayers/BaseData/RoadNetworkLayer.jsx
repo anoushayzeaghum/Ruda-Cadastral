@@ -403,16 +403,33 @@ export function setRoadNetworkOpacity(map, opacity) {
 }
 
 export function removeRoadNetworkLayer(map) {
+  if (!map) return;
+
+  // Map has been destroyed or style is unavailable
+  try {
+    if (!map.getStyle()) return;
+  } catch (e) {
+    return;
+  }
+
   Object.values(ROAD_NETWORK_LAYER_IDS)
     .reverse()
     .forEach((id) => {
-      if (map?.getLayer(id)) {
-        map.removeLayer(id);
+      try {
+        if (map.getLayer(id)) {
+          map.removeLayer(id);
+        }
+      } catch (e) {
+        // Ignore cleanup errors
       }
     });
 
-  if (map?.getSource(SOURCE_ID)) {
-    map.removeSource(SOURCE_ID);
+  try {
+    if (map.getSource(SOURCE_ID)) {
+      map.removeSource(SOURCE_ID);
+    }
+  } catch (e) {
+    // Ignore cleanup errors
   }
 }
 

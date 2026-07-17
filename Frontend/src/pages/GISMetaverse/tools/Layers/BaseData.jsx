@@ -224,15 +224,28 @@ function addOrUpdateMapLayer(map, key, geojson, color, opacity) {
 function removeMapLayer(map, key) {
   if (!map) return;
 
+  try {
+    if (!map.getStyle()) return;
+  } catch {
+    return;
+  }
+
   const ids = getIds(key);
 
   [ids.point, ids.line, ids.fill].forEach((layerId) => {
-    if (map.getLayer(layerId)) map.removeLayer(layerId);
+    try {
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId);
+      }
+    } catch {}
   });
 
-  if (map.getSource(ids.source)) map.removeSource(ids.source);
+  try {
+    if (map.getSource(ids.source)) {
+      map.removeSource(ids.source);
+    }
+  } catch {}
 }
-
 export default function BaseData({ map }) {
   const [open, setOpen] = useState(false);
   const [layers, setLayers] = useState(createInitialLayers);
@@ -337,34 +350,27 @@ export default function BaseData({ map }) {
   };
 
   useEffect(() => {
+  return () => {
     if (!map) return;
 
+    // Don't touch layers if the map/style has already been destroyed.
+    try {
+      if (!map.getStyle()) return;
+    } catch {
+      return;
+    }
+
     LAYER_DEFS.forEach((definition) => {
-      const state = layers[definition.key];
-
-      if (!state.visible) {
-        requestTokenRef.current[definition.key] = null;
-        if (definition.customRoadStyle) {
-          setRoadNetworkVisibility(map, false);
-        } else if (definition.customLandUseStyle) {
-          setLandUseVisibility(map, false);
-        } else {
-          setLayerVisibility(map, definition.key, false);
-        }
-        return;
+      if (definition.customRoadStyle) {
+        removeRoadNetworkLayer(map);
+      } else if (definition.customLandUseStyle) {
+        removeLandUseLayer(map);
+      } else {
+        removeMapLayer(map, definition.key);
       }
-
-      if (!definition.fetchGeoJSON) {
-        setStatuses((previous) => ({
-          ...previous,
-          [definition.key]: "Backend not connected",
-        }));
-        return;
-      }
-
-      loadLayer(definition);
     });
-  }, [map, ...LAYER_DEFS.map((definition) => layers[definition.key].visible)]);
+  };
+}, [map]);
 
   useEffect(() => {
     if (!map) return undefined;
