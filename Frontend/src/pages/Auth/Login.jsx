@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowRight,
-  Eye,
-  EyeOff,
-  LockKeyhole,
-  Mail,
-} from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import RudaLogo from "../../assets/RUDA L&M.png";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -141,7 +135,7 @@ export default function Login() {
           loop
           muted
           playsInline
-          className="absolute inset-0 h-full w-full object-cover opacity-55"
+          className="absolute inset-0 h-full w-full object-cover opacity-100"
         >
           <source
             src="https://videos.pexels.com/video-files/1851190/1851190-uhd_3840_2160_25fps.mp4"
@@ -172,8 +166,9 @@ export default function Login() {
 
       <main className="relative z-10 flex min-h-screen w-full items-center justify-center p-4 sm:p-6 lg:p-8">
         <div
-          className={`relative w-full max-w-[460px] overflow-hidden rounded-[2.5rem] border border-[#8fd36f]/20 bg-[#0b2a1d]/95 p-7 shadow-[0_34px_90px_-22px_rgba(0,0,0,0.92)] backdrop-blur-2xl transition-all duration-1000 sm:p-10 ${mounted ? "opacity-100" : "opacity-0"
-            }`}
+          className={`relative w-full max-w-[460px] overflow-hidden rounded-[2.5rem] border border-[#8fd36f]/20 bg-[#0b2a1d]/95 p-7 shadow-[0_34px_90px_-22px_rgba(0,0,0,0.92)] backdrop-blur-2xl transition-all duration-1000 sm:p-10 ${
+            mounted ? "opacity-100" : "opacity-0"
+          }`}
           style={{
             animation: mounted
               ? "authPanelIn 1000ms cubic-bezier(0.16,1,0.3,1) both"
@@ -296,11 +291,7 @@ export default function Login() {
                       showPassword ? "Hide password" : "Show password"
                     }
                   >
-                    {showPassword ? (
-                      <EyeOff size={16} />
-                    ) : (
-                      <Eye size={16} />
-                    )}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
@@ -345,9 +336,7 @@ export default function Login() {
                 />
 
                 <span className="relative">
-                  {isLoading
-                    ? "Authenticating..."
-                    : "Sign in to Dashboard"}
+                  {isLoading ? "Authenticating..." : "Sign in to Dashboard"}
                 </span>
 
                 {!isLoading && (
