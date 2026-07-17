@@ -10,13 +10,13 @@ import RoadNetworkLegend, {
   removeRoadNetworkLayer,
   setRoadNetworkOpacity,
   setRoadNetworkVisibility,
-} from "./LayerManager/RudaMasterPlanLayers/BaseData/RoadNetworkLayer";
+} from "./LayerManager/BaseData/RoadNetworkLayer";
 import LandUseLegend, {
   addOrUpdateLandUseLayer,
   removeLandUseLayer,
   setLandUseOpacity,
   setLandUseVisibility,
-} from "./LayerManager/RudaMasterPlanLayers/BaseData/LandUseLayer";
+} from "./LayerManager/BaseData/LandUseLayer";
 
 const SOURCE_PREFIX = "gism-base-data";
 
