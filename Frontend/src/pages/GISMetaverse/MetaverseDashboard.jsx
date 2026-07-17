@@ -59,10 +59,13 @@ export default function MetaverseDashboard() {
   const defaultAdminBoundaryVisibility = {
     rudaBoundary: false,
     rudaMauzaBoundary: false,
+    rudaPhasesBoundary: false,
     geodeticNetwork: false,
     proposedRoads: false,
 
     rudaBoundaryOpacity: 50,
+    rudaMauzaBoundaryOpacity: 100,
+    rudaPhasesBoundaryOpacity: 100,
     geodeticNetworkOpacity: 100,
     proposedRoadsOpacity: 100,
   };
@@ -84,8 +87,11 @@ export default function MetaverseDashboard() {
 
     setAdminBoundaryVisibility((prev) => ({
       ...prev,
-      rudaBoundary: true,
-      rudaBoundaryOpacity: prev.rudaBoundaryOpacity ?? 50,
+      // Select the exact Layers > Administrative > RUDA Phases Boundary.
+      rudaBoundary: false,
+      rudaMauzaBoundary: false,
+      rudaPhasesBoundary: true,
+      rudaPhasesBoundaryOpacity: prev.rudaPhasesBoundaryOpacity ?? 100,
     }));
   }, []);
 
