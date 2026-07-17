@@ -1,4 +1,5 @@
 from ..common_imports import *
+
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 
@@ -73,6 +74,7 @@ class ListSquareView(viewsets.ViewSet):
                 error_traceback=traceback.format_exc(),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()
+
     @action(
         detail=True,
         methods=["get"],
@@ -118,9 +120,11 @@ class ListSquareView(viewsets.ViewSet):
                         pc_id,
                         sq,
                         layer,
-                        ST_AsGeoJSON(geom)::json
+                        ST_AsGeoJSON(
+                            ST_SimplifyPreserveTopology(geom, 0.00001)
+                        )::json
                     FROM square
-                    WHERE gid = %s
+                    WHERE gid=%s
                 """, [pk])
 
                 row = cursor.fetchone()
@@ -142,7 +146,7 @@ class ListSquareView(viewsets.ViewSet):
             feature = {
                 "type": "Feature",
                 "id": row[0],
-                "geometry": row[11],
+                "geometry": row[10],
                 "properties": {
                     "gid": row[0],
                     "district_id": row[1],
@@ -153,7 +157,7 @@ class ListSquareView(viewsets.ViewSet):
                     "pc": row[6],
                     "pc_id": row[7],
                     "sq": row[8],
-                    "layer": row[10],
+                    "layer": row[9],
                 },
             }
 
@@ -174,11 +178,14 @@ class ListSquareView(viewsets.ViewSet):
 
         except Exception as e:
 
+            import traceback
+
             print(traceback.format_exc())
 
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
                 data=str(e),
+                error_traceback=traceback.format_exc(),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()

@@ -1022,18 +1022,40 @@ class GeodeticNetwork(models.Model):
 
     gid = models.AutoField(primary_key=True)
 
-    name = models.CharField(max_length=100, null=True, blank=True)
+    name = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    # Actual DB columns are easting_(m and northing_(
-    # Keep Python/API field names clean as easting_m / northing_m.
-    easting_m = models.FloatField(db_column="easting_m", null=True, blank=True)
-    northing_m = models.FloatField(db_column="northing_m", null=True, blank=True)
+    easting_m = models.FloatField(
+        db_column="easting_m",
+        null=True,
+        blank=True,
+    )
 
-    code = models.CharField(max_length=50, null=True, blank=True)
+    northing_m = models.FloatField(
+        db_column="northing_m",
+        null=True,
+        blank=True,
+    )
 
-    elevation = models.FloatField(null=True, blank=True)
+    code = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    geom = gis_models.PointField(srid=4326)
+    elevation = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.PointField(
+        srid=4326,
+    )
 
     def __str__(self):
         return self.name if self.name else f"Geodetic {self.gid}"
@@ -1041,6 +1063,11 @@ class GeodeticNetwork(models.Model):
     class Meta:
         managed = False
         db_table = "geodeticnetwork"
+
+        indexes = [
+            models.Index(fields=["name"]),
+            models.Index(fields=["code"]),
+        ]
 
 
 # =========================
@@ -1896,19 +1923,76 @@ class ProposedRoadNetwork(models.Model):
 class StateLand(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    district = models.CharField(max_length=254, null=True, blank=True)
-    tehsil = models.CharField(max_length=254, null=True, blank=True)
-    mouza = models.CharField(max_length=254, null=True, blank=True)
+    district = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    square = models.SmallIntegerField(null=True, blank=True)
-    khasra = models.SmallIntegerField(null=True, blank=True)
-    sub_khasra = models.SmallIntegerField(null=True, blank=True)
-    khasra_lab = models.CharField(max_length=254, null=True, blank=True)
+    tehsil = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    remarks = models.CharField(max_length=35, null=True, blank=True)
-    state_land = models.CharField(max_length=254, null=True, blank=True)
-    area_sqft = models.IntegerField(null=True, blank=True)
-    date = models.DateField(db_column="date", null=True, blank=True)
+    mouza = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    square = models.SmallIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    khasra = models.SmallIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    sub_khasra = models.SmallIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    khasra_lab = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    remarks = models.CharField(
+        max_length=35,
+        null=True,
+        blank=True,
+    )
+
+    state_land = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    area_sqft = models.IntegerField(
+        null=True,
+        blank=True,
+    )
+
+    date = models.DateField(
+        db_column="date",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
     geom = gis_models.MultiPolygonField(
         srid=4326,
@@ -1958,21 +2042,94 @@ class RtwAlignment(models.Model):
 class PossessionLand(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    district = models.CharField(max_length=254, null=True, blank=True)
-    tehsil = models.CharField(max_length=254, null=True, blank=True)
-    mouza = models.CharField(max_length=254, null=True, blank=True)
+    district = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    square = models.FloatField(null=True, blank=True)
-    khasra = models.FloatField(null=True, blank=True)
-    khasra_lab = models.CharField(max_length=254, null=True, blank=True)
+    tehsil = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    award_zone = models.CharField(max_length=254, null=True, blank=True)
-    projects = models.CharField(max_length=254, null=True, blank=True)
-    l_type = models.CharField(max_length=254, null=True, blank=True)
-    land_owner = models.CharField(max_length=254, null=True, blank=True)
-    lp_name = models.CharField(max_length=254, null=True, blank=True)
-    remarks = models.CharField(max_length=254, null=True, blank=True)
-    date = models.CharField(db_column="date", max_length=50, null=True, blank=True)
+    mouza = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    square = models.FloatField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    khasra = models.FloatField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    khasra_lab = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    award_zone = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    projects = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    l_type = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    land_owner = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    lp_name = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    remarks = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+    )
+
+    date = models.CharField(
+        db_column="date",
+        max_length=50,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
     geom = gis_models.MultiPolygonField(
         srid=4326,
@@ -1995,20 +2152,83 @@ class PossessionLand(models.Model):
 class AwardedLand(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    district = models.CharField(max_length=254, null=True, blank=True)
-    tehsil = models.CharField(max_length=254, null=True, blank=True)
-    mouza = models.CharField(max_length=254, null=True, blank=True)
+    district = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    square = models.FloatField(null=True, blank=True)
-    khasra = models.FloatField(null=True, blank=True)
-    sub_khasra = models.FloatField(null=True, blank=True)
-    khasra_lab = models.CharField(max_length=254, null=True, blank=True)
+    tehsil = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
-    agri_river = models.CharField(max_length=254, null=True, blank=True)
-    land_type = models.CharField(max_length=254, null=True, blank=True)
-    remarks = models.CharField(max_length=254, null=True, blank=True)
-    area_sqft = models.FloatField(null=True, blank=True)
-    date = models.DateField(db_column="date", null=True, blank=True)
+    mouza = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    square = models.FloatField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    khasra = models.FloatField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    sub_khasra = models.FloatField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    khasra_lab = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    agri_river = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    land_type = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    remarks = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+    )
+
+    area_sqft = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    date = models.DateField(
+        db_column="date",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
 
     geom = gis_models.MultiPolygonField(
         srid=4326,
