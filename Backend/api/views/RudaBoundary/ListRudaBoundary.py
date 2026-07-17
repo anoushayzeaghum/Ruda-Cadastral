@@ -126,7 +126,12 @@ class ListRudaBoundaryView(viewsets.ViewSet):
                         popupinfo,
                         shape_leng,
                         shape_area,
-                        ST_AsGeoJSON(geom)::json
+                        ST_AsGeoJSON(
+                            ST_SimplifyPreserveTopology(
+                                geom,
+                                0.00002
+                            )
+                        )::json
                     FROM ruda_boundary
                     WHERE gid = %s
                 """, [pk])

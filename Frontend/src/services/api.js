@@ -144,8 +144,6 @@ export const getDistricts = async () => {
 
   const res = await API.get("/district/");
 
-  console.log("District API:", (performance.now() - start).toFixed(2), "ms");
-
   return normalizeData(res);
 };
 

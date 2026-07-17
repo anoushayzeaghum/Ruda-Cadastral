@@ -218,7 +218,9 @@ export default function AdministrativeBoundaries({
     if (cache.current[key]) return cache.current[key];
     const def = LAYERS[key];
     const response = await axios.get(`${API_BASE}${def.endpoint}`);
+
     const geojson = unwrapGeoJSON(response.data);
+
     cache.current[key] = geojson;
     setFeatureCounts((prev) => ({
       ...prev,

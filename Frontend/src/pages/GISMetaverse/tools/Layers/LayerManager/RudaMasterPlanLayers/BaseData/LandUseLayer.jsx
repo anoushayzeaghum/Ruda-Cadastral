@@ -317,21 +317,42 @@ export function setLandUseOpacity(map, opacity) {
 }
 
 export function removeLandUseLayer(map) {
+  if (!map) return;
+
+  // Map has been destroyed or style isn't available
+  try {
+    if (!map.getStyle()) return;
+  } catch (e) {
+    return;
+  }
+
   Object.values(LAND_USE_LAYER_IDS)
     .reverse()
     .forEach((id) => {
-      if (map?.getLayer(id)) {
-        map.removeLayer(id);
+      try {
+        if (map.getLayer(id)) {
+          map.removeLayer(id);
+        }
+      } catch (e) {
+        // Ignore if the style was removed during cleanup
       }
     });
 
-  if (map?.getSource(SOURCE_ID)) {
-    map.removeSource(SOURCE_ID);
+  try {
+    if (map.getSource(SOURCE_ID)) {
+      map.removeSource(SOURCE_ID);
+    }
+  } catch (e) {
+    // Ignore
   }
 
   Object.values(PATTERN_IDS).forEach((id) => {
-    if (map?.hasImage(id)) {
-      map.removeImage(id);
+    try {
+      if (map.hasImage(id)) {
+        map.removeImage(id);
+      }
+    } catch (e) {
+      // Ignore
     }
   });
 }

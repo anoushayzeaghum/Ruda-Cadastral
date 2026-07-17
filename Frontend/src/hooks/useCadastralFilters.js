@@ -56,7 +56,6 @@ export default function useCadastralFilters(enabled = true) {
 useEffect(() => {
 
   if (!enabled) {
-    // console.log("Filters are disabled");
     return;
   }
 
@@ -138,7 +137,6 @@ useEffect(() => {
       setErrorMessage("");
 
       try {
-        console.log(selectedTehsil);
         const responses = await Promise.all(
           selectedTehsil.map((tehsil) => getMauzas(tehsil)),
         );
@@ -180,9 +178,7 @@ useEffect(() => {
       ignore = true;
     };
   }, [selectedTehsil]);
-  // useEffect(() => {
-  //   console.log("Districts:", districts);
-  // }, [districts]);
+
 
   const selectedDistrictPrimary = selectedDistrict[0] ?? "";
   const selectedTehsilPrimary = selectedTehsil[0] ?? "";
