@@ -2106,3 +2106,19 @@ class LahoreTransportationRoadSerializer(GeoFeatureModelSerializer):
         read_only_fields = (
             "gid",
         )
+
+class RudaSquareSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RudaSquare
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
+            "geom",
+        )
