@@ -124,7 +124,9 @@ class ListKhasraView(viewsets.ViewSet):
                         dc_rate,
                         remarks,
                         b,
-                        ST_AsGeoJSON(geom)::json
+                        ST_AsGeoJSON(
+                            ST_SimplifyPreserveTopology(geom, 0.00001)
+                        )::json
                     FROM khasra
                     WHERE gid = %s
                 """, [pk])
