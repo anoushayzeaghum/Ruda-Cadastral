@@ -47,6 +47,7 @@ export default function Demarcation() {
   });
 
   const [loadedPlotsGeojson, setLoadedPlotsGeojson] = useState(null);
+  const [reportContextGeojson, setReportContextGeojson] = useState(null);
   const [selectedPlot, setSelectedPlot] = useState(null);
 
   const landUseSummary = useMemo(
@@ -55,15 +56,15 @@ export default function Demarcation() {
   );
 
   const handleFiltersChange = (partial) => {
-    setFilters((prev) => ({ ...prev, ...partial }));
+    setFilters((previous) => ({ ...previous, ...partial }));
   };
 
   const handlePlotSelect = useCallback((feature) => {
     setSelectedPlot(feature || null);
     const props = feature?.properties || {};
-    setFilters((prev) => ({
-      ...prev,
-      plotNo: props.plot_no ? String(props.plot_no) : prev.plotNo,
+    setFilters((previous) => ({
+      ...previous,
+      plotNo: props.plot_no ? String(props.plot_no) : previous.plotNo,
       selectedParcelNumber: props.plot_no ? String(props.plot_no) : "",
     }));
   }, []);
@@ -74,18 +75,17 @@ export default function Demarcation() {
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         sidebarOpen={sidebarOpen}
-        toggleSidebar={() => setSidebarOpen((prev) => !prev)}
+        toggleSidebar={() => setSidebarOpen((previous) => !previous)}
       />
 
-      {/* Full-screen map with floating panels on top */}
       <div className="relative min-h-0 flex-1 overflow-hidden">
         <DemarcationMap
           filters={filters}
           onParcelSelect={handlePlotSelect}
           onFeaturesLoaded={setLoadedPlotsGeojson}
+          onContextFeaturesLoaded={setReportContextGeojson}
         />
 
-        {/* Spatial Query - floating top center */}
         <div
           className="absolute left-1/2 top-2 z-30 -translate-x-1/2 sm:top-4"
           style={{ width: "calc(100vw - 24px)", maxWidth: "820px" }}
@@ -96,12 +96,14 @@ export default function Demarcation() {
           />
         </div>
 
-        {/* Plot Details - floating bottom left, opens automatically on selection */}
         <div className="absolute bottom-2 left-2 z-20 w-[230px] max-w-[calc(100vw-16px)] sm:bottom-4 sm:left-4 sm:w-[360px]">
-          <PlotDetails parcel={selectedPlot} filters={filters} />
+          <PlotDetails
+            parcel={selectedPlot}
+            filters={filters}
+            contextGeojson={reportContextGeojson || loadedPlotsGeojson}
+          />
         </div>
 
-        {/* Landuse Breakdown + Legend - floating bottom right, each collapsible */}
         <div className="absolute bottom-2 right-2 z-20 flex w-[210px] max-w-[calc(100vw-16px)] flex-col gap-2 sm:bottom-4 sm:right-4 sm:w-[320px] sm:gap-3">
           <LandUseBreakdown
             items={landUseSummary}
