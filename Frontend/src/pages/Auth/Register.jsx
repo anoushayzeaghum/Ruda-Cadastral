@@ -78,7 +78,6 @@ export default function Register() {
       });
 
       const data = await response.json();
-      console.log("Register response:", data);
 
       if (!response.ok) {
         const errorMessage = data?.data
