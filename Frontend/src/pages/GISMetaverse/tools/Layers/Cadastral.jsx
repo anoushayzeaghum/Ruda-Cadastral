@@ -9,9 +9,25 @@ import AwardedLandAttribute from "./AttributeTable/AwardedLandAttribute";
 import StateLandAttribute from "./AttributeTable/StateLandAttribute";
 import PossessionLandAttribute from "./AttributeTable/PossessionLandAttribute";
 import GeodeticNetworkAttribute from "./AttributeTable/GeodeticNetworkAttribute";
-import { addAwardedLandLayer } from "./LayerManager/AdministrativeBoundariesLayers/AwardedLandLayer";
-import { addStateLandLayer } from "./LayerManager/AdministrativeBoundariesLayers/StateLandLayer";
-import { addPossessionLandLayer } from "./LayerManager/AdministrativeBoundariesLayers/PossessionLandLayer";
+import { addAwardedLandLayer } from "./LayerManager/Cadastral/AwardedLandLayer";
+import { addStateLandLayer } from "./LayerManager/Cadastral/StateLandLayer";
+import { addPossessionLandLayer } from "./LayerManager/Cadastral/PossessionLandLayer";
+import {
+  addGeodeticPointsLayer,
+  GEODETIC_POINTS_IDS,
+} from "./LayerManager/Cadastral/GeodeticPointsLayer";
+import {
+  addMauzaBoundaryLayer,
+  MAUZA_BOUNDARY_IDS,
+} from "./LayerManager/Cadastral/MauzaBoundaryLayer";
+import {
+  addSquareBoundaryLayer,
+  SQUARE_BOUNDARY_IDS,
+} from "./LayerManager/Cadastral/SquareBoundaryLayer";
+import {
+  addKhasraBoundaryLayer,
+  KHASRA_BOUNDARY_IDS,
+} from "./LayerManager/Cadastral/KhasraBoundaryLayer";
 import {
   API_BASE,
   formatNumber,
@@ -30,29 +46,21 @@ const MASAWI_BOUNDS = [
 ];
 
 const IDS = {
-  moza: {
-    src: "gism-lrr-moza-src",
-    fill: "gism-lrr-moza-fill",
-    line: "gism-lrr-moza-line",
-    label: "gism-lrr-moza-label",
-  },
-  square: {
-    src: "gism-lrr-square-src",
-    fill: "gism-lrr-square-fill",
-    line: "gism-lrr-square-line",
-  },
-  khasra: {
-    src: "gism-lrr-khasra-src",
-    fill: "gism-lrr-khasra-fill",
-    line: "gism-lrr-khasra-line",
-    label: "gism-lrr-khasra-label",
-  },
+  moza: MAUZA_BOUNDARY_IDS,
+  square: SQUARE_BOUNDARY_IDS,
+  khasra: KHASRA_BOUNDARY_IDS,
+};
+
+const BOUNDARY_LAYER_CONFIG = {
+  moza: { addLayer: addMauzaBoundaryLayer },
+  square: { addLayer: addSquareBoundaryLayer },
+  khasra: { addLayer: addKhasraBoundaryLayer },
 };
 
 const MAUZA_DEF = {
   key: "moza",
   label: "Mauza Boundary",
-  color: "#ff8b24",
+  color: "#2C2C2A",
   type: "polygon",
 };
 
@@ -60,13 +68,13 @@ const LAYER_DEFS = [
   {
     key: "square",
     label: "Square Boundary",
-    color: "#d7bf32",
+    color: "#185FA5",
     type: "polygon",
   },
   {
     key: "khasra",
     label: "Khasra Boundary",
-    color: "#1f7a3a",
+    color: "#712B13",
     type: "polygon",
     dropdown: true,
   },
@@ -75,10 +83,10 @@ const LAYER_DEFS = [
 const ALL_LAYER_DEFS = [MAUZA_DEF, ...LAYER_DEFS];
 
 const EXTRA_LAYER_DEFS = [
-  { key: "awardedLand", label: "Awarded Land", color: "#a855f7" },
-  { key: "stateLand", label: "State Land", color: "#22c55e" },
-  { key: "possessionLand", label: "Possession Land", color: "#ef4444" },
-  { key: "geodeticNetwork", label: "Geodetic Network", color: "#f97316" },
+  { key: "awardedLand", label: "Awarded Land", color: "#854F0B" },
+  { key: "stateLand", label: "State Land", color: "#5F5E5A" },
+  { key: "possessionLand", label: "Possession Land", color: "#27500A" },
+  { key: "geodeticNetwork", label: "Geodetic Network", color: "#D92D20" },
 ];
 
 const EXTRA_LAYER_CONFIG = {
@@ -114,11 +122,9 @@ const EXTRA_LAYER_CONFIG = {
   },
   geodeticNetwork: {
     endpoint: "/geodeticnetwork/",
-    sourceId: "metaverse-geodetic-network-source",
-    layerIds: [
-      "metaverse-geodetic-network-circle",
-      "metaverse-geodetic-network-label",
-    ],
+    sourceId: GEODETIC_POINTS_IDS.source,
+    layerIds: [GEODETIC_POINTS_IDS.circle, GEODETIC_POINTS_IDS.label],
+    addLayer: addGeodeticPointsLayer,
   },
 };
 
@@ -137,78 +143,6 @@ function setExtraVisibility(map, key, visible) {
       );
     }
   });
-}
-
-function addOrUpdateGeodeticLayer(map, geojson, color, opacity = 100) {
-  if (!map) return;
-
-  const config = EXTRA_LAYER_CONFIG.geodeticNetwork;
-  const ratio = opacity / 100;
-
-  if (!map.getSource(config.sourceId)) {
-    map.addSource(config.sourceId, {
-      type: "geojson",
-      data: geojson,
-    });
-  } else {
-    map.getSource(config.sourceId).setData(geojson);
-  }
-
-  const [circleId, labelId] = config.layerIds;
-
-  if (!map.getLayer(circleId)) {
-    map.addLayer({
-      id: circleId,
-      type: "circle",
-      source: config.sourceId,
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 4, 16, 7],
-        "circle-color": color,
-        "circle-opacity": ratio,
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.2,
-        "circle-stroke-opacity": ratio,
-      },
-      layout: { visibility: "visible" },
-    });
-  } else {
-    map.setPaintProperty(circleId, "circle-color", color);
-    map.setPaintProperty(circleId, "circle-opacity", ratio);
-    map.setPaintProperty(circleId, "circle-stroke-opacity", ratio);
-    map.setLayoutProperty(circleId, "visibility", "visible");
-  }
-
-  if (!map.getLayer(labelId)) {
-    map.addLayer({
-      id: labelId,
-      type: "symbol",
-      source: config.sourceId,
-      minzoom: 13,
-      layout: {
-        visibility: "visible",
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "name"]],
-          ["to-string", ["get", "code"]],
-          "",
-        ],
-        "text-size": 10,
-        "text-offset": [0, 1.2],
-        "text-anchor": "top",
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-      },
-      paint: {
-        "text-color": color,
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-        "text-opacity": ratio,
-      },
-    });
-  } else {
-    map.setPaintProperty(labelId, "text-color", color);
-    map.setPaintProperty(labelId, "text-opacity", ratio);
-    map.setLayoutProperty(labelId, "visibility", "visible");
-  }
 }
 
 function fitToExtraGeoJSON(map, geojson) {
@@ -245,54 +179,6 @@ function emptyFC() {
   return { type: "FeatureCollection", features: [] };
 }
 
-function getLayerColor(key) {
-  return ALL_LAYER_DEFS.find((d) => d.key === key)?.color || "#ffffff";
-}
-
-const POLYGON_STYLES = {
-  moza: {
-    fillColor: "#ff8b24",
-    lineColor: "#ff8b24",
-    fillOpacityMultiplier: 0.16,
-    lineWidth: 1.5,
-    labelColor: "#ff8b24",
-    labelMinZoom: 14,
-  },
-  square: {
-    fillColor: "#d7bf32",
-    lineColor: "#d7bf32",
-    fillOpacityMultiplier: 0.1,
-    lineWidth: 1.6,
-  },
-  khasra: {
-    fillColor: "#1f7a3a",
-    lineColor: "#1f7a3a",
-    fillOpacityMultiplier: 0,
-    lineWidth: 1.25,
-    labelColor: "#1f7a3a",
-    labelMinZoom: 14.6,
-  },
-};
-
-function getPolygonStyle(key, color) {
-  const baseStyle = POLYGON_STYLES[key] || {
-    fillColor: getLayerColor(key),
-    lineColor: getLayerColor(key),
-    fillOpacityMultiplier: 0.2,
-    lineWidth: 1.5,
-    labelColor: getLayerColor(key),
-    labelMinZoom: 14,
-  };
-
-  if (!color) return baseStyle;
-
-  return {
-    ...baseStyle,
-    fillColor: color,
-    lineColor: color,
-    labelColor: color,
-  };
-}
 
 const LAND_REVENUE_LAYER_ORDER = [
   IDS.moza.fill,
@@ -495,99 +381,16 @@ function fitToGeojson(map, geojson) {
 }
 
 function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
-  const ids = IDS[key];
-  if (!map || !ids || !geojson) return;
+  const config = BOUNDARY_LAYER_CONFIG[key];
+  if (!map || !config || !geojson) return;
 
-  const o = opacity / 100;
-  const style = getPolygonStyle(key, color);
-
-  if (!map.getSource(ids.src)) {
-    map.addSource(ids.src, { type: "geojson", data: geojson });
-  } else {
-    map.getSource(ids.src).setData(geojson);
-  }
-
-  const beforeId = getLandRevenueBeforeId(map);
-
-  if (!map.getLayer(ids.fill)) {
-    map.addLayer(
-      {
-        id: ids.fill,
-        type: "fill",
-        source: ids.src,
-        paint: {
-          "fill-color": style.fillColor,
-          "fill-opacity": o * style.fillOpacityMultiplier,
-        },
-        layout: { visibility: "visible" },
-      },
-      beforeId,
-    );
-  } else {
-    map.setLayoutProperty(ids.fill, "visibility", "visible");
-    map.setPaintProperty(ids.fill, "fill-color", style.fillColor);
-    map.setPaintProperty(
-      ids.fill,
-      "fill-opacity",
-      o * style.fillOpacityMultiplier,
-    );
-  }
-
-  if (!map.getLayer(ids.line)) {
-    map.addLayer(
-      {
-        id: ids.line,
-        type: "line",
-        source: ids.src,
-        paint: {
-          "line-color": style.lineColor,
-          "line-width": style.lineWidth,
-          "line-opacity": o,
-        },
-        layout: { visibility: "visible" },
-      },
-      beforeId,
-    );
-  } else {
-    map.setLayoutProperty(ids.line, "visibility", "visible");
-    map.setPaintProperty(ids.line, "line-color", style.lineColor);
-    map.setPaintProperty(ids.line, "line-width", style.lineWidth);
-    map.setPaintProperty(ids.line, "line-opacity", o);
-  }
-
-  if (ids.label && !map.getLayer(ids.label)) {
-    map.addLayer(
-      {
-        id: ids.label,
-        type: "symbol",
-        source: ids.src,
-        minzoom: style.labelMinZoom ?? 14,
-        paint: {
-          "text-color": style.labelColor || style.lineColor,
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 1.2,
-          "text-opacity": o,
-        },
-        layout: {
-          visibility: "visible",
-          "text-field": getLabelExpression(key),
-          "text-size": ["interpolate", ["linear"], ["zoom"], 14, 9, 18, 12],
-          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-          "text-allow-overlap": false,
-          "text-ignore-placement": false,
-        },
-      },
-      beforeId,
-    );
-  } else if (ids.label) {
-    map.setLayoutProperty(ids.label, "visibility", "visible");
-    map.setPaintProperty(
-      ids.label,
-      "text-color",
-      style.labelColor || style.lineColor,
-    );
-    map.setPaintProperty(ids.label, "text-opacity", o);
-  }
+  config.addLayer(
+    map,
+    geojson,
+    color,
+    opacity / 100,
+    getLandRevenueBeforeId(map),
+  );
 
   reorderLandRevenueLayers(map);
 }
@@ -616,53 +419,26 @@ function hideLayer(map, key) {
   } catch (_) {}
 }
 
-function updateOpacity(map, key, opacity) {
+function updateOpacity(map, key, opacity, geojson, color) {
   if (!map) return;
-
-  const o = opacity / 100;
 
   if (key === "masawi") {
     try {
-      if (map.getLayer(MASAWI_LAYER))
-        map.setPaintProperty(MASAWI_LAYER, "raster-opacity", o);
+      if (map.getLayer(MASAWI_LAYER)) {
+        map.setPaintProperty(MASAWI_LAYER, "raster-opacity", opacity / 100);
+      }
     } catch (_) {}
     return;
   }
 
-  const ids = IDS[key];
-  if (!ids) return;
-  const style = POLYGON_STYLES[key] || { fillOpacityMultiplier: 0.2 };
-
-  try {
-    if (map.getLayer(ids.fill))
-      map.setPaintProperty(
-        ids.fill,
-        "fill-opacity",
-        o * style.fillOpacityMultiplier,
-      );
-    if (map.getLayer(ids.line))
-      map.setPaintProperty(ids.line, "line-opacity", o);
-    if (ids.label && map.getLayer(ids.label))
-      map.setPaintProperty(ids.label, "text-opacity", o);
-    reorderLandRevenueLayers(map);
-  } catch (_) {}
+  if (geojson) {
+    addOrUpdatePolygonLayer(map, key, geojson, opacity, color);
+  }
 }
 
-function updateColor(map, key, color) {
-  if (!map || key === "masawi") return;
-
-  const ids = IDS[key];
-  if (!ids) return;
-
-  try {
-    if (map.getLayer(ids.fill))
-      map.setPaintProperty(ids.fill, "fill-color", color);
-    if (map.getLayer(ids.line))
-      map.setPaintProperty(ids.line, "line-color", color);
-    if (ids.label && map.getLayer(ids.label))
-      map.setPaintProperty(ids.label, "text-color", color);
-    reorderLandRevenueLayers(map);
-  } catch (_) {}
+function updateColor(map, key, color, geojson, opacity) {
+  if (!map || key === "masawi" || !geojson) return;
+  addOrUpdatePolygonLayer(map, key, geojson, opacity, color);
 }
 
 function addOrUpdateMasawiLayer(map, opacity) {
@@ -726,21 +502,19 @@ export default function Cadastral({ map, selectedProjectId }) {
     if (EXTRA_LAYER_CONFIG[key]) {
       const geojson = cachedData.current[key];
       if (geojson && layers[key]?.visible) {
-        if (key === "geodeticNetwork") {
-          addOrUpdateGeodeticLayer(map, geojson, layers[key].color, opacity);
-        } else {
-          EXTRA_LAYER_CONFIG[key].addLayer(
-            map,
-            geojson,
-            layers[key].color,
-            opacity / 100,
-          );
-        }
+        EXTRA_LAYER_CONFIG[key].addLayer(
+          map,
+          geojson,
+          layers[key].color,
+          opacity / 100,
+        );
       }
       return;
     }
 
-    updateOpacity(map, key, opacity);
+    const geojson =
+      key === "moza" ? mauzaGeojson : cachedData.current[key];
+    updateOpacity(map, key, opacity, geojson, layers[key]?.color);
   };
 
   const setColor = (key, color) => {
@@ -749,21 +523,19 @@ export default function Cadastral({ map, selectedProjectId }) {
     if (EXTRA_LAYER_CONFIG[key]) {
       const geojson = cachedData.current[key];
       if (geojson && layers[key]?.visible) {
-        if (key === "geodeticNetwork") {
-          addOrUpdateGeodeticLayer(map, geojson, color, layers[key].opacity);
-        } else {
-          EXTRA_LAYER_CONFIG[key].addLayer(
-            map,
-            geojson,
-            color,
-            layers[key].opacity / 100,
-          );
-        }
+        EXTRA_LAYER_CONFIG[key].addLayer(
+          map,
+          geojson,
+          color,
+          layers[key].opacity / 100,
+        );
       }
       return;
     }
 
-    updateColor(map, key, color);
+    const geojson =
+      key === "moza" ? mauzaGeojson : cachedData.current[key];
+    updateColor(map, key, color, geojson, layers[key]?.opacity ?? 100);
   };
 
   const setLoading = (key, loading) => {
@@ -916,22 +688,13 @@ export default function Cadastral({ map, selectedProjectId }) {
         cachedData.current[key] = geojson;
       }
 
-      if (key === "geodeticNetwork") {
-        addOrUpdateGeodeticLayer(
-          map,
-          geojson,
-          layers[key].color,
-          layers[key].opacity,
-        );
-      } else {
-        config.addLayer(
-          map,
-          geojson,
-          layers[key].color,
-          layers[key].opacity / 100,
-        );
-        setExtraVisibility(map, key, true);
-      }
+      config.addLayer(
+        map,
+        geojson,
+        layers[key].color,
+        layers[key].opacity / 100,
+      );
+      setExtraVisibility(map, key, true);
 
       setVisible(key, true);
       if (zoom) fitToExtraGeoJSON(map, geojson);
@@ -1274,7 +1037,7 @@ export default function Cadastral({ map, selectedProjectId }) {
                               : prev.filter((selectedId) => selectedId !== id),
                           );
                         }}
-                        className="accent-[#1f7a3a]"
+                        className="accent-[#712B13]"
                       />
                       <span className="min-w-0 flex-1 truncate">
                         {name} - {getFeatureAreaLabel(mauza)}
