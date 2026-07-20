@@ -582,7 +582,7 @@ class RudaKhasra(models.Model):
     )
 
     mauza = models.ForeignKey(
-        Mauza,
+        RudaMauza,
         db_column="mauza_id",
         to_field="mauza_id",
         related_name="khasras",

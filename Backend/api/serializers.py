@@ -329,27 +329,23 @@ class KhasraSerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 class RudaKhasraSerializer(GeoFeatureModelSerializer):
 
-    district_name = serializers.SerializerMethodField()
-    tehsil_name = serializers.SerializerMethodField()
-    mauza_name = serializers.SerializerMethodField()
-
-    def get_district_name(self, obj):
-        try:
-            return obj.district.name if obj.district else obj.district_text
-        except Exception:
-            return obj.district_text
-
-    def get_tehsil_name(self, obj):
-        try:
-            return obj.tehsil.name if obj.tehsil else obj.tehsil_text
-        except Exception:
-            return obj.tehsil_text
-
-    def get_mauza_name(self, obj):
-        try:
-            return obj.mauza.mauza if obj.mauza else obj.mauza_text
-        except Exception:
-            return obj.mauza_text
+    # The imported table already contains these names. Reading the text columns
+    # directly avoids three related-object accesses for every feature.
+    district_name = serializers.CharField(
+        source="district_text",
+        read_only=True,
+        allow_null=True,
+    )
+    tehsil_name = serializers.CharField(
+        source="tehsil_text",
+        read_only=True,
+        allow_null=True,
+    )
+    mauza_name = serializers.CharField(
+        source="mauza_text",
+        read_only=True,
+        allow_null=True,
+    )
 
     class Meta:
         model = RudaKhasra

@@ -128,11 +128,18 @@ const normalizeData = (res) => {
 
 const normalizeGeoJson = (res) => {
   const payload = extractPayload(res);
-
-  return {
+  const geojson = {
     type: "FeatureCollection",
     features: toGeoJSONFeatures(payload),
   };
+
+  // Preserve an API-provided bbox so map screens can fit the layer without
+  // recursively walking every coordinate of a large cadastral geometry.
+  if (Array.isArray(payload?.bbox)) {
+    geojson.bbox = payload.bbox;
+  }
+
+  return geojson;
 };
 
 ///////////////////////////////////////////////////////
@@ -307,33 +314,20 @@ export const getMauzaBoundary = async (id) => {
 };
 
 export const getKhasraBoundary = async (id) => {
-
   const start = performance.now();
 
-  const res = await API.get(
-    `/khasra/${id}/geojson`,
-    {
-      headers:{
-        "Accept-Encoding":"gzip"
-      }
-    }
-  );
+  const res = await API.get(`/khasra/${id}/geojson`, {
+    headers: {
+      "Accept-Encoding": "gzip",
+    },
+  });
 
-
-  console.log(
-    "Khasra API:",
-    (performance.now()-start).toFixed(2),
-    "ms"
-  );
-
+  console.log("Khasra API:", (performance.now() - start).toFixed(2), "ms");
 
   return {
-    type:"FeatureCollection",
-    features:[
-      res.data.data
-    ]
+    type: "FeatureCollection",
+    features: [res.data.data],
   };
-
 };
 
 export const getMurabbaBoundary = async (id) => {

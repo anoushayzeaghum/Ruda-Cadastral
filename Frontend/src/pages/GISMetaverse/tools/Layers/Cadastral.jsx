@@ -179,6 +179,18 @@ function emptyFC() {
   return { type: "FeatureCollection", features: [] };
 }
 
+function unwrapBoundaryGeoJSON(responseData) {
+  const geojson = unwrapGeoJSON(responseData);
+  const payload =
+    responseData?.data?.data ?? responseData?.data ?? responseData;
+
+  if (Array.isArray(payload?.bbox)) {
+    geojson.bbox = payload.bbox;
+  }
+
+  return geojson;
+}
+
 const LAND_REVENUE_LAYER_ORDER = [
   IDS.moza.fill,
   IDS.moza.line,
@@ -355,6 +367,25 @@ function getMauzaIdsFromFeatures(features = []) {
 function fitToGeojson(map, geojson) {
   if (!map || !geojson?.features?.length) return;
 
+  const bbox = geojson?.bbox;
+  if (
+    Array.isArray(bbox) &&
+    bbox.length >= 4 &&
+    bbox.slice(0, 4).every((value) => Number.isFinite(Number(value)))
+  ) {
+    map.fitBounds(
+      [
+        [Number(bbox[0]), Number(bbox[1])],
+        [Number(bbox[2]), Number(bbox[3])],
+      ],
+      { padding: 40, duration: 900 },
+    );
+    return;
+  }
+
+  // Fallback for older endpoints that do not return a FeatureCollection bbox.
+  // This coordinate walk is intentionally avoided for RUDA Khasra responses
+  // because large cadastral geometries can freeze the browser main thread.
   import("mapbox-gl").then((m) => {
     const bounds = new m.default.LngLatBounds();
 
@@ -374,8 +405,9 @@ function fitToGeojson(map, geojson) {
       traverse(feature.geometry?.coordinates);
     });
 
-    if (!bounds.isEmpty())
+    if (!bounds.isEmpty()) {
       map.fitBounds(bounds, { padding: 40, duration: 900 });
+    }
   });
 }
 
@@ -478,6 +510,7 @@ export default function Cadastral({ map, selectedProjectId }) {
   const [extraDetailsOpen, setExtraDetailsOpen] = useState({});
 
   const cachedData = useRef({});
+  const boundaryRequests = useRef({});
 
   const [layers, setLayers] = useState(() =>
     Object.fromEntries(
@@ -626,38 +659,70 @@ export default function Cadastral({ map, selectedProjectId }) {
   const loadBoundaryByMauzas = async (key, _mauzaIds, { zoom = true } = {}) => {
     if (!map) return emptyFC();
 
-    setLoading(key, true);
-
-    try {
-      // Fetch the complete Square or Khasra model directly.
-      const endpoint = key === "khasra" ? "/rudakhasra/" : "/rudasquare/";
-      const response = await axios.get(`${API_BASE}${endpoint}`);
-      const geojson = unwrapGeoJSON(response.data);
-
-      cachedData.current[key] = geojson;
-
+    const cachedGeojson = cachedData.current[key];
+    if (cachedGeojson?.features) {
       addOrUpdatePolygonLayer(
         map,
         key,
-        geojson,
+        cachedGeojson,
         layers[key].opacity,
         layers[key].color,
       );
 
-      if (zoom) fitToGeojson(map, geojson);
+      if (zoom) fitToGeojson(map, cachedGeojson);
       setVisible(key, true);
 
       if (key === "khasra") {
         setKhasraPanelOpen("khasra");
       }
 
-      return geojson;
-    } catch (error) {
-      console.error(`Complete ${key} model load error:`, error);
-      return emptyFC();
-    } finally {
-      setLoading(key, false);
+      return cachedGeojson;
     }
+
+    // Reuse the same promise when the checkbox is clicked repeatedly while a
+    // large GeoJSON response is still downloading/parsing.
+    if (boundaryRequests.current[key]) {
+      return boundaryRequests.current[key];
+    }
+
+    setLoading(key, true);
+
+    const requestPromise = (async () => {
+      try {
+        const endpoint = key === "khasra" ? "/rudakhasra/" : "/rudasquare/";
+        const response = await axios.get(`${API_BASE}${endpoint}`);
+        const geojson = unwrapBoundaryGeoJSON(response.data);
+
+        cachedData.current[key] = geojson;
+
+        addOrUpdatePolygonLayer(
+          map,
+          key,
+          geojson,
+          layers[key].opacity,
+          layers[key].color,
+        );
+
+        if (zoom) fitToGeojson(map, geojson);
+        setVisible(key, true);
+
+        if (key === "khasra") {
+          setKhasraPanelOpen("khasra");
+        }
+
+        return geojson;
+      } catch (error) {
+        console.error(`Complete ${key} model load error:`, error);
+        setVisible(key, false);
+        return emptyFC();
+      } finally {
+        delete boundaryRequests.current[key];
+        setLoading(key, false);
+      }
+    })();
+
+    boundaryRequests.current[key] = requestPromise;
+    return requestPromise;
   };
 
   const ensureProjectMauzas = async () => {
@@ -770,12 +835,10 @@ export default function Cadastral({ map, selectedProjectId }) {
     };
 
     map.on("styledata", handleStyleData);
-    map.on("sourcedata", handleStyleData);
     reorderLandRevenueLayers(map);
 
     return () => {
       map.off("styledata", handleStyleData);
-      map.off("sourcedata", handleStyleData);
     };
   }, [map]);
 
@@ -783,6 +846,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     if (!map) return;
 
     cachedData.current = {};
+    boundaryRequests.current = {};
     setMauzas([]);
     setSelectedMauzas([]);
     setKhasraMauzas([]);
