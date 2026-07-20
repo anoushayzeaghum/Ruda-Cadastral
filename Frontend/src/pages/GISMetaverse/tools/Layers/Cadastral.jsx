@@ -1,9 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  getRudaMauzas,
-  getRudaKhasras,
-  getRudaSquares,
-} from "../../../../services/api";
+import axios from "axios";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import MauzaBoundaryAttribute from "./AttributeTable/MauzaBoundaryAttribute";
@@ -182,7 +178,6 @@ function fitToExtraGeoJSON(map, geojson) {
 function emptyFC() {
   return { type: "FeatureCollection", features: [] };
 }
-
 
 const LAND_REVENUE_LAYER_ORDER = [
   IDS.moza.fill,
@@ -516,8 +511,7 @@ export default function Cadastral({ map, selectedProjectId }) {
       return;
     }
 
-    const geojson =
-      key === "moza" ? mauzaGeojson : cachedData.current[key];
+    const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
     updateOpacity(map, key, opacity, geojson, layers[key]?.color);
   };
 
@@ -537,8 +531,7 @@ export default function Cadastral({ map, selectedProjectId }) {
       return;
     }
 
-    const geojson =
-      key === "moza" ? mauzaGeojson : cachedData.current[key];
+    const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
     updateColor(map, key, color, geojson, layers[key]?.opacity ?? 100);
   };
 
@@ -591,8 +584,8 @@ export default function Cadastral({ map, selectedProjectId }) {
 
     try {
       // Fetch the complete Mauza model with no project or tehsil filter.
-      // const response = await axios.get(`${API_BASE}/mauza/`);
-      const geojson = await getRudaMauzas();
+      const response = await axios.get(`${API_BASE}/rudamauza/`);
+      const geojson = unwrapGeoJSON(response.data);
       const allMauzas = uniqueByMauza(geojson?.features || []);
       const completeMauzaGeojson = {
         type: "FeatureCollection",
@@ -637,16 +630,9 @@ export default function Cadastral({ map, selectedProjectId }) {
 
     try {
       // Fetch the complete Square or Khasra model directly.
-      // const endpoint = key === "khasra" ? "/khasra/" : "/square/";
-      // const response = await axios.get(`${API_BASE}${endpoint}`);
-      // const geojson = unwrapGeoJSON(response.data);
-      let geojson;
-
-      if (key === "khasra") {
-        geojson = await getRudaKhasras();
-      } else {
-        geojson = await getRudaSquares();
-      }
+      const endpoint = key === "khasra" ? "/rudakhasra/" : "/rudasquare/";
+      const response = await axios.get(`${API_BASE}${endpoint}`);
+      const geojson = unwrapGeoJSON(response.data);
 
       cachedData.current[key] = geojson;
 
