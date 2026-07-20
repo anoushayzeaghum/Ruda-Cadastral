@@ -481,6 +481,7 @@ export default function GISMetaverseMap({
       style: "mapbox://styles/mapbox/streets-v12",
       center: [0, 20],
       zoom: 1.5,
+      preserveDrawingBuffer: true,
     });
 
     mapRef.current.on("load", () => {

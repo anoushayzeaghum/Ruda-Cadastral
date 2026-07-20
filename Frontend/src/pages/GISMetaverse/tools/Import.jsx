@@ -1,5 +1,13 @@
 import React, { useState, useRef } from "react";
-import { X, Upload, Trash2, FileCheck, AlertTriangle, Loader2, Printer } from "lucide-react";
+import {
+  X,
+  Upload,
+  Trash2,
+  FileCheck,
+  AlertTriangle,
+  Loader2,
+  Printer,
+} from "lucide-react";
 import bbox from "@turf/bbox";
 import shp from "shpjs";
 import JSZip from "jszip";
@@ -46,7 +54,8 @@ const normaliseGeoJSON = (data) => {
     return { type: "FeatureCollection", features };
   }
   if (data.type === "FeatureCollection") return data;
-  if (data.type === "Feature") return { type: "FeatureCollection", features: [data] };
+  if (data.type === "Feature")
+    return { type: "FeatureCollection", features: [data] };
   // bare Geometry
   return {
     type: "FeatureCollection",
@@ -57,13 +66,16 @@ const normaliseGeoJSON = (data) => {
 /** Build a summary object from a FeatureCollection */
 const summarise = (fc) => {
   const count = fc.features.length;
-  const types = [...new Set(fc.features.map((f) => f.geometry?.type).filter(Boolean))];
+  const types = [
+    ...new Set(fc.features.map((f) => f.geometry?.type).filter(Boolean)),
+  ];
   return { count, types };
 };
 
 /** Validate that a parsed object is valid GeoJSON */
 const validateGeoJSON = (obj) => {
-  if (!obj || typeof obj !== "object") return "File does not contain valid JSON.";
+  if (!obj || typeof obj !== "object")
+    return "File does not contain valid JSON.";
   const validTypes = [
     "FeatureCollection",
     "Feature",
@@ -75,9 +87,11 @@ const validateGeoJSON = (obj) => {
     "MultiPolygon",
     "GeometryCollection",
   ];
-  if (!validTypes.includes(obj.type)) return `Invalid GeoJSON type "${obj.type}".`;
+  if (!validTypes.includes(obj.type))
+    return `Invalid GeoJSON type "${obj.type}".`;
   const fc = normaliseGeoJSON(obj);
-  if (!fc.features || fc.features.length === 0) return "GeoJSON contains no features.";
+  if (!fc.features || fc.features.length === 0)
+    return "GeoJSON contains no features.";
   return null; // valid
 };
 
@@ -100,22 +114,52 @@ const parseKMLText = (kmlText) => {
   return normaliseGeoJSON(geojson);
 };
 
-const waitForMapIdle = (map) =>
+const waitForMapRender = (map, timeoutMs = 5000) =>
   new Promise((resolve) => {
     if (!map) {
       resolve();
       return;
     }
 
-    if (map.loaded()) {
-      map.once("idle", resolve);
-    } else {
-      map.once("load", () => map.once("idle", resolve));
+    let finished = false;
+    let timeoutId;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeoutId);
+      map.off("idle", finish);
+      map.off("render", onRender);
+      resolve();
+    };
+
+    const onRender = () => {
+      // Wait one extra animation frame so the WebGL buffer contains the
+      // newly-fitted camera and all visible vector/raster layers.
+      requestAnimationFrame(() => requestAnimationFrame(finish));
+    };
+
+    timeoutId = setTimeout(finish, timeoutMs);
+
+    if (!map.isStyleLoaded?.()) {
+      map.once("load", () => {
+        map.once("idle", finish);
+        map.once("render", onRender);
+        map.triggerRepaint?.();
+      });
+      return;
     }
+
+    map.once("idle", finish);
+    map.once("render", onRender);
+    map.triggerRepaint?.();
   });
 
 const getImportedTitle = (fileName = "Imported Boundary") =>
-  fileName.replace(/\.(geojson|json|kml|kmz|zip)$/i, "").replace(/[_-]+/g, " ").trim();
+  fileName
+    .replace(/\.(geojson|json|kml|kmz|zip)$/i, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
 
 const prepareImportedFeatures = (geojson, fallbackLabel) => ({
   ...geojson,
@@ -150,39 +194,18 @@ const escapeHtml = (value = "") =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-const buildLegendRows = (map) => {
-  if (!map) return [];
-
-  const styleLayers = map.getStyle()?.layers || [];
-
-  return styleLayers
-    .filter((layer) => {
-      if (layer.layout?.visibility === "none") return false;
-      return ["fill", "line", "circle", "symbol"].includes(layer.type);
-    })
-    .filter((layer) => !layer.id.includes("label") || layer.id === LAYER_IDS.label)
-    .slice(-10)
-    .map((layer) => {
-      const paint = layer.paint || {};
-      const color =
-        paint["fill-color"] ||
-        paint["line-color"] ||
-        paint["circle-color"] ||
-        "#555555";
-
-      return {
-        id: layer.id,
-        label:
-          layer.id === LAYER_IDS.fill || layer.id === LAYER_IDS.outline
-            ? "Imported KMZ / Vector Boundary"
-            : layer.id
-                .replaceAll("-", " ")
-                .replaceAll("_", " ")
-                .replace(/\b\w/g, (char) => char.toUpperCase()),
-        color: typeof color === "string" ? color : "#555555",
-      };
-    });
-};
+const buildLegendRows = (uploadedTitle) => [
+  {
+    id: "ruda-jurisdiction",
+    label: "Lahore RUDA Jurisdiction",
+    kind: "jurisdiction",
+  },
+  {
+    id: "uploaded-boundary",
+    label: uploadedTitle || "Imported Boundary",
+    kind: "imported",
+  },
+];
 
 const makePrintableHtml = ({
   title,
@@ -196,7 +219,7 @@ const makePrintableHtml = ({
     .map(
       (item) => `
         <div class="legend-row">
-          <span class="legend-swatch" style="background:${escapeHtml(item.color)}"></span>
+          <span class="legend-swatch ${escapeHtml(item.kind)}"></span>
           <span>${escapeHtml(item.label)}</span>
         </div>`,
     )
@@ -214,8 +237,8 @@ const makePrintableHtml = ({
     body { background: #fff; }
     .sheet {
       position: relative;
-      width: 100vw;
-      height: 100vh;
+      width: 420mm;
+      height: 297mm;
       overflow: hidden;
       border: 3px solid #1f2937;
       background: #f8fafc;
@@ -226,6 +249,8 @@ const makePrintableHtml = ({
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center;
+      display: block;
     }
     .title {
       position: absolute;
@@ -265,13 +290,11 @@ const makePrintableHtml = ({
       border: 1px solid #334155;
       background: rgba(255,255,255,.96);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
+      padding: 5px;
     }
-    .north .n { font-size: 16px; margin-bottom: -2px; }
-    .north .arrow { font-size: 62px; line-height: .8; transform: scaleX(.72); }
+    .north svg { width: 96px; height: 96px; display: block; }
     .inset {
       position: absolute;
       left: 18px;
@@ -282,7 +305,7 @@ const makePrintableHtml = ({
       padding: 8px;
     }
     .inset-title { font-size: 12px; font-weight: 800; margin-bottom: 6px; }
-    .inset img { width: 100%; height: 165px; object-fit: cover; border: 1px solid #64748b; }
+    .inset img { width: 100%; height: 165px; object-fit: contain; background: #eef2f7; border: 1px solid #64748b; }
     .legend {
       position: absolute;
       right: 18px;
@@ -296,7 +319,20 @@ const makePrintableHtml = ({
     }
     .legend h3 { margin: 0 0 8px; font-size: 18px; }
     .legend-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 11px; }
-    .legend-swatch { width: 30px; height: 14px; border: 2px solid #facc15; flex: 0 0 auto; }
+    .legend-swatch {
+      width: 34px;
+      height: 17px;
+      flex: 0 0 auto;
+      background: transparent;
+    }
+    .legend-swatch.imported {
+      border: 3px solid #ffff00;
+      background: rgba(209,213,219,.5);
+    }
+    .legend-swatch.jurisdiction {
+      border: 3px solid #d100b8;
+      box-shadow: inset 0 0 0 1px #ffffff;
+    }
     .scale {
       position: absolute;
       left: 50%;
@@ -326,7 +362,8 @@ const makePrintableHtml = ({
       font-weight: 700;
     }
     @media print {
-      .sheet { width: 100vw; height: 100vh; }
+      html, body { width: 420mm; height: 297mm; }
+      .sheet { width: 420mm; height: 297mm; }
     }
   </style>
 </head>
@@ -335,7 +372,25 @@ const makePrintableHtml = ({
     <img class="map" src="${mapImage}" alt="Printed map" />
     <div class="logo-box"><img src="${logoUrl}" alt="RUDA Logo" /></div>
     <div class="title">${escapeHtml(title)}</div>
-    <div class="north"><div class="n">N</div><div class="arrow">↑</div></div>
+    <div class="north" aria-label="North arrow">
+      <svg viewBox="0 0 100 100" role="img">
+        <text x="50" y="10" text-anchor="middle" font-size="12" font-family="Arial" font-weight="700">N</text>
+        <text x="50" y="98" text-anchor="middle" font-size="12" font-family="Arial" font-weight="700">S</text>
+        <text x="7" y="55" text-anchor="middle" font-size="12" font-family="Arial" font-weight="700">W</text>
+        <text x="93" y="55" text-anchor="middle" font-size="12" font-family="Arial" font-weight="700">E</text>
+        <circle cx="50" cy="52" r="34" fill="#fff" stroke="#111" stroke-width="1.5"/>
+        <circle cx="50" cy="52" r="27" fill="none" stroke="#111" stroke-width="1"/>
+        <path d="M50 15 L57 46 L50 41 L43 46 Z" fill="#111"/>
+        <path d="M50 89 L43 58 L50 63 L57 58 Z" fill="#fff" stroke="#111" stroke-width="1"/>
+        <path d="M13 52 L44 45 L39 52 L44 59 Z" fill="#fff" stroke="#111" stroke-width="1"/>
+        <path d="M87 52 L56 59 L61 52 L56 45 Z" fill="#111"/>
+        <path d="M27 29 L46 46 L39 43 L36 50 Z" fill="#111"/>
+        <path d="M73 75 L54 58 L61 61 L64 54 Z" fill="#fff" stroke="#111" stroke-width="1"/>
+        <path d="M73 29 L54 46 L61 43 L64 50 Z" fill="#fff" stroke="#111" stroke-width="1"/>
+        <path d="M27 75 L46 58 L39 61 L36 54 Z" fill="#111"/>
+        <circle cx="50" cy="52" r="3" fill="#111"/>
+      </svg>
+    </div>
 
     <div class="inset">
       <div class="inset-title">RUDA / LP Principle Boundary Overview</div>
@@ -355,11 +410,28 @@ const makePrintableHtml = ({
     </div>
   </div>
   <script>
-    window.onload = () => {
-      setTimeout(() => {
-        window.print();
-      }, 350);
+    const waitForImages = () => {
+      const images = Array.from(document.images);
+      return Promise.all(
+        images.map((image) => {
+          if (image.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            image.addEventListener("load", resolve, { once: true });
+            image.addEventListener("error", resolve, { once: true });
+          });
+        }),
+      );
     };
+
+    window.addEventListener("load", async () => {
+      await waitForImages();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.focus();
+          window.print();
+        });
+      });
+    });
   </script>
 </body>
 </html>`;
@@ -392,7 +464,11 @@ export default function Import({ map, onClose }) {
   const addLayers = (geojson) => {
     removeImportedLayers(map);
 
-    map.addSource(SOURCE_ID, { type: "geojson", data: geojson, generateId: true });
+    map.addSource(SOURCE_ID, {
+      type: "geojson",
+      data: geojson,
+      generateId: true,
+    });
 
     // Polygon fill
     map.addLayer({
@@ -424,7 +500,11 @@ export default function Import({ map, onClose }) {
       type: "symbol",
       source: SOURCE_ID,
       layout: {
-        "text-field": ["coalesce", ["get", "_import_label"], "Imported Boundary"],
+        "text-field": [
+          "coalesce",
+          ["get", "_import_label"],
+          "Imported Boundary",
+        ],
         "text-size": 15,
         "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
         "text-anchor": "center",
@@ -474,7 +554,7 @@ export default function Import({ map, onClose }) {
             [bounds[0], bounds[1]],
             [bounds[2], bounds[3]],
           ],
-          { padding: 60, maxZoom: 18 }
+          { padding: 60, maxZoom: 18 },
         );
       }
     } catch {
@@ -494,7 +574,7 @@ export default function Import({ map, onClose }) {
     const type = detectFileType(file.name);
     if (!type) {
       setError(
-        `Unsupported file type. Accepted: ${ACCEPTED_EXTENSIONS.join(", ")}.`
+        `Unsupported file type. Accepted: ${ACCEPTED_EXTENSIONS.join(", ")}.`,
       );
       return;
     }
@@ -502,7 +582,7 @@ export default function Import({ map, onClose }) {
     // 2. size check
     if (file.size > MAX_FILE_SIZE) {
       setError(
-        `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed size is 10 MB.`
+        `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed size is 10 MB.`,
       );
       return;
     }
@@ -559,7 +639,9 @@ export default function Import({ map, onClose }) {
         try {
           zip = await JSZip.loadAsync(arrayBuffer);
         } catch {
-          setError("Failed to open KMZ file. Make sure it is a valid KMZ archive.");
+          setError(
+            "Failed to open KMZ file. Make sure it is a valid KMZ archive.",
+          );
           return;
         }
 
@@ -567,7 +649,7 @@ export default function Import({ map, onClose }) {
         // then any .kml anywhere in the archive
         const allFileNames = Object.keys(zip.files);
         const kmlFiles = allFileNames.filter(
-          (n) => n.toLowerCase().endsWith(".kml") && !zip.files[n].dir
+          (n) => n.toLowerCase().endsWith(".kml") && !zip.files[n].dir,
         );
 
         if (kmlFiles.length === 0) {
@@ -583,7 +665,7 @@ export default function Import({ map, onClose }) {
 
         if (kmlFiles.length > 1) {
           setWarning(
-            `KMZ contains ${kmlFiles.length} KML files. Using "${primaryKml}".`
+            `KMZ contains ${kmlFiles.length} KML files. Using "${primaryKml}".`,
           );
         }
 
@@ -609,24 +691,32 @@ export default function Import({ map, onClose }) {
         try {
           const zip = await JSZip.loadAsync(arrayBuffer);
           const fileNames = Object.keys(zip.files);
-          const hasPrj = fileNames.some((n) => n.toLowerCase().endsWith(".prj"));
-          const hasShp = fileNames.some((n) => n.toLowerCase().endsWith(".shp"));
-          const hasDbf = fileNames.some((n) => n.toLowerCase().endsWith(".dbf"));
+          const hasPrj = fileNames.some((n) =>
+            n.toLowerCase().endsWith(".prj"),
+          );
+          const hasShp = fileNames.some((n) =>
+            n.toLowerCase().endsWith(".shp"),
+          );
+          const hasDbf = fileNames.some((n) =>
+            n.toLowerCase().endsWith(".dbf"),
+          );
 
           if (!hasShp) {
             setError(
-              "ZIP does not contain a .shp file. Please upload a valid zipped Shapefile."
+              "ZIP does not contain a .shp file. Please upload a valid zipped Shapefile.",
             );
             return;
           }
           if (!hasDbf) {
-            setWarning("⚠ No .dbf file found — attribute data will be missing.");
+            setWarning(
+              "⚠ No .dbf file found — attribute data will be missing.",
+            );
           }
           if (!hasPrj) {
             setWarning((prev) =>
               prev
                 ? prev + " Also, no .prj file found — assuming WGS 84."
-                : "⚠ No .prj file found in the ZIP. The data will be assumed to be in WGS 84 (EPSG:4326)."
+                : "⚠ No .prj file found in the ZIP. The data will be assumed to be in WGS 84 (EPSG:4326).",
             );
           }
         } catch {
@@ -641,7 +731,7 @@ export default function Import({ map, onClose }) {
         } catch (e) {
           console.error("shpjs parse error:", e);
           setError(
-            "Failed to parse shapefile. Ensure the ZIP contains valid .shp and .dbf files."
+            "Failed to parse shapefile. Ensure the ZIP contains valid .shp and .dbf files.",
           );
           return;
         }
@@ -674,9 +764,33 @@ export default function Import({ map, onClose }) {
 
   const handlePrint = async () => {
     if (!map || !importedGeoJSON?.features?.length) {
-      setError("Import a KMZ, KML, GeoJSON or zipped Shapefile before printing.");
+      setError(
+        "Import a KMZ, KML, GeoJSON or zipped Shapefile before printing.",
+      );
       return;
     }
+
+    // Open the window immediately inside the click event. Opening it after
+    // fitBounds/idle awaits causes browsers to treat it as an unsolicited
+    // pop-up and silently block the print page.
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      setError(
+        "The browser blocked the print window. Allow pop-ups for this site and try again.",
+      );
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html>
+      <html>
+        <head><title>Preparing map…</title></head>
+        <body style="font-family:Arial,sans-serif;padding:24px">
+          Preparing printable map…
+        </body>
+      </html>`);
+    printWindow.document.close();
 
     setPrintLoading(true);
     setError(null);
@@ -689,6 +803,22 @@ export default function Import({ map, onClose }) {
     };
 
     try {
+      // Capture the user's current map view first. This becomes the lower-left
+      // overview and therefore includes every layer currently open on the map.
+      await waitForMapRender(map);
+      const overviewImage = map.getCanvas().toDataURL("image/png", 1);
+
+      // Force the imported polygon to use the official print symbology,
+      // regardless of the styling contained in the uploaded file.
+      if (map.getLayer(LAYER_IDS.fill)) {
+        map.setPaintProperty(LAYER_IDS.fill, "fill-color", "#d1d5db");
+        map.setPaintProperty(LAYER_IDS.fill, "fill-opacity", 0.34);
+      }
+      if (map.getLayer(LAYER_IDS.outline)) {
+        map.setPaintProperty(LAYER_IDS.outline, "line-color", "#ffff00");
+        map.setPaintProperty(LAYER_IDS.outline, "line-width", 3);
+      }
+
       const bounds = bbox(importedGeoJSON);
 
       if (bounds.every((value) => Number.isFinite(value))) {
@@ -701,38 +831,33 @@ export default function Import({ map, onClose }) {
             padding: { top: 90, right: 90, bottom: 90, left: 90 },
             maxZoom: 17,
             duration: 700,
+            essential: true,
           },
         );
       }
 
-      await waitForMapIdle(map);
+      await waitForMapRender(map);
 
       const canvas = map.getCanvas();
-      const mapImage = canvas.toDataURL("image/png");
+      const mapImage = canvas.toDataURL("image/png", 1);
 
-      if (!mapImage || mapImage === "data:,") {
+      if (!mapImage || mapImage === "data:," || mapImage.length < 1000) {
         throw new Error(
-          "The map canvas could not be captured. Initialize the Mapbox/MapLibre map with preserveDrawingBuffer: true.",
+          "The map canvas could not be captured. Make sure preserveDrawingBuffer is enabled on the Mapbox map.",
         );
       }
 
-      const legendRows = buildLegendRows(map);
       const title = summary?.title || "Imported Boundary Map";
+      const legendRows = buildLegendRows(title);
       const center = map.getCenter();
       const scaleText = `Map center: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)} · Zoom ${map.getZoom().toFixed(1)}`;
-
-      const printWindow = window.open("", "_blank", "noopener,noreferrer");
-
-      if (!printWindow) {
-        throw new Error("The browser blocked the print window. Allow pop-ups and try again.");
-      }
 
       printWindow.document.open();
       printWindow.document.write(
         makePrintableHtml({
           title,
           mapImage,
-          insetImage: mapImage,
+          insetImage: overviewImage || mapImage,
           legendRows,
           logoUrl: RudaLogo,
           scaleText,
@@ -741,9 +866,9 @@ export default function Import({ map, onClose }) {
       printWindow.document.close();
     } catch (printError) {
       console.error("Print error:", printError);
+      printWindow.close();
       setError(
-        printError?.message ||
-          "The map could not be prepared for printing.",
+        printError?.message || "The map could not be prepared for printing.",
       );
     } finally {
       map.easeTo({

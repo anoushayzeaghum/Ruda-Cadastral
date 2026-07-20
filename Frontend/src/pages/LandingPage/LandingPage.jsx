@@ -35,7 +35,6 @@ import {
   Radio,
   Users,
   Leaf,
-  Workflow,
 } from "lucide-react";
 
 const HERO_SLIDES = [
@@ -197,10 +196,10 @@ const DECISION_AREAS = [
 ];
 
 const TOP_PILLARS = [
-  { label: "Integrated Data", icon: Database },
-  { label: "Real-time Monitoring", icon: Radio },
-  { label: "Collaborative Decisions", icon: Users },
-  { label: "Sustainable Future", icon: Leaf },
+  { label: "Transparent ", icon: Shield },
+  { label: "Data-driven ", icon: BarChart3 },
+  { label: "Livability", icon: Users },
+  { label: "Sustainable ", icon: Leaf },
 ];
 
 const RAVI_CITY_PILLARS = [
@@ -215,11 +214,10 @@ const RAVI_CITY_PILLARS = [
 ];
 
 const CORE_CAPABILITIES = [
-  { label: "3D Visualization", icon: Box },
-  { label: "Real-time Data", icon: Database },
-  { label: "Analytics", icon: BarChart3 },
-  { label: "Simulation", icon: Workflow },
-  { label: "Scenarios", icon: Layers },
+  { label: "Integrated Data", icon: Database },
+  { label: "Real-time Monitoring", icon: Radio },
+  { label: "Collaborative Decisions", icon: Users },
+  { label: "Sustainable Future", icon: Leaf },
 ];
 
 const TEAM_MEMBERS = [
@@ -620,7 +618,7 @@ function RaviCityVisionPanel() {
         Ravi City
       </div>
 
-      <div className="mt-3 grid grid-cols-5 gap-1.5">
+      {/* <div className="mt-3 grid grid-cols-5 gap-1.5">
         {RAVI_CITY_PILLARS.map((item) => {
           const Icon = item.icon;
 
@@ -641,7 +639,7 @@ function RaviCityVisionPanel() {
             </div>
           );
         })}
-      </div>
+      </div> */}
     </div>
   );
 }
@@ -666,12 +664,12 @@ function CapabilityNode({ item }) {
   const Icon = item.icon;
 
   return (
-    <div className="group flex w-[70px] flex-col items-center text-center sm:w-[84px]">
-      <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-[#72DFFF]/75 bg-[#041c20]/[0.82] text-[#91E7FF] shadow-[0_0_26px_rgba(61,198,255,.18)] backdrop-blur-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-14 sm:w-14">
-        <span className="absolute inset-[5px] rounded-full border border-white/10" />
-        <Icon size={20} strokeWidth={1.8} />
+    <div className="group flex w-[82px] min-w-0 flex-col items-center text-center text-white sm:w-[104px]">
+      <div className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[#49B84A]/70 bg-[#061b17]/[0.78] text-[#8FEA67] shadow-[0_0_26px_rgba(73,184,74,.2)] backdrop-blur-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:border-[#8FEA67] sm:h-12 sm:w-12">
+        <span className="absolute inset-[4px] rounded-full border border-white/10" />
+        <Icon size={19} strokeWidth={1.8} />
       </div>
-      <span className="mt-2 text-[7px] font-bold uppercase leading-tight tracking-[0.07em] text-white/[0.72] sm:text-[8px]">
+      <span className="mt-1.5 max-w-[100px] text-[7px] font-bold uppercase leading-tight tracking-[0.08em] text-white/[0.76] sm:text-[8px]">
         {item.label}
       </span>
     </div>
@@ -997,16 +995,16 @@ export default function LandingPage() {
         <div className="absolute inset-0 z-10 opacity-25 [background-image:linear-gradient(rgba(104,223,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(104,223,255,.04)_1px,transparent_1px)] [background-size:44px_44px]" />
         <div className="absolute left-1/2 top-[185px] z-10 h-[390px] w-[58%] -translate-x-1/2 rounded-full bg-[#0B7A3B]/[0.08] blur-[100px]" />
 
-        <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-5 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
+        <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-1 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
           <div className="relative mx-auto w-full max-w-[1600px]">
             <div className="mx-auto max-w-[1450px] text-center">
-              <div className="text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.84] sm:text-[13px] lg:text-[14px] xl:whitespace-nowrap">
+              {/* <div className="text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.84] sm:text-[13px] lg:text-[14px] xl:whitespace-nowrap">
                 An Integrated, Immersive &amp; Intelligent Platform for
                 Planning, Monitoring, Collaboration &amp; Sustainable
                 Development
-              </div>
+              </div> */}
 
-              <div className="mt-2 flex items-center justify-center gap-3">
+              <div className="mt-0 flex items-center justify-center gap-3">
                 <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
                 <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#8FEA67] sm:text-[14px]">
                   One City. One Data. One Platform.
@@ -1081,10 +1079,9 @@ export default function LandingPage() {
                 </h1>
 
                 <p className="mx-auto mt-4 max-w-2xl px-2 text-xs leading-relaxed text-white/[0.78] sm:mt-5 sm:text-sm md:text-[15px]">
-                  A unified geospatial decision-support environment connecting
-                  land records, planning, BIM, engineering, investment,
-                  infrastructure and sustainability across the RUDA project
-                  area.
+                  An Integrated, Immersive &amp; Intelligent Platform for
+                  Planning, Monitoring, Collaboration &amp; Sustainable
+                  Development
                 </p>
               </div>
 
@@ -1092,7 +1089,7 @@ export default function LandingPage() {
               <div className="transition-transform duration-300 xl:translate-y-[30px] 2xl:translate-y-[36px]">
                 <div className="relative mx-auto mt-5 max-w-[610px] sm:mt-6">
                   <div
-                    className="absolute left-[8%] right-[8%] top-7 hidden h-px origin-center bg-gradient-to-r from-transparent via-[#4CCBFF]/[0.55] to-transparent sm:block"
+                    className="absolute left-[8%] right-[8%] top-6 hidden h-px origin-center bg-gradient-to-r from-transparent via-[#8FEA67]/[0.55] to-transparent sm:block"
                     style={{ animation: "dataLine 3.8s ease-in-out infinite" }}
                   />
 
