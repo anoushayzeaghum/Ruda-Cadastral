@@ -423,12 +423,38 @@ const makePrintableHtml = ({
       );
     };
 
+    const returnToApplication = () => {
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.focus();
+        }
+      } catch (error) {
+        // Ignore cross-window focus errors.
+      }
+
+      // Close the temporary print tab so it cannot keep focus or leave the
+      // application feeling blocked after printing/cancelling.
+      setTimeout(() => {
+        try {
+          window.close();
+        } catch (error) {
+          // Ignore browsers that do not allow scripted closing.
+        }
+      }, 100);
+    };
+
+    window.addEventListener("afterprint", returnToApplication, { once: true });
+
     window.addEventListener("load", async () => {
       await waitForImages();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           window.focus();
           window.print();
+
+          // Some browsers do not fire afterprint when the print dialog is
+          // cancelled. Restore focus and close the temporary tab as fallback.
+          setTimeout(returnToApplication, 1500);
         });
       });
     });

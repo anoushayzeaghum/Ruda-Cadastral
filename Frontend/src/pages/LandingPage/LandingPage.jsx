@@ -614,7 +614,7 @@ function RaviCityVisionPanel() {
         </span>
       </div>
 
-      <div className="mt-1 text-[22px] font-black uppercase leading-none tracking-[0.04em] text-[#70D84F] 2xl:text-[24px]">
+      <div className="mt-1 text-[26px] font-black uppercase leading-none tracking-[0.04em] text-[#70D84F] 2xl:text-[28px]">
         Ravi City
       </div>
 
@@ -1019,7 +1019,7 @@ export default function LandingPage() {
                   <img
                     src={RudaLogo}
                     alt="RUDA"
-                    className="h-28 w-auto object-contain drop-shadow-[0_8px_22px_rgba(0,0,0,0.45)] 2xl:h-28"
+                    className="h-20 w-auto object-contain drop-shadow-[0_8px_22px_rgba(0,0,0,0.45)] 2xl:h-24"
                   />
                 </a>
 
@@ -1847,3 +1847,4 @@ export default function LandingPage() {
     </div>
   );
 }
+44;
