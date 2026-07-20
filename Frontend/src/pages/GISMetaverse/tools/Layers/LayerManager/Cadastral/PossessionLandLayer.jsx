@@ -6,6 +6,49 @@ export const POSSESSION_LAND_COLORS = {
   line: "#27500A",
 };
 
+const LAND_LABEL_MIN_ZOOM = 15;
+const LAND_LABEL_MAX_ZOOM = 24;
+
+const KHASRA_LABEL_EXPRESSION = [
+  "case",
+  [
+    "all",
+    ["has", "khasra"],
+    ["!=", ["get", "khasra"], null],
+    ["!=", ["to-string", ["get", "khasra"]], ""],
+  ],
+  ["to-string", ["get", "khasra"]],
+  "",
+];
+
+function applyKhasraOnlyLabel(map, labelLayerId) {
+  if (!map || !labelLayerId || !map.getLayer(labelLayerId)) return;
+
+  map.setLayoutProperty(
+    labelLayerId,
+    "text-field",
+    KHASRA_LABEL_EXPRESSION,
+  );
+  map.setLayoutProperty(labelLayerId, "text-size", [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    LAND_LABEL_MIN_ZOOM,
+    10,
+    16,
+    11,
+    18,
+    13,
+  ]);
+  map.setLayoutProperty(labelLayerId, "text-allow-overlap", false);
+  map.setLayoutProperty(labelLayerId, "text-ignore-placement", false);
+  map.setLayerZoomRange(
+    labelLayerId,
+    LAND_LABEL_MIN_ZOOM,
+    LAND_LABEL_MAX_ZOOM,
+  );
+}
+
 export function addPossessionLandLayer(
   map,
   data,
@@ -27,7 +70,10 @@ export function addPossessionLandLayer(
     labelColor: color,
     opacity,
     fillOpacity: 0.65,
-    labelFields: ["projects", "khasra_lab", "mouza"],
+    labelFields: ["khasra"],
+    labelMinZoom: LAND_LABEL_MIN_ZOOM,
     lineWidth: 1.3,
   });
+
+  applyKhasraOnlyLabel(map, LAYERS.possessionLandLabel);
 }
