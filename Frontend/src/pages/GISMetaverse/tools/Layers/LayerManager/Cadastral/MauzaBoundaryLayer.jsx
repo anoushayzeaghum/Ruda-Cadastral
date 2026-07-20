@@ -34,7 +34,7 @@ export function addMauzaBoundaryLayer(
     color,
     opacity,
     // 2.5 px at low zoom, smoothly increasing to 3 px.
-    lineWidth: ["interpolate", ["linear"], ["zoom"], 8, 2.5, 16, 3],
+    lineWidth: ["interpolate", ["linear"], ["zoom"], 8, 1, 16, 1.5],
     fillOpacity: 0,
     labelExpression: MAUZA_LABEL,
     labelMinZoom: 14,

@@ -1038,7 +1038,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-1 grid flex-1 items-center gap-5 xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
+          <div className="mt-1 grid flex-1 items-center gap-5 xl:items-start xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
             <div className="hidden flex-col gap-3 xl:flex">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
@@ -1847,4 +1847,3 @@ export default function LandingPage() {
     </div>
   );
 }
-44;

@@ -1,6 +1,7 @@
 from ..common_imports import *
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
+from django.http import HttpResponse
 
 
 @method_decorator(cache_page(60 * 10), name="list")
@@ -223,6 +224,233 @@ class ListRudaKhasraView(viewsets.ViewSet):
                 data=str(e),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="extent",
+        url_name="extent",
+    )
+    def extent(self, request):
+        """Return only the full table extent and count, never all geometries."""
+        cache_key = "ruda_khasra_extent_v1"
+        cached_extent = cache.get(cache_key)
+
+        if cached_extent is None:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT
+                        ST_XMin(extent)::float8,
+                        ST_YMin(extent)::float8,
+                        ST_XMax(extent)::float8,
+                        ST_YMax(extent)::float8,
+                        feature_count::bigint
+                    FROM (
+                        SELECT
+                            ST_Extent(ST_Force2D("geom")) AS extent,
+                            COUNT(*) AS feature_count
+                        FROM "ruda_khasra"
+                        WHERE "geom" IS NOT NULL
+                          AND NOT ST_IsEmpty("geom")
+                    ) AS layer_extent
+                    """
+                )
+                row = cursor.fetchone()
+
+            bbox = list(row[:4]) if row and all(v is not None for v in row[:4]) else []
+            cached_extent = {
+                "bbox": bbox,
+                "count": int(row[4]) if row and row[4] is not None else 0,
+                "min_zoom": 11,
+            }
+            cache.set(cache_key, cached_extent, 60 * 60 * 24)
+
+        return ApiResponse(
+            status=status.HTTP_200_OK,
+            message="RudaKhasra extent fetched successfully.",
+            data=cached_extent,
+            http_status=status.HTTP_200_OK,
+        ).create_response()
+
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path=r"tiles/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)",
+        url_name="tiles",
+    )
+    def tiles(self, request, z=None, x=None, y=None):
+        """
+        Serve RUDA Khasra as Mapbox Vector Tiles.
+
+        Only features intersecting the requested map tile are read from
+        PostGIS. This keeps the browser responsive even though the source table
+        contains roughly 233,000 polygons.
+        """
+        try:
+            z = int(z)
+            x = int(x)
+            y = int(y)
+        except (TypeError, ValueError):
+            return HttpResponse(status=400)
+
+        max_tile_index = (1 << z) - 1 if 0 <= z <= 18 else -1
+        if (
+            z < 11
+            or z > 18
+            or x < 0
+            or y < 0
+            or x > max_tile_index
+            or y > max_tile_index
+        ):
+            return HttpResponse(
+                b"",
+                content_type="application/vnd.mapbox-vector-tile",
+            )
+
+        tile_cache_key = f"ruda_khasra_mvt_v3_{z}_{x}_{y}"
+        cached_tile = cache.get(tile_cache_key)
+        if cached_tile is not None:
+            response = HttpResponse(
+                cached_tile,
+                content_type="application/vnd.mapbox-vector-tile",
+            )
+            response["Cache-Control"] = "public, max-age=3600"
+            return response
+
+        # The frontend starts this source at zoom 11. Geometry simplification
+        # is performed in Web Mercator metres before MVT clipping.
+        if z <= 11:
+            tolerance = 1.5
+        elif z <= 13:
+            tolerance = 0.45
+        elif z <= 15:
+            tolerance = 0.12
+        else:
+            tolerance = 0.0
+
+        sql = """
+            WITH
+            tile_bounds AS (
+                SELECT
+                    tile_3857 AS geom_3857,
+                    ST_Transform(tile_3857, 4326) AS geom_4326
+                FROM (
+                    SELECT ST_TileEnvelope(%s, %s, %s) AS tile_3857
+                ) AS tile
+            ),
+            candidates AS (
+                SELECT
+                    k."gid",
+                    k."__gid",
+                    k."district" AS district_text,
+                    k."tehsil" AS tehsil_text,
+                    k."mauza" AS mauza_text,
+                    k."remarks",
+                    k."area_sqft",
+                    k."shape_leng",
+                    k."shape_area",
+                    k."dist_id",
+                    k."tehsil_id",
+                    k."mauza_id",
+                    k."kc",
+                    k."kc_id",
+                    k."pc",
+                    k."pc_id",
+                    k."hadbust_no",
+                    k."asse_cir",
+                    k."type",
+                    k."karam"::float8 AS karam,
+                    k."sq",
+                    k."kh",
+                    k."sk",
+                    k."join_shp",
+                    k."khasra_id",
+                    k."khewat_id",
+                    k."khatoni_no",
+                    k."dc_rate",
+                    k."b",
+                    CASE
+                        WHEN %s > 0 THEN ST_SimplifyPreserveTopology(
+                            ST_Transform(ST_Force2D(k."geom"), 3857),
+                            %s
+                        )
+                        ELSE ST_Transform(ST_Force2D(k."geom"), 3857)
+                    END AS geom_3857,
+                    tb.geom_3857 AS tile_geom
+                FROM "ruda_khasra" AS k
+                CROSS JOIN tile_bounds AS tb
+                WHERE k."geom" IS NOT NULL
+                  AND NOT ST_IsEmpty(k."geom")
+                  AND k."geom" && tb.geom_4326
+                  AND ST_Intersects(k."geom", tb.geom_4326)
+            ),
+            mvt_rows AS (
+                SELECT
+                    "gid",
+                    "__gid",
+                    district_text,
+                    district_text AS district_name,
+                    tehsil_text,
+                    tehsil_text AS tehsil_name,
+                    mauza_text,
+                    mauza_text AS mauza_name,
+                    "remarks",
+                    "area_sqft",
+                    "shape_leng",
+                    "shape_area",
+                    "dist_id",
+                    "dist_id" AS district_id,
+                    "tehsil_id",
+                    "mauza_id",
+                    "kc",
+                    "kc_id",
+                    "pc",
+                    "pc_id",
+                    "hadbust_no",
+                    "asse_cir",
+                    "type",
+                    "karam",
+                    "sq",
+                    "kh",
+                    "sk",
+                    "join_shp",
+                    "khasra_id",
+                    "khewat_id",
+                    "khatoni_no",
+                    "dc_rate",
+                    "b",
+                    ST_AsMVTGeom(
+                        geom_3857,
+                        tile_geom,
+                        4096,
+                        64,
+                        true
+                    ) AS geom
+                FROM candidates
+                WHERE geom_3857 IS NOT NULL
+                  AND NOT ST_IsEmpty(geom_3857)
+            )
+            SELECT COALESCE(
+                ST_AsMVT(mvt_rows, 'ruda_khasra', 4096, 'geom', 'gid'),
+                ''::bytea
+            )
+            FROM mvt_rows
+        """
+
+        with connection.cursor() as cursor:
+            cursor.execute(sql, [z, x, y, tolerance, tolerance])
+            row = cursor.fetchone()
+
+        tile = bytes(row[0]) if row and row[0] is not None else b""
+        cache.set(tile_cache_key, tile, 60 * 60)
+
+        response = HttpResponse(
+            tile,
+            content_type="application/vnd.mapbox-vector-tile",
+        )
+        response["Cache-Control"] = "public, max-age=3600"
+        return response
 
     @action(
         detail=True,
