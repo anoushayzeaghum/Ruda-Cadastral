@@ -360,48 +360,48 @@ export default function TopographicPlan({
           <LayerRow
             label="Spot Level"
             checked={spotLevelVisible}
-            disabled={!selectedProjectId}
+            disabled={false}
             opacity={spotLevelOpacity}
             loading={topoLoading && spotLevelVisible}
-            onChange={setSpotLevelVisible}
+            onCheckedChange={setSpotLevelVisible}
             onOpacityChange={setSpotLevelOpacity}
           />
 
           <LayerRow
             label="Contours"
             checked={contoursVisible}
-            disabled={!selectedProjectId}
+            disabled={false}
             opacity={contoursOpacity}
             loading={topoLoading && contoursVisible}
-            onChange={setContoursVisible}
+            onCheckedChange={setContoursVisible}
             onOpacityChange={setContoursOpacity}
           />
 
           <LayerRow
             label="Topographic Boundary"
             checked={topoVisible}
-            disabled={!selectedProjectId}
+            disabled={false}
             opacity={topoOpacity}
             loading={topoLoading && topoVisible}
-            onChange={setTopoVisible}
+            onCheckedChange={setTopoVisible}
             onOpacityChange={setTopoOpacity}
           />
 
           <LayerRow
             label="DSM"
             checked={dsmVisible}
-            disabled={!selectedProjectId}
+            disabled={false}
             opacity={dsmOpacity}
-            onChange={setDsmVisible}
+            onCheckedChange={setDsmVisible}
             onOpacityChange={setDsmOpacity}
           />
 
           <LayerRow
             label="DTM"
             checked={dtmVisible}
-            disabled={!selectedProjectId}
+            disabled={false}
             opacity={dtmOpacity}
-            onChange={setDtmVisible}
+            onCheckedChange={setDtmVisible}
             onOpacityChange={setDtmOpacity}
           />
         </div>

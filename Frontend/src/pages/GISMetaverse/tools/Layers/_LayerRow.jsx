@@ -11,19 +11,27 @@ export default function LayerRow({
   checked,
   opacity,
   onCheckedChange,
+  onChange,
   onOpacityChange,
   disabled = false,
 }) {
+  const handleCheckedChange = (nextValue) => {
+    onCheckedChange?.(nextValue);
+    onChange?.(nextValue);
+  };
+
   return (
     <div className={`mt-3 first:mt-1 ${disabled ? "opacity-50" : ""}`}>
       {/* Row: checkbox + swatch + label + grid icon */}
       <div className="flex items-center justify-between">
-        <label className={`flex items-center gap-2 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}>
+        <label
+          className={`flex items-center gap-2 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+        >
           <input
             type="checkbox"
             checked={!!checked}
             disabled={disabled}
-            onChange={(e) => onCheckedChange?.(e.target.checked)}
+            onChange={(e) => handleCheckedChange(e.target.checked)}
             className="accent-[#65c96b] disabled:cursor-not-allowed"
           />
           <span

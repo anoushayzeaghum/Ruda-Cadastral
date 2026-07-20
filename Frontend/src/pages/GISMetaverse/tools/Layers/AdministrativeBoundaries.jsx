@@ -8,7 +8,6 @@ import {
 } from "./AttributeTable/AdminAttributeTableShell";
 import {
   RUDA_PLANNING_BOUNDARY,
-  RUDA_PHASE_LEGEND,
   DEFAULT_RUDA_PLANNING_STYLE,
   addOrUpdateRudaPlanningBoundary,
   setRudaPlanningBoundaryVisibility,
@@ -95,6 +94,11 @@ export default function AdministrativeBoundaries({
 }) {
   const [open, setOpen] = useState(false);
   const [phaseOpen, setPhaseOpen] = useState(false);
+  const [phaseOptions, setPhaseOptions] = useState({
+    notifiedPhases: false,
+    masterplanPhases: false,
+    executionPhases: false,
+  });
   const [detailsOpen, setDetailsOpen] = useState({});
   const [loading, setLoading] = useState({});
   const [featureCounts, setFeatureCounts] = useState({});
@@ -118,13 +122,6 @@ export default function AdministrativeBoundaries({
 
   const isVisible = (key) =>
     adminBoundaryVisibility?.[key] ?? localVisibility[key] ?? false;
-
-  useEffect(() => {
-    if (adminBoundaryVisibility?.rudaPhasesBoundary) {
-      setOpen(true);
-      setPhaseOpen(true);
-    }
-  }, [adminBoundaryVisibility?.rudaPhasesBoundary]);
 
   const setVisibleState = (key, visible) => {
     setLocalVisibility((prev) => ({ ...prev, [key]: visible }));
@@ -165,9 +162,6 @@ export default function AdministrativeBoundaries({
       def.addOrUpdate(map, geojson, styles[key]);
       fitToData(map, geojson);
 
-      if (key === "rudaPhasesBoundary") {
-        setPhaseOpen(true);
-      }
     } catch (error) {
       console.error(`${def.label} load error:`, error);
       setVisibleState(key, false);
@@ -265,14 +259,23 @@ export default function AdministrativeBoundaries({
             loading={loading.rudaPhasesBoundary}
             label={LAYERS.rudaPhasesBoundary.label}
             style={styles.rudaPhasesBoundary}
-            previewColors={RUDA_PHASE_LEGEND.map((item) => item.color)}
             onChange={() => toggleLayer("rudaPhasesBoundary")}
             onStyleChange={(patch) => updateStyle("rudaPhasesBoundary", patch)}
             detailsOpen={phaseOpen}
             onDetails={() => setPhaseOpen((prev) => !prev)}
             count={featureCounts.rudaPhasesBoundary}
           >
-            {phaseOpen && <PhaseLegend items={RUDA_PHASE_LEGEND} />}
+            {phaseOpen && (
+              <PhaseOptions
+                values={phaseOptions}
+                onChange={(key) =>
+                  setPhaseOptions((prev) => ({
+                    ...prev,
+                    [key]: !prev[key],
+                  }))
+                }
+              />
+            )}
           </LayerItem>
 
           <LayerItem
@@ -316,27 +319,33 @@ export default function AdministrativeBoundaries({
   );
 }
 
-function PhaseLegend({ items }) {
+function PhaseOptions({ values, onChange }) {
+  const options = [
+    { key: "notifiedPhases", label: "Notified Phases" },
+    { key: "masterplanPhases", label: "Masterplan Phases" },
+    { key: "executionPhases", label: "Execution Phases" },
+  ];
+
   return (
-    <div className="ml-6 mt-2 rounded-md border border-[#13593f]/30 bg-white p-3 text-[#465365] shadow-sm">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-[11px] font-bold text-[#465365]">
-          RUDA Boundary Phases
-        </span>
-        <span className="rounded-full bg-[#EAF9EF] px-2 py-0.5 text-[9px] font-semibold text-[#22A447]">
-          {items.length} selected
-        </span>
+    <div className="ml-6 mt-2 rounded-md border border-[#13593f]/30 bg-[#051f17] p-3 text-white/90 shadow-sm">
+      <div className="mb-2 text-[11px] font-bold text-white">
+        RUDA Phase Categories
       </div>
 
-      <div className="space-y-1.5">
-        {items.map((item) => (
-          <div key={item.label} className="flex items-center gap-2">
-            <span
-              className="h-4 w-7 rounded border border-[#5E6A7C]"
-              style={{ backgroundColor: item.color }}
+      <div className="space-y-2">
+        {options.map((option) => (
+          <label
+            key={option.key}
+            className="flex cursor-pointer items-center gap-2 text-[10px] font-medium"
+          >
+            <input
+              type="checkbox"
+              checked={values[option.key]}
+              onChange={() => onChange(option.key)}
+              className="accent-[#65c96b]"
             />
-            <span className="text-[10px] font-medium">{item.label}</span>
-          </div>
+            <span>{option.label}</span>
+          </label>
         ))}
       </div>
     </div>
