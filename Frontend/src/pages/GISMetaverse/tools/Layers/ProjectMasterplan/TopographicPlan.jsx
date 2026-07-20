@@ -367,7 +367,7 @@ export default function TopographicPlan({
             onOpacityChange={setSpotLevelOpacity}
           />
 
-          <LayerRow
+          {/* <LayerRow
             label="Contours"
             checked={contoursVisible}
             disabled={false}
@@ -375,7 +375,7 @@ export default function TopographicPlan({
             loading={topoLoading && contoursVisible}
             onCheckedChange={setContoursVisible}
             onOpacityChange={setContoursOpacity}
-          />
+          /> */}
 
           <LayerRow
             label="Topographic Boundary"

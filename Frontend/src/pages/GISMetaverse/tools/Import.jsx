@@ -1,9 +1,10 @@
 import React, { useState, useRef } from "react";
-import { X, Upload, Trash2, FileCheck, AlertTriangle, Loader2 } from "lucide-react";
+import { X, Upload, Trash2, FileCheck, AlertTriangle, Loader2, Printer } from "lucide-react";
 import bbox from "@turf/bbox";
 import shp from "shpjs";
 import JSZip from "jszip";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
+import RudaLogo from "../../../assets/Ruda.png";
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -12,6 +13,7 @@ const SOURCE_ID = "user-imported-data";
 const LAYER_IDS = {
   fill: "user-imported-fill",
   outline: "user-imported-outline",
+  label: "user-imported-label",
   line: "user-imported-line",
   point: "user-imported-point",
 };
@@ -98,12 +100,279 @@ const parseKMLText = (kmlText) => {
   return normaliseGeoJSON(geojson);
 };
 
+const waitForMapIdle = (map) =>
+  new Promise((resolve) => {
+    if (!map) {
+      resolve();
+      return;
+    }
+
+    if (map.loaded()) {
+      map.once("idle", resolve);
+    } else {
+      map.once("load", () => map.once("idle", resolve));
+    }
+  });
+
+const getImportedTitle = (fileName = "Imported Boundary") =>
+  fileName.replace(/\.(geojson|json|kml|kmz|zip)$/i, "").replace(/[_-]+/g, " ").trim();
+
+const prepareImportedFeatures = (geojson, fallbackLabel) => ({
+  ...geojson,
+  features: (geojson.features || []).map((feature, index) => {
+    const properties = feature.properties || {};
+    const label =
+      properties.name ||
+      properties.Name ||
+      properties.NAME ||
+      properties.title ||
+      properties.Title ||
+      properties.label ||
+      properties.Label ||
+      fallbackLabel ||
+      `Imported Feature ${index + 1}`;
+
+    return {
+      ...feature,
+      properties: {
+        ...properties,
+        _import_label: String(label),
+      },
+    };
+  }),
+});
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+const buildLegendRows = (map) => {
+  if (!map) return [];
+
+  const styleLayers = map.getStyle()?.layers || [];
+
+  return styleLayers
+    .filter((layer) => {
+      if (layer.layout?.visibility === "none") return false;
+      return ["fill", "line", "circle", "symbol"].includes(layer.type);
+    })
+    .filter((layer) => !layer.id.includes("label") || layer.id === LAYER_IDS.label)
+    .slice(-10)
+    .map((layer) => {
+      const paint = layer.paint || {};
+      const color =
+        paint["fill-color"] ||
+        paint["line-color"] ||
+        paint["circle-color"] ||
+        "#555555";
+
+      return {
+        id: layer.id,
+        label:
+          layer.id === LAYER_IDS.fill || layer.id === LAYER_IDS.outline
+            ? "Imported KMZ / Vector Boundary"
+            : layer.id
+                .replaceAll("-", " ")
+                .replaceAll("_", " ")
+                .replace(/\b\w/g, (char) => char.toUpperCase()),
+        color: typeof color === "string" ? color : "#555555",
+      };
+    });
+};
+
+const makePrintableHtml = ({
+  title,
+  mapImage,
+  insetImage,
+  legendRows,
+  logoUrl,
+  scaleText,
+}) => {
+  const legendHtml = legendRows
+    .map(
+      (item) => `
+        <div class="legend-row">
+          <span class="legend-swatch" style="background:${escapeHtml(item.color)}"></span>
+          <span>${escapeHtml(item.label)}</span>
+        </div>`,
+    )
+    .join("");
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(title)}</title>
+  <style>
+    @page { size: A3 landscape; margin: 0; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; font-family: Arial, Helvetica, sans-serif; }
+    body { background: #fff; }
+    .sheet {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      border: 3px solid #1f2937;
+      background: #f8fafc;
+    }
+    .map {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .title {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 38%;
+      padding: 10px 20px;
+      background: rgba(255,255,255,.94);
+      border: 1px solid #334155;
+      text-align: center;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      box-shadow: 0 8px 22px rgba(0,0,0,.18);
+    }
+    .logo-box {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      width: 108px;
+      height: 108px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.96);
+      border: 1px solid #334155;
+      padding: 8px;
+    }
+    .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .north {
+      position: absolute;
+      right: 18px;
+      top: 16px;
+      width: 108px;
+      height: 108px;
+      border: 1px solid #334155;
+      background: rgba(255,255,255,.96);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+    .north .n { font-size: 16px; margin-bottom: -2px; }
+    .north .arrow { font-size: 62px; line-height: .8; transform: scaleX(.72); }
+    .inset {
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      width: 300px;
+      background: rgba(255,255,255,.96);
+      border: 2px solid #334155;
+      padding: 8px;
+    }
+    .inset-title { font-size: 12px; font-weight: 800; margin-bottom: 6px; }
+    .inset img { width: 100%; height: 165px; object-fit: cover; border: 1px solid #64748b; }
+    .legend {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      width: 270px;
+      max-height: 290px;
+      overflow: hidden;
+      background: rgba(255,255,255,.96);
+      border: 2px solid #334155;
+      padding: 12px;
+    }
+    .legend h3 { margin: 0 0 8px; font-size: 18px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 11px; }
+    .legend-swatch { width: 30px; height: 14px; border: 2px solid #facc15; flex: 0 0 auto; }
+    .scale {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,.94);
+      border: 1px solid #334155;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .scale-bar {
+      width: 210px;
+      height: 10px;
+      margin-top: 5px;
+      border: 1px solid #111827;
+      background: linear-gradient(90deg,#111827 0 25%,#fff 25% 50%,#111827 50% 75%,#fff 75% 100%);
+    }
+    .credit {
+      position: absolute;
+      left: 18px;
+      bottom: 203px;
+      padding: 5px 8px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid #334155;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    @media print {
+      .sheet { width: 100vw; height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <img class="map" src="${mapImage}" alt="Printed map" />
+    <div class="logo-box"><img src="${logoUrl}" alt="RUDA Logo" /></div>
+    <div class="title">${escapeHtml(title)}</div>
+    <div class="north"><div class="n">N</div><div class="arrow">↑</div></div>
+
+    <div class="inset">
+      <div class="inset-title">RUDA / LP Principle Boundary Overview</div>
+      <img src="${insetImage || mapImage}" alt="Overview map" />
+    </div>
+
+    <div class="credit">Prepared by: GIS Section, LA&amp;EM Department — RUDA</div>
+
+    <div class="legend">
+      <h3>Legend</h3>
+      ${legendHtml || '<div class="legend-row">Visible map layers</div>'}
+    </div>
+
+    <div class="scale">
+      ${escapeHtml(scaleText)}
+      <div class="scale-bar"></div>
+    </div>
+  </div>
+  <script>
+    window.onload = () => {
+      setTimeout(() => {
+        window.print();
+      }, 350);
+    };
+  </script>
+</body>
+</html>`;
+};
+
 // ── component ──────────────────────────────────────────────────────────────────
 export default function Import({ map, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
   const [summary, setSummary] = useState(null); // { fileName, count, types }
+  const [importedGeoJSON, setImportedGeoJSON] = useState(null);
+  const [printLoading, setPrintLoading] = useState(false);
   const [hasLayer, setHasLayer] = useState(() => {
     return !!(map && map.getSource(SOURCE_ID));
   });
@@ -114,6 +383,7 @@ export default function Import({ map, onClose }) {
     removeImportedLayers(map);
     setHasLayer(false);
     setSummary(null);
+    setImportedGeoJSON(null);
     setError(null);
     setWarning(null);
   };
@@ -122,7 +392,7 @@ export default function Import({ map, onClose }) {
   const addLayers = (geojson) => {
     removeImportedLayers(map);
 
-    map.addSource(SOURCE_ID, { type: "geojson", data: geojson });
+    map.addSource(SOURCE_ID, { type: "geojson", data: geojson, generateId: true });
 
     // Polygon fill
     map.addLayer({
@@ -130,8 +400,8 @@ export default function Import({ map, onClose }) {
       type: "fill",
       source: SOURCE_ID,
       paint: {
-        "fill-color": "#6ee7b7",
-        "fill-opacity": 0.35,
+        "fill-color": "#d1d5db",
+        "fill-opacity": 0.34,
       },
       filter: ["any", ["==", "$type", "Polygon"]],
     });
@@ -142,10 +412,31 @@ export default function Import({ map, onClose }) {
       type: "line",
       source: SOURCE_ID,
       paint: {
-        "line-color": "#34d399",
-        "line-width": 1.8,
+        "line-color": "#facc15",
+        "line-width": 3,
       },
       filter: ["any", ["==", "$type", "Polygon"]],
+    });
+
+    // Polygon label layer — places the imported KMZ / vector name inside polygons
+    map.addLayer({
+      id: LAYER_IDS.label,
+      type: "symbol",
+      source: SOURCE_ID,
+      layout: {
+        "text-field": ["coalesce", ["get", "_import_label"], "Imported Boundary"],
+        "text-size": 15,
+        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        "text-anchor": "center",
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": "#111827",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 2,
+        "text-halo-blur": 0.5,
+      },
+      filter: ["==", "$type", "Polygon"],
     });
 
     // Line layer
@@ -364,16 +655,102 @@ export default function Import({ map, onClose }) {
       }
 
       // ── add to map ───────────────────────────────────────────────────────────
-      addLayers(geojson);
+      const importTitle = getImportedTitle(file.name);
+      const preparedGeoJSON = prepareImportedFeatures(geojson, importTitle);
 
-      const { count, types } = summarise(geojson);
-      setSummary({ fileName: file.name, count, types });
+      addLayers(preparedGeoJSON);
+      setImportedGeoJSON(preparedGeoJSON);
+
+      const { count, types } = summarise(preparedGeoJSON);
+      setSummary({ fileName: file.name, title: importTitle, count, types });
     } catch (e) {
       console.error("Import error:", e);
       setError("An unexpected error occurred while importing the file.");
     } finally {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
       setLoading(false);
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!map || !importedGeoJSON?.features?.length) {
+      setError("Import a KMZ, KML, GeoJSON or zipped Shapefile before printing.");
+      return;
+    }
+
+    setPrintLoading(true);
+    setError(null);
+
+    const previousCamera = {
+      center: map.getCenter(),
+      zoom: map.getZoom(),
+      bearing: map.getBearing(),
+      pitch: map.getPitch(),
+    };
+
+    try {
+      const bounds = bbox(importedGeoJSON);
+
+      if (bounds.every((value) => Number.isFinite(value))) {
+        map.fitBounds(
+          [
+            [bounds[0], bounds[1]],
+            [bounds[2], bounds[3]],
+          ],
+          {
+            padding: { top: 90, right: 90, bottom: 90, left: 90 },
+            maxZoom: 17,
+            duration: 700,
+          },
+        );
+      }
+
+      await waitForMapIdle(map);
+
+      const canvas = map.getCanvas();
+      const mapImage = canvas.toDataURL("image/png");
+
+      if (!mapImage || mapImage === "data:,") {
+        throw new Error(
+          "The map canvas could not be captured. Initialize the Mapbox/MapLibre map with preserveDrawingBuffer: true.",
+        );
+      }
+
+      const legendRows = buildLegendRows(map);
+      const title = summary?.title || "Imported Boundary Map";
+      const center = map.getCenter();
+      const scaleText = `Map center: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)} · Zoom ${map.getZoom().toFixed(1)}`;
+
+      const printWindow = window.open("", "_blank", "noopener,noreferrer");
+
+      if (!printWindow) {
+        throw new Error("The browser blocked the print window. Allow pop-ups and try again.");
+      }
+
+      printWindow.document.open();
+      printWindow.document.write(
+        makePrintableHtml({
+          title,
+          mapImage,
+          insetImage: mapImage,
+          legendRows,
+          logoUrl: RudaLogo,
+          scaleText,
+        }),
+      );
+      printWindow.document.close();
+    } catch (printError) {
+      console.error("Print error:", printError);
+      setError(
+        printError?.message ||
+          "The map could not be prepared for printing.",
+      );
+    } finally {
+      map.easeTo({
+        ...previousCamera,
+        duration: 500,
+      });
+      setPrintLoading(false);
     }
   };
 
@@ -401,15 +778,33 @@ export default function Import({ map, onClose }) {
   return (
     <div className="p-4 text-white w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <span className="font-bold text-sm tracking-wide">Import Data</span>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-white transition-colors"
-          title="Close"
-        >
-          <X size={16} />
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handlePrint}
+            disabled={!hasLayer || printLoading}
+            className="inline-flex items-center gap-1.5 rounded-md border border-amber-300/30 bg-amber-400/10 px-2.5 py-1.5 text-[11px] font-semibold text-amber-300 transition-colors hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-40"
+            title="Print imported map"
+          >
+            {printLoading ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Printer size={13} />
+            )}
+            Print
+          </button>
+
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors"
+            title="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Drop zone */}

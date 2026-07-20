@@ -145,6 +145,14 @@ const RUDA_MASTER_PLAN_GROUPS = [
     ],
   },
   {
+    key: "proposedRoadsGroup",
+    label: "Proposed Roads",
+    standalone: true,
+    children: [
+      { key: "rudaProposedRoads", label: "Proposed Roads", color: "#19598d" },
+    ],
+  },
+  {
     key: "riverTrainingWorks",
     label: "River Training Works - RTW",
     children: [
@@ -162,14 +170,7 @@ const RUDA_MASTER_PLAN_GROUPS = [
       { key: "riverRavi", label: "River Ravi", color: RIVER_RAVI_COLOR },
     ],
   },
-  {
-    key: "proposedRoadsGroup",
-    label: "Proposed Roads",
-    standalone: true,
-    children: [
-      { key: "rudaProposedRoads", label: "Proposed Roads", color: "#19598d" },
-    ],
-  },
+
   {
     key: "wwtp",
     label: "WWTP",
@@ -1294,7 +1295,7 @@ function GroupItem({
         />
 
         <span
-          className="truncate cursor-pointer text-[11px] text-white/90"
+          className="truncate cursor-pointer text-[11px]"
           onClick={onChange}
         >
           {label}

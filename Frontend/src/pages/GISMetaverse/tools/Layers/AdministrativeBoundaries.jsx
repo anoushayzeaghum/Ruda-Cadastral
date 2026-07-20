@@ -161,7 +161,6 @@ export default function AdministrativeBoundaries({
       const geojson = await fetchLayer(key);
       def.addOrUpdate(map, geojson, styles[key]);
       fitToData(map, geojson);
-
     } catch (error) {
       console.error(`${def.label} load error:`, error);
       setVisibleState(key, false);
@@ -382,7 +381,7 @@ function LayerItem({
           />
 
           <span
-            className={`relative h-4 w-7 shrink-0 overflow-hidden rounded-sm ${
+            className={`relative h-4 w-4 shrink-0 overflow-hidden rounded-sm ${
               symbolType === "tehsil" ? "border border-dashed" : "border"
             }`}
             style={{

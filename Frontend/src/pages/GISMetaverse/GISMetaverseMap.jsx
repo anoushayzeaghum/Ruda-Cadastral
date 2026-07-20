@@ -155,7 +155,7 @@ function animateIntroContinuously(
   map,
   loadedSteps,
   {
-    durationPerStep = 1200,
+    durationPerStep = 850,
     padding = 85,
     maxZoom = 11.5,
     isCancelled = () => false,
@@ -574,7 +574,7 @@ export default function GISMetaverseMap({
         // Use one continuous camera animation instead of running a separate
         // fitBounds animation for every boundary.
         await animateIntroContinuously(map, loadedSteps, {
-          durationPerStep: 1900,
+          durationPerStep: 850,
           padding: 85,
           maxZoom: 11.5,
           isCancelled: () => cancelled,
@@ -615,7 +615,7 @@ export default function GISMetaverseMap({
         setRudaPlanningBoundaryVisibility(map, true);
 
         await smoothFitGeoJSON(map, rudaPhasesBoundary, {
-          duration: 1900,
+          duration: 700,
           padding: 75,
           maxZoom: 11,
         });
@@ -654,7 +654,7 @@ export default function GISMetaverseMap({
           setRudaPlanningBoundaryVisibility(map, true);
 
           await smoothFitGeoJSON(map, rudaPhasesBoundary, {
-            duration: 1500,
+            duration: 700,
             padding: 75,
             maxZoom: 11,
           });

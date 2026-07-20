@@ -49,6 +49,15 @@ const LAYER_DEFS = [
     key: "existingLandUse",
     label: "Existing Land Use",
     color: "#d4a72c",
+    previewColors: [
+      "#facc15",
+      "#84cc16",
+      "#22c55e",
+      "#06b6d4",
+      "#3b82f6",
+      "#a855f7",
+      "#ef4444",
+    ],
     fetchGeoJSON: getMpPrincipleZoningGeoJSON,
     customLandUseStyle: true,
   },
@@ -56,6 +65,14 @@ const LAYER_DEFS = [
     key: "transportationRoadNetwork",
     label: "Transportation Road Network",
     color: "#ef4444",
+    previewColors: [
+      "#ef4444",
+      "#f97316",
+      "#facc15",
+      "#22c55e",
+      "#3b82f6",
+      "#8b5cf6",
+    ],
     fetchGeoJSON: getLahoreTransportationRoadsGeoJSON,
     customRoadStyle: true,
   },
@@ -467,6 +484,7 @@ export default function BaseData({ map }) {
                     !definition.customRoadStyle &&
                     !definition.customLandUseStyle
                   }
+                  previewColors={definition.previewColors}
                 />
 
                 {definition.customLandUseStyle && state.visible && (
@@ -512,6 +530,26 @@ function ColorPickerSquare({ color, label, onColorChange }) {
   );
 }
 
+function PalettePreview({ colors = [], label }) {
+  if (!colors.length) return null;
+
+  return (
+    <span
+      className="flex h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/35"
+      title={`${label} color palette`}
+      aria-label={`${label} color palette`}
+    >
+      {colors.map((color, index) => (
+        <span
+          key={`${color}-${index}`}
+          className="h-full flex-1"
+          style={{ backgroundColor: color }}
+        />
+      ))}
+    </span>
+  );
+}
+
 function LayerItem({
   checked,
   color,
@@ -522,6 +560,7 @@ function LayerItem({
   onOpacityChange,
   onColorChange,
   showColorPicker = true,
+  previewColors = [],
 }) {
   return (
     <div className="mt-3 first:mt-1 text-white">
@@ -534,12 +573,14 @@ function LayerItem({
             className="accent-[#65c96b]"
           />
 
-          {showColorPicker && (
+          {showColorPicker ? (
             <ColorPickerSquare
               color={color}
               label={label}
               onColorChange={onColorChange}
             />
+          ) : (
+            <PalettePreview colors={previewColors} label={label} />
           )}
 
           <span className="truncate text-[11px]">
