@@ -1,5 +1,5 @@
 import gopLogoUrl from "./assets/gop-logo.png";
-import rudaLogoUrl from "./assets/ruda-logo.png";
+import rudaLogoUrl from "./assets/ruda-logo.jpg";
 import rudaWatermarkUrl from "./assets/ruda-watermark.png";
 
 export const EMPTY_FC = { type: "FeatureCollection", features: [] };
@@ -50,7 +50,13 @@ export const buildPlotDetails = (parcel = null, filters = {}) => {
     phase: firstValue(p.phase, p.phase_name, p.project_phase, p.ph),
     plotNo: firstValue(p.plot_no, p.plotno, p.plot_number, p.pl_no, parcel?.id),
     landUse: firstValue(p.type, p.land_use, p.landuse, p.name, p.plot_category),
-    plotCategory: firstValue(p.plot_category, p.category, p.type, p.land_use, p.name),
+    plotCategory: firstValue(
+      p.plot_category,
+      p.category,
+      p.type,
+      p.land_use,
+      p.name,
+    ),
     plotArea: firstValue(
       p.plot_area,
       p.area,
@@ -61,7 +67,13 @@ export const buildPlotDetails = (parcel = null, filters = {}) => {
     ),
     plotSize: firstValue(p.plot_size, p.size, p.dimension, p.plot_area, p.area),
     dimension: firstValue(p.dimension, p.dimensions, p.plot_dimension),
-    roadFt: firstValue(p.rd_ft, p.road_ft, p.road_width, p.road_wide, p.row_width),
+    roadFt: firstValue(
+      p.rd_ft,
+      p.road_ft,
+      p.road_width,
+      p.road_wide,
+      p.row_width,
+    ),
     roadFacing: firstValue(p.rd_facing, p.road_facing, p.facing),
     streetRoadNo: firstValue(
       p.street_road_no,
@@ -143,7 +155,8 @@ export const getGeometryRing = (geometry) => {
 
   let ring = [];
   if (geometry.type === "Polygon") ring = geometry.coordinates?.[0] || [];
-  if (geometry.type === "MultiPolygon") ring = geometry.coordinates?.[0]?.[0] || [];
+  if (geometry.type === "MultiPolygon")
+    ring = geometry.coordinates?.[0]?.[0] || [];
 
   if (ring.length > 1) {
     const first = ring[0];
@@ -231,13 +244,17 @@ const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
   const selectedBounds = boundsOfFeature(selectedFeature);
   if (!selectedBounds) return [selectedFeature];
 
-  const neighborhoodBounds = expandBounds(selectedBounds, mode === "site" ? 4.5 : 2.2);
+  const neighborhoodBounds = expandBounds(
+    selectedBounds,
+    mode === "site" ? 4.5 : 2.2,
+  );
   const nearby = all.filter((feature) =>
     intersectsBounds(boundsOfFeature(feature), neighborhoodBounds),
   );
 
   const limited = nearby.slice(0, mode === "site" ? 80 : 35);
-  if (!limited.some((feature) => feature === selectedFeature)) limited.push(selectedFeature);
+  if (!limited.some((feature) => feature === selectedFeature))
+    limited.push(selectedFeature);
   return limited.length ? limited : [selectedFeature];
 };
 
@@ -399,7 +416,11 @@ export const createPdfPreviewWindow = (title = "Preparing PDF") => {
   return preview;
 };
 
-export const openPdfPreview = (doc, title = "Document", previewWindow = null) => {
+export const openPdfPreview = (
+  doc,
+  title = "Document",
+  previewWindow = null,
+) => {
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
   const preview = previewWindow || window.open("", "_blank");
@@ -585,7 +606,9 @@ export const createPlanCanvas = async ({
   const features = getContextFeatures(selectedFeature, contextGeojson, mode);
   const selectedRing = getGeometryRing(selectedFeature?.geometry);
   const bounds = expandBounds(
-    getBounds(features.length ? features : selectedFeature ? [selectedFeature] : []),
+    getBounds(
+      features.length ? features : selectedFeature ? [selectedFeature] : [],
+    ),
     mode === "location" ? 0.04 : 0.15,
   );
 
@@ -757,9 +780,14 @@ const wgs84ToUtm = (lng, lat) => {
 
   const m =
     a *
-    ((1 - eccSquared / 4 - (3 * eccSquared ** 2) / 64 - (5 * eccSquared ** 3) / 256) *
+    ((1 -
+      eccSquared / 4 -
+      (3 * eccSquared ** 2) / 64 -
+      (5 * eccSquared ** 3) / 256) *
       latRad -
-      ((3 * eccSquared) / 8 + (3 * eccSquared ** 2) / 32 + (45 * eccSquared ** 3) / 1024) *
+      ((3 * eccSquared) / 8 +
+        (3 * eccSquared ** 2) / 32 +
+        (45 * eccSquared ** 3) / 1024) *
         Math.sin(2 * latRad) +
       ((15 * eccSquared ** 2) / 256 + (45 * eccSquared ** 3) / 1024) *
         Math.sin(4 * latRad) -
@@ -770,7 +798,8 @@ const wgs84ToUtm = (lng, lat) => {
       n *
       (A +
         ((1 - t + c) * A ** 3) / 6 +
-        ((5 - 18 * t + t ** 2 + 72 * c - 58 * eccPrimeSquared) * A ** 5) / 120) +
+        ((5 - 18 * t + t ** 2 + 72 * c - 58 * eccPrimeSquared) * A ** 5) /
+          120) +
     500000;
 
   let northing =
@@ -780,7 +809,8 @@ const wgs84ToUtm = (lng, lat) => {
         Math.tan(latRad) *
         (A ** 2 / 2 +
           ((5 - t + 9 * c + 4 * c ** 2) * A ** 4) / 24 +
-          ((61 - 58 * t + t ** 2 + 600 * c - 330 * eccPrimeSquared) * A ** 6) / 720));
+          ((61 - 58 * t + t ** 2 + 600 * c - 330 * eccPrimeSquared) * A ** 6) /
+            720));
 
   if (lat < 0) northing += 10000000;
   easting = Math.round(easting * 1000) / 1000;
@@ -821,7 +851,10 @@ const pointSegmentDistanceMeters = (point, a, b) => {
   const lengthSquared = dx * dx + dy * dy;
   if (!lengthSquared) return Math.hypot(px - ax, py - ay);
 
-  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSquared));
+  const t = Math.max(
+    0,
+    Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSquared),
+  );
   const x = ax + t * dx;
   const y = ay + t * dy;
   return Math.hypot(px - x, py - y);
@@ -836,7 +869,11 @@ const findNearestPlot = (midpoint, selectedFeature, contextGeojson) => {
       selectedFeature?.properties?.gid,
       selectedFeature?.properties?.plot_no,
     );
-    const featureId = firstValue(feature?.id, feature?.properties?.gid, feature?.properties?.plot_no);
+    const featureId = firstValue(
+      feature?.id,
+      feature?.properties?.gid,
+      feature?.properties?.plot_no,
+    );
     if (selectedId && featureId && selectedId === featureId) return;
 
     const ring = getGeometryRing(feature?.geometry);
@@ -875,7 +912,9 @@ export const getPlotSides = (parcel, contextGeojson, details) => {
     const a = ring[index] || ring[0];
     const b = ring[(index + 1) % Math.max(ring.length, 1)] || a;
     const midpoint = a && b ? [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] : null;
-    const neighbor = midpoint ? findNearestPlot(midpoint, parcel, contextGeojson) : null;
+    const neighbor = midpoint
+      ? findNearestPlot(midpoint, parcel, contextGeojson)
+      : null;
     const neighborPlotNo = getPlotLabel(neighbor);
 
     let boundedBy = firstValue(
@@ -889,7 +928,10 @@ export const getPlotSides = (parcel, contextGeojson, details) => {
 
     return {
       label,
-      length: firstValue(explicitLengths[index], a && b ? formatFeet(distanceMeters(a, b)) : ""),
+      length: firstValue(
+        explicitLengths[index],
+        a && b ? formatFeet(distanceMeters(a, b)) : "",
+      ),
       boundedBy,
     };
   });
@@ -901,7 +943,15 @@ export const drawNorthArrowPdf = (doc, x, y, size = 15) => {
   doc.setLineWidth(0.45);
   doc.line(x, y - size, x, y + size);
   doc.line(x - size, y, x + size, y);
-  doc.triangle(x, y - size, x - size * 0.24, y - size * 0.12, x + size * 0.24, y - size * 0.12, "F");
+  doc.triangle(
+    x,
+    y - size,
+    x - size * 0.24,
+    y - size * 0.12,
+    x + size * 0.24,
+    y - size * 0.12,
+    "F",
+  );
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.text("N", x, y - size - 2, { align: "center" });

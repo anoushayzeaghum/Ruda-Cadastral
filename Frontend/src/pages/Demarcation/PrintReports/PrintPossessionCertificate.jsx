@@ -2,7 +2,6 @@ import { jsPDF } from "jspdf";
 import {
   buildPlotDetails,
   createPdfPreviewWindow,
-  drawUnderlinedValue,
   getGeometryRing,
   getPlotSides,
   loadPrintAssets,
@@ -11,162 +10,232 @@ import {
   valueOrDash,
 } from "./printUtils";
 
-const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
-  const ring = getGeometryRing(parcel?.geometry);
+const MM_PER_POINT = 0.3528;
 
-  // Grid proportions matching the template's bordered box layout:
-  // a top row (top-side label), a bottom row (bottom-side label),
-  // and left/right columns (left/right-side labels) framing the plot.
-  const topH = height * 0.16;
-  const bottomH = height * 0.16;
-  const sideW = width * 0.22;
-
-  const plotX = x + sideW + 0.6;
-  const plotY = y + topH + 0.6;
-  const plotWidth = width - sideW * 2 - 1.2;
-  const plotHeight = height - topH - bottomH - 1.2;
-
-  doc.setDrawColor(20, 20, 20);
-  doc.setLineWidth(0.3);
-
-  // Outer border + grid separators, like the template's boxed sketch
-  doc.rect(x, y, width, height);
-  doc.line(x, y + topH, x + width, y + topH);
-  doc.line(x, y + height - bottomH, x + width, y + height - bottomH);
-  doc.line(x + sideW, y + topH, x + sideW, y + height - bottomH);
-  doc.line(
-    x + width - sideW,
-    y + topH,
-    x + width - sideW,
-    y + height - bottomH,
-  );
-
-  doc.setLineWidth(0.35);
-  if (ring.length >= 3) {
-    const xs = ring.map((point) => point[0]);
-    const ys = ring.map((point) => point[1]);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    const dataWidth = Math.max(maxX - minX, 1e-9);
-    const dataHeight = Math.max(maxY - minY, 1e-9);
-    const scale = Math.min(plotWidth / dataWidth, plotHeight / dataHeight);
-    const offsetX = plotX + (plotWidth - dataWidth * scale) / 2;
-    const offsetY = plotY + (plotHeight - dataHeight * scale) / 2;
-    const project = ([lng, lat]) => [
-      offsetX + (lng - minX) * scale,
-      offsetY + plotHeight - (lat - minY) * scale,
-    ];
-
-    for (let index = 0; index < ring.length; index += 1) {
-      const start = project(ring[index]);
-      const end = project(ring[(index + 1) % ring.length]);
-      doc.line(start[0], start[1], end[0], end[1]);
-    }
-  } else {
-    doc.rect(plotX, plotY, plotWidth, plotHeight);
-  }
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(6.4);
-  doc.text(
-    `Plot No. ${valueOrDash(details.plotNo)}`,
-    x + width / 2,
-    y + height / 2 + 1,
-    {
-      align: "center",
-    },
-  );
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(5.2);
-  doc.text(sides[3]?.boundedBy || "", x + width / 2, y + topH / 2 + 1, {
-    align: "center",
-  });
-  doc.text(
-    sides[2]?.boundedBy || "",
-    x + width / 2,
-    y + height - bottomH / 2 + 1,
-    {
-      align: "center",
-    },
-  );
-  doc.text(sides[1]?.boundedBy || "", x + sideW / 2, y + height / 2, {
-    angle: 90,
-    align: "center",
-  });
-  doc.text(sides[0]?.boundedBy || "", x + width - sideW / 2, y + height / 2, {
-    angle: 90,
-    align: "center",
-  });
+const normalizeText = (value, fallback = "") => {
+  if (value === null || value === undefined || value === "") return fallback;
+  return String(value).trim();
 };
 
-// Renders a paragraph built from { text, emphasis } runs, wrapping words
-// across lines while keeping bold+underline styling on the emphasized runs
-// (matches the template, where plot no / area / road / block / land use /
-// date are bold and underlined inline within the certification sentence).
-const drawEmphasizedParagraph = (
+const drawUnderline = (doc, x1, x2, y, lineWidth = 0.2) => {
+  doc.setLineWidth(lineWidth);
+  doc.line(x1, y, x2, y);
+};
+
+const drawInlineRuns = (
   doc,
-  segments,
+  runs,
   x,
   y,
   maxWidth,
-  fontSize,
-  lineHeightFactor = 1.35,
+  { fontSize = 8.3, lineHeightFactor = 1.28, defaultFont = "helvetica" } = {},
 ) => {
-  const lineHeight = fontSize * lineHeightFactor * 0.3528; // pt -> mm
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(fontSize);
-  const spaceWidth = doc.getTextWidth(" ");
-
+  const lineHeight = fontSize * lineHeightFactor * MM_PER_POINT;
   const words = [];
-  segments.forEach((segment) => {
-    segment.text.split(" ").forEach((word) => {
-      if (word.length) words.push({ text: word, emphasis: !!segment.emphasis });
+
+  runs.forEach((run) => {
+    const parts = normalizeText(run.text).split(/\s+/).filter(Boolean);
+    parts.forEach((part) => {
+      words.push({
+        text: part,
+        bold: Boolean(run.bold),
+        underline: Boolean(run.underline),
+      });
     });
   });
 
+  doc.setFontSize(fontSize);
   let cursorX = x;
   let cursorY = y;
 
   words.forEach((word) => {
-    doc.setFont("helvetica", word.emphasis ? "bold" : "normal");
+    doc.setFont(defaultFont, word.bold ? "bold" : "normal");
     const wordWidth = doc.getTextWidth(word.text);
+    const spaceWidth = doc.getTextWidth(" ");
 
-    if (cursorX + wordWidth > x + maxWidth) {
+    if (cursorX !== x && cursorX + wordWidth > x + maxWidth) {
       cursorX = x;
       cursorY += lineHeight;
     }
 
     doc.text(word.text, cursorX, cursorY);
-    if (word.emphasis) {
-      doc.setLineWidth(0.2);
-      doc.line(cursorX, cursorY + 0.8, cursorX + wordWidth, cursorY + 0.8);
+
+    if (word.underline) {
+      drawUnderline(doc, cursorX, cursorX + wordWidth, cursorY + 0.75, 0.18);
     }
 
     cursorX += wordWidth + spaceWidth;
   });
 
-  doc.setFont("helvetica", "normal");
-  return cursorY + lineHeight;
+  doc.setFont(defaultFont, "normal");
+  return cursorY;
 };
 
-const drawSignatureBlock = (doc, heading, x, y, width) => {
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9.2);
-  doc.text(heading, x, y);
-  doc.line(x, y + 1, x + width, y + 1);
+const drawFieldLine = (
+  doc,
+  label,
+  value,
+  x,
+  y,
+  {
+    labelWidth,
+    lineWidth,
+    fontSize = 8.5,
+    boldValue = true,
+    underlineValue = false,
+  },
+) => {
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(fontSize);
+  doc.text(label, x, y);
+
+  const valueX = x + labelWidth;
+  const availableWidth = lineWidth;
+  const safeValue = normalizeText(value);
+
+  if (safeValue) {
+    doc.setFont("helvetica", boldValue ? "bold" : "normal");
+    const fittedValue = doc.splitTextToSize(safeValue, availableWidth)[0] || "";
+    doc.text(fittedValue, valueX, y);
+
+    if (underlineValue) {
+      const renderedWidth = Math.min(
+        doc.getTextWidth(fittedValue),
+        availableWidth,
+      );
+      drawUnderline(doc, valueX, valueX + renderedWidth, y + 0.8, 0.18);
+    }
+  } else {
+    drawUnderline(doc, valueX, valueX + availableWidth, y + 0.8, 0.18);
+  }
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.4);
-  doc.text("Name:", x, y + 11);
-  doc.line(x + 31, y + 11.8, x + width, y + 11.8);
-  doc.text("SIGNATURE:", x, y + 21);
-  doc.line(x + 31, y + 21.8, x + width, y + 21.8);
-  doc.text("DATE:", x, y + 31);
-  doc.line(x + 31, y + 31.8, x + width, y + 31.8);
+};
+
+const getProjectedSketchPoints = (ring, x, y, width, height) => {
+  if (!Array.isArray(ring) || ring.length < 3) {
+    return [
+      [x + width * 0.25, y + height * 0.12],
+      [x + width * 0.83, y + height * 0.3],
+      [x + width * 0.68, y + height * 0.88],
+      [x + width * 0.12, y + height * 0.69],
+    ];
+  }
+
+  const cleanRing =
+    ring.length > 1 &&
+    ring[0][0] === ring[ring.length - 1][0] &&
+    ring[0][1] === ring[ring.length - 1][1]
+      ? ring.slice(0, -1)
+      : ring;
+
+  const xs = cleanRing.map((point) => point[0]);
+  const ys = cleanRing.map((point) => point[1]);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const dataWidth = Math.max(maxX - minX, 1e-9);
+  const dataHeight = Math.max(maxY - minY, 1e-9);
+  const scale = Math.min(width / dataWidth, height / dataHeight) * 0.78;
+  const scaledWidth = dataWidth * scale;
+  const scaledHeight = dataHeight * scale;
+  const offsetX = x + (width - scaledWidth) / 2;
+  const offsetY = y + (height - scaledHeight) / 2;
+
+  return cleanRing.map(([lng, lat]) => [
+    offsetX + (lng - minX) * scale,
+    offsetY + scaledHeight - (lat - minY) * scale,
+  ]);
+};
+
+const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
+  const ring = getGeometryRing(parcel?.geometry);
+  const points = getProjectedSketchPoints(ring, x, y, width, height);
+
+  doc.setDrawColor(75, 75, 75);
+  doc.setFillColor(214, 82, 155);
+  doc.setLineWidth(0.35);
+
+  if (points.length >= 3) {
+    const vectors = [];
+    for (let index = 1; index < points.length; index += 1) {
+      vectors.push([
+        points[index][0] - points[index - 1][0],
+        points[index][1] - points[index - 1][1],
+      ]);
+    }
+    vectors.push([
+      points[0][0] - points[points.length - 1][0],
+      points[0][1] - points[points.length - 1][1],
+    ]);
+
+    doc.lines(vectors, points[0][0], points[0][1], [1, 1], "FD", true);
+  }
+
+  const centerX =
+    points.reduce((sum, point) => sum + point[0], 0) / points.length;
+  const centerY =
+    points.reduce((sum, point) => sum + point[1], 0) / points.length;
+
+  doc.setTextColor(30, 30, 30);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(5.2);
+  doc.text(`P-${valueOrDash(details.plotNo)}`, centerX, centerY + 0.6, {
+    align: "center",
+  });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(4.3);
+
+  const sideLabels = sides.slice(0, Math.min(sides.length, points.length));
+  sideLabels.forEach((side, index) => {
+    const start = points[index];
+    const end = points[(index + 1) % points.length];
+    const middleX = (start[0] + end[0]) / 2;
+    const middleY = (start[1] + end[1]) / 2;
+    const angle =
+      (Math.atan2(end[1] - start[1], end[0] - start[0]) * 180) / Math.PI;
+    const label = normalizeText(side.length, "");
+
+    if (label) {
+      doc.text(label, middleX, middleY - 1.2, {
+        align: "center",
+        angle: -angle,
+      });
+    }
+  });
+
+  const roadLabel = normalizeText(
+    details.streetRoadNo || details.roadFacing,
+    details.roadFt ? `${details.roadFt} ft wide road` : "",
+  );
+
+  if (roadLabel) {
+    doc.setFontSize(4.4);
+    doc.text(roadLabel, x + width - 1, y + height - 1, {
+      align: "right",
+      angle: 52,
+    });
+  }
+};
+
+const drawNumberedTerms = (doc, terms, x, y, maxWidth) => {
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.15);
+
+  let cursorY = y;
+  terms.forEach((term, index) => {
+    const numberText = `${index + 1}.`;
+    const numberWidth = 6;
+    const lines = doc.splitTextToSize(term, maxWidth - numberWidth);
+
+    doc.text(numberText, x, cursorY);
+    doc.text(lines, x + numberWidth, cursorY, { lineHeightFactor: 1.08 });
+    cursorY += lines.length * 2.75 + 0.7;
+  });
+
+  return cursorY;
 };
 
 export const printPossessionCertificate = async ({
@@ -184,7 +253,7 @@ export const printPossessionCertificate = async ({
 
   try {
     const details = buildPlotDetails(parcel, filters);
-    const { gopLogo, rudaLogo, watermark } = await loadPrintAssets();
+    const { gopLogo, rudaLogo } = await loadPrintAssets();
     const sides = getPlotSides(parcel, contextGeojson, details);
     const totalArea = normalizeAreaText(details);
 
@@ -196,160 +265,147 @@ export const printPossessionCertificate = async ({
     });
 
     const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 11;
+    const margin = 18;
+    const contentWidth = pageWidth - margin * 2;
 
-    if (watermark) {
-      doc.addImage(
-        watermark,
-        "PNG",
-        pageWidth / 2 - 72,
-        55,
-        144,
-        144,
-        undefined,
-        "FAST",
-      );
-    }
+    doc.setTextColor(20, 20, 20);
+    doc.setDrawColor(35, 35, 35);
+    doc.setLineWidth(0.2);
 
-    if (rudaLogo) {
-      doc.addImage(rudaLogo, "PNG", margin, 5, 27, 27, undefined, "FAST");
-    }
+    // Header logos: Government of Punjab on the left and RUDA on the right.
     if (gopLogo) {
+      doc.addImage(gopLogo, "PNG", margin + 1, 8, 25, 25, undefined, "FAST");
+    }
+    if (rudaLogo) {
       doc.addImage(
-        gopLogo,
+        rudaLogo,
         "PNG",
-        pageWidth - margin - 25,
-        5,
-        25,
-        25,
+        pageWidth - margin - 24,
+        8,
+        24,
+        24,
         undefined,
         "FAST",
       );
     }
 
-    doc.setTextColor(0, 0, 0);
-    doc.setDrawColor(25, 25, 25);
-    doc.setLineWidth(0.25);
-
-    doc.setFont("times", "bold");
-    doc.setFontSize(15.5);
-    doc.text("RAVI URBAN DEVELOPMENT AUTHORITY", pageWidth / 2, 14, {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13.2);
+    doc.text("RAVI URBAN DEVELOPMENT AUTHORITY", pageWidth / 2, 14.5, {
       align: "center",
+      charSpace: 0.7,
     });
-    doc.setFontSize(14);
-    doc.text("POSSESSION CERTIFICATE", pageWidth / 2, 21, { align: "center" });
-    doc.line(pageWidth / 2 - 37, 22, pageWidth / 2 + 37, 22);
-    doc.setFontSize(10.5);
+    drawUnderline(doc, pageWidth / 2 - 51, pageWidth / 2 + 51, 15.7, 0.35);
+
+    doc.setFontSize(12.5);
+    doc.text("POSSESSION CERTIFICATE", pageWidth / 2, 22.5, {
+      align: "center",
+      charSpace: 1.4,
+    });
+    drawUnderline(doc, pageWidth / 2 - 36, pageWidth / 2 + 36, 23.7, 0.32);
+
+    doc.setFontSize(10.2);
     doc.text(
       valueOrDash(details.project, "CHAHAR BAGH (PHASE-1)").toUpperCase(),
       pageWidth / 2,
-      28,
-      {
-        align: "center",
-        charSpace: 1.2,
-      },
+      30,
+      { align: "center", charSpace: 1.7 },
     );
 
-    drawUnderlinedValue(
-      doc,
-      "Registration #",
-      details.registrationNo,
-      margin,
-      35,
-      31,
-      20,
-      {
-        fontSize: 8.5,
-        boldLabel: false,
-      },
-    );
-    drawUnderlinedValue(
-      doc,
-      "Dated:",
-      details.possessionDate || details.documentDate,
-      pageWidth - margin - 42,
-      35,
-      14,
-      24,
-      {
-        fontSize: 8.5,
-        boldLabel: false,
-      },
-    );
-    drawUnderlinedValue(
-      doc,
-      "Application #",
-      details.applicationNo,
-      margin,
-      43,
-      31,
-      20,
-      {
-        fontSize: 8.5,
-        boldLabel: false,
-      },
-    );
-    drawUnderlinedValue(doc, "Owner Name:", details.owner, margin, 51, 31, 48, {
-      fontSize: 8.5,
-      boldLabel: false,
+    const fileReference =
+      details.fileReferenceNo ||
+      details.registrationNo ||
+      details.applicationNo;
+    const possessionDate = details.possessionDate || details.documentDate;
+    const cnic = normalizeText(details.cnic);
+
+    drawFieldLine(doc, "File Reference No:", fileReference, margin, 42, {
+      labelWidth: 34,
+      lineWidth: 50,
+      fontSize: 8.4,
+      underlineValue: true,
     });
-    drawUnderlinedValue(
-      doc,
-      "Postal Address:",
-      details.postalAddress,
-      margin,
-      59,
-      31,
-      pageWidth - margin * 2 - 31,
-      {
-        fontSize: 8.5,
-        boldLabel: false,
-      },
-    );
 
-    const possessionDate =
-      details.possessionDate || details.documentDate || "__________";
-    const roadText = details.roadFt
-      ? `Road wide ${details.roadFt} Feet`
-      : details.streetRoadNo || details.roadFacing || "__________";
+    drawFieldLine(doc, "Dated:", possessionDate, pageWidth - margin - 47, 42, {
+      labelWidth: 12,
+      lineWidth: 35,
+      fontSize: 8.4,
+      boldValue: false,
+      underlineValue: false,
+    });
 
-    drawEmphasizedParagraph(
+    const ownerRuns = [
+      { text: "Owner Name:" },
+      { text: valueOrDash(details.owner), bold: true },
+    ];
+    if (cnic) ownerRuns.push({ text: `(${cnic})`, bold: true });
+    drawInlineRuns(doc, ownerRuns, margin, 51, contentWidth, { fontSize: 8.4 });
+
+    drawInlineRuns(
       doc,
       [
-        { text: "Certified that possession of plot No" },
-        { text: `${valueOrDash(details.plotNo)},`, emphasis: true },
-        { text: "measuring" },
-        { text: valueOrDash(totalArea), emphasis: true },
-        { text: "street No" },
-        { text: `${roadText},`, emphasis: true },
-        { text: valueOrDash(details.block), emphasis: true },
-        { text: "Block and Land Use" },
-        { text: valueOrDash(details.landUse), emphasis: true },
-        { text: "has been handed over to the allottee / attorney on" },
-        { text: possessionDate, emphasis: true },
-        { text: "as per sketch shown below:" },
+        { text: "Postal Address:" },
+        {
+          text: valueOrDash(details.postalAddress),
+        },
       ],
       margin,
-      67,
-      pageWidth - margin * 2,
-      9.5,
-      1.35,
+      59,
+      contentWidth,
+      { fontSize: 8.2, lineHeightFactor: 1.2 },
+    );
+
+    const streetNo = normalizeText(
+      details.streetNo || details.streetRoadNo,
+      "________",
+    );
+    const roadWidth = normalizeText(details.roadFt, "________");
+
+    drawInlineRuns(
+      doc,
+      [
+        { text: "It is Certified that possession of Plot No" },
+        { text: valueOrDash(details.plotNo), bold: true, underline: true },
+        { text: "Block" },
+        { text: valueOrDash(details.block), bold: true, underline: true },
+        { text: "measuring area of" },
+        { text: valueOrDash(totalArea), bold: true, underline: true },
+        { text: "Sqft, Street No" },
+        { text: streetNo, bold: true, underline: true },
+        { text: "Road wide" },
+        { text: `${roadWidth} ft`, bold: true, underline: true },
+        { text: "wide Road and Land Use" },
+        { text: valueOrDash(details.landUse), bold: true, underline: true },
+        { text: "has been handed over to the allottee / attorney on" },
+        {
+          text: possessionDate || "______________",
+          bold: true,
+          underline: true,
+        },
+        { text: "as per following details:" },
+      ],
+      margin,
+      69,
+      contentWidth,
+      { fontSize: 8.25, lineHeightFactor: 1.22 },
     );
 
     const sidesTop = 86;
-    const sideLabelX = margin + 8;
-    const sideLengthX = margin + 52;
-    const boundedX = margin + 88;
-    const boundedValueX = margin + 124;
+    const sideNameX = margin + 6;
+    const lengthX = margin + 43;
+    const boundedLabelX = margin + 72;
+    const boundedValueX = margin + 105;
 
-    doc.setFontSize(8.4);
-    sides.forEach((side, index) => {
-      const yy = sidesTop + index * 7;
-      doc.text(`${index + 1}.`, margin, yy);
-      doc.text(side.label, sideLabelX, yy);
-      doc.text(valueOrDash(side.length), sideLengthX, yy);
-      doc.text("Bounded by", boundedX, yy);
-      doc.text(valueOrDash(side.boundedBy), boundedValueX, yy);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.2);
+
+    sides.slice(0, 4).forEach((side, index) => {
+      const y = sidesTop + index * 6.5;
+      doc.text(`${index + 1}.`, margin, y);
+      doc.text(valueOrDash(side.label), sideNameX, y);
+      doc.text(valueOrDash(side.length), lengthX, y);
+      doc.text("Bounded by", boundedLabelX, y);
+      doc.text(valueOrDash(side.boundedBy), boundedValueX, y);
     });
 
     drawPlotSketch(
@@ -358,118 +414,75 @@ export const printPossessionCertificate = async ({
       details,
       sides,
       pageWidth - margin - 37,
-      sidesTop - 5,
-      37,
-      36,
+      82,
+      35,
+      31,
     );
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.text("Total Area", margin, 118);
-    doc.setFont("helvetica", "bold");
-    doc.text(valueOrDash(totalArea), margin + 44, 118);
-    doc.line(margin + 44, 119, margin + 69, 119);
-
-    doc.setFont("helvetica", "normal");
-    doc.text("Excess Area:", margin + 92, 118);
-    doc.setFont("helvetica", "bold");
-    doc.text(valueOrDash(details.excessArea), margin + 137, 118);
-    doc.line(margin + 137, 119, margin + 163, 119);
-
-    doc.setFont("helvetica", "normal");
-    doc.text("Champher Area", margin, 126);
-    if (details.chamferArea) {
-      doc.text(details.chamferArea, margin + 35, 126);
-    }
-
-    drawSignatureBlock(doc, "SURVEY INCHARGE", margin, 136, 78);
-    drawSignatureBlock(
-      doc,
-      "DEPUTY DIRECTOR DEMARCATION",
-      pageWidth / 2 + 10,
-      136,
-      85,
-    );
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.4);
-    const directorTitle = "DIRECTOR LAND ACQUISITION & ESTATE MANAGEMENT";
-    doc.text(directorTitle, pageWidth / 2, 177, { align: "center" });
-    doc.line(pageWidth / 2 - 58, 178, pageWidth / 2 + 58, 178);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.4);
-    doc.text("Name:", pageWidth / 2 - 47, 187);
-    doc.line(pageWidth / 2 - 17, 187.8, pageWidth / 2 + 36, 187.8);
-    doc.text("SIGNATURE:", pageWidth / 2 - 47, 197);
-    doc.line(pageWidth / 2 - 17, 197.8, pageWidth / 2 + 36, 197.8);
-    doc.text("DATE:", pageWidth / 2 - 47, 207);
-    doc.line(pageWidth / 2 - 17, 207.8, pageWidth / 2 + 36, 207.8);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.8);
-    doc.text("SURVEY & POSSESSION DEPARTMENT REMARKS:", margin, 217);
-    doc.line(margin + 95, 217.8, pageWidth - margin, 217.8);
+    doc.text("Total Area:", margin, 119);
+    doc.text(valueOrDash(totalArea), margin + 27, 119);
+    drawUnderline(doc, margin + 27, margin + 52, 120, 0.2);
 
-    const notes = [
-      "I, personally inspected the plot to my Satisfaction and is clear of encroachment.",
-      "I shall abide by Building By-Laws of RUDA i.e Approval of Building Plan etc.",
-      "The location, number, size and type of the Plot are final, however, RUDA reserves the right to change/amend due to the technical reasons at any stage.",
-      "Champher area is part of the plot but will not be included in the boundary of the plot.",
-      "Possession letter is valid for three years from date of readiness, after that re-validation charges will be applied.",
-      "On expiry, re-validation of possession will be required after the payment of re-validation charges & Non utilization charges of entire project.",
-      "Three years are given for construction after collection of possession upon payment of all due charges for all projects.",
+    const extraLand =
+      details.extraLand || details.excessArea || details.additionalArea;
+    doc.text("Extra Land:", margin + 94, 119);
+    doc.text(valueOrDash(extraLand), margin + 122, 119);
+    drawUnderline(doc, margin + 122, margin + 151, 120, 0.2);
+
+    doc.setFontSize(8.4);
+    doc.text("DD Demarcation:", margin, 132);
+    drawUnderline(doc, margin + 37, margin + 72, 133, 0.23);
+
+    doc.text("Director Land:", margin + 101, 132);
+    drawUnderline(doc, margin + 132, pageWidth - margin, 133, 0.23);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.4);
+    doc.text("Terms and Conditions", margin, 147);
+    drawUnderline(doc, margin, margin + 42, 148.2, 0.28);
+
+    const terms = [
+      "By accepting this Provisional Possession Certificate, I confirm that I have personally inspected the plot and am satisfied that it is free from any unauthorized occupation or encroachment.",
+      "I agree to adhere to all building Regulations and Bylaws established by the Ravi Urban Development Authority (RUDA). I will construct any building on the plot according to the drawings that have been officially approved by RUDA.",
+      "RUDA reserves the right to change/amend due to technical reasons at any stage.",
+      "The Provisional Possession Certificate is valid till issued payment plan time frame.",
+      "Chamfer area is part of the plot but will not be included in the boundary of the plot.",
+      "On expiry, re-validation of possession will be required after the payment of re-validation charges & Non utilization charges.",
+      "If any outstanding payments due to RUDA are not made within the specified payment period, RUDA retains the right to cancel the Intimation, Allotment, and this Provisional Possession Certificate.",
+      "This Possession Certificate is provisional. Water, sewerage, and electrical connections will not be provided until all outstanding dues owed to RUDA have been fully paid.",
+      "I agree to comply with and abide by these Terms and Conditions, as well as any other Bylaws, Rules & Regulations, issued by RUDA relating to the Intimation, Allocation, Allotment, and Possession of this plot.",
     ];
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.4);
-    let noteY = 231;
-    notes.forEach((note, index) => {
-      const lines = doc.splitTextToSize(
-        `${index + 1}. ${note}`,
-        pageWidth - margin * 2,
-      );
-      if (index === 4) doc.setTextColor(255, 184, 36);
-      else doc.setTextColor(0, 0, 0);
-      doc.text(lines, margin, noteY, { lineHeightFactor: 1.16 });
-      noteY += lines.length * 3.2 + 0.7;
-    });
+    const termsEndY = drawNumberedTerms(doc, terms, margin, 157, contentWidth);
 
-    doc.setTextColor(0, 0, 0);
+    const takeoverY = Math.min(Math.max(termsEndY + 4, 258), 267);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.4);
-    doc.text("POSSESSION TAKEN OVER BY ALLOTTEE / ATTORNEY", margin, 270);
+    doc.setFontSize(8.9);
+    doc.text("POSSESSION TAKEN OVER BY ALLOTTEE / ATTORNEY", margin, takeoverY);
 
-    drawUnderlinedValue(doc, "NAME:", details.owner, margin, 279, 15, 51, {
-      fontSize: 9.2,
-    });
-    drawUnderlinedValue(
+    const firstLineY = takeoverY + 11;
+    const secondLineY = takeoverY + 23;
+
+    doc.setFontSize(8.5);
+    doc.text("NAME:", margin, firstLineY);
+    drawUnderline(doc, margin + 12, margin + 59, firstLineY + 0.8, 0.23);
+
+    doc.text("THUMB & SIGNATURE:", margin + 84, firstLineY);
+    drawUnderline(
       doc,
-      "THUMB & SIGNATURE:",
-      "",
-      pageWidth / 2 + 2,
-      279,
-      43,
-      50,
-      {
-        fontSize: 9.2,
-      },
+      margin + 128,
+      pageWidth - margin,
+      firstLineY + 0.8,
+      0.23,
     );
-    drawUnderlinedValue(doc, "CNIC:", details.cnic, margin, 290, 15, 51, {
-      fontSize: 9.2,
-    });
-    drawUnderlinedValue(
-      doc,
-      "DATED:",
-      details.possessionDate || details.documentDate,
-      pageWidth / 2 + 39,
-      290,
-      17,
-      39,
-      {
-        fontSize: 9.2,
-      },
-    );
+
+    doc.text("CNIC:", margin, secondLineY);
+    drawUnderline(doc, margin + 12, margin + 59, secondLineY + 0.8, 0.23);
+
+    doc.text("DATED:", margin + 87, secondLineY);
+    drawUnderline(doc, margin + 105, margin + 154, secondLineY + 0.8, 0.23);
 
     openPdfPreview(
       doc,

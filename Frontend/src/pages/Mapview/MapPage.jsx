@@ -14,6 +14,7 @@ import ParcelPanel from "./ParcelPanel";
 import MapControls from "./MapControls";
 import Legend from "./Legend";
 import MapView from "./MapView";
+import { getRudaMauzas } from "../../services/api";
 
 const getKhasraNumber = (props = {}) => {
   return (
@@ -87,6 +88,25 @@ const getLandType = (props = {}) => {
   return props.type ?? props.land_type ?? null;
 };
 
+const getMauzaId = (mauza = {}) =>
+  mauza?.mauza_id ?? mauza?.id ?? mauza?.gid ?? "";
+
+const geoJSONMauzasToOptions = (geojson) => {
+  const features = Array.isArray(geojson?.features) ? geojson.features : [];
+
+  return features
+    .map((feature) => ({
+      ...(feature?.properties || {}),
+      id:
+        feature?.properties?.id ??
+        feature?.properties?.mauza_id ??
+        feature?.id ??
+        feature?.properties?.gid,
+      geometry: feature?.geometry ?? null,
+    }))
+    .filter((mauza) => getMauzaId(mauza) !== "");
+};
+
 export default function MapPage() {
   const outletContext = useOutletContext() ?? {};
 
@@ -122,6 +142,91 @@ export default function MapPage() {
   const [selectedParcelNumber, setSelectedParcelNumber] = useState("");
   const [selectedMurabbaNumber, setSelectedMurabbaNumber] = useState("");
   const [loadedParcelsGeojson, setLoadedParcelsGeojson] = useState(null);
+  const [unverifiedMauzas, setUnverifiedMauzas] = useState([]);
+  const [unverifiedMauzasLoading, setUnverifiedMauzasLoading] = useState(false);
+
+  useEffect(() => {
+    if (boundaryStatus !== "unverified" || unverifiedMauzas.length) return;
+
+    let cancelled = false;
+
+    const loadUnverifiedMauzas = async () => {
+      try {
+        setUnverifiedMauzasLoading(true);
+        const geojson = await getRudaMauzas();
+        if (!cancelled) {
+          setUnverifiedMauzas(geoJSONMauzasToOptions(geojson));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load unverified Mauzas:", error);
+          setUnverifiedMauzas([]);
+        }
+      } finally {
+        if (!cancelled) setUnverifiedMauzasLoading(false);
+      }
+    };
+
+    loadUnverifiedMauzas();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [boundaryStatus, unverifiedMauzas.length]);
+
+  const activeSelectedMauzaDetails = useMemo(() => {
+    if (boundaryStatus === "verified") {
+      return filters?.selectedMauzaDetails ?? null;
+    }
+
+    const selectedMauzaId = filters?.selectedMauza;
+    if (selectedMauzaId === undefined || selectedMauzaId === null || selectedMauzaId === "") {
+      return null;
+    }
+
+    return (
+      unverifiedMauzas.find(
+        (mauza) => String(getMauzaId(mauza)) === String(selectedMauzaId),
+      ) || null
+    );
+  }, [
+    boundaryStatus,
+    filters?.selectedMauza,
+    filters?.selectedMauzaDetails,
+    unverifiedMauzas,
+  ]);
+
+  const activeFilters = useMemo(() => {
+    if (!filters) return filters;
+
+    const isUnverified = boundaryStatus === "unverified";
+    const selectedMauza = isUnverified
+      ? activeSelectedMauzaDetails
+        ? String(getMauzaId(activeSelectedMauzaDetails))
+        : ""
+      : filters.selectedMauza;
+
+    return {
+      ...filters,
+      mauzas: isUnverified ? unverifiedMauzas : filters.mauzas,
+      selectedMauza,
+      selectedMauzaDetails: isUnverified
+        ? activeSelectedMauzaDetails
+        : filters.selectedMauzaDetails,
+      loading: {
+        ...(filters.loading || {}),
+        mauzas: isUnverified
+          ? unverifiedMauzasLoading
+          : filters.loading?.mauzas,
+      },
+    };
+  }, [
+    filters,
+    boundaryStatus,
+    unverifiedMauzas,
+    unverifiedMauzasLoading,
+    activeSelectedMauzaDetails,
+  ]);
 
   const isMurabbaBasedKhasra = useMemo(() => {
     if (filters?.viewBy !== "khasra") return false;
@@ -144,8 +249,8 @@ export default function MapPage() {
   useEffect(() => {
     const statusColor = boundaryStatus === "unverified" ? "#dc5a5a" : "#16a34a";
 
-    // Only Mauza and Khasra switch between verified and unverified tables.
-    // Preserve visibility/opacity and update just their status color.
+    // Mauza, Khasra, and Square switch between verified and unverified tables.
+    // Preserve visibility/opacity and keep the status color on Mauza/Khasra.
     setLayers((prev) => ({
       ...prev,
       mauzaBoundary: {
@@ -252,12 +357,12 @@ export default function MapPage() {
   }, [filters?.viewBy, isMurabbaBasedKhasra, khasraOptions]);
 
   const selectedFilterLayers = useMemo(() => {
-    if (!filters) return [];
+    if (!activeFilters) return [];
 
     const items = [];
 
-    if (filters?.selectedDistrictOptions?.length) {
-      const label = filters.selectedDistrictOptions
+    if (activeFilters?.selectedDistrictOptions?.length) {
+      const label = activeFilters.selectedDistrictOptions
         .map((d) => d?.name)
         .filter(Boolean)
         .join(", ");
@@ -267,8 +372,8 @@ export default function MapPage() {
       });
     }
 
-    if (filters?.selectedTehsilOptions?.length) {
-      const label = filters.selectedTehsilOptions
+    if (activeFilters?.selectedTehsilOptions?.length) {
+      const label = activeFilters.selectedTehsilOptions
         .map((t) => t?.name)
         .filter(Boolean)
         .join(", ");
@@ -278,10 +383,10 @@ export default function MapPage() {
       });
     }
 
-    if (filters?.selectedMauzaDetails) {
+    if (activeFilters?.selectedMauzaDetails) {
       const label =
-        filters.selectedMauzaDetails?.mauza ||
-        filters.selectedMauzaDetails?.name ||
+        activeFilters.selectedMauzaDetails?.mauza ||
+        activeFilters.selectedMauzaDetails?.name ||
         "Selected Mauza";
       items.push({
         key: "mauzaBoundary",
@@ -289,7 +394,7 @@ export default function MapPage() {
       });
     }
 
-    if (filters?.selectedMauzaDetails && filters?.viewBy === "khasra") {
+    if (activeFilters?.selectedMauzaDetails && filters?.viewBy === "khasra") {
       items.push({
         key: "khasraLayer",
         label: selectedParcelNumber
@@ -298,7 +403,7 @@ export default function MapPage() {
       });
     }
 
-    if (filters?.selectedMauzaDetails && filters?.viewBy === "square") {
+    if (activeFilters?.selectedMauzaDetails && filters?.viewBy === "square") {
       items.push({
         key: "squareLayer",
         label: selectedParcelNumber
@@ -307,7 +412,7 @@ export default function MapPage() {
       });
     }
 
-    if (filters?.selectedMauzaDetails && filters?.viewBy === "acre") {
+    if (activeFilters?.selectedMauzaDetails && filters?.viewBy === "acre") {
       items.push({
         key: "acreLayer",
         label: selectedParcelNumber
@@ -318,16 +423,18 @@ export default function MapPage() {
 
     return items;
   }, [
-    filters,
-    filters?.selectedDistrictOptions,
-    filters?.selectedTehsilOptions,
-    filters?.selectedMauzaDetails,
+    activeFilters,
+    activeFilters?.selectedDistrictOptions,
+    activeFilters?.selectedTehsilOptions,
+    activeFilters?.selectedMauzaDetails,
     filters?.viewBy,
     selectedParcelNumber,
   ]);
 
   const selectedMauzaKey =
-    filters?.selectedMauzaDetails?.mauza_id ?? filters?.selectedMauza ?? "";
+    getMauzaId(activeFilters?.selectedMauzaDetails) ||
+    activeFilters?.selectedMauza ||
+    "";
 
   useEffect(() => {
     const activeKeys = new Set(selectedFilterLayers.map((item) => item.key));
@@ -496,7 +603,7 @@ export default function MapPage() {
         className="relative flex-1 overflow-hidden bg-gradient-to-b from-blue-50 to-white"
       >
         <MapView
-          selectedMauza={filters?.selectedMauzaDetails}
+          selectedMauza={activeFilters?.selectedMauzaDetails}
           selectedDistrict={filters?.selectedDistrictOptions}
           selectedTehsil={filters?.selectedTehsilOptions}
           viewBy={filters?.viewBy}
@@ -515,7 +622,7 @@ export default function MapPage() {
         {/* <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} /> */}
         {filters && (
           <SubHeader
-            filters={filters}
+            filters={activeFilters}
             parcelOptions={standardParcelOptions}
             selectedParcelNumber={selectedParcelNumber}
             onParcelNumberChange={(val) => setSelectedParcelNumber(val)}
@@ -542,7 +649,7 @@ export default function MapPage() {
           setSelectedProposedRoadIds={setSelectedProposedRoadIds}
           basemap={basemap}
           setBasemap={setBasemap}
-          selectedMauza={filters?.selectedMauzaDetails}
+          selectedMauza={activeFilters?.selectedMauzaDetails}
           selectedDistrict={filters?.selectedDistrictOptions}
           selectedTehsil={filters?.selectedTehsilOptions}
           selectedFilterLayers={selectedFilterLayers}
