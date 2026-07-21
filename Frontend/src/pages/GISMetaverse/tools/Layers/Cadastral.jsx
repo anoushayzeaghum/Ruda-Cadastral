@@ -9,9 +9,25 @@ import AwardedLandAttribute from "./AttributeTable/AwardedLandAttribute";
 import StateLandAttribute from "./AttributeTable/StateLandAttribute";
 import PossessionLandAttribute from "./AttributeTable/PossessionLandAttribute";
 import GeodeticNetworkAttribute from "./AttributeTable/GeodeticNetworkAttribute";
-import { addAwardedLandLayer } from "./LayerManager/AdministrativeBoundariesLayers/AwardedLandLayer";
-import { addStateLandLayer } from "./LayerManager/AdministrativeBoundariesLayers/StateLandLayer";
-import { addPossessionLandLayer } from "./LayerManager/AdministrativeBoundariesLayers/PossessionLandLayer";
+import { addAwardedLandLayer } from "./LayerManager/Cadastral/AwardedLandLayer";
+import { addStateLandLayer } from "./LayerManager/Cadastral/StateLandLayer";
+import { addPossessionLandLayer } from "./LayerManager/Cadastral/PossessionLandLayer";
+import {
+  addGeodeticPointsLayer,
+  GEODETIC_POINTS_IDS,
+} from "./LayerManager/Cadastral/GeodeticPointsLayer";
+import {
+  addMauzaBoundaryLayer,
+  MAUZA_BOUNDARY_IDS,
+} from "./LayerManager/Cadastral/MauzaBoundaryLayer";
+import {
+  addSquareBoundaryLayer,
+  SQUARE_BOUNDARY_IDS,
+} from "./LayerManager/Cadastral/SquareBoundaryLayer";
+import {
+  addKhasraBoundaryLayer,
+  KHASRA_BOUNDARY_IDS,
+} from "./LayerManager/Cadastral/KhasraBoundaryLayer";
 import {
   API_BASE,
   formatNumber,
@@ -29,30 +45,35 @@ const MASAWI_BOUNDS = [
   [74.43545280361002, 31.6112165411359],
 ];
 
+// RUDA Khasra contains roughly 233,000 polygons. Loading that table as one
+// GeoJSON response blocks the browser while JSON is parsed and rendered.
+// The Khasra layer therefore uses PostGIS vector tiles and only downloads the
+// tiles visible in the current map viewport.
+const KHASRA_SOURCE_LAYER = "ruda_khasra";
+const KHASRA_MIN_ZOOM = 11;
+const KHASRA_VISIBLE_LIST_LIMIT = 250;
+
 const IDS = {
-  moza: {
-    src: "gism-lrr-moza-src",
-    fill: "gism-lrr-moza-fill",
-    line: "gism-lrr-moza-line",
-    label: "gism-lrr-moza-label",
-  },
-  square: {
-    src: "gism-lrr-square-src",
-    fill: "gism-lrr-square-fill",
-    line: "gism-lrr-square-line",
-  },
-  khasra: {
-    src: "gism-lrr-khasra-src",
-    fill: "gism-lrr-khasra-fill",
-    line: "gism-lrr-khasra-line",
-    label: "gism-lrr-khasra-label",
-  },
+  moza: MAUZA_BOUNDARY_IDS,
+  square: SQUARE_BOUNDARY_IDS,
+  khasra: KHASRA_BOUNDARY_IDS,
+};
+
+const KHASRA_VECTOR_SOURCE_ID =
+  KHASRA_BOUNDARY_IDS.source ||
+  KHASRA_BOUNDARY_IDS.src ||
+  "metaverse-khasra-boundary-source";
+
+const BOUNDARY_LAYER_CONFIG = {
+  moza: { addLayer: addMauzaBoundaryLayer },
+  square: { addLayer: addSquareBoundaryLayer },
+  khasra: { addLayer: addKhasraBoundaryLayer },
 };
 
 const MAUZA_DEF = {
   key: "moza",
   label: "Mauza Boundary",
-  color: "#ff8b24",
+  color: "#2C2C2A",
   type: "polygon",
 };
 
@@ -60,13 +81,13 @@ const LAYER_DEFS = [
   {
     key: "square",
     label: "Square Boundary",
-    color: "#d7bf32",
+    color: "#185FA5",
     type: "polygon",
   },
   {
     key: "khasra",
     label: "Khasra Boundary",
-    color: "#1f7a3a",
+    color: "#712B13",
     type: "polygon",
     dropdown: true,
   },
@@ -75,10 +96,10 @@ const LAYER_DEFS = [
 const ALL_LAYER_DEFS = [MAUZA_DEF, ...LAYER_DEFS];
 
 const EXTRA_LAYER_DEFS = [
-  { key: "awardedLand", label: "Awarded Land", color: "#a855f7" },
-  { key: "stateLand", label: "State Land", color: "#22c55e" },
-  { key: "possessionLand", label: "Possession Land", color: "#ef4444" },
-  { key: "geodeticNetwork", label: "Geodetic Network", color: "#f97316" },
+  { key: "awardedLand", label: "Awarded Land", color: "#854F0B" },
+  { key: "stateLand", label: "State Land", color: "#5F5E5A" },
+  { key: "possessionLand", label: "Possession Land", color: "#27500A" },
+  { key: "geodeticNetwork", label: "Geodetic Network", color: "#D92D20" },
 ];
 
 const EXTRA_LAYER_CONFIG = {
@@ -114,11 +135,9 @@ const EXTRA_LAYER_CONFIG = {
   },
   geodeticNetwork: {
     endpoint: "/geodeticnetwork/",
-    sourceId: "metaverse-geodetic-network-source",
-    layerIds: [
-      "metaverse-geodetic-network-circle",
-      "metaverse-geodetic-network-label",
-    ],
+    sourceId: GEODETIC_POINTS_IDS.source,
+    layerIds: [GEODETIC_POINTS_IDS.circle, GEODETIC_POINTS_IDS.label],
+    addLayer: addGeodeticPointsLayer,
   },
 };
 
@@ -137,78 +156,6 @@ function setExtraVisibility(map, key, visible) {
       );
     }
   });
-}
-
-function addOrUpdateGeodeticLayer(map, geojson, color, opacity = 100) {
-  if (!map) return;
-
-  const config = EXTRA_LAYER_CONFIG.geodeticNetwork;
-  const ratio = opacity / 100;
-
-  if (!map.getSource(config.sourceId)) {
-    map.addSource(config.sourceId, {
-      type: "geojson",
-      data: geojson,
-    });
-  } else {
-    map.getSource(config.sourceId).setData(geojson);
-  }
-
-  const [circleId, labelId] = config.layerIds;
-
-  if (!map.getLayer(circleId)) {
-    map.addLayer({
-      id: circleId,
-      type: "circle",
-      source: config.sourceId,
-      paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 8, 4, 16, 7],
-        "circle-color": color,
-        "circle-opacity": ratio,
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.2,
-        "circle-stroke-opacity": ratio,
-      },
-      layout: { visibility: "visible" },
-    });
-  } else {
-    map.setPaintProperty(circleId, "circle-color", color);
-    map.setPaintProperty(circleId, "circle-opacity", ratio);
-    map.setPaintProperty(circleId, "circle-stroke-opacity", ratio);
-    map.setLayoutProperty(circleId, "visibility", "visible");
-  }
-
-  if (!map.getLayer(labelId)) {
-    map.addLayer({
-      id: labelId,
-      type: "symbol",
-      source: config.sourceId,
-      minzoom: 13,
-      layout: {
-        visibility: "visible",
-        "text-field": [
-          "coalesce",
-          ["to-string", ["get", "name"]],
-          ["to-string", ["get", "code"]],
-          "",
-        ],
-        "text-size": 10,
-        "text-offset": [0, 1.2],
-        "text-anchor": "top",
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-      },
-      paint: {
-        "text-color": color,
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
-        "text-opacity": ratio,
-      },
-    });
-  } else {
-    map.setPaintProperty(labelId, "text-color", color);
-    map.setPaintProperty(labelId, "text-opacity", ratio);
-    map.setLayoutProperty(labelId, "visibility", "visible");
-  }
 }
 
 function fitToExtraGeoJSON(map, geojson) {
@@ -245,53 +192,16 @@ function emptyFC() {
   return { type: "FeatureCollection", features: [] };
 }
 
-function getLayerColor(key) {
-  return ALL_LAYER_DEFS.find((d) => d.key === key)?.color || "#ffffff";
-}
+function unwrapBoundaryGeoJSON(responseData) {
+  const geojson = unwrapGeoJSON(responseData);
+  const payload =
+    responseData?.data?.data ?? responseData?.data ?? responseData;
 
-const POLYGON_STYLES = {
-  moza: {
-    fillColor: "#ff8b24",
-    lineColor: "#ff8b24",
-    fillOpacityMultiplier: 0.16,
-    lineWidth: 1.5,
-    labelColor: "#ff8b24",
-    labelMinZoom: 14,
-  },
-  square: {
-    fillColor: "#d7bf32",
-    lineColor: "#d7bf32",
-    fillOpacityMultiplier: 0.1,
-    lineWidth: 1.6,
-  },
-  khasra: {
-    fillColor: "#1f7a3a",
-    lineColor: "#1f7a3a",
-    fillOpacityMultiplier: 0,
-    lineWidth: 1.25,
-    labelColor: "#1f7a3a",
-    labelMinZoom: 14.6,
-  },
-};
+  if (Array.isArray(payload?.bbox)) {
+    geojson.bbox = payload.bbox;
+  }
 
-function getPolygonStyle(key, color) {
-  const baseStyle = POLYGON_STYLES[key] || {
-    fillColor: getLayerColor(key),
-    lineColor: getLayerColor(key),
-    fillOpacityMultiplier: 0.2,
-    lineWidth: 1.5,
-    labelColor: getLayerColor(key),
-    labelMinZoom: 14,
-  };
-
-  if (!color) return baseStyle;
-
-  return {
-    ...baseStyle,
-    fillColor: color,
-    lineColor: color,
-    labelColor: color,
-  };
+  return geojson;
 }
 
 const LAND_REVENUE_LAYER_ORDER = [
@@ -470,6 +380,25 @@ function getMauzaIdsFromFeatures(features = []) {
 function fitToGeojson(map, geojson) {
   if (!map || !geojson?.features?.length) return;
 
+  const bbox = geojson?.bbox;
+  if (
+    Array.isArray(bbox) &&
+    bbox.length >= 4 &&
+    bbox.slice(0, 4).every((value) => Number.isFinite(Number(value)))
+  ) {
+    map.fitBounds(
+      [
+        [Number(bbox[0]), Number(bbox[1])],
+        [Number(bbox[2]), Number(bbox[3])],
+      ],
+      { padding: 40, duration: 900 },
+    );
+    return;
+  }
+
+  // Fallback for older endpoints that do not return a FeatureCollection bbox.
+  // This coordinate walk is intentionally avoided for RUDA Khasra responses
+  // because large cadastral geometries can freeze the browser main thread.
   import("mapbox-gl").then((m) => {
     const bounds = new m.default.LngLatBounds();
 
@@ -489,105 +418,206 @@ function fitToGeojson(map, geojson) {
       traverse(feature.geometry?.coordinates);
     });
 
-    if (!bounds.isEmpty())
+    if (!bounds.isEmpty()) {
       map.fitBounds(bounds, { padding: 40, duration: 900 });
+    }
+  });
+}
+
+function getKhasraTileUrl() {
+  const base = String(API_BASE || "").replace(/\/$/, "");
+  return `${base}/rudakhasra/tiles/{z}/{x}/{y}/`;
+}
+
+function removeKhasraMapLayers(map) {
+  if (!map) return;
+
+  [IDS.khasra.label, IDS.khasra.line, IDS.khasra.fill].forEach((layerId) => {
+    try {
+      if (layerId && map.getLayer(layerId)) map.removeLayer(layerId);
+    } catch (_) {}
+  });
+}
+
+function ensureKhasraVectorLayer(map, opacity, color) {
+  if (!map) return;
+
+  const sourceId = KHASRA_VECTOR_SOURCE_ID;
+  const existingSource = map.getSource(sourceId);
+  const existingSourceType = map.getStyle?.()?.sources?.[sourceId]?.type;
+
+  // During hot reload, or after previously using the old GeoJSON code, the
+  // same source id may still point to a GeoJSON source. Replace only that
+  // Khasra source so Mapbox can use vector tiles.
+  if (existingSource && existingSourceType !== "vector") {
+    removeKhasraMapLayers(map);
+    try {
+      map.removeSource(sourceId);
+    } catch (_) {}
+  }
+
+  if (!map.getSource(sourceId)) {
+    map.addSource(sourceId, {
+      type: "vector",
+      tiles: [getKhasraTileUrl()],
+      minzoom: KHASRA_MIN_ZOOM,
+      maxzoom: 18,
+      promoteId: "gid",
+    });
+  }
+
+  const beforeId = getLandRevenueBeforeId(map);
+  const visibility = "visible";
+  const opacityRatio = Math.max(0, Math.min(Number(opacity) / 100, 1));
+
+  if (!map.getLayer(IDS.khasra.fill)) {
+    map.addLayer(
+      {
+        id: IDS.khasra.fill,
+        type: "fill",
+        source: sourceId,
+        "source-layer": KHASRA_SOURCE_LAYER,
+        minzoom: KHASRA_MIN_ZOOM,
+        layout: { visibility },
+        paint: {
+          "fill-color": color,
+          "fill-opacity": 0.12 * opacityRatio,
+          "fill-antialias": true,
+        },
+      },
+      beforeId,
+    );
+  }
+
+  if (!map.getLayer(IDS.khasra.line)) {
+    map.addLayer(
+      {
+        id: IDS.khasra.line,
+        type: "line",
+        source: sourceId,
+        "source-layer": KHASRA_SOURCE_LAYER,
+        minzoom: KHASRA_MIN_ZOOM,
+        layout: { visibility },
+        paint: {
+          "line-color": color,
+          "line-opacity": opacityRatio,
+          "line-width": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            KHASRA_MIN_ZOOM,
+            0.45,
+            15,
+            1.15,
+            18,
+            1.8,
+          ],
+        },
+      },
+      beforeId,
+    );
+  }
+
+  if (IDS.khasra.label && !map.getLayer(IDS.khasra.label)) {
+    map.addLayer(
+      {
+        id: IDS.khasra.label,
+        type: "symbol",
+        source: sourceId,
+        "source-layer": KHASRA_SOURCE_LAYER,
+        minzoom: 15,
+        layout: {
+          visibility,
+          "text-field": getLabelExpression("khasra"),
+          "text-size": ["interpolate", ["linear"], ["zoom"], 15, 9, 18, 12],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+        },
+        paint: {
+          "text-color": "#24150f",
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1.2,
+          "text-opacity": opacityRatio,
+        },
+      },
+      beforeId,
+    );
+  }
+
+  [IDS.khasra.fill, IDS.khasra.line, IDS.khasra.label].forEach((layerId) => {
+    try {
+      if (layerId && map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, "visibility", "visible");
+      }
+    } catch (_) {}
+  });
+
+  reorderLandRevenueLayers(map);
+}
+
+function updateKhasraVectorStyle(map, opacity, color) {
+  if (!map) return;
+
+  const opacityRatio = Math.max(0, Math.min(Number(opacity) / 100, 1));
+
+  try {
+    if (map.getLayer(IDS.khasra.fill)) {
+      map.setPaintProperty(IDS.khasra.fill, "fill-color", color);
+      map.setPaintProperty(
+        IDS.khasra.fill,
+        "fill-opacity",
+        0.12 * opacityRatio,
+      );
+    }
+    if (map.getLayer(IDS.khasra.line)) {
+      map.setPaintProperty(IDS.khasra.line, "line-color", color);
+      map.setPaintProperty(IDS.khasra.line, "line-opacity", opacityRatio);
+    }
+    if (IDS.khasra.label && map.getLayer(IDS.khasra.label)) {
+      map.setPaintProperty(IDS.khasra.label, "text-opacity", opacityRatio);
+    }
+  } catch (_) {}
+}
+
+function fitToKhasraExtent(map, bbox) {
+  if (
+    !map ||
+    !Array.isArray(bbox) ||
+    bbox.length < 4 ||
+    !bbox.slice(0, 4).every((value) => Number.isFinite(Number(value)))
+  ) {
+    return;
+  }
+
+  const bounds = [
+    [Number(bbox[0]), Number(bbox[1])],
+    [Number(bbox[2]), Number(bbox[3])],
+  ];
+  const camera = map.cameraForBounds(bounds, { padding: 55 });
+
+  if (!camera) return;
+
+  map.easeTo({
+    center: camera.center,
+    zoom: Math.max(camera.zoom ?? KHASRA_MIN_ZOOM, KHASRA_MIN_ZOOM),
+    bearing: camera.bearing ?? map.getBearing(),
+    pitch: camera.pitch ?? map.getPitch(),
+    duration: 900,
+    essential: true,
   });
 }
 
 function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
-  const ids = IDS[key];
-  if (!map || !ids || !geojson) return;
+  const config = BOUNDARY_LAYER_CONFIG[key];
+  if (!map || !config || !geojson) return;
 
-  const o = opacity / 100;
-  const style = getPolygonStyle(key, color);
-
-  if (!map.getSource(ids.src)) {
-    map.addSource(ids.src, { type: "geojson", data: geojson });
-  } else {
-    map.getSource(ids.src).setData(geojson);
-  }
-
-  const beforeId = getLandRevenueBeforeId(map);
-
-  if (!map.getLayer(ids.fill)) {
-    map.addLayer(
-      {
-        id: ids.fill,
-        type: "fill",
-        source: ids.src,
-        paint: {
-          "fill-color": style.fillColor,
-          "fill-opacity": o * style.fillOpacityMultiplier,
-        },
-        layout: { visibility: "visible" },
-      },
-      beforeId,
-    );
-  } else {
-    map.setLayoutProperty(ids.fill, "visibility", "visible");
-    map.setPaintProperty(ids.fill, "fill-color", style.fillColor);
-    map.setPaintProperty(
-      ids.fill,
-      "fill-opacity",
-      o * style.fillOpacityMultiplier,
-    );
-  }
-
-  if (!map.getLayer(ids.line)) {
-    map.addLayer(
-      {
-        id: ids.line,
-        type: "line",
-        source: ids.src,
-        paint: {
-          "line-color": style.lineColor,
-          "line-width": style.lineWidth,
-          "line-opacity": o,
-        },
-        layout: { visibility: "visible" },
-      },
-      beforeId,
-    );
-  } else {
-    map.setLayoutProperty(ids.line, "visibility", "visible");
-    map.setPaintProperty(ids.line, "line-color", style.lineColor);
-    map.setPaintProperty(ids.line, "line-width", style.lineWidth);
-    map.setPaintProperty(ids.line, "line-opacity", o);
-  }
-
-  if (ids.label && !map.getLayer(ids.label)) {
-    map.addLayer(
-      {
-        id: ids.label,
-        type: "symbol",
-        source: ids.src,
-        minzoom: style.labelMinZoom ?? 14,
-        paint: {
-          "text-color": style.labelColor || style.lineColor,
-          "text-halo-color": "#ffffff",
-          "text-halo-width": 1.2,
-          "text-opacity": o,
-        },
-        layout: {
-          visibility: "visible",
-          "text-field": getLabelExpression(key),
-          "text-size": ["interpolate", ["linear"], ["zoom"], 14, 9, 18, 12],
-          "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-          "text-allow-overlap": false,
-          "text-ignore-placement": false,
-        },
-      },
-      beforeId,
-    );
-  } else if (ids.label) {
-    map.setLayoutProperty(ids.label, "visibility", "visible");
-    map.setPaintProperty(
-      ids.label,
-      "text-color",
-      style.labelColor || style.lineColor,
-    );
-    map.setPaintProperty(ids.label, "text-opacity", o);
-  }
+  config.addLayer(
+    map,
+    geojson,
+    color,
+    opacity / 100,
+    getLandRevenueBeforeId(map),
+  );
 
   reorderLandRevenueLayers(map);
 }
@@ -616,53 +646,26 @@ function hideLayer(map, key) {
   } catch (_) {}
 }
 
-function updateOpacity(map, key, opacity) {
+function updateOpacity(map, key, opacity, geojson, color) {
   if (!map) return;
-
-  const o = opacity / 100;
 
   if (key === "masawi") {
     try {
-      if (map.getLayer(MASAWI_LAYER))
-        map.setPaintProperty(MASAWI_LAYER, "raster-opacity", o);
+      if (map.getLayer(MASAWI_LAYER)) {
+        map.setPaintProperty(MASAWI_LAYER, "raster-opacity", opacity / 100);
+      }
     } catch (_) {}
     return;
   }
 
-  const ids = IDS[key];
-  if (!ids) return;
-  const style = POLYGON_STYLES[key] || { fillOpacityMultiplier: 0.2 };
-
-  try {
-    if (map.getLayer(ids.fill))
-      map.setPaintProperty(
-        ids.fill,
-        "fill-opacity",
-        o * style.fillOpacityMultiplier,
-      );
-    if (map.getLayer(ids.line))
-      map.setPaintProperty(ids.line, "line-opacity", o);
-    if (ids.label && map.getLayer(ids.label))
-      map.setPaintProperty(ids.label, "text-opacity", o);
-    reorderLandRevenueLayers(map);
-  } catch (_) {}
+  if (geojson) {
+    addOrUpdatePolygonLayer(map, key, geojson, opacity, color);
+  }
 }
 
-function updateColor(map, key, color) {
-  if (!map || key === "masawi") return;
-
-  const ids = IDS[key];
-  if (!ids) return;
-
-  try {
-    if (map.getLayer(ids.fill))
-      map.setPaintProperty(ids.fill, "fill-color", color);
-    if (map.getLayer(ids.line))
-      map.setPaintProperty(ids.line, "line-color", color);
-    if (ids.label && map.getLayer(ids.label))
-      map.setPaintProperty(ids.label, "text-color", color);
-    reorderLandRevenueLayers(map);
-  } catch (_) {}
+function updateColor(map, key, color, geojson, opacity) {
+  if (!map || key === "masawi" || !geojson) return;
+  addOrUpdatePolygonLayer(map, key, geojson, opacity, color);
 }
 
 function addOrUpdateMasawiLayer(map, opacity) {
@@ -698,11 +701,13 @@ export default function Cadastral({ map, selectedProjectId }) {
   const [mauzaPanelOpen, setMauzaPanelOpen] = useState(false);
   const [khasraPanelOpen, setKhasraPanelOpen] = useState(false);
   const [khasraMauzas, setKhasraMauzas] = useState([]);
+  const [visibleKhasraGeojson, setVisibleKhasraGeojson] = useState(emptyFC);
   const [open, setOpen] = useState(false);
   const [activeTable, setActiveTable] = useState(null);
   const [extraDetailsOpen, setExtraDetailsOpen] = useState({});
 
   const cachedData = useRef({});
+  const boundaryRequests = useRef({});
 
   const [layers, setLayers] = useState(() =>
     Object.fromEntries(
@@ -726,21 +731,23 @@ export default function Cadastral({ map, selectedProjectId }) {
     if (EXTRA_LAYER_CONFIG[key]) {
       const geojson = cachedData.current[key];
       if (geojson && layers[key]?.visible) {
-        if (key === "geodeticNetwork") {
-          addOrUpdateGeodeticLayer(map, geojson, layers[key].color, opacity);
-        } else {
-          EXTRA_LAYER_CONFIG[key].addLayer(
-            map,
-            geojson,
-            layers[key].color,
-            opacity / 100,
-          );
-        }
+        EXTRA_LAYER_CONFIG[key].addLayer(
+          map,
+          geojson,
+          layers[key].color,
+          opacity / 100,
+        );
       }
       return;
     }
 
-    updateOpacity(map, key, opacity);
+    if (key === "khasra") {
+      updateKhasraVectorStyle(map, opacity, layers[key]?.color);
+      return;
+    }
+
+    const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
+    updateOpacity(map, key, opacity, geojson, layers[key]?.color);
   };
 
   const setColor = (key, color) => {
@@ -749,21 +756,23 @@ export default function Cadastral({ map, selectedProjectId }) {
     if (EXTRA_LAYER_CONFIG[key]) {
       const geojson = cachedData.current[key];
       if (geojson && layers[key]?.visible) {
-        if (key === "geodeticNetwork") {
-          addOrUpdateGeodeticLayer(map, geojson, color, layers[key].opacity);
-        } else {
-          EXTRA_LAYER_CONFIG[key].addLayer(
-            map,
-            geojson,
-            color,
-            layers[key].opacity / 100,
-          );
-        }
+        EXTRA_LAYER_CONFIG[key].addLayer(
+          map,
+          geojson,
+          color,
+          layers[key].opacity / 100,
+        );
       }
       return;
     }
 
-    updateColor(map, key, color);
+    if (key === "khasra") {
+      updateKhasraVectorStyle(map, layers[key]?.opacity ?? 100, color);
+      return;
+    }
+
+    const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
+    updateColor(map, key, color, geojson, layers[key]?.opacity ?? 100);
   };
 
   const setLoading = (key, loading) => {
@@ -787,7 +796,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     [activeMauzaFeatures],
   );
 
-  const khasraGeojson = cachedData.current.khasra || emptyFC();
+  const khasraGeojson = visibleKhasraGeojson;
   const squareGeojson = cachedData.current.square || emptyFC();
 
   const loadProjectMauzas = async ({ draw = false, zoom = false } = {}) => {
@@ -815,7 +824,7 @@ export default function Cadastral({ map, selectedProjectId }) {
 
     try {
       // Fetch the complete Mauza model with no project or tehsil filter.
-      const response = await axios.get(`${API_BASE}/mauza/`);
+      const response = await axios.get(`${API_BASE}/rudamauza/`);
       const geojson = unwrapGeoJSON(response.data);
       const allMauzas = uniqueByMauza(geojson?.features || []);
       const completeMauzaGeojson = {
@@ -854,41 +863,108 @@ export default function Cadastral({ map, selectedProjectId }) {
     return loadProjectMauzas({ draw: true, zoom });
   };
 
+  const loadKhasraTiles = async ({ zoom = true } = {}) => {
+    if (!map) return emptyFC();
+
+    setLoading("khasra", true);
+
+    try {
+      let extentData = cachedData.current.khasraExtent;
+
+      if (!extentData) {
+        const response = await axios.get(`${API_BASE}/rudakhasra/extent/`);
+        extentData =
+          response?.data?.data?.data ??
+          response?.data?.data ??
+          response?.data ??
+          {};
+        cachedData.current.khasraExtent = extentData;
+      }
+
+      ensureKhasraVectorLayer(map, layers.khasra.opacity, layers.khasra.color);
+      setVisible("khasra", true);
+      setKhasraPanelOpen("khasra");
+
+      if (zoom) fitToKhasraExtent(map, extentData?.bbox);
+
+      return visibleKhasraGeojson;
+    } catch (error) {
+      console.error("RUDA Khasra vector-tile load error:", error);
+      hideLayer(map, "khasra");
+      setVisible("khasra", false);
+      return emptyFC();
+    } finally {
+      setLoading("khasra", false);
+    }
+  };
+
   const loadBoundaryByMauzas = async (key, _mauzaIds, { zoom = true } = {}) => {
     if (!map) return emptyFC();
 
-    setLoading(key, true);
-
-    try {
-      // Fetch the complete Square or Khasra model directly.
-      const endpoint = key === "khasra" ? "/khasra/" : "/square/";
-      const response = await axios.get(`${API_BASE}${endpoint}`);
-      const geojson = unwrapGeoJSON(response.data);
-
-      cachedData.current[key] = geojson;
-
+    const cachedGeojson = cachedData.current[key];
+    if (cachedGeojson?.features) {
       addOrUpdatePolygonLayer(
         map,
         key,
-        geojson,
+        cachedGeojson,
         layers[key].opacity,
         layers[key].color,
       );
 
-      if (zoom) fitToGeojson(map, geojson);
+      if (zoom) fitToGeojson(map, cachedGeojson);
       setVisible(key, true);
 
       if (key === "khasra") {
         setKhasraPanelOpen("khasra");
       }
 
-      return geojson;
-    } catch (error) {
-      console.error(`Complete ${key} model load error:`, error);
-      return emptyFC();
-    } finally {
-      setLoading(key, false);
+      return cachedGeojson;
     }
+
+    // Reuse the same promise when the checkbox is clicked repeatedly while a
+    // large GeoJSON response is still downloading/parsing.
+    if (boundaryRequests.current[key]) {
+      return boundaryRequests.current[key];
+    }
+
+    setLoading(key, true);
+
+    const requestPromise = (async () => {
+      try {
+        const endpoint = key === "khasra" ? "/rudakhasra/" : "/rudasquare/";
+        const response = await axios.get(`${API_BASE}${endpoint}`);
+        const geojson = unwrapBoundaryGeoJSON(response.data);
+
+        cachedData.current[key] = geojson;
+
+        addOrUpdatePolygonLayer(
+          map,
+          key,
+          geojson,
+          layers[key].opacity,
+          layers[key].color,
+        );
+
+        if (zoom) fitToGeojson(map, geojson);
+        setVisible(key, true);
+
+        if (key === "khasra") {
+          setKhasraPanelOpen("khasra");
+        }
+
+        return geojson;
+      } catch (error) {
+        console.error(`Complete ${key} model load error:`, error);
+        setVisible(key, false);
+        return emptyFC();
+      } finally {
+        delete boundaryRequests.current[key];
+        setLoading(key, false);
+      }
+    })();
+
+    boundaryRequests.current[key] = requestPromise;
+    return requestPromise;
   };
 
   const ensureProjectMauzas = async () => {
@@ -916,22 +992,13 @@ export default function Cadastral({ map, selectedProjectId }) {
         cachedData.current[key] = geojson;
       }
 
-      if (key === "geodeticNetwork") {
-        addOrUpdateGeodeticLayer(
-          map,
-          geojson,
-          layers[key].color,
-          layers[key].opacity,
-        );
-      } else {
-        config.addLayer(
-          map,
-          geojson,
-          layers[key].color,
-          layers[key].opacity / 100,
-        );
-        setExtraVisibility(map, key, true);
-      }
+      config.addLayer(
+        map,
+        geojson,
+        layers[key].color,
+        layers[key].opacity / 100,
+      );
+      setExtraVisibility(map, key, true);
 
       setVisible(key, true);
       if (zoom) fitToExtraGeoJSON(map, geojson);
@@ -986,7 +1053,12 @@ export default function Cadastral({ map, selectedProjectId }) {
       return;
     }
 
-    if (key === "square" || key === "khasra") {
+    if (key === "khasra") {
+      await loadKhasraTiles({ zoom: true });
+      return;
+    }
+
+    if (key === "square") {
       await loadBoundaryByMauzas(key, [], { zoom: true });
     }
   };
@@ -1003,6 +1075,88 @@ export default function Cadastral({ map, selectedProjectId }) {
   }, [map, mauzaGeojson, layers.moza.visible]);
 
   useEffect(() => {
+    if (!map || !layers.khasra.visible) return;
+
+    let frameId = null;
+
+    const syncVisibleFeatures = () => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
+
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+
+        try {
+          if (!map.getSource(KHASRA_VECTOR_SOURCE_ID)) return;
+
+          const sourceFeatures = map.querySourceFeatures(
+            KHASRA_VECTOR_SOURCE_ID,
+            {
+              sourceLayer: KHASRA_SOURCE_LAYER,
+            },
+          );
+          const seen = new Set();
+          const features = [];
+
+          sourceFeatures.forEach((feature) => {
+            const properties = { ...(feature?.properties || {}) };
+            const id = feature?.id ?? properties.gid;
+            const uniqueId = id ?? `${properties.khasra_id}-${properties.kh}`;
+
+            if (
+              uniqueId === null ||
+              uniqueId === undefined ||
+              seen.has(uniqueId)
+            ) {
+              return;
+            }
+
+            seen.add(uniqueId);
+            features.push({
+              type: "Feature",
+              id,
+              geometry: feature.geometry,
+              properties,
+            });
+          });
+
+          const geojson = { type: "FeatureCollection", features };
+          cachedData.current.khasra = geojson;
+          setVisibleKhasraGeojson(geojson);
+        } catch (_) {}
+      });
+    };
+
+    const restoreAfterStyleChange = () => {
+      try {
+        ensureKhasraVectorLayer(
+          map,
+          layers.khasra.opacity,
+          layers.khasra.color,
+        );
+      } catch (_) {}
+    };
+
+    const handleSourceData = (event) => {
+      if (event?.sourceId === KHASRA_VECTOR_SOURCE_ID) syncVisibleFeatures();
+    };
+
+    restoreAfterStyleChange();
+    map.on("sourcedata", handleSourceData);
+    map.on("moveend", syncVisibleFeatures);
+    map.on("zoomend", syncVisibleFeatures);
+    map.on("styledata", restoreAfterStyleChange);
+    syncVisibleFeatures();
+
+    return () => {
+      if (frameId !== null) cancelAnimationFrame(frameId);
+      map.off("sourcedata", handleSourceData);
+      map.off("moveend", syncVisibleFeatures);
+      map.off("zoomend", syncVisibleFeatures);
+      map.off("styledata", restoreAfterStyleChange);
+    };
+  }, [map, layers.khasra.visible, layers.khasra.opacity, layers.khasra.color]);
+
+  useEffect(() => {
     if (!map) return;
 
     const handleStyleData = () => {
@@ -1010,12 +1164,10 @@ export default function Cadastral({ map, selectedProjectId }) {
     };
 
     map.on("styledata", handleStyleData);
-    map.on("sourcedata", handleStyleData);
     reorderLandRevenueLayers(map);
 
     return () => {
       map.off("styledata", handleStyleData);
-      map.off("sourcedata", handleStyleData);
     };
   }, [map]);
 
@@ -1023,9 +1175,11 @@ export default function Cadastral({ map, selectedProjectId }) {
     if (!map) return;
 
     cachedData.current = {};
+    boundaryRequests.current = {};
     setMauzas([]);
     setSelectedMauzas([]);
     setKhasraMauzas([]);
+    setVisibleKhasraGeojson(emptyFC());
     setMauzaPanelOpen(false);
     setKhasraPanelOpen(false);
     setOpen(false);
@@ -1068,7 +1222,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     const isMasawi = key === "masawi";
     const boundaryFeatures =
       key === "khasra"
-        ? cachedData.current.khasra?.features || []
+        ? visibleKhasraGeojson.features || []
         : key === "square"
           ? cachedData.current.square?.features || []
           : [];
@@ -1120,30 +1274,45 @@ export default function Cadastral({ map, selectedProjectId }) {
                 No {label.toLowerCase()} records were returned by the model.
               </div>
             ) : (
-              boundaryFeatures.map((feature, index) => {
-                const props = feature?.properties || {};
-                const displayName = isKhasra
-                  ? getKhasraName(feature)
-                  : `${getSquareName(feature)}${props.mauza ? ` - ${props.mauza}` : ""}`;
-
-                return (
-                  <div
-                    key={`${key}-${props.gid || feature.id || index}`}
-                    className="flex items-center gap-2 py-1 text-[11px] text-white/85"
-                  >
-                    <span
-                      className="h-1.5 w-1.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: layers[key].color }}
-                    />
-                    <span className="min-w-0 flex-1 truncate">
-                      {displayName}
-                    </span>
-                    <span className="shrink-0 text-white/50">
-                      {getFeatureAreaLabel(feature)}
-                    </span>
+              <>
+                {isKhasra && (
+                  <div className="mb-1 border-b border-white/10 pb-1 text-[10px] text-white/45">
+                    Showing{" "}
+                    {Math.min(
+                      boundaryFeatures.length,
+                      KHASRA_VISIBLE_LIST_LIMIT,
+                    )}{" "}
+                    of {boundaryFeatures.length} Khasras currently loaded in the
+                    map view.
                   </div>
-                );
-              })
+                )}
+                {boundaryFeatures
+                  .slice(0, isKhasra ? KHASRA_VISIBLE_LIST_LIMIT : undefined)
+                  .map((feature, index) => {
+                    const props = feature?.properties || {};
+                    const displayName = isKhasra
+                      ? getKhasraName(feature)
+                      : `${getSquareName(feature)}${props.mauza ? ` - ${props.mauza}` : ""}`;
+
+                    return (
+                      <div
+                        key={`${key}-${props.gid || feature.id || index}`}
+                        className="flex items-center gap-2 py-1 text-[11px] text-white/85"
+                      >
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: layers[key].color }}
+                        />
+                        <span className="min-w-0 flex-1 truncate">
+                          {displayName}
+                        </span>
+                        <span className="shrink-0 text-white/50">
+                          {getFeatureAreaLabel(feature)}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </>
             )}
           </div>
         )}
@@ -1274,7 +1443,7 @@ export default function Cadastral({ map, selectedProjectId }) {
                               : prev.filter((selectedId) => selectedId !== id),
                           );
                         }}
-                        className="accent-[#1f7a3a]"
+                        className="accent-[#712B13]"
                       />
                       <span className="min-w-0 flex-1 truncate">
                         {name} - {getFeatureAreaLabel(mauza)}

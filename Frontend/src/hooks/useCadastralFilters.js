@@ -36,7 +36,7 @@ const toId = (valueOrEvent) => {
 const toggleId = (list, id) =>
   list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
 
-export default function useCadastralFilters() {
+export default function useCadastralFilters(enabled = true) {
   const [districts, setDistricts] = useState([]);
   const [tehsils, setTehsils] = useState([]);
   const [mauzas, setMauzas] = useState([]);
@@ -53,36 +53,43 @@ export default function useCadastralFilters() {
   });
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    let ignore = false;
+useEffect(() => {
 
-    const loadDistricts = async () => {
-      setLoading((prev) => ({ ...prev, districts: true }));
-      setErrorMessage("");
+  if (!enabled) {
+    return;
+  }
 
-      try {
-        const data = await getDistricts();
-        if (!ignore) {
-          setDistricts(sortByLabel(data, "name"));
-        }
-      } catch {
-        if (!ignore) {
-          setDistricts([]);
-          setErrorMessage("Unable to load districts right now.");
-        }
-      } finally {
-        if (!ignore) {
-          setLoading((prev) => ({ ...prev, districts: false }));
-        }
+  let ignore = false;
+
+  const loadDistricts = async () => {
+  
+    setLoading((prev) => ({ ...prev, districts: true }));
+    setErrorMessage("");
+
+    try {
+      const data = await getDistricts();
+
+      if (!ignore) {
+        setDistricts(sortByLabel(data, "name"));
       }
-    };
+    } catch (err) {
+      console.error("District API Error:", err);
+    } finally {
+      if (!ignore) {
+        setLoading((prev) => ({
+          ...prev,
+          districts: false,
+        }));
+      }
+    }
+  };
 
-    loadDistricts();
+  loadDistricts();
 
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  return () => {
+    ignore = true;
+  };
+}, [enabled]);
 
   useEffect(() => {
     if (!selectedDistrict.length) return undefined;
@@ -130,7 +137,6 @@ export default function useCadastralFilters() {
       setErrorMessage("");
 
       try {
-        console.log(selectedTehsil);
         const responses = await Promise.all(
           selectedTehsil.map((tehsil) => getMauzas(tehsil)),
         );
@@ -172,6 +178,7 @@ export default function useCadastralFilters() {
       ignore = true;
     };
   }, [selectedTehsil]);
+
 
   const selectedDistrictPrimary = selectedDistrict[0] ?? "";
   const selectedTehsilPrimary = selectedTehsil[0] ?? "";

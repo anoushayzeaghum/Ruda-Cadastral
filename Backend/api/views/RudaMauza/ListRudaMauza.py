@@ -13,7 +13,10 @@ class ListRudaMauzaView(viewsets.ViewSet):
     def list(self, request, *args, **kwargs):
 
         try:
-            RudaMauza_id = request.query_params.get("RudaMauza_id") or request.query_params.get("id")
+            mauza_id = (
+                request.query_params.get("mauza_id")
+                or request.query_params.get("id")
+            )
 
             district_id = (
                 request.query_params.get("district_id")
@@ -22,42 +25,16 @@ class ListRudaMauzaView(viewsets.ViewSet):
 
             tehsil_id = request.query_params.get("tehsil_id")
 
-            # Single RudaMauza
-            if RudaMauza_id:
-
-                obj = RudaMauza.objects.filter(
-                    RudaMauza_id=RudaMauza_id
-                ).first()
-
-                if not obj:
-                    return ApiResponse(
-                        status=status.HTTP_404_NOT_FOUND,
-                        message="RudaMauza not found.",
-                        http_status=status.HTTP_404_NOT_FOUND,
-                    ).create_response()
-
-                serializer = RudaMauzaSerializer(obj)
-
-                return ApiResponse(
-                    status=status.HTTP_200_OK,
-                    message="RudaMauza found.",
-                    data=serializer.data,
-                    http_status=status.HTTP_200_OK,
-                ).create_response()
-
             queryset = RudaMauza.objects.all()
 
-            # Filter by district
-            if district_id:
-                queryset = queryset.filter(
-                    district_id=district_id
-                )
+            if mauza_id:
+                queryset = queryset.filter(mauza_id=mauza_id)
 
-            # Filter by tehsil
+            if district_id:
+                queryset = queryset.filter(district_id=district_id)
+
             if tehsil_id:
-                queryset = queryset.filter(
-                    tehsil_id=tehsil_id
-                )
+                queryset = queryset.filter(tehsil_id=tehsil_id)
 
             serializer = RudaMauzaSerializer(queryset, many=True)
 
@@ -69,11 +46,13 @@ class ListRudaMauzaView(viewsets.ViewSet):
             ).create_response()
 
         except Exception as e:
+            import traceback
 
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
                 data=str(e),
+                error_traceback=traceback.format_exc(),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()
 
@@ -118,11 +97,11 @@ class ListRudaMauzaView(viewsets.ViewSet):
                         kc,
                         kc_id,
                         pc,
-                        RudaMauza,
-                        RudaMauza_id,
+                        mauza,
+                        mauza_id,
                         ST_AsGeoJSON(geom)::json
-                    FROM RudaMauza
-                    WHERE RudaMauza_id = %s
+                    FROM ruda_mauza
+                    WHERE mauza_id = %s
                 """, [pk])
 
                 row = cursor.fetchone()
@@ -152,8 +131,8 @@ class ListRudaMauzaView(viewsets.ViewSet):
                     "kc": row[3],
                     "kc_id": row[4],
                     "pc": row[5],
-                    "RudaMauza": row[6],
-                    "RudaMauza_id": row[7],
+                    "mauza": row[6],
+                    "mauza_id": row[7],
                 },
             }
 

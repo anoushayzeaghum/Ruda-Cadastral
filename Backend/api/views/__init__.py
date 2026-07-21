@@ -75,3 +75,7 @@ from .RudaMasterPlan.OrangeTrackView import *
 from .RudaMasterPlan.RailwayLineView import *
 from .RudaMasterPlan.RailwayStationsView import *
 from .RudaMasterPlan.HudiaraDrainView import *
+
+from .RudaMasterPlan.LahoreTransportationRoadView import *
+
+from .RudaSquare import *

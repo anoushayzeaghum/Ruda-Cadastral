@@ -33,6 +33,10 @@ router.register(r"rudamauza/create", CreateRudaMauzaView, basename="create-ruda-
 router.register(r"rudamauza/update", UpdateRudaMauzaView, basename="update-ruda-mauza")
 router.register(r"rudamauza/delete", DeleteRudaMauzaView, basename="delete-ruda-mauza")
 
+router.register(r"rudasquare", ListRudaSquareView, basename="rudasquare",)
+router.register(r"rudasquare/create", CreateRudaSquareView, basename="create-ruda-square",)
+router.register(r"rudasquare/update", UpdateRudaSquareView, basename="update-ruda-square",)
+router.register(r"rudasquare/delete", DeleteRudaSquareView, basename="delete-ruda-square",)
 #--------------------------------- Khasra View ---------------------------------
 router.register(r"khasra", ListKhasraView, basename="khasra")   
 router.register(r"khasra/create", CreateKhasraView, basename="create-khasra")
@@ -381,6 +385,11 @@ router.register(r"hudiara-drain", ListHudiaraDrainView, basename="hudiara-drain"
 router.register(r"hudiara-drain/create", CreateHudiaraDrainView, basename="create-hudiara-drain",)
 router.register(r"hudiara-drain/update", UpdateHudiaraDrainView, basename="update-hudiara-drain",)
 router.register(r"hudiara-drain/delete", DeleteHudiaraDrainView, basename="delete-hudiara-drain",)
+
+router.register(r"lahore-transportation-roads", ListLahoreTransportationRoadView, basename="lahore-transportation-roads",)
+router.register(r"lahore-transportation-roads/create", CreateLahoreTransportationRoadView, basename="create-lahore-transportation-road",)
+router.register(r"lahore-transportation-roads/update", UpdateLahoreTransportationRoadView, basename="update-lahore-transportation-road",)
+router.register(r"lahore-transportation-roads/delete", DeleteLahoreTransportationRoadView, basename="delete-lahore-transportation-road",)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

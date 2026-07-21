@@ -2,6 +2,7 @@ from ..common_imports import *
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 
+
 @method_decorator(cache_page(60 * 10), name="list")
 class ListGeodeticNetworkView(viewsets.ViewSet):
     queryset = GeodeticNetwork.objects.all()
@@ -9,29 +10,71 @@ class ListGeodeticNetworkView(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
+
         try:
             gid = request.query_params.get("gid")
             code = request.query_params.get("code")
             name = request.query_params.get("name")
 
+            # -----------------------------
+            # Single Record (Raw SQL)
+            # -----------------------------
             if gid:
-                obj = GeodeticNetwork.objects.filter(gid=gid).first()
 
-                if not obj:
+                with connection.cursor() as cursor:
+
+                    cursor.execute("""
+                        SELECT
+                            gid,
+                            name,
+                            easting_m,
+                            northing_m,
+                            code,
+                            elevation,
+                            ST_AsGeoJSON(geom)::json
+                        FROM geodeticnetwork
+                        WHERE gid=%s
+                    """, [gid])
+
+                    row = cursor.fetchone()
+
+                if not row:
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
                         message="GeodeticNetwork not found.",
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
+                feature = {
+                    "type": "Feature",
+                    "id": row[0],
+                    "geometry": row[6],
+                    "properties": {
+                        "gid": row[0],
+                        "name": row[1],
+                        "easting_m": row[2],
+                        "northing_m": row[3],
+                        "code": row[4],
+                        "elevation": row[5],
+                    },
+                }
+
                 return ApiResponse(
                     status=status.HTTP_200_OK,
                     message="GeodeticNetwork found.",
-                    data=GeodeticNetworkSerializer(obj).data,
+                    data=feature,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = GeodeticNetwork.objects.all()
+            queryset = GeodeticNetwork.objects.only(
+                "gid",
+                "name",
+                "easting_m",
+                "northing_m",
+                "code",
+                "elevation",
+                "geom",
+            )
 
             if code:
                 queryset = queryset.filter(code__iexact=code)
@@ -39,7 +82,10 @@ class ListGeodeticNetworkView(viewsets.ViewSet):
             if name:
                 queryset = queryset.filter(name__iexact=name)
 
-            serializer = GeodeticNetworkSerializer(queryset, many=True)
+            serializer = GeodeticNetworkSerializer(
+                queryset.iterator(),
+                many=True,
+            )
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
@@ -49,6 +95,7 @@ class ListGeodeticNetworkView(viewsets.ViewSet):
             ).create_response()
 
         except Exception as e:
+
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
@@ -70,6 +117,7 @@ class ListGeodeticNetworkView(viewsets.ViewSet):
         cached = cache.get(cache_key)
 
         if cached:
+
             print(
                 "CACHE:",
                 round((time.time() - start) * 1000, 2),
@@ -89,8 +137,7 @@ class ListGeodeticNetworkView(viewsets.ViewSet):
 
             with connection.cursor() as cursor:
 
-                cursor.execute(
-                    """
+                cursor.execute("""
                     SELECT
                         gid,
                         name,
@@ -100,10 +147,8 @@ class ListGeodeticNetworkView(viewsets.ViewSet):
                         elevation,
                         ST_AsGeoJSON(geom)::json
                     FROM geodeticnetwork
-                    WHERE gid = %s
-                    """,
-                    [pk],
-                )
+                    WHERE gid=%s
+                """, [pk])
 
                 row = cursor.fetchone()
 
@@ -114,6 +159,7 @@ class ListGeodeticNetworkView(viewsets.ViewSet):
             )
 
             if not row:
+
                 return ApiResponse(
                     status=status.HTTP_404_NOT_FOUND,
                     message="GeodeticNetwork not found.",
@@ -151,6 +197,7 @@ class ListGeodeticNetworkView(viewsets.ViewSet):
             ).create_response()
 
         except Exception as e:
+
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",

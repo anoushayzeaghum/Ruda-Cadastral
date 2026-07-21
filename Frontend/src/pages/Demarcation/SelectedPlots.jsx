@@ -9,7 +9,7 @@ export default function SelectedPlots() {
         </h2>
       </div>
 
-      <div className="p-4 h-[calc(100%-56px)]">
+      <div className="p-4 h-[calc(100%_-_56px)]">
         <div className="flex h-full items-center justify-center text-center text-gray-400 text-sm">
           Select a landuse class to view plot numbers.
         </div>

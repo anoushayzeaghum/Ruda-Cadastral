@@ -230,6 +230,7 @@ export default function DemarcationMap({
   filters = {},
   onParcelSelect = () => {},
   onFeaturesLoaded = () => {},
+  onContextFeaturesLoaded = () => {},
 }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -295,6 +296,7 @@ export default function DemarcationMap({
         ensureSource(map, SOURCES.plots, emptyFC);
         ensureSource(map, SOURCES.selectedPlot, emptyFC);
         onFeaturesLoaded(emptyFC);
+        onContextFeaturesLoaded(emptyFC);
         onParcelSelect(null);
         return;
       }
@@ -312,17 +314,29 @@ export default function DemarcationMap({
       };
 
       try {
-        const [projectGeoJSON, blockGeoJSON, roadGeoJSON, plotGeoJSON] =
-          await Promise.all([
-            filters.block
-              ? Promise.resolve(emptyFC)
-              : getProjectGeoJSON(filters.projectId),
-            filters.block
-              ? getBlocksGeoJSON(filters.projectId, filters.block)
-              : Promise.resolve(emptyFC),
-            getRoadsGeoJSON(baseFilter),
-            getPlotsGeoJSON(plotFilter),
-          ]);
+        const plotPromise = getPlotsGeoJSON(plotFilter);
+        const contextPlotPromise =
+          filters.plotType || filters.plotNo
+            ? getPlotsGeoJSON(baseFilter)
+            : plotPromise;
+
+        const [
+          projectGeoJSON,
+          blockGeoJSON,
+          roadGeoJSON,
+          plotGeoJSON,
+          contextPlotGeoJSON,
+        ] = await Promise.all([
+          filters.block
+            ? Promise.resolve(emptyFC)
+            : getProjectGeoJSON(filters.projectId),
+          filters.block
+            ? getBlocksGeoJSON(filters.projectId, filters.block)
+            : Promise.resolve(emptyFC),
+          getRoadsGeoJSON(baseFilter),
+          plotPromise,
+          contextPlotPromise,
+        ]);
 
         if (requestIdRef.current !== requestId) return;
 
@@ -331,6 +345,7 @@ export default function DemarcationMap({
         ensureSource(map, SOURCES.roads, roadGeoJSON);
         ensureSource(map, SOURCES.plots, plotGeoJSON);
         onFeaturesLoaded(plotGeoJSON);
+        onContextFeaturesLoaded(contextPlotGeoJSON);
 
         const exactSelected = (plotGeoJSON.features || []).find((feature) => {
           const props = feature.properties || {};
@@ -363,6 +378,7 @@ export default function DemarcationMap({
         ensureSource(map, SOURCES.plots, emptyFC);
         ensureSource(map, SOURCES.selectedPlot, emptyFC);
         onFeaturesLoaded(emptyFC);
+        onContextFeaturesLoaded(emptyFC);
         onParcelSelect(null);
       }
     };
@@ -377,11 +393,15 @@ export default function DemarcationMap({
     filters?.plotNo,
     filters?.searchNonce,
     onFeaturesLoaded,
+    onContextFeaturesLoaded,
     onParcelSelect,
   ]);
 
   return (
-    <div className="h-[250px] sm:h-[300px] lg:h-full lg:col-span-6 bg-white border border-[#b8c2cc] relative overflow-hidden rounded-md">
+    <div
+      id="demarcation-map"
+      className="demarcation-map-root absolute inset-0 h-full w-full overflow-hidden bg-white"
+    >
       <div ref={containerRef} className="w-full h-full" />
     </div>
   );

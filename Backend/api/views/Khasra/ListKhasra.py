@@ -1,64 +1,379 @@
 from ..common_imports import *
-from django.views.decorators.cache import cache_page
-from django.utils.decorators import method_decorator
 
-@method_decorator(cache_page(60 * 10), name="list")
+from django.core.cache import cache
+from django.db import connection
+from rest_framework.decorators import action
+
+import traceback
+import time
+
+
+
 class ListKhasraView(viewsets.ViewSet):
-    queryset = Khasra.objects.all()
-    serializer_class = KhasraSerializer
+
     permission_classes = [AllowAny]
 
+
+    # =====================================================
+    # LIST KHASRA
+    # =====================================================
+
     def list(self, request, *args, **kwargs):
-        
+
         try:
-            gid = request.query_params.get("gid") or request.query_params.get("id")
+
+            start = time.time()
+
+
+            gid = (
+                request.query_params.get("gid")
+                or request.query_params.get("id")
+            )
+
+            bbox = request.query_params.get("bbox")
+
             mauza_id = request.query_params.get("mauza_id")
             tehsil_id = request.query_params.get("tehsil_id")
             dist_id = request.query_params.get("dist_id")
 
-            if gid:
-                obj = Khasra.objects.filter(gid=gid).first()
 
-                if not obj:
+
+            # =================================================
+            # SINGLE KHASRA
+            # =================================================
+
+            if gid:
+
+                cache_key = f"khasra_detail_{gid}"
+
+                cached = cache.get(cache_key)
+
+
+                if cached:
+
+                    return ApiResponse(
+                        status=status.HTTP_200_OK,
+                        message="Khasra found.",
+                        data=cached,
+                        http_status=status.HTTP_200_OK,
+                    ).create_response()
+
+
+
+                with connection.cursor() as cursor:
+
+                    cursor.execute(
+                        """
+
+                        SELECT
+
+                        gid,
+                        join_shp,
+                        dist_id,
+                        tehsil_id,
+                        mauza_id,
+
+                        ST_AsGeoJSON(
+                            geom
+                        )::json
+
+
+                        FROM khasra
+
+                        WHERE gid=%s
+
+                        LIMIT 1
+
+                        """,
+                        [gid]
+                    )
+
+                    row = cursor.fetchone()
+
+
+
+                if not row:
+
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
                         message="Khasra not found.",
+                        data=[],
                         http_status=status.HTTP_404_NOT_FOUND,
                     ).create_response()
 
-                serializer = KhasraSerializer(obj)
+
+
+                feature = {
+
+                    "type": "Feature",
+
+                    "id": row[0],
+
+                    "geometry": row[5],
+
+                    "properties": {
+
+                        "gid": row[0],
+                        "join_shp": row[1],
+                        "dist_id": row[2],
+                        "tehsil_id": row[3],
+                        "mauza_id": row[4],
+
+                    }
+
+                }
+
+
+                cache.set(
+                    cache_key,
+                    feature,
+                    86400
+                )
+
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
                     message="Khasra found.",
-                    data=serializer.data,
+                    data=feature,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 
-            queryset = Khasra.objects.all()
+
+
+            # =================================================
+            # MAP VIEW QUERY
+            # =================================================
+
+
+            sql = """
+
+            SELECT
+
+                gid,
+                join_shp,
+                dist_id,
+                tehsil_id,
+                mauza_id,
+
+                ST_AsGeoJSON(
+
+                    ST_SimplifyPreserveTopology(
+                        geom,
+                        0.00002
+                    ),
+
+                    6
+
+                )::json
+
+
+            FROM khasra
+
+            WHERE 1=1
+
+            """
+
+
+            params = []
+
+
+
+            # -----------------------------
+            # BBOX FILTER
+            # -----------------------------
+
+            if bbox:
+
+                minx, miny, maxx, maxy = map(
+                    float,
+                    bbox.split(",")
+                )
+
+
+                sql += """
+
+                AND geom && ST_MakeEnvelope(
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    4326
+                )
+
+                """
+
+
+                params.extend(
+                    [
+                        minx,
+                        miny,
+                        maxx,
+                        maxy
+                    ]
+                )
+
+
+
+            # -----------------------------
+            # OLD FILTER SUPPORT
+            # -----------------------------
+
 
             if dist_id:
-                queryset = queryset.filter(district_id=dist_id)
+
+                sql += """
+                AND dist_id=%s
+                """
+
+                params.append(dist_id)
+
+
 
             if tehsil_id:
-                queryset = queryset.filter(tehsil_id=tehsil_id)
+
+                sql += """
+                AND tehsil_id=%s
+                """
+
+                params.append(tehsil_id)
+
+
 
             if mauza_id:
-                queryset = queryset.filter(mauza_id=mauza_id)
 
-            serializer = KhasraSerializer(queryset, many=True)
+                sql += """
+                AND mauza_id=%s
+                """
+
+                params.append(mauza_id)
+
+
+
+            sql += """
+
+            ORDER BY gid
+
+            """
+
+
+
+            cache_key = (
+                "khasra_map_"
+                + str(
+                    sorted(
+                        request.query_params.items()
+                    )
+                )
+            )
+
+
+
+            cached = cache.get(cache_key)
+
+
+            if cached:
+
+                return ApiResponse(
+                    status=status.HTTP_200_OK,
+                    message="Cached Khasra.",
+                    data=cached,
+                    http_status=status.HTTP_200_OK,
+                ).create_response()
+
+
+
+            with connection.cursor() as cursor:
+
+                cursor.execute(
+                    sql,
+                    params
+                )
+
+                rows = cursor.fetchall()
+
+
+
+            features = []
+
+
+            for row in rows:
+
+
+                features.append(
+
+                    {
+
+                        "type": "Feature",
+
+                        "id": row[0],
+
+                        "geometry": row[5],
+
+                        "properties": {
+
+                            "gid": row[0],
+
+                            "join_shp": row[1],
+
+                            "dist_id": row[2],
+
+                            "tehsil_id": row[3],
+
+                            "mauza_id": row[4],
+
+                        }
+
+                    }
+
+                )
+
+
+
+            result = {
+
+                "type": "FeatureCollection",
+
+                "features": features
+
+            }
+
+
+
+            cache.set(
+                cache_key,
+                result,
+                3600
+            )
+
+
+
+            print(
+                "KHASRA:",
+                len(features),
+                "features",
+                round(
+                    (time.time()-start)*1000,
+                    2
+                ),
+                "ms"
+            )
+
+
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="Khasra data fetched successfully.",
-                data=serializer.data,
+                message="Khasra loaded.",
+                data=result,
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
+
+
         except Exception as e:
-            print("\n========== KHASRA ERROR ==========")
+
+
             print(traceback.format_exc())
-            print("=================================\n")
+
 
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -66,6 +381,13 @@ class ListKhasraView(viewsets.ViewSet):
                 data=str(e),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()
+
+
+
+    # =====================================================
+    # GEOJSON ENDPOINT
+    # =====================================================
+
 
     @action(
         detail=True,
@@ -75,128 +397,8 @@ class ListKhasraView(viewsets.ViewSet):
     )
     def geojson(self, request, pk=None):
 
-        start = time.time()
+        request.query_params._mutable = True
 
-        cache_key = f"khasra_geojson_{pk}"
-        cached = cache.get(cache_key)
+        request.query_params["gid"] = pk
 
-        if cached:
-            print(
-                "CACHE:",
-                round((time.time() - start) * 1000, 2),
-                "ms"
-            )
-
-            return ApiResponse(
-                status=status.HTTP_200_OK,
-                message="Khasra GeoJSON found.",
-                data=cached,
-                http_status=status.HTTP_200_OK,
-            ).create_response()
-
-        try:
-
-            db_start = time.time()
-
-            with connection.cursor() as cursor:
-
-                cursor.execute("""
-                    SELECT
-                        gid,
-                        join_shp,
-                        dist_id,
-                        tehsil_id,
-                        mauza_id,
-                        kc,
-                        kc_id,
-                        pc,
-                        pc_id,
-                        hadbust_no,
-                        asse_cir,
-                        karam,
-                        type,
-                        sq,
-                        kh,
-                        sk,
-                        khasra_id,
-                        khewat_id,
-                        khatoni_no,
-                        dc_rate,
-                        remarks,
-                        b,
-                        ST_AsGeoJSON(geom)::json
-                    FROM khasra
-                    WHERE gid = %s
-                """, [pk])
-
-                row = cursor.fetchone()
-
-            print(
-                "DB + ST_AsGeoJSON:",
-                round((time.time() - db_start) * 1000, 2),
-                "ms"
-            )
-
-            if not row:
-                return ApiResponse(
-                    status=status.HTTP_404_NOT_FOUND,
-                    message="Khasra not found.",
-                    data=[],
-                    http_status=status.HTTP_404_NOT_FOUND,
-                ).create_response()
-
-            feature = {
-                "type": "Feature",
-                "id": row[0],
-                "geometry": row[22],
-                "properties": {
-                    "gid": row[0],
-                    "join_shp": row[1],
-                    "district_id": row[2],
-                    "tehsil_id": row[3],
-                    "mauza_id": row[4],
-                    "kc": row[5],
-                    "kc_id": row[6],
-                    "pc": row[7],
-                    "pc_id": row[8],
-                    "hadbust_no": row[9],
-                    "asse_cir": row[10],
-                    "karam": float(row[11]) if row[11] is not None else None,
-                    "type": row[12],
-                    "sq": row[13],
-                    "kh": row[14],
-                    "sk": row[15],
-                    "khasra_id": row[16],
-                    "khewat_id": row[17],
-                    "khatoni_no": row[18],
-                    "dc_rate": row[19],
-                    "remarks": row[20],
-                    "b": row[21],
-                },
-            }
-
-            cache.set(cache_key, feature, 60 * 60)
-
-            print(
-                "TOTAL:",
-                round((time.time() - start) * 1000, 2),
-                "ms"
-            )
-
-            return ApiResponse(
-                status=status.HTTP_200_OK,
-                message="Khasra GeoJSON found.",
-                data=feature,
-                http_status=status.HTTP_200_OK,
-            ).create_response()
-
-        except Exception as e:
-
-            print(traceback.format_exc())
-
-            return ApiResponse(
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                message="Server error.",
-                data=str(e),
-                http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            ).create_response()
+        return self.list(request)

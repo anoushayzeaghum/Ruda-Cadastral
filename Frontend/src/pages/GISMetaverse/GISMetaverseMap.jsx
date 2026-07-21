@@ -25,8 +25,6 @@ import {
   RUDA_MAUZA_ASSET_PATHS,
   emptyFC,
   fitGeoJSON,
-  wait,
-  waitForMapMove,
   setLayerVisibility,
   applyMetaverseLayerOpacities,
 } from "./tools/Layers/LayerManager/MetaverseLayerConfig";
@@ -56,8 +54,216 @@ import {
   applyRudaMauzaBoundaryStyle,
 } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/AdministrativeBoundaryLayer";
 import { addGeodeticNetworkLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/GeodeticLayer";
+import {
+  DEFAULT_RUDA_PLANNING_STYLE,
+  addOrUpdateRudaPlanningBoundary,
+  setRudaPlanningBoundaryVisibility,
+} from "./tools/Layers/LayerManager/AdministrativeLayers/RudaPlanningBoundaryLayer";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+const easeInOutQuad = (t) =>
+  t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+function getGeoJSONBounds(geojson) {
+  if (!geojson?.features?.length) return null;
+
+  const bounds = new mapboxgl.LngLatBounds();
+
+  const extendBounds = (coordinates) => {
+    if (!Array.isArray(coordinates)) return;
+
+    if (
+      typeof coordinates[0] === "number" &&
+      typeof coordinates[1] === "number"
+    ) {
+      bounds.extend(coordinates);
+      return;
+    }
+
+    coordinates.forEach(extendBounds);
+  };
+
+  geojson.features.forEach((feature) => {
+    extendBounds(feature?.geometry?.coordinates);
+  });
+
+  return bounds.isEmpty() ? null : bounds;
+}
+
+function waitForSmoothMove(map, timeoutMs) {
+  return new Promise((resolve) => {
+    let completed = false;
+
+    const finish = () => {
+      if (completed) return;
+      completed = true;
+      clearTimeout(timeoutId);
+      map.off("moveend", finish);
+      resolve();
+    };
+
+    const timeoutId = setTimeout(finish, timeoutMs);
+    map.once("moveend", finish);
+  });
+}
+
+async function smoothFitGeoJSON(
+  map,
+  geojson,
+  { duration = 800, padding = 80, maxZoom = 12 } = {},
+) {
+  const bounds = getGeoJSONBounds(geojson);
+  if (!bounds) return;
+
+  const moveFinished = waitForSmoothMove(map, duration + 10);
+
+  map.fitBounds(bounds, {
+    padding,
+    duration,
+    maxZoom,
+    essential: true,
+    easing: easeInOutQuad,
+  });
+
+  await moveFinished;
+}
+
+const interpolateNumber = (start, end, progress) =>
+  start + (end - start) * progress;
+
+function getIntroCamera(map, geojson, { padding = 85, maxZoom = 11.5 } = {}) {
+  const bounds = getGeoJSONBounds(geojson);
+  if (!bounds) return null;
+
+  const camera = map.cameraForBounds(bounds, {
+    padding,
+    maxZoom,
+  });
+
+  if (!camera) return null;
+
+  return {
+    center: [camera.center.lng, camera.center.lat],
+    zoom: camera.zoom,
+    bearing: camera.bearing ?? map.getBearing(),
+    pitch: camera.pitch ?? map.getPitch(),
+  };
+}
+
+function animateIntroContinuously(
+  map,
+  loadedSteps,
+  {
+    durationPerStep = 850,
+    padding = 85,
+    maxZoom = 11.5,
+    isCancelled = () => false,
+  } = {},
+) {
+  const cameraSteps = loadedSteps
+    .map((step) => ({
+      ...step,
+      camera: getIntroCamera(map, step.data, { padding, maxZoom }),
+    }))
+    .filter((step) => step.camera);
+
+  if (!cameraSteps.length) {
+    return Promise.resolve();
+  }
+
+  const currentCenter = map.getCenter();
+  const startCamera = {
+    center: [currentCenter.lng, currentCenter.lat],
+    zoom: map.getZoom(),
+    bearing: map.getBearing(),
+    pitch: map.getPitch(),
+  };
+
+  const cameras = [startCamera, ...cameraSteps.map((step) => step.camera)];
+  const totalSegments = cameraSteps.length;
+  const totalDuration = durationPerStep * totalSegments;
+
+  return new Promise((resolve) => {
+    let animationFrameId = null;
+    let shownStepIndex = -1;
+    const startedAt = performance.now();
+
+    const finish = () => {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      resolve();
+    };
+
+    const animateFrame = (currentTime) => {
+      if (isCancelled()) {
+        finish();
+        return;
+      }
+
+      const overallProgress = Math.max(
+        0,
+        Math.min((currentTime - startedAt) / totalDuration, 1),
+      );
+
+      const scaledProgress = overallProgress * totalSegments;
+      const segmentIndex = Math.min(
+        Math.floor(scaledProgress),
+        totalSegments - 1,
+      );
+      const segmentProgress =
+        overallProgress === 1 ? 1 : scaledProgress - segmentIndex;
+
+      if (segmentIndex !== shownStepIndex) {
+        const currentStep = cameraSteps[segmentIndex];
+        addIntroBoundaryLayer(map, currentStep.data, currentStep.label);
+        shownStepIndex = segmentIndex;
+      }
+
+      const fromCamera = cameras[segmentIndex];
+      const toCamera = cameras[segmentIndex + 1];
+
+      map.jumpTo({
+        center: [
+          interpolateNumber(
+            fromCamera.center[0],
+            toCamera.center[0],
+            segmentProgress,
+          ),
+          interpolateNumber(
+            fromCamera.center[1],
+            toCamera.center[1],
+            segmentProgress,
+          ),
+        ],
+        zoom: interpolateNumber(
+          fromCamera.zoom,
+          toCamera.zoom,
+          segmentProgress,
+        ),
+        bearing: interpolateNumber(
+          fromCamera.bearing,
+          toCamera.bearing,
+          segmentProgress,
+        ),
+        pitch: interpolateNumber(
+          fromCamera.pitch,
+          toCamera.pitch,
+          segmentProgress,
+        ),
+      });
+
+      if (overallProgress < 1) {
+        animationFrameId = requestAnimationFrame(animateFrame);
+      } else {
+        finish();
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(animateFrame);
+  });
+}
 
 function applyMetaverseLayerStyles(
   map,
@@ -118,6 +324,16 @@ export default function GISMetaverseMap({
   const loadAdministrativeLayers = async (map) => {
     if (!map) return;
 
+    if (adminBoundaryVisibility?.rudaPhasesBoundary) {
+      const data = await getRudaGeoJSON();
+      addOrUpdateRudaPlanningBoundary(map, data, {
+        ...DEFAULT_RUDA_PLANNING_STYLE,
+        opacity:
+          adminBoundaryVisibility?.rudaPhasesBoundaryOpacity ??
+          DEFAULT_RUDA_PLANNING_STYLE.opacity,
+      });
+    }
+
     if (adminBoundaryVisibility?.rudaBoundary) {
       const data = await getRudaGeoJSON();
       addRudaBoundaryLayer(map, data);
@@ -141,6 +357,11 @@ export default function GISMetaverseMap({
       const data = await getGeodeticNetworkGeoJSON();
       addGeodeticNetworkLayer(map, data);
     }
+
+    setRudaPlanningBoundaryVisibility(
+      map,
+      !!adminBoundaryVisibility?.rudaPhasesBoundary,
+    );
 
     setLayerVisibility(
       map,
@@ -258,8 +479,9 @@ export default function GISMetaverseMap({
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v12",
-      center: [69.3451, 30.3753],
-      zoom: 4.4,
+      center: [0, 20],
+      zoom: 1.5,
+      preserveDrawingBuffer: true,
     });
 
     mapRef.current.on("load", () => {
@@ -339,39 +561,44 @@ export default function GISMetaverseMap({
       }
 
       try {
-        const steps = INTRO_STEPS;
+        // Load all intro boundaries first so network requests do not create
+        // pauses between Pakistan, Punjab and RUDA.
+        const loadedSteps = await Promise.all(
+          INTRO_STEPS.map(async (step) => ({
+            ...step,
+            data: await loadAssetGeoJSON(step.assetPaths),
+          })),
+        );
 
-        for (const step of steps) {
-          if (cancelled) {
-            return;
-          }
+        if (cancelled) return;
 
-          const data = await loadAssetGeoJSON(step.assetPaths);
+        // Use one continuous camera animation instead of running a separate
+        // fitBounds animation for every boundary.
+        await animateIntroContinuously(map, loadedSteps, {
+          durationPerStep: 850,
+          padding: 85,
+          maxZoom: 11.5,
+          isCancelled: () => cancelled,
+        });
 
-          if (cancelled) {
-            return;
-          }
-
-          addIntroBoundaryLayer(map, data, step.label);
-
-          fitGeoJSON(map, data);
-
-          await waitForMapMove(map, 100);
-
-          await wait(500);
-        }
-
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
 
         clearIntroBoundaryLayer(map);
 
-        // Show the real Administrative Boundaries RUDA layer immediately.
-        // Do not wait for the Layers panel to open. The panel checkbox is
-        // synced by onIntroComplete below.
-        const realRudaBoundary = await getRudaGeoJSON();
-        addRudaBoundaryLayer(map, realRudaBoundary);
+        // Open the exact layer used by:
+        // Layers > Administrative > RUDA Phases Boundary.
+        const rudaPhasesBoundary = await getRudaGeoJSON();
+
+        if (cancelled) return;
+
+        addOrUpdateRudaPlanningBoundary(map, rudaPhasesBoundary, {
+          ...DEFAULT_RUDA_PLANNING_STYLE,
+          opacity:
+            adminBoundaryVisibility?.rudaPhasesBoundaryOpacity ??
+            DEFAULT_RUDA_PLANNING_STYLE.opacity,
+        });
+
+        // Keep the older RUDA boundary implementations switched off.
         setLayerVisibility(
           map,
           [
@@ -379,18 +606,22 @@ export default function GISMetaverseMap({
             LAYERS.rudaBoundaryLine,
             LAYERS.rudaBoundaryDashLine,
             LAYERS.rudaBoundaryLabel,
+            LAYERS.rudaMauzaBoundaryFill,
+            LAYERS.rudaMauzaBoundaryLine,
+            LAYERS.rudaMauzaBoundaryLabel,
           ],
-          true,
+          false,
         );
-        applyMetaverseLayerStyles(map, layerVisibility, {
-          ...adminBoundaryVisibility,
-          rudaBoundary: true,
-          rudaBoundaryOpacity:
-            adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
+
+        setRudaPlanningBoundaryVisibility(map, true);
+
+        await smoothFitGeoJSON(map, rudaPhasesBoundary, {
+          duration: 700,
+          padding: 75,
+          maxZoom: 11,
         });
 
         introHasRunRef.current = true;
-
         onIntroComplete?.();
       } catch (err) {
         if (cancelled) return;
@@ -398,8 +629,15 @@ export default function GISMetaverseMap({
         clearIntroBoundaryLayer(map);
 
         try {
-          const realRudaBoundary = await getRudaGeoJSON();
-          addRudaBoundaryLayer(map, realRudaBoundary);
+          const rudaPhasesBoundary = await getRudaGeoJSON();
+
+          addOrUpdateRudaPlanningBoundary(map, rudaPhasesBoundary, {
+            ...DEFAULT_RUDA_PLANNING_STYLE,
+            opacity:
+              adminBoundaryVisibility?.rudaPhasesBoundaryOpacity ??
+              DEFAULT_RUDA_PLANNING_STYLE.opacity,
+          });
+
           setLayerVisibility(
             map,
             [
@@ -407,16 +645,26 @@ export default function GISMetaverseMap({
               LAYERS.rudaBoundaryLine,
               LAYERS.rudaBoundaryDashLine,
               LAYERS.rudaBoundaryLabel,
+              LAYERS.rudaMauzaBoundaryFill,
+              LAYERS.rudaMauzaBoundaryLine,
+              LAYERS.rudaMauzaBoundaryLabel,
             ],
-            true,
+            false,
           );
-          applyMetaverseLayerStyles(map, layerVisibility, {
-            ...adminBoundaryVisibility,
-            rudaBoundary: true,
-            rudaBoundaryOpacity:
-              adminBoundaryVisibility?.rudaBoundaryOpacity ?? 50,
+
+          setRudaPlanningBoundaryVisibility(map, true);
+
+          await smoothFitGeoJSON(map, rudaPhasesBoundary, {
+            duration: 700,
+            padding: 75,
+            maxZoom: 11,
           });
-        } catch (rudaError) {}
+        } catch (rudaPhasesError) {
+          console.error(
+            "[GISMetaverseMap] RUDA Phases Boundary intro load error",
+            rudaPhasesError,
+          );
+        }
 
         introHasRunRef.current = true;
         onIntroComplete?.();

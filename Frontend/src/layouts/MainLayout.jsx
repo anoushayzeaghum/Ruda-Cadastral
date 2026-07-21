@@ -3,8 +3,14 @@ import useCadastralFilters from "../hooks/useCadastralFilters";
 
 export default function MainLayout() {
   const location = useLocation();
-  const filters = useCadastralFilters();
-  const isMapRoute = location.pathname === "/mapview";
+
+const enableFilters = [
+  "/mapview",
+  "/cadastral-map",
+].includes(location.pathname.toLowerCase());
+
+  const filters = useCadastralFilters(enableFilters);
+
   return (
     <div className="app-layout">
       <main className="app-layout__main">
