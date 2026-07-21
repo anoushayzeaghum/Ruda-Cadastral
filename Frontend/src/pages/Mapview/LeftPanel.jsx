@@ -152,7 +152,7 @@ export default function LeftPanel({
 
   const changeBoundaryStatus = (status) => {
     // Do not touch layer visibility here. MapView will reload only the
-    // status-sensitive Mauza and Khasra sources for the selected Mauza.
+    // status-sensitive Mauza, Khasra, and Square sources.
     setBoundaryStatus(status);
   };
   const toggleDropdownForKey = (key) =>
@@ -206,6 +206,10 @@ export default function LeftPanel({
   };
 
   const getLayerColor = (layerKey) => {
+    if (layerKey === "khasraLayer") {
+      return boundaryStatus === "verified" ? "#16a34a" : "#dc5a5a";
+    }
+
     const value = layers?.[layerKey];
     return typeof value === "object" && value.color
       ? value.color
@@ -218,7 +222,11 @@ export default function LeftPanel({
     selectedMauza?.mauza_id ?? selectedMauza?.id ?? selectedMauza?.gid;
 
   const loadLayerRecords = async (key, boundaryStatus = "verified") => {
-    const statusSensitive = ["mauzaBoundary", "khasraLayer"].includes(key);
+    const statusSensitive = [
+      "mauzaBoundary",
+      "khasraLayer",
+      "squareLayer",
+    ].includes(key);
     const cacheKey = statusSensitive ? `${boundaryStatus}_${key}` : key;
 
     const districtSelectionKey = (
@@ -318,9 +326,15 @@ export default function LeftPanel({
             : null;
         }
       } else if (key === "squareLayer") {
-        geojson = selectedMauzaId
-          ? await api.getSquares(selectedMauzaId)
-          : loadedParcelsGeojson;
+        if (boundaryStatus === "verified") {
+          geojson = selectedMauzaId
+            ? await api.getSquares(selectedMauzaId)
+            : loadedParcelsGeojson;
+        } else {
+          geojson = selectedMauzaId
+            ? await api.getRudaSquares(selectedMauzaId)
+            : null;
+        }
       } else if (key === "acreLayer") {
         geojson = selectedMauzaId
           ? await api.getAcres(selectedMauzaId)
@@ -546,6 +560,7 @@ export default function LeftPanel({
     // Refresh the status-sensitive records without changing checkbox state.
     loadLayerRecords("mauzaBoundary", boundaryStatus);
     loadLayerRecords("khasraLayer", boundaryStatus);
+    loadLayerRecords("squareLayer", boundaryStatus);
   }, [selectedMauza, boundaryStatus]);
   return (
     <>
@@ -654,7 +669,8 @@ export default function LeftPanel({
             <SquareBoundaryAttribute
               map={map}
               geojson={
-                layerRecordCache.squareLayer?.geojson || loadedParcelsGeojson
+                layerRecordCache[`${boundaryStatus}_squareLayer`]?.geojson ||
+                loadedParcelsGeojson
               }
               onClose={() => setOpenAttributeTable(null)}
             />

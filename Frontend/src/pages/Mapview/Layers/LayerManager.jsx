@@ -16,8 +16,18 @@ const BASE_DATA_LAYERS = [
 ];
 
 const RUDA_PHASE_COLORS = [
-  "#6bb7e8", "#f8d56b", "#6bd69a", "#f59e72", "#b99cf3", "#78d6d0",
-  "#f3a6c8", "#a7d77b", "#f4b860", "#86a8e7", "#d7b377", "#8dd3c7",
+  "#6bb7e8",
+  "#f8d56b",
+  "#6bd69a",
+  "#f59e72",
+  "#b99cf3",
+  "#78d6d0",
+  "#f3a6c8",
+  "#a7d77b",
+  "#f4b860",
+  "#86a8e7",
+  "#d7b377",
+  "#8dd3c7",
 ];
 
 const hashString = (value = "") => {
@@ -68,15 +78,13 @@ export default function LayerManager({
   const [geodeticDropdownOpen, setGeodeticDropdownOpen] = useState(false);
 
   const getGeojsonForKey = (key) => {
-    if (["mauzaBoundary", "khasraLayer"].includes(key)) {
+    if (["mauzaBoundary", "khasraLayer", "squareLayer"].includes(key)) {
       return layerRecordCache?.[`${boundaryStatus}_${key}`]?.geojson || null;
     }
 
     return (
       layerRecordCache?.[key]?.geojson ||
-      (["squareLayer", "acreLayer"].includes(key)
-        ? loadedParcelsGeojson
-        : null)
+      (["squareLayer", "acreLayer"].includes(key) ? loadedParcelsGeojson : null)
     );
   };
 
@@ -90,7 +98,9 @@ export default function LayerManager({
         isOpen={!!dropdownOpenByKey?.[item.key]}
         isLast={index === items.length - 1}
         onToggle={() =>
-          vectorLayer ? toggleVectorBoundaryLayer(item.key) : toggleLayer(item.key)
+          vectorLayer
+            ? toggleVectorBoundaryLayer(item.key)
+            : toggleLayer(item.key)
         }
         onOpacity={(value) => updateLayer(item.key, { opacity: value })}
         onColor={(value) => setLayerColor(item.key, value)}
@@ -126,37 +136,37 @@ export default function LayerManager({
         {/* Verified / Unverified buttons */}
         <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-3">
           {/* <div className="rounded-md border border-[#13593f] bg-[#06291f] p-2"> */}
-            {/* <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/70">
+          {/* <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-white/70">
               Boundary Status
             </div> */}
 
-            <div className="flex justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setBoundaryStatus("verified")}
-                className={`h-7 w-24 px-2 py-0 text-[11px] font-semibold rounded-md transition
+          <div className="flex justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => setBoundaryStatus("verified")}
+              className={`h-7 w-24 px-2 py-0 text-[11px] font-semibold rounded-md transition
                   ${
                     boundaryStatus === "verified"
                       ? "bg-green-600 text-white"
                       : "border border-[#13593f] bg-[#031a14] text-white/70 hover:bg-[#0a3327]"
                   }`}
-              >
-                Verified
-              </button>
+            >
+              Verified
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setBoundaryStatus("unverified")}
-                className={`h-7 w-24 px-2 py-0 text-[11px] font-semibold rounded-md transition
+            <button
+              type="button"
+              onClick={() => setBoundaryStatus("unverified")}
+              className={`h-7 w-24 px-2 py-0 text-[11px] font-semibold rounded-md transition
                   ${
                     boundaryStatus === "unverified"
                       ? "bg-red-600 text-white"
                       : "border border-[#13593f] bg-[#031a14] text-white/70 hover:bg-[#0a3327]"
                   }`}
-              >
-                Unverified
-              </button>
-            </div>
+            >
+              Unverified
+            </button>
+          </div>
           {/* </div> */}
         </div>
 
@@ -166,7 +176,11 @@ export default function LayerManager({
         )}
       </LayerSection>
 
-      <LayerSection title="RUDA Boundaries" open={rudaOpen} setOpen={setRudaOpen}>
+      <LayerSection
+        title="RUDA Boundaries"
+        open={rudaOpen}
+        setOpen={setRudaOpen}
+      >
         <AdminLayerRow
           label="RUDA Boundary"
           checked={getLayerVisible("rudaBoundary")}
@@ -194,7 +208,9 @@ export default function LayerManager({
           color={getLayerColor("proposedRoads")}
           isOpen={proposedDropdownOpen}
           onToggle={toggleProposedRoadLayer}
-          onOpacity={(value) => updateLayer("proposedRoads", { opacity: value })}
+          onOpacity={(value) =>
+            updateLayer("proposedRoads", { opacity: value })
+          }
           onDropdownToggle={() => setProposedDropdownOpen((value) => !value)}
           onTable={() => openAttributeTable("proposedRoads")}
         />
@@ -216,7 +232,9 @@ export default function LayerManager({
           isOpen={geodeticDropdownOpen}
           isLast
           onToggle={() => toggleLayer("geodeticNetwork")}
-          onOpacity={(value) => updateLayer("geodeticNetwork", { opacity: value })}
+          onOpacity={(value) =>
+            updateLayer("geodeticNetwork", { opacity: value })
+          }
           onColor={(value) => setLayerColor("geodeticNetwork", value)}
           onDropdownToggle={() => setGeodeticDropdownOpen((value) => !value)}
           onTable={() => openAttributeTable("geodeticNetwork")}
@@ -229,7 +247,11 @@ export default function LayerManager({
         )}
       </LayerSection>
 
-      <LayerSection title="Base Data" open={baseDataOpen} setOpen={setBaseDataOpen}>
+      <LayerSection
+        title="Base Data"
+        open={baseDataOpen}
+        setOpen={setBaseDataOpen}
+      >
         {BASE_DATA_LAYERS.map((item, index) =>
           renderStandardLayer(item, index, BASE_DATA_LAYERS, false),
         )}
@@ -246,7 +268,9 @@ function LayerSection({ title, open, setOpen, children }) {
         onClick={() => setOpen((value) => !value)}
         className="flex w-full items-center justify-between border-b border-[#0c3d2d] bg-[#06291f] px-3 py-2.5 text-left transition hover:bg-[#0a3327]"
       >
-        <h4 className="text-[12px] font-semibold leading-tight text-white">{title}</h4>
+        <h4 className="text-[12px] font-semibold leading-tight text-white">
+          {title}
+        </h4>
         <ChevronDown
           size={16}
           strokeWidth={2.6}
@@ -276,7 +300,9 @@ function AdminLayerRow({
   onTable,
 }) {
   return (
-    <div className={`bg-[#06291f] px-2.5 py-2 ${isLast ? "" : "border-b border-[#0c3d2d]"}`}>
+    <div
+      className={`bg-[#06291f] px-2.5 py-2 ${isLast ? "" : "border-b border-[#0c3d2d]"}`}
+    >
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -358,9 +384,13 @@ function LayerDropdownPanel({ geojson }) {
     <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
       <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {!geojson ? (
-          <p className="px-1 py-1 text-[11px] text-white/50">Loading records...</p>
+          <p className="px-1 py-1 text-[11px] text-white/50">
+            Loading records...
+          </p>
         ) : features.length === 0 ? (
-          <p className="px-1 py-1 text-[11px] text-white/50">No records found</p>
+          <p className="px-1 py-1 text-[11px] text-white/50">
+            No records found
+          </p>
         ) : (
           <>
             <div className="border-b border-[#0c3d2d] pb-1.5 text-[12px] font-semibold text-white">
@@ -384,8 +414,15 @@ function LayerDropdownPanel({ geojson }) {
 function featureLabel(feature = {}, fallback = "Feature") {
   const props = feature.properties || feature || {};
   return (
-    props.name || props.Name || props.mauza || props.Mauza || props.join_shp ||
-    props.kh || props.sq || props.acre || props.type ||
+    props.name ||
+    props.Name ||
+    props.mauza ||
+    props.Mauza ||
+    props.join_shp ||
+    props.kh ||
+    props.sq ||
+    props.acre ||
+    props.type ||
     `${fallback} ${props.gid || feature.id || ""}`
   );
 }
@@ -395,13 +432,16 @@ function RudaPhaseDropdown({ phases, selectedIds, setSelectedIds }) {
     .map((phase) => phase.gid ?? phase.id ?? phase.oid)
     .filter((id) => id !== undefined && id !== null);
   const selectedSet = new Set((selectedIds || []).map(String));
-  const allChecked = allIds.length > 0 && allIds.every((id) => selectedSet.has(String(id)));
+  const allChecked =
+    allIds.length > 0 && allIds.every((id) => selectedSet.has(String(id)));
 
   return (
     <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
       <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {(phases || []).length === 0 ? (
-          <p className="px-1 py-1 text-[11px] font-medium text-white/50">No phases found</p>
+          <p className="px-1 py-1 text-[11px] font-medium text-white/50">
+            No phases found
+          </p>
         ) : (
           <>
             <SelectAllRow
@@ -413,14 +453,19 @@ function RudaPhaseDropdown({ phases, selectedIds, setSelectedIds }) {
               const id = phase.gid ?? phase.id ?? phase.oid;
               const checked = selectedSet.has(String(id));
               return (
-                <label key={id} className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0">
+                <label
+                  key={id}
+                  className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0"
+                >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() =>
                       setSelectedIds((previous) =>
                         checked
-                          ? (previous || []).filter((value) => String(value) !== String(id))
+                          ? (previous || []).filter(
+                              (value) => String(value) !== String(id),
+                            )
                           : [...(previous || []), id],
                       )
                     }
@@ -443,13 +488,20 @@ function RudaPhaseDropdown({ phases, selectedIds, setSelectedIds }) {
   );
 }
 
-function ProposedRoadDropdown({ roads, selectedIds, setSelectedIds, getAllIds }) {
+function ProposedRoadDropdown({
+  roads,
+  selectedIds,
+  setSelectedIds,
+  getAllIds,
+}) {
   const selectedSet = new Set((selectedIds || []).map(String));
   return (
     <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
       <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {(roads || []).length === 0 ? (
-          <p className="px-1 py-1 text-[11px] text-white/50">No proposed roads found</p>
+          <p className="px-1 py-1 text-[11px] text-white/50">
+            No proposed roads found
+          </p>
         ) : (
           <>
             <SelectAllRow
@@ -461,14 +513,19 @@ function ProposedRoadDropdown({ roads, selectedIds, setSelectedIds, getAllIds })
               const id = road.gid ?? road.id ?? road.oid;
               const checked = selectedSet.has(String(id));
               return (
-                <label key={id} className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0">
+                <label
+                  key={id}
+                  className="flex items-center gap-2 border-b border-[#0c3d2d]/70 py-1.5 last:border-b-0"
+                >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() =>
                       setSelectedIds((previous) =>
                         checked
-                          ? (previous || []).filter((value) => String(value) !== String(id))
+                          ? (previous || []).filter(
+                              (value) => String(value) !== String(id),
+                            )
                           : [...(previous || []), id],
                       )
                     }
@@ -497,7 +554,9 @@ function SelectAllRow({ checked, onChange, onReset }) {
           onChange={(event) => onChange(event.target.checked)}
           className="h-3.5 w-3.5 accent-[#9be37b]"
         />
-        <span className="text-[12px] font-semibold leading-tight text-white">Select All</span>
+        <span className="text-[12px] font-semibold leading-tight text-white">
+          Select All
+        </span>
       </label>
       <button
         type="button"

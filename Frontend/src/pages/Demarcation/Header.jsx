@@ -35,14 +35,8 @@ export default function Header({
           {/* Title */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <h1 className="whitespace-nowrap text-lg font-normal tracking-wide sm:text-3xl">
-              RCMS
+              Plot Information System
             </h1>
-
-            <span className="hidden text-base text-white/40 sm:block sm:text-xl">|</span>
-
-            <p className="hidden truncate text-xs font-normal text-white/80 sm:block sm:text-lg">
-              RUDA Cadastral Management System
-            </p>
           </div>
         </div>
 
@@ -54,7 +48,11 @@ export default function Header({
             icon={<Home size={18} />}
           />
 
-          <IconButton title="Logout" onClick={handleLogout} icon={<LogOut size={18} />} />
+          <IconButton
+            title="Logout"
+            onClick={handleLogout}
+            icon={<LogOut size={18} />}
+          />
         </div>
       </div>
     </div>

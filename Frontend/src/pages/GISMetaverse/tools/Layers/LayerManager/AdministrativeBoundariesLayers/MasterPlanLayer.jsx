@@ -1,152 +1,135 @@
 import { SOURCES, LAYERS, ensureSource } from "../MetaverseLayerConfig";
 
+const LAND_USE_VALUE = [
+  "downcase",
+  [
+    "to-string",
+    [
+      "coalesce",
+      ["get", "type"],
+      ["get", "land_use"],
+      ["get", "landuse"],
+      ["get", "land_use_type"],
+      ["get", "category"],
+      ["get", "name"],
+      "",
+    ],
+  ],
+];
+
+const containsAny = (...values) => [
+  "any",
+  ...values.map((value) => [
+    ">=",
+    ["index-of", value.toLowerCase(), LAND_USE_VALUE],
+    0,
+  ]),
+];
+
+const IS_CB_1_BOUNDARY = containsAny(
+  "cb - 1 boundary",
+  "cb-1 boundary",
+  "cb 1 boundary",
+  "cb1 boundary",
+);
+
+// Colors sampled directly from the supplied legend image.
+export const MASTER_PLAN_LAND_USE_COLORS = {
+  greenOpenAreaParks: "#139B48",
+  condominiums: "#DDB3D4",
+  mixUse: "#999B37",
+  commercial: "#ADDDF7",
+  publicBuilding: "#F7ABAE",
+  residential10Marla: "#F8991E",
+  residential1Kanal: "#C17006",
+  petrolPump: "#E05254",
+  grandMosque: "#F7F281",
+  rudaOffice: "#6AE7B1",
+  convenienceShops: "#A953A0",
+  cb1Boundary: "#00FF00",
+  fallback: "#9CA3AF",
+};
+
 const MASTER_PLAN_FILL_COLOR = [
   "case",
 
-  // Residential plots - light blue like your reference image
-  [
-    ">=",
-    [
-      "index-of",
-      "residential",
-      [
-        "downcase",
-        [
-          "to-string",
-          [
-            "coalesce",
-            ["get", "type"],
-            ["get", "land_use"],
-            ["get", "landuse"],
-            "",
-          ],
-        ],
-      ],
-    ],
-    0,
-  ],
-  "#2563eb",
+  // CB-1 is a boundary only, so no polygon fill is applied.
+  IS_CB_1_BOUNDARY,
+  "rgba(0, 0, 0, 0)",
 
-  // Commercial plots - yellow
-  [
-    ">=",
-    [
-      "index-of",
-      "commercial",
-      [
-        "downcase",
-        [
-          "to-string",
-          [
-            "coalesce",
-            ["get", "type"],
-            ["get", "land_use"],
-            ["get", "landuse"],
-            "",
-          ],
-        ],
-      ],
-    ],
-    0,
-  ],
-  "#f6dc78",
+  // Green / Open Area / Parks
+  containsAny("green", "open area", "open space", "park"),
+  MASTER_PLAN_LAND_USE_COLORS.greenOpenAreaParks,
 
-  // Parks / open spaces - green
-  [
-    "any",
-    [
-      ">=",
-      [
-        "index-of",
-        "park",
-        [
-          "downcase",
-          [
-            "to-string",
-            [
-              "coalesce",
-              ["get", "type"],
-              ["get", "land_use"],
-              ["get", "landuse"],
-              "",
-            ],
-          ],
-        ],
-      ],
-      0,
-    ],
-    [
-      ">=",
-      [
-        "index-of",
-        "green",
-        [
-          "downcase",
-          [
-            "to-string",
-            [
-              "coalesce",
-              ["get", "type"],
-              ["get", "land_use"],
-              ["get", "landuse"],
-              "",
-            ],
-          ],
-        ],
-      ],
-      0,
-    ],
-    [
-      ">=",
-      [
-        "index-of",
-        "open",
-        [
-          "downcase",
-          [
-            "to-string",
-            [
-              "coalesce",
-              ["get", "type"],
-              ["get", "land_use"],
-              ["get", "landuse"],
-              "",
-            ],
-          ],
-        ],
-      ],
-      0,
-    ],
-  ],
-  "#15803d",
+  // Condominiums
+  containsAny("condominium", "condominiums", "condo"),
+  MASTER_PLAN_LAND_USE_COLORS.condominiums,
 
-  // Roads inside master plan - soft red/pink, separate roads layer can still be unchecked
-  [
-    ">=",
-    [
-      "index-of",
-      "road",
-      [
-        "downcase",
-        [
-          "to-string",
-          [
-            "coalesce",
-            ["get", "type"],
-            ["get", "land_use"],
-            ["get", "landuse"],
-            "",
-          ],
-        ],
-      ],
-    ],
-    0,
-  ],
-  "#ef4444",
+  // Mix Use / Mixed Use
+  containsAny("mix use", "mixed use", "mix-use", "mixed-use"),
+  MASTER_PLAN_LAND_USE_COLORS.mixUse,
 
-  // Other / public / unknown plots - grey
-  "#9ca3af",
+  // Commercial
+  containsAny("commercial"),
+  MASTER_PLAN_LAND_USE_COLORS.commercial,
+
+  // Public Building
+  containsAny("public building", "public buildings"),
+  MASTER_PLAN_LAND_USE_COLORS.publicBuilding,
+
+  // Residential (10 Marla Plots)
+  [
+    "all",
+    containsAny("residential"),
+    containsAny("10 marla", "10-marla", "10marla"),
+  ],
+  MASTER_PLAN_LAND_USE_COLORS.residential10Marla,
+
+  // Residential (1 Kanal Plots)
+  [
+    "all",
+    containsAny("residential"),
+    containsAny("1 kanal", "1-kanal", "1kanal"),
+  ],
+  MASTER_PLAN_LAND_USE_COLORS.residential1Kanal,
+
+  // Petrol Pump
+  containsAny("petrol pump", "fuel station", "filling station"),
+  MASTER_PLAN_LAND_USE_COLORS.petrolPump,
+
+  // Grand Mosque
+  containsAny("grand mosque", "jamia mosque", "mosque", "masjid"),
+  MASTER_PLAN_LAND_USE_COLORS.grandMosque,
+
+  // RUDA Office
+  containsAny("ruda office", "ruda offices"),
+  MASTER_PLAN_LAND_USE_COLORS.rudaOffice,
+
+  // Convenience Shops
+  containsAny(
+    "convenience shop",
+    "convenience shops",
+    "convenience store",
+    "convenience stores",
+  ),
+  MASTER_PLAN_LAND_USE_COLORS.convenienceShops,
+
+  // Generic residential fallback when plot size is not present.
+  containsAny("residential"),
+  MASTER_PLAN_LAND_USE_COLORS.residential10Marla,
+
+  // Unknown or uncategorized land use.
+  MASTER_PLAN_LAND_USE_COLORS.fallback,
 ];
+
+const MASTER_PLAN_LINE_COLOR = [
+  "case",
+  IS_CB_1_BOUNDARY,
+  MASTER_PLAN_LAND_USE_COLORS.cb1Boundary,
+  "#111111",
+];
+
+const MASTER_PLAN_LINE_WIDTH = ["case", IS_CB_1_BOUNDARY, 2, 1.15];
 
 export function addMasterPlanLayer(map, data, color = null) {
   ensureSource(map, SOURCES.masterPlan, data);
@@ -158,7 +141,7 @@ export function addMasterPlanLayer(map, data, color = null) {
       source: SOURCES.masterPlan,
       paint: {
         "fill-color": MASTER_PLAN_FILL_COLOR,
-        "fill-opacity": 0.45,
+        "fill-opacity": 1,
       },
     });
   } else {
@@ -167,7 +150,7 @@ export function addMasterPlanLayer(map, data, color = null) {
       "fill-color",
       MASTER_PLAN_FILL_COLOR,
     );
-    map.setPaintProperty(LAYERS.masterPlanFill, "fill-opacity", 0.45);
+    map.setPaintProperty(LAYERS.masterPlanFill, "fill-opacity", 1);
   }
 
   if (!map.getLayer(LAYERS.masterPlanLine)) {
@@ -176,13 +159,21 @@ export function addMasterPlanLayer(map, data, color = null) {
       type: "line",
       source: SOURCES.masterPlan,
       paint: {
-        "line-color": "#111111",
-        "line-width": 1.15,
+        "line-color": MASTER_PLAN_LINE_COLOR,
+        "line-width": MASTER_PLAN_LINE_WIDTH,
       },
     });
   } else {
-    map.setPaintProperty(LAYERS.masterPlanLine, "line-color", "#111111");
-    map.setPaintProperty(LAYERS.masterPlanLine, "line-width", 1.15);
+    map.setPaintProperty(
+      LAYERS.masterPlanLine,
+      "line-color",
+      MASTER_PLAN_LINE_COLOR,
+    );
+    map.setPaintProperty(
+      LAYERS.masterPlanLine,
+      "line-width",
+      MASTER_PLAN_LINE_WIDTH,
+    );
   }
 
   if (!map.getLayer(LAYERS.masterPlanLabel)) {
