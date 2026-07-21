@@ -52,7 +52,7 @@ export default function LandUseBreakdown({ items = [], selectedProjectName = "" 
       <button
         type="button"
         onClick={() => setIsCollapsed((prev) => !prev)}
-        className="flex w-full items-center justify-between gap-3 border-b border-[#d4dbe2] px-3 py-2.5 text-left transition hover:bg-gray-50 sm:px-4 sm:py-3"
+        className="flex w-full items-center justify-between gap-3 border-b border-gray-200 bg-gray-50/50 px-3 py-2 text-left transition hover:bg-gray-50 sm:px-3 sm:py-2.5"
       >
         <div className="min-w-0">
           <h2 className="text-[13px] font-bold uppercase tracking-wide text-[#5b5b5b] sm:text-[15px]">
@@ -73,7 +73,7 @@ export default function LandUseBreakdown({ items = [], selectedProjectName = "" 
       </button>
 
       {!isCollapsed && (
-        <div className="flex items-center justify-between gap-3 px-3 py-2 sm:gap-4 sm:px-4 sm:py-3">
+        <div className="flex items-center justify-between gap-3 px-3 py-2 sm:gap-4 sm:px-3 sm:py-2.5">
           {!chartItems.length ? (
             <div className="flex w-full items-center justify-center py-6 text-center text-sm text-gray-400">
               Select a project to load land use summary.
@@ -95,7 +95,7 @@ export default function LandUseBreakdown({ items = [], selectedProjectName = "" 
                 </div>
               </div>
 
-              <div className="max-h-[120px] flex-1 space-y-1 overflow-auto pr-1 sm:max-h-[150px] sm:space-y-1.5">
+              <div className="max-h-[120px] flex-1 space-y-1.5 overflow-auto pr-1 sm:max-h-[150px]">
                 {chartItems.map((item) => (
                   <div key={item.label} className="flex items-center justify-between gap-1.5 text-[11px] sm:gap-2 sm:text-[12px]">
                     <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">

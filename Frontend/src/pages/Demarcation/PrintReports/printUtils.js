@@ -244,18 +244,35 @@ const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
   const selectedBounds = boundsOfFeature(selectedFeature);
   if (!selectedBounds) return [selectedFeature];
 
-  const neighborhoodBounds = expandBounds(
-    selectedBounds,
-    mode === "site" ? 4.5 : 2.2,
-  );
-  const nearby = all.filter((feature) =>
-    intersectsBounds(boundsOfFeature(feature), neighborhoodBounds),
-  );
+  const selectedCenter = [
+    (selectedBounds.minX + selectedBounds.maxX) / 2,
+    (selectedBounds.minY + selectedBounds.maxY) / 2,
+  ];
 
-  const limited = nearby.slice(0, mode === "site" ? 80 : 35);
-  if (!limited.some((feature) => feature === selectedFeature))
-    limited.push(selectedFeature);
-  return limited.length ? limited : [selectedFeature];
+  // The site-plan drawing should show the selected plot at a readable scale,
+  // together with only its immediate surroundings. The old 4.5x expansion
+  // included most of the scheme and caused all labels to overlap.
+  const neighborhoodBounds = expandBounds(selectedBounds, 1.35);
+  const nearby = all
+    .filter((feature) => intersectsBounds(boundsOfFeature(feature), neighborhoodBounds))
+    .map((feature) => {
+      const b = boundsOfFeature(feature);
+      const cx = b ? (b.minX + b.maxX) / 2 : selectedCenter[0];
+      const cy = b ? (b.minY + b.maxY) / 2 : selectedCenter[1];
+      return {
+        feature,
+        distance: Math.hypot(cx - selectedCenter[0], cy - selectedCenter[1]),
+      };
+    })
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 14)
+    .map(({ feature }) => feature);
+
+  if (!nearby.some((feature) => feature === selectedFeature)) {
+    nearby.unshift(selectedFeature);
+  }
+
+  return nearby.length ? nearby : [selectedFeature];
 };
 
 export const loadImage = (src) =>
@@ -605,12 +622,18 @@ export const createPlanCanvas = async ({
 
   const features = getContextFeatures(selectedFeature, contextGeojson, mode);
   const selectedRing = getGeometryRing(selectedFeature?.geometry);
-  const bounds = expandBounds(
-    getBounds(
-      features.length ? features : selectedFeature ? [selectedFeature] : [],
-    ),
-    mode === "location" ? 0.04 : 0.15,
+
+  // Main site plan is always framed from the selected plot itself. This keeps
+  // the plot large and readable even when the context collection contains the
+  // complete scheme. The location inset still uses the full project extent.
+  const selectedBounds = boundsOfFeature(selectedFeature);
+  const fullSchemeBounds = getBounds(
+    contextGeojson?.features?.length ? contextGeojson.features : features,
   );
+  const bounds =
+    mode === "location"
+      ? expandBounds(fullSchemeBounds, 0.08)
+      : expandBounds(selectedBounds, 2.15);
 
   if (!bounds || selectedRing.length < 3) {
     ctx.fillStyle = "#666666";
@@ -620,13 +643,15 @@ export const createPlanCanvas = async ({
     return canvas;
   }
 
-  const padding = mode === "location" ? 28 : 72;
+  const padding = mode === "location" ? 48 : 95;
   const project = getTransform(bounds, width, height, padding);
 
   if (watermark) {
     const { watermark: watermarkImage } = await loadPrintAssets();
     if (watermarkImage) {
-      const wmSize = Math.min(width, height) * 0.78;
+      ctx.save();
+      ctx.globalAlpha = 0.1;
+      const wmSize = Math.min(width, height) * 0.7;
       ctx.drawImage(
         watermarkImage,
         (width - wmSize) / 2,
@@ -634,31 +659,43 @@ export const createPlanCanvas = async ({
         wmSize,
         wmSize,
       );
+      ctx.restore();
     }
   }
 
   features.forEach((feature) => {
-    if (feature === selectedFeature) return;
     const ring = getGeometryRing(feature?.geometry);
-    if (ring.length < 3) return;
+    if (ring.length < 3 || feature === selectedFeature) return;
+
     drawPolygon(
       ctx,
       ring,
       project,
-      mode === "location" ? getFeatureColor(feature) : "rgba(248,250,252,0.72)",
-      "#8c939b",
-      mode === "location" ? 1.2 : 1.4,
+      mode === "location" ? getFeatureColor(feature) : "rgba(245,247,250,0.84)",
+      mode === "location" ? "#a8b0b8" : "#aeb6bf",
+      mode === "location" ? 1.2 : 2,
     );
 
     if (showContextLabels) {
       const label = getPlotLabel(feature);
-      if (label) {
-        const center = project(polygonCentroid(ring));
-        ctx.fillStyle = mode === "location" ? "#0639d8" : "#203060";
-        ctx.font = `${mode === "location" ? 18 : 24}px Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(label, center[0], center[1]);
+      const box = boundsOfFeature(feature);
+      if (label && box) {
+        const projectedMin = project([box.minX, box.minY]);
+        const projectedMax = project([box.maxX, box.maxY]);
+        const pixelWidth = Math.abs(projectedMax[0] - projectedMin[0]);
+        const pixelHeight = Math.abs(projectedMax[1] - projectedMin[1]);
+
+        // Suppress labels that cannot fit inside their polygon. This prevents
+        // the dense text collisions visible in the previous PDF.
+        if (pixelWidth >= 42 && pixelHeight >= 25) {
+          const center = project(polygonCentroid(ring));
+          const fontSize = Math.max(16, Math.min(25, pixelWidth * 0.18));
+          ctx.fillStyle = "#334a72";
+          ctx.font = `600 ${fontSize}px Arial`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(label, center[0], center[1], Math.max(28, pixelWidth - 8));
+        }
       }
     }
   });
@@ -669,24 +706,93 @@ export const createPlanCanvas = async ({
     project,
     selectedFill,
     selectedStroke,
-    mode === "location" ? 5 : 8,
+    mode === "location" ? 5 : 7,
   );
 
   const selectedCenter = project(polygonCentroid(selectedRing));
-  ctx.fillStyle = mode === "location" ? "#042ee8" : "#111111";
-  ctx.font = `700 ${mode === "location" ? 34 : 44}px Arial`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+  const selectedBox = boundsOfFeature(selectedFeature);
+  const selectedProjectedMin = selectedBox
+    ? project([selectedBox.minX, selectedBox.minY])
+    : selectedCenter;
+  const selectedProjectedMax = selectedBox
+    ? project([selectedBox.maxX, selectedBox.maxY])
+    : selectedCenter;
+  const selectedPixelWidth = Math.max(
+    1,
+    Math.abs(selectedProjectedMax[0] - selectedProjectedMin[0]),
+  );
+  const selectedPixelHeight = Math.max(
+    1,
+    Math.abs(selectedProjectedMax[1] - selectedProjectedMin[1]),
+  );
 
-  const centerLines = [
-    details.plotSize || details.plotArea,
-    details.plotNo,
-  ].filter(Boolean);
+  // In the location inset, use only a clean highlighted marker. Text inside a
+  // scheme-wide inset becomes unreadable and was overlapping the selected plot.
+  if (mode === "location") {
+    ctx.save();
+    ctx.fillStyle = "#0637d9";
+    ctx.beginPath();
+    ctx.arc(selectedCenter[0], selectedCenter[1], 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.restore();
+  } else {
+    const plotLabel = firstValue(details.plotNo);
+    const areaLabel = firstValue(details.plotSize, details.plotArea);
 
-  centerLines.forEach((line, index) => {
-    const offset = (index - (centerLines.length - 1) / 2) * 54;
-    ctx.fillText(String(line), selectedCenter[0], selectedCenter[1] + offset);
-  });
+    const plotFont = Math.max(
+      25,
+      Math.min(54, selectedPixelWidth * 0.34, selectedPixelHeight * 0.26),
+    );
+    const areaFont = Math.max(
+      17,
+      Math.min(34, selectedPixelWidth * 0.22, selectedPixelHeight * 0.16),
+    );
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+
+    if (plotLabel) {
+      ctx.font = `700 ${plotFont}px Arial`;
+      ctx.lineWidth = Math.max(4, plotFont * 0.12);
+      ctx.strokeStyle = "rgba(255,255,255,0.96)";
+      ctx.strokeText(
+        String(plotLabel),
+        selectedCenter[0],
+        selectedCenter[1] - areaFont * 0.48,
+        selectedPixelWidth * 0.72,
+      );
+      ctx.fillStyle = "#173d82";
+      ctx.fillText(
+        String(plotLabel),
+        selectedCenter[0],
+        selectedCenter[1] - areaFont * 0.48,
+        selectedPixelWidth * 0.72,
+      );
+    }
+
+    if (areaLabel) {
+      ctx.font = `600 ${areaFont}px Arial`;
+      ctx.lineWidth = Math.max(3, areaFont * 0.12);
+      ctx.strokeStyle = "rgba(255,255,255,0.96)";
+      ctx.strokeText(
+        String(areaLabel),
+        selectedCenter[0],
+        selectedCenter[1] + plotFont * 0.52,
+        selectedPixelWidth * 0.82,
+      );
+      ctx.fillStyle = "#222222";
+      ctx.fillText(
+        String(areaLabel),
+        selectedCenter[0],
+        selectedCenter[1] + plotFont * 0.52,
+        selectedPixelWidth * 0.82,
+      );
+    }
+  }
 
   if (showDimensions) {
     selectedRing.forEach((point, index) => {
@@ -695,18 +801,38 @@ export const createPlanCanvas = async ({
       const b = project(next);
       const midX = (a[0] + b[0]) / 2;
       const midY = (a[1] + b[1]) / 2;
-      let angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      let angle = Math.atan2(dy, dx);
       if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
       const dimension = formatFeet(distanceMeters(point, next));
 
+      // Place dimensions outside the plot rather than over its centre label.
+      const length = Math.max(Math.hypot(dx, dy), 1);
+      const nx = -dy / length;
+      const ny = dx / length;
+      const polygonCenter = selectedCenter;
+      const towardCenter =
+        (polygonCenter[0] - midX) * nx + (polygonCenter[1] - midY) * ny;
+      const outsideDirection = towardCenter > 0 ? -1 : 1;
+      const offset = mode === "location" ? 12 : 34;
+      const dimensionFont = mode === "location" ? 17 : 21;
+
       ctx.save();
-      ctx.translate(midX, midY);
+      ctx.translate(
+        midX + nx * offset * outsideDirection,
+        midY + ny * offset * outsideDirection,
+      );
       ctx.rotate(angle);
-      ctx.fillStyle = "#111111";
-      ctx.font = `700 ${mode === "location" ? 18 : 24}px Arial`;
+      ctx.font = `700 ${dimensionFont}px Arial`;
       ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillText(dimension, 0, -10);
+      ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = Math.max(4, dimensionFont * 0.18);
+      ctx.strokeStyle = "rgba(255,255,255,0.98)";
+      ctx.strokeText(dimension, 0, 0);
+      ctx.fillStyle = "#222222";
+      ctx.fillText(dimension, 0, 0);
       ctx.restore();
     });
   }
@@ -714,44 +840,44 @@ export const createPlanCanvas = async ({
   if (showVertexLabels) {
     selectedRing.slice(0, 8).forEach((point, index) => {
       const [x, y] = project(point);
-      ctx.fillStyle = "#16d30d";
+      ctx.fillStyle = "#20c63a";
       ctx.beginPath();
       ctx.arc(x, y, mode === "location" ? 7 : 10, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "#052d03";
+      ctx.strokeStyle = "#07580f";
       ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.fillStyle = "#3b003b";
-      ctx.font = `700 ${mode === "location" ? 17 : 22}px Arial`;
+      ctx.fillStyle = "#8a2e17";
+      ctx.font = `700 ${mode === "location" ? 17 : 20}px Arial`;
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
-      ctx.fillText(String.fromCharCode(65 + index), x, y - 12);
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "rgba(255,255,255,0.98)";
+      const vertexLabel = String.fromCharCode(65 + index);
+      ctx.strokeText(vertexLabel, x, y - 15);
+      ctx.fillText(vertexLabel, x, y - 15);
     });
   }
 
-  if (details.roadFt || details.streetRoadNo || details.roadFacing) {
+  if (mode === "site" && (details.roadFt || details.streetRoadNo || details.roadFacing)) {
     const roadText = firstValue(
       details.streetRoadNo && details.roadFt
-        ? `${details.streetRoadNo} (${details.roadFt} ft ROW)`
+        ? `${details.streetRoadNo} - ${details.roadFt} Feet Wide Road`
         : "",
       details.streetRoadNo,
       details.roadFacing,
-      details.roadFt ? `${details.roadFt} feet wide Road` : "",
+      details.roadFt ? `${details.roadFt} Feet Wide Road` : "",
     );
-    ctx.fillStyle = "#111111";
-    ctx.font = `700 ${mode === "location" ? 30 : 34}px Arial`;
+    ctx.fillStyle = "#444444";
+    ctx.font = "600 27px Arial";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText(roadText, 48, 45);
+    ctx.fillText(roadText, 55, height - 60);
   }
 
   if (northArrow) {
-    drawNorthArrowCanvas(
-      ctx,
-      mode === "location" ? 95 : width - 105,
-      mode === "location" ? 105 : 110,
-      mode === "location" ? 120 : 125,
-    );
+    drawNorthArrowCanvas(ctx, 100, 105, mode === "location" ? 100 : 112);
   }
 
   return canvas;
@@ -788,29 +914,29 @@ const wgs84ToUtm = (lng, lat) => {
       ((3 * eccSquared) / 8 +
         (3 * eccSquared ** 2) / 32 +
         (45 * eccSquared ** 3) / 1024) *
-        Math.sin(2 * latRad) +
+      Math.sin(2 * latRad) +
       ((15 * eccSquared ** 2) / 256 + (45 * eccSquared ** 3) / 1024) *
-        Math.sin(4 * latRad) -
+      Math.sin(4 * latRad) -
       ((35 * eccSquared ** 3) / 3072) * Math.sin(6 * latRad));
 
   let easting =
     k0 *
-      n *
-      (A +
-        ((1 - t + c) * A ** 3) / 6 +
-        ((5 - 18 * t + t ** 2 + 72 * c - 58 * eccPrimeSquared) * A ** 5) /
-          120) +
+    n *
+    (A +
+      ((1 - t + c) * A ** 3) / 6 +
+      ((5 - 18 * t + t ** 2 + 72 * c - 58 * eccPrimeSquared) * A ** 5) /
+      120) +
     500000;
 
   let northing =
     k0 *
     (m +
       n *
-        Math.tan(latRad) *
-        (A ** 2 / 2 +
-          ((5 - t + 9 * c + 4 * c ** 2) * A ** 4) / 24 +
-          ((61 - 58 * t + t ** 2 + 600 * c - 330 * eccPrimeSquared) * A ** 6) /
-            720));
+      Math.tan(latRad) *
+      (A ** 2 / 2 +
+        ((5 - t + 9 * c + 4 * c ** 2) * A ** 4) / 24 +
+        ((61 - 58 * t + t ** 2 + 600 * c - 330 * eccPrimeSquared) * A ** 6) /
+        720));
 
   if (lat < 0) northing += 10000000;
   easting = Math.round(easting * 1000) / 1000;
@@ -992,10 +1118,10 @@ export const drawUnderlinedValue = (
 export const canvasAsPng = (canvas) =>
   canvas
     ? {
-        dataUrl: canvas.toDataURL("image/png"),
-        width: canvas.width,
-        height: canvas.height,
-      }
+      dataUrl: canvas.toDataURL("image/png"),
+      width: canvas.width,
+      height: canvas.height,
+    }
     : null;
 
 export const normalizeAreaText = (details) => {
