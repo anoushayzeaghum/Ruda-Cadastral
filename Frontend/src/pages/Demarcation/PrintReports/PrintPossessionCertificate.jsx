@@ -255,7 +255,6 @@ export const printPossessionCertificate = async ({
     const details = buildPlotDetails(parcel, filters);
     const { gopLogo, rudaLogo } = await loadPrintAssets();
     const sides = getPlotSides(parcel, contextGeojson, details);
-    const totalArea = normalizeAreaText(details);
 
     const doc = new jsPDF({
       orientation: "portrait",
@@ -265,147 +264,223 @@ export const printPossessionCertificate = async ({
     });
 
     const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 18;
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // The official paper format uses a broad printable area with relatively
+    // small side margins.
+    const margin = 14;
     const contentWidth = pageWidth - margin * 2;
 
+    const totalArea = normalizeAreaText(details);
+    const areaText = normalizeText(totalArea, "-");
+    const fileReference = normalizeText(
+      details.fileReference ||
+        details.registrationNo ||
+        details.applicationNo,
+      "",
+    );
+    const possessionDate = normalizeText(
+      details.possessionDate || details.documentDate,
+      "",
+    );
+    const cnic = normalizeText(details.cnic);
+    const owner = normalizeText(details.owner, "-");
+    const postalAddress = normalizeText(details.postalAddress, "-");
+    const streetNo = normalizeText(details.streetRoadNo, "________");
+    const roadWidth = normalizeText(details.roadFt, "________");
+    const landUse = normalizeText(
+      details.landUse || details.plotCategory,
+      "-",
+    ).toUpperCase();
+    const extraLand = normalizeText(
+      details.excessArea || details.extraLand || details.additionalArea,
+      "-",
+    );
+
     doc.setTextColor(20, 20, 20);
-    doc.setDrawColor(35, 35, 35);
+    doc.setDrawColor(45, 45, 45);
     doc.setLineWidth(0.2);
 
-    // Header logos: Government of Punjab on the left and RUDA on the right.
+    // ------------------------------------------------------------------
+    // HEADER
+    // ------------------------------------------------------------------
     if (gopLogo) {
-      doc.addImage(gopLogo, "PNG", margin + 1, 8, 25, 25, undefined, "FAST");
+      doc.addImage(gopLogo, "PNG", margin + 2, 8, 31, 31, undefined, "FAST");
     }
+
     if (rudaLogo) {
       doc.addImage(
         rudaLogo,
         "PNG",
-        pageWidth - margin - 24,
+        pageWidth - margin - 31,
         8,
-        24,
-        24,
+        31,
+        31,
         undefined,
         "FAST",
       );
     }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(13.2);
-    doc.text("RAVI URBAN DEVELOPMENT AUTHORITY", pageWidth / 2, 14.5, {
-      align: "center",
-      charSpace: 0.7,
-    });
-    drawUnderline(doc, pageWidth / 2 - 51, pageWidth / 2 + 51, 15.7, 0.35);
+    doc.setFontSize(15.1);
+    doc.text(
+      "RAVI URBAN DEVELOPMENT AUTHORITY",
+      pageWidth / 2,
+      15.5,
+      { align: "center", charSpace: 0.75 },
+    );
+    drawUnderline(
+      doc,
+      pageWidth / 2 - 57,
+      pageWidth / 2 + 57,
+      17,
+      0.45,
+    );
 
-    doc.setFontSize(12.5);
-    doc.text("POSSESSION CERTIFICATE", pageWidth / 2, 22.5, {
+    doc.setFontSize(14.1);
+    doc.text("POSSESSION CERTIFICATE", pageWidth / 2, 24, {
       align: "center",
-      charSpace: 1.4,
+      charSpace: 1.75,
     });
-    drawUnderline(doc, pageWidth / 2 - 36, pageWidth / 2 + 36, 23.7, 0.32);
+    drawUnderline(
+      doc,
+      pageWidth / 2 - 42,
+      pageWidth / 2 + 42,
+      25.5,
+      0.4,
+    );
 
-    doc.setFontSize(10.2);
+    doc.setFontSize(11.6);
     doc.text(
       valueOrDash(details.project, "CHAHAR BAGH (PHASE-1)").toUpperCase(),
       pageWidth / 2,
-      30,
-      { align: "center", charSpace: 1.7 },
+      33,
+      { align: "center", charSpace: 1.95 },
     );
 
-    const fileReference =
-      details.fileReferenceNo ||
-      details.registrationNo ||
-      details.applicationNo;
-    const possessionDate = details.possessionDate || details.documentDate;
-    const cnic = normalizeText(details.cnic);
+    // ------------------------------------------------------------------
+    // BASIC INFORMATION
+    // ------------------------------------------------------------------
+    const infoTop = 45;
 
-    drawFieldLine(doc, "File Reference No:", fileReference, margin, 42, {
-      labelWidth: 34,
-      lineWidth: 50,
-      fontSize: 8.4,
+    drawFieldLine(doc, "File Reference No:", fileReference, margin, infoTop, {
+      labelWidth: 39,
+      lineWidth: 68,
+      fontSize: 9.6,
       underlineValue: true,
     });
 
-    drawFieldLine(doc, "Dated:", possessionDate, pageWidth - margin - 47, 42, {
-      labelWidth: 12,
-      lineWidth: 35,
-      fontSize: 8.4,
-      boldValue: false,
-      underlineValue: false,
-    });
+    drawFieldLine(
+      doc,
+      "Dated:",
+      possessionDate,
+      pageWidth - margin - 63,
+      infoTop,
+      {
+        labelWidth: 14,
+        lineWidth: 49,
+        fontSize: 9.6,
+        boldValue: false,
+        underlineValue: false,
+      },
+    );
 
-    const ownerRuns = [
-      { text: "Owner Name:" },
-      { text: valueOrDash(details.owner), bold: true },
-    ];
-    if (cnic) ownerRuns.push({ text: `(${cnic})`, bold: true });
-    drawInlineRuns(doc, ownerRuns, margin, 51, contentWidth, { fontSize: 8.4 });
+    drawInlineRuns(
+      doc,
+      [
+        { text: "Owner Name:" },
+        { text: owner, bold: true },
+        ...(cnic ? [{ text: `(${cnic})`, bold: true }] : []),
+      ],
+      margin,
+      infoTop + 10,
+      contentWidth,
+      { fontSize: 9.7, lineHeightFactor: 1.18 },
+    );
 
     drawInlineRuns(
       doc,
       [
         { text: "Postal Address:" },
-        {
-          text: valueOrDash(details.postalAddress),
-        },
+        { text: postalAddress },
       ],
       margin,
-      59,
+      infoTop + 20,
       contentWidth,
-      { fontSize: 8.2, lineHeightFactor: 1.2 },
+      { fontSize: 9.4, lineHeightFactor: 1.2 },
     );
 
-    const streetNo = normalizeText(
-      details.streetNo || details.streetRoadNo,
-      "________",
-    );
-    const roadWidth = normalizeText(details.roadFt, "________");
+    // ------------------------------------------------------------------
+    // CERTIFICATION PARAGRAPH
+    // ------------------------------------------------------------------
+    const certificationY = infoTop + 32;
 
-    drawInlineRuns(
+    const areaAlreadyHasUnit = /sq\s*ft|sqft|sft|kanal|marla/i.test(areaText);
+    const certifiedRuns = [
+      { text: "It is Certified that possession of Plot No" },
+      { text: valueOrDash(details.plotNo), bold: true, underline: true },
+      { text: "Block" },
+      { text: valueOrDash(details.block), bold: true, underline: true },
+      { text: "measuring area of" },
+      { text: areaText, bold: true, underline: true },
+      ...(!areaAlreadyHasUnit
+        ? [{ text: "Sqft", bold: true, underline: true }]
+        : []),
+      { text: "Street No" },
+      { text: streetNo, bold: true, underline: true },
+      { text: "Road wide" },
+      { text: `${roadWidth} ft`, bold: true, underline: true },
+      { text: "wide Road and Land Use" },
+      { text: landUse, bold: true, underline: true },
+      { text: "has been handed over to the allottee / attorney on" },
+      {
+        text: possessionDate || "______________",
+        bold: true,
+        underline: true,
+      },
+      { text: "as per following details:" },
+    ];
+
+    const certificationEndY = drawInlineRuns(
       doc,
-      [
-        { text: "It is Certified that possession of Plot No" },
-        { text: valueOrDash(details.plotNo), bold: true, underline: true },
-        { text: "Block" },
-        { text: valueOrDash(details.block), bold: true, underline: true },
-        { text: "measuring area of" },
-        { text: valueOrDash(totalArea), bold: true, underline: true },
-        { text: "Sqft, Street No" },
-        { text: streetNo, bold: true, underline: true },
-        { text: "Road wide" },
-        { text: `${roadWidth} ft`, bold: true, underline: true },
-        { text: "wide Road and Land Use" },
-        { text: valueOrDash(details.landUse), bold: true, underline: true },
-        { text: "has been handed over to the allottee / attorney on" },
-        {
-          text: possessionDate || "______________",
-          bold: true,
-          underline: true,
-        },
-        { text: "as per following details:" },
-      ],
+      certifiedRuns,
       margin,
-      69,
+      certificationY,
       contentWidth,
-      { fontSize: 8.25, lineHeightFactor: 1.22 },
+      { fontSize: 9.3, lineHeightFactor: 1.24 },
     );
 
-    const sidesTop = 86;
-    const sideNameX = margin + 6;
-    const lengthX = margin + 43;
-    const boundedLabelX = margin + 72;
-    const boundedValueX = margin + 105;
+    // ------------------------------------------------------------------
+    // BOUNDARY DETAILS + PLOT SKETCH
+    // ------------------------------------------------------------------
+    const sidesTop = certificationEndY + 12;
+    const sketchWidth = 44;
+    const sketchHeight = 39;
+    const sketchX = pageWidth - margin - sketchWidth;
+    const sketchY = sidesTop - 5;
+
+    const tableRight = sketchX - 5;
+    const sideNameX = margin + 8;
+    const lengthX = margin + 58;
+    const boundedLabelX = margin + 88;
+    const boundedValueX = margin + 122;
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.2);
+    doc.setFontSize(9.1);
 
     sides.slice(0, 4).forEach((side, index) => {
-      const y = sidesTop + index * 6.5;
+      const y = sidesTop + index * 7.2;
       doc.text(`${index + 1}.`, margin, y);
       doc.text(valueOrDash(side.label), sideNameX, y);
       doc.text(valueOrDash(side.length), lengthX, y);
       doc.text("Bounded by", boundedLabelX, y);
-      doc.text(valueOrDash(side.boundedBy), boundedValueX, y);
+
+      const boundedValue = doc.splitTextToSize(
+        valueOrDash(side.boundedBy),
+        Math.max(20, tableRight - boundedValueX),
+      )[0];
+
+      doc.text(boundedValue, boundedValueX, y);
     });
 
     drawPlotSketch(
@@ -413,35 +488,74 @@ export const printPossessionCertificate = async ({
       parcel,
       details,
       sides,
-      pageWidth - margin - 37,
-      82,
-      35,
-      31,
+      sketchX,
+      sketchY,
+      sketchWidth,
+      sketchHeight,
     );
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.8);
-    doc.text("Total Area:", margin, 119);
-    doc.text(valueOrDash(totalArea), margin + 27, 119);
-    drawUnderline(doc, margin + 27, margin + 52, 120, 0.2);
-
-    const extraLand =
-      details.extraLand || details.excessArea || details.additionalArea;
-    doc.text("Extra Land:", margin + 94, 119);
-    doc.text(valueOrDash(extraLand), margin + 122, 119);
-    drawUnderline(doc, margin + 122, margin + 151, 120, 0.2);
-
-    doc.setFontSize(8.4);
-    doc.text("DD Demarcation:", margin, 132);
-    drawUnderline(doc, margin + 37, margin + 72, 133, 0.23);
-
-    doc.text("Director Land:", margin + 101, 132);
-    drawUnderline(doc, margin + 132, pageWidth - margin, 133, 0.23);
+    // ------------------------------------------------------------------
+    // TOTAL AREA / EXTRA LAND / OFFICIAL SIGNATURES
+    // ------------------------------------------------------------------
+    const totalsY = sidesTop + 39;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10.4);
-    doc.text("Terms and Conditions", margin, 147);
-    drawUnderline(doc, margin, margin + 42, 148.2, 0.28);
+    doc.setFontSize(9.8);
+    doc.text("Total Area:", margin, totalsY);
+    doc.text(areaText, margin + 28, totalsY);
+    drawUnderline(
+      doc,
+      margin + 28,
+      margin + 68,
+      totalsY + 1,
+      0.25,
+    );
+
+    doc.text("Extra Land:", margin + 103, totalsY);
+    doc.text(extraLand, margin + 132, totalsY);
+    drawUnderline(
+      doc,
+      margin + 132,
+      pageWidth - margin,
+      totalsY + 1,
+      0.25,
+    );
+
+    const signaturesY = totalsY + 17;
+    doc.setFontSize(9.2);
+    doc.text("DD Demarcation:", margin, signaturesY);
+    drawUnderline(
+      doc,
+      margin + 40,
+      margin + 86,
+      signaturesY + 1,
+      0.28,
+    );
+
+    doc.text("Director Land:", margin + 105, signaturesY);
+    drawUnderline(
+      doc,
+      margin + 139,
+      pageWidth - margin,
+      signaturesY + 1,
+      0.28,
+    );
+
+    // ------------------------------------------------------------------
+    // TERMS AND CONDITIONS
+    // ------------------------------------------------------------------
+    const termsHeadingY = signaturesY + 18;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11.4);
+    doc.text("Terms and Conditions", margin, termsHeadingY);
+    drawUnderline(
+      doc,
+      margin,
+      margin + 47,
+      termsHeadingY + 1.4,
+      0.35,
+    );
 
     const terms = [
       "By accepting this Provisional Possession Certificate, I confirm that I have personally inspected the plot and am satisfied that it is free from any unauthorized occupation or encroachment.",
@@ -455,34 +569,69 @@ export const printPossessionCertificate = async ({
       "I agree to comply with and abide by these Terms and Conditions, as well as any other Bylaws, Rules & Regulations, issued by RUDA relating to the Intimation, Allocation, Allotment, and Possession of this plot.",
     ];
 
-    const termsEndY = drawNumberedTerms(doc, terms, margin, 157, contentWidth);
+    const termsEndY = drawNumberedTerms(
+      doc,
+      terms,
+      margin,
+      termsHeadingY + 11,
+      contentWidth,
+    );
 
-    const takeoverY = Math.min(Math.max(termsEndY + 4, 258), 267);
+    // ------------------------------------------------------------------
+    // POSSESSION TAKEN OVER
+    // ------------------------------------------------------------------
+    const takeoverY = Math.min(
+      Math.max(termsEndY + 7, 258),
+      pageHeight - 40,
+    );
+
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.9);
-    doc.text("POSSESSION TAKEN OVER BY ALLOTTEE / ATTORNEY", margin, takeoverY);
+    doc.setFontSize(9.7);
+    doc.text(
+      "POSSESSION TAKEN OVER BY ALLOTTEE / ATTORNEY",
+      margin,
+      takeoverY,
+    );
 
-    const firstLineY = takeoverY + 11;
-    const secondLineY = takeoverY + 23;
+    const firstLineY = takeoverY + 13;
+    const secondLineY = takeoverY + 26;
 
-    doc.setFontSize(8.5);
+    doc.setFontSize(9.2);
     doc.text("NAME:", margin, firstLineY);
-    drawUnderline(doc, margin + 12, margin + 59, firstLineY + 0.8, 0.23);
-
-    doc.text("THUMB & SIGNATURE:", margin + 84, firstLineY);
     drawUnderline(
       doc,
-      margin + 128,
+      margin + 14,
+      margin + 72,
+      firstLineY + 1,
+      0.28,
+    );
+
+    doc.text("THUMB & SIGNATURE:", margin + 92, firstLineY);
+    drawUnderline(
+      doc,
+      margin + 141,
       pageWidth - margin,
-      firstLineY + 0.8,
-      0.23,
+      firstLineY + 1,
+      0.28,
     );
 
     doc.text("CNIC:", margin, secondLineY);
-    drawUnderline(doc, margin + 12, margin + 59, secondLineY + 0.8, 0.23);
+    drawUnderline(
+      doc,
+      margin + 14,
+      margin + 72,
+      secondLineY + 1,
+      0.28,
+    );
 
-    doc.text("DATED:", margin + 87, secondLineY);
-    drawUnderline(doc, margin + 105, margin + 154, secondLineY + 0.8, 0.23);
+    doc.text("DATED:", margin + 95, secondLineY);
+    drawUnderline(
+      doc,
+      margin + 114,
+      pageWidth - margin,
+      secondLineY + 1,
+      0.28,
+    );
 
     openPdfPreview(
       doc,
@@ -497,5 +646,4 @@ export const printPossessionCertificate = async ({
     );
   }
 };
-
 export default printPossessionCertificate;
