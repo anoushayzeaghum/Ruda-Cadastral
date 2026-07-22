@@ -31,7 +31,7 @@ export const printPartPlan = async ({
         contextGeojson,
         details,
         mode: "location",
-        width: 2200,
+        width: 2800,
         height: 900,
         selectedFill: "#9ed8f1",
         selectedStroke: "#0037ff",
@@ -46,8 +46,8 @@ export const printPartPlan = async ({
         contextGeojson,
         details,
         mode: "part",
-        width: 1800,
-        height: 1050,
+        width: 2400,
+        height: 1000,
         selectedFill: "#a9daf2",
         selectedStroke: "#0637ff",
         watermark: false,
@@ -74,7 +74,7 @@ export const printPartPlan = async ({
     const contentWidth = pageWidth - margin * 2;
     const titleHeight = 19;
     const subtitleHeight = 11;
-    const mapHeight = 130;
+    const mapHeight = 116;
     const dimensionTop = margin + titleHeight + subtitleHeight + mapHeight;
     const dimensionHeight = pageHeight - dimensionTop - margin;
 
@@ -113,14 +113,6 @@ export const printPartPlan = async ({
       );
     }
 
-    // Strong road heading matching the reference layout.
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(22);
-    doc.text(
-      details.roadFt ? `${details.roadFt} feet wide Road` : details.streetRoadNo || "",
-      margin + 58,
-      mapTop + 36,
-    );
 
     doc.rect(margin, dimensionTop, contentWidth, dimensionHeight);
     doc.setFont("helvetica", "normal");
@@ -135,10 +127,10 @@ export const printPartPlan = async ({
         dimensionImage.dataUrl,
         dimensionImage.width,
         dimensionImage.height,
-        margin + 82,
-        dimensionTop + 3,
-        contentWidth - 105,
-        dimensionHeight - 8,
+        margin + 34,
+        dimensionTop + 5,
+        contentWidth - 68,
+        dimensionHeight - 12,
       );
     }
 

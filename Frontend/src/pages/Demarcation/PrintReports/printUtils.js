@@ -931,10 +931,13 @@ export const createPlanCanvas = async ({
   const fullSchemeBounds = getBounds(
     contextGeojson?.features?.length ? contextGeojson.features : features,
   );
+  const contextBounds = getBounds(features.length ? features : [selectedFeature]);
   const bounds =
     mode === "location"
-      ? expandBounds(fullSchemeBounds, 0.08)
-      : expandBounds(selectedBounds, 2.15);
+      ? expandBounds(fullSchemeBounds, 0.025)
+      : mode === "part"
+        ? expandBounds(contextBounds, 0.08)
+        : expandBounds(selectedBounds, 2.15);
 
   if (!bounds || selectedRing.length < 3) {
     ctx.fillStyle = "#666666";
@@ -944,7 +947,7 @@ export const createPlanCanvas = async ({
     return canvas;
   }
 
-  const padding = mode === "location" ? 48 : 95;
+  const padding = mode === "location" ? 22 : mode === "part" ? 34 : 95;
   const project = getTransform(bounds, width, height, padding);
 
   if (watermark) {
@@ -972,12 +975,16 @@ export const createPlanCanvas = async ({
       ctx,
       ring,
       project,
-      mode === "location" ? getFeatureColor(feature) : "rgba(245,247,250,0.84)",
-      mode === "location" ? "#a8b0b8" : "#aeb6bf",
-      mode === "location" ? 1.2 : 2,
+      mode === "location"
+        ? getFeatureColor(feature)
+        : mode === "part"
+          ? "rgba(250,251,252,0.96)"
+          : "rgba(245,247,250,0.84)",
+      mode === "location" ? "#9aa4af" : "#aeb6bf",
+      mode === "location" ? 1.4 : mode === "part" ? 2.2 : 2,
     );
 
-    if (showContextLabels && mode === "site") {
+    if (showContextLabels && ["site", "location", "part"].includes(mode)) {
       drawPlotNumberInsidePolygon(ctx, getPlotLabel(feature), ring, project);
     }
   });
@@ -988,22 +995,15 @@ export const createPlanCanvas = async ({
     project,
     selectedFill,
     selectedStroke,
-    mode === "location" ? 5 : 7,
+    mode === "location" ? 7 : mode === "part" ? 8 : 7,
   );
 
   const selectedCenter = project(polygonCentroid(selectedRing));
   const selectedProjectedBox = getProjectedRingBox(selectedRing, project);
 
   if (mode === "location") {
-    ctx.save();
-    ctx.fillStyle = "#0637d9";
-    ctx.beginPath();
-    ctx.arc(selectedCenter[0], selectedCenter[1], 9, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.restore();
+    // Show the selected plot as an actual highlighted parcel, not only a dot.
+    drawPlotNumberInsidePolygon(ctx, details.plotNo, selectedRing, project);
   } else {
     drawCanvasLabel(
       ctx,
@@ -1036,7 +1036,7 @@ export const createPlanCanvas = async ({
     );
   }
 
-  if (showDimensions && mode === "site") {
+  if (showDimensions && ["site", "part"].includes(mode)) {
     dimensionRing.forEach((point, index) => {
       const next = dimensionRing[(index + 1) % dimensionRing.length];
       const a = project(point);
