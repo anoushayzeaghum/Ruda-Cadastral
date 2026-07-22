@@ -334,23 +334,25 @@ function StatTicker() {
 
   return (
     <div
-      className="w-full shrink-0"
+      className="w-full shrink-0 border-b border-black/10"
       style={{
-        backgroundImage: `linear-gradient(90deg, ${BRAND.deepest} 0%, ${BRAND.dark} 55%, ${BRAND.primary} 100%)`,
+        backgroundImage: `linear-gradient(90deg, ${BRAND.deepest} 0%, ${BRAND.dark} 40%, ${BRAND.primary} 75%, ${BRAND.deepest} 100%)`,
       }}
     >
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 py-2.5 sm:flex-row sm:gap-6 sm:px-6">
-        <div className="flex shrink-0 items-center gap-2 text-center sm:border-r sm:border-white/15 sm:pr-6 sm:text-left">
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 py-2 sm:flex-row sm:gap-6 sm:px-6">
+        {/* Label badge */}
+        <div className="flex shrink-0 items-center gap-2 sm:border-r sm:border-white/20 sm:pr-6">
           {Icon ? (
-            <span className="hidden sm:flex h-7 w-7 items-center justify-center rounded-md bg-white/10 text-[#8FEA67]">
-              <Icon size={15} />
+            <span className="hidden sm:flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-[#8FEA67] ring-1 ring-white/10">
+              <Icon size={14} />
             </span>
           ) : null}
-          <span className="text-[11px] font-black uppercase leading-tight tracking-[0.14em] text-[#8FEA67] sm:text-sm">
+          <span className="text-[10px] font-black uppercase leading-tight tracking-[0.16em] text-[#8FEA67] sm:text-[11px]">
             {group.title}
           </span>
         </div>
 
+        {/* Stats */}
         <div
           className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-6 ${
             group.stats.length === 3
@@ -360,16 +362,17 @@ function StatTicker() {
         >
           {group.stats.map(({ value, label }) => (
             <div key={label} className="py-0.5">
-              <div className="text-base font-black text-[#70D84F] xs:text-lg sm:text-xl">
+              <div className="text-base font-black text-[#70D84F] xs:text-lg sm:text-xl tabular-nums">
                 {value}
               </div>
-              <div className="text-[8px] font-semibold uppercase tracking-[0.1em] text-white/60 sm:text-[10px]">
+              <div className="text-[8px] font-bold uppercase tracking-[0.12em] text-white/50 sm:text-[9px]">
                 {label}
               </div>
             </div>
           ))}
         </div>
 
+        {/* Dots */}
         <div className="flex shrink-0 justify-center gap-1.5">
           {STAT_GROUPS.map((g, i) => (
             <button
@@ -379,7 +382,7 @@ function StatTicker() {
               className={`rounded-full transition-all duration-300 ${
                 i === index
                   ? "h-1.5 w-5 bg-[#70D84F]"
-                  : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
+                  : "h-1.5 w-1.5 bg-white/25 hover:bg-white/50"
               }`}
             />
           ))}
@@ -393,41 +396,80 @@ function StatTicker() {
    KPI GROUP CARD — one card per STAT_GROUPS entry, all visible
    at once (unlike the rotating ticker) so nothing is hidden.
    ============================================================ */
+const TONE_GRADIENTS = {
+  green:  "from-[#0B7A3B]/10 via-transparent to-transparent dark:from-[#0B7A3B]/20",
+  cyan:   "from-[#0B87C7]/10 via-transparent to-transparent dark:from-[#0B87C7]/20",
+  amber:  "from-[#c8811a]/10 via-transparent to-transparent dark:from-[#c8811a]/20",
+  violet: "from-[#6d28d9]/10 via-transparent to-transparent dark:from-[#6d28d9]/20",
+};
+
+const TONE_BORDER = {
+  green:  "border-[#0B7A3B]/20 dark:border-[#0B7A3B]/30",
+  cyan:   "border-[#0B87C7]/20 dark:border-[#0B87C7]/30",
+  amber:  "border-[#c8811a]/20 dark:border-[#c8811a]/30",
+  violet: "border-[#6d28d9]/20 dark:border-[#6d28d9]/30",
+};
+
+const TONE_DIVIDER = {
+  green:  "bg-[#0B7A3B]/15 dark:bg-[#70D84F]/20",
+  cyan:   "bg-[#0B87C7]/15 dark:bg-[#4CCBFF]/20",
+  amber:  "bg-[#c8811a]/15 dark:bg-[#f5b942]/20",
+  violet: "bg-[#6d28d9]/15 dark:bg-[#a78bfa]/20",
+};
+
 function GroupCard({ group }) {
   const tone = TONE_STYLES[group.tone] ?? TONE_STYLES.green;
   const Icon = GROUP_ICONS[group.icon];
   const cols = group.stats.length === 3 ? "grid-cols-3" : "grid-cols-2";
+  const grad = TONE_GRADIENTS[group.tone] ?? TONE_GRADIENTS.green;
+  const bord = TONE_BORDER[group.tone] ?? TONE_BORDER.green;
+  const divider = TONE_DIVIDER[group.tone] ?? TONE_DIVIDER.green;
 
   return (
     <div
-      className={`rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900
-      px-4 py-4 shadow-sm ring-1 ring-transparent transition-all duration-300 hover:shadow-md ${tone.ring}`}
+      className={`relative rounded-2xl border ${bord} bg-white dark:bg-slate-900/80
+      overflow-hidden shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 group`}
     >
-      <div className="flex items-center gap-3">
-        <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone.iconWrap}`}
-        >
-          {Icon ? <Icon size={18} /> : null}
+      {/* Top gradient wash */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${grad} pointer-events-none`} />
+
+      {/* Content */}
+      <div className="relative px-4 pt-4 pb-4">
+        {/* Header row */}
+        <div className="flex items-center gap-3 mb-4">
+          <div
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tone.iconWrap}
+            transition-transform duration-300 group-hover:scale-110`}
+          >
+            {Icon ? <Icon size={18} /> : null}
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-[13px] font-bold text-slate-800 dark:text-slate-100 leading-tight truncate">
+              {group.title}
+            </h3>
+            <div className={`mt-1 h-0.5 w-8 rounded-full ${divider}`} />
+          </div>
         </div>
-        <h3 className="text-[13.5px] font-bold text-slate-800 dark:text-slate-100 leading-tight">
-          {group.title}
-        </h3>
+
+        {/* Stats grid */}
+        <div className={`grid ${cols} gap-x-4 gap-y-3`}>
+          {group.stats.map((s) => (
+            <div key={s.label} className="min-w-0">
+              <div
+                className={`text-[20px] font-black tracking-tight leading-none tabular-nums ${tone.value}`}
+              >
+                {s.value}
+              </div>
+              <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide leading-tight text-slate-400 dark:text-slate-500 truncate">
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className={`mt-4 grid ${cols} gap-3`}>
-        {group.stats.map((s) => (
-          <div key={s.label}>
-            <div
-              className={`text-[18px] font-black tracking-tight leading-none ${tone.value}`}
-            >
-              {s.value}
-            </div>
-            <div className="mt-1 text-[10.5px] font-medium leading-tight text-slate-500 dark:text-slate-400">
-              {s.label}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Bottom accent strip */}
+      <div className={`h-0.5 w-full ${divider}`} />
     </div>
   );
 }
@@ -488,41 +530,55 @@ export default function Dashboard() {
         <div className="flex min-h-0 flex-1 overflow-hidden">
           <DashboardSidebar sidebarOpen={sidebarOpen} />
 
-          <main className="min-h-0 flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto px-3 pt-3 pb-3 xl:px-4 xl:pt-3 xl:pb-3">
-              <div className="space-y-4">
-                {/* Page header */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 border-b border-slate-100 dark:border-slate-800/50 pb-3">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                      Dashboard Overview
-                    </h2>
-                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Land Information System, RUDA Metaverse, RTW Packages
-                      &amp; Chahar Bagh — live snapshot
-                    </p>
+          <main className="min-h-0 flex-1 overflow-hidden bg-slate-50/60 dark:bg-[#0b0f14]">
+            <div className="h-full overflow-y-auto px-3 pt-4 pb-4 xl:px-5 xl:pt-4 xl:pb-5">
+              <div className="space-y-4 max-w-[1600px] mx-auto">
+
+                {/* ── Page header ─────────────────────────────── */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-1 rounded-full bg-gradient-to-b from-[#0B7A3B] to-[#70D84F] shrink-0" />
+                    <div>
+                      <h2 className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
+                        Dashboard Overview
+                      </h2>
+                      <p className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 mt-1">
+                        LIS · RUDA Metaverse · RTW Packages · Chahar Bagh — live snapshot
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-[#0B7A3B] dark:text-[#70D84F] bg-[#0B7A3B]/10 dark:bg-[#70D84F]/10 px-3 py-1.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#0B7A3B] dark:bg-[#70D84F] animate-pulse inline-block" />
+                      Live Data
+                    </span>
                   </div>
                 </div>
 
-                {/* KPI cards, one per STAT_GROUPS entry */}
+                {/* ── KPI cards ───────────────────────────────── */}
                 <KPISection />
 
-                {/* Map + land-use chart */}
+                {/* ── Map + land-use chart ─────────────────────── */}
                 <div className="grid grid-cols-1 gap-3 xl:grid-cols-[1.6fr_1fr]">
-                  <div className="h-[300px] sm:h-[360px] xl:h-[380px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  {/* Map card with header overlay */}
+                  <div className="relative h-[300px] sm:h-[360px] xl:h-[390px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm group">
+                    {/* Map label overlay */}
+                    <div className="absolute top-3 left-3 z-10 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm border border-slate-200/60 dark:border-slate-700/60">
+                      <MapIcon size={13} className="text-[#0B7A3B] dark:text-[#70D84F]" />
+                      <span className="text-[11px] font-bold text-slate-700 dark:text-white tracking-tight">District &amp; RUDA Phases</span>
+                    </div>
                     <MapPanel />
                   </div>
-                  <div className="h-[300px] sm:h-[360px] xl:h-[380px]">
+                  <div className="h-[300px] sm:h-[360px] xl:h-[390px]">
                     <PieChart />
                   </div>
                 </div>
 
-                {/* Structural comparison chart */}
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="h-[300px] sm:h-[340px]">
-                    <BarChart />
-                  </div>
+                {/* ── Bar chart ───────────────────────────────── */}
+                <div className="h-[300px] sm:h-[350px]">
+                  <BarChart />
                 </div>
+
               </div>
             </div>
           </main>
