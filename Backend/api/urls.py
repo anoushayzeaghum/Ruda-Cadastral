@@ -4,6 +4,12 @@ from rest_framework.routers import DefaultRouter
 from api.views import *
 from api.views.RudaMasterPlan import *
 from api.views.GISMetaverse import *
+from api.views.RudaMasterPlan.RudaNotifiedPhasesBoundary import (
+    CreateRudaNotifiedPhasesBoundaryView,
+    DeleteRudaNotifiedPhasesBoundaryView,
+    ListRudaNotifiedPhasesBoundaryView,
+    UpdateRudaNotifiedPhasesBoundaryView,
+)
 
 
 router = DefaultRouter()
@@ -266,6 +272,28 @@ router.register(r"wwtp-sites", ListWWTPSitesView, basename="wwtp-sites",)
 router.register(r"wwtp-sites/create", CreateWWTPSitesView, basename="create-wwtp-sites",)
 router.register(r"wwtp-sites/update", UpdateWWTPSitesView, basename="update-wwtp-sites",)
 router.register(r"wwtp-sites/delete", DeleteWWTPSitesView, basename="delete-wwtp-sites",)
+
+# ------------------------------ RUDA Notified Phases Boundary Views ------------------------------
+router.register(
+    r"ruda-notified-phases-boundary",
+    ListRudaNotifiedPhasesBoundaryView,
+    basename="ruda-notified-phases-boundary",
+)
+router.register(
+    r"ruda-notified-phases-boundary/create",
+    CreateRudaNotifiedPhasesBoundaryView,
+    basename="create-ruda-notified-phases-boundary",
+)
+router.register(
+    r"ruda-notified-phases-boundary/update",
+    UpdateRudaNotifiedPhasesBoundaryView,
+    basename="update-ruda-notified-phases-boundary",
+)
+router.register(
+    r"ruda-notified-phases-boundary/delete",
+    DeleteRudaNotifiedPhasesBoundaryView,
+    basename="delete-ruda-notified-phases-boundary",
+)
 
 router.register(r"lahore-transportation-roads", ListLahoreTransportationRoadView, basename="lahore-transportation-roads",)
 router.register(r"lahore-transportation-roads/create", CreateLahoreTransportationRoadView, basename="create-lahore-transportation-road",)

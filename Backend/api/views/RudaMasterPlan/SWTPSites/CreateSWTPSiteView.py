@@ -1,21 +1,24 @@
 from ...common_imports import *
 
 
-class CreateTransportationRoadsView(viewsets.ViewSet):
-    queryset = TransportationRoads.objects.all()
-    serializer_class = TransportationRoadsSerializer
+class CreateSWTPSiteView(viewsets.ViewSet):
+    queryset = SWTPSite.objects.all()
+    serializer_class = SWTPSiteSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
+        data = request.data
+
         try:
-            serializer = TransportationRoadsSerializer(data=request.data)
+            serializer = SWTPSiteSerializer(data=data)
             serializer.is_valid(raise_exception=True)
+
             record = serializer.save()
 
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
-                message="TransportationRoads created successfully.",
-                data=TransportationRoadsSerializer(record).data,
+                message="SWTPSite created successfully.",
+                data=SWTPSiteSerializer(record).data,
                 http_status=status.HTTP_201_CREATED,
             ).create_response()
 

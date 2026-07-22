@@ -48,7 +48,7 @@ from .RudaMasterPlan.MpPrincipleZoningView import *
 from .RudaMasterPlan.ExistingForestView import *
 from .RudaMasterPlan.RudaPlanningBoundaryView import *
 from .RudaMasterPlan.ProposedRoadNetworkView import *
-from .RudaMasterPlan.SWTPSiteView import *
-from .RudaMasterPlan.WWTPSitesView import *
-from .RudaMasterPlan.TransportationRoads import *
+from .RudaMasterPlan.SWTPSites import *
+from .RudaMasterPlan.WWTPSites import *
+from .RudaMasterPlan.RudaNotifiedPhasesBoundary import *
 from .RudaMasterPlan.LahoreTransportationRoadView import *

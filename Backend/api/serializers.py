@@ -1504,7 +1504,7 @@ class RtwPackageSerializer(GeoFeatureModelSerializer):
 
 
 #-----------------------------------------------
-# SWTP Site Serializer
+# SWTP Sites Serializer
 #-----------------------------------------------
 class SWTPSiteSerializer(GeoFeatureModelSerializer):
 
@@ -1515,19 +1515,18 @@ class SWTPSiteSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "id",
             "name",
-            "sq_ft",
-            "marla",
-            "kanal",
-            "acres",
+            "area_225ac",
+            "remarks",
+            "shape_leng",
+            "shape_area",
             "geom",
         )
+
 
 #-----------------------------------------------
 # WWTP Sites Serializer
 #-----------------------------------------------
-
 class WWTPSitesSerializer(GeoFeatureModelSerializer):
 
     class Meta:
@@ -1537,18 +1536,36 @@ class WWTPSitesSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "objectid",
             "name",
-            "site_type",
+            "area_225ac",
+            "remarks",
             "shape_leng",
             "shape_area",
-            "created_us",
-            "created_da",
-            "last_edite",
-            "last_edi_1",
-            "area",
             "geom",
         )
+
+
+#-----------------------------------------------
+# RUDA Notified Phases Boundary Serializer
+#-----------------------------------------------
+class RudaNotifiedPhasesBoundarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RudaNotifiedPhasesBoundary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "area_acre",
+            "phases",
+            "phases_new",
+            "shape_leng",
+            "shape_le_1",
+            "shape_area",
+            "geom",
+        )
+
 
 # --------------------------------------------------------
 # Lahore Transportation Roads

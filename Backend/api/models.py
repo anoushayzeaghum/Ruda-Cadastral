@@ -2250,17 +2250,38 @@ class RtwPackage(models.Model):
 
 
 #-------------------------------------------------------
-# SWTP Site
-# DB table: swtp_site   
+# SWTP Sites
+# DB table: swtp_sites
+#-------------------------------------------------------
 class SWTPSite(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    id = models.IntegerField(null=True, blank=True)
-    name = models.CharField(max_length=255, null=True, blank=True)
-    sq_ft = models.FloatField(null=True, blank=True)
-    marla = models.FloatField(null=True, blank=True)
-    kanal = models.FloatField(null=True, blank=True)
-    acres = models.FloatField(null=True, blank=True)
+    name = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+    )
+
+    area_225ac = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    remarks = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    shape_area = models.FloatField(
+        null=True,
+        blank=True,
+    )
 
     geom = gis_models.MultiPolygonField(
         srid=4326,
@@ -2273,33 +2294,42 @@ class SWTPSite(models.Model):
 
     class Meta:
         managed = False
-        db_table = "swtp_site"
+        db_table = "swtp_sites"
+
 
 #-------------------------------------------------------
 # WWTP Sites
 # DB table: wwtp_sites
+#-------------------------------------------------------
 class WWTPSites(models.Model):
     gid = models.AutoField(primary_key=True)
 
-    objectid = models.IntegerField(null=True, blank=True)
-    name = models.CharField(max_length=255, null=True, blank=True)
-
-    site_type = models.CharField(
-        max_length=100,
+    name = models.CharField(
+        max_length=50,
         null=True,
         blank=True,
-        db_column="type",
     )
 
-    shape_leng = models.FloatField(null=True, blank=True)
-    shape_area = models.FloatField(null=True, blank=True)
+    area_225ac = models.FloatField(
+        null=True,
+        blank=True,
+    )
 
-    created_us = models.CharField(max_length=255, null=True, blank=True)
-    created_da = models.CharField(max_length=255, null=True, blank=True)
-    last_edite = models.CharField(max_length=255, null=True, blank=True)
-    last_edi_1 = models.CharField(max_length=255, null=True, blank=True)
+    remarks = models.CharField(
+        max_length=254,
+        null=True,
+        blank=True,
+    )
 
-    area = models.FloatField(null=True, blank=True)
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    shape_area = models.FloatField(
+        null=True,
+        blank=True,
+    )
 
     geom = gis_models.MultiPolygonField(
         srid=4326,
@@ -2313,6 +2343,59 @@ class WWTPSites(models.Model):
     class Meta:
         managed = False
         db_table = "wwtp_sites"
+
+
+#-------------------------------------------------------
+# RUDA Notified Phases Boundary
+# DB table: ruda_notified_phases_boundary
+#-------------------------------------------------------
+class RudaNotifiedPhasesBoundary(models.Model):
+    gid = models.AutoField(primary_key=True)
+
+    area_acre = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    phases = models.CharField(
+        max_length=15,
+        null=True,
+        blank=True,
+    )
+
+    phases_new = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    shape_le_1 = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    shape_area = models.FloatField(
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.phases_new or self.phases or f"RUDA Notified Phase {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "ruda_notified_phases_boundary"
 
 
 #----------------------------------------------

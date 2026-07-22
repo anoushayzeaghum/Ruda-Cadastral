@@ -11,31 +11,25 @@ class ListSWTPSiteView(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     filter_fields = [
-        "id",
         "name",
-        "sq_ft",
-        "marla",
-        "kanal",
-        "acres",
+        "area_225ac",
+        "remarks",
+        "shape_leng",
+        "shape_area",
     ]
 
     def list(self, request, *args, **kwargs):
-
         try:
-
             gid = request.query_params.get("gid")
 
             # -----------------------------
             # Single Feature
             # -----------------------------
             if gid:
-
-                cache_key = f"swtp_site_{gid}"
-
+                cache_key = f"swtp_sites_{gid}"
                 cached = cache.get(cache_key)
 
                 if cached:
-
                     return ApiResponse(
                         status=status.HTTP_200_OK,
                         message="SWTPSite found.",
@@ -44,25 +38,24 @@ class ListSWTPSiteView(viewsets.ViewSet):
                     ).create_response()
 
                 with connection.cursor() as cursor:
-
-                    cursor.execute("""
+                    cursor.execute(
+                        """
                         SELECT
                             gid,
-                            id,
                             name,
-                            sq_ft,
-                            marla,
-                            kanal,
-                            acres,
+                            area_225ac,
+                            remarks,
+                            shape_leng,
+                            shape_area,
                             ST_AsGeoJSON(geom)::json
-                        FROM swtp_site
+                        FROM swtp_sites
                         WHERE gid=%s
-                    """, [gid])
-
+                        """,
+                        [gid],
+                    )
                     row = cursor.fetchone()
 
                 if not row:
-
                     return ApiResponse(
                         status=status.HTTP_404_NOT_FOUND,
                         message="SWTPSite not found.",
@@ -73,15 +66,14 @@ class ListSWTPSiteView(viewsets.ViewSet):
                 feature = {
                     "type": "Feature",
                     "id": row[0],
-                    "geometry": row[7],
+                    "geometry": row[6],
                     "properties": {
                         "gid": row[0],
-                        "id": row[1],
-                        "name": row[2],
-                        "sq_ft": row[3],
-                        "marla": row[4],
-                        "kanal": row[5],
-                        "acres": row[6],
+                        "name": row[1],
+                        "area_225ac": row[2],
+                        "remarks": row[3],
+                        "shape_leng": row[4],
+                        "shape_area": row[5],
                     },
                 }
 
@@ -97,30 +89,24 @@ class ListSWTPSiteView(viewsets.ViewSet):
             # -----------------------------
             # List
             # -----------------------------
-
             filters = {}
 
             for field in self.filter_fields:
-
                 value = request.query_params.get(field)
-
                 if value not in [None, ""]:
-
                     filters[field] = value
 
             queryset = SWTPSite.objects.only(
                 "gid",
-                "id",
                 "name",
-                "sq_ft",
-                "marla",
-                "kanal",
-                "acres",
+                "area_225ac",
+                "remarks",
+                "shape_leng",
+                "shape_area",
                 "geom",
             )
 
             if filters:
-
                 queryset = queryset.filter(**filters)
 
             serializer = SWTPSiteSerializer(queryset, many=True)
@@ -133,7 +119,6 @@ class ListSWTPSiteView(viewsets.ViewSet):
             ).create_response()
 
         except Exception as e:
-
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
@@ -148,13 +133,10 @@ class ListSWTPSiteView(viewsets.ViewSet):
         url_name="geojson",
     )
     def geojson(self, request, pk=None):
-
-        cache_key = f"swtp_site_geojson_{pk}"
-
+        cache_key = f"swtp_sites_geojson_{pk}"
         cached = cache.get(cache_key)
 
         if cached:
-
             return ApiResponse(
                 status=status.HTTP_200_OK,
                 message="SWTPSite GeoJSON found.",
@@ -163,27 +145,25 @@ class ListSWTPSiteView(viewsets.ViewSet):
             ).create_response()
 
         try:
-
             with connection.cursor() as cursor:
-
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT
                         gid,
-                        id,
                         name,
-                        sq_ft,
-                        marla,
-                        kanal,
-                        acres,
+                        area_225ac,
+                        remarks,
+                        shape_leng,
+                        shape_area,
                         ST_AsGeoJSON(geom)::json
-                    FROM swtp_site
+                    FROM swtp_sites
                     WHERE gid=%s
-                """, [pk])
-
+                    """,
+                    [pk],
+                )
                 row = cursor.fetchone()
 
             if not row:
-
                 return ApiResponse(
                     status=status.HTTP_404_NOT_FOUND,
                     message="SWTPSite not found.",
@@ -194,15 +174,14 @@ class ListSWTPSiteView(viewsets.ViewSet):
             feature = {
                 "type": "Feature",
                 "id": row[0],
-                "geometry": row[7],
+                "geometry": row[6],
                 "properties": {
                     "gid": row[0],
-                    "id": row[1],
-                    "name": row[2],
-                    "sq_ft": row[3],
-                    "marla": row[4],
-                    "kanal": row[5],
-                    "acres": row[6],
+                    "name": row[1],
+                    "area_225ac": row[2],
+                    "remarks": row[3],
+                    "shape_leng": row[4],
+                    "shape_area": row[5],
                 },
             }
 
@@ -216,7 +195,6 @@ class ListSWTPSiteView(viewsets.ViewSet):
             ).create_response()
 
         except Exception as e:
-
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",

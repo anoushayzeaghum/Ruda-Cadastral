@@ -1,44 +1,47 @@
 from ...common_imports import *
+from api.models import RudaNotifiedPhasesBoundary
+from api.serializers import RudaNotifiedPhasesBoundarySerializer
 
 
-class UpdateTransportationRoadsView(viewsets.ViewSet):
-    queryset = TransportationRoads.objects.all()
-    serializer_class = TransportationRoadsSerializer
+class UpdateRudaNotifiedPhasesBoundaryView(viewsets.ViewSet):
+    queryset = RudaNotifiedPhasesBoundary.objects.all()
+    serializer_class = RudaNotifiedPhasesBoundarySerializer
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
         record_id = kwargs.get("pk")
 
         try:
-            record = TransportationRoads.objects.get(gid=record_id)
-        except TransportationRoads.DoesNotExist:
+            record = RudaNotifiedPhasesBoundary.objects.get(gid=record_id)
+
+        except RudaNotifiedPhasesBoundary.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="TransportationRoads not found.",
+                message="RUDA notified phases boundary not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            serializer = TransportationRoadsSerializer(
+            serializer = RudaNotifiedPhasesBoundarySerializer(
                 record,
                 data=request.data,
                 partial=True,
             )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
 
-            return ApiResponse(
-                status=status.HTTP_200_OK,
-                message="TransportationRoads updated successfully.",
-                data=serializer.data,
-                http_status=status.HTTP_200_OK,
-            ).create_response()
+            if serializer.is_valid():
+                serializer.save()
 
-        except serializers.ValidationError as e:
+                return ApiResponse(
+                    status=status.HTTP_200_OK,
+                    message="RUDA notified phases boundary updated successfully.",
+                    data=serializer.data,
+                    http_status=status.HTTP_200_OK,
+                ).create_response()
+
             return ApiResponse(
                 status=status.HTTP_400_BAD_REQUEST,
                 message="Validation error.",
-                data=e.detail,
+                data=serializer.errors,
                 http_status=status.HTTP_400_BAD_REQUEST,
             ).create_response()
 
