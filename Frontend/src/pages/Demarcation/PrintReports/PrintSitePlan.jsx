@@ -13,6 +13,56 @@ import {
   valueOrDash,
 } from "./printUtils";
 
+// Easy print-layout controls. Adjust these values whenever you need more or less zoom.
+const PRINT_LAYOUT = {
+  gopLogoSize: 23,
+  rudaLogoSize: 22,
+
+  // 1 = original size, values greater than 1 zoom in.
+  mainMapZoom: 1.7,
+  mainMapPanX: 0,
+  mainMapPanY: 20,
+
+  insetMapZoom: 1.3,
+  insetMapPanX: 0,
+  insetMapPanY: 0,
+};
+
+/**
+ * Zooms and repositions an already-rendered plan canvas without requiring
+ * any change inside printUtils/createPlanCanvas. Pan values are in pixels.
+ */
+const createZoomedCanvas = (sourceCanvas, zoom = 1, panX = 0, panY = 0) => {
+  if (!sourceCanvas || typeof document === "undefined") return sourceCanvas;
+
+  const safeZoom = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = sourceCanvas.width;
+  outputCanvas.height = sourceCanvas.height;
+
+  const context = outputCanvas.getContext("2d");
+  if (!context) return sourceCanvas;
+
+  // Keep any cropped area white so the PDF background remains clean.
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+  context.save();
+  context.translate(
+    outputCanvas.width / 2 + panX,
+    outputCanvas.height / 2 + panY,
+  );
+  context.scale(safeZoom, safeZoom);
+  context.drawImage(
+    sourceCanvas,
+    -sourceCanvas.width / 2,
+    -sourceCanvas.height / 2,
+  );
+  context.restore();
+
+  return outputCanvas;
+};
+
 const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
   const rows = coordinates.slice(0, 4);
   const titleHeight = 5;
@@ -28,9 +78,14 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
 
   doc.setFont("times", "bold");
   doc.setFontSize(7.2);
-  doc.text(`Plot ${details.plotNo || ""}, Block ${details.block || ""}`, x + width / 2, y + 3.6, {
-    align: "center",
-  });
+  doc.text(
+    `Plot ${details.plotNo || ""}, Block ${details.block || ""}`,
+    x + width / 2,
+    y + 3.6,
+    {
+      align: "center",
+    },
+  );
   doc.line(x, y + titleHeight, x + width, y + titleHeight);
 
   let cursor = x;
@@ -40,17 +95,29 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
   });
 
   doc.setFontSize(6.5);
-  doc.text("Name", x + columns[0] / 2, y + titleHeight + 3.5, { align: "center" });
-  doc.text("Easting (m)", x + columns[0] + columns[1] / 2, y + titleHeight + 3.5, {
+  doc.text("Name", x + columns[0] / 2, y + titleHeight + 3.5, {
     align: "center",
   });
+  doc.text(
+    "Easting (m)",
+    x + columns[0] + columns[1] / 2,
+    y + titleHeight + 3.5,
+    {
+      align: "center",
+    },
+  );
   doc.text(
     "Northing (m)",
     x + columns[0] + columns[1] + columns[2] / 2,
     y + titleHeight + 3.5,
     { align: "center" },
   );
-  doc.line(x, y + titleHeight + headerHeight, x + width, y + titleHeight + headerHeight);
+  doc.line(
+    x,
+    y + titleHeight + headerHeight,
+    x + width,
+    y + titleHeight + headerHeight,
+  );
 
   rows.forEach((coordinate, index) => {
     const rowTop = y + titleHeight + headerHeight + index * rowHeight;
@@ -58,9 +125,14 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
     doc.setFont("times", "normal");
     doc.setFontSize(6.6);
     doc.text(coordinate.label, x + columns[0] / 2, textY, { align: "center" });
-    doc.text(coordinate.easting.toFixed(3), x + columns[0] + columns[1] / 2, textY, {
-      align: "center",
-    });
+    doc.text(
+      coordinate.easting.toFixed(3),
+      x + columns[0] + columns[1] / 2,
+      textY,
+      {
+        align: "center",
+      },
+    );
     doc.text(
       coordinate.northing.toFixed(3),
       x + columns[0] + columns[1] + columns[2] / 2,
@@ -121,8 +193,21 @@ export const printSitePlan = async ({
       }),
     ]);
 
-    const mainImage = canvasAsPng(mainCanvas);
-    const insetImage = canvasAsPng(insetCanvas);
+    const zoomedMainCanvas = createZoomedCanvas(
+      mainCanvas,
+      PRINT_LAYOUT.mainMapZoom,
+      PRINT_LAYOUT.mainMapPanX,
+      PRINT_LAYOUT.mainMapPanY,
+    );
+    const zoomedInsetCanvas = createZoomedCanvas(
+      insetCanvas,
+      PRINT_LAYOUT.insetMapZoom,
+      PRINT_LAYOUT.insetMapPanX,
+      PRINT_LAYOUT.insetMapPanY,
+    );
+
+    const mainImage = canvasAsPng(zoomedMainCanvas);
+    const insetImage = canvasAsPng(zoomedInsetCanvas);
     const coordinates = getCornerCoordinates(parcel.geometry).slice(0, 4);
 
     const doc = new jsPDF({
@@ -142,10 +227,28 @@ export const printSitePlan = async ({
 
     // Header matching the approved paper site-plan format.
     if (gopLogo) {
-      doc.addImage(gopLogo, "PNG", margin + 7, 4.5, 29, 29, undefined, "FAST");
+      doc.addImage(
+        gopLogo,
+        "PNG",
+        margin + 9,
+        6,
+        PRINT_LAYOUT.gopLogoSize,
+        PRINT_LAYOUT.gopLogoSize,
+        undefined,
+        "FAST",
+      );
     }
     if (rudaLogo) {
-      doc.addImage(rudaLogo, "PNG", pageWidth - margin - 32, 6, 27, 27, undefined, "FAST");
+      doc.addImage(
+        rudaLogo,
+        "PNG",
+        pageWidth - margin - PRINT_LAYOUT.rudaLogoSize - 8,
+        7,
+        PRINT_LAYOUT.rudaLogoSize,
+        PRINT_LAYOUT.rudaLogoSize,
+        undefined,
+        "FAST",
+      );
     }
 
     doc.setFont("helvetica", "bold");
@@ -199,9 +302,18 @@ export const printSitePlan = async ({
       { fontSize: 8.8 },
     );
 
-    drawUnderlinedValue(doc, "Plot No:", details.plotNo, margin + 5, infoTop + 29, 18, 19, {
-      fontSize: 8.8,
-    });
+    drawUnderlinedValue(
+      doc,
+      "Plot No:",
+      details.plotNo,
+      margin + 5,
+      infoTop + 29,
+      18,
+      19,
+      {
+        fontSize: 8.8,
+      },
+    );
     drawUnderlinedValue(
       doc,
       "St/Road No:",
@@ -212,12 +324,30 @@ export const printSitePlan = async ({
       27,
       { fontSize: 8.8 },
     );
-    drawUnderlinedValue(doc, "Block:", details.block, margin + 101, infoTop + 29, 15, 18, {
-      fontSize: 8.8,
-    });
-    drawUnderlinedValue(doc, "Phase:", details.phase, margin + 145, infoTop + 29, 15, 20, {
-      fontSize: 8.8,
-    });
+    drawUnderlinedValue(
+      doc,
+      "Block:",
+      details.block,
+      margin + 101,
+      infoTop + 29,
+      15,
+      18,
+      {
+        fontSize: 8.8,
+      },
+    );
+    drawUnderlinedValue(
+      doc,
+      "Phase:",
+      details.phase,
+      margin + 145,
+      infoTop + 29,
+      15,
+      20,
+      {
+        fontSize: 8.8,
+      },
+    );
 
     drawUnderlinedValue(
       doc,
@@ -246,7 +376,11 @@ export const printSitePlan = async ({
     doc.text("Note:", pageWidth / 2 - 31, infoTop + 46, { align: "right" });
     doc.setTextColor(20, 20, 20);
     doc.setFont("helvetica", "normal");
-    doc.text("(This document is valid for six (06) months)", pageWidth / 2 - 29, infoTop + 46);
+    doc.text(
+      "(This document is valid for six (06) months)",
+      pageWidth / 2 - 29,
+      infoTop + 46,
+    );
 
     // Large, readable plot drawing area.
     const planTop = infoTop + infoHeight;
@@ -320,9 +454,10 @@ export const printSitePlan = async ({
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8.8);
         const maxWidth = lineEnd - lineX - 2;
-        const fitted = doc.getTextWidth(String(value)) <= maxWidth
-          ? String(value)
-          : `${String(value).slice(0, 25)}...`;
+        const fitted =
+          doc.getTextWidth(String(value)) <= maxWidth
+            ? String(value)
+            : `${String(value).slice(0, 25)}...`;
         doc.text(fitted, lineX + 1, y - 0.5);
       }
     };
@@ -390,11 +525,17 @@ export const printSitePlan = async ({
       handoverTop + 12,
     );
 
-    openPdfPreview(doc, `Site Plan - Plot ${details.plotNo || ""}`, previewWindow);
+    openPdfPreview(
+      doc,
+      `Site Plan - Plot ${details.plotNo || ""}`,
+      previewWindow,
+    );
   } catch (error) {
     previewWindow.close();
     console.error("Site plan generation failed", error);
-    alert("Failed to generate the site plan. Please check the selected plot data and try again.");
+    alert(
+      "Failed to generate the site plan. Please check the selected plot data and try again.",
+    );
   }
 };
 
