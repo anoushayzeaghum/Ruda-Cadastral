@@ -480,6 +480,155 @@ export const formatFeet = (meters) => {
   return `${wholeFeet}'-${inches}\"`;
 };
 
+
+const samePoint = (a, b, tolerance = 1e-10) =>
+  a &&
+  b &&
+  Math.abs(Number(a[0]) - Number(b[0])) <= tolerance &&
+  Math.abs(Number(a[1]) - Number(b[1])) <= tolerance;
+
+const pointLineDistance = (point, start, end) => {
+  const dx = Number(end[0]) - Number(start[0]);
+  const dy = Number(end[1]) - Number(start[1]);
+  const length = Math.hypot(dx, dy);
+
+  if (!length) {
+    return Math.hypot(
+      Number(point[0]) - Number(start[0]),
+      Number(point[1]) - Number(start[1]),
+    );
+  }
+
+  return Math.abs(
+    dy * Number(point[0]) -
+      dx * Number(point[1]) +
+      Number(end[0]) * Number(start[1]) -
+      Number(end[1]) * Number(start[0]),
+  ) / length;
+};
+
+const simplifyPlotRing = (ring = []) => {
+  if (ring.length < 3) return ring;
+
+  let cleaned = ring.filter(
+    (point, index) => index === 0 || !samePoint(point, ring[index - 1]),
+  );
+
+  if (cleaned.length > 2 && samePoint(cleaned[0], cleaned[cleaned.length - 1])) {
+    cleaned = cleaned.slice(0, -1);
+  }
+
+  if (cleaned.length < 4) return cleaned;
+
+  const extent = getBounds([
+    {
+      type: "Feature",
+      geometry: { type: "Polygon", coordinates: [[...cleaned, cleaned[0]]] },
+      properties: {},
+    },
+  ]);
+
+  const diagonal = extent
+    ? Math.hypot(extent.maxX - extent.minX, extent.maxY - extent.minY)
+    : 0;
+
+  const lineTolerance = Math.max(diagonal * 0.012, 1e-10);
+  const minimumSegment = Math.max(diagonal * 0.018, 1e-10);
+
+  let changed = true;
+  while (changed && cleaned.length > 4) {
+    changed = false;
+    const result = [];
+
+    for (let index = 0; index < cleaned.length; index += 1) {
+      const previous = cleaned[(index - 1 + cleaned.length) % cleaned.length];
+      const current = cleaned[index];
+      const next = cleaned[(index + 1) % cleaned.length];
+
+      const previousLength = Math.hypot(
+        Number(current[0]) - Number(previous[0]),
+        Number(current[1]) - Number(previous[1]),
+      );
+      const nextLength = Math.hypot(
+        Number(next[0]) - Number(current[0]),
+        Number(next[1]) - Number(current[1]),
+      );
+      const distanceFromLine = pointLineDistance(current, previous, next);
+
+      const removeCurrent =
+        previousLength < minimumSegment ||
+        nextLength < minimumSegment ||
+        distanceFromLine < lineTolerance;
+
+      if (removeCurrent && cleaned.length - 1 >= 4) {
+        changed = true;
+      } else {
+        result.push(current);
+      }
+    }
+
+    if (result.length >= 4) cleaned = result;
+    else break;
+  }
+
+  return cleaned;
+};
+
+const getProjectedRingBox = (ring, project) => {
+  const points = ring.map(project);
+  const xs = points.map(([x]) => x);
+  const ys = points.map(([, y]) => y);
+
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys),
+    width: Math.max(...xs) - Math.min(...xs),
+    height: Math.max(...ys) - Math.min(...ys),
+  };
+};
+
+const drawCanvasLabel = (
+  ctx,
+  text,
+  x,
+  y,
+  maxWidth,
+  maxHeight,
+  {
+    maxFontSize = 25,
+    minFontSize = 9,
+    fontWeight = 600,
+    fillStyle = "#243f73",
+  } = {},
+) => {
+  const value = String(text || "").trim();
+  if (!value || maxWidth < 14 || maxHeight < 10) return;
+
+  let fontSize = Math.min(maxFontSize, maxHeight * 0.62);
+
+  while (fontSize >= minFontSize) {
+    ctx.font = `${fontWeight} ${fontSize}px Arial`;
+    if (ctx.measureText(value).width <= maxWidth) break;
+    fontSize -= 1;
+  }
+
+  if (fontSize < minFontSize) return;
+
+  ctx.save();
+  ctx.font = `${fontWeight} ${fontSize}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = Math.max(2.5, fontSize * 0.13);
+  ctx.strokeStyle = "rgba(255,255,255,0.98)";
+  ctx.strokeText(value, x, y);
+  ctx.fillStyle = fillStyle;
+  ctx.fillText(value, x, y);
+  ctx.restore();
+};
+
 const polygonCentroid = (ring) => {
   if (!ring.length) return [0, 0];
   let twiceArea = 0;
@@ -622,6 +771,7 @@ export const createPlanCanvas = async ({
 
   const features = getContextFeatures(selectedFeature, contextGeojson, mode);
   const selectedRing = getGeometryRing(selectedFeature?.geometry);
+  const dimensionRing = simplifyPlotRing(selectedRing);
 
   // Main site plan is always framed from the selected plot itself. This keeps
   // the plot large and readable even when the context collection contains the
@@ -676,27 +826,25 @@ export const createPlanCanvas = async ({
       mode === "location" ? 1.2 : 2,
     );
 
-    if (showContextLabels) {
+    if (showContextLabels && mode === "site") {
       const label = getPlotLabel(feature);
-      const box = boundsOfFeature(feature);
-      if (label && box) {
-        const projectedMin = project([box.minX, box.minY]);
-        const projectedMax = project([box.maxX, box.maxY]);
-        const pixelWidth = Math.abs(projectedMax[0] - projectedMin[0]);
-        const pixelHeight = Math.abs(projectedMax[1] - projectedMin[1]);
+      const projectedBox = getProjectedRingBox(ring, project);
+      const center = project(polygonCentroid(ring));
 
-        // Suppress labels that cannot fit inside their polygon. This prevents
-        // the dense text collisions visible in the previous PDF.
-        if (pixelWidth >= 42 && pixelHeight >= 25) {
-          const center = project(polygonCentroid(ring));
-          const fontSize = Math.max(16, Math.min(25, pixelWidth * 0.18));
-          ctx.fillStyle = "#334a72";
-          ctx.font = `600 ${fontSize}px Arial`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(label, center[0], center[1], Math.max(28, pixelWidth - 8));
-        }
-      }
+      drawCanvasLabel(
+        ctx,
+        label,
+        center[0],
+        center[1],
+        projectedBox.width * 0.72,
+        projectedBox.height * 0.72,
+        {
+          maxFontSize: 22,
+          minFontSize: 8,
+          fontWeight: 600,
+          fillStyle: "#294474",
+        },
+      );
     }
   });
 
@@ -710,24 +858,8 @@ export const createPlanCanvas = async ({
   );
 
   const selectedCenter = project(polygonCentroid(selectedRing));
-  const selectedBox = boundsOfFeature(selectedFeature);
-  const selectedProjectedMin = selectedBox
-    ? project([selectedBox.minX, selectedBox.minY])
-    : selectedCenter;
-  const selectedProjectedMax = selectedBox
-    ? project([selectedBox.maxX, selectedBox.maxY])
-    : selectedCenter;
-  const selectedPixelWidth = Math.max(
-    1,
-    Math.abs(selectedProjectedMax[0] - selectedProjectedMin[0]),
-  );
-  const selectedPixelHeight = Math.max(
-    1,
-    Math.abs(selectedProjectedMax[1] - selectedProjectedMin[1]),
-  );
+  const selectedProjectedBox = getProjectedRingBox(selectedRing, project);
 
-  // In the location inset, use only a clean highlighted marker. Text inside a
-  // scheme-wide inset becomes unreadable and was overlapping the selected plot.
   if (mode === "location") {
     ctx.save();
     ctx.fillStyle = "#0637d9";
@@ -739,64 +871,40 @@ export const createPlanCanvas = async ({
     ctx.stroke();
     ctx.restore();
   } else {
-    const plotLabel = firstValue(details.plotNo);
-    const areaLabel = firstValue(details.plotSize, details.plotArea);
-
-    const plotFont = Math.max(
-      25,
-      Math.min(54, selectedPixelWidth * 0.34, selectedPixelHeight * 0.26),
+    drawCanvasLabel(
+      ctx,
+      details.plotNo,
+      selectedCenter[0],
+      selectedCenter[1] - selectedProjectedBox.height * 0.09,
+      selectedProjectedBox.width * 0.62,
+      selectedProjectedBox.height * 0.34,
+      {
+        maxFontSize: 52,
+        minFontSize: 24,
+        fontWeight: 700,
+        fillStyle: "#173d82",
+      },
     );
-    const areaFont = Math.max(
-      17,
-      Math.min(34, selectedPixelWidth * 0.22, selectedPixelHeight * 0.16),
+
+    drawCanvasLabel(
+      ctx,
+      firstValue(details.plotSize, details.plotArea),
+      selectedCenter[0],
+      selectedCenter[1] + selectedProjectedBox.height * 0.17,
+      selectedProjectedBox.width * 0.80,
+      selectedProjectedBox.height * 0.22,
+      {
+        maxFontSize: 28,
+        minFontSize: 14,
+        fontWeight: 600,
+        fillStyle: "#202020",
+      },
     );
-
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.lineJoin = "round";
-
-    if (plotLabel) {
-      ctx.font = `700 ${plotFont}px Arial`;
-      ctx.lineWidth = Math.max(4, plotFont * 0.12);
-      ctx.strokeStyle = "rgba(255,255,255,0.96)";
-      ctx.strokeText(
-        String(plotLabel),
-        selectedCenter[0],
-        selectedCenter[1] - areaFont * 0.48,
-        selectedPixelWidth * 0.72,
-      );
-      ctx.fillStyle = "#173d82";
-      ctx.fillText(
-        String(plotLabel),
-        selectedCenter[0],
-        selectedCenter[1] - areaFont * 0.48,
-        selectedPixelWidth * 0.72,
-      );
-    }
-
-    if (areaLabel) {
-      ctx.font = `600 ${areaFont}px Arial`;
-      ctx.lineWidth = Math.max(3, areaFont * 0.12);
-      ctx.strokeStyle = "rgba(255,255,255,0.96)";
-      ctx.strokeText(
-        String(areaLabel),
-        selectedCenter[0],
-        selectedCenter[1] + plotFont * 0.52,
-        selectedPixelWidth * 0.82,
-      );
-      ctx.fillStyle = "#222222";
-      ctx.fillText(
-        String(areaLabel),
-        selectedCenter[0],
-        selectedCenter[1] + plotFont * 0.52,
-        selectedPixelWidth * 0.82,
-      );
-    }
   }
 
-  if (showDimensions) {
-    selectedRing.forEach((point, index) => {
-      const next = selectedRing[(index + 1) % selectedRing.length];
+  if (showDimensions && mode === "site") {
+    dimensionRing.forEach((point, index) => {
+      const next = dimensionRing[(index + 1) % dimensionRing.length];
       const a = project(point);
       const b = project(next);
       const midX = (a[0] + b[0]) / 2;
@@ -807,16 +915,16 @@ export const createPlanCanvas = async ({
       if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
       const dimension = formatFeet(distanceMeters(point, next));
 
-      // Place dimensions outside the plot rather than over its centre label.
       const length = Math.max(Math.hypot(dx, dy), 1);
       const nx = -dy / length;
       const ny = dx / length;
-      const polygonCenter = selectedCenter;
       const towardCenter =
-        (polygonCenter[0] - midX) * nx + (polygonCenter[1] - midY) * ny;
+        (selectedCenter[0] - midX) * nx + (selectedCenter[1] - midY) * ny;
       const outsideDirection = towardCenter > 0 ? -1 : 1;
-      const offset = mode === "location" ? 12 : 34;
-      const dimensionFont = mode === "location" ? 17 : 21;
+
+      const sidePixelLength = Math.hypot(dx, dy);
+      const dimensionFont = Math.max(15, Math.min(21, sidePixelLength * 0.16));
+      const offset = Math.max(29, dimensionFont * 1.65);
 
       ctx.save();
       ctx.translate(
@@ -828,35 +936,45 @@ export const createPlanCanvas = async ({
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.lineJoin = "round";
-      ctx.lineWidth = Math.max(4, dimensionFont * 0.18);
-      ctx.strokeStyle = "rgba(255,255,255,0.98)";
+      ctx.lineWidth = Math.max(4.5, dimensionFont * 0.22);
+      ctx.strokeStyle = "rgba(255,255,255,0.99)";
       ctx.strokeText(dimension, 0, 0);
-      ctx.fillStyle = "#222222";
+      ctx.fillStyle = "#161616";
       ctx.fillText(dimension, 0, 0);
       ctx.restore();
     });
   }
 
-  if (showVertexLabels) {
-    selectedRing.slice(0, 8).forEach((point, index) => {
+  if (showVertexLabels && mode === "site") {
+    const cornerCenter = project(polygonCentroid(dimensionRing));
+
+    dimensionRing.slice(0, 8).forEach((point, index) => {
       const [x, y] = project(point);
+      const vx = x - cornerCenter[0];
+      const vy = y - cornerCenter[1];
+      const vectorLength = Math.max(Math.hypot(vx, vy), 1);
+      const labelDistance = 22;
+      const labelX = x + (vx / vectorLength) * labelDistance;
+      const labelY = y + (vy / vectorLength) * labelDistance;
+
       ctx.fillStyle = "#20c63a";
       ctx.beginPath();
-      ctx.arc(x, y, mode === "location" ? 7 : 10, 0, Math.PI * 2);
+      ctx.arc(x, y, 9, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = "#07580f";
       ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.fillStyle = "#8a2e17";
-      ctx.font = `700 ${mode === "location" ? 17 : 20}px Arial`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.lineJoin = "round";
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = "rgba(255,255,255,0.98)";
+
       const vertexLabel = String.fromCharCode(65 + index);
-      ctx.strokeText(vertexLabel, x, y - 15);
-      ctx.fillText(vertexLabel, x, y - 15);
+      ctx.font = "700 18px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "rgba(255,255,255,0.99)";
+      ctx.strokeText(vertexLabel, labelX, labelY);
+      ctx.fillStyle = "#8a2e17";
+      ctx.fillText(vertexLabel, labelX, labelY);
     });
   }
 
@@ -946,7 +1064,7 @@ const wgs84ToUtm = (lng, lat) => {
 };
 
 export const getCornerCoordinates = (geometry) =>
-  getGeometryRing(geometry)
+  simplifyPlotRing(getGeometryRing(geometry))
     .slice(0, 8)
     .map((coord, index) => {
       const lng = Number(coord[0]);
