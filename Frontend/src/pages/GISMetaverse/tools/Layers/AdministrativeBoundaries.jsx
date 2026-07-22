@@ -131,6 +131,34 @@ export default function AdministrativeBoundaries({
     setAdminBoundaryVisibility?.((prev) => ({ ...prev, [key]: visible }));
   };
 
+  useEffect(() => {
+    if (!map) return undefined;
+
+    const showNotifiedPhasesOnly = () => {
+      // The intro animation finishes on the notified phases layer.
+      // Keep the regular RUDA Notified Boundary switched off.
+      LAYERS.rudaNotifiedBoundary.setVisibility(map, false);
+
+      setLocalVisibility((prev) => ({
+        ...prev,
+        rudaNotifiedBoundary: false,
+        rudaPhasesBoundary: true,
+      }));
+
+      setAdminBoundaryVisibility?.((prev) => ({
+        ...prev,
+        rudaNotifiedBoundary: false,
+        rudaPhasesBoundary: true,
+      }));
+    };
+
+    map.on("show-notified-phases-only", showNotifiedPhasesOnly);
+
+    return () => {
+      map.off("show-notified-phases-only", showNotifiedPhasesOnly);
+    };
+  }, [map, setAdminBoundaryVisibility]);
+
   const fetchLayer = async (key) => {
     if (cache.current[key]) return cache.current[key];
 

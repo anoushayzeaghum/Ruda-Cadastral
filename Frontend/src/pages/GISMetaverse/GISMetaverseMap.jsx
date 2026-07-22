@@ -14,6 +14,7 @@ import {
   getSewagePointsGeoJSON,
   getCameraLocationsGeoJSON,
   getRudaGeoJSON,
+  getRudaNotifiedPhasesBoundaryGeoJSON,
   getRudaProposedRoadsGeoJSON,
   getGeodeticNetworkGeoJSON,
 } from "../../services/metaverseApi";
@@ -55,10 +56,11 @@ import {
 } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/AdministrativeBoundaryLayer";
 import { addGeodeticNetworkLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/GeodeticLayer";
 import {
-  DEFAULT_RUDA_PLANNING_STYLE,
-  addOrUpdateRudaPlanningBoundary,
-  setRudaPlanningBoundaryVisibility,
-} from "./tools/Layers/LayerManager/AdministrativeLayers/RudaPlanningBoundaryLayer";
+  DEFAULT_NOTIFIED_PHASES_STYLE,
+  addOrUpdateNotifiedPhasesBoundary,
+  setNotifiedPhasesBoundaryVisibility,
+} from "./tools/Layers/LayerManager/AdministrativeLayers/NotifiedPhasesBoundaryLayer";
+import { setRudaNotifiedBoundaryVisibility } from "./tools/Layers/LayerManager/AdministrativeLayers/RudaNotifiedBoundaryLayer";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -325,12 +327,12 @@ export default function GISMetaverseMap({
     if (!map) return;
 
     if (adminBoundaryVisibility?.rudaPhasesBoundary) {
-      const data = await getRudaGeoJSON();
-      addOrUpdateRudaPlanningBoundary(map, data, {
-        ...DEFAULT_RUDA_PLANNING_STYLE,
+      const data = await getRudaNotifiedPhasesBoundaryGeoJSON();
+      addOrUpdateNotifiedPhasesBoundary(map, data, {
+        ...DEFAULT_NOTIFIED_PHASES_STYLE,
         opacity:
           adminBoundaryVisibility?.rudaPhasesBoundaryOpacity ??
-          DEFAULT_RUDA_PLANNING_STYLE.opacity,
+          DEFAULT_NOTIFIED_PHASES_STYLE.opacity,
       });
     }
 
@@ -358,7 +360,7 @@ export default function GISMetaverseMap({
       addGeodeticNetworkLayer(map, data);
     }
 
-    setRudaPlanningBoundaryVisibility(
+    setNotifiedPhasesBoundaryVisibility(
       map,
       !!adminBoundaryVisibility?.rudaPhasesBoundary,
     );
@@ -586,16 +588,16 @@ export default function GISMetaverseMap({
         clearIntroBoundaryLayer(map);
 
         // Open the exact layer used by:
-        // Layers > Administrative > RUDA Phases Boundary.
-        const rudaPhasesBoundary = await getRudaGeoJSON();
+        // Layers > Administrative > RUDA Phases Boundary (notified phases table).
+        const rudaPhasesBoundary = await getRudaNotifiedPhasesBoundaryGeoJSON();
 
         if (cancelled) return;
 
-        addOrUpdateRudaPlanningBoundary(map, rudaPhasesBoundary, {
-          ...DEFAULT_RUDA_PLANNING_STYLE,
+        addOrUpdateNotifiedPhasesBoundary(map, rudaPhasesBoundary, {
+          ...DEFAULT_NOTIFIED_PHASES_STYLE,
           opacity:
             adminBoundaryVisibility?.rudaPhasesBoundaryOpacity ??
-            DEFAULT_RUDA_PLANNING_STYLE.opacity,
+            DEFAULT_NOTIFIED_PHASES_STYLE.opacity,
         });
 
         // Keep the older RUDA boundary implementations switched off.
@@ -613,7 +615,12 @@ export default function GISMetaverseMap({
           false,
         );
 
-        setRudaPlanningBoundaryVisibility(map, true);
+        // The intro must end with only RUDA Notified Phase Boundary visible.
+        setRudaNotifiedBoundaryVisibility(map, false);
+        setNotifiedPhasesBoundaryVisibility(map, true);
+
+        // Synchronize the Administrative panel checkboxes/state.
+        map.fire("show-notified-phases-only");
 
         await smoothFitGeoJSON(map, rudaPhasesBoundary, {
           duration: 700,
@@ -629,13 +636,14 @@ export default function GISMetaverseMap({
         clearIntroBoundaryLayer(map);
 
         try {
-          const rudaPhasesBoundary = await getRudaGeoJSON();
+          const rudaPhasesBoundary =
+            await getRudaNotifiedPhasesBoundaryGeoJSON();
 
-          addOrUpdateRudaPlanningBoundary(map, rudaPhasesBoundary, {
-            ...DEFAULT_RUDA_PLANNING_STYLE,
+          addOrUpdateNotifiedPhasesBoundary(map, rudaPhasesBoundary, {
+            ...DEFAULT_NOTIFIED_PHASES_STYLE,
             opacity:
               adminBoundaryVisibility?.rudaPhasesBoundaryOpacity ??
-              DEFAULT_RUDA_PLANNING_STYLE.opacity,
+              DEFAULT_NOTIFIED_PHASES_STYLE.opacity,
           });
 
           setLayerVisibility(
@@ -652,7 +660,9 @@ export default function GISMetaverseMap({
             false,
           );
 
-          setRudaPlanningBoundaryVisibility(map, true);
+          setRudaNotifiedBoundaryVisibility(map, false);
+          setNotifiedPhasesBoundaryVisibility(map, true);
+          map.fire("show-notified-phases-only");
 
           await smoothFitGeoJSON(map, rudaPhasesBoundary, {
             duration: 700,
@@ -661,7 +671,7 @@ export default function GISMetaverseMap({
           });
         } catch (rudaPhasesError) {
           console.error(
-            "[GISMetaverseMap] RUDA Phases Boundary intro load error",
+            "[GISMetaverseMap] RUDA Notified Phase Boundary intro load error",
             rudaPhasesError,
           );
         }
