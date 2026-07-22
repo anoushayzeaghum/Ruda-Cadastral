@@ -14,6 +14,7 @@ from .RudaBoundary import *
 from .UserView import *
 
 from .SquareView import *   
+from .RudaSquare import *
 from .AcreView import *
 from .FieldPointsView import *
 from .GeodeticNetworkView import *
@@ -47,35 +48,7 @@ from .RudaMasterPlan.MpPrincipleZoningView import *
 from .RudaMasterPlan.ExistingForestView import *
 from .RudaMasterPlan.RudaPlanningBoundaryView import *
 from .RudaMasterPlan.ProposedRoadNetworkView import *
-
-from .RudaMasterPlan.BranchCanalView import *
-from .RudaMasterPlan.DistributaryView import *
-from .RudaMasterPlan.ExistingDrainsView import *
-from .RudaMasterPlan.IrrigationNetworkView import *
-from .RudaMasterPlan.KatarBandWWTPView import *
-from .RudaMasterPlan.LinkCanalView import *
-from .RudaMasterPlan.ProposedWWTPView import *
 from .RudaMasterPlan.SWTPSiteView import *
 from .RudaMasterPlan.WWTPSitesView import *
-
-from .RudaMasterPlan.AbdulHakeemMotorwayM3 import *
-from .RudaMasterPlan.HardoSohalMuslimRoad import *
-from .RudaMasterPlan.JinnahAvenue import *
-from .RudaMasterPlan.KalaKhataiInterchange import *
-from .RudaMasterPlan.KatarBundRoad import *
-from .RudaMasterPlan.LahoreBypass import *
-from .RudaMasterPlan.SialkotMotorway import *
 from .RudaMasterPlan.TransportationRoads import *
-from .RudaMasterPlan.LahoreRingRoadView import *
-
-from .RudaMasterPlan.BridgesView import *
-from .RudaMasterPlan.GanjaKalanTruckStandView import *
-from .RudaMasterPlan.LahoreRapidMassTransitView import *
-from .RudaMasterPlan.OrangeTrackView import *
-from .RudaMasterPlan.RailwayLineView import *
-from .RudaMasterPlan.RailwayStationsView import *
-from .RudaMasterPlan.HudiaraDrainView import *
-
 from .RudaMasterPlan.LahoreTransportationRoadView import *
-
-from .RudaSquare import *

@@ -1,4 +1,0 @@
-from .CreateJinnahAvenueView import CreateJinnahAvenueView
-from .UpdateJinnahAvenueView import UpdateJinnahAvenueView
-from .DeleteJinnahAvenueView import DeleteJinnahAvenueView
-from .ListJinnahAvenueView import ListJinnahAvenueView

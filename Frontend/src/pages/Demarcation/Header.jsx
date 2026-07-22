@@ -34,7 +34,7 @@ export default function Header({
 
           {/* Title */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <h1 className="whitespace-nowrap text-lg font-normal tracking-wide sm:text-3xl">
+            <h1 className="truncate text-sm font-normal tracking-wide sm:text-xl md:text-2xl">
               Plot Information System
             </h1>
           </div>
