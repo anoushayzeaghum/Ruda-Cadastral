@@ -47,6 +47,7 @@ export default function Demarcation() {
   });
 
   const [loadedPlotsGeojson, setLoadedPlotsGeojson] = useState(null);
+  const [reportContextGeojson, setReportContextGeojson] = useState(null);
   const [selectedPlot, setSelectedPlot] = useState(null);
 
   const landUseSummary = useMemo(
@@ -55,45 +56,63 @@ export default function Demarcation() {
   );
 
   const handleFiltersChange = (partial) => {
-    setFilters((prev) => ({ ...prev, ...partial }));
+    setFilters((previous) => ({ ...previous, ...partial }));
   };
 
   const handlePlotSelect = useCallback((feature) => {
     setSelectedPlot(feature || null);
     const props = feature?.properties || {};
-    setFilters((prev) => ({
-      ...prev,
-      plotNo: props.plot_no ? String(props.plot_no) : prev.plotNo,
+    setFilters((previous) => ({
+      ...previous,
+      plotNo: props.plot_no ? String(props.plot_no) : previous.plotNo,
       selectedParcelNumber: props.plot_no ? String(props.plot_no) : "",
     }));
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-[#f4f4f4] font-sans text-[#4a4a4a] overflow-hidden">
+    <div className="flex h-screen min-h-screen flex-col overflow-hidden bg-[#f4f4f4] font-sans text-[#4a4a4a]">
       <Header
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         sidebarOpen={sidebarOpen}
-        toggleSidebar={() => setSidebarOpen((prev) => !prev)}
+        toggleSidebar={() => setSidebarOpen((previous) => !previous)}
       />
 
-      <div className="p-3 flex-1 overflow-hidden">
-        <div className="grid grid-cols-12 gap-3 h-full">
-          <DemarcationMap
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <DemarcationMap
+          filters={filters}
+          onParcelSelect={handlePlotSelect}
+          onFeaturesLoaded={setLoadedPlotsGeojson}
+          onContextFeaturesLoaded={setReportContextGeojson}
+        />
+
+        <div
+          className="absolute left-1/2 top-2 z-30 -translate-x-1/2 sm:top-4"
+          style={{ width: "calc(100vw - 24px)", maxWidth: "820px" }}
+        >
+          <SpatialQuery
             filters={filters}
-            onParcelSelect={handlePlotSelect}
-            onFeaturesLoaded={setLoadedPlotsGeojson}
+            onFiltersChange={handleFiltersChange}
           />
+        </div>
 
-          <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3 min-h-0">
-            <LandUseBreakdown items={landUseSummary} selectedProjectName={filters.projectName} />
-            <PlotDetails parcel={selectedPlot} filters={filters} />
-          </div>
+        <div className="absolute bottom-2 left-2 z-20 w-[230px] max-w-[calc(100vw-16px)] sm:bottom-4 sm:left-4 sm:w-[360px]">
+          <PlotDetails
+            parcel={selectedPlot}
+            filters={filters}
+            contextGeojson={reportContextGeojson || loadedPlotsGeojson}
+          />
+        </div>
 
-          <div className="col-span-12 lg:col-span-3 xl:col-span-3 flex flex-col gap-3 min-h-0">
-            <SpatialQuery filters={filters} onFiltersChange={handleFiltersChange} />
-            <Legend items={landUseSummary} selectedParcelNumber={filters.selectedParcelNumber} />
-          </div>
+        <div className="absolute bottom-2 right-2 z-20 flex w-[210px] max-w-[calc(100vw-16px)] flex-col gap-2 sm:bottom-4 sm:right-4 sm:w-[320px] sm:gap-3">
+          <LandUseBreakdown
+            items={landUseSummary}
+            selectedProjectName={filters.projectName}
+          />
+          <Legend
+            items={landUseSummary}
+            selectedParcelNumber={filters.selectedParcelNumber}
+          />
         </div>
       </div>
     </div>

@@ -2,17 +2,12 @@ import { LogOut, Home } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 import { useNavigate } from "react-router-dom";
 
-const headerBackgroundStyle = {
-  backgroundImage: [
-    "linear-gradient(90deg, rgba(20, 83, 45, 0.94) 0%, rgba(22, 101, 52, 0.82) 38%, rgba(21, 128, 61, 0.72) 65%, rgba(20, 83, 45, 0.78) 100%)",
-    "url('/ruda_bg.png')",
-  ].join(", "),
-  backgroundSize: "cover",
-  backgroundPosition: "center center",
-  backgroundRepeat: "no-repeat",
-};
-
-export default function Header() {
+export default function Header({
+  darkMode,
+  setDarkMode,
+  sidebarOpen,
+  toggleSidebar,
+} = {}) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -24,58 +19,56 @@ export default function Header() {
   };
 
   return (
-    <div
-      className="relative w-full text-white px-6 py-2 shadow-md"
-      style={headerBackgroundStyle}
-    >
+    <div className="relative z-40 w-full bg-[#0f3d2e] px-3 py-2 text-white shadow-md sm:px-6">
       <div className="relative z-10 flex items-center justify-between">
         {/* LEFT SECTION */}
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           {/* Circular Logo */}
-          <div className="bg-white rounded-full p-1 flex items-center justify-center">
+          <div className="flex shrink-0 items-center justify-center rounded-full bg-white p-1">
             <img
               src={rudaFirmLogo}
               alt="RLIMS"
-              className="h-10 w-10 object-contain"
+              className="h-7 w-7 object-contain sm:h-10 sm:w-10"
             />
           </div>
 
           {/* Title */}
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-normal tracking-wide">RCMS</h1>
-
-            <span className="text-white/60 text-xl">|</span>
-
-            <p className="text-lg font-normal text-white/90">
-              RUDA Cadastral Management System
-            </p>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <h1 className="whitespace-nowrap text-lg font-normal tracking-wide sm:text-3xl">
+              Plot Information System
+            </h1>
           </div>
         </div>
 
         {/* RIGHT SECTION */}
-        <div className="flex items-center gap-3">
-          {/* Home Button */}
-          <button
-            onClick={() => navigate("/")}
-            className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-md flex items-center justify-center transition"
-            aria-label="Go to landing page"
+        <div className="flex shrink-0 items-center gap-2">
+          <IconButton
             title="Home"
-          >
-            <Home size={18} />
-          </button>
+            onClick={() => navigate("/")}
+            icon={<Home size={18} />}
+          />
 
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="bg-white/15 hover:bg-white/25 text-white px-3 py-2 rounded-md flex items-center gap-2 transition"
-            aria-label="Logout"
+          <IconButton
             title="Logout"
-          >
-            <LogOut size={18} />
-            <span className="text-sm font-medium">Logout</span>
-          </button>
+            onClick={handleLogout}
+            icon={<LogOut size={18} />}
+          />
         </div>
       </div>
     </div>
+  );
+}
+
+function IconButton({ title, icon, onClick }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/25 bg-white/15 text-white shadow-sm transition hover:border-white/40 hover:bg-white/25"
+    >
+      {icon}
+    </button>
   );
 }

@@ -7,8 +7,9 @@ import {
   VECTOR_LABEL_FIELDS,
 } from "./layerConfig";
 
-export const addKhasraLayerStyles = ({ map, geojson, opacity }) => {
+export const addKhasraLayerStyles = ({ map, geojson, opacity, color }) => {
   const khasraTheme = VECTOR_LAYER_THEME.khasra;
+  const statusColor = color || khasraTheme.line;
 
   map.addSource(KHASRA_SOURCE, {
     type: "geojson",
@@ -20,9 +21,9 @@ export const addKhasraLayerStyles = ({ map, geojson, opacity }) => {
     type: "fill",
     source: KHASRA_SOURCE,
     paint: {
-      "fill-color": khasraTheme.fill,
+      "fill-color": statusColor,
       "fill-opacity": khasraTheme.fillOpacity * opacity,
-      "fill-outline-color": khasraTheme.line,
+      "fill-outline-color": statusColor,
     },
   });
 
@@ -31,7 +32,7 @@ export const addKhasraLayerStyles = ({ map, geojson, opacity }) => {
     type: "line",
     source: KHASRA_SOURCE,
     paint: {
-      "line-color": khasraTheme.line,
+      "line-color": statusColor,
       "line-width": khasraTheme.lineWidth,
       "line-opacity": 0.95,
     },
@@ -51,7 +52,7 @@ export const addKhasraLayerStyles = ({ map, geojson, opacity }) => {
       "text-optional": true,
     },
     paint: {
-      "text-color": khasraTheme.label,
+      "text-color": statusColor,
       "text-halo-color": "#ffffff",
       "text-halo-width": 1.2,
       "text-halo-blur": 0.15,

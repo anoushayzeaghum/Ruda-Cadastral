@@ -13,6 +13,18 @@ password: postgres
 "GDAL_LIBRARY_PATH": "C:/Program Files/QGIS 3.44.1/bin/gdal311.dll",
 "GEOS_LIBRARY_PATH": "C:/Program Files/QGIS 3.44.1/bin/geos_c.dll"
 
+
+**secrets.json**
+{
+  "SECRET_KEY": "M3zW2IKDHQcPNPhi7rrjHoGRECu3NuE81y1xfpGcqkiCLnhkA5bXF3YqIyJNWXgN23s",
+  "EMAIL_HOST_PASSWORD": "",
+  "DB_NAME": "ruda_cadastral",
+  "DB_USER": "postgres",
+  "DB_PASSWORD": "Postgres",
+  "GDAL_LIBRARY_PATH": "/usr/lib/x86_64-linux-gnu/libgdal.so",
+  "GEOS_LIBRARY_PATH": "/usr/lib/x86_64-linux-gnu/libgeos_c.so"
+}
+
 **Make Migration Command**
 python manage.py makemigrations --settings=server.settings.local
 

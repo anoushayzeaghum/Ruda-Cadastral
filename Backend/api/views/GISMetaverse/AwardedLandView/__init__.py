@@ -1,0 +1,4 @@
+from .CreateAwardedLandView import CreateAwardedLandView
+from .DeleteAwardedLandView import DeleteAwardedLandView
+from .ListAwardedLandView import ListAwardedLandView
+from .UpdateAwardedLandView import UpdateAwardedLandView

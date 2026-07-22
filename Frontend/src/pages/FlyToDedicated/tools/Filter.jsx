@@ -1,10 +1,99 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import { X } from "lucide-react";
 import {
   getBlocks,
   getPlotOptions,
   getProjects,
 } from "../../../services/metaverseApi";
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+
+const normalizeMatchValue = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+const getFirstAvailableValue = (props = {}, keys = []) => {
+  for (const key of keys) {
+    const value = props?.[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return value;
+    }
+  }
+
+  return "";
+};
+
+const hasExpectedValue = (props = {}, keys = [], expected) => {
+  if (!expected) return true;
+
+  const expectedValue = normalizeMatchValue(expected);
+
+  return keys.some(
+    (key) => normalizeMatchValue(props?.[key]) === expectedValue,
+  );
+};
+
+const getPlotId = (props = {}, fallbackId) =>
+  getFirstAvailableValue(props, [
+    "gid",
+    "id",
+    "plot_id",
+    "plotId",
+    "plot_gid",
+    "objectid",
+    "OBJECTID",
+  ]) ||
+  fallbackId ||
+  "";
+
+const normalizePlotResponse = (raw) => {
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw?.features)) return raw.features;
+  if (Array.isArray(raw?.results)) return raw.results;
+  if (Array.isArray(raw?.data)) return raw.data;
+  return [];
+};
+
+const findMatchingPlot = (features = [], selected = {}) =>
+  features.find((feature) => {
+    const props = feature?.properties || feature || {};
+
+    const projectValue = getFirstAvailableValue(props, [
+      "project_id",
+      "projectId",
+      "project_gid",
+    ]);
+
+    return (
+      (!selected.projectId ||
+        !projectValue ||
+        normalizeMatchValue(projectValue) ===
+          normalizeMatchValue(selected.projectId)) &&
+      hasExpectedValue(
+        props,
+        ["block", "block_name", "blockName", "name", "block_no", "blockNo"],
+        selected.block,
+      ) &&
+      hasExpectedValue(
+        props,
+        ["type", "plot_type", "plotType", "land_use", "landuse"],
+        selected.plotType,
+      ) &&
+      hasExpectedValue(
+        props,
+        ["plot_area", "area", "plotArea", "area_marla"],
+        selected.area,
+      ) &&
+      hasExpectedValue(
+        props,
+        ["plot_no", "plotNo", "plot_number", "plotNumber"],
+        selected.plotNo,
+      )
+    );
+  });
 
 /* ---------------- utils ---------------- */
 const normalizeSortValue = (value) => String(value ?? "").trim();
@@ -76,18 +165,18 @@ export default function FlyToFilter({ filters, onApply, onClose }) {
   });
 
   /* ---------------- load projects ---------------- */
-useEffect(() => {
-  getProjects()
-    .then((data) =>
-      setProjects(
-        naturalSort(
-          data,
-          (p) => p.brief_name || p.name || p.project_name || p.id
-        )
+  useEffect(() => {
+    getProjects()
+      .then((data) =>
+        setProjects(
+          naturalSort(
+            data,
+            (p) => p.brief_name || p.name || p.project_name || p.id,
+          ),
+        ),
       )
-    )
-    .catch(console.error);
-}, []);
+      .catch(console.error);
+  }, []);
 
   /* ---------------- load blocks ---------------- */
   useEffect(() => {
@@ -97,104 +186,155 @@ useEffect(() => {
     }
 
     getBlocks(selected.projectId)
-      .then((data) =>
-        setBlocks(
-          naturalSort(
-            data,
-            (b) => b.block || b.name
-          )
-        )
-      )
+      .then((data) => setBlocks(naturalSort(data, (b) => b.block || b.name)))
       .catch(console.error);
   }, [selected.projectId]);
 
   /* ---------------- load cascading options ---------------- */
-/* ---------------- load cascading options ---------------- */
-useEffect(() => {
-  if (!selected.projectId) {
-    setOptions({ areas: [], plotTypes: [], plotNos: [] });
-    return;
-  }
-
-  const loadOptions = async () => {
-    try {
-      // Plot Type depends on Project + Block
-      const plotTypeRes = await getPlotOptions({
-        project_id: selected.projectId,
-        block: selected.block || undefined,
-      });
-
-      // Area depends on Project + Block + Plot Type
-      const areaRes = await getPlotOptions({
-        project_id: selected.projectId,
-        block: selected.block || undefined,
-        type: selected.plotType || undefined,
-      });
-
-      // Plot No depends on Project + Block + Plot Type + Area
-      const plotNoRes = await getPlotOptions({
-        project_id: selected.projectId,
-        block: selected.block || undefined,
-        type: selected.plotType || undefined,
-        plot_area: selected.area || undefined,
-      });
-
-      setOptions({
-        plotTypes: uniqueSorted(plotTypeRes?.plotTypes || []),
-        areas: uniqueSorted(areaRes?.areas || []),
-        plotNos: uniqueSorted(plotNoRes?.plotNos || []),
-      });
-    } catch (err) {
-      console.error(err);
-      setOptions({
-        areas: [],
-        plotTypes: [],
-        plotNos: [],
-      });
+  /* ---------------- load cascading options ---------------- */
+  useEffect(() => {
+    if (!selected.projectId) {
+      setOptions({ areas: [], plotTypes: [], plotNos: [] });
+      return;
     }
-  };
 
-  loadOptions();
-}, [
-  selected.projectId,
-  selected.block,
-  selected.plotType,
-  selected.area,
-]);
+    const loadOptions = async () => {
+      try {
+        // Plot Type depends on Project + Block
+        const plotTypeRes = await getPlotOptions({
+          project_id: selected.projectId,
+          block: selected.block || undefined,
+        });
+
+        // Area depends on Project + Block + Plot Type
+        const areaRes = await getPlotOptions({
+          project_id: selected.projectId,
+          block: selected.block || undefined,
+          type: selected.plotType || undefined,
+        });
+
+        // Plot No depends on Project + Block + Plot Type + Area
+        const plotNoRes = await getPlotOptions({
+          project_id: selected.projectId,
+          block: selected.block || undefined,
+          type: selected.plotType || undefined,
+          plot_area: selected.area || undefined,
+        });
+
+        setOptions({
+          plotTypes: uniqueSorted(plotTypeRes?.plotTypes || []),
+          areas: uniqueSorted(areaRes?.areas || []),
+          plotNos: uniqueSorted(plotNoRes?.plotNos || []),
+        });
+      } catch (err) {
+        console.error(err);
+        setOptions({
+          areas: [],
+          plotTypes: [],
+          plotNos: [],
+        });
+      }
+    };
+
+    loadOptions();
+  }, [selected.projectId, selected.block, selected.plotType, selected.area]);
 
   /* ---------------- handle change ---------------- */
-const handleChange = (key, value) => {
-  setSelected((prev) => {
-    const next = { ...prev, [key]: value };
+  const handleChange = (key, value) => {
+    setSelected((prev) => {
+      const next = { ...prev, [key]: value };
 
-    if (key === "projectId") {
-      next.block = "";
-      next.plotType = "";
-      next.area = "";
-      next.plotNo = "";
+      if (key === "projectId") {
+        next.block = "";
+        next.plotType = "";
+        next.area = "";
+        next.plotNo = "";
+      }
+
+      if (key === "block") {
+        next.plotType = "";
+        next.area = "";
+        next.plotNo = "";
+      }
+
+      if (key === "plotType") {
+        next.area = "";
+        next.plotNo = "";
+      }
+
+      if (key === "area") {
+        next.plotNo = "";
+      }
+
+      return next;
+    });
+  };
+
+  const handleApply = async () => {
+    const fallbackPayload = {
+      ...selected,
+      selectedPlotId: "",
+      selectedPlotGid: "",
+      selectedPlotGeometry: null,
+      flyToPlotTrigger: Date.now(),
+    };
+
+    // If a specific plot is selected, resolve the same exact record data that
+    // AttributeTable sends: plot id, gid, and geometry. FlyToMap already uses
+    // these fields for zoom + marker + highlight.
+    if (!selected.projectId || !selected.plotNo) {
+      onApply?.(fallbackPayload);
+      return;
     }
 
-    if (key === "block") {
-      next.plotType = "";
-      next.area = "";
-      next.plotNo = "";
+    try {
+      const params = {
+        project_id: selected.projectId,
+        plot_no: selected.plotNo,
+      };
+
+      if (selected.block) params.block = selected.block;
+      if (selected.plotType) params.type = selected.plotType;
+      if (selected.area) params.plot_area = selected.area;
+
+      const res = await axios.get(`${API_BASE}/plot/`, { params });
+      const raw = res.data?.data || res.data || [];
+      const features = normalizePlotResponse(raw);
+      const matchedFeature =
+        findMatchingPlot(features, selected) || features[0];
+
+      if (!matchedFeature) {
+        onApply?.(fallbackPayload);
+        return;
+      }
+
+      const props = matchedFeature?.properties || matchedFeature || {};
+      const geometry = matchedFeature?.geometry || props.geometry || null;
+
+      onApply?.({
+        ...selected,
+        projectId: selected.projectId,
+        block:
+          getFirstAvailableValue(props, ["block", "block_name", "blockName"]) ||
+          selected.block,
+        plotType:
+          getFirstAvailableValue(props, ["type", "plot_type", "plotType"]) ||
+          selected.plotType,
+        area:
+          getFirstAvailableValue(props, ["plot_area", "area", "plotArea"]) ||
+          selected.area,
+        plotNo:
+          getFirstAvailableValue(props, ["plot_no", "plotNo", "plot_number"]) ||
+          selected.plotNo,
+        selectedPlotId: getPlotId(props, matchedFeature?.id),
+        selectedPlotGid: props?.gid || "",
+        selectedPlotGeometry: geometry,
+        flyToPlotTrigger: Date.now(),
+      });
+    } catch (err) {
+      console.error("FlyTo filter apply error:", err);
+      onApply?.(fallbackPayload);
     }
-
-    if (key === "plotType") {
-      next.area = "";
-      next.plotNo = "";
-    }
-
-    if (key === "area") {
-      next.plotNo = "";
-    }
-
-    return next;
-  });
-};
-
-  const handleApply = () => {
-    onApply?.(selected);
   };
 
   const handleClear = () => {
@@ -206,60 +346,68 @@ const handleChange = (key, value) => {
       plotNo: "",
     };
     setSelected(cleared);
-    onApply?.(cleared);
+    onApply?.({
+      ...cleared,
+      selectedPlotId: "",
+      selectedPlotGid: "",
+      selectedPlotGeometry: null,
+      flyToPlotTrigger: Date.now(),
+    });
   };
 
   /* ---------------- mapped options ---------------- */
-const projectOptions = naturalSort(
-  projects.map((p) => ({
-    value: String(p.gid || p.id),
-    label: p.brief_name || p.name || p.project_name,
-  })),
-  (p) => p.label
-);
+  const projectOptions = naturalSort(
+    projects.map((p) => ({
+      value: String(p.gid || p.id),
+      label: p.brief_name || p.name || p.project_name,
+    })),
+    (p) => p.label,
+  );
 
-const blockOptions = naturalSort(
-  blocks.map((b) => ({
-    value: String(b.block || b.name),
-    label: b.block || b.name,
-  })),
-  (b) => b.label
-);
+  const blockOptions = naturalSort(
+    blocks.map((b) => ({
+      value: String(b.block || b.name),
+      label: b.block || b.name,
+    })),
+    (b) => b.label,
+  );
 
-const plotTypeOptions = naturalSort(
-  options.plotTypes.map((t) => ({
-    value: t,
-    label: t,
-  })),
-  (t) => t.label
-);
+  const plotTypeOptions = naturalSort(
+    options.plotTypes.map((t) => ({
+      value: t,
+      label: t,
+    })),
+    (t) => t.label,
+  );
 
-const areaToMarla = (value) => {
-  const text = String(value || "").toLowerCase().trim();
+  const areaToMarla = (value) => {
+    const text = String(value || "")
+      .toLowerCase()
+      .trim();
 
-  const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
+    const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
 
-  if (text.includes("acre")) return number * 160;
-  if (text.includes("kanal")) return number * 20;
-  if (text.includes("marla")) return number;
+    if (text.includes("acre")) return number * 160;
+    if (text.includes("kanal")) return number * 20;
+    if (text.includes("marla")) return number;
 
-  return number;
-};
+    return number;
+  };
 
-const areaOptions = options.areas
-  .map((a) => ({
-    value: a,
-    label: a,
-  }))
-  .sort((a, b) => areaToMarla(a.label) - areaToMarla(b.label));
+  const areaOptions = options.areas
+    .map((a) => ({
+      value: a,
+      label: a,
+    }))
+    .sort((a, b) => areaToMarla(a.label) - areaToMarla(b.label));
 
-const plotNoOptions = naturalSort(
-  options.plotNos.map((p) => ({
-    value: p,
-    label: p,
-  })),
-  (p) => p.label
-);
+  const plotNoOptions = naturalSort(
+    options.plotNos.map((p) => ({
+      value: p,
+      label: p,
+    })),
+    (p) => p.label,
+  );
 
   /* ---------------- UI ---------------- */
   return (
@@ -273,7 +421,6 @@ const plotNoOptions = naturalSort(
       </div>
 
       <div className="p-3 space-y-2 text-xs">
-
         {/* PROJECT */}
         <SelectBox
           value={selected.projectId}
@@ -307,7 +454,7 @@ const plotNoOptions = naturalSort(
           options={areaOptions}
           placeholder="Select Area"
           disabled={!selected.projectId}
-        />        
+        />
 
         {/* PLOT NO */}
         <SelectBox

@@ -150,61 +150,127 @@ class TehsilSerializer(GeoFeatureModelSerializer):
 # Mauza Serializer
 # District → Tehsil → Mauza
 # --------------------------------------------------------
-
 class MauzaSerializer(GeoFeatureModelSerializer):
-    district_name = serializers.CharField(
-        source="district.name",
-        read_only=True
-    )
-
-    tehsil_name = serializers.CharField(
-        source="tehsil.name",
-        read_only=True
-    )
 
     class Meta:
         model = Mauza
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "dist_id",
+            "tehsil",
+            "tehsil_id",
+            "kc",
+            "kc_id",
+            "mauza",
+            "mauza_id",
+            "pc",
+            "pc_id",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+
+# --------------------------------------------------------
+# Ruda Mauza Serializer
+# District → Tehsil → Mauza
+# --------------------------------------------------------
+
+class RudaMauzaSerializer(GeoFeatureModelSerializer):
+    # Keep the old field names "district" and "tehsil", but read them from the
+    # raw FK id values to avoid unnecessary FK lookups during GeoJSON output.
+    district = serializers.IntegerField(
+        source="district_id",
+        read_only=True,
+        allow_null=True,
+    )
+
+    tehsil = serializers.IntegerField(
+        source="tehsil_id",
+        read_only=True,
+        allow_null=True,
+    )
+
+    district_name = serializers.SerializerMethodField()
+    tehsil_name = serializers.SerializerMethodField()
+
+    def get_district_name(self, obj):
+        try:
+            return obj.district.name if obj.district else obj.district_text
+        except Exception:
+            return obj.district_text
+
+    def get_tehsil_name(self, obj):
+        try:
+            return obj.tehsil.name if obj.tehsil else obj.tehsil_text
+        except Exception:
+            return obj.tehsil_text
+
+    class Meta:
+        model = RudaMauza
         geo_field = "geom"
         id_field = "mauza_id"
 
         fields = (
             "gid",
-            "district",       # FK value
-            "district_id",    # same value as dist_id column
+
+            # Raw shapefile text columns.
+            "district_text",
+            "tehsil_text",
+
+            # Existing FK/id fields used by the current API and frontend.
+            "district",
+            "district_id",
             "district_name",
 
-            "tehsil",         # FK value
-            "tehsil_id",      # same value as tehsil_id column
+            "tehsil",
+            "tehsil_id",
             "tehsil_name",
 
             "kc",
             "kc_id",
             "pc",
-            "pc_id",
+
             "mauza",
             "mauza_id",
+
+            # New Mauza shapefile columns.
+            "notified_b",
+            "proposed_b",
+            "new_ext",
+            "prepared_b",
+            "remarks",
+
             "geom",
         )
-
-
+        
 # --------------------------------------------------------
-# Khasra Serializer - New Format
+# Khasra Serializer
 # District → Tehsil → Mauza → Khasra
 # --------------------------------------------------------
 class KhasraSerializer(GeoFeatureModelSerializer):
+    district_name = serializers.CharField(
+        source="district",
+        read_only=True,
+        allow_null=True,
+    )
 
-    district_name = serializers.SerializerMethodField()
-    tehsil_name = serializers.SerializerMethodField()
-    mauza_name = serializers.SerializerMethodField()
+    tehsil_name = serializers.CharField(
+        source="tehsil",
+        read_only=True,
+        allow_null=True,
+    )
 
-    def get_district_name(self, obj):
-        return obj.district.name if obj.district else None
-
-    def get_tehsil_name(self, obj):
-        return obj.tehsil.name if obj.tehsil else None
-
-    def get_mauza_name(self, obj):
-        return obj.mauza.mauza if obj.mauza else None
+    mauza_name = serializers.CharField(
+        source="mauza",
+        read_only=True,
+        allow_null=True,
+    )
 
     class Meta:
         model = Khasra
@@ -213,8 +279,88 @@ class KhasraSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "join_shp",
 
+            # Administrative hierarchy
+            "district",
+            "dist_id",
+            "district_name",
+
+            "tehsil",
+            "tehsil_id",
+            "tehsil_name",
+
+            "kc",
+            "kc_id",
+
+            "pc",
+            "pc_id",
+
+            "mauza",
+            "mauza_id",
+            "mauza_name",
+
+            # Khasra attributes
+            "hadbust_no",
+            "asse_cir",
+            "type",
+            "karam",
+            "sq",
+            "kh",
+            "sk",
+            "join_shp",
+            "khasra_id",
+            "khewat_id",
+            "khatoni_no",
+            "dc_rate",
+            "remarks",
+            "b",
+
+            # Geometry
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+        
+# --------------------------------------------------------
+# Ruda Khasra Serializer - New Format
+# District → Tehsil → Mauza → Khasra
+# --------------------------------------------------------
+class RudaKhasraSerializer(GeoFeatureModelSerializer):
+
+    # The imported table already contains these names. Reading the text columns
+    # directly avoids three related-object accesses for every feature.
+    district_name = serializers.CharField(
+        source="district_text",
+        read_only=True,
+        allow_null=True,
+    )
+    tehsil_name = serializers.CharField(
+        source="tehsil_text",
+        read_only=True,
+        allow_null=True,
+    )
+    mauza_name = serializers.CharField(
+        source="mauza_text",
+        read_only=True,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = RudaKhasra
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+
+            # Raw shapefile text columns.
+            "district_text",
+            "tehsil_text",
+            "mauza_text",
+
+            # Existing FK/id fields used by the current API and frontend.
             "district_id",
             "tehsil_id",
             "mauza_id",
@@ -222,6 +368,11 @@ class KhasraSerializer(GeoFeatureModelSerializer):
             "district_name",
             "tehsil_name",
             "mauza_name",
+
+            "remarks",
+            "area_sqft",
+            "shape_leng",
+            "shape_area",
 
             "kc",
             "kc_id",
@@ -236,15 +387,17 @@ class KhasraSerializer(GeoFeatureModelSerializer):
             "kh",
             "sk",
 
+            "join_shp",
+
             "khasra_id",
             "khewat_id",
             "khatoni_no",
             "dc_rate",
-            "remarks",
             "b",
 
             "geom",
         )
+
 # --------------------------------------------------------
 # Society Serializer
 # District → Tehsil → Mauza → Society
@@ -536,7 +689,6 @@ class SquareSerializer(GeoFeatureModelSerializer):
             "pc",
             "pc_id",
             "sq",
-            "square_id",
             "layer",
             "geom",
         )
@@ -947,5 +1099,1022 @@ class WSPointSerializer(GeoFeatureModelSerializer):
             "name",
             "project_id",
             "project_name",
+            "geom",
+        )
+
+# -----------------------------------------------------------------------------------------------------------
+# ***RUDA LMASTER PLAN SERIALIZERS***
+# -----------------------------------------------------------------------------------------------------------
+
+# --------------------------------------------------------
+# Existing Forest Serializer
+# --------------------------------------------------------
+class ExistingForestSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ExistingForest
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "type",
+            "source",
+            "lu_type",
+            "status",
+            "comments",
+            "area_sqfee",
+            "area_acre",
+            "area_225ac",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# RUDA Mp Principle Zoning Serializer
+# --------------------------------------------------------
+class MpPrincipleZoningSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = MpPrincipleZoning
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "area225a",
+            "zoning_cat",
+            "area_sqft",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# City Level Service Serializer
+# --------------------------------------------------------
+class CityLevelServiceSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = CityLevelService
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "layer",
+            "gm_type",
+            "elevation",
+            "name",
+            "area_225ac",
+            "type",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Forest Boundary Serializer
+# --------------------------------------------------------
+class ForestBoundarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ForestBoundary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "f_zone",
+            "f_circle",
+            "f_div",
+            "f_name",
+            "gps_area",
+            "gross_area",
+            "f_type",
+            "legal_stat",
+            "shape_leng",
+            "shape_area",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Precient Boundary Serializer
+# --------------------------------------------------------
+class PrecientBoundarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = PrecientBoundary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "area_acre",
+            "phases",
+            "phases_new",
+            "shape_leng",
+            "shape_area",
+            "area_sqft",
+            "area_225ac",
+            "name",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# River Serializer
+# --------------------------------------------------------
+class RiverSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = River
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "layer",
+            "name",
+            "area_sqft",
+            "area_225ac",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# River Ravi Serializer
+# --------------------------------------------------------
+class RiverRaviSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RiverRavi
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "type",
+            "area",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# RUDA Jurisdiction Serializer
+# --------------------------------------------------------
+class RudaJurisdictionSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RudaJurisdiction
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "area_usacr",
+            "phases",
+            "districts",
+            "name",
+            "tehsils",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# City Level Service Points Serializer
+# --------------------------------------------------------
+class CityLevelServicePointsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = CityLevelServicePoints
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "layer",
+            "gm_type",
+            "name",
+            "area_225ac",
+            "type",
+            "orig_fid",
+            "elevation",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RUDA Planning Boundary Serializer
+# --------------------------------------------------------
+class RudaPlanningBoundarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RudaPlanningBoundary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "area_usacr",
+            "name",
+            "area_sqft",
+            "area_225ac",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Proposed Road Network Serializer
+# --------------------------------------------------------
+class ProposedRoadNetworkSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ProposedRoadNetwork
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "gm_layer",
+            "gm_type",
+            "elevation",
+            "layer",
+            "geom",
+        )
+
+# =================================================================================================
+# IMPORTED LAND TABLE SERIALIZERS
+# =================================================================================================
+
+# --------------------------------------------------------
+# State Land Serializer
+# DB table: stateland
+# --------------------------------------------------------
+class StateLandSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = StateLand
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
+            "khasra",
+            "sub_khasra",
+            "khasra_lab",
+            "remarks",
+            "state_land",
+            "area_sqft",
+            "date",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# RTW Alignment Serializer
+# DB table: rtwalignment
+# --------------------------------------------------------
+class RtwAlignmentSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RtwAlignment
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "package",
+            "length",
+            "area_sqft",
+            "area_ac225",
+            "date",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Possession Land Serializer
+# DB table: possessionland
+# --------------------------------------------------------
+class PossessionLandSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = PossessionLand
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
+            "khasra",
+            "khasra_lab",
+            "award_zone",
+            "projects",
+            "l_type",
+            "land_owner",
+            "lp_name",
+            "remarks",
+            "date",
+            "geom",
+        )
+
+
+# --------------------------------------------------------
+# Awarded Land Serializer
+# DB table: awardedland
+# --------------------------------------------------------
+class AwardedLandSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = AwardedLand
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
+            "khasra",
+            "sub_khasra",
+            "khasra_lab",
+            "agri_river",
+            "land_type",
+            "remarks",
+            "area_sqft",
+            "date",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RTW Package Serializer
+# DB table: rtwpackage
+# --------------------------------------------------------
+class RtwPackageSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RtwPackage
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "layer",
+            "map_name",
+            "name",
+            "package",
+            "area_acres",
+            "closed",
+            "label_pos",
+            "ruda_phase",
+            "area_sqkm",
+            "aaa",
+            "geom",
+        )
+
+#-----------------------------------------
+# Branch Canal Serializer
+#-----------------------------------------
+
+class BranchCanalSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = BranchCanal
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#-----------------------------------------
+# Distributary Serializer
+#-----------------------------------------
+class DistributarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Distributary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#---------------------------------------------
+# Existing Drains Serializer
+#---------------------------------------------
+class ExistingDrainsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ExistingDrains
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "kml_folder",
+            "length",
+            "shape_leng",
+            "geom",
+        )
+
+#---------------------------------------------
+# Irrigation Network Serializer
+#---------------------------------------------
+class IrrigationNetworkSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = IrrigationNetwork
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#----------------------------------------------
+# Katar Band WWTP Serializer
+#----------------------------------------------
+class KatarBandWWTPSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KatarBandWWTP
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "area",
+            "geom",
+        )
+
+#-----------------------------------------------
+# Link Canal Serializer
+#-----------------------------------------------
+class LinkCanalSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LinkCanal
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "imis_code",
+            "division",
+            "parent_ch",
+            "remarks",
+            "zone",
+            "circle",
+            "name",
+            "canal_type",
+            "gca",
+            "cca",
+            "designed_d",
+            "tail_rd",
+            "a_tail_g",
+            "a_tail_d",
+            "flow_type",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+#-----------------------------------------------
+# Proposed WWTP Serializer
+#-----------------------------------------------
+
+class ProposedWWTPSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ProposedWWTP
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "area",
+            "descriptio",
+            "geom",
+        )
+
+#-----------------------------------------------
+# SWTP Site Serializer
+#-----------------------------------------------
+class SWTPSiteSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = SWTPSite
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "id",
+            "name",
+            "sq_ft",
+            "marla",
+            "kanal",
+            "acres",
+            "geom",
+        )
+
+#-----------------------------------------------
+# WWTP Sites Serializer
+#-----------------------------------------------
+
+class WWTPSitesSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = WWTPSites
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "site_type",
+            "shape_leng",
+            "shape_area",
+            "created_us",
+            "created_da",
+            "last_edite",
+            "last_edi_1",
+            "area",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RTW Package Serializer
+# DB table: rtwpackage
+# --------------------------------------------------------
+
+class AbdulHakeemMotorwayM3Serializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = AbdulHakeemMotorwayM3
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "kml_style",
+            "tessellate",
+            "name_1",
+            "name_2",
+            "shape_leng",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RTW Package Serializer
+# DB table: rtwpackage
+# --------------------------------------------------------
+
+class HardoSohalMuslimRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = HardoSohalMuslimRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "row",
+            "category",
+            "name",
+            "length_km",
+            "remarks",
+            "kacha_pacc",
+            "shape_leng",
+            "geom",
+        )
+
+
+class JinnahAvenueSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = JinnahAvenue
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "row",
+            "category",
+            "name",
+            "length_km",
+            "remarks",
+            "kacha_pacc",
+            "shape_leng",
+            "geom",
+        )
+
+
+class KalaKhataiInterchangeSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KalaKhataiInterchange
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "kml_style",
+            "tessellate",
+            "shape_leng",
+            "geom",
+        )
+
+
+class KatarBundRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KatarBundRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "oid",
+            "name",
+            "folderpath",
+            "symbolid",
+            "altmode",
+            "base",
+            "clamped",
+            "extruded",
+            "snippet",
+            "popupinfo",
+            "shape_leng",
+            "row",
+            "buffer",
+            "geom",
+        )
+
+
+class LahoreBypassSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreBypass
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "oid",
+            "name",
+            "folderpath",
+            "symbolid",
+            "altmode",
+            "base",
+            "clamped",
+            "extruded",
+            "snippet",
+            "popupinfo",
+            "shape_leng",
+            "geom",
+        )
+
+
+class SialkotMotorwaySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = SialkotMotorway
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "label",
+            "length_km",
+            "shape_leng",
+            "geom",
+        )
+
+
+class TransportationRoadsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = TransportationRoads
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "type",
+            "name",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# Lahore Ring Road Serializer
+# DB table: lahoreringroad
+# --------------------------------------------------------
+class LahoreRingRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreRingRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "fid",
+            "entity_name",
+            "layer",
+            "color",
+            "linetype",
+            "elevation",
+            "linewt",
+            "refname",
+            "orig_fid",
+            "shape_leng",
+            "shape_le_1",
+            "geom",
+        )
+
+class BridgesSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = Bridges
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "osm_id",
+            "name",
+            "ref",
+            "bridge_type",
+            "oneway",
+            "bridge",
+            "maxspeed",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# GanjaKalanTruckStand Serializer
+# DB table: ganjakalantruckstand
+class GanjaKalanTruckStandSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = GanjaKalanTruckStand
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
+            "khasra",
+            "sub_khasra",
+            "khasra_lab",
+            "remarks",
+            "area_sqft",
+            "shape_leng",
+            "shape_area",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# LahoreRapidMassTransit Serializer
+# DB table: lahorerapidmasstransit
+class LahoreRapidMassTransitSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreRapidMassTransit
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "shape_leng",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# OrangeTrack Serializer
+# DB table: orangetrack
+class OrangeTrackSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = OrangeTrack
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "folderpath",
+            "symbolid",
+            "altmode",
+            "base",
+            "clamped",
+            "extruded",
+            "snippet",
+            "popupinfo",
+            "shape_leng",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# RailwayLine Serializer
+# DB table: railwayline
+
+class RailwayLineSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RailwayLine
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "name",
+            "shape_leng",
+            "shape_le_1",
+            "shape_le_2",
+            "geom",
+        )
+
+class RailwayStationsSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RailwayStations
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "fid",
+            "entity",
+            "layer",
+            "color",
+            "linetype",
+            "elevation",
+            "linewt",
+            "refname",
+            "shape_leng",
+            "shape_area",
+            "geom",
+        )
+
+# --------------------------------------------------------
+# HudiaraDrain Serializer
+# DB table: hudiaradrain
+class HudiaraDrainSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = HudiaraDrain
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "layer",
+            "drain",
+            "shape_leng",
+            "geom",
+        )
+
+class LahoreTransportationRoadSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = LahoreTransportationRoad
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "oid",
+            "name",
+            "shape_leng",
+            "type",
+            "popupinfo",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+
+class RudaSquareSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = RudaSquare
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "district",
+            "tehsil",
+            "mouza",
+            "square",
             "geom",
         )

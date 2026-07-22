@@ -1,4 +1,4 @@
-import { LAYERS } from "./LayerManager/MetaverseLayerConfig";
+import { LAYERS } from "./tools/Layers/LayerManager/MetaverseLayerConfig";
 
 const ADMIN_LOCATION_FIELDS = [
   { keys: ["district", "District"], label: "District" },

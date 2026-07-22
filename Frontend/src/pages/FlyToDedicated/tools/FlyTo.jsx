@@ -10,7 +10,7 @@ export default function FlyTo({
 }) {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(
-    filters?.projectId || ""
+    filters?.projectId || "",
   );
   const [loading, setLoading] = useState(false);
 
@@ -18,23 +18,23 @@ export default function FlyTo({
     let ignore = false;
 
     const loadProjects = async () => {
-  try {
-    setLoading(true);
-    const data = await getProjects();
+      try {
+        setLoading(true);
+        const data = await getProjects();
 
-    const sorted = (data || []).sort((a, b) => {
-      const nameA = (a.name || a.project_name || "").toLowerCase();
-      const nameB = (b.name || b.project_name || "").toLowerCase();
-      return nameA.localeCompare(nameB);
-    });
+        const sorted = (data || []).sort((a, b) => {
+          const nameA = (a.name || a.project_name || "").toLowerCase();
+          const nameB = (b.name || b.project_name || "").toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
 
-    if (!ignore) setProjects(sorted);
-  } catch (error) {
-    console.error("Failed to load projects for Fly To:", error);
-  } finally {
-    if (!ignore) setLoading(false);
-  }
-};
+        if (!ignore) setProjects(sorted);
+      } catch (error) {
+        console.error("Failed to load projects for Fly To:", error);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
 
     loadProjects();
 
@@ -47,33 +47,37 @@ export default function FlyTo({
     setSelectedProjectId(filters?.projectId || "");
   }, [filters?.projectId]);
 
-const handleFlyToProject = () => {
-  if (!selectedProjectId) return;
+  const handleFlyToProject = () => {
+    if (!selectedProjectId) return;
 
-  setFilters?.((prev) => ({
-    ...prev,
-    projectId: selectedProjectId,
-    block: "",
-    plotType: "",
-    plotNo: "",
-    area: "",
-    flyTrigger: Date.now(), 
-  }));
+    setFilters?.((prev) => ({
+      ...prev,
+      projectId: selectedProjectId,
+      block: "",
+      plotType: "",
+      plotNo: "",
+      area: "",
+      selectedPlotId: "",
+      selectedPlotGid: "",
+      selectedPlotGeometry: null,
+      flyToPlotTrigger: Date.now(),
+      flyTrigger: Date.now(),
+    }));
 
-  // Show only boundary layer
-  setLayerVisibility?.((prev) => ({
-    ...prev,
-    boundary: true,
+    // Show only boundary layer
+    setLayerVisibility?.((prev) => ({
+      ...prev,
+      boundary: true,
 
-    // hide everything else
-    masterPlan: false,
-    roads: false,
-    spotLevel: false,
-    contours: false,
-  }));
+      // hide everything else
+      masterPlan: false,
+      roads: false,
+      spotLevel: false,
+      contours: false,
+    }));
 
-  onClose?.();
-};
+    onClose?.();
+  };
 
   return (
     <div className="flex items-center gap-2 rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 text-white shadow-lg">

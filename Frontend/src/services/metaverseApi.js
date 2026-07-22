@@ -1,9 +1,8 @@
 import axios from "axios";
 
 const API_BASE =
-
-  import.meta.env.VITE_API_BASE_URL || "https://rudametaverse.nespakprogresscenter.com/api";
-
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://rudametaverse.nespakprogresscenter.com/api";
 
 const unwrapApiData = (data) => data?.data || data?.results || data;
 
@@ -24,6 +23,13 @@ export const normalizeFeatures = (data) => {
 
 const emptyFC = () => ({ type: "FeatureCollection", features: [] });
 
+const compactParams = (params = {}) =>
+  Object.fromEntries(
+    Object.entries(params).filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    ),
+  );
+
 const unwrapGeoJSON = (data) => {
   const raw = unwrapApiData(data);
   if (raw?.type === "FeatureCollection") return raw;
@@ -31,6 +37,47 @@ const unwrapGeoJSON = (data) => {
   if (Array.isArray(raw)) return { type: "FeatureCollection", features: raw };
   return emptyFC();
 };
+
+// Tries the backend route first and only falls back when that route returns 404.
+// This keeps the frontend compatible with the currently registered DRF routes
+// while also supporting route names that match the PostGIS table names.
+const getGeoJSONFromEndpoints = async (endpoints) => {
+  const routes = Array.isArray(endpoints) ? endpoints : [endpoints];
+  let lastError = null;
+
+  for (const endpoint of routes) {
+    try {
+      const res = await axios.get(`${API_BASE}${endpoint}`);
+      return unwrapGeoJSON(res.data);
+    } catch (error) {
+      lastError = error;
+
+      // Do not hide authentication, permission, server, or network errors.
+      if (error?.response?.status !== 404) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+// Exact model/table mappings supplied by the backend.
+// The first route in each list matches the uploaded urls.py.
+// "Bridgess" is retained as the first Bridges route because that is the
+// currently registered backend path; /bridges/ remains as a safe fallback.
+const RUDA_INFRASTRUCTURE_ENDPOINTS = Object.freeze({
+  bridges: ["/Bridgess/", "/bridges/"],
+  ganjakalantruckstand: ["/ganja-kalan-truck-stand/", "/ganjakalantruckstand/"],
+  lahorerapidmasstransit: [
+    "/lahore-rapid-mass-transit/",
+    "/lahorerapidmasstransit/",
+  ],
+  orangetrack: ["/orange-track/", "/orangetrack/"],
+  railwayline: ["/railway-line/", "/railwayline/"],
+  railwaystations: ["/railway-stations/", "/railwaystations/"],
+  hudiaradrain: ["/hudiara-drain/", "/hudiaradrain/"],
+});
 
 export const getProjects = async () => {
   const res = await axios.get(`${API_BASE}/project/`);
@@ -87,7 +134,10 @@ const naturalSort = (a, b) => {
     return Number(numA) - Number(numB);
   }
 
-  return ax.localeCompare(bx, undefined, { numeric: true, sensitivity: "base" });
+  return ax.localeCompare(bx, undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
 };
 // export const getPlotOptions = async (filters = {}) => {
 //   const geojson = await getPlotsGeoJSON(filters);
@@ -97,7 +147,7 @@ const naturalSort = (a, b) => {
 //     plotTypes: [...new Set(plots.map((p) => p.type).filter(Boolean))],
 //     plotNos: [...new Set(plots.map((p) => p.plot_no).filter(Boolean))],
 //     areas: [...new Set(plots.map((p) => p.plot_area).filter(Boolean))],
-    
+
 //   };
 // };
 
@@ -112,9 +162,7 @@ export const getPlotOptionsAll = async (filters = {}) => {
     // NEW (ADD ALL MISSING FIELDS)
     parkFronts: [...new Set(plots.map((p) => p.parkfront).filter(Boolean))],
     roadFacing: [...new Set(plots.map((p) => p.rd_facing).filter(Boolean))],
-    possessionStatus: [
-      ...new Set(plots.map((p) => p.poss_st ).filter(Boolean)),
-    ],
+    possessionStatus: [...new Set(plots.map((p) => p.poss_st).filter(Boolean))],
     plotStatus: [...new Set(plots.map((p) => p.canceled).filter(Boolean))],
     categories: [...new Set(plots.map((p) => p.tr_cate).filter(Boolean))],
     owners: [...new Set(plots.map((p) => p.tr_own).filter(Boolean))],
@@ -140,7 +188,9 @@ export const getPlotIntersectingKhasras = async (plotGid) => {
     };
   }
 
-  const res = await axios.get(`${API_BASE}/plot/${plotGid}/intersecting-khasras/`);
+  const res = await axios.get(
+    `${API_BASE}/plot/${plotGid}/intersecting-khasras/`,
+  );
   const data = unwrapApiData(res.data);
 
   console.log("[metaverseApi] getPlotIntersectingKhasras response", {
@@ -180,16 +230,49 @@ export const getRoadsGeoJSON = async (filters = {}) => {
 
   if (!params.project_id) return emptyFC();
 
-  const res = await axios.get(`${API_BASE}/road/`, {
-    params: {
-      project_id: params.project_id,
-      block_id: params.block_id || undefined,
-      block: params.block || undefined,
-      type: params.type || undefined,
-    },
+  const requestParams = compactParams({
+    project_id: params.project_id,
+    block_id: params.block_id,
+    block: params.block,
+
+    // Use this only when you intentionally pass a ROAD type
+    // such as "Secondary Road". Do not pass plot type here.
+    type: params.road_type ?? params.type,
   });
 
-  return unwrapGeoJSON(res.data);
+  try {
+    const res = await axios.get(`${API_BASE}/road/`, {
+      params: requestParams,
+    });
+
+    return unwrapGeoJSON(res.data);
+  } catch (error) {
+    const status = error?.response?.status;
+
+    // If an optional road filter breaks the backend, retry with only project_id.
+    // This keeps the map usable and confirms whether the issue is filter-related.
+    if (
+      status === 500 &&
+      (requestParams.block_id || requestParams.block || requestParams.type)
+    ) {
+      console.warn(
+        "[metaverseApi] /road/ failed with filters. Retrying with project_id only.",
+        {
+          status,
+          requestParams,
+          response: error?.response?.data,
+        },
+      );
+
+      const retry = await axios.get(`${API_BASE}/road/`, {
+        params: { project_id: params.project_id },
+      });
+
+      return unwrapGeoJSON(retry.data);
+    }
+
+    throw error;
+  }
 };
 
 export const getWaterSupplyPointsGeoJSON = async (projectId) => {
@@ -369,12 +452,17 @@ export const getKhasrasGeoJSON = async (filters = {}) => {
   return unwrapGeoJSON(res.data);
 };
 
-export const saveProjectMauzas = async (projectId, mauzaIds, khasraIds, murabbaIds) => {
+export const saveProjectMauzas = async (
+  projectId,
+  mauzaIds,
+  khasraIds,
+  murabbaIds,
+) => {
   const res = await axios.post(`${API_BASE}/project-mauza/create/`, {
     project_id: projectId,
     mauza_ids: mauzaIds,
     khasra_ids: khasraIds,
-    murabba_ids: murabbaIds
+    murabba_ids: murabbaIds,
   });
 
   return res.data;
@@ -389,9 +477,223 @@ export const getPlotOptions = async (params = {}) => {
     }
   });
 
-  const response = await fetch(
-    `${API_BASE}/plot-options/?${query.toString()}`
-  );
+  const response = await fetch(`${API_BASE}/plot-options/?${query.toString()}`);
 
   return response.json();
+};
+
+// ------------------------------ RUDA Master Plan Layers ------------------------------
+export const getCityLevelServiceGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/city-level-service/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getForestBoundaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/forest-boundary/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getPrecientBoundaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/precient-boundary/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRiverGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/river/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRiverRaviGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/river-ravi/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRudaJurisdictionGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ruda-jurisdiction/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getCityLevelServicePointsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/city-level-service-points/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getMpPrincipleZoningGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/mp-principle-zoning/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getExistingForestGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/existing-forest/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRudaPlanningBoundaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ruda-planning-boundary/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getProposedRoadNetworkGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/proposed-road-network/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getTransportationRoadsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/transportation-roads/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getLahoreTransportationRoadsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/lahore-transportation-roads/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getLahoreRingRoadGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/lahore-ring-road/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getLahoreBypassGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/lahore-bypass/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getJinnahAvenueGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/jinnah-avenue/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getHardoSohalMuslimRoadGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/hardo-sohal-muslim-road/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getKatarBundRoadGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/katar-bund-road/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getKalaKhataiInterchangeGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/kala-khatai-interchange/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getSialkotMotorwayGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/sialkot-motorway/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getAbdulHakeemMotorwayM3GeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/abdul-hakeem-motorway-m3/`);
+  return unwrapGeoJSON(res.data);
+};
+
+// ------------------------------ Irrigation System Layers ------------------------------
+export const getIrrigationNetworkGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/irrigation-network/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getExistingDrainsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/existing-drains/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getLinkCanalGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/link-canal/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getBranchCanalGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/branch-canal/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getDistributaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/distributary/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getHudiaraDrainGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/hudiara-drain/`);
+  return unwrapGeoJSON(res.data);
+};
+
+// ------------------------------ Transportation Layers ------------------------------
+
+export const getRailwayLineGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/railway-line/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRailwayStationsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/railway-stations/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getOrangeTrackGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/orange-track/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getLahoreRapidMassTransitGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/lahore-rapid-mass-transit/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getBridgesGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/Bridgess/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getGanjaKalanTruckStandGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ganja-kalan-truck-stand/`);
+  return unwrapGeoJSON(res.data);
+};
+
+// ------------------------------ WWTP Layers ------------------------------
+export const getProposedWWTPGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/proposed-wwtp/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getWWTPSitesGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/wwtp-sites/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getKatarBandWWTPGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/katar-band-wwtp/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getSWTPSiteGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/swtp-site/`);
+  return unwrapGeoJSON(res.data);
+};
+
+// ------------------------------ Imported Administrative Boundary Layers ------------------------------
+export const getRtwPackageGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/rtwpackage/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getRtwAlignmentGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/rtwalignment/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getStateLandGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/stateland/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getAwardedLandGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/awardedland/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getPossessionLandGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/possessionland/`);
+  return unwrapGeoJSON(res.data);
 };

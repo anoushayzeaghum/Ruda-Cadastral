@@ -1,4 +1,3 @@
-// MetaverseLeftToolbar.jsx
 import { useCallback, useEffect, useState } from "react";
 import {
   Layers,
@@ -32,16 +31,9 @@ const tools = [
   { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
   { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
   { id: "measurement", label: "Measurement", icon: Ruler },
-
-  // 👇 3D first
   { id: "threeD", label: "3D View", icon: Box },
-
-  // 👇 moved here (below 3D)
   { id: "flyTo", label: "Fly To", icon: Send },
-
   { id: "import", label: "Import", icon: FileInput },
-
-  // 👇 moved here (below import)
   { id: "basemaps", label: "Basemaps", icon: Globe2 },
 ];
 
@@ -166,7 +158,9 @@ export default function MetaverseLeftToolbar({
       >
         {/* Layers panel header with close button */}
         <div className="flex shrink-0 items-center justify-between border-b border-[#0c3d2d] px-4 py-2.5">
-          <span className="text-[12px] font-bold uppercase tracking-wide">Layers</span>
+          <span className="text-[12px] font-bold uppercase tracking-wide">
+            Layers
+          </span>
           <button
             type="button"
             onClick={() => setActiveTool(null)}
@@ -210,14 +204,20 @@ export default function MetaverseLeftToolbar({
 
           {activeTool === "basemaps" && (
             <>
-              <PanelHeader title="Basemaps" onClose={() => setActiveTool(null)} />
+              <PanelHeader
+                title="Basemaps"
+                onClose={() => setActiveTool(null)}
+              />
               <Basemaps map={map} rebuildAllLayers={rebuildAllLayers} />
             </>
           )}
 
           {activeTool === "droneImagery" && (
             <>
-              <PanelHeader title="Drone Imagery" onClose={() => setActiveTool(null)} />
+              <PanelHeader
+                title="Drone Imagery"
+                onClose={() => setActiveTool(null)}
+              />
               <DroneImagery
                 map={map}
                 onExpandedChange={handleDroneImageryExpandedChange}
@@ -266,7 +266,9 @@ export default function MetaverseLeftToolbar({
 function PanelHeader({ title, onClose }) {
   return (
     <div className="flex shrink-0 items-center justify-between border-b border-[#0c3d2d] px-4 py-2.5">
-      <span className="text-[12px] font-bold uppercase tracking-wide">{title}</span>
+      <span className="text-[12px] font-bold uppercase tracking-wide">
+        {title}
+      </span>
       <button
         type="button"
         onClick={onClose}

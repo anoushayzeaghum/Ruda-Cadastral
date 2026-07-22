@@ -36,7 +36,7 @@ const toId = (valueOrEvent) => {
 const toggleId = (list, id) =>
   list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
 
-export default function useCadastralFilters() {
+export default function useCadastralFilters(enabled = true) {
   const [districts, setDistricts] = useState([]);
   const [tehsils, setTehsils] = useState([]);
   const [mauzas, setMauzas] = useState([]);
@@ -53,36 +53,43 @@ export default function useCadastralFilters() {
   });
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    let ignore = false;
+useEffect(() => {
 
-    const loadDistricts = async () => {
-      setLoading((prev) => ({ ...prev, districts: true }));
-      setErrorMessage("");
+  if (!enabled) {
+    return;
+  }
 
-      try {
-        const data = await getDistricts();
-        if (!ignore) {
-          setDistricts(sortByLabel(data, "name"));
-        }
-      } catch {
-        if (!ignore) {
-          setDistricts([]);
-          setErrorMessage("Unable to load districts right now.");
-        }
-      } finally {
-        if (!ignore) {
-          setLoading((prev) => ({ ...prev, districts: false }));
-        }
+  let ignore = false;
+
+  const loadDistricts = async () => {
+  
+    setLoading((prev) => ({ ...prev, districts: true }));
+    setErrorMessage("");
+
+    try {
+      const data = await getDistricts();
+
+      if (!ignore) {
+        setDistricts(sortByLabel(data, "name"));
       }
-    };
+    } catch (err) {
+      console.error("District API Error:", err);
+    } finally {
+      if (!ignore) {
+        setLoading((prev) => ({
+          ...prev,
+          districts: false,
+        }));
+      }
+    }
+  };
 
-    loadDistricts();
+  loadDistricts();
 
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  return () => {
+    ignore = true;
+  };
+}, [enabled]);
 
   useEffect(() => {
     if (!selectedDistrict.length) return undefined;
@@ -130,17 +137,12 @@ export default function useCadastralFilters() {
       setErrorMessage("");
 
       try {
-        console.log(selectedTehsil);
         const responses = await Promise.all(
           selectedTehsil.map((tehsil) => getMauzas(tehsil)),
         );
 
-        // console.log("Responses from API:", responses);
-
-        // Extract features correctly
         const allFeatures = responses.flatMap((fc) => fc.features);
 
-        // Convert GeoJSON → flat object
         const data = allFeatures.map((f) => ({
           id: f.id,
           mauza_id: f.id, // or f.properties.mauza_id if exists
@@ -150,11 +152,13 @@ export default function useCadastralFilters() {
 
         const unique = dedupeBy(data, "mauza_id");
 
-        // console.log("Flattened mauza data:", unique);
+        // Filter mauzas to only those belonging to the currently selected district(s)
+        const filtered = unique.filter((m) =>
+          selectedDistrict.includes(String(m.dist_id ?? m.district_id ?? ""))
+        );
 
-        setMauzas(sortByLabel(unique, "mauza"));
         if (!ignore) {
-          setMauzas(sortByLabel(data, "mauza"));
+          setMauzas(sortByLabel(filtered.length ? filtered : unique, "mauza"));
         }
       } catch {
         if (!ignore) {
@@ -174,6 +178,7 @@ export default function useCadastralFilters() {
       ignore = true;
     };
   }, [selectedTehsil]);
+
 
   const selectedDistrictPrimary = selectedDistrict[0] ?? "";
   const selectedTehsilPrimary = selectedTehsil[0] ?? "";

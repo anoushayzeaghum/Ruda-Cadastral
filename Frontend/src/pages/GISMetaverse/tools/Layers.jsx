@@ -1,11 +1,8 @@
-import MasterPlan from "./Layers/MasterPlan";
-import TopographicPlan from "./Layers/TopographicPlan";
-import Utilities from "./Layers/Utilities";
-import Services from "./Layers/Services";
-import LandRevenueRecord from "./Layers/LandRevenueRecord";
-// import Miscellaneous from "./Layers/Miscellaneous";
-import NotifiedBoundaries from "./Layers/NotifiedBoundaries";
 import AdministrativeBoundaries from "./Layers/AdministrativeBoundaries";
+import RUDAMasterPlan from "./Layers/RUDAMasterPlan";
+import Cadastral from "./Layers/Cadastral";
+import BaseData from "./Layers/BaseData";
+import ProjectMasterPlan from "./Layers/ProjectMasterPlan";
 import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
 
 export default function LayersPanel({
@@ -16,6 +13,7 @@ export default function LayersPanel({
   adminBoundaryVisibility,
   setAdminBoundaryVisibility,
 }) {
+  const selectedProjectId = filters?.projectId;
   return (
     <div
       className={`max-h-[calc(70vh-2.5rem)] text-[12px] font-semibold sm:max-h-[min(500px,calc(100vh-120px))] ${LAYER_PANEL_SCROLL}`}
@@ -25,36 +23,12 @@ export default function LayersPanel({
         adminBoundaryVisibility={adminBoundaryVisibility}
         setAdminBoundaryVisibility={setAdminBoundaryVisibility}
       />
-      <MasterPlan
+      <RUDAMasterPlan map={map} />
+      <Cadastral map={map} selectedProjectId={selectedProjectId} />
+      <BaseData map={map} />
+      <ProjectMasterPlan
         map={map}
-        selectedProjectId={filters?.projectId}
-        layerVisibility={layerVisibility}
-        setLayerVisibility={setLayerVisibility}
-      />
-      <LandRevenueRecord map={map} selectedProjectId={filters?.projectId} />
-
-      <TopographicPlan
-        map={map}
-        selectedProjectId={filters?.projectId}
-        layerVisibility={layerVisibility}
-        setLayerVisibility={setLayerVisibility}
-      />
-      <Utilities
-        map={map}
-        selectedProjectId={filters?.projectId}
-        layerVisibility={layerVisibility}
-        setLayerVisibility={setLayerVisibility}
-      />
-      <Services
-        map={map}
-        selectedProjectId={filters?.projectId}
-        layerVisibility={layerVisibility}
-        setLayerVisibility={setLayerVisibility}
-      />
-      {/* <Miscellaneous map={map} /> */}
-      <NotifiedBoundaries
-        map={map}
-        selectedProjectId={filters?.projectId}
+        selectedProjectId={selectedProjectId}
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />

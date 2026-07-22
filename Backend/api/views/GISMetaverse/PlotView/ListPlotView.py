@@ -1,14 +1,18 @@
 from ...common_imports import *
+from django.core.cache import cache
+from django.db import connection
 from django.db.models import Q
+import traceback
 
 
 class ListPlotView(viewsets.ViewSet):
-    queryset = Plot.objects.all()
-    serializer_class = PlotSerializer
+
     permission_classes = [AllowAny]
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request):
+
         try:
+
             gid = request.query_params.get("gid")
             project_id = request.query_params.get("project_id")
             block_id = request.query_params.get("block_id")
@@ -16,73 +20,175 @@ class ListPlotView(viewsets.ViewSet):
             block = request.query_params.get("block")
             plot_area = request.query_params.get("plot_area")
             plot_type = request.query_params.get("type")
-
-            # ⭐ GLOBAL SEARCH PARAM
             search = request.query_params.get("search")
 
-            queryset = (
-                Plot.objects
-                .select_related("project", "block")
-                .order_by("gid")
+            cache_key = (
+                f"plot_geojson_{gid}_{project_id}_{block_id}_"
+                f"{plot_no}_{block}_{plot_area}_{plot_type}_{search}"
             )
 
-            # ----------------------------
-            # EXISTING FILTERS
-            # ----------------------------
+            cached = cache.get(cache_key)
+
+            if cached:
+                return ApiResponse(
+                    status=status.HTTP_200_OK,
+                    message="Cached plot data.",
+                    data=cached,
+                    http_status=status.HTTP_200_OK,
+                ).create_response()
+
+            sql = """
+                SELECT
+                    p.gid,
+                    p.name,
+                    p.type,
+                    p.plot_no,
+                    p.plot_area,
+                    p.shape_leng,
+                    p.shape_area,
+
+                    pr.gid,
+                    pr.name,
+
+                    b.gid,
+                    b.name,
+                    b.block,
+
+                    ST_AsGeoJSON(
+                        ST_SimplifyPreserveTopology(
+                            p.geom,
+                            0.00001
+                        ),
+                        6
+                    )::json
+
+                FROM plot p
+
+                LEFT JOIN project pr
+                    ON p.project_id = pr.gid
+
+                LEFT JOIN block b
+                    ON p.block_id = b.gid
+
+                WHERE 1=1
+            """
+
+            params = []
+
             if gid:
-                queryset = queryset.filter(gid=gid)
+                sql += " AND p.gid=%s"
+                params.append(gid)
 
             if project_id:
-                queryset = queryset.filter(project__gid=project_id)
+                sql += " AND p.project_id=%s"
+                params.append(project_id)
 
             if block_id:
-                queryset = queryset.filter(block__gid=block_id)
+                sql += " AND p.block_id=%s"
+                params.append(block_id)
 
             if block:
-                queryset = queryset.filter(block__block__iexact=block)
+                sql += " AND LOWER(b.block)=LOWER(%s)"
+                params.append(block)
 
             if plot_no:
-                queryset = queryset.filter(plot_no__iexact=plot_no)
-
-            # if block:
-            #     queryset = queryset.filter(block__block__iexact=block)
+                sql += " AND LOWER(p.plot_no)=LOWER(%s)"
+                params.append(plot_no)
 
             if plot_area:
-                queryset = queryset.filter(plot_area__iexact=plot_area)
+                sql += " AND LOWER(p.plot_area)=LOWER(%s)"
+                params.append(plot_area)
 
             if plot_type:
-                queryset = queryset.filter(type__iexact=plot_type)
+                sql += " AND LOWER(p.type)=LOWER(%s)"
+                params.append(plot_type)
 
-            # ----------------------------
-            # ⭐ GLOBAL SEARCH (ATTRIBUTE TABLE)
-            # ----------------------------
             if search:
-                queryset = queryset.filter(
-                    Q(plot_no__icontains=search) |
-                    Q(name__icontains=search) |
-                    Q(type__icontains=search) |
-                    Q(plot_area__icontains=search) |
-                    Q(project__name__icontains=search) |
-                    Q(block__name__icontains=search) |
-                    Q(block__block__icontains=search)
+                sql += """
+                AND (
+                    p.plot_no ILIKE %s OR
+                    p.name ILIKE %s OR
+                    p.type ILIKE %s OR
+                    p.plot_area ILIKE %s OR
+                    pr.name ILIKE %s OR
+                    b.name ILIKE %s OR
+                    b.block ILIKE %s
                 )
+                """
 
-            # ----------------------------
-            # SERIALIZER
-            # ----------------------------
-            serializer = PlotSerializer(queryset, many=True)
+                value = f"%{search}%"
+
+                params.extend([
+                    value,
+                    value,
+                    value,
+                    value,
+                    value,
+                    value,
+                    value,
+                ])
+
+            sql += " ORDER BY p.gid"
+
+            with connection.cursor() as cursor:
+
+                cursor.execute(sql, params)
+
+                rows = cursor.fetchall()
+
+            features = []
+
+            for row in rows:
+
+                features.append({
+
+                    "type": "Feature",
+
+                    "id": row[0],
+
+                    "geometry": row[12],
+
+                    "properties": {
+
+                        "gid": row[0],
+                        "name": row[1],
+                        "type": row[2],
+                        "plot_no": row[3],
+                        "plot_area": row[4],
+                        "shape_leng": row[5],
+                        "shape_area": row[6],
+
+                        "project": row[7],
+                        "project_name": row[8],
+
+                        "block": row[9],
+                        "block_name": row[10],
+                        "block_code": row[11],
+                    }
+                })
+
+            geojson = {
+                "type": "FeatureCollection",
+                "features": features,
+            }
+
+            cache.set(cache_key, geojson, 3600)
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
                 message="Plot list fetched successfully.",
-                data=serializer.data,
+                data=geojson,
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
         except Exception as e:
+
+            print(traceback.format_exc())
+
             return ApiResponse(
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 message="Server error.",
                 data=str(e),
+                error_traceback=traceback.format_exc(),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             ).create_response()

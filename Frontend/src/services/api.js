@@ -1,9 +1,8 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "https://rudametaverse.nespakprogresscenter.com/api/",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
 });
-
 const extractPayload = (res) => res?.data?.data ?? res?.data ?? [];
 
 const extractCollection = (payload) => {
@@ -129,11 +128,18 @@ const normalizeData = (res) => {
 
 const normalizeGeoJson = (res) => {
   const payload = extractPayload(res);
-
-  return {
+  const geojson = {
     type: "FeatureCollection",
     features: toGeoJSONFeatures(payload),
   };
+
+  // Preserve an API-provided bbox so map screens can fit the layer without
+  // recursively walking every coordinate of a large cadastral geometry.
+  if (Array.isArray(payload?.bbox)) {
+    geojson.bbox = payload.bbox;
+  }
+
+  return geojson;
 };
 
 ///////////////////////////////////////////////////////
@@ -141,7 +147,10 @@ const normalizeGeoJson = (res) => {
 ///////////////////////////////////////////////////////
 
 export const getDistricts = async () => {
+  const start = performance.now();
+
   const res = await API.get("/district/");
+
   return normalizeData(res);
 };
 
@@ -267,23 +276,58 @@ export const importMurabba = async ({ file }) => {
 ///////////////////////////////////////////////////////
 
 export const getDistrictBoundary = async (id) => {
+  const start = performance.now();
+
   const res = await API.get(`/district/${id}/geojson`);
-  return normalizeGeoJson(res);
+
+  const apiTime = performance.now() - start;
+
+  const normalizeStart = performance.now();
+
+  const geojson = normalizeGeoJson(res);
+
+  return geojson;
 };
 
 export const getTehsilBoundary = async (id) => {
+  const start = performance.now();
+
   const res = await API.get(`/tehsil/${id}/geojson`);
-  return normalizeGeoJson(res);
+
+  const normalizeStart = performance.now();
+
+  const geojson = normalizeGeoJson(res);
+
+  return geojson;
 };
 
 export const getMauzaBoundary = async (id) => {
+  const start = performance.now();
+
   const res = await API.get(`/mauza/${id}/geojson`);
-  return normalizeGeoJson(res);
+
+  const normalizeStart = performance.now();
+
+  const geojson = normalizeGeoJson(res);
+
+  return geojson;
 };
 
 export const getKhasraBoundary = async (id) => {
-  const res = await API.get(`/khasra/${id}/geojson`);
-  return normalizeGeoJson(res);
+  const start = performance.now();
+
+  const res = await API.get(`/khasra/${id}/geojson`, {
+    headers: {
+      "Accept-Encoding": "gzip",
+    },
+  });
+
+  console.log("Khasra API:", (performance.now() - start).toFixed(2), "ms");
+
+  return {
+    type: "FeatureCollection",
+    features: [res.data.data],
+  };
 };
 
 export const getMurabbaBoundary = async (id) => {
@@ -660,3 +704,32 @@ export const getMurabbasGeoJSON = async (filters = {}) => {
 export const getKhasrasGeoJSON = async (filters = {}) => {
   return getBoundaryGeoJSONByProjectMauzas("/khasra/", filters);
 };
+
+///////////////////////////////////////////////////////
+//////////////// UNVERIFIED APIs //////////////////////
+///////////////////////////////////////////////////////
+
+const getRudaGeoJSONByMauza = async (endpoint, mauzaId) => {
+  const params = {};
+
+  if (mauzaId !== undefined && mauzaId !== null && mauzaId !== "") {
+    params.mauza_id = mauzaId;
+  }
+
+  const res = await API.get(endpoint, { params });
+  const geojson = normalizeGeoJson(res);
+
+  // Some backend list endpoints may ignore the query parameter and return
+  // every RUDA record. Keep a frontend safety filter so only the Mauza
+  // selected in the subheader can reach the map or attribute table.
+  return filterGeoJSONByMauzaIds(geojson, mauzaId);
+};
+
+export const getRudaMauzas = async (mauzaId) =>
+  getRudaGeoJSONByMauza("/rudamauza/", mauzaId);
+
+export const getRudaKhasras = async (mauzaId) =>
+  getRudaGeoJSONByMauza("/rudakhasra/", mauzaId);
+
+export const getRudaSquares = async (mauzaId) =>
+  getRudaGeoJSONByMauza("/rudasquare/", mauzaId);

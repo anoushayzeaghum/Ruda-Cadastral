@@ -78,16 +78,15 @@ export default function Register() {
       });
 
       const data = await response.json();
-      console.log("Register response:", data);
 
       if (!response.ok) {
         const errorMessage = data?.data
           ? Object.entries(data.data)
-              .map(([key, value]) => {
-                const text = Array.isArray(value) ? value.join(", ") : value;
-                return `${key}: ${text}`;
-              })
-              .join("\n")
+            .map(([key, value]) => {
+              const text = Array.isArray(value) ? value.join(", ") : value;
+              return `${key}: ${text}`;
+            })
+            .join("\n")
           : data?.message || "Registration failed.";
 
         alert(errorMessage);
