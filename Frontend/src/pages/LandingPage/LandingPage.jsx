@@ -264,7 +264,7 @@ const GIS_APPS = [
     icon: <Search size={22} />,
     title: "RUDA GIS Metaverse",
     desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
-    images: ["/s2.png"],
+    images: ["/2.1.png", "/2.2.png", "/2.3.png"],
     route: "/gis-metaverse",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
