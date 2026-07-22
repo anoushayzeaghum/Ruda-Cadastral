@@ -285,7 +285,7 @@ const GIS_APPS = [
     title: "RUDA Masterplan",
     desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
     images: ["/s6.png", "/s6.1.png", "/s6.2.png", "/s6.3.png"],
-    route: "/flyto-dashboard",
+    route: "/masterplan",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
     tags: ["Location", "Analytics"],

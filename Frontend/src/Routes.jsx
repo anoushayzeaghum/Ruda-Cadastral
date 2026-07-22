@@ -19,6 +19,7 @@ import SocietyMapPage from "./pages/SocietyMapDashboard/SocietyMapPage";
 import Society3DMapPage from "./pages/3DMapview/Society3DMapPage";
 import MetaverseDashboard from "./pages/GISMetaverse/MetaverseDashboard";
 import FlyToDashboard from "./pages/FlyToDedicated/FlyToDashboard";
+import MasterPlanDashboard from "./pages/MasterPlan/MasterPlanDashboard";
 
 const AppRoutes = () => {
   return (
@@ -44,6 +45,7 @@ const AppRoutes = () => {
           <Route path="/society-3d" element={<Society3DMapPage />} />
           <Route path="/gis-metaverse" element={<MetaverseDashboard />} />
           <Route path="/flyto-dashboard" element={<FlyToDashboard />} />
+          <Route path="/masterplan" element={<MasterPlanDashboard />} />
           <Route path="/society-3d-upload" element={<Society3DMapUploadPage />} />
 
           <Route path="/area" element={<AreaLayout />}>
