@@ -33,20 +33,21 @@ const IS_CB_1_BOUNDARY = containsAny(
   "cb1 boundary",
 );
 
-// Colors sampled directly from the supplied legend image.
+// Exact solid-fill colors sampled from the supplied legend screenshot.
 export const MASTER_PLAN_LAND_USE_COLORS = {
-  greenOpenAreaParks: "#139B48",
-  condominiums: "#DDB3D4",
-  mixUse: "#999B37",
-  commercial: "#ADDDF7",
-  publicBuilding: "#F7ABAE",
-  residential10Marla: "#F8991E",
-  residential1Kanal: "#C17006",
-  petrolPump: "#E05254",
-  grandMosque: "#F7F281",
-  rudaOffice: "#6AE7B1",
-  convenienceShops: "#A953A0",
+  greenOpenAreaParks: "#139B47",
+  condominiums: "#DCB3D3",
+  mixUse: "#999B36",
+  commercial: "#AEDDF7",
+  publicBuilding: "#F7ABAF",
+  residential10Marla: "#F8981D",
+  residential1Kanal: "#C17005",
+  petrolPump: "#E15254",
+  grandMosque: "#F8F282",
+  rudaOffice: "#6CE5B0",
+  convenienceShops: "#A753A0",
   cb1Boundary: "#00FF00",
+  canal: "#00b3ff",
   fallback: "#9CA3AF",
 };
 
