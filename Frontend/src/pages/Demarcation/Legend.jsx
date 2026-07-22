@@ -30,7 +30,7 @@ export default function Legend({ items = [], selectedParcelNumber = null }) {
       <button
         type="button"
         onClick={() => setIsCollapsed((prev) => !prev)}
-        className="flex h-[46px] w-full items-center justify-between gap-3 border-b border-[#d4dbe2] px-3 text-left transition hover:bg-gray-50 sm:h-[52px] sm:px-4"
+        className="flex w-full items-center justify-between gap-3 border-b border-gray-200 bg-gray-50/50 px-3 py-2 text-left transition hover:bg-gray-50 sm:px-3 sm:py-2.5"
       >
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="text-[13px] font-bold uppercase tracking-wide text-[#5b5b5b] sm:text-[15px]">
@@ -48,7 +48,7 @@ export default function Legend({ items = [], selectedParcelNumber = null }) {
       </button>
 
       {!isCollapsed && (
-        <div className="max-h-[180px] overflow-auto p-3 sm:max-h-[240px] sm:p-4">
+        <div className="max-h-[180px] overflow-auto p-3 sm:max-h-[240px] sm:p-3">
           {!items.length ? (
             <div className="py-6 text-center text-sm text-gray-400">No land use loaded.</div>
           ) : (
@@ -56,7 +56,7 @@ export default function Legend({ items = [], selectedParcelNumber = null }) {
               {items.map((item, index) => (
                 <div
                   key={item.label}
-                  className="flex items-center justify-between gap-2 border-b border-gray-200 pb-2 text-[12px] sm:text-[14px]"
+                  className="flex items-center justify-between gap-2 border-b border-gray-100 py-1.5 last:border-0 text-[11px] sm:text-[12px]"
                 >
                   <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                     <span

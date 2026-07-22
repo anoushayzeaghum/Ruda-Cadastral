@@ -33,11 +33,12 @@ const selectStyles = {
     ...base,
     minHeight: "30px",
     height: "30px",
-    background: "#ffffff",
-    borderColor: "#2f3a4d",
-    boxShadow: state.isFocused ? "0 0 0 1px #0a5a27" : "none",
+    background: "#f9fafb",
+    borderColor: state.isFocused ? "#16a34a" : "#e5e7eb",
+    boxShadow: state.isFocused ? "0 0 0 1px #16a34a" : "none",
     borderRadius: "6px",
     cursor: "pointer",
+    transition: "all 0.2s ease",
   }),
   valueContainer: (base) => ({
     ...base,
@@ -48,7 +49,7 @@ const selectStyles = {
     ...base,
     margin: 0,
     padding: 0,
-    color: "#06291f",
+    color: "#374151",
     fontSize: "11px",
   }),
   indicatorsContainer: (base) => ({
@@ -59,19 +60,19 @@ const selectStyles = {
   dropdownIndicator: (base) => ({
     ...base,
     padding: "0 6px",
-    color: "#06291f",
+    color: "#6b7280",
   }),
   placeholder: (base) => ({
     ...base,
-    color: "#06291f",
-    fontWeight: 600,
+    color: "#6b7280",
+    fontWeight: 500,
     fontSize: "11px",
     whiteSpace: "nowrap",
   }),
   singleValue: (base) => ({
     ...base,
-    color: "#06291f",
-    fontWeight: 600,
+    color: "#111827",
+    fontWeight: 500,
     fontSize: "11px",
   }),
   menu: (base) => ({
@@ -286,8 +287,8 @@ export default function SpatialQuery({
   };
 
   return (
-    <div className="flex w-full items-center gap-1.5 overflow-x-auto rounded-lg bg-[#06291f] px-2 py-1.5 shadow-xl sm:gap-2 sm:px-3 sm:py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-      <span className="shrink-0 whitespace-nowrap pr-1 text-[11px] font-bold uppercase tracking-wide text-white/90 sm:pr-2 sm:text-[13px]">
+    <div className="flex w-full items-center gap-1.5 overflow-x-auto rounded-lg bg-white/95 backdrop-blur-md border border-gray-200 px-2 py-1.5 shadow-lg sm:gap-2 sm:px-3 sm:py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <span className="shrink-0 whitespace-nowrap pr-1 text-[11px] font-bold uppercase tracking-wide text-gray-700 sm:pr-2 sm:text-[12px]">
         Spatial Query
       </span>
 
@@ -409,20 +410,20 @@ export default function SpatialQuery({
         title="Search"
         disabled={!canSearch}
         onClick={handleSearch}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] transition hover:bg-[#b6bdc8] disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 border border-gray-200 text-gray-700 transition hover:bg-gray-200 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 sm:h-8 sm:w-8"
       >
-        <Search size={14} strokeWidth={2.4} className="sm:hidden" />
-        <Search size={16} strokeWidth={2.4} className="hidden sm:block" />
+        <Search size={14} strokeWidth={2} className="sm:hidden" />
+        <Search size={16} strokeWidth={2} className="hidden sm:block" />
       </button>
 
       <button
         type="button"
         title="Clear"
         onClick={clearAll}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] transition hover:bg-[#b6bdc8] sm:h-8 sm:w-8"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100 border border-gray-200 text-gray-700 transition hover:bg-gray-200 hover:text-gray-900 sm:h-8 sm:w-8"
       >
-        <RotateCcw size={14} strokeWidth={2.4} className="sm:hidden" />
-        <RotateCcw size={16} strokeWidth={2.4} className="hidden sm:block" />
+        <RotateCcw size={14} strokeWidth={2} className="sm:hidden" />
+        <RotateCcw size={16} strokeWidth={2} className="hidden sm:block" />
       </button>
     </div>
   );
