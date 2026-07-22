@@ -533,6 +533,11 @@ export const getRudaPlanningBoundaryGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getRudaNotifiedPhasesBoundaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ruda-notified-phases-boundary/`);
+  return unwrapGeoJSON(res.data);
+};
+
 export const getProposedRoadNetworkGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/proposed-road-network/`);
   return unwrapGeoJSON(res.data);

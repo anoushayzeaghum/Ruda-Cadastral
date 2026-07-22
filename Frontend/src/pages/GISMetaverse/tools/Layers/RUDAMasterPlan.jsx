@@ -9,6 +9,9 @@ import {
 } from "./LayerManager/RudaMasterPlanLayers/MasterPlanningBoundaryLayer";
 import {
   MASTER_PLAN_PHASES_COLOR,
+  getMasterPlanPhasesFillPaint,
+  getMasterPlanPhasesLabelLayout,
+  getMasterPlanPhasesLabelPaint,
   getMasterPlanPhasesOutlinePaint,
 } from "./LayerManager/RudaMasterPlanLayers/MasterPlanPhasesLayer";
 import {
@@ -208,10 +211,13 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
   masterPlanPhases: {
     endpoint: "/ruda/",
     fetchGeoJSON: getRudaGeoJSON,
-    hidePolygonFill: true,
     paintUsesLayerColor: true,
+    getFillPaint: getMasterPlanPhasesFillPaint,
     getOutlinePaint: getMasterPlanPhasesOutlinePaint,
     getLinePaint: getMasterPlanPhasesOutlinePaint,
+    getLabelLayout: getMasterPlanPhasesLabelLayout,
+    getLabelPaint: getMasterPlanPhasesLabelPaint,
+    labelMinZoom: 6,
     outlineLineCap: "round",
     lineCap: "round",
   },

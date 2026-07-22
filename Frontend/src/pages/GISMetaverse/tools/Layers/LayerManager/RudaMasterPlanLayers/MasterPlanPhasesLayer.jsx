@@ -42,6 +42,8 @@ const clamp = (value) => Math.min(100, Math.max(0, Number(value) || 0));
 
 const PHASE_NAME_EXPRESSION = [
   "coalesce",
+  ["get", "phases_new"],
+  ["get", "phases"],
   ["get", "phase_name"],
   ["get", "phase"],
   ["get", "phase_no"],
@@ -62,40 +64,57 @@ const NORMALIZED_PHASE_EXPRESSION = [
   ["to-string", PHASE_NAME_EXPRESSION],
 ];
 
+const containsPhaseText = (text) => [
+  "!=",
+  ["index-of", text, NORMALIZED_PHASE_EXPRESSION],
+  -1,
+];
+
 const PHASE_FILL_EXPRESSION = [
   "case",
-  [
-    "in",
-    NORMALIZED_PHASE_EXPRESSION,
-    ["literal", ["phase 2b", "phase2b", "2b", "phase-2b"]],
-  ],
+  containsPhaseText("2b"),
   "#F8D56B",
-  [
-    "in",
-    NORMALIZED_PHASE_EXPRESSION,
-    ["literal", ["phase 1", "phase1", "1", "phase-1"]],
-  ],
-  "#6BD69A",
-  [
-    "in",
-    NORMALIZED_PHASE_EXPRESSION,
-    ["literal", ["phase 3", "phase3", "3", "phase-3"]],
-  ],
-  "#F59E72",
-  [
-    "in",
-    NORMALIZED_PHASE_EXPRESSION,
-    ["literal", ["phase 2a", "phase2a", "2a", "phase-2a"]],
-  ],
+  containsPhaseText("2a"),
   "#B99CF3",
-  [
-    "in",
-    NORMALIZED_PHASE_EXPRESSION,
-    ["literal", ["jhok forest", "jhokforest", "jhok", "forest", "jhok-forest"]],
-  ],
+  containsPhaseText("phase 3"),
+  "#F59E72",
+  containsPhaseText("phase - 3"),
+  "#F59E72",
+  containsPhaseText("phase 1"),
+  "#6BD69A",
+  containsPhaseText("phase - 1"),
+  "#6BD69A",
+  containsPhaseText("jhok"),
   "#78D6D0",
   "#D9E2EC",
 ];
+
+export const getMasterPlanPhasesFillPaint = (
+  _color = MASTER_PLAN_PHASES_COLOR,
+  opacity = 1,
+) => ({
+  "fill-color": PHASE_FILL_EXPRESSION,
+  "fill-opacity": 0.72 * opacity,
+});
+
+export const getMasterPlanPhasesLabelLayout = () => ({
+  "symbol-placement": "point",
+  "text-field": ["to-string", PHASE_NAME_EXPRESSION],
+  "text-size": ["interpolate", ["linear"], ["zoom"], 6, 10, 10, 13, 14, 16],
+  "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+  "text-anchor": "center",
+  "text-max-width": 10,
+  "text-allow-overlap": false,
+  "text-ignore-placement": false,
+});
+
+export const getMasterPlanPhasesLabelPaint = (opacity = 1) => ({
+  "text-color": "#25313C",
+  "text-halo-color": "#FFFFFF",
+  "text-halo-width": 1.5,
+  "text-halo-blur": 0.25,
+  "text-opacity": opacity,
+});
 
 export function setRudaPlanningBoundaryVisibility(map, visible) {
   [
@@ -141,10 +160,7 @@ export function addOrUpdateRudaPlanningBoundary(
         true,
         false,
       ],
-      paint: {
-        "fill-color": PHASE_FILL_EXPRESSION,
-        "fill-opacity": 0.72 * opacity,
-      },
+      paint: getMasterPlanPhasesFillPaint(style.color, opacity),
       layout: { visibility: "visible" },
     });
   } else {
@@ -205,32 +221,9 @@ export function addOrUpdateRudaPlanningBoundary(
       minzoom: 6,
       layout: {
         visibility: "visible",
-        "symbol-placement": "point",
-        "text-field": ["to-string", PHASE_NAME_EXPRESSION],
-        "text-size": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          6,
-          10,
-          10,
-          13,
-          14,
-          16,
-        ],
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-anchor": "center",
-        "text-max-width": 10,
-        "text-allow-overlap": false,
-        "text-ignore-placement": false,
+        ...getMasterPlanPhasesLabelLayout(),
       },
-      paint: {
-        "text-color": "#25313C",
-        "text-halo-color": "#FFFFFF",
-        "text-halo-width": 1.5,
-        "text-halo-blur": 0.25,
-        "text-opacity": opacity,
-      },
+      paint: getMasterPlanPhasesLabelPaint(opacity),
     });
   } else {
     map.setLayoutProperty(RUDA_PLANNING_BOUNDARY.labelLayer, "text-field", [

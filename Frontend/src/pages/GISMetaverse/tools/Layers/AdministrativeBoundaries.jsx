@@ -7,11 +7,12 @@ import {
   unwrapGeoJSON,
 } from "./AttributeTable/AdminAttributeTableShell";
 import {
-  RUDA_PLANNING_BOUNDARY,
-  DEFAULT_RUDA_PLANNING_STYLE,
-  addOrUpdateRudaPlanningBoundary,
-  setRudaPlanningBoundaryVisibility,
-} from "./LayerManager/AdministrativeLayers/RudaPlanningBoundaryLayer";
+  NOTIFIED_PHASES_BOUNDARY,
+  NOTIFIED_PHASES_LEGEND,
+  DEFAULT_NOTIFIED_PHASES_STYLE,
+  addOrUpdateNotifiedPhasesBoundary,
+  setNotifiedPhasesBoundaryVisibility,
+} from "./LayerManager/AdministrativeLayers/NotifiedPhasesBoundaryLayer";
 import {
   RUDA_NOTIFIED_BOUNDARY,
   DEFAULT_RUDA_NOTIFIED_STYLE,
@@ -30,6 +31,7 @@ import {
   addOrUpdateTehsilBoundary,
   setTehsilBoundaryVisibility,
 } from "./LayerManager/AdministrativeLayers/TehsilBoundaryLayer";
+import { getRudaNotifiedPhasesBoundaryGeoJSON } from "../../../../services/metaverseApi";
 
 const EMPTY_FC = { type: "FeatureCollection", features: [] };
 
@@ -41,10 +43,11 @@ const LAYERS = {
     setVisibility: setRudaNotifiedBoundaryVisibility,
   },
   rudaPhasesBoundary: {
-    ...RUDA_PLANNING_BOUNDARY,
-    defaultStyle: DEFAULT_RUDA_PLANNING_STYLE,
-    addOrUpdate: addOrUpdateRudaPlanningBoundary,
-    setVisibility: setRudaPlanningBoundaryVisibility,
+    ...NOTIFIED_PHASES_BOUNDARY,
+    defaultStyle: DEFAULT_NOTIFIED_PHASES_STYLE,
+    fetchGeoJSON: getRudaNotifiedPhasesBoundaryGeoJSON,
+    addOrUpdate: addOrUpdateNotifiedPhasesBoundary,
+    setVisibility: setNotifiedPhasesBoundaryVisibility,
   },
   districtBoundary: {
     ...DISTRICT_BOUNDARY,
@@ -132,8 +135,9 @@ export default function AdministrativeBoundaries({
     if (cache.current[key]) return cache.current[key];
 
     const def = LAYERS[key];
-    const response = await axios.get(`${API_BASE}${def.endpoint}`);
-    const geojson = unwrapGeoJSON(response.data);
+    const geojson = def.fetchGeoJSON
+      ? await def.fetchGeoJSON()
+      : unwrapGeoJSON((await axios.get(`${API_BASE}${def.endpoint}`)).data);
 
     cache.current[key] = geojson;
     setFeatureCounts((prev) => ({
@@ -258,6 +262,7 @@ export default function AdministrativeBoundaries({
             loading={loading.rudaPhasesBoundary}
             label={LAYERS.rudaPhasesBoundary.label}
             style={styles.rudaPhasesBoundary}
+            previewColors={NOTIFIED_PHASES_LEGEND.map((item) => item.color)}
             onChange={() => toggleLayer("rudaPhasesBoundary")}
             onStyleChange={(patch) => updateStyle("rudaPhasesBoundary", patch)}
             detailsOpen={phaseOpen}
