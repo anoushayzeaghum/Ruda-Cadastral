@@ -265,7 +265,7 @@ const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
       };
     })
     .sort((a, b) => a.distance - b.distance)
-    .slice(0, 14)
+    .slice(0, 18)
     .map(({ feature }) => feature);
 
   if (!nearby.some((feature) => feature === selectedFeature)) {
@@ -589,6 +589,157 @@ const getProjectedRingBox = (ring, project) => {
   };
 };
 
+
+const pointInProjectedPolygon = (point, ring) => {
+  let inside = false;
+  const [x, y] = point;
+
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+
+    const intersects =
+      yi > y !== yj > y &&
+      x < ((xj - xi) * (y - yi)) / ((yj - yi) || Number.EPSILON) + xi;
+
+    if (intersects) inside = !inside;
+  }
+
+  return inside;
+};
+
+const pointToProjectedSegmentDistance = (point, start, end) => {
+  const [px, py] = point;
+  const [ax, ay] = start;
+  const [bx, by] = end;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lengthSquared = dx * dx + dy * dy;
+
+  if (!lengthSquared) return Math.hypot(px - ax, py - ay);
+
+  const t = Math.max(
+    0,
+    Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSquared),
+  );
+
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+};
+
+const projectedDistanceToPolygon = (point, ring) => {
+  let distance = Infinity;
+
+  for (let index = 0; index < ring.length; index += 1) {
+    distance = Math.min(
+      distance,
+      pointToProjectedSegmentDistance(
+        point,
+        ring[index],
+        ring[(index + 1) % ring.length],
+      ),
+    );
+  }
+
+  return pointInProjectedPolygon(point, ring) ? distance : -distance;
+};
+
+const getInteriorLabelPosition = (ring, project) => {
+  const projectedRing = ring.map(project);
+  const xs = projectedRing.map(([x]) => x);
+  const ys = projectedRing.map(([, y]) => y);
+
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const width = Math.max(maxX - minX, 1);
+  const height = Math.max(maxY - minY, 1);
+
+  const projectedCentroid = project(polygonCentroid(ring));
+  let bestPoint = pointInProjectedPolygon(projectedCentroid, projectedRing)
+    ? projectedCentroid
+    : [(minX + maxX) / 2, (minY + maxY) / 2];
+  let bestDistance = projectedDistanceToPolygon(bestPoint, projectedRing);
+
+  let step = Math.max(Math.min(width, height) / 5, 2);
+
+  while (step >= 1) {
+    let improved = false;
+    const searchMinX = Math.max(minX, bestPoint[0] - step * 3);
+    const searchMaxX = Math.min(maxX, bestPoint[0] + step * 3);
+    const searchMinY = Math.max(minY, bestPoint[1] - step * 3);
+    const searchMaxY = Math.min(maxY, bestPoint[1] + step * 3);
+
+    for (let x = searchMinX; x <= searchMaxX; x += step) {
+      for (let y = searchMinY; y <= searchMaxY; y += step) {
+        const distance = projectedDistanceToPolygon([x, y], projectedRing);
+        if (distance > bestDistance) {
+          bestDistance = distance;
+          bestPoint = [x, y];
+          improved = true;
+        }
+      }
+    }
+
+    step = improved ? step / 1.7 : step / 2;
+  }
+
+  return {
+    x: bestPoint[0],
+    y: bestPoint[1],
+    radius: Math.max(bestDistance, 0),
+    width,
+    height,
+    projectedRing,
+  };
+};
+
+const drawPlotNumberInsidePolygon = (ctx, text, ring, project) => {
+  const value = String(text || "").trim();
+  if (!value || ring.length < 3) return;
+
+  const placement = getInteriorLabelPosition(ring, project);
+  if (placement.radius < 3) return;
+
+  const maxFontSize = Math.min(
+    25,
+    placement.radius * 1.18,
+    placement.height * 0.48,
+  );
+  const minFontSize = placement.radius >= 7 ? 7 : 5;
+
+  let fontSize = Math.max(minFontSize, maxFontSize);
+  const maxTextWidth = Math.max(placement.radius * 1.75, 10);
+
+  while (fontSize > minFontSize) {
+    ctx.font = `700 ${fontSize}px Arial`;
+    if (ctx.measureText(value).width <= maxTextWidth) break;
+    fontSize -= 0.5;
+  }
+
+  if (ctx.measureText(value).width > maxTextWidth) return;
+
+  ctx.save();
+
+  ctx.beginPath();
+  ctx.moveTo(placement.projectedRing[0][0], placement.projectedRing[0][1]);
+  placement.projectedRing.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.font = `700 ${fontSize}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = Math.max(2, fontSize * 0.12);
+  ctx.strokeStyle = "rgba(255,255,255,0.98)";
+  ctx.strokeText(value, placement.x, placement.y);
+  ctx.fillStyle = "#294474";
+  ctx.fillText(value, placement.x, placement.y);
+
+  ctx.restore();
+};
+
 const drawCanvasLabel = (
   ctx,
   text,
@@ -827,24 +978,7 @@ export const createPlanCanvas = async ({
     );
 
     if (showContextLabels && mode === "site") {
-      const label = getPlotLabel(feature);
-      const projectedBox = getProjectedRingBox(ring, project);
-      const center = project(polygonCentroid(ring));
-
-      drawCanvasLabel(
-        ctx,
-        label,
-        center[0],
-        center[1],
-        projectedBox.width * 0.72,
-        projectedBox.height * 0.72,
-        {
-          maxFontSize: 22,
-          minFontSize: 8,
-          fontWeight: 600,
-          fillStyle: "#294474",
-        },
-      );
+      drawPlotNumberInsidePolygon(ctx, getPlotLabel(feature), ring, project);
     }
   });
 
