@@ -1195,16 +1195,52 @@ export default function RUDAMasterPlan({ map }) {
     );
   };
 
+  const allLayerKeys = Object.keys(layerState);
+  const allOn = allLayerKeys.every((k) => layerState[k]?.checked);
+
+  const toggleAllRudaLayers = (e) => {
+    e.stopPropagation();
+    const next = !allOn;
+    setLayerState((prev) => {
+      const updated = { ...prev };
+      allLayerKeys.forEach((key) => {
+        if (next) zoomOnLoadRef.current[key] = false; // Disable zoom for bulk toggle
+        updated[key] = {
+          ...updated[key],
+          checked: next,
+        };
+      });
+      return updated;
+    });
+  };
+
   return (
     <div className="border-b border-[#343c4c]">
-      <button
-        type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
-        onClick={() => setOpen((previous) => !previous)}
-      >
-        <span>RUDA MASTER PLAN</span>
-        {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-      </button>
+      <div className="flex w-full items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]">
+        <button
+          type="button"
+          className="flex flex-1 cursor-pointer items-center gap-2 text-left"
+          onClick={() => setOpen((previous) => !previous)}
+        >
+          <span>RUDA MASTER PLAN</span>
+          {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+        </button>
+        {/* Toggle-all switch */}
+        <button
+          type="button"
+          title={allOn ? "Hide all RUDA Master Plan layers" : "Show all RUDA Master Plan layers"}
+          onClick={toggleAllRudaLayers}
+          className={`relative ml-2 h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
+            allOn ? "bg-[#65c96b]" : "bg-white/20"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+              allOn ? "translate-x-4" : "translate-x-0.5"
+            }`}
+          />
+        </button>
+      </div>
 
       {open && (
         <div className="mx-3 mb-3 rounded-sm border border-[#13593f]/40 bg-[#093024] p-2">

@@ -273,6 +273,17 @@ function applyMetaverseLayerStyles(
   adminBoundaryVisibility,
 ) {
   applyMetaverseLayerOpacities(map, layerVisibility, adminBoundaryVisibility);
+
+  // Keep the approved CB-1 Master Plan palette at full strength.
+  // The generic opacity helper was washing these colors out against the basemap.
+  if (map.getLayer(LAYERS.masterPlanFill)) {
+    map.setPaintProperty(LAYERS.masterPlanFill, "fill-opacity", 1);
+  }
+
+  if (map.getLayer(LAYERS.masterPlanLine)) {
+    map.setPaintProperty(LAYERS.masterPlanLine, "line-opacity", 1);
+  }
+
   applyRudaMauzaBoundaryStyle(
     map,
     adminBoundaryVisibility?.rudaMauzaBoundaryOpacity ?? 100,

@@ -49,7 +49,7 @@ export const buildPlotDetails = (parcel = null, filters = {}) => {
     block: firstValue(p.block, p.block_name, filters.block),
     phase: firstValue(p.phase, p.phase_name, p.project_phase, p.ph),
     plotNo: firstValue(p.plot_no, p.plotno, p.plot_number, p.pl_no, parcel?.id),
-    landUse: firstValue(p.type, p.land_use, p.landuse, p.name, p.plot_category),
+    landUse: firstValue(p.land_use, p.landuse, p.plot_category, p.category, p.name, p.type),
     plotCategory: firstValue(
       p.plot_category,
       p.category,
@@ -252,7 +252,10 @@ const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
   // The site-plan drawing should show the selected plot at a readable scale,
   // together with only its immediate surroundings. The old 4.5x expansion
   // included most of the scheme and caused all labels to overlap.
-  const neighborhoodBounds = expandBounds(selectedBounds, 1.35);
+  const neighborhoodBounds = expandBounds(
+    selectedBounds,
+    mode === "partOverview" ? 8.5 : mode === "part" ? 0.9 : 1.35,
+  );
   const nearby = all
     .filter((feature) => intersectsBounds(boundsOfFeature(feature), neighborhoodBounds))
     .map((feature) => {
@@ -265,7 +268,10 @@ const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
       };
     })
     .sort((a, b) => a.distance - b.distance)
-    .slice(0, 18)
+    .slice(
+      0,
+      mode === "partOverview" ? 90 : mode === "part" ? 8 : 18,
+    )
     .map(({ feature }) => feature);
 
   if (!nearby.some((feature) => feature === selectedFeature)) {
@@ -806,26 +812,212 @@ const polygonCentroid = (ring) => {
 };
 
 const LAND_USE_COLORS = {
-  Residential: "#f8a12b",
-  "Residential Plot": "#f8a12b",
-  Commercial: "#a9d8ef",
-  "Commercial Plot": "#a9d8ef",
-  "Green Belt": "#7bdcb5",
-  Park: "#79dfa9",
-  Mosque: "#f5ef7b",
-  "Public Use": "#f5ef7b",
+  Residential: "#f89a1c",
+  "Residential Plot": "#f89a1c",
+  Commercial: "#9fd3eb",
+  "Commercial Plot": "#9fd3eb",
+  Condominium: "#d5acd2",
+  "Green Belt": "#65d7a4",
+  "Green Area": "#65d7a4",
+  Park: "#65d7a4",
+  Mosque: "#f8f07e",
+  Masjid: "#f8f07e",
+  "Grand Mosque": "#f8f07e",
+  "RUDA Office": "#62d9aa",
+  "Public Use": "#efa4aa",
+  "Public Building": "#efa4aa",
+  Utility: "#efa4aa",
+  Canal: "#9fd3eb",
+  Passage: "#ffffff",
   Road: "#ffffff",
 };
 
 const getFeatureColor = (feature) => {
   const p = feature?.properties || {};
-  const label = firstValue(p.type, p.land_use, p.name, p.plot_category);
-  return LAND_USE_COLORS[label] || "#e7edf3";
+  const label = firstValue(
+    p.land_use,
+    p.landuse,
+    p.plot_category,
+    p.category,
+    p.name,
+    p.type,
+  );
+  const key = Object.keys(LAND_USE_COLORS).find((item) =>
+    label.toLowerCase().includes(item.toLowerCase()),
+  );
+  return key ? LAND_USE_COLORS[key] : "#eef2f5";
 };
 
 const getPlotLabel = (feature) => {
   const p = feature?.properties || {};
   return firstValue(p.plot_no, p.plotno, p.plot_number, p.name, feature?.id);
+};
+
+
+const getFeatureDetails = (feature) => {
+  const p = feature?.properties || {};
+
+  return {
+    plotNo: firstValue(
+      p.plot_no,
+      p.plotno,
+      p.plot_number,
+      p.pl_no,
+      feature?.id,
+    ),
+    area: firstValue(
+      p.plot_area,
+      p.area,
+      p.total_area,
+      p.area_sqft,
+      p.area_sft,
+    ),
+    category: firstValue(
+      p.plot_category,
+      p.category,
+      p.type,
+      p.land_use,
+      p.landuse,
+      p.name,
+    ),
+    dimension: firstValue(
+      p.dimension,
+      p.dimensions,
+      p.plot_dimension,
+    ),
+    roadFt: firstValue(
+      p.rd_ft,
+      p.road_ft,
+      p.road_width,
+      p.road_wide,
+      p.row_width,
+    ),
+    roadFacing: firstValue(
+      p.rd_facing,
+      p.road_facing,
+      p.facing,
+      p.street_road_no,
+      p.street_no,
+      p.road_no,
+      p.road_name,
+    ),
+  };
+};
+
+const drawUniformPlotNumber = (
+  ctx,
+  text,
+  ring,
+  project,
+  {
+    fontSize = 15,
+    fillStyle = "#0b35d5",
+    haloWidth = 2.5,
+  } = {},
+) => {
+  const value = String(text || "").trim();
+  if (!value || ring.length < 3) return;
+
+  const placement = getInteriorLabelPosition(ring, project);
+  if (placement.radius < 2.2) return;
+
+  let finalFontSize = fontSize;
+
+  // All plot numbers start from the same size. Only genuinely tiny plots
+  // reduce the size enough to stay within their own boundary.
+  const availableWidth = Math.max(placement.radius * 1.85, 8);
+  ctx.font = `700 ${finalFontSize}px Arial`;
+
+  while (
+    finalFontSize > 8 &&
+    ctx.measureText(value).width > availableWidth
+  ) {
+    finalFontSize -= 0.5;
+    ctx.font = `700 ${finalFontSize}px Arial`;
+  }
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(placement.projectedRing[0][0], placement.projectedRing[0][1]);
+  placement.projectedRing.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.font = `700 ${finalFontSize}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = haloWidth;
+  ctx.strokeStyle = "rgba(255,255,255,0.98)";
+  ctx.strokeText(value, placement.x, placement.y);
+  ctx.fillStyle = fillStyle;
+  ctx.fillText(value, placement.x, placement.y);
+  ctx.restore();
+};
+
+const drawDetailedSelectedPlotLabel = (
+  ctx,
+  details,
+  ring,
+  project,
+) => {
+  const placement = getInteriorLabelPosition(ring, project);
+  if (placement.radius < 5) return;
+
+  const lines = [
+    { text: details.plotNo, size: 36, weight: 700, color: "#0b35d5" },
+    {
+      text: firstValue(details.plotArea, details.plotSize),
+      size: 20,
+      weight: 600,
+      color: "#1f2937",
+    },
+    {
+      text: firstValue(details.landUse, details.plotCategory),
+      size: 15,
+      weight: 600,
+      color: "#1f2937",
+    },
+    {
+      text: details.dimension,
+      size: 13,
+      weight: 500,
+      color: "#374151",
+    },
+    {
+      text: details.roadFt ? `${details.roadFt} ft Road` : "",
+      size: 13,
+      weight: 500,
+      color: "#374151",
+    },
+  ].filter((line) => line.text);
+
+  const lineHeights = lines.map((line) => line.size * 1.08);
+  const totalHeight = lineHeights.reduce((sum, value) => sum + value, 0);
+  let cursorY = placement.y - totalHeight / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(placement.projectedRing[0][0], placement.projectedRing[0][1]);
+  placement.projectedRing.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+  ctx.closePath();
+  ctx.clip();
+
+  lines.forEach((line, index) => {
+    cursorY += lineHeights[index] / 2;
+    ctx.font = `${line.weight} ${line.size}px Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(2.5, line.size * 0.12);
+    ctx.strokeStyle = "rgba(255,255,255,0.98)";
+    ctx.strokeText(String(line.text), placement.x, cursorY);
+    ctx.fillStyle = line.color;
+    ctx.fillText(String(line.text), placement.x, cursorY);
+    cursorY += lineHeights[index] / 2;
+  });
+
+  ctx.restore();
 };
 
 const getTransform = (bounds, width, height, padding) => {
@@ -896,6 +1088,155 @@ const drawNorthArrowCanvas = (ctx, x, y, size) => {
   ctx.restore();
 };
 
+
+const drawWrappedCanvasText = (
+  ctx,
+  lines,
+  x,
+  y,
+  fontSize,
+  color = "#111111",
+) => {
+  const filtered = lines.filter(Boolean);
+  const lineHeight = fontSize * 1.12;
+  const startY = y - ((filtered.length - 1) * lineHeight) / 2;
+
+  filtered.forEach((line, index) => {
+    ctx.font = `${index === 0 ? 700 : 600} ${fontSize}px Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(3, fontSize * 0.14);
+    ctx.strokeStyle = "rgba(255,255,255,0.98)";
+    ctx.strokeText(String(line), x, startY + index * lineHeight);
+    ctx.fillStyle = index === 0 ? color : "#263238";
+    ctx.fillText(String(line), x, startY + index * lineHeight);
+  });
+};
+
+const drawClientOverviewLabel = (ctx, feature, ring, project) => {
+  const p = feature?.properties || {};
+  const placement = getInteriorLabelPosition(ring, project);
+  if (placement.radius < 4) return;
+
+  const plotNo = firstValue(
+    p.plot_no,
+    p.plotno,
+    p.plot_number,
+    p.name,
+    feature?.id,
+  );
+  const category = firstValue(
+    p.land_use,
+    p.landuse,
+    p.plot_category,
+    p.category,
+    p.name,
+    p.type,
+  );
+  const area = firstValue(p.plot_area, p.area, p.area_sqft, p.area_sft);
+
+  const isLandUse =
+    placement.radius >= 18 &&
+    /park|green|commercial|mosque|masjid|ruda office|public|utility|canal|condominium/i.test(
+      category,
+    );
+
+  if (isLandUse) {
+    drawWrappedCanvasText(
+      ctx,
+      [
+        /mosque|masjid/i.test(category) ? "Grand Mosque" : category,
+        area,
+      ],
+      placement.x,
+      placement.y,
+      Math.max(12, Math.min(24, placement.radius * 0.45)),
+      "#111111",
+    );
+    return;
+  }
+
+  drawUniformPlotNumber(ctx, plotNo, ring, project, {
+    fontSize: 17,
+    fillStyle: "#0b35d5",
+    haloWidth: 2.5,
+  });
+};
+
+const drawAdjacentClientLabel = (ctx, feature, ring, project) => {
+  const p = feature?.properties || {};
+  const placement = getInteriorLabelPosition(ring, project);
+  if (placement.radius < 11) return;
+
+  const plotNo = firstValue(
+    p.plot_no,
+    p.plotno,
+    p.plot_number,
+    p.name,
+    feature?.id,
+  );
+
+  drawWrappedCanvasText(
+    ctx,
+    [plotNo, "Adjacent", "Plot"],
+    placement.x,
+    placement.y,
+    Math.max(15, Math.min(24, placement.radius * 0.48)),
+    "#111111",
+  );
+};
+
+const drawRoadLabelForPartPlan = (
+  ctx,
+  details,
+  selectedRing,
+  project,
+  width,
+  height,
+  mode,
+) => {
+  if (!["partOverview", "part"].includes(mode)) return;
+
+  const points = selectedRing.map(project);
+  const xs = points.map(([x]) => x);
+  const ys = points.map(([, y]) => y);
+  const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const bottomY = Math.max(...ys);
+
+  const roadName = firstValue(details.streetRoadNo, details.roadFacing);
+  if (!roadName && !details.roadFt) return;
+
+  const label = roadName
+    ? /street|road/i.test(roadName)
+      ? roadName
+      : `Street ${roadName}`
+    : "Road";
+
+  const x = Math.min(width - 150, Math.max(150, centerX));
+  const y = Math.min(height - 75, bottomY + (mode === "part" ? 95 : 55));
+
+  ctx.save();
+  ctx.font = `700 ${mode === "part" ? 30 : 24}px Arial`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = 7;
+  ctx.strokeStyle = "rgba(255,255,255,0.98)";
+  ctx.strokeText(label, x, y);
+  ctx.fillStyle = "#111111";
+  ctx.fillText(label, x, y);
+
+  if (details.roadFt) {
+    const widthText = `${details.roadFt} Feet ROW`;
+    ctx.font = `600 ${mode === "part" ? 21 : 18}px Arial`;
+    ctx.lineWidth = 5;
+    ctx.strokeText(widthText, x, y + (mode === "part" ? 34 : 27));
+    ctx.fillText(widthText, x, y + (mode === "part" ? 34 : 27));
+  }
+  ctx.restore();
+};
+
 export const createPlanCanvas = async ({
   selectedFeature,
   contextGeojson = EMPTY_FC,
@@ -931,10 +1272,15 @@ export const createPlanCanvas = async ({
   const fullSchemeBounds = getBounds(
     contextGeojson?.features?.length ? contextGeojson.features : features,
   );
+  const contextBounds = getBounds(features.length ? features : [selectedFeature]);
   const bounds =
     mode === "location"
-      ? expandBounds(fullSchemeBounds, 0.08)
-      : expandBounds(selectedBounds, 2.15);
+      ? expandBounds(fullSchemeBounds, 0.025)
+      : mode === "partOverview"
+        ? expandBounds(contextBounds, 0.01)
+        : mode === "part"
+          ? expandBounds(contextBounds, 0.005)
+          : expandBounds(selectedBounds, 2.15);
 
   if (!bounds || selectedRing.length < 3) {
     ctx.fillStyle = "#666666";
@@ -944,7 +1290,14 @@ export const createPlanCanvas = async ({
     return canvas;
   }
 
-  const padding = mode === "location" ? 48 : 95;
+  const padding =
+    mode === "location"
+      ? 18
+      : mode === "partOverview"
+        ? 8
+        : mode === "part"
+          ? 8
+          : 95;
   const project = getTransform(bounds, width, height, padding);
 
   if (watermark) {
@@ -972,13 +1325,32 @@ export const createPlanCanvas = async ({
       ctx,
       ring,
       project,
-      mode === "location" ? getFeatureColor(feature) : "rgba(245,247,250,0.84)",
-      mode === "location" ? "#a8b0b8" : "#aeb6bf",
-      mode === "location" ? 1.2 : 2,
+      mode === "location" || mode === "partOverview"
+        ? getFeatureColor(feature)
+        : mode === "part"
+          ? "rgba(255,255,255,0.99)"
+          : "rgba(245,247,250,0.84)",
+      mode === "location" ? "#9aa4af" : "#aeb6bf",
+      mode === "location" ? 1.4 : mode === "part" ? 2.2 : 2,
     );
 
-    if (showContextLabels && mode === "site") {
-      drawPlotNumberInsidePolygon(ctx, getPlotLabel(feature), ring, project);
+    if (showContextLabels) {
+      if (mode === "partOverview") {
+        drawClientOverviewLabel(ctx, feature, ring, project);
+      } else if (mode === "part") {
+        drawAdjacentClientLabel(ctx, feature, ring, project);
+      } else if (["site", "location"].includes(mode)) {
+        drawUniformPlotNumber(
+          ctx,
+          getPlotLabel(feature),
+          ring,
+          project,
+          {
+            fontSize: mode === "location" ? 15 : 16,
+            fillStyle: "#0b35d5",
+          },
+        );
+      }
     }
   });
 
@@ -988,22 +1360,37 @@ export const createPlanCanvas = async ({
     project,
     selectedFill,
     selectedStroke,
-    mode === "location" ? 5 : 7,
+    mode === "location"
+      ? 7
+      : mode === "partOverview"
+        ? 10
+        : mode === "part"
+          ? 11
+          : 7,
   );
 
   const selectedCenter = project(polygonCentroid(selectedRing));
   const selectedProjectedBox = getProjectedRingBox(selectedRing, project);
 
-  if (mode === "location") {
-    ctx.save();
-    ctx.fillStyle = "#0637d9";
-    ctx.beginPath();
-    ctx.arc(selectedCenter[0], selectedCenter[1], 9, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.restore();
+  if (mode === "location" || mode === "partOverview") {
+    drawUniformPlotNumber(
+      ctx,
+      details.plotNo,
+      selectedRing,
+      project,
+      {
+        fontSize: mode === "partOverview" ? 24 : 17,
+        fillStyle: "#0637ff",
+        haloWidth: 4,
+      },
+    );
+  } else if (mode === "part") {
+    drawDetailedSelectedPlotLabel(
+      ctx,
+      details,
+      selectedRing,
+      project,
+    );
   } else {
     drawCanvasLabel(
       ctx,
@@ -1036,7 +1423,17 @@ export const createPlanCanvas = async ({
     );
   }
 
-  if (showDimensions && mode === "site") {
+  drawRoadLabelForPartPlan(
+    ctx,
+    details,
+    selectedRing,
+    project,
+    width,
+    height,
+    mode,
+  );
+
+  if (showDimensions && ["site", "part"].includes(mode)) {
     dimensionRing.forEach((point, index) => {
       const next = dimensionRing[(index + 1) % dimensionRing.length];
       const a = project(point);
@@ -1057,8 +1454,14 @@ export const createPlanCanvas = async ({
       const outsideDirection = towardCenter > 0 ? -1 : 1;
 
       const sidePixelLength = Math.hypot(dx, dy);
-      const dimensionFont = Math.max(15, Math.min(21, sidePixelLength * 0.16));
-      const offset = Math.max(29, dimensionFont * 1.65);
+      const dimensionFont =
+        mode === "part"
+          ? Math.max(24, Math.min(34, sidePixelLength * 0.19))
+          : Math.max(15, Math.min(21, sidePixelLength * 0.16));
+      const offset =
+        mode === "part"
+          ? Math.max(46, dimensionFont * 1.85)
+          : Math.max(29, dimensionFont * 1.65);
 
       ctx.save();
       ctx.translate(
