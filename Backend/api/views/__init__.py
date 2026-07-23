@@ -50,5 +50,4 @@ from .RudaMasterPlan.RudaPlanningBoundaryView import *
 from .RudaMasterPlan.ProposedRoadNetworkView import *
 from .RudaMasterPlan.SWTPSiteView import *
 from .RudaMasterPlan.WWTPSitesView import *
-from .RudaMasterPlan.TransportationRoads import *
 from .RudaMasterPlan.LahoreTransportationRoadView import *
