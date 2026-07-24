@@ -1,15 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Grid3X3,
   Clock,
-  Video,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Maximize2,
-  Minimize2,
-  RotateCcw,
   Image,
   ScanSearch,
   TimerReset,
@@ -17,17 +9,6 @@ import {
 import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
 import TimeLapse from "./TimeLapse";
 import ChangeDetection from "./ChangeDetection";
-
-// ── Video catalogue ────────────────────────────────────────────────────────────
-const DRONE_VIDEOS = [
-  {
-    id: "chahar-bagh-1",
-    title: "Chahar Bagh Phase 1",
-    subtitle: "Aerial Survey — 2024",
-    src: "/Ruda Chahar Bagh Drone Video 1.mp4",
-    color: "#65c96b",
-  },
-];
 
 // ── Imagery catalogue ──────────────────────────────────────────────────────────
 const IMAGERY_LAYERS = [
@@ -66,7 +47,7 @@ const IMAGERY_LAYERS = [
 ];
 
 export default function DroneImagery({ map, onExpandedChange }) {
-  // ── Tab state: "imagery" | "videos" | "change" | "timelapse" ─────────────
+  // ── Tab state: "imagery" | "change" | "timelapse" ───────────────────────
   const [activeTab, setActiveTab] = useState("imagery");
 
   // ── Imagery state ─────────────────────────────────────────────────────────
@@ -76,32 +57,18 @@ export default function DroneImagery({ map, onExpandedChange }) {
     ),
   );
 
-  // ── Video state ───────────────────────────────────────────────────────────
-  const [activeVideo, setActiveVideo] = useState(null);
-  const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [volume, setVolume] = useState(0.8);
-  const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [timeLapseExpanded, setTimeLapseExpanded] = useState(false);
-  const [changeDetectionExpanded, setChangeDetectionExpanded] = useState(false);
-  const videoRef = useRef(null);
 
   useEffect(() => {
     if (typeof onExpandedChange !== "function") return;
 
     onExpandedChange(
-      expanded || timeLapseExpanded || changeDetectionExpanded,
+      timeLapseExpanded || changeDetectionExpanded,
     );
 
     return () => {
       onExpandedChange(false);
     };
   }, [
-    expanded,
     timeLapseExpanded,
     changeDetectionExpanded,
     onExpandedChange,
@@ -158,52 +125,6 @@ export default function DroneImagery({ map, onExpandedChange }) {
       [id]: { ...prev[id], ...patch },
     }));
 
-  // ── Video helpers ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (playing) v.play().catch(() => setPlaying(false));
-    else v.pause();
-  }, [playing]);
-
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.volume = muted ? 0 : volume;
-  }, [volume, muted]);
-
-  const formatTime = (s) => {
-    if (!isFinite(s)) return "0:00";
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, "0")}`;
-  };
-
-  const handleSeek = (e) => {
-    const v = videoRef.current;
-    if (!v) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    v.currentTime = pct * v.duration;
-    setProgress(pct * 100);
-    setCurrentTime(v.currentTime);
-  };
-
-  const openVideo = (id) => {
-    setActiveVideo(id);
-    setPlaying(false);
-    setProgress(0);
-    setCurrentTime(0);
-    setExpanded(false);
-  };
-
-  const closeVideo = () => {
-    setActiveVideo(null);
-    setPlaying(false);
-    setExpanded(false);
-  };
-
-  const activeVid = DRONE_VIDEOS.find((v) => v.id === activeVideo);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -318,8 +239,8 @@ export default function DroneImagery({ map, onExpandedChange }) {
               type="button"
               onClick={() => openVideo(vid.id)}
               className={`w-full flex items-center gap-3 rounded-md border px-3 py-2.5 mb-2 transition text-left ${activeVideo === vid.id
-                  ? "border-[#65c96b] bg-[#1e2e1e]"
-                  : "border-[#3b4558] bg-[#1e2636] hover:border-[#65c96b]/50 hover:bg-[#1e2e1e]/60"
+                ? "border-[#65c96b] bg-[#1e2e1e]"
+                : "border-[#3b4558] bg-[#1e2636] hover:border-[#65c96b]/50 hover:bg-[#1e2e1e]/60"
                 }`}
             >
               <div
@@ -364,8 +285,8 @@ export default function DroneImagery({ map, onExpandedChange }) {
 
               <div
                 className={`bg-[#06291f] shadow-xl transition-all duration-300 ${expanded
-                    ? "fixed z-[10002] rounded-xl border border-[#3b4558] overflow-hidden"
-                    : "mt-2 rounded-lg border border-[#3b4558] overflow-hidden"
+                  ? "fixed z-[10002] rounded-xl border border-[#3b4558] overflow-hidden"
+                  : "mt-2 rounded-lg border border-[#3b4558] overflow-hidden"
                   }`}
                 style={
                   expanded
@@ -609,26 +530,12 @@ function TabBtn({ active, icon, label, title, onClick }) {
       title={title || label}
       onClick={onClick}
       className={`flex min-w-0 items-center justify-center gap-1.5 rounded-t-md border-b-2 px-2 py-2 text-[10px] font-semibold transition-colors sm:text-[11px] ${active
-          ? "border-[#65c96b] text-[#65c96b] bg-[#65c96b]/10"
-          : "border-transparent text-white/40 hover:text-white/70"
+        ? "border-[#65c96b] text-[#65c96b] bg-[#65c96b]/10"
+        : "border-transparent text-white/40 hover:text-white/70"
         }`}
     >
       {icon}
       {label}
-    </button>
-  );
-}
-
-// ── Small icon button ─────────────────────────────────────────────────────────
-function CtrlBtn({ title, onClick, children }) {
-  return (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className="flex h-7 w-7 items-center justify-center rounded-md border border-[#0f3d2e] bg-[#1f2937] text-white/70 transition hover:bg-[#0f3d2e] hover:text-white"
-    >
-      {children}
     </button>
   );
 }
