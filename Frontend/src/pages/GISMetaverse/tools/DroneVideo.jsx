@@ -34,7 +34,7 @@ const DRONE_VIDEOS = [
     },
 ];
 
-export default function DroneVideos({ onClose, onExpandedChange }) {
+export default function DroneVideo({ onClose, onExpandedChange }) {
     const videoRef = useRef(null);
 
     const [query, setQuery] = useState("");

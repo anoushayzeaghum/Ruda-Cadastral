@@ -19,7 +19,7 @@ import Filter from "./tools/Filter";
 import Basemaps from "./tools/Basemaps";
 import LayersPanel from "./tools/Layers";
 import DroneImagery from "./tools/DroneImagery";
-import DroneVideos from "./tools/DroneVideos";
+import DroneVideo from "./tools/DroneVideo";
 import TimeLapse from "./tools/TimeLapse";
 import ChangeDetection from "./tools/ChangeDetection";
 import Import from "./tools/Import";
@@ -97,7 +97,7 @@ export default function MetaverseLeftToolbar({
     [handleToolExpandedChange],
   );
 
-  const handleDroneVideosExpandedChange = useCallback(
+  const handleDroneVideoExpandedChange = useCallback(
     (isExpanded) =>
       handleToolExpandedChange("droneVideos", isExpanded),
     [handleToolExpandedChange],
@@ -243,10 +243,10 @@ export default function MetaverseLeftToolbar({
           )}
 
           {activeTool === "droneVideos" && (
-            <DroneVideos
+            <DroneVideo
               onClose={() => setActiveTool(null)}
               onExpandedChange={
-                handleDroneVideosExpandedChange
+                handleDroneVideoExpandedChange
               }
             />
           )}
