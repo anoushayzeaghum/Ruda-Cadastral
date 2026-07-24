@@ -56,20 +56,20 @@ export default function PlotDetails({
 
   const printOptions = [
     {
-      label: "Print Report",
-      action: printReport,
+      label: "Print Part Plan",
+      action: printPartPlan,
     },
     {
-      label: "Print Official Demarcation",
-      action: printOfficialDemarcation,
+      label: "Print Report",
+      action: printReport,
     },
     {
       label: "Print Site Plan",
       action: printSitePlan,
     },
     {
-      label: "Print Part Plan",
-      action: printPartPlan,
+      label: "Print Official Demarcation",
+      action: printOfficialDemarcation,
     },
     {
       label: "Print Possession Certificate",

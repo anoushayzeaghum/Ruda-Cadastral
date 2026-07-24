@@ -248,12 +248,6 @@ const TEAM_MEMBERS = [
   {
     id: 5,
     name: "Team Member Name",
-    designation: "Project Lead",
-    image: "",
-  },
-  {
-    id: 6,
-    name: "Team Member Name",
     designation: "GIS & Digital Twin Lead",
     image: "",
   },
@@ -425,10 +419,10 @@ function AppCard({
   onClick,
 }) {
   const [ref, visible] = useInView();
-  const [hovered,      setHovered]      = useState(false);
-  const [slideIdx,     setSlideIdx]     = useState(0);
-  const [prevIdx,      setPrevIdx]      = useState(null);
-  const [fading,       setFading]       = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [prevIdx, setPrevIdx] = useState(null);
+  const [fading, setFading] = useState(false);
   const intervalRef = useRef(null);
 
   /* start / stop slideshow on hover */
@@ -439,7 +433,10 @@ function AppCard({
           const next = (cur + 1) % images.length;
           setPrevIdx(cur);
           setFading(true);
-          setTimeout(() => { setPrevIdx(null); setFading(false); }, 650);
+          setTimeout(() => {
+            setPrevIdx(null);
+            setFading(false);
+          }, 650);
           return next;
         });
       }, 1600);
@@ -468,10 +465,8 @@ function AppCard({
       style={{ transitionDelay: `${(index % 4) * 80}ms` }}
     >
       <div className="flex w-full flex-col">
-
         {/* ── image area ── */}
         <div className="relative h-40 overflow-hidden sm:h-44">
-
           {/* outgoing slide */}
           {prevIdx !== null && (
             <img
@@ -480,7 +475,10 @@ function AppCard({
               alt=""
               aria-hidden="true"
               className="absolute inset-0 h-full w-full object-cover"
-              style={{ opacity: fading ? 0 : 1, transition: "opacity 650ms ease-in-out" }}
+              style={{
+                opacity: fading ? 0 : 1,
+                transition: "opacity 650ms ease-in-out",
+              }}
             />
           )}
 
@@ -507,10 +505,11 @@ function AppCard({
                   key={i}
                   className="block rounded-full transition-all duration-400"
                   style={{
-                    width:      i === slideIdx ? "14px" : "5px",
-                    height:     "5px",
-                    background: i === slideIdx ? "#70D84F" : "rgba(255,255,255,0.3)",
-                    boxShadow:  i === slideIdx ? "0 0 6px #70D84F" : "none",
+                    width: i === slideIdx ? "14px" : "5px",
+                    height: "5px",
+                    background:
+                      i === slideIdx ? "#70D84F" : "rgba(255,255,255,0.3)",
+                    boxShadow: i === slideIdx ? "0 0 6px #70D84F" : "none",
                   }}
                 />
               ))}

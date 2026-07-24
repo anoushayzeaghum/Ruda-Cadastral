@@ -1,7 +1,7 @@
 const EMPTY_FC = { type: "FeatureCollection", features: [] };
 
 export const NOTIFIED_PHASES_BOUNDARY = {
-  label: "RUDA Phases Boundary",
+  label: "Phases Boundary",
   endpoint: "/ruda-notified-phases-boundary/",
   source: "metaverse-admin-notified-phases-source",
   fill: "metaverse-admin-notified-phases-fill",
@@ -210,11 +210,10 @@ export function addOrUpdateNotifiedPhasesBoundary(
       },
     });
   } else {
-    map.setLayoutProperty(
-      NOTIFIED_PHASES_BOUNDARY.labelLayer,
-      "text-field",
-      ["to-string", PHASE_NAME_EXPRESSION],
-    );
+    map.setLayoutProperty(NOTIFIED_PHASES_BOUNDARY.labelLayer, "text-field", [
+      "to-string",
+      PHASE_NAME_EXPRESSION,
+    ]);
     map.setPaintProperty(
       NOTIFIED_PHASES_BOUNDARY.labelLayer,
       "text-opacity",

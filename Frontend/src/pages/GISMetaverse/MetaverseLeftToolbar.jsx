@@ -26,8 +26,8 @@ import FlyTo from "./tools/FlyTo";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
-  { id: "droneImagery", label: "Drone Imagery", icon: Drone },
   { id: "filter", label: "Filter", icon: FilterIcon },
+  { id: "droneImagery", label: "Drone Imagery", icon: Drone },
   { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
   { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
   { id: "measurement", label: "Measurement", icon: Ruler },
