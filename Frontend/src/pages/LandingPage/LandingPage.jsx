@@ -604,8 +604,8 @@ hover:rotate-[0.15deg] ${compact
         <div className="flex shrink-0 flex-col items-center justify-center gap-2">
           <div
             className={`${compact
-                ? "h-9 w-9 text-sm"
-                : "h-10 w-10 text-sm 2xl:h-11 2xl:w-11 2xl:text-base"
+              ? "h-9 w-9 text-sm"
+              : "h-10 w-10 text-sm 2xl:h-11 2xl:w-11 2xl:text-base"
               } flex items-center justify-center rounded-full border-2 font-black`}
             style={{
               borderColor: area.accent,
@@ -619,8 +619,8 @@ hover:rotate-[0.15deg] ${compact
 
           <div
             className={`${compact
-                ? "h-8 w-8"
-                : "h-9 w-9 2xl:h-10 2xl:w-10"
+              ? "h-8 w-8"
+              : "h-9 w-9 2xl:h-10 2xl:w-10"
               } flex items-center justify-center rounded-full border bg-black/25`}
             style={{ borderColor: `${area.accent}90`, color: area.accent }}
           >
@@ -631,8 +631,8 @@ hover:rotate-[0.15deg] ${compact
         <div className="min-w-0 flex-1">
           <h3
             className={`${compact
-                ? "text-[10px]"
-                : "text-[11px] 2xl:text-[12px]"
+              ? "text-[10px]"
+              : "text-[11px] 2xl:text-[12px]"
               } font-black uppercase leading-[1.15] tracking-[0.035em]`}
           >
             {compact ? area.shortTitle : area.title}
@@ -646,8 +646,8 @@ hover:rotate-[0.15deg] ${compact
               <li
                 key={bullet}
                 className={`${compact
-                    ? "text-[9px]"
-                    : "text-[9px] 2xl:text-[10px]"
+                  ? "text-[9px]"
+                  : "text-[9px] 2xl:text-[10px]"
                   } flex items-start gap-1.5 leading-[1.28] text-white/[0.84]`}
               >
                 <span
@@ -1768,26 +1768,26 @@ export default function LandingPage() {
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="mb-6 flex flex-wrap items-center gap-2 sm:gap-2.5 lg:flex-nowrap lg:gap-2.5 xl:gap-3">
               {[
-  {
-    src: RudaFooterLogo,
-    alt: "Ravi Urban Development Authority",
-  },
-  {
-    src: GopHeaderLogo,
-    alt: "Government of Punjab",
-  },
-  {
-    src: NespakLogo,
-    alt: "NESPAK",
-  },
-  {
-    src: RudaLogo,
-    alt: "RUDA GIS Directorate",
-  },
-].map((logo) => (
-  <div
-    key={logo.alt}
-    className="
+                {
+                  src: RudaFooterLogo,
+                  alt: "Ravi Urban Development Authority",
+                },
+                {
+                  src: GopHeaderLogo,
+                  alt: "Government of Punjab",
+                },
+                {
+                  src: NespakLogo,
+                  alt: "NESPAK",
+                },
+                {
+                  src: RudaLogo,
+                  alt: "RUDA GIS Directorate",
+                },
+              ].map((logo) => (
+                <div
+                  key={logo.alt}
+                  className="
       flex
       h-[64px] w-[64px]
       sm:h-[70px] sm:w-[70px]
@@ -1804,14 +1804,14 @@ export default function LandingPage() {
       duration-300
       hover:scale-105
     "
-  >
-    <img
-      src={logo.src}
-      alt={logo.alt}
-      className="h-[92%] w-[92%] rounded-full object-contain"
-    />
-  </div>
-))}
+                >
+                  <img
+                    src={logo.src}
+                    alt={logo.alt}
+                    className="h-[92%] w-[92%] rounded-full object-contain"
+                  />
+                </div>
+              ))}
             </div>
 
             <p className="mb-4 max-w-md text-xs leading-relaxed text-white/70 sm:mb-6 sm:text-sm">
