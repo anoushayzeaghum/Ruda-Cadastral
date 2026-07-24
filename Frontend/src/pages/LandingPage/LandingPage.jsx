@@ -264,18 +264,17 @@ const GIS_APPS = [
     icon: <Search size={22} />,
     title: "RUDA GIS Metaverse",
     desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
-    img: "/s2.png",
+    images: ["/2.1.png", "/2.2.png", "/2.3.png"],
     route: "/gis-metaverse",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
     tags: ["GIS", "Vector & Raster"],
   },
-
   {
     icon: <Layers size={22} />,
     title: "Land Information System ",
     desc: "Manage and visualize cadastral records, Khasra layers, mauza limits and administrative boundaries in one interactive GIS platform.",
-    img: "/s1.png",
+    images: ["/s1.png", "/S1.2.png", "/S1.3.png"],
     route: "/Mapview",
     gradientFrom: "#49B84A",
     gradientTo: "#004225",
@@ -285,8 +284,8 @@ const GIS_APPS = [
     icon: <Smartphone size={22} />,
     title: "RUDA Masterplan",
     desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
-    img: "/s6.png",
-    route: "/flyto-dashboard",
+    images: ["/s6.png", "/s6.1.png", "/s6.2.png", "/s6.3.png"],
+    route: "/masterplan",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
     tags: ["Location", "Analytics"],
@@ -295,7 +294,7 @@ const GIS_APPS = [
     icon: <Eye size={22} />,
     title: "Metaverse KPIs",
     desc: "Control and manage the complete cadastral system, including users, records, spatial datasets, dashboards, permissions and administrative workflows.",
-    img: "/s5.png",
+    images: ["/s5.png"],
     route: "/dashboard",
     gradientFrom: "#49B84A",
     gradientTo: "#004225",
@@ -305,18 +304,17 @@ const GIS_APPS = [
     icon: <FileText size={22} />,
     title: "Plot Information System",
     desc: "Search plots, view demarcation details, verify and generate printable plot reports for cadastral documentation.",
-    img: "/s4.png",
+    images: ["/s4.png", "/s4.1.png", "/s4.2.png"],
     route: "/demarcation",
     gradientFrom: "#49B84A",
     gradientTo: "#0B7A3B",
     tags: ["Plots", "Reports"],
   },
-
   {
     icon: <ClipboardList size={22} />,
     title: "3D GeoVerse",
     desc: "Experience cadastral and society data in an immersive 3D environment with land-use visualization.",
-    img: "/s3.png",
+    images: ["/s3.png", "/s3.1.png", "/s3.2.png"],
     route: "/society-3d",
     gradientFrom: "#49B84A",
     gradientTo: "#0B7A3B",
@@ -326,7 +324,7 @@ const GIS_APPS = [
     icon: <UploadCloud size={22} />,
     title: "3D BIM Model Viewer",
     desc: "Upload and position GLB or glTF models on the Cesium globe, manage BIM visibility, and explore project boundaries in an interactive 3D environment.",
-    img: "/s7.png",
+    images: ["/s7.png"],
     route: "/society-3d-upload",
     gradientFrom: "#0B7A3B",
     gradientTo: "#00351F",
@@ -336,7 +334,7 @@ const GIS_APPS = [
     icon: <Smartphone size={22} />,
     title: "Location Intelligence",
     desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
-    img: "/s6.png",
+    images: ["/s6.png", "/s6.1.png", "/s6.2.png", "/s6.3.png"],
     route: "/flyto-dashboard",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
@@ -418,7 +416,7 @@ function AppCard({
   icon,
   title,
   desc,
-  img,
+  images = [],
   route,
   gradientFrom,
   gradientTo,
@@ -427,7 +425,32 @@ function AppCard({
   onClick,
 }) {
   const [ref, visible] = useInView();
-  const [hovered, setHovered] = useState(false);
+  const [hovered,      setHovered]      = useState(false);
+  const [slideIdx,     setSlideIdx]     = useState(0);
+  const [prevIdx,      setPrevIdx]      = useState(null);
+  const [fading,       setFading]       = useState(false);
+  const intervalRef = useRef(null);
+
+  /* start / stop slideshow on hover */
+  useEffect(() => {
+    if (hovered && images.length > 1) {
+      intervalRef.current = setInterval(() => {
+        setSlideIdx((cur) => {
+          const next = (cur + 1) % images.length;
+          setPrevIdx(cur);
+          setFading(true);
+          setTimeout(() => { setPrevIdx(null); setFading(false); }, 650);
+          return next;
+        });
+      }, 1600);
+    } else {
+      clearInterval(intervalRef.current);
+      setSlideIdx(0);
+      setPrevIdx(null);
+      setFading(false);
+    }
+    return () => clearInterval(intervalRef.current);
+  }, [hovered, images.length]);
 
   return (
     <article
@@ -445,14 +468,54 @@ function AppCard({
       style={{ transitionDelay: `${(index % 4) * 80}ms` }}
     >
       <div className="flex w-full flex-col">
+
+        {/* ── image area ── */}
         <div className="relative h-40 overflow-hidden sm:h-44">
+
+          {/* outgoing slide */}
+          {prevIdx !== null && (
+            <img
+              key={`prev-${prevIdx}`}
+              src={images[prevIdx]}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{ opacity: fading ? 0 : 1, transition: "opacity 650ms ease-in-out" }}
+            />
+          )}
+
+          {/* current slide */}
           <img
-            src={img}
+            key={`cur-${slideIdx}`}
+            src={images[slideIdx]}
             alt={title}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{
+              opacity: 1,
+              transform: hovered ? "scale(1.06)" : "scale(1)",
+              transition: "transform 700ms ease-in-out",
+            }}
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-[#031812] via-[#031812]/10 to-black/20" />
+
+          {/* slide indicator dots — only when >1 image */}
+          {images.length > 1 && (
+            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+              {images.map((_, i) => (
+                <span
+                  key={i}
+                  className="block rounded-full transition-all duration-400"
+                  style={{
+                    width:      i === slideIdx ? "14px" : "5px",
+                    height:     "5px",
+                    background: i === slideIdx ? "#70D84F" : "rgba(255,255,255,0.3)",
+                    boxShadow:  i === slideIdx ? "0 0 6px #70D84F" : "none",
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           <div className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/35 text-white/85 backdrop-blur-md">
             {icon}
@@ -473,7 +536,6 @@ function AppCard({
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#55d985]/35 bg-gradient-to-br from-[#3cc96f] to-[#0b7a3b] text-white shadow-[0_8px_18px_-9px_rgba(60,201,111,0.9)]">
               {icon}
             </div>
-
             <h3 className="min-w-0 text-[14px] font-black leading-tight text-white sm:text-sm">
               {title}
             </h3>
@@ -1373,7 +1435,7 @@ export default function LandingPage() {
                   icon,
                   title,
                   desc,
-                  img,
+                  images,
                   route,
                   gradientFrom,
                   gradientTo,
@@ -1390,7 +1452,7 @@ export default function LandingPage() {
                     icon={icon}
                     title={title}
                     desc={desc}
-                    img={img}
+                    images={images}
                     route={route}
                     gradientFrom={gradientFrom}
                     gradientTo={gradientTo}

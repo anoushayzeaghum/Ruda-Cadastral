@@ -533,121 +533,18 @@ export const getRudaPlanningBoundaryGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getRudaNotifiedPhasesBoundaryGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/ruda-notified-phases-boundary/`);
+  return unwrapGeoJSON(res.data);
+};
+
 export const getProposedRoadNetworkGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/proposed-road-network/`);
   return unwrapGeoJSON(res.data);
 };
 
-export const getTransportationRoadsGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/transportation-roads/`);
-  return unwrapGeoJSON(res.data);
-};
-
 export const getLahoreTransportationRoadsGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/lahore-transportation-roads/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getLahoreRingRoadGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/lahore-ring-road/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getLahoreBypassGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/lahore-bypass/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getJinnahAvenueGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/jinnah-avenue/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getHardoSohalMuslimRoadGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/hardo-sohal-muslim-road/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getKatarBundRoadGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/katar-bund-road/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getKalaKhataiInterchangeGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/kala-khatai-interchange/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getSialkotMotorwayGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/sialkot-motorway/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getAbdulHakeemMotorwayM3GeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/abdul-hakeem-motorway-m3/`);
-  return unwrapGeoJSON(res.data);
-};
-
-// ------------------------------ Irrigation System Layers ------------------------------
-export const getIrrigationNetworkGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/irrigation-network/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getExistingDrainsGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/existing-drains/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getLinkCanalGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/link-canal/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getBranchCanalGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/branch-canal/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getDistributaryGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/distributary/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getHudiaraDrainGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/hudiara-drain/`);
-  return unwrapGeoJSON(res.data);
-};
-
-// ------------------------------ Transportation Layers ------------------------------
-
-export const getRailwayLineGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/railway-line/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getRailwayStationsGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/railway-stations/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getOrangeTrackGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/orange-track/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getLahoreRapidMassTransitGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/lahore-rapid-mass-transit/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getBridgesGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/Bridgess/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getGanjaKalanTruckStandGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/ganja-kalan-truck-stand/`);
   return unwrapGeoJSON(res.data);
 };
 
@@ -659,11 +556,6 @@ export const getProposedWWTPGeoJSON = async () => {
 
 export const getWWTPSitesGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/wwtp-sites/`);
-  return unwrapGeoJSON(res.data);
-};
-
-export const getKatarBandWWTPGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/katar-band-wwtp/`);
   return unwrapGeoJSON(res.data);
 };
 

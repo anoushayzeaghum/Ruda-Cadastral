@@ -453,14 +453,43 @@ export default function BaseData({ map }) {
 
   return (
     <div className="border-b border-[#343c4c]">
-      <button
-        type="button"
-        className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
-        onClick={() => setOpen((previous) => !previous)}
-      >
-        <span>BASE DATA</span>
-        {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-      </button>
+      <div className="flex w-full items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]">
+        <button
+          type="button"
+          className="flex flex-1 cursor-pointer items-center gap-2 text-left"
+          onClick={() => setOpen((previous) => !previous)}
+        >
+          <span>BASE DATA</span>
+          {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+        </button>
+        {/* Toggle-all switch */}
+        <button
+          type="button"
+          title={
+            LAYER_DEFS.every((d) => layers[d.key]?.visible)
+              ? "Hide all base data layers"
+              : "Show all base data layers"
+          }
+          onClick={(e) => {
+            e.stopPropagation();
+            const next = !LAYER_DEFS.every((d) => layers[d.key]?.visible);
+            LAYER_DEFS.forEach((d) => setVisible(d.key, next));
+          }}
+          className={`relative ml-2 h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
+            LAYER_DEFS.every((d) => layers[d.key]?.visible)
+              ? "bg-[#65c96b]"
+              : "bg-white/20"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+              LAYER_DEFS.every((d) => layers[d.key]?.visible)
+                ? "translate-x-4"
+                : "translate-x-0.5"
+            }`}
+          />
+        </button>
+      </div>
 
       {open && (
         <div className="mx-3 mb-3 rounded-sm border border-[#13593f]/40 bg-[#093024] p-2">

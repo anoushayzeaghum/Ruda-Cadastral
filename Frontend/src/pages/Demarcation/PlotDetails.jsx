@@ -79,7 +79,7 @@ export default function PlotDetails({
 
   return (
     <div className="flex min-h-0 flex-col overflow-hidden rounded-md border border-[#b8c2cc] bg-white/95 shadow-xl backdrop-blur-sm">
-      <div className="flex items-center justify-between gap-2 border-b border-[#d4dbe2] px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3">
+      <div className="flex items-center justify-between gap-2 border-b border-gray-200 bg-gray-50/50 px-3 py-2 sm:gap-3 sm:px-3 sm:py-2.5">
         <button
           type="button"
           onClick={() => setIsCollapsed((previous) => !previous)}
@@ -142,16 +142,16 @@ export default function PlotDetails({
               No plot selected.
             </div>
           ) : (
-            <div className="space-y-1.5 sm:space-y-2">
+            <div className="space-y-0">
               {fields.map(([label, value]) => (
                 <div
                   key={label}
-                  className="flex items-start justify-between gap-2 rounded bg-gray-50 p-1.5 sm:gap-3 sm:p-2"
+                  className="flex items-start justify-between gap-2 border-b border-gray-100 py-1.5 last:border-0 sm:gap-3 sm:py-2"
                 >
-                  <div className="shrink-0 text-[11px] text-gray-600 sm:text-sm">
+                  <div className="shrink-0 text-[11px] text-gray-500 sm:text-[12px]">
                     {label}
                   </div>
-                  <div className="break-words text-right text-[11px] font-medium text-gray-800 sm:text-sm">
+                  <div className="break-words text-right text-[11px] font-semibold text-gray-800 sm:text-[12px]">
                     {String(value)}
                   </div>
                 </div>

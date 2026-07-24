@@ -4,6 +4,12 @@ from rest_framework.routers import DefaultRouter
 from api.views import *
 from api.views.RudaMasterPlan import *
 from api.views.GISMetaverse import *
+from api.views.RudaMasterPlan.RudaNotifiedPhasesBoundary import (
+    CreateRudaNotifiedPhasesBoundaryView,
+    DeleteRudaNotifiedPhasesBoundaryView,
+    ListRudaNotifiedPhasesBoundaryView,
+    UpdateRudaNotifiedPhasesBoundaryView,
+)
 
 
 router = DefaultRouter()
@@ -114,7 +120,6 @@ router.register(r"geodeticnetwork", ListGeodeticNetworkView, basename="geodeticn
 router.register(r"geodeticnetwork/create", CreateGeodeticNetworkView, basename="create-geodeticnetwork")
 router.register(r"geodeticnetwork/update", UpdateGeodeticNetworkView, basename="update-geodeticnetwork")
 router.register(r"geodeticnetwork/delete", DeleteGeodeticNetworkView, basename="delete-geodeticnetwork")
-
 
 # ------------------------------ Project Views ------------------------------
 router.register(r"project", ListProjectView, basename="project")
@@ -232,7 +237,6 @@ router.register(r"proposed-road-network/create", CreateProposedRoadNetworkView, 
 router.register(r"proposed-road-network/update", UpdateProposedRoadNetworkView, basename="update-proposed-road-network")
 router.register(r"proposed-road-network/delete", DeleteProposedRoadNetworkView, basename="delete-proposed-road-network")
 
-
 # ------------------------------ Imported Land Table Views ------------------------------
 router.register(r"stateland", ListStateLandView, basename="stateland")
 router.register(r"stateland/create", CreateStateLandView, basename="create-stateland")
@@ -259,41 +263,6 @@ router.register(r"rtwpackage/create", CreateRtwPackageView, basename="create-rtw
 router.register(r"rtwpackage/update", UpdateRtwPackageView, basename="update-rtwpackage")
 router.register(r"rtwpackage/delete", DeleteRtwPackageView, basename="delete-rtwpackage")
 
-router.register(r"branch-canal", ListBranchCanalView, basename="branch-canal",)
-router.register(r"branch-canal/create", CreateBranchCanalView, basename="create-branch-canal",)
-router.register(r"branch-canal/update", UpdateBranchCanalView, basename="update-branch-canal",)
-router.register(r"branch-canal/delete", DeleteBranchCanalView, basename="delete-branch-canal",)
-
-router.register(r"distributary", ListDistributaryView, basename="distributary",)
-router.register(r"distributary/create", CreateDistributaryView, basename="create-distributary",)
-router.register(r"distributary/update", UpdateDistributaryView, basename="update-distributary",)
-router.register(r"distributary/delete", DeleteDistributaryView, basename="delete-distributary",)
-
-router.register(r"existing-drains", ListExistingDrainsView, basename="existing-drains",)
-router.register(r"existing-drains/create", CreateExistingDrainsView, basename="create-existing-drains",)
-router.register(r"existing-drains/update", UpdateExistingDrainsView, basename="update-existing-drains",)
-router.register(r"existing-drains/delete", DeleteExistingDrainsView, basename="delete-existing-drains",)
-
-router.register(r"irrigation-network", ListIrrigationNetworkView, basename="irrigation-network",)
-router.register(r"irrigation-network/create", CreateIrrigationNetworkView, basename="create-irrigation-network",)
-router.register(r"irrigation-network/update", UpdateIrrigationNetworkView, basename="update-irrigation-network",)
-router.register(r"irrigation-network/delete", DeleteIrrigationNetworkView, basename="delete-irrigation-network",)
-
-router.register(r"katar-band-wwtp", ListKatarBandWWTPView, basename="katar-band-wwtp",)
-router.register(r"katar-band-wwtp/create", CreateKatarBandWWTPView, basename="create-katar-band-wwtp",)
-router.register(r"katar-band-wwtp/update", UpdateKatarBandWWTPView, basename="update-katar-band-wwtp",)
-router.register(r"katar-band-wwtp/delete", DeleteKatarBandWWTPView, basename="delete-katar-band-wwtp",)
-
-router.register(r"link-canal", ListLinkCanalView, basename="link-canal",)
-router.register(r"link-canal/create", CreateLinkCanalView, basename="create-link-canal",)
-router.register(r"link-canal/update", UpdateLinkCanalView, basename="update-link-canal",)
-router.register(r"link-canal/delete", DeleteLinkCanalView, basename="delete-link-canal",)
-
-router.register(r"proposed-wwtp", ListProposedWWTPView, basename="proposed-wwtp",)
-router.register(r"proposed-wwtp/create", CreateProposedWWTPView, basename="create-proposed-wwtp",)
-router.register(r"proposed-wwtp/update", UpdateProposedWWTPView, basename="update-proposed-wwtp",)
-router.register( r"proposed-wwtp/delete", DeleteProposedWWTPView, basename="delete-proposed-wwtp",)
-
 router.register(r"swtp-site", ListSWTPSiteView, basename="swtp-site",)
 router.register(r"swtp-site/create", CreateSWTPSiteView, basename="create-swtp-site",)
 router.register(r"swtp-site/update", UpdateSWTPSiteView, basename="update-swtp-site",)
@@ -304,87 +273,27 @@ router.register(r"wwtp-sites/create", CreateWWTPSitesView, basename="create-wwtp
 router.register(r"wwtp-sites/update", UpdateWWTPSitesView, basename="update-wwtp-sites",)
 router.register(r"wwtp-sites/delete", DeleteWWTPSitesView, basename="delete-wwtp-sites",)
 
-
-router.register(r"abdul-hakeem-motorway-m3", ListAbdulHakeemMotorwayM3View, basename="abdul-hakeem-motorway-m3")
-router.register(r"abdul-hakeem-motorway-m3/create", CreateAbdulHakeemMotorwayM3View, basename="create-abdul-hakeem-motorway-m3")
-router.register(r"abdul-hakeem-motorway-m3/update", UpdateAbdulHakeemMotorwayM3View, basename="update-abdul-hakeem-motorway-m3")
-router.register(r"abdul-hakeem-motorway-m3/delete", DeleteAbdulHakeemMotorwayM3View, basename="delete-abdul-hakeem-motorway-m3")
-
-router.register(r"hardo-sohal-muslim-road", ListHardoSohalMuslimRoadView, basename="hardo-sohal-muslim-road")
-router.register(r"hardo-sohal-muslim-road/create", CreateHardoSohalMuslimRoadView, basename="create-hardo-sohal-muslim-road")
-router.register(r"hardo-sohal-muslim-road/update", UpdateHardoSohalMuslimRoadView, basename="update-hardo-sohal-muslim-road")
-router.register(r"hardo-sohal-muslim-road/delete", DeleteHardoSohalMuslimRoadView, basename="delete-hardo-sohal-muslim-road")
-
-router.register(r"jinnah-avenue", ListJinnahAvenueView, basename="jinnah-avenue")
-router.register(r"jinnah-avenue/create", CreateJinnahAvenueView, basename="create-jinnah-avenue")
-router.register(r"jinnah-avenue/update", UpdateJinnahAvenueView, basename="update-jinnah-avenue")
-router.register(r"jinnah-avenue/delete", DeleteJinnahAvenueView, basename="delete-jinnah-avenue")
-
-router.register(r"kala-khatai-interchange", ListKalaKhataiInterchangeView, basename="kala-khatai-interchange")
-router.register(r"kala-khatai-interchange/create", CreateKalaKhataiInterchangeView, basename="create-kala-khatai-interchange")
-router.register(r"kala-khatai-interchange/update", UpdateKalaKhataiInterchangeView, basename="update-kala-khatai-interchange")
-router.register(r"kala-khatai-interchange/delete", DeleteKalaKhataiInterchangeView, basename="delete-kala-khatai-interchange")
-
-router.register(r"katar-bund-road", ListKatarBundRoadView, basename="katar-bund-road")
-router.register(r"katar-bund-road/create", CreateKatarBundRoadView, basename="create-katar-bund-road")
-router.register(r"katar-bund-road/update", UpdateKatarBundRoadView, basename="update-katar-bund-road")
-router.register(r"katar-bund-road/delete", DeleteKatarBundRoadView, basename="delete-katar-bund-road")
-
-router.register(r"lahore-bypass", ListLahoreBypassView, basename="lahore-bypass")
-router.register(r"lahore-bypass/create", CreateLahoreBypassView, basename="create-lahore-bypass")
-router.register(r"lahore-bypass/update", UpdateLahoreBypassView, basename="update-lahore-bypass")
-router.register(r"lahore-bypass/delete", DeleteLahoreBypassView, basename="delete-lahore-bypass")
-
-router.register(r"sialkot-motorway", ListSialkotMotorwayView, basename="sialkot-motorway")
-router.register(r"sialkot-motorway/create", CreateSialkotMotorwayView, basename="create-sialkot-motorway")
-router.register(r"sialkot-motorway/update", UpdateSialkotMotorwayView, basename="update-sialkot-motorway")
-router.register(r"sialkot-motorway/delete", DeleteSialkotMotorwayView, basename="delete-sialkot-motorway")
-
-router.register(r"transportation-roads", ListTransportationRoadsView, basename="transportation-roads")
-router.register(r"transportation-roads/create", CreateTransportationRoadsView, basename="create-transportation-roads")
-router.register(r"transportation-roads/update", UpdateTransportationRoadsView, basename="update-transportation-roads")
-router.register(r"transportation-roads/delete", DeleteTransportationRoadsView, basename="delete-transportation-roads")
-
-router.register(r"lahore-ring-road", ListLahoreRingRoadView, basename="lahore-ring-road",)
-router.register(r"lahore-ring-road/create", CreateLahoreRingRoadView, basename="create-lahore-ring-road",)
-router.register(r"lahore-ring-road/update", UpdateLahoreRingRoadView, basename="update-lahore-ring-road",)
-router.register(r"lahore-ring-road/delete", DeleteLahoreRingRoadView, basename="delete-lahore-ring-road",)
-
-
-router.register(r"Bridgess", ListBridgesView, basename="Bridgess",)
-router.register(r"Bridgess/create", CreateBridgesView, basename="create-Bridgess",)
-router.register(r"Bridgess/update", UpdateBridgesView, basename="update-Bridgess",)
-router.register(r"Bridgess/delete", DeleteBridgesView, basename="delete-Bridgess",)
-
-router.register(r"ganja-kalan-truck-stand", ListGanjaKalanTruckStandView, basename="ganja-kalan-truck-stand",)
-router.register(r"ganja-kalan-truck-stand/create", CreateGanjaKalanTruckStandView, basename="create-ganja-kalan-truck-stand",)
-router.register(r"ganja-kalan-truck-stand/update", UpdateGanjaKalanTruckStandView, basename="update-ganja-kalan-truck-stand",)
-router.register(r"ganja-kalan-truck-stand/delete", DeleteGanjaKalanTruckStandView, basename="delete-ganja-kalan-truck-stand",)
-
-router.register(r"lahore-rapid-mass-transit", ListLahoreRapidMassTransitView, basename="lahore-rapid-mass-transit",)
-router.register(r"lahore-rapid-mass-transit/create", CreateLahoreRapidMassTransitView, basename="create-lahore-rapid-mass-transit",)
-router.register(r"lahore-rapid-mass-transit/update", UpdateLahoreRapidMassTransitView, basename="update-lahore-rapid-mass-transit",)
-router.register(r"lahore-rapid-mass-transit/delete", DeleteLahoreRapidMassTransitView, basename="delete-lahore-rapid-mass-transit",)
-
-router.register(r"orange-track", ListOrangeTrackView, basename="orange-track",)
-router.register(r"orange-track/create", CreateOrangeTrackView, basename="create-orange-track",)
-router.register(r"orange-track/update", UpdateOrangeTrackView, basename="update-orange-track",)
-router.register(r"orange-track/delete", DeleteOrangeTrackView, basename="delete-orange-track",)
-
-router.register(r"railway-line", ListRailwayLineView, basename="railway-line",)
-router.register(r"railway-line/create", CreateRailwayLineView, basename="create-railway-line",)
-router.register(r"railway-line/update", UpdateRailwayLineView, basename="update-railway-line",)
-router.register(r"railway-line/delete", DeleteRailwayLineView, basename="delete-railway-line",)
-
-router.register(r"railway-stations", ListRailwayStationsView, basename="railway-stations",)
-router.register(r"railway-stations/create", CreateRailwayStationsView, basename="create-railway-stations",)
-router.register(r"railway-stations/update", UpdateRailwayStationsView, basename="update-railway-stations",)
-router.register(r"railway-stations/delete", DeleteRailwayStationsView, basename="delete-railway-stations",)
-
-router.register(r"hudiara-drain", ListHudiaraDrainView, basename="hudiara-drain",)
-router.register(r"hudiara-drain/create", CreateHudiaraDrainView, basename="create-hudiara-drain",)
-router.register(r"hudiara-drain/update", UpdateHudiaraDrainView, basename="update-hudiara-drain",)
-router.register(r"hudiara-drain/delete", DeleteHudiaraDrainView, basename="delete-hudiara-drain",)
+# ------------------------------ RUDA Notified Phases Boundary Views ------------------------------
+router.register(
+    r"ruda-notified-phases-boundary",
+    ListRudaNotifiedPhasesBoundaryView,
+    basename="ruda-notified-phases-boundary",
+)
+router.register(
+    r"ruda-notified-phases-boundary/create",
+    CreateRudaNotifiedPhasesBoundaryView,
+    basename="create-ruda-notified-phases-boundary",
+)
+router.register(
+    r"ruda-notified-phases-boundary/update",
+    UpdateRudaNotifiedPhasesBoundaryView,
+    basename="update-ruda-notified-phases-boundary",
+)
+router.register(
+    r"ruda-notified-phases-boundary/delete",
+    DeleteRudaNotifiedPhasesBoundaryView,
+    basename="delete-ruda-notified-phases-boundary",
+)
 
 router.register(r"lahore-transportation-roads", ListLahoreTransportationRoadView, basename="lahore-transportation-roads",)
 router.register(r"lahore-transportation-roads/create", CreateLahoreTransportationRoadView, basename="create-lahore-transportation-road",)

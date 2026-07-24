@@ -1,36 +1,30 @@
-import { LogOut, Home } from "lucide-react";
-import rudaFirmLogo from "../../assets/Rudafirm.png";
+import { Home, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-// Old green image background commented
-// const headerBackgroundStyle = {
-//   backgroundImage: [
-//     "linear-gradient(90deg, rgba(20, 83, 45, 0.96) 0%, rgba(22, 101, 52, 0.86) 42%, rgba(21, 128, 61, 0.72) 70%, rgba(20, 83, 45, 0.82) 100%)",
-//     "url('/ruda_bg.png')",
-//   ].join(", "),
-//   backgroundSize: "cover",
-//   backgroundPosition: "center center",
-//   backgroundRepeat: "no-repeat",
-// };
+import rudaFirmLogo from "../../assets/Rudafirm.png";
 
 export default function Header() {
   const navigate = useNavigate();
+
+  const handleHome = () => {
+    navigate("/landing");
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
-    navigate("/login");
+
+    navigate("/login", { replace: true });
   };
 
   return (
-    <div className="relative z-40 w-full bg-[#0f3d2e] px-3 py-2 text-white shadow-md sm:px-5">
+    <header className="relative z-40 w-full bg-[#0f3d2e] px-3 py-2 text-white shadow-md sm:px-5">
       <div className="relative z-10 flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="flex shrink-0 items-center justify-center rounded-full bg-white p-1">
             <img
               src={rudaFirmLogo}
-              alt="GIS Metaverse"
+              alt="RUDA GIS Metaverse"
               className="h-7 w-7 object-contain sm:h-9 sm:w-9"
             />
           </div>
@@ -43,7 +37,7 @@ export default function Header() {
         <div className="flex shrink-0 items-center gap-2">
           <IconButton
             title="Home"
-            onClick={() => navigate("/")}
+            onClick={handleHome}
             icon={<Home size={18} />}
           />
 
@@ -54,7 +48,7 @@ export default function Header() {
           />
         </div>
       </div>
-    </div>
+    </header>
   );
 }
 
@@ -65,7 +59,7 @@ function IconButton({ title, icon, onClick }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className="h-9 w-9 rounded-lg bg-white/15 border border-white/25 text-white flex items-center justify-center shadow-sm transition hover:bg-white/25 hover:border-white/40"
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/25 bg-white/15 text-white shadow-sm transition hover:border-white/40 hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50"
     >
       {icon}
     </button>

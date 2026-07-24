@@ -1,138 +1,253 @@
 import { SOURCES, LAYERS, ensureSource } from "../MetaverseLayerConfig";
 
-const LAND_USE_VALUE = [
-  "downcase",
-  [
-    "to-string",
-    [
-      "coalesce",
-      ["get", "type"],
-      ["get", "land_use"],
-      ["get", "landuse"],
-      ["get", "land_use_type"],
-      ["get", "category"],
-      ["get", "name"],
-      "",
-    ],
-  ],
-];
-
-const containsAny = (...values) => [
-  "any",
-  ...values.map((value) => [
-    ">=",
-    ["index-of", value.toLowerCase(), LAND_USE_VALUE],
-    0,
-  ]),
-];
-
-const IS_CB_1_BOUNDARY = containsAny(
-  "cb - 1 boundary",
-  "cb-1 boundary",
-  "cb 1 boundary",
-  "cb1 boundary",
-);
-
-// Colors sampled directly from the supplied legend image.
 export const MASTER_PLAN_LAND_USE_COLORS = {
-  greenOpenAreaParks: "#139B48",
-  condominiums: "#DDB3D4",
-  mixUse: "#999B37",
-  commercial: "#ADDDF7",
-  publicBuilding: "#F7ABAE",
-  residential10Marla: "#F8991E",
-  residential1Kanal: "#C17006",
-  petrolPump: "#E05254",
-  grandMosque: "#F7F281",
-  rudaOffice: "#6AE7B1",
-  convenienceShops: "#A953A0",
-  cb1Boundary: "#00FF00",
-  fallback: "#9CA3AF",
+  greenOpenAreaParks: "#159E49",
+  condominiums: "#D5ACD2",
+  mixUse: "#9D9E31",
+  commercial: "#9FD3EB",
+  publicBuilding: "#EFA4AA",
+  residential10Marla: "#F89A1C",
+  residential1Kanal: "#C97800",
+  petrolPump: "#E34E52",
+  grandMosque: "#F8F07E",
+  rudaOffice: "#62D9AA",
+  convenienceShops: "#A84FA2",
+  cb1Boundary: "#00F51A",
+
+  // Types present in your data but not separately shown in the client legend.
+  canal: "#9FD3EB",
+  passage: "#F4F4F4",
+  utility: "#EFA4AA",
+  fallback: "#BFC3C9",
 };
 
+const normalizeText = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+const firstProperty = (properties = {}, keys = []) => {
+  for (const key of keys) {
+    const value = properties?.[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return String(value);
+    }
+  }
+  return "";
+};
+
+const classifyMasterPlanFeature = (feature) => {
+  const properties = feature?.properties || {};
+
+  const landUse = normalizeText(
+    firstProperty(properties, [
+      "land_use",
+      "landuse",
+      "land_use_type",
+      "category",
+      "type",
+      "name",
+    ]),
+  );
+
+  const residentialDetail = normalizeText(
+    [
+      properties.plot_area,
+      properties.plot_size,
+      properties.dimension,
+      properties.name,
+      properties.category,
+      properties.type,
+      properties.land_use,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+
+  if (
+    landUse.includes("cb - 1 boundary") ||
+    landUse.includes("cb-1 boundary") ||
+    landUse.includes("cb 1 boundary") ||
+    landUse.includes("cb1 boundary")
+  ) {
+    return "cb1Boundary";
+  }
+
+  if (
+    landUse === "green area" ||
+    landUse === "green areas" ||
+    landUse === "green" ||
+    landUse === "open area" ||
+    landUse === "open areas" ||
+    landUse === "open space" ||
+    landUse === "open spaces" ||
+    landUse === "park" ||
+    landUse === "parks"
+  ) {
+    return "greenOpenAreaParks";
+  }
+
+  if (
+    landUse.includes("condominium") ||
+    landUse.includes("condo")
+  ) {
+    return "condominiums";
+  }
+
+  if (
+    landUse.includes("mix use") ||
+    landUse.includes("mixed use") ||
+    landUse.includes("mix-use") ||
+    landUse.includes("mixed-use")
+  ) {
+    return "mixUse";
+  }
+
+  if (landUse.includes("commercial")) {
+    return "commercial";
+  }
+
+  if (
+    landUse.includes("public building") ||
+    landUse.includes("public use") ||
+    landUse.includes("public facility")
+  ) {
+    return "publicBuilding";
+  }
+
+  if (landUse.includes("residential")) {
+    if (
+      residentialDetail.includes("1 kanal") ||
+      residentialDetail.includes("1-kanal") ||
+      residentialDetail.includes("1kanal")
+    ) {
+      return "residential1Kanal";
+    }
+
+    return "residential10Marla";
+  }
+
+  if (
+    landUse.includes("petrol pump") ||
+    landUse.includes("fuel station") ||
+    landUse.includes("filling station")
+  ) {
+    return "petrolPump";
+  }
+
+  if (
+    landUse.includes("grand mosque") ||
+    landUse.includes("mosque") ||
+    landUse.includes("masjid")
+  ) {
+    return "grandMosque";
+  }
+
+  if (landUse.includes("ruda office")) {
+    return "rudaOffice";
+  }
+
+  if (
+    landUse.includes("convenience shop") ||
+    landUse.includes("convenience store")
+  ) {
+    return "convenienceShops";
+  }
+
+  if (landUse.includes("canal") || landUse.includes("water channel")) {
+    return "canal";
+  }
+
+  if (
+    landUse.includes("passage") ||
+    landUse.includes("walkway") ||
+    landUse.includes("corridor")
+  ) {
+    return "passage";
+  }
+
+  if (landUse.includes("utility")) {
+    return "utility";
+  }
+
+  return "fallback";
+};
+
+const prepareMasterPlanGeoJSON = (data) => ({
+  ...(data || { type: "FeatureCollection", features: [] }),
+  features: (data?.features || []).map((feature) => {
+    const masterPlanClass = classifyMasterPlanFeature(feature);
+
+    return {
+      ...feature,
+      properties: {
+        ...(feature.properties || {}),
+        _masterplan_class: masterPlanClass,
+        _masterplan_color:
+          MASTER_PLAN_LAND_USE_COLORS[masterPlanClass] ||
+          MASTER_PLAN_LAND_USE_COLORS.fallback,
+      },
+    };
+  }),
+});
+
 const MASTER_PLAN_FILL_COLOR = [
-  "case",
-
-  // CB-1 is a boundary only, so no polygon fill is applied.
-  IS_CB_1_BOUNDARY,
-  "rgba(0, 0, 0, 0)",
-
-  // Green / Open Area / Parks
-  containsAny("green", "open area", "open space", "park"),
+  "match",
+  ["get", "_masterplan_class"],
+  "greenOpenAreaParks",
   MASTER_PLAN_LAND_USE_COLORS.greenOpenAreaParks,
-
-  // Condominiums
-  containsAny("condominium", "condominiums", "condo"),
+  "condominiums",
   MASTER_PLAN_LAND_USE_COLORS.condominiums,
-
-  // Mix Use / Mixed Use
-  containsAny("mix use", "mixed use", "mix-use", "mixed-use"),
+  "mixUse",
   MASTER_PLAN_LAND_USE_COLORS.mixUse,
-
-  // Commercial
-  containsAny("commercial"),
+  "commercial",
   MASTER_PLAN_LAND_USE_COLORS.commercial,
-
-  // Public Building
-  containsAny("public building", "public buildings"),
+  "publicBuilding",
   MASTER_PLAN_LAND_USE_COLORS.publicBuilding,
-
-  // Residential (10 Marla Plots)
-  [
-    "all",
-    containsAny("residential"),
-    containsAny("10 marla", "10-marla", "10marla"),
-  ],
+  "residential10Marla",
   MASTER_PLAN_LAND_USE_COLORS.residential10Marla,
-
-  // Residential (1 Kanal Plots)
-  [
-    "all",
-    containsAny("residential"),
-    containsAny("1 kanal", "1-kanal", "1kanal"),
-  ],
+  "residential1Kanal",
   MASTER_PLAN_LAND_USE_COLORS.residential1Kanal,
-
-  // Petrol Pump
-  containsAny("petrol pump", "fuel station", "filling station"),
+  "petrolPump",
   MASTER_PLAN_LAND_USE_COLORS.petrolPump,
-
-  // Grand Mosque
-  containsAny("grand mosque", "jamia mosque", "mosque", "masjid"),
+  "grandMosque",
   MASTER_PLAN_LAND_USE_COLORS.grandMosque,
-
-  // RUDA Office
-  containsAny("ruda office", "ruda offices"),
+  "rudaOffice",
   MASTER_PLAN_LAND_USE_COLORS.rudaOffice,
-
-  // Convenience Shops
-  containsAny(
-    "convenience shop",
-    "convenience shops",
-    "convenience store",
-    "convenience stores",
-  ),
+  "convenienceShops",
   MASTER_PLAN_LAND_USE_COLORS.convenienceShops,
-
-  // Generic residential fallback when plot size is not present.
-  containsAny("residential"),
-  MASTER_PLAN_LAND_USE_COLORS.residential10Marla,
-
-  // Unknown or uncategorized land use.
+  "canal",
+  MASTER_PLAN_LAND_USE_COLORS.canal,
+  "passage",
+  MASTER_PLAN_LAND_USE_COLORS.passage,
+  "utility",
+  MASTER_PLAN_LAND_USE_COLORS.utility,
+  "cb1Boundary",
+  "rgba(0,0,0,0)",
   MASTER_PLAN_LAND_USE_COLORS.fallback,
 ];
 
 const MASTER_PLAN_LINE_COLOR = [
   "case",
-  IS_CB_1_BOUNDARY,
+  ["==", ["get", "_masterplan_class"], "cb1Boundary"],
   MASTER_PLAN_LAND_USE_COLORS.cb1Boundary,
   "#111111",
 ];
 
-const MASTER_PLAN_LINE_WIDTH = ["case", IS_CB_1_BOUNDARY, 2, 1.15];
+const MASTER_PLAN_LINE_WIDTH = [
+  "case",
+  ["==", ["get", "_masterplan_class"], "cb1Boundary"],
+  2.5,
+  1.1,
+];
 
 export function addMasterPlanLayer(map, data, color = null) {
-  ensureSource(map, SOURCES.masterPlan, data);
+  const preparedData = prepareMasterPlanGeoJSON(data);
+  ensureSource(map, SOURCES.masterPlan, preparedData);
+
+  const source = map.getSource(SOURCES.masterPlan);
+  source?.setData?.(preparedData);
 
   if (!map.getLayer(LAYERS.masterPlanFill)) {
     map.addLayer({
@@ -161,6 +276,7 @@ export function addMasterPlanLayer(map, data, color = null) {
       paint: {
         "line-color": MASTER_PLAN_LINE_COLOR,
         "line-width": MASTER_PLAN_LINE_WIDTH,
+        "line-opacity": 1,
       },
     });
   } else {
@@ -174,6 +290,7 @@ export function addMasterPlanLayer(map, data, color = null) {
       "line-width",
       MASTER_PLAN_LINE_WIDTH,
     );
+    map.setPaintProperty(LAYERS.masterPlanLine, "line-opacity", 1);
   }
 
   if (!map.getLayer(LAYERS.masterPlanLabel)) {
