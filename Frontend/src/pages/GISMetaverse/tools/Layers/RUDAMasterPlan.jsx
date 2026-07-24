@@ -101,12 +101,12 @@ import {
 const RUDA_MASTER_PLAN_GROUPS = [
   {
     key: "masterPlanningBoundaryGroup",
-    label: "Master Planning Boundary",
+    label: "Planning Boundary",
     standalone: true,
     children: [
       {
         key: "rudaPlanningBoundary",
-        label: "Master Planning Boundary",
+        label: "Planning Boundary",
         color: MASTER_PLANNING_BOUNDARY_COLOR,
       },
     ],
@@ -170,7 +170,7 @@ const RUDA_MASTER_PLAN_GROUPS = [
         label: "River Boundary",
         color: RIVER_BOUNDARY_COLOR,
       },
-      { key: "riverRavi", label: "River Ravi", color: RIVER_RAVI_COLOR },
+      { key: "riverRavi", label: "River 2025", color: RIVER_RAVI_COLOR },
     ],
   },
 
@@ -1222,13 +1222,17 @@ export default function RUDAMasterPlan({ map }) {
           className="flex flex-1 cursor-pointer items-center gap-2 text-left"
           onClick={() => setOpen((previous) => !previous)}
         >
-          <span>RUDA MASTER PLAN</span>
+          <span>MASTER PLAN</span>
           {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
         </button>
         {/* Toggle-all switch */}
         <button
           type="button"
-          title={allOn ? "Hide all RUDA Master Plan layers" : "Show all RUDA Master Plan layers"}
+          title={
+            allOn
+              ? "Hide all RUDA Master Plan layers"
+              : "Show all RUDA Master Plan layers"
+          }
           onClick={toggleAllRudaLayers}
           className={`relative ml-2 h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
             allOn ? "bg-[#65c96b]" : "bg-white/20"

@@ -1,7 +1,7 @@
 const EMPTY_FC = { type: "FeatureCollection", features: [] };
 
 export const RUDA_NOTIFIED_BOUNDARY = {
-  label: "RUDA Notified Boundary",
+  label: "Notified Boundary",
   endpoint: "/ruda-jurisdiction/",
   source: "metaverse-admin-ruda-notified-source",
   fill: "metaverse-admin-ruda-notified-fill",
@@ -26,7 +26,7 @@ const LABEL_EXPRESSION = [
   ["get", "jurisdiction"],
   ["get", "boundary_name"],
   ["get", "title"],
-  "RUDA Notified Boundary",
+  "Notified Boundary",
 ];
 
 export function setRudaNotifiedBoundaryVisibility(map, visible) {

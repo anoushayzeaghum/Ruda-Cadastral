@@ -32,29 +32,29 @@ import {
 import {
   addIntroBoundaryLayer,
   clearIntroBoundaryLayer,
-} from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/IntroBoundaryLayer";
+} from "./tools/Layers/LayerManager/ProjectMasterplanLayers/IntroBoundaryLayer";
 import {
   addProjectBoundaryLayer,
   addNotifiedBoundaryLayer,
-} from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/ProjectBoundaryLayer";
-import { addBlockLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/BlockLayer";
-import { addMasterPlanLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/MasterPlanLayer";
-import { addSpotLevelLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/SpotLevelLayer";
-import { addContourLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/ContourLayer";
-import { addRoadLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/RoadLayer";
+} from "./tools/Layers/LayerManager/ProjectMasterplanLayers/ProjectBoundaryLayer";
+import { addBlockLayer } from "./tools/Layers/LayerManager/ProjectMasterplanLayers/BlockLayer";
+import { addMasterPlanLayer } from "./tools/Layers/LayerManager/ProjectMasterplanLayers/MasterPlanLayer";
+import { addSpotLevelLayer } from "./tools/Layers/LayerManager/ProjectMasterplanLayers/SpotLevelLayer";
+import { addContourLayer } from "./tools/Layers/LayerManager/ProjectMasterplanLayers/ContourLayer";
+import { addRoadLayer } from "./tools/Layers/LayerManager/ProjectMasterplanLayers/RoadLayer";
 import {
   addWaterSupplyPointsLayer,
   addWaterSupplyLinesLayer,
   addSewagePointsLayer,
   addCameraLocationsLayer,
-} from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/UtilitiesLayer";
+} from "./tools/Layers/LayerManager/ProjectMasterplanLayers/UtilitiesLayer";
 import {
   addRudaBoundaryLayer,
   addRudaMauzaBoundaryLayer,
   addProposedRoadsLayer,
   applyRudaMauzaBoundaryStyle,
-} from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/AdministrativeBoundaryLayer";
-import { addGeodeticNetworkLayer } from "./tools/Layers/LayerManager/AdministrativeBoundariesLayers/GeodeticLayer";
+} from "./tools/Layers/LayerManager/ProjectMasterplanLayers/AdministrativeBoundaryLayer";
+import { addGeodeticNetworkLayer } from "./tools/Layers/LayerManager/ProjectMasterplanLayers/GeodeticLayer";
 import {
   DEFAULT_NOTIFIED_PHASES_STYLE,
   addOrUpdateNotifiedPhasesBoundary,
