@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
 import RudaFooterLogo from "../../assets/Ruda.png";
+import GopHeaderLogo from "../../assets/govtpunjab.png";
 import {
   Map,
   BarChart3,
@@ -107,10 +108,8 @@ const DECISION_AREAS = [
     accent: "#9BE35C",
     image: "/LandingCard1.png",
     bullets: [
-      "Parcel mapping & Khasra management",
-      "Ownership & compensation management",
-      "Estate inventory & asset management",
-      "Mutation & revenue integration",
+      "Parcel, Khasra, ownership & compensation management",
+      "Estate inventory, mutation & revenue integration",
     ],
   },
   {
@@ -122,11 +121,8 @@ const DECISION_AREAS = [
     accent: "#3FC6FF",
     image: "/LandingCard2.png",
     bullets: [
-      "Master planning & zoning",
-      "3D city modeling & visualization",
-      "Land-use & density analysis",
-      "Urban design & streetscapes",
-      "Scenario planning & simulations",
+      "Master planning, zoning & land-use analysis",
+      "3D city modeling, urban design & scenario simulation",
     ],
   },
   {
@@ -138,11 +134,8 @@ const DECISION_AREAS = [
     accent: "#B781FF",
     image: "/LandingCard3.png",
     bullets: [
-      "Building plan approval system",
-      "Development monitoring",
-      "Building inspections",
-      "Regulatory compliance",
-      "e-Permits & digital records",
+      "Building approvals, inspections & development monitoring",
+      "Regulatory compliance, e-Permits & digital records",
     ],
   },
   {
@@ -154,11 +147,8 @@ const DECISION_AREAS = [
     accent: "#FFAA22",
     image: "/LandingCard4.png",
     bullets: [
-      "Infrastructure design & modeling",
-      "Roads, bridges & interchanges",
-      "Water supply & sewerage networks",
-      "Storm-water drainage",
-      "Asset management & maintenance",
+      "Infrastructure, roads, bridges & interchange design",
+      "Water, sewerage, drainage & asset maintenance",
     ],
   },
   {
@@ -170,11 +160,8 @@ const DECISION_AREAS = [
     accent: "#27E1EA",
     image: "/LandingCard5.png",
     bullets: [
-      "Investment & opportunity mapping",
-      "Commercial zone management",
-      "Market & feasibility analysis",
-      "Stakeholder & investor portal",
-      "Revenue & financial analytics",
+      "Investment mapping, market analysis & feasibility",
+      "Commercial zones, investor portal & revenue analytics",
     ],
   },
   {
@@ -186,11 +173,8 @@ const DECISION_AREAS = [
     accent: "#9BE84F",
     image: "/LandingCard6.png",
     bullets: [
-      "Community engagement",
-      "Social-impact assessment",
-      "Environmental sustainability",
-      "Green & blue infrastructure",
-      "Education, health & well-being",
+      "Community engagement, social impact & well-being",
+      "Environmental sustainability & green-blue infrastructure",
     ],
   },
 ];
@@ -425,10 +409,10 @@ function AppCard({
   onClick,
 }) {
   const [ref, visible] = useInView();
-  const [hovered,      setHovered]      = useState(false);
-  const [slideIdx,     setSlideIdx]     = useState(0);
-  const [prevIdx,      setPrevIdx]      = useState(null);
-  const [fading,       setFading]       = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [prevIdx, setPrevIdx] = useState(null);
+  const [fading, setFading] = useState(false);
   const intervalRef = useRef(null);
 
   /* start / stop slideshow on hover */
@@ -507,10 +491,10 @@ function AppCard({
                   key={i}
                   className="block rounded-full transition-all duration-400"
                   style={{
-                    width:      i === slideIdx ? "14px" : "5px",
-                    height:     "5px",
+                    width: i === slideIdx ? "14px" : "5px",
+                    height: "5px",
                     background: i === slideIdx ? "#70D84F" : "rgba(255,255,255,0.3)",
-                    boxShadow:  i === slideIdx ? "0 0 6px #70D84F" : "none",
+                    boxShadow: i === slideIdx ? "0 0 6px #70D84F" : "none",
                   }}
                 />
               ))}
@@ -587,13 +571,12 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
-hover:-translate-y-2
-hover:scale-[1.025]
-hover:rotate-[0.2deg] ${
-        compact
-          ? "min-h-[128px] rounded-xl p-3"
-          : "min-h-[154px] rounded-[18px] p-4"
-      }`}
+hover:-translate-y-1.5
+hover:scale-[1.018]
+hover:rotate-[0.15deg] ${compact
+          ? "min-h-[112px] rounded-xl px-3 py-3"
+          : "h-[138px] rounded-[18px] px-4 py-3 2xl:h-[144px]"
+        }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
         backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.91) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.36) 100%), url('${area.image}')`,
@@ -611,15 +594,19 @@ hover:rotate-[0.2deg] ${
           background: `linear-gradient(90deg, transparent, ${area.accent}, transparent)`,
         }}
       />
+
       <div
         className="absolute -right-12 -top-12 h-28 w-28 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
         style={{ backgroundColor: `${area.accent}35` }}
       />
 
-      <div className="relative z-10 flex items-start gap-3">
-        <div className="flex shrink-0 flex-col items-center gap-2">
+      <div className="relative z-10 flex h-full items-center gap-3">
+        <div className="flex shrink-0 flex-col items-center justify-center gap-2">
           <div
-            className={`${compact ? "h-9 w-9 text-sm" : "h-11 w-11 text-base"} flex items-center justify-center rounded-full border-2 font-black`}
+            className={`${compact
+                ? "h-9 w-9 text-sm"
+                : "h-10 w-10 text-sm 2xl:h-11 2xl:w-11 2xl:text-base"
+              } flex items-center justify-center rounded-full border-2 font-black`}
             style={{
               borderColor: area.accent,
               color: "white",
@@ -629,36 +616,47 @@ hover:rotate-[0.2deg] ${
           >
             {Number(area.number)}
           </div>
+
           <div
-            className={`${compact ? "h-8 w-8" : "h-10 w-10"} flex items-center justify-center rounded-full border bg-black/25`}
+            className={`${compact
+                ? "h-8 w-8"
+                : "h-9 w-9 2xl:h-10 2xl:w-10"
+              } flex items-center justify-center rounded-full border bg-black/25`}
             style={{ borderColor: `${area.accent}90`, color: area.accent }}
           >
-            <Icon size={compact ? 16 : 19} strokeWidth={2} />
+            <Icon size={compact ? 16 : 18} strokeWidth={2} />
           </div>
         </div>
 
         <div className="min-w-0 flex-1">
           <h3
-            className={`${compact ? "text-[10px]" : "text-[12px] 2xl:text-[13px]"} font-black uppercase leading-tight tracking-[0.035em]`}
+            className={`${compact
+                ? "text-[10px]"
+                : "text-[11px] 2xl:text-[12px]"
+              } font-black uppercase leading-[1.15] tracking-[0.035em]`}
           >
             {compact ? area.shortTitle : area.title}
           </h3>
 
-          <ul className={`${compact ? "mt-2 space-y-1" : "mt-2.5 space-y-1"}`}>
-            {area.bullets
-              .slice(0, compact ? 3 : area.bullets.length)
-              .map((bullet) => (
-                <li
-                  key={bullet}
-                  className={`${compact ? "text-[10px]" : "text-[10px] 2xl:text-[11px]"} flex items-start gap-1.5 leading-snug text-white/[0.82]`}
-                >
-                  <span
-                    className="mt-[5px] h-1 w-1 shrink-0 rounded-full"
-                    style={{ backgroundColor: area.accent }}
-                  />
-                  {bullet}
-                </li>
-              ))}
+          <ul
+            className={`${compact ? "mt-2 space-y-1" : "mt-2 space-y-1.5"
+              }`}
+          >
+            {area.bullets.slice(0, 2).map((bullet) => (
+              <li
+                key={bullet}
+                className={`${compact
+                    ? "text-[9px]"
+                    : "text-[9px] 2xl:text-[10px]"
+                  } flex items-start gap-1.5 leading-[1.28] text-white/[0.84]`}
+              >
+                <span
+                  className="mt-[4px] h-1 w-1 shrink-0 rounded-full"
+                  style={{ backgroundColor: area.accent }}
+                />
+                <span>{bullet}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
@@ -888,45 +886,68 @@ export default function LandingPage() {
       </div>
 
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white shadow-lg"
-            : "bg-white/95 backdrop-blur-sm shadow-sm"
-        }`}
+        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
+          ? "bg-white shadow-lg"
+          : "bg-white/95 backdrop-blur-sm shadow-sm"
+          }`}
       >
-        <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-12 sm:h-14 md:h-14">
-          <div
-            className="hidden w-[110px] shrink-0 md:block"
-            aria-hidden="true"
-          />
+        <div className="mx-auto grid h-14 max-w-[1500px] grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:h-16 sm:px-5 md:grid-cols-[230px_minmax(0,1fr)_230px] lg:grid-cols-[270px_minmax(0,1fr)_270px] lg:px-7">
+          <div className="flex items-center justify-start">
+            <a
+              href="#home"
+              aria-label="Government of Punjab home"
+              className="flex shrink-0 items-center"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white p-1 shadow-[0_7px_18px_-10px_rgba(0,0,0,0.5)] ring-1 ring-[#0B7A3B]/15 sm:h-[52px] sm:w-[52px]">
+                <img
+                  src={GopHeaderLogo}
+                  alt="Government of Punjab"
+                  className="h-full w-full rounded-full object-contain"
+                />
+              </div>
+            </a>
+          </div>
 
-          <nav className="hidden md:flex items-center gap-0.5 lg:gap-1">
+          <nav className="hidden items-center justify-center gap-0.5 md:flex lg:gap-1">
             {NAV_LINKS.map(({ href, label }) => (
               <a
                 key={href}
                 href={href}
-                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
-                  activeSection === href.slice(1)
-                    ? "bg-[#0B7A3B] text-white"
-                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
-                }`}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all lg:px-4 lg:text-sm ${activeSection === href.slice(1)
+                  ? "bg-[#0B7A3B] text-white"
+                  : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                  }`}
               >
                 {label}
               </a>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
             <button
               onClick={() => navigate("/Mapview")}
-              className="hidden sm:flex items-center gap-1.5 sm:gap-2 bg-[#0B7A3B] hover:bg-[#004225] text-white text-xs sm:text-sm font-bold px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:shadow-lg hover:-translate-y-px"
+              className="hidden items-center gap-1.5 rounded-full bg-[#0B7A3B] px-3 py-2 text-xs font-bold text-white transition-all hover:-translate-y-px hover:bg-[#004225] hover:shadow-lg sm:flex sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm"
             >
               Open Map <ArrowRight size={13} />
             </button>
 
+            <a
+              href="#home"
+              aria-label="Ravi Urban Development Authority home"
+              className="flex shrink-0 items-center"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white p-1 shadow-[0_7px_18px_-10px_rgba(0,0,0,0.5)] ring-1 ring-[#0B7A3B]/15 sm:h-[52px] sm:w-[52px]">
+                <img
+                  src={RudaFooterLogo}
+                  alt="Ravi Urban Development Authority"
+                  className="h-full w-full rounded-full object-contain"
+                />
+              </div>
+            </a>
+
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden p-1.5 sm:p-2 rounded-lg bg-[#0B7A3B] text-white"
+              className="rounded-lg bg-[#0B7A3B] p-1.5 text-white md:hidden sm:p-2"
               aria-label="Toggle menu"
             >
               {menuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -1053,9 +1074,9 @@ export default function LandingPage() {
           }
         `}</style>
 
-        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(20,144,93,0.13),transparent_34%),linear-gradient(to_bottom,rgba(0,8,12,0.74),rgba(0,20,20,0.66)_42%,rgba(1,12,10,0.96))]" />
-        <div className="absolute inset-0 z-10 opacity-25 [background-image:linear-gradient(rgba(104,223,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(104,223,255,.04)_1px,transparent_1px)] [background-size:44px_44px]" />
-        <div className="absolute left-1/2 top-[185px] z-10 h-[390px] w-[58%] -translate-x-1/2 rounded-full bg-[#0B7A3B]/[0.08] blur-[100px]" />
+        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(20,144,93,0.07),transparent_40%),linear-gradient(to_bottom,rgba(0,8,12,0.34),rgba(0,20,20,0.30)_42%,rgba(1,12,10,0.62))]" />
+        <div className="absolute inset-0 z-10 opacity-15 [background-image:linear-gradient(rgba(104,223,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(104,223,255,.035)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="absolute left-1/2 top-[185px] z-10 h-[390px] w-[58%] -translate-x-1/2 rounded-full bg-[#0B7A3B]/[0.045] blur-[100px]" />
 
         <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-1 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
           <div className="relative mx-auto w-full max-w-[1600px]">
@@ -1214,11 +1235,10 @@ export default function LandingPage() {
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${
-                  i === slideIndex
-                    ? "h-2 w-7 bg-[#70D84F]"
-                    : "h-2 w-2 bg-white/35 hover:bg-white/70"
-                }`}
+                className={`rounded-full transition-all duration-300 ${i === slideIndex
+                  ? "h-2 w-7 bg-[#70D84F]"
+                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                  }`}
               />
             ))}
           </div>
@@ -1233,15 +1253,13 @@ export default function LandingPage() {
             </div>
 
             <div
-              className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${
-                STAT_GROUPS[statGroupIndex].stats.length === 3
-                  ? "grid-cols-3"
-                  : "grid-cols-2 sm:grid-cols-4"
-              } ${
-                statFade
+              className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${STAT_GROUPS[statGroupIndex].stats.length === 3
+                ? "grid-cols-3"
+                : "grid-cols-2 sm:grid-cols-4"
+                } ${statFade
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-2"
-              }`}
+                }`}
             >
               {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
                 <div key={label} className="relative py-1">
@@ -1262,11 +1280,10 @@ export default function LandingPage() {
                 key={group.key}
                 onClick={() => goToStatGroup(i)}
                 aria-label={`Show ${group.title} stats`}
-                className={`rounded-full transition-all duration-300 ${
-                  i === statGroupIndex
-                    ? "h-1.5 w-6 bg-[#70D84F]"
-                    : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
-                }`}
+                className={`rounded-full transition-all duration-300 ${i === statGroupIndex
+                  ? "h-1.5 w-6 bg-[#70D84F]"
+                  : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
+                  }`}
               />
             ))}
           </div>
@@ -1584,11 +1601,10 @@ export default function LandingPage() {
                   type="button"
                   onClick={() => setTeamStartIndex(index)}
                   aria-label={`Show team member group starting from ${index + 1}`}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    index === teamStartIndex
-                      ? "w-7 bg-[#8FEA67]"
-                      : "w-2 bg-white/30 hover:bg-white/60"
-                  }`}
+                  className={`h-2 rounded-full transition-all duration-300 ${index === teamStartIndex
+                    ? "w-7 bg-[#8FEA67]"
+                    : "w-2 bg-white/30 hover:bg-white/60"
+                    }`}
                 />
               ))}
             </div>
@@ -1736,11 +1752,10 @@ export default function LandingPage() {
                   type="button"
                   onClick={() => setFeatureStartIndex(index)}
                   aria-label={`Show capability group starting from ${index + 1}`}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    index === featureStartIndex
-                      ? "w-7 bg-[#0B7A3B]"
-                      : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
-                  }`}
+                  className={`h-2 rounded-full transition-all duration-300 ${index === featureStartIndex
+                    ? "w-7 bg-[#0B7A3B]"
+                    : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
+                    }`}
                 />
               ))}
             </div>
@@ -1753,38 +1768,50 @@ export default function LandingPage() {
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="mb-6 flex flex-wrap items-center gap-2 sm:gap-2.5 lg:flex-nowrap lg:gap-2.5 xl:gap-3">
               {[
-                {
-                  src: RudaFooterLogo,
-                  alt: "Ravi Urban Development Authority",
-                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
-                },
-                {
-                  src: "/gop_logo.png",
-                  alt: "Government of Punjab",
-                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
-                },
-                {
-                  src: NespakLogo,
-                  alt: "NESPAK",
-                  imageClass: "h-[48px] w-[48px] sm:h-[54px] sm:w-[54px]",
-                },
-                {
-                  src: RudaLogo,
-                  alt: "RUDA GIS Directorate",
-                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
-                },
-              ].map((logo) => (
-                <div
-                  key={logo.alt}
-                  className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-white p-1 shadow-[0_8px_20px_-10px_rgba(0,0,0,0.55)] ring-1 ring-white/40 sm:h-[78px] sm:w-[78px]"
-                >
-                  <img
-                    src={logo.src}
-                    alt={logo.alt}
-                    className={`${logo.imageClass} rounded-full object-contain`}
-                  />
-                </div>
-              ))}
+  {
+    src: RudaFooterLogo,
+    alt: "Ravi Urban Development Authority",
+  },
+  {
+    src: GopHeaderLogo,
+    alt: "Government of Punjab",
+  },
+  {
+    src: NespakLogo,
+    alt: "NESPAK",
+  },
+  {
+    src: RudaLogo,
+    alt: "RUDA GIS Directorate",
+  },
+].map((logo) => (
+  <div
+    key={logo.alt}
+    className="
+      flex
+      h-[64px] w-[64px]
+      sm:h-[70px] sm:w-[70px]
+      shrink-0
+      items-center
+      justify-center
+      rounded-full
+      bg-white
+      p-[2px]
+      shadow-md
+      ring-1
+      ring-white/20
+      transition-all
+      duration-300
+      hover:scale-105
+    "
+  >
+    <img
+      src={logo.src}
+      alt={logo.alt}
+      className="h-[92%] w-[92%] rounded-full object-contain"
+    />
+  </div>
+))}
             </div>
 
             <p className="mb-4 max-w-md text-xs leading-relaxed text-white/70 sm:mb-6 sm:text-sm">
