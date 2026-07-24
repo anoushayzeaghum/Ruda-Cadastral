@@ -16,7 +16,7 @@ export const RUDA_PROPOSED_ROAD_LEGEND = [
   },
   {
     label: "Promenade Road with Service Road",
-    color: "#c02ad3",
+    color: "#DC2626",
     values: [
       "promenade road with service road",
       "promenade road with servi",
@@ -52,16 +52,16 @@ export const DEFAULT_RUDA_PROPOSED_ROAD_COLORS =
 export const buildRudaProposedRoadColorExpression = (
   roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
 ) => [
-  "match",
-  RUDA_PROPOSED_ROAD_TYPE_EXPRESSION,
-  ...RUDA_PROPOSED_ROAD_LEGEND.flatMap((item) =>
-    item.values.flatMap((value) => [
-      value,
-      roadColors[item.label] || item.color,
-    ]),
-  ),
-  "#19598d",
-];
+    "match",
+    RUDA_PROPOSED_ROAD_TYPE_EXPRESSION,
+    ...RUDA_PROPOSED_ROAD_LEGEND.flatMap((item) =>
+      item.values.flatMap((value) => [
+        value,
+        roadColors[item.label] || item.color,
+      ]),
+    ),
+    "#19598d",
+  ];
 
 export const getRudaProposedRoadLinePaint = (
   roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
