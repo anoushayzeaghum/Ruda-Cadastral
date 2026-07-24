@@ -11,8 +11,12 @@ import {
   Minimize2,
   RotateCcw,
   Image,
+  ScanSearch,
+  TimerReset,
 } from "lucide-react";
 import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
+import TimeLapse from "./TimeLapse";
+import ChangeDetection from "./ChangeDetection";
 
 // ── Video catalogue ────────────────────────────────────────────────────────────
 const DRONE_VIDEOS = [
@@ -62,7 +66,7 @@ const IMAGERY_LAYERS = [
 ];
 
 export default function DroneImagery({ map, onExpandedChange }) {
-  // ── Tab state: "imagery" | "videos" ──────────────────────────────────────
+  // ── Tab state: "imagery" | "videos" | "change" | "timelapse" ─────────────
   const [activeTab, setActiveTab] = useState("imagery");
 
   // ── Imagery state ─────────────────────────────────────────────────────────
@@ -82,17 +86,26 @@ export default function DroneImagery({ map, onExpandedChange }) {
   const [duration, setDuration] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [timeLapseExpanded, setTimeLapseExpanded] = useState(false);
+  const [changeDetectionExpanded, setChangeDetectionExpanded] = useState(false);
   const videoRef = useRef(null);
 
   useEffect(() => {
     if (typeof onExpandedChange !== "function") return;
 
-    onExpandedChange(expanded);
+    onExpandedChange(
+      expanded || timeLapseExpanded || changeDetectionExpanded,
+    );
 
     return () => {
       onExpandedChange(false);
     };
-  }, [expanded, onExpandedChange]);
+  }, [
+    expanded,
+    timeLapseExpanded,
+    changeDetectionExpanded,
+    onExpandedChange,
+  ]);
 
   const flyToChaharbagh = () => {
     if (!map) return;
@@ -200,8 +213,8 @@ export default function DroneImagery({ map, onExpandedChange }) {
         <span>Drone Imagery</span>
       </div>
 
-      {/* ── Tab toggle strip ── */}
-      <div className="flex gap-1 border-b border-[#343c4c] px-3 pt-2 pb-0">
+      {/* ── Four-tab tool strip ── */}
+      <div className="grid grid-cols-2 gap-1 border-b border-[#343c4c] px-3 pt-2 sm:grid-cols-4">
         <TabBtn
           active={activeTab === "imagery"}
           icon={<Image size={13} />}
@@ -213,6 +226,19 @@ export default function DroneImagery({ map, onExpandedChange }) {
           icon={<Video size={13} />}
           label="Videos"
           onClick={() => setActiveTab("videos")}
+        />
+        <TabBtn
+          active={activeTab === "change"}
+          icon={<ScanSearch size={13} />}
+          label="Change"
+          title="Change Detection"
+          onClick={() => setActiveTab("change")}
+        />
+        <TabBtn
+          active={activeTab === "timelapse"}
+          icon={<TimerReset size={13} />}
+          label="Time Lapse"
+          onClick={() => setActiveTab("timelapse")}
         />
       </div>
 
@@ -291,11 +317,10 @@ export default function DroneImagery({ map, onExpandedChange }) {
               key={vid.id}
               type="button"
               onClick={() => openVideo(vid.id)}
-              className={`w-full flex items-center gap-3 rounded-md border px-3 py-2.5 mb-2 transition text-left ${
-                activeVideo === vid.id
+              className={`w-full flex items-center gap-3 rounded-md border px-3 py-2.5 mb-2 transition text-left ${activeVideo === vid.id
                   ? "border-[#65c96b] bg-[#1e2e1e]"
                   : "border-[#3b4558] bg-[#1e2636] hover:border-[#65c96b]/50 hover:bg-[#1e2e1e]/60"
-              }`}
+                }`}
             >
               <div
                 className="shrink-0 w-14 h-10 rounded overflow-hidden flex items-center justify-center"
@@ -337,23 +362,22 @@ export default function DroneImagery({ map, onExpandedChange }) {
                 />
               )}
 
-<div
-  className={`bg-[#06291f] shadow-xl transition-all duration-300 ${
-    expanded
-      ? "fixed z-[10002] rounded-xl border border-[#3b4558] overflow-hidden"
-      : "mt-2 rounded-lg border border-[#3b4558] overflow-hidden"
-  }`}
-style={
+              <div
+                className={`bg-[#06291f] shadow-xl transition-all duration-300 ${expanded
+                    ? "fixed z-[10002] rounded-xl border border-[#3b4558] overflow-hidden"
+                    : "mt-2 rounded-lg border border-[#3b4558] overflow-hidden"
+                  }`}
+                style={
                   expanded
                     ? {
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        width: "min(820px, 90vw)",
-                      }
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: "min(820px, 90vw)",
+                    }
                     : {}
                 }
->
+              >
                 {/* Player header */}
                 <div className="flex items-center justify-between px-3 py-2 border-b border-[#2a3548]">
                   <div className="flex items-center gap-2">
@@ -546,21 +570,48 @@ style={
           )}
         </div>
       )}
+
+
+      {/* ═══════════════════════ CHANGE DETECTION TAB ═══════════════════════ */}
+      {activeTab === "change" && (
+        <div
+          className={`max-h-[calc(70vh-6rem)] sm:max-h-[calc(100vh-130px)] ${LAYER_PANEL_SCROLL}`}
+        >
+          <ChangeDetection
+            map={map}
+            embedded
+            onExpandedChange={setChangeDetectionExpanded}
+          />
+        </div>
+      )}
+
+      {/* ═════════════════════════ TIMELAPSE TAB ═════════════════════════ */}
+      {activeTab === "timelapse" && (
+        <div
+          className={`max-h-[calc(70vh-6rem)] sm:max-h-[calc(100vh-130px)] ${LAYER_PANEL_SCROLL}`}
+        >
+          <TimeLapse
+            map={map}
+            embedded
+            onExpandedChange={setTimeLapseExpanded}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Tab button ────────────────────────────────────────────────────────────────
-function TabBtn({ active, icon, label, onClick }) {
+function TabBtn({ active, icon, label, title, onClick }) {
   return (
     <button
       type="button"
+      title={title || label}
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold rounded-t-md border-b-2 transition-colors ${
-        active
+      className={`flex min-w-0 items-center justify-center gap-1.5 rounded-t-md border-b-2 px-2 py-2 text-[10px] font-semibold transition-colors sm:text-[11px] ${active
           ? "border-[#65c96b] text-[#65c96b] bg-[#65c96b]/10"
           : "border-transparent text-white/40 hover:text-white/70"
-      }`}
+        }`}
     >
       {icon}
       {label}
