@@ -101,7 +101,7 @@ import {
   buildCornerMarkerFeatureCollection,
   addCornerMarkerLayerStyles,
   HANDU_GUJRAN_BOUNDS,
-  restoreHanduGujranOrthoLayer,
+  restoreOrthoLayer,
   ensureMeasureLayerStyles,
   ensureMeasureAreaLayerStyles,
   ensureBearingLayerStyles,
@@ -138,6 +138,43 @@ const getAcreNumberFromProps = (props = {}, feature = null) => {
   );
 };
 
+const getMauzaName = (selectedMauza) => {
+  if (!selectedMauza) return "";
+  return (
+    selectedMauza?.mauza ??
+    selectedMauza?.name ??
+    selectedMauza?.Mauza ??
+    selectedMauza?.moza ??
+    selectedMauza?.mouza ??
+    ""
+  ).trim();
+};
+
+const ORTHO_TILE_NAME_BY_MAUZA = {
+  "handu gujran": "Handu_Gujran_Ortho",
+  "lakho dair": "Lakho_Dair_Ortho",
+};
+
+const getOrthoTileNameFromMauzaName = (mauzaName = "") => {
+  const normalized = String(mauzaName || "").trim().toLowerCase();
+  return ORTHO_TILE_NAME_BY_MAUZA[normalized] || "";
+};
+
+const getOrthoTileUrlFromMauza = (selectedMauza) => {
+  const tileName = getOrthoTileNameFromMauzaName(getMauzaName(selectedMauza));
+  return tileName
+    ? `https://rudametaverse.nespakprogresscenter.com/tiles/data/${tileName}/{z}/{x}/{y}.png`
+    : "";
+};
+
+const getOrthoBoundsFromMauzaName = (mauzaName = "") => {
+  const normalized = String(mauzaName || "").trim().toLowerCase();
+  const known = {
+    "handu gujran": HANDU_GUJRAN_BOUNDS,
+  };
+  return known[normalized] || null;
+};
+
 export default function MapView({
   selectedDistrict,
   selectedTehsil,
@@ -162,7 +199,7 @@ export default function MapView({
   const activePopupRef = useRef(null);
   const popupTimeoutRef = useRef(null);
   const lastSyncedSelectionRef = useRef("");
-  const prevHanduGujranOrthoVisible = useRef(false);
+  const prevMussaviLayerVisible = useRef(false);
   const measureCoordsRef = useRef([]);
   const measureAreaCoordsRef = useRef([]);
   const bearingCoordsRef = useRef([]);
@@ -256,15 +293,18 @@ export default function MapView({
     VECTOR_LAYER_THEME.fieldPoints.circle,
   );
   const controlPointsVisible = getLayerVisible(layers, "controlPoints", false);
-  const handuGujranOrthoVisible =
-    typeof layers?.handuGujranOrtho === "object"
-      ? layers.handuGujranOrtho.visible
-      : !!layers?.handuGujranOrtho;
-  const handuGujranOrthoOpacity =
-    typeof layers?.handuGujranOrtho === "object" &&
-    Number.isFinite(Number(layers.handuGujranOrtho.opacity))
-      ? Number(layers.handuGujranOrtho.opacity) / 100
+  const massaviLayerState = layers?.mussaviLayer ?? layers?.handuGujranOrtho;
+  const massaviLayerVisible =
+    typeof massaviLayerState === "object"
+      ? !!massaviLayerState.visible
+      : !!massaviLayerState;
+  const massaviLayerOpacity =
+    typeof massaviLayerState === "object" &&
+    Number.isFinite(Number(massaviLayerState.opacity))
+      ? Number(massaviLayerState.opacity) / 100
       : 1.0;
+  const selectedMauzaName = getMauzaName(selectedMauza);
+  const orthoTileUrl = getOrthoTileUrlFromMauza(selectedMauza);
 
   const clearProposedRoads = () => {
     try {
@@ -2506,31 +2546,35 @@ export default function MapView({
     const map = mapInstance.current;
     if (!map || !isMapReady) return;
 
-    const restoreHanduGujranOrtho = () => {
-      restoreHanduGujranOrthoLayer({
+    const restoreOrtho = () => {
+      restoreOrthoLayer({
         map,
-        visible: handuGujranOrthoVisible,
-        opacity: handuGujranOrthoOpacity,
+        visible: massaviLayerVisible && !!orthoTileUrl,
+        opacity: massaviLayerOpacity,
+        tileUrl: orthoTileUrl,
       });
 
-      if (handuGujranOrthoVisible && !prevHanduGujranOrthoVisible.current) {
-        map.fitBounds(HANDU_GUJRAN_BOUNDS, {
-          padding: 50,
-          duration: 1500,
-        });
+      if (massaviLayerVisible && !prevMussaviLayerVisible.current) {
+        const bounds = getOrthoBoundsFromMauzaName(selectedMauzaName);
+        if (bounds) {
+          map.fitBounds(bounds, {
+            padding: 50,
+            duration: 1500,
+          });
+        }
       }
 
-      prevHanduGujranOrthoVisible.current = handuGujranOrthoVisible;
+      prevMussaviLayerVisible.current = massaviLayerVisible;
     };
 
-    restoreHanduGujranOrtho();
+    restoreOrtho();
 
-    map.on("style.load", restoreHanduGujranOrtho);
+    map.on("style.load", restoreOrtho);
 
     return () => {
-      map.off("style.load", restoreHanduGujranOrtho);
+      map.off("style.load", restoreOrtho);
     };
-  }, [handuGujranOrthoVisible, handuGujranOrthoOpacity, isMapReady]);
+  }, [massaviLayerVisible, massaviLayerOpacity, orthoTileUrl, isMapReady, selectedMauzaName]);
 
   useEffect(() => {
     const map = mapInstance.current;

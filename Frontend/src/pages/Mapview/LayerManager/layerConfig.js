@@ -43,8 +43,10 @@ export const GEODETIC_NETWORK_SOURCE = "geodetic-network-source";
 export const GEODETIC_NETWORK_LAYER = "geodetic-network-layer";
 export const GEODETIC_NETWORK_LABEL = "geodetic-network-label";
 
-export const HANDU_GUJRAN_ORTHO_SOURCE = "local-handugujran-ortho-source";
-export const HANDU_GUJRAN_ORTHO_LAYER = "local-handugujran-ortho-layer";
+export const ORTHO_SOURCE = "local-ortho-source";
+export const ORTHO_LAYER = "local-ortho-layer";
+export const HANDU_GUJRAN_ORTHO_SOURCE = ORTHO_SOURCE;
+export const HANDU_GUJRAN_ORTHO_LAYER = ORTHO_LAYER;
 
 export const MEASURE_SOURCE = "measure-source";
 export const MEASURE_LINE_LAYER = "measure-line-layer";

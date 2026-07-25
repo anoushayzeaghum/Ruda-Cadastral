@@ -33,6 +33,35 @@ import ProposedRoadAttribute from "../GISMetaverse/tools/Layers/AttributeTable/P
 import GeodeticNetworkAttribute from "../GISMetaverse/tools/Layers/AttributeTable/GeodeticNetworkAttribute";
 import MauzaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/MauzaBoundaryAttribute";
 
+const getMauzaName = (selectedMauza) => {
+  if (!selectedMauza) return "";
+  return (
+    selectedMauza?.mauza ??
+    selectedMauza?.name ??
+    selectedMauza?.Mauza ??
+    selectedMauza?.moza ??
+    selectedMauza?.mouza ??
+    ""
+  ).trim();
+};
+
+const ORTHO_TILE_NAME_BY_MAUZA = {
+  "handu gujran": "Handu_Gujran_Ortho",
+  "lakho dair": "Lakho_Dair_Ortho",
+};
+
+const getOrthoTileNameFromMauzaName = (mauzaName = "") => {
+  const normalized = String(mauzaName || "").trim().toLowerCase();
+  return ORTHO_TILE_NAME_BY_MAUZA[normalized] || "";
+};
+
+const getOrthoTileUrlFromMauza = (selectedMauza) => {
+  const tileName = getOrthoTileNameFromMauzaName(getMauzaName(selectedMauza));
+  return tileName
+    ? `https://rudametaverse.nespakprogresscenter.com/tiles/data/${tileName}/{z}/{x}/{y}.png`
+    : "";
+};
+
 // Hook — true when viewport width is below the sm breakpoint (640 px)
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(
@@ -89,7 +118,7 @@ const VECTOR_BOUNDARY_LAYERS = [
   { key: "fieldPoints", label: "Field Points" },
 ];
 
-const RASTER_DATA_LAYERS = [{ key: "handuGujranOrtho", label: "Massavi" }];
+const RASTER_DATA_LAYERS = [{ key: "mussaviLayer", label: "Massavi" }];
 
 const RUDA_PHASE_COLORS = [
   "#6bb7e8",
@@ -200,7 +229,7 @@ export default function LeftPanel({
       triJunctionPoints: "#e11d48",
       fieldPoints: "#2563eb",
       murabbaLayer: "#facc15",
-      handuGujranOrtho: "#9be37b",
+      mussaviLayer: "#9be37b",
     };
     return defaults[layerKey] || "#9be37b";
   };
