@@ -10,8 +10,8 @@ export const TEHSIL_BOUNDARY = {
 };
 
 export const DEFAULT_TEHSIL_STYLE = {
-  color: "#372a19",
-  fillColor: "#d2a569",
+  color: "#000000",
+  fillColor: "#000000",
   opacity: 100,
 };
 
@@ -50,7 +50,7 @@ export function addOrUpdateTehsilBoundary(
   const hasGeoJSON = geojson?.type === "FeatureCollection";
   const data = hasGeoJSON ? geojson : EMPTY_FC;
   const opacity = clamp(style.opacity) / 100;
-  const lineColor = style.color || "#362a1b";
+  const lineColor = style.color || "#000000";
 
   if (!map.getSource(TEHSIL_BOUNDARY.source)) {
     map.addSource(TEHSIL_BOUNDARY.source, { type: "geojson", data });

@@ -11,8 +11,8 @@ export const RUDA_NOTIFIED_BOUNDARY = {
 };
 
 export const DEFAULT_RUDA_NOTIFIED_STYLE = {
-  color: "#FF00B8",
-  fillColor: "#FF00B8",
+  color: "#065F46",
+  fillColor: "#065F46",
   opacity: 100,
 };
 
@@ -52,7 +52,7 @@ export function addOrUpdateRudaNotifiedBoundary(
   const hasGeoJSON = geojson?.type === "FeatureCollection";
   const data = hasGeoJSON ? geojson : EMPTY_FC;
   const opacity = clamp(style.opacity) / 100;
-  const lineColor = style.color || "#FF00B8";
+  const lineColor = style.color || "#065F46";
   const fillColor = style.fillColor || lineColor;
 
   if (!map.getSource(RUDA_NOTIFIED_BOUNDARY.source)) {

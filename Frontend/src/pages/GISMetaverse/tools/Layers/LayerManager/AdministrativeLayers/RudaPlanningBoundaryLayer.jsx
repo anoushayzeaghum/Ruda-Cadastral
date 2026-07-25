@@ -10,16 +10,16 @@ export const RUDA_PLANNING_BOUNDARY = {
 };
 
 export const RUDA_PHASE_LEGEND = [
-  { label: "Phase 2B", color: "#F8D56B" },
-  { label: "Phase 1", color: "#6BD69A" },
-  { label: "Phase 3", color: "#F59E72" },
-  { label: "Phase 2A", color: "#B99CF3" },
-  { label: "Jhok Forest", color: "#78D6D0" },
+  { label: "Phase 2B", color: "#F4B942" },
+  { label: "Phase 1", color: "#41b111ff" },
+  { label: "Phase 3", color: "#E76F51" },
+  { label: "Phase 2A", color: "#4F7CAC" },
+  { label: "Jhok Forest", color: "#14db63ff" },
 ];
 
 export const DEFAULT_RUDA_PLANNING_STYLE = {
-  color: "#5E6A7C",
-  fillColor: "#F8D56B",
+  color: "#334155",
+  fillColor: "#F4B942",
   opacity: 100,
 };
 
@@ -54,25 +54,25 @@ const PHASE_FILL_EXPRESSION = [
     NORMALIZED_PHASE_EXPRESSION,
     ["literal", ["phase 2b", "phase2b", "2b", "phase-2b"]],
   ],
-  "#F8D56B",
+  "#F4B942",
   [
     "in",
     NORMALIZED_PHASE_EXPRESSION,
     ["literal", ["phase 1", "phase1", "1", "phase-1"]],
   ],
-  "#6BD69A",
+  "#2FA36B",
   [
     "in",
     NORMALIZED_PHASE_EXPRESSION,
     ["literal", ["phase 3", "phase3", "3", "phase-3"]],
   ],
-  "#F59E72",
+  "#E76F51",
   [
     "in",
     NORMALIZED_PHASE_EXPRESSION,
     ["literal", ["phase 2a", "phase2a", "2a", "phase-2a"]],
   ],
-  "#B99CF3",
+  "#4F7CAC",
   [
     "in",
     NORMALIZED_PHASE_EXPRESSION,
@@ -81,8 +81,8 @@ const PHASE_FILL_EXPRESSION = [
       ["jhok forest", "jhokforest", "jhok", "forest", "jhok-forest"],
     ],
   ],
-  "#78D6D0",
-  "#D9E2EC",
+  "#1F7A5A",
+  "#CBD5E1",
 ];
 
 export function setRudaPlanningBoundaryVisibility(map, visible) {
@@ -159,7 +159,7 @@ export function addOrUpdateRudaPlanningBoundary(
       type: "line",
       source: RUDA_PLANNING_BOUNDARY.source,
       paint: {
-        "line-color": style.color || "#5E6A7C",
+        "line-color": style.color || "#334155",
         "line-width": [
           "interpolate",
           ["linear"],
@@ -183,7 +183,7 @@ export function addOrUpdateRudaPlanningBoundary(
     map.setPaintProperty(
       RUDA_PLANNING_BOUNDARY.line,
       "line-color",
-      style.color || "#5E6A7C",
+      style.color || "#334155",
     );
     map.setPaintProperty(
       RUDA_PLANNING_BOUNDARY.line,
@@ -225,7 +225,7 @@ export function addOrUpdateRudaPlanningBoundary(
         "text-ignore-placement": false,
       },
       paint: {
-        "text-color": "#25313C",
+        "text-color": "#172033",
         "text-halo-color": "#FFFFFF",
         "text-halo-width": 1.5,
         "text-halo-blur": 0.25,

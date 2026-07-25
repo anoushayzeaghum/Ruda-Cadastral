@@ -10,8 +10,8 @@ export const DISTRICT_BOUNDARY = {
 };
 
 export const DEFAULT_DISTRICT_STYLE = {
-  color: "#1B3A5C",
-  fillColor: "#1B3A5C",
+  color: "#16A34A",
+  fillColor: "#16A34A",
   opacity: 100,
 };
 
@@ -50,7 +50,7 @@ export function addOrUpdateDistrictBoundary(
   const hasGeoJSON = geojson?.type === "FeatureCollection";
   const data = hasGeoJSON ? geojson : EMPTY_FC;
   const opacity = clamp(style.opacity) / 100;
-  const lineColor = style.color || "#1B3A5C";
+  const lineColor = style.color || "#16A34A";
   const fillColor = style.fillColor || lineColor;
 
   if (!map.getSource(DISTRICT_BOUNDARY.source)) {
