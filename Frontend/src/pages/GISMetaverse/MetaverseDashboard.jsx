@@ -13,20 +13,26 @@ export default function MetaverseDashboard() {
   const [activeTool, setActiveTool] = useState(false);
   const [showMetaverseLegend, setShowMetaverseLegend] = useState(false);
 
+  // const defaultFilters = {
+  //   projectId: "",
+  //   block: "",
+  //   plotType: "",
+  //   plotNo: "",
+  //   area: "",
+  //   parkfront: "",
+  //   rd_facing: "",
+  //   poss_st: "",
+  //   plotStatus: "",
+  //   tr_cate: "",
+  //   tr_own: "",
+  //   site_plan: "",
+  // };
+
   const defaultFilters = {
-    projectId: "",
-    block: "",
-    plotType: "",
-    plotNo: "",
-    area: "",
-    parkfront: "",
-    rd_facing: "",
-    poss_st: "",
-    plotStatus: "",
-    tr_cate: "",
-    tr_own: "",
-    site_plan: "",
-  };
+  phase: "",
+  projectType: "",
+  projectId: "",
+};
 
   const defaultLayerVisibility = {
     boundary: false,

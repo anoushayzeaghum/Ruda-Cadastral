@@ -1087,6 +1087,8 @@ class Project(models.Model):
 
     brief_name = models.CharField(max_length=100, null=True, blank=True)
 
+    phase = models.CharField(max_length=100, null=True, blank=True)
+
     geom = gis_models.MultiPolygonField(srid=4326, null=True, blank=True)
 
     def __str__(self):
@@ -1095,7 +1097,6 @@ class Project(models.Model):
     class Meta:
         managed = False
         db_table = "project"
-
 
 
 # =========================

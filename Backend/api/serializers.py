@@ -459,8 +459,11 @@ class ProjectSerializer(GeoFeatureModelSerializer):
         id_field = "gid"
         fields = (
             "gid",
-            "name", "type", "brief_name",
-            "geom"
+            "name",
+            "type",
+            "brief_name",
+            "phase",
+            "geom",
         )
 
 

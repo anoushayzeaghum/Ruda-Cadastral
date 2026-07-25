@@ -11,8 +11,9 @@ class ListProjectView(viewsets.ViewSet):
         try:
             gid = request.query_params.get("gid")
             name = request.query_params.get("name")
-            project_type = request.query_params.get("type")
+            type = request.query_params.get("type")
             brief_name = request.query_params.get("brief_name")
+            phase = request.query_params.get("phase")  # NEW
 
             queryset = Project.objects.all().order_by("gid")
 
@@ -22,11 +23,14 @@ class ListProjectView(viewsets.ViewSet):
             if name:
                 queryset = queryset.filter(name__icontains=name)
 
-            if project_type:
-                queryset = queryset.filter(type__iexact=project_type)
+            if type:
+                queryset = queryset.filter(type__iexact=type)
 
             if brief_name:
                 queryset = queryset.filter(brief_name__icontains=brief_name)
+
+            if phase:  # NEW
+                queryset = queryset.filter(phase__iexact=phase)
 
             serializer = ProjectSerializer(queryset, many=True)
 

@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://rudametaverse.nespakprogresscenter.com/api";
+  import.meta.env.VITE_API_BASE_URL || 
+  "http://localhost:8000/api";
 
 const unwrapApiData = (data) => data?.data || data?.results || data;
 
@@ -94,6 +94,21 @@ export const getProjectGeoJSON = async (projectId) => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getProjectsByPhase = async (phase) => {
+  if (!phase) return emptyFC();
+  const res = await axios.get(`${API_BASE}/project/`, {
+    params: { phase },
+  });
+  return unwrapGeoJSON(res.data);
+};
+
+export const getProjectsByPhaseAndType = async (phase, type) => {
+  if (!phase || !type) return emptyFC();
+  const res = await axios.get(`${API_BASE}/project/`, {
+    params: { phase, type },
+  });
+  return unwrapGeoJSON(res.data);
+};
 export const getBlocks = async (projectId) => {
   const res = await axios.get(`${API_BASE}/block/`, {
     params: { project_id: projectId },

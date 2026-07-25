@@ -1940,6 +1940,41 @@ export const drawUnderlinedValue = (
     }
   }
 };
+
+const getTextWidthWithSpacing = (doc, text, charSpace = 0) =>
+  doc.getTextWidth(text) + charSpace * Math.max(text.length - 1, 0);
+
+const drawFittedCenteredHeading = (
+  doc,
+  text,
+  centerX,
+  y,
+  {
+    maxWidth,
+    startFontSize,
+    minFontSize = 8,
+    charSpace = 0,
+    bold = true,
+    color = null,
+  } = {},
+) => {
+  doc.setFont("helvetica", bold ? "bold" : "normal");
+  let fontSize = startFontSize;
+
+  doc.setFontSize(fontSize);
+  while (
+    fontSize > minFontSize &&
+    getTextWidthWithSpacing(doc, text, charSpace) > maxWidth
+  ) {
+    fontSize -= 0.3;
+    doc.setFontSize(fontSize);
+  }
+
+  if (color) doc.setTextColor(...color);
+  doc.text(text, centerX, y, { align: "center", charSpace });
+  return fontSize;
+};
+
 export const canvasAsPng = (canvas) =>
   canvas
     ? {

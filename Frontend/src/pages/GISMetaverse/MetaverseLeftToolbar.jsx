@@ -31,7 +31,6 @@ const tools = [
   { id: "filter", label: "Filter", icon: FilterIcon },
   { id: "droneImagery", label: "Drone Imagery", icon: Drone },
   { id: "droneVideos", label: "Drone Videos", icon: Video },
-  { id: "filter", label: "Filter", icon: FilterIcon },
   { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
   { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
   { id: "measurement", label: "Measurement", icon: Ruler },

@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, RotateCcw } from "lucide-react";
 import {
-  getBlocks,
-  getPlotOptions,
   getProjects,
+  getProjectsByPhase,
+  getProjectsByPhaseAndType,
+  getProjectGeoJSON,
 } from "../../services/metaverseApi";
 
 const normalizeSortValue = (value) => String(value ?? "").trim();
@@ -202,229 +203,159 @@ export default function MetaverseSubHeader({
   setLayerVisibility,
   onReset,
   onCalendarClick,
+  onBoundaryChange,
 }) {
   const [projects, setProjects] = useState([]);
-  const [blocks, setBlocks] = useState([]);
-  const [options, setOptions] = useState({
-    plotTypes: [],
-    plotNos: [],
-    areas: [],
-  });
+  // const [blocks, setBlocks] = useState([]);
+  // const [options, setOptions] = useState({
+  //   plotTypes: [],
+  //   plotNos: [],
+  //   areas: [],
+  // });
 
   useEffect(() => {
-    getProjects()
-      .then((data) => {
-        setProjects(
-          naturalSort(
-            data,
-            (project) =>
-              project.brief_name || project.name || project.gid || project.id,
-          ),
-        );
-      })
-      .catch((err) => {
-        console.error("PROJECTS ERROR:", err);
-      });
-  }, []);
+  getProjects()
+    .then((data) => {
+      console.log("PROJECTS:", data); // <-- ADD THIS LINE
 
+      setProjects(
+        naturalSort(
+          data,
+          (project) =>
+            project.brief_name || project.name || project.gid || project.id,
+        ),
+      );
+    })
+    .catch((err) => {
+      console.error("PROJECTS ERROR:", err);
+    });
+}, []);
+  
+// Fetch and surface the boundary GeoJSON for whichever filter stage is
+  // currently the most specific: Project > Type+Phase > Phase alone.
   useEffect(() => {
     let cancelled = false;
 
-    const loadBlocks = async () => {
-      if (!filters.projectId) {
-        setBlocks([]);
-        return;
-      }
+    const loadBoundary = async () => {
+      if (!onBoundaryChange) return;
 
       try {
-        const data = await getBlocks(filters.projectId);
-        if (!cancelled)
-          setBlocks(
-            naturalSort(data, (block) => block.block || block.gid || block.id),
-          );
+        let geojson;
+
+        if (filters.projectId) {
+          geojson = await getProjectGeoJSON(filters.projectId);
+        } else if (filters.phase && filters.projectType) {
+          geojson = await getProjectsByPhaseAndType(filters.phase, filters.projectType);
+        } else if (filters.phase) {
+          geojson = await getProjectsByPhase(filters.phase);
+        } else {
+          geojson = { type: "FeatureCollection", features: [] };
+        }
+
+        if (!cancelled) onBoundaryChange(geojson);
       } catch (err) {
-        console.error(err);
-        if (!cancelled) setBlocks([]);
+        console.error("BOUNDARY FETCH ERROR:", err);
+        if (!cancelled) onBoundaryChange({ type: "FeatureCollection", features: [] });
       }
     };
 
-    loadBlocks();
+    loadBoundary();
 
     return () => {
       cancelled = true;
     };
-  }, [filters.projectId]);
+  }, [filters.phase, filters.projectType, filters.projectId, onBoundaryChange]);
 
-  useEffect(() => {
-  let cancelled = false;
+// const updateFilter = (key, value) => {
+//   setFilters(prev => {
+//     const next = {
+//       ...prev,
+//       [key]: value,
+//     };
 
-  const load = async () => {
-    if (!filters.projectId) {
-      setOptions({
-        plotTypes: [],
-        areas: [],
-        plotNos: [],
-      });
-      return;
-    }
+//     if (key === "projectId") {
+//       next.block = "";
+//       next.plotType = "";
+//       next.area = "";
+//       next.plotNo = "";
+//     }
 
-    try {
-      let plotTypes = [];
-      let areas = [];
-      let plotNos = [];
+//     if (key === "block") {
+//       next.plotType = "";
+//       next.area = "";
+//       next.plotNo = "";
+//     }
 
-      // Project + Block -> Plot Types
-      const typeRes = await getPlotOptions({
-        project_id: filters.projectId,
-        block: filters.block,
-      });
+//     if (key === "plotType") {
+//       next.area = "";
+//       next.plotNo = "";
+//     }
 
-      plotTypes = uniqueSorted(
-        typeRes.plotTypes || []
-      );
+//     if (key === "area") {
+//       next.plotNo = "";
+//     }
 
-      // Project + Block + Plot Type -> Areas
-      if (filters.plotType) {
-        const areaRes = await getPlotOptions({
-          project_id: filters.projectId,
-          block: filters.block,
-          type: filters.plotType,
-        });
-
-        areas = uniqueSorted(
-          areaRes.areas || []
-        );
-      }
-
-      // Project + Block + Plot Type + Area -> Plot Nos
-      if (filters.plotType && filters.area) {
-        const plotNoRes = await getPlotOptions({
-          project_id: filters.projectId,
-          block: filters.block,
-          type: filters.plotType,
-          plot_area: filters.area,
-        });
-
-        plotNos = uniqueSorted(
-          plotNoRes.plotNos || []
-        );
-      }
-
-      if (!cancelled) {
-        setOptions({
-          plotTypes,
-          areas,
-          plotNos,
-        });
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  load();
-
-  return () => {
-    cancelled = true;
-  };
-}, [
-  filters.projectId,
-  filters.block,
-  filters.plotType,
-  filters.area,
-]);
-
+//     return next;
+//   });
+// };
 const updateFilter = (key, value) => {
-  setFilters(prev => {
-    const next = {
-      ...prev,
-      [key]: value,
-    };
+    setFilters(prev => {
+        const next = {
+            ...prev,
+            [key]: value,
+        };
 
-    if (key === "projectId") {
-      next.block = "";
-      next.plotType = "";
-      next.area = "";
-      next.plotNo = "";
-    }
+        if (key === "phase") {
+            next.projectType = "";
+            next.projectId = "";
+        }
 
-    if (key === "block") {
-      next.plotType = "";
-      next.area = "";
-      next.plotNo = "";
-    }
+        if (key === "projectType") {
+            next.projectId = "";
+        }
 
-    if (key === "plotType") {
-      next.area = "";
-      next.plotNo = "";
-    }
-
-    if (key === "area") {
-      next.plotNo = "";
-    }
-
-    return next;
-  });
+        return next;
+    });
 };
+
+
   const projectOptions = projects.map((p) => ({
     value: String(p.gid || p.id),
     label: p.brief_name || p.name,
   }));
 
-  const blockOptions = blocks.map((b) => ({
-    value: String(b.block),
-    label: b.block,
-  }));
+const phaseOptions = [
+  ...new Set(projects.map((p) => p.phase).filter(Boolean)),
+].map((phase) => ({
+  value: phase,
+  label: phase,
+}));
 
-  const areaToMarla = (value) => {
-    const text = String(value || "")
-      .toLowerCase()
-      .trim();
+const projectTypeOptions = [
+  ...new Set(
+    projects
+      .filter((p) => !filters.phase || p.phase === filters.phase)
+      .map((p) => p.type)
+      .filter(Boolean),
+  ),
+].map((type) => ({
+  value: type,
+  label: type,
+}));
 
-    const number = parseFloat(text.match(/[\d.]+/)?.[0] || 0);
-
-    if (text.includes("acre")) return number * 160; // 1 acre = 160 marla
-    if (text.includes("kanal")) return number * 20; // 1 kanal = 20 marla
-    if (text.includes("marla")) return number;
-
-    return number;
-  };
-
-  const areaOptions = (options.areas || [])
-    .map((area) => ({
-      value: String(area),
-      label: area,
-    }))
-    .sort((a, b) => {
-      const av = areaToMarla(a.label);
-      const bv = areaToMarla(b.label);
-
-      // primary sort: actual size
-      if (av !== bv) return av - bv;
-
-      // secondary: unit priority (optional but makes it stable)
-      const unitRank = (label) => {
-        const l = label.toLowerCase();
-        if (l.includes("marla")) return 1;
-        if (l.includes("kanal")) return 2;
-        if (l.includes("acre")) return 3;
-        return 4;
-      };
-
-      const unitDiff = unitRank(a.label) - unitRank(b.label);
-      if (unitDiff !== 0) return unitDiff;
-
-      return a.label.localeCompare(b.label);
-    });
-
-  const plotTypeOptions = options.plotTypes?.map((type) => ({
-    value: String(type),
-    label: type,
-  }));
-
-  const plotNoOptions = options.plotNos?.map((plotNo) => ({
-    value: String(plotNo),
-    label: plotNo,
+const filteredProjectOptions = projects
+  .filter((p) => {
+    if (filters.phase && p.phase !== filters.phase) return false;
+    if (
+        filters.projectType &&
+        p.type !== filters.projectType
+    )
+      return false;
+    return true;
+  })
+  .map((p) => ({
+    value: String(p.gid || p.id),
+    label: p.brief_name || p.name,
   }));
 
   const filterClassName =
@@ -432,50 +363,34 @@ const updateFilter = (key, value) => {
 
   return (
     <div className="absolute left-1/2 top-2 sm:top-3 z-40 -translate-x-1/2"
-      style={{ width: "calc(100vw - 120px)", maxWidth: "720px" }}
+      style={{ maxWidth: "calc(100vw - 120px)" }}
     >
       <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto rounded-md sm:rounded-lg bg-[#06291f] px-1.5 sm:px-2 py-1 sm:py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <SearchableSelect
-          value={filters.projectId}
-          placeholder="Projects"
-          options={projectOptions}
-          onChange={(value) => updateFilter("projectId", value)}
-          className="h-7 sm:h-8 w-[100px] sm:w-[130px] shrink-0 rounded-md border border-[#2f3a4d] bg-white px-1.5 sm:px-2 text-[10px] sm:text-xs font-semibold text-[#06291f] outline-none"
-        />
+  value={filters.phase}
+  placeholder="Phase"
+  options={phaseOptions}
+  onChange={(value) => updateFilter("phase", value)}
+  className={`${filterClassName} w-[110px]`}
+/>
 
-        <SearchableSelect
-          value={filters.block}
-          placeholder="Block No"
-          disabled={!filters.projectId}
-          options={blockOptions}
-          onChange={(value) => updateFilter("block", value)}
-          className={`${filterClassName} w-[85px] sm:w-[105px]`}
-        />
-        <SearchableSelect
-          value={filters.plotType}
-          placeholder="Plot Type"
-          disabled={!filters.projectId}
-          options={plotTypeOptions}
-          onChange={(value) => updateFilter("plotType", value)}
-          className={`${filterClassName} w-[85px] sm:w-[105px]`}
-        />
-        <SearchableSelect
-          value={filters.area}
-          placeholder="Area"
-          disabled={!filters.projectId}
-          options={areaOptions}
-          onChange={(value) => updateFilter("area", value)}
-          className={`${filterClassName} w-[75px] sm:w-[105px]`}
-        />
+<SearchableSelect
+  value={filters.projectType}
+  placeholder="Project Type"
+  options={projectTypeOptions}
+  disabled={!filters.phase}
+  onChange={(value) => updateFilter("projectType", value)}
+  className={`${filterClassName} w-[140px]`}
+/>
 
-        <SearchableSelect
-          value={filters.plotNo}
-          placeholder="Plot No"
-          disabled={!filters.projectId}
-          options={plotNoOptions}
-          onChange={(value) => updateFilter("plotNo", value)}
-          className={`${filterClassName} w-[80px] sm:w-[105px]`}
-        />
+<SearchableSelect
+  value={filters.projectId}
+  placeholder="Project"
+  options={filteredProjectOptions}
+  disabled={!filters.projectType}
+  onChange={(value) => updateFilter("projectId", value)}
+  className={`${filterClassName} w-[170px]`}
+/>
 
         <button
           type="button"
