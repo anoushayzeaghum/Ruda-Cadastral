@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
 import RudaFooterLogo from "../../assets/Ruda.png";
+import GopHeaderLogo from "../../assets/govtpunjab.png";
 import {
   Map,
   BarChart3,
@@ -107,10 +108,8 @@ const DECISION_AREAS = [
     accent: "#9BE35C",
     image: "/LandingCard1.png",
     bullets: [
-      "Parcel mapping & Khasra management",
-      "Ownership & compensation management",
-      "Estate inventory & asset management",
-      "Mutation & revenue integration",
+      "Parcel, Khasra, ownership & compensation management",
+      "Estate inventory, mutation & revenue integration",
     ],
   },
   {
@@ -122,11 +121,8 @@ const DECISION_AREAS = [
     accent: "#3FC6FF",
     image: "/LandingCard2.png",
     bullets: [
-      "Master planning & zoning",
-      "3D city modeling & visualization",
-      "Land-use & density analysis",
-      "Urban design & streetscapes",
-      "Scenario planning & simulations",
+      "Master planning, zoning & land-use analysis",
+      "3D city modeling, urban design & scenario simulation",
     ],
   },
   {
@@ -138,11 +134,8 @@ const DECISION_AREAS = [
     accent: "#B781FF",
     image: "/LandingCard3.png",
     bullets: [
-      "Building plan approval system",
-      "Development monitoring",
-      "Building inspections",
-      "Regulatory compliance",
-      "e-Permits & digital records",
+      "Building approvals, inspections & development monitoring",
+      "Regulatory compliance, e-Permits & digital records",
     ],
   },
   {
@@ -154,11 +147,8 @@ const DECISION_AREAS = [
     accent: "#FFAA22",
     image: "/LandingCard4.png",
     bullets: [
-      "Infrastructure design & modeling",
-      "Roads, bridges & interchanges",
-      "Water supply & sewerage networks",
-      "Storm-water drainage",
-      "Asset management & maintenance",
+      "Infrastructure, roads, bridges & interchange design",
+      "Water, sewerage, drainage & asset maintenance",
     ],
   },
   {
@@ -170,11 +160,8 @@ const DECISION_AREAS = [
     accent: "#27E1EA",
     image: "/LandingCard5.png",
     bullets: [
-      "Investment & opportunity mapping",
-      "Commercial zone management",
-      "Market & feasibility analysis",
-      "Stakeholder & investor portal",
-      "Revenue & financial analytics",
+      "Investment mapping, market analysis & feasibility",
+      "Commercial zones, investor portal & revenue analytics",
     ],
   },
   {
@@ -186,11 +173,8 @@ const DECISION_AREAS = [
     accent: "#9BE84F",
     image: "/LandingCard6.png",
     bullets: [
-      "Community engagement",
-      "Social-impact assessment",
-      "Environmental sustainability",
-      "Green & blue infrastructure",
-      "Education, health & well-being",
+      "Community engagement, social impact & well-being",
+      "Environmental sustainability & green-blue infrastructure",
     ],
   },
 ];
@@ -223,32 +207,27 @@ const CORE_CAPABILITIES = [
 const TEAM_MEMBERS = [
   {
     id: 1,
-    name: "Team Member Name",
+    name: "Imran Amin",
     designation: "Chief Executive Officer",
-    image: "",
+    image: "/Ruda_Official/Imran-Amin (CEO).webp",
   },
   {
     id: 2,
-    name: "Team Member Name",
+    name: "Brig. Mansoor",
     designation: "Chief Operating Officer",
-    image: "",
+    image: "/Ruda_Official/Brig-Mansoor (COO).webp",
   },
   {
     id: 3,
-    name: "Team Member Name",
-    designation: "Executive Director",
-    image: "",
+    name: "Bakhtiar",
+    designation: "Executive Director — Land Acquisition & Estate",
+    image:
+      "/Ruda_Official/ED BAKHTIAR (ED Land Acquisition & Estate).jpeg",
   },
   {
     id: 4,
     name: "Team Member Name",
     designation: "Director",
-    image: "",
-  },
-  {
-    id: 5,
-    name: "Team Member Name",
-    designation: "GIS & Digital Twin Lead",
     image: "",
   },
 ];
@@ -507,8 +486,7 @@ function AppCard({
                   style={{
                     width: i === slideIdx ? "14px" : "5px",
                     height: "5px",
-                    background:
-                      i === slideIdx ? "#70D84F" : "rgba(255,255,255,0.3)",
+                    background: i === slideIdx ? "#70D84F" : "rgba(255,255,255,0.3)",
                     boxShadow: i === slideIdx ? "0 0 6px #70D84F" : "none",
                   }}
                 />
@@ -586,21 +564,20 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
-hover:-translate-y-2
-hover:scale-[1.025]
-hover:rotate-[0.2deg] ${
-        compact
-          ? "min-h-[128px] rounded-xl p-3"
-          : "min-h-[154px] rounded-[18px] p-4"
-      }`}
+        hover:-translate-y-1
+        hover:scale-[1.012]
+        ${compact
+          ? "min-h-[114px] rounded-xl px-3 py-3"
+          : "h-[126px] rounded-[18px] px-4 py-3 2xl:h-[130px]"
+        }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
-        backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.91) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.36) 100%), url('${area.image}')`,
+        backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.92) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.34) 100%), url('${area.image}')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         boxShadow: hovered
-          ? `0 0 30px ${area.accent}70, 0 22px 55px -20px ${area.accent}CC, inset 0 0 36px ${area.accent}18`
-          : `0 18px 45px -24px ${area.accent}88, inset 0 0 32px rgba(255,255,255,.025)`,
+          ? `0 0 26px ${area.accent}55, 0 18px 44px -20px ${area.accent}AA, inset 0 0 30px ${area.accent}14`
+          : `0 16px 38px -24px ${area.accent}70, inset 0 0 28px rgba(255,255,255,.02)`,
         animation: `decisionCardIn 700ms ease-out ${delay}ms both`,
       }}
     >
@@ -610,54 +587,73 @@ hover:rotate-[0.2deg] ${
           background: `linear-gradient(90deg, transparent, ${area.accent}, transparent)`,
         }}
       />
+
       <div
-        className="absolute -right-12 -top-12 h-28 w-28 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
-        style={{ backgroundColor: `${area.accent}35` }}
+        className="absolute -right-10 -top-10 h-24 w-24 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
+        style={{ backgroundColor: `${area.accent}30` }}
       />
 
-      <div className="relative z-10 flex items-start gap-3">
-        <div className="flex shrink-0 flex-col items-center gap-2">
+      {/* Top-right Lucide icon. No emojis are used. */}
+      <div
+        className={`${compact ? "right-3 top-3 h-9 w-9" : "right-4 top-3.5 h-10 w-10"}
+          absolute z-20 flex items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-300 group-hover:scale-105`}
+        style={{
+          borderColor: `${area.accent}80`,
+          backgroundColor: `${area.accent}18`,
+          color: area.accent,
+          boxShadow: `0 0 18px ${area.accent}28`,
+        }}
+      >
+        <Icon size={compact ? 17 : 19} strokeWidth={2} />
+      </div>
+
+      <div className="relative z-10 flex h-full items-center gap-3 pr-12">
+        <div className="flex shrink-0 items-center justify-center">
           <div
-            className={`${compact ? "h-9 w-9 text-sm" : "h-11 w-11 text-base"} flex items-center justify-center rounded-full border-2 font-black`}
+            className={`${compact
+              ? "h-9 w-9 text-sm"
+              : "h-11 w-11 text-base 2xl:h-12 2xl:w-12"
+              } flex items-center justify-center rounded-full border-2 font-black`}
             style={{
               borderColor: area.accent,
               color: "white",
-              backgroundColor: `${area.accent}25`,
-              boxShadow: `0 0 20px ${area.accent}38`,
+              backgroundColor: `${area.accent}20`,
+              boxShadow: `0 0 18px ${area.accent}30`,
             }}
           >
             {Number(area.number)}
-          </div>
-          <div
-            className={`${compact ? "h-8 w-8" : "h-10 w-10"} flex items-center justify-center rounded-full border bg-black/25`}
-            style={{ borderColor: `${area.accent}90`, color: area.accent }}
-          >
-            <Icon size={compact ? 16 : 19} strokeWidth={2} />
           </div>
         </div>
 
         <div className="min-w-0 flex-1">
           <h3
-            className={`${compact ? "text-[10px]" : "text-[12px] 2xl:text-[13px]"} font-black uppercase leading-tight tracking-[0.035em]`}
+            className={`${compact
+              ? "text-[11px]"
+              : "text-[12px] 2xl:text-[13px]"
+              } font-black uppercase leading-[1.12] tracking-[0.025em]`}
           >
             {compact ? area.shortTitle : area.title}
           </h3>
 
-          <ul className={`${compact ? "mt-2 space-y-1" : "mt-2.5 space-y-1"}`}>
-            {area.bullets
-              .slice(0, compact ? 3 : area.bullets.length)
-              .map((bullet) => (
-                <li
-                  key={bullet}
-                  className={`${compact ? "text-[10px]" : "text-[10px] 2xl:text-[11px]"} flex items-start gap-1.5 leading-snug text-white/[0.82]`}
-                >
-                  <span
-                    className="mt-[5px] h-1 w-1 shrink-0 rounded-full"
-                    style={{ backgroundColor: area.accent }}
-                  />
-                  {bullet}
-                </li>
-              ))}
+          <ul className={`${compact ? "mt-2 space-y-1" : "mt-2 space-y-1.5"}`}>
+            {area.bullets.slice(0, 2).map((bullet) => (
+              <li
+                key={bullet}
+                className={`${compact
+                  ? "text-[10px]"
+                  : "text-[10.5px] 2xl:text-[11px]"
+                  } flex items-start gap-2 leading-[1.32] text-white/90`}
+              >
+                <span
+                  className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{
+                    backgroundColor: area.accent,
+                    boxShadow: `0 0 7px ${area.accent}80`,
+                  }}
+                />
+                <span>{bullet}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
@@ -740,7 +736,7 @@ function CapabilityNode({ item }) {
 function TeamMemberCard({ member, index }) {
   return (
     <article
-      className="group relative w-full overflow-hidden rounded-[22px] border border-white/15 bg-white/[0.07] shadow-[0_22px_48px_-26px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#7FE45B]/70 hover:bg-white/[0.11] hover:shadow-[0_28px_64px_-28px_rgba(73,184,74,0.68)]"
+      className="group relative mx-auto w-full max-w-[390px] overflow-hidden rounded-[22px] border border-white/15 bg-white/[0.07] shadow-[0_22px_48px_-26px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#7FE45B]/70 hover:bg-white/[0.11] hover:shadow-[0_28px_64px_-28px_rgba(73,184,74,0.68)]"
       style={{
         animation: `teamCardReveal 700ms ease-out ${index * 110}ms both`,
       }}
@@ -749,15 +745,31 @@ function TeamMemberCard({ member, index }) {
       <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#49B84A]/15 blur-3xl transition-transform duration-700 group-hover:scale-150" />
 
       <div className="relative p-3">
-        <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-[#061b17]">
+        <div className="relative mx-auto w-[94%] overflow-hidden rounded-[20px] border border-white/10 bg-[#061b17]">
           {member.image ? (
-            <img
-              src={member.image}
-              alt={member.name}
-              className="h-44 w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.06] sm:h-48 lg:h-52"
-            />
+            <>
+              <img
+                src={member.image}
+                alt={member.name}
+                className="h-52 w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.045] sm:h-56 lg:h-60"
+                loading="lazy"
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                  const fallback = event.currentTarget.nextElementSibling;
+                  if (fallback) {
+                    fallback.style.display = "flex";
+                  }
+                }}
+              />
+              <div className="hidden h-52 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-56 lg:h-60">
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
+                  <span className="absolute inset-2 rounded-full border border-white/10" />
+                  <Users size={36} strokeWidth={1.5} />
+                </div>
+              </div>
+            </>
           ) : (
-            <div className="flex h-44 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-48 lg:h-52">
+            <div className="flex h-52 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-56 lg:h-60">
               <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
                 <span className="absolute inset-2 rounded-full border border-white/10" />
                 <Users size={36} strokeWidth={1.5} />
@@ -887,45 +899,68 @@ export default function LandingPage() {
       </div>
 
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white shadow-lg"
-            : "bg-white/95 backdrop-blur-sm shadow-sm"
-        }`}
+        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
+          ? "bg-white shadow-lg"
+          : "bg-white/95 backdrop-blur-sm shadow-sm"
+          }`}
       >
-        <div className="max-w-6xl mx-auto px-3 sm:px-5 flex items-center justify-between h-12 sm:h-14 md:h-14">
-          <div
-            className="hidden w-[110px] shrink-0 md:block"
-            aria-hidden="true"
-          />
+        <div className="mx-auto grid h-14 max-w-[1500px] grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:h-16 sm:px-5 md:grid-cols-[230px_minmax(0,1fr)_230px] lg:grid-cols-[270px_minmax(0,1fr)_270px] lg:px-7">
+          <div className="flex items-center justify-start">
+            <a
+              href="#home"
+              aria-label="Government of Punjab home"
+              className="flex shrink-0 items-center"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white p-1 shadow-[0_7px_18px_-10px_rgba(0,0,0,0.5)] ring-1 ring-[#0B7A3B]/15 sm:h-[52px] sm:w-[52px]">
+                <img
+                  src={GopHeaderLogo}
+                  alt="Government of Punjab"
+                  className="h-full w-full rounded-full object-contain"
+                />
+              </div>
+            </a>
+          </div>
 
-          <nav className="hidden md:flex items-center gap-0.5 lg:gap-1">
+          <nav className="hidden items-center justify-center gap-0.5 md:flex lg:gap-1">
             {NAV_LINKS.map(({ href, label }) => (
               <a
                 key={href}
                 href={href}
-                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
-                  activeSection === href.slice(1)
-                    ? "bg-[#0B7A3B] text-white"
-                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
-                }`}
+                className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all lg:px-4 lg:text-sm ${activeSection === href.slice(1)
+                  ? "bg-[#0B7A3B] text-white"
+                  : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                  }`}
               >
                 {label}
               </a>
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
             <button
               onClick={() => navigate("/Mapview")}
-              className="hidden sm:flex items-center gap-1.5 sm:gap-2 bg-[#0B7A3B] hover:bg-[#004225] text-white text-xs sm:text-sm font-bold px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:shadow-lg hover:-translate-y-px"
+              className="hidden items-center gap-1.5 rounded-full bg-[#0B7A3B] px-3 py-2 text-xs font-bold text-white transition-all hover:-translate-y-px hover:bg-[#004225] hover:shadow-lg sm:flex sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm"
             >
               Open Map <ArrowRight size={13} />
             </button>
 
+            <a
+              href="#home"
+              aria-label="Ravi Urban Development Authority home"
+              className="flex shrink-0 items-center"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white p-1 shadow-[0_7px_18px_-10px_rgba(0,0,0,0.5)] ring-1 ring-[#0B7A3B]/15 sm:h-[52px] sm:w-[52px]">
+                <img
+                  src={RudaFooterLogo}
+                  alt="Ravi Urban Development Authority"
+                  className="h-full w-full rounded-full object-contain"
+                />
+              </div>
+            </a>
+
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden p-1.5 sm:p-2 rounded-lg bg-[#0B7A3B] text-white"
+              className="rounded-lg bg-[#0B7A3B] p-1.5 text-white md:hidden sm:p-2"
               aria-label="Toggle menu"
             >
               {menuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -1052,9 +1087,9 @@ export default function LandingPage() {
           }
         `}</style>
 
-        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(20,144,93,0.13),transparent_34%),linear-gradient(to_bottom,rgba(0,8,12,0.74),rgba(0,20,20,0.66)_42%,rgba(1,12,10,0.96))]" />
-        <div className="absolute inset-0 z-10 opacity-25 [background-image:linear-gradient(rgba(104,223,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(104,223,255,.04)_1px,transparent_1px)] [background-size:44px_44px]" />
-        <div className="absolute left-1/2 top-[185px] z-10 h-[390px] w-[58%] -translate-x-1/2 rounded-full bg-[#0B7A3B]/[0.08] blur-[100px]" />
+        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(20,144,93,0.07),transparent_40%),linear-gradient(to_bottom,rgba(0,8,12,0.34),rgba(0,20,20,0.30)_42%,rgba(1,12,10,0.62))]" />
+        <div className="absolute inset-0 z-10 opacity-15 [background-image:linear-gradient(rgba(104,223,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(104,223,255,.035)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="absolute left-1/2 top-[185px] z-10 h-[390px] w-[58%] -translate-x-1/2 rounded-full bg-[#0B7A3B]/[0.045] blur-[100px]" />
 
         <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-1 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
           <div className="relative mx-auto w-full max-w-[1600px]">
@@ -1100,7 +1135,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-1 grid flex-1 items-center gap-5 xl:items-start xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
-            <div className="hidden flex-col gap-3 xl:flex">
+            <div className="hidden flex-col gap-[7px] xl:flex">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
@@ -1185,7 +1220,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="hidden flex-col gap-3 xl:flex">
+            <div className="hidden flex-col gap-[7px] xl:flex">
               {DECISION_AREAS.slice(3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
@@ -1196,7 +1231,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mx-auto mt-4 grid w-full max-w-5xl grid-cols-1 gap-3 xs:grid-cols-2 lg:grid-cols-3 xl:hidden">
+          <div className="mx-auto mt-3 grid w-full max-w-5xl grid-cols-1 gap-2 xs:grid-cols-2 lg:grid-cols-3 xl:hidden">
             {DECISION_AREAS.map((area, index) => (
               <DecisionSupportCard
                 key={area.key}
@@ -1213,41 +1248,44 @@ export default function LandingPage() {
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${
-                  i === slideIndex
-                    ? "h-2 w-7 bg-[#70D84F]"
-                    : "h-2 w-2 bg-white/35 hover:bg-white/70"
-                }`}
+                className={`rounded-full transition-all duration-300 ${i === slideIndex
+                  ? "h-2 w-7 bg-[#70D84F]"
+                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                  }`}
               />
             ))}
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/88 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-6 sm:px-5 sm:py-5">
-            <div className="shrink-0 text-center sm:border-r sm:border-white/15 sm:pr-6 sm:text-left">
-              <div className="animate-pulse text-[11px] font-black uppercase leading-tight tracking-[0.18em] text-[#70D84F] xs:text-xs sm:text-base md:text-lg">
+        <div className="absolute bottom-0 left-0 right-0 z-30 overflow-hidden border-t border-white/15">
+          {/* Theme-matched dark evergreen background with high text contrast. */}
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,13,10,0.96),rgba(7,28,20,0.94)_48%,rgba(2,13,10,0.96))] backdrop-blur-[3px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(73,184,74,0.13),transparent_58%)]" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#70D84F]/45 to-transparent" />
+
+          <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center gap-1.5 px-3 py-2 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-3">
+            <div className="shrink-0 text-center sm:border-r sm:border-white/15 sm:pr-5 sm:text-left">
+              <div className="text-[10px] font-black uppercase leading-tight tracking-[0.18em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] xs:text-[11px] sm:text-sm md:text-base">
                 {STAT_GROUPS[statGroupIndex].title}
               </div>
             </div>
 
             <div
-              className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${
-                STAT_GROUPS[statGroupIndex].stats.length === 3
-                  ? "grid-cols-3"
-                  : "grid-cols-2 sm:grid-cols-4"
-              } ${
-                statFade
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-2"
-              }`}
+              className={`grid flex-1 gap-2 text-center transition-all duration-300 ease-out sm:gap-3 ${STAT_GROUPS[statGroupIndex].stats.length === 3
+                ? "grid-cols-3"
+                : "grid-cols-2 sm:grid-cols-4"
+                } ${statFade
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-1 opacity-0"
+                }`}
             >
               {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
-                <div key={label} className="relative py-1">
-                  <div className="text-xl font-black text-[#70D84F] xs:text-2xl sm:text-4xl">
+                <div key={label} className="relative py-0.5">
+                  <div className="text-lg font-black leading-none text-[#F7FFF9] drop-shadow-[0_3px_10px_rgba(0,0,0,0.82)] xs:text-xl sm:text-[30px]">
                     {value}
                   </div>
-                  <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
+
+                  <div className="mt-1 text-[7px] font-semibold uppercase leading-tight tracking-[0.13em] text-white/70 xs:text-[8px] sm:text-[10px]">
                     {label}
                   </div>
                 </div>
@@ -1255,17 +1293,17 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="flex justify-center gap-2 pb-2.5 sm:pb-3.5">
+          <div className="relative z-10 flex justify-center gap-2 pb-1.5 sm:pb-2">
             {STAT_GROUPS.map((group, i) => (
               <button
                 key={group.key}
+                type="button"
                 onClick={() => goToStatGroup(i)}
                 aria-label={`Show ${group.title} stats`}
-                className={`rounded-full transition-all duration-300 ${
-                  i === statGroupIndex
-                    ? "h-1.5 w-6 bg-[#70D84F]"
-                    : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
-                }`}
+                className={`rounded-full transition-all duration-300 ${i === statGroupIndex
+                  ? "h-1.5 w-6 bg-[#70D84F] shadow-[0_0_10px_rgba(112,216,79,0.72)]"
+                  : "h-1.5 w-1.5 bg-white/30 hover:bg-white/65"
+                  }`}
               />
             ))}
           </div>
@@ -1501,7 +1539,7 @@ export default function LandingPage() {
             <div className="overflow-hidden px-1 sm:px-12">
               <div
                 key={teamStartIndex}
-                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5"
+                className="grid grid-cols-1 justify-items-center gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6"
                 style={{ animation: "teamCarouselMove 620ms ease-out both" }}
               >
                 {Array.from({ length: 3 }, (_, offset) => {
@@ -1583,11 +1621,10 @@ export default function LandingPage() {
                   type="button"
                   onClick={() => setTeamStartIndex(index)}
                   aria-label={`Show team member group starting from ${index + 1}`}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    index === teamStartIndex
-                      ? "w-7 bg-[#8FEA67]"
-                      : "w-2 bg-white/30 hover:bg-white/60"
-                  }`}
+                  className={`h-2 rounded-full transition-all duration-300 ${index === teamStartIndex
+                    ? "w-7 bg-[#8FEA67]"
+                    : "w-2 bg-white/30 hover:bg-white/60"
+                    }`}
                 />
               ))}
             </div>
@@ -1735,11 +1772,10 @@ export default function LandingPage() {
                   type="button"
                   onClick={() => setFeatureStartIndex(index)}
                   aria-label={`Show capability group starting from ${index + 1}`}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    index === featureStartIndex
-                      ? "w-7 bg-[#0B7A3B]"
-                      : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
-                  }`}
+                  className={`h-2 rounded-full transition-all duration-300 ${index === featureStartIndex
+                    ? "w-7 bg-[#0B7A3B]"
+                    : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
+                    }`}
                 />
               ))}
             </div>
@@ -1755,32 +1791,44 @@ export default function LandingPage() {
                 {
                   src: RudaFooterLogo,
                   alt: "Ravi Urban Development Authority",
-                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
                 },
                 {
-                  src: "/gop_logo.png",
+                  src: GopHeaderLogo,
                   alt: "Government of Punjab",
-                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
                 },
                 {
                   src: NespakLogo,
                   alt: "NESPAK",
-                  imageClass: "h-[48px] w-[48px] sm:h-[54px] sm:w-[54px]",
                 },
                 {
                   src: RudaLogo,
                   alt: "RUDA GIS Directorate",
-                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
                 },
               ].map((logo) => (
                 <div
                   key={logo.alt}
-                  className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-white p-1 shadow-[0_8px_20px_-10px_rgba(0,0,0,0.55)] ring-1 ring-white/40 sm:h-[78px] sm:w-[78px]"
+                  className="
+      flex
+      h-[64px] w-[64px]
+      sm:h-[70px] sm:w-[70px]
+      shrink-0
+      items-center
+      justify-center
+      rounded-full
+      bg-white
+      p-[2px]
+      shadow-md
+      ring-1
+      ring-white/20
+      transition-all
+      duration-300
+      hover:scale-105
+    "
                 >
                   <img
                     src={logo.src}
                     alt={logo.alt}
-                    className={`${logo.imageClass} rounded-full object-contain`}
+                    className="h-[92%] w-[92%] rounded-full object-contain"
                   />
                 </div>
               ))}
@@ -1856,15 +1904,20 @@ export default function LandingPage() {
 
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
-              <h3 className="text-sm font-black sm:text-base">
-                Office Location
-              </h3>
+              <div>
+                <h3 className="text-sm font-black sm:text-base">
+                  Office Location
+                </h3>
+                <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-white/45 sm:text-[10px]">
+                  Land Acquisition &amp; Estate Management
+                </p>
+              </div>
 
               <a
-                href="https://www.google.com/maps/search/?api=1&query=152-A+Ali+Block+Garden+Town+Lahore+Pakistan"
+                href="https://www.google.com/maps/search/?api=1&query=RUDA+LA%26EM+Office%2C+152-A+Ali+Block%2C+Garden+Town%2C+Lahore%2C+Pakistan"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#8FEA67] transition-colors hover:text-white sm:text-xs"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#8FEA67]/25 bg-[#8FEA67]/10 px-3 py-1.5 text-[10px] font-bold text-[#8FEA67] transition-all hover:-translate-y-0.5 hover:border-[#8FEA67]/55 hover:bg-[#8FEA67]/20 hover:text-white sm:text-xs"
               >
                 Open in Maps
                 <ExternalLink size={12} />
@@ -1872,18 +1925,35 @@ export default function LandingPage() {
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)]">
-              <iframe
-                title="RUDA office location"
-                src="https://www.google.com/maps?q=152-A+Ali+Block+Garden+Town+Lahore+Pakistan&output=embed"
-                className="h-[270px] w-full border-0 sm:h-[300px] lg:h-[285px] xl:h-[310px]"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                allowFullScreen
-              />
+              <div className="relative overflow-hidden">
+                <iframe
+                  title="RUDA LA&EM Office location"
+                  src="https://www.google.com/maps?q=RUDA+LA%26EM+Office%2C+152-A+Ali+Block%2C+Garden+Town%2C+Lahore%2C+Pakistan&z=17&output=embed"
+                  className="h-[270px] w-full border-0 sm:h-[300px] lg:h-[285px] xl:h-[310px]"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
 
-              <div className="flex items-start gap-2 border-t border-white/10 bg-black/10 px-3 py-3 text-[10px] leading-relaxed text-white/70 sm:text-xs">
-                <MapPin size={14} className="mt-0.5 shrink-0 text-[#49B84A]" />
-                <span>152-A, Ali Block, Garden Town, Lahore, Pakistan</span>
+                {/* Custom location label so the office name is always visible,
+                    even when Google does not render a place-name label. */}
+                {/* Custom location label so the office name is always visible,
+    even when Google does not render a place-name label. */}
+
+              </div>
+
+              <div className="border-t border-white/10 bg-black/10 px-3 py-3">
+                <div className="flex items-start gap-2">
+
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white sm:text-xs">
+                      RUDA LA&amp;EM Office
+                    </p>
+                    <p className="mt-1 text-[10px] leading-relaxed text-white/65 sm:text-xs">
+                      152-A, Ali Block, Garden Town, Lahore, Pakistan
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
