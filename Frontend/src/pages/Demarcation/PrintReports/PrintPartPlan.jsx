@@ -6,6 +6,7 @@ import {
   createPlanCanvas,
   createPdfPreviewWindow,
   drawNorthArrowPdf,
+  loadPrintAssets,
   openPdfPreview,
   valueOrDash,
 } from "./printUtils";
@@ -25,6 +26,7 @@ export const printPartPlan = async ({
 
   try {
     const details = buildPlotDetails(parcel, filters);
+    const { gopLogo, rudaLogo } = await loadPrintAssets();
     const [locationCanvas, dimensionCanvas] = await Promise.all([
       createPlanCanvas({
         selectedFeature: parcel,
@@ -78,8 +80,18 @@ export const printPartPlan = async ({
     const dimensionTop = margin + titleHeight + subtitleHeight + mapHeight;
     const dimensionHeight = pageHeight - dimensionTop - margin;
 
-    doc.setDrawColor(130, 130, 130);
-    doc.setLineWidth(0.25);
+    doc.setTextColor(15, 15, 15);
+    doc.setDrawColor(85, 85, 85);
+    doc.setLineWidth(0.28);
+
+    /* ===== TOP BAR ===== */
+    doc.setFillColor(30, 58, 95);
+    doc.rect(0, 0, pageWidth, 1.8, "F");
+
+    
+    /* ===== OUTER BORDER ===== */
+    doc.setDrawColor(30, 58, 95);
+    doc.setLineWidth(0.35);
     doc.rect(margin, margin, contentWidth, pageHeight - margin * 2);
 
     const schemeName = valueOrDash(details.project, "CHAHARBAGH HOUSING SCHEME").toUpperCase();
@@ -87,17 +99,31 @@ export const printPartPlan = async ({
       details.block,
     )}, ${schemeName}`;
 
-    doc.rect(margin, margin, contentWidth, titleHeight);
-    doc.setFont("helvetica", "normal");
+    /* ===== TITLE BOX ===== */
+    doc.setFillColor(30, 58, 95);
+    doc.setDrawColor(30, 58, 95);
+    doc.rect(margin, margin, contentWidth, titleHeight, "FD");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(18.5);
+    doc.setTextColor(255, 255, 255);
     doc.text(title, margin + 5, margin + 12.5);
+    doc.setTextColor(15, 15, 15);
 
+    /* ===== SUBTITLE BOX ===== */
     const subtitleTop = margin + titleHeight;
+    doc.setDrawColor(30, 58, 95);
+    doc.setLineWidth(0.35);
     doc.rect(margin, subtitleTop, contentWidth, subtitleHeight);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(11.5);
+    doc.setTextColor(100, 100, 100);
     doc.text("LOCATION PLAN AS PER APPROVED MASTER PLAN", margin + 5, subtitleTop + 7.5);
+    doc.setTextColor(15, 15, 15);
 
+    /* ===== MAP BOX ===== */
     const mapTop = subtitleTop + subtitleHeight;
+    doc.setDrawColor(30, 58, 95);
+    doc.setLineWidth(0.35);
     doc.rect(margin, mapTop, contentWidth, mapHeight);
 
     if (locationImage) {
@@ -113,13 +139,22 @@ export const printPartPlan = async ({
       );
     }
 
-
+    /* ===== DIMENSION BOX ===== */
+    doc.setDrawColor(30, 58, 95);
+    doc.setLineWidth(0.35);
     doc.rect(margin, dimensionTop, contentWidth, dimensionHeight);
-    doc.setFont("helvetica", "normal");
+
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(11.2);
+    doc.setTextColor(30, 58, 95);
     doc.text("PLOT DIMENSIONS", margin + 7, dimensionTop + 7);
+    doc.setTextColor(15, 15, 15);
+
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(6.7);
+    doc.setTextColor(100, 100, 100);
     doc.text("As per approved Scheme Plan", margin + 7, dimensionTop + 11.5);
+    doc.setTextColor(15, 15, 15);
 
     if (dimensionImage) {
       addImageContained(
@@ -138,7 +173,23 @@ export const printPartPlan = async ({
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
+    doc.setTextColor(100, 100, 100);
     doc.text("NOTE: ALL DIMENSIONS ARE IN FEET AND INCHES.", margin + 7, pageHeight - margin - 6);
+    doc.setTextColor(15, 15, 15);
+
+    /* ===== FOOTER ===== */
+    doc.setDrawColor(30, 58, 95);
+    doc.setLineWidth(0.5);
+    doc.line(margin, pageHeight - margin - 4, pageWidth - margin, pageHeight - margin - 4);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Generated: ${new Date().toLocaleDateString("en-GB")} | RUDA Part Plan System | This is a computer-generated document.`,
+      pageWidth / 2,
+      pageHeight - margin - 1,
+      { align: "center" },
+    );
 
     openPdfPreview(doc, `Part Plan - Plot ${details.plotNo || ""}`, previewWindow);
   } catch (error) {

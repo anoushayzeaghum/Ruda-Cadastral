@@ -681,9 +681,10 @@ const getInteriorLabelPosition = (ring, project) => {
     : [(minX + maxX) / 2, (minY + maxY) / 2];
   let bestDistance = projectedDistanceToPolygon(bestPoint, projectedRing);
 
-  let step = Math.max(Math.min(width, height) / 5, 2);
+  // Finer initial step + search down to 0.5 px for truer center
+  let step = Math.max(Math.min(width, height) / 6, 2);
 
-  while (step >= 1) {
+  while (step >= 0.5) {
     let improved = false;
     const searchMinX = Math.max(minX, bestPoint[0] - step * 3);
     const searchMaxX = Math.min(maxX, bestPoint[0] + step * 3);
@@ -924,7 +925,7 @@ const drawUniformPlotNumber = (
   ring,
   project,
   {
-    fontSize = 15,
+    fontSize = 20,
     fillStyle = "#0b35d5",
     haloWidth = 2.5,
   } = {},
@@ -933,21 +934,30 @@ const drawUniformPlotNumber = (
   if (!value || ring.length < 3) return;
 
   const placement = getInteriorLabelPosition(ring, project);
-  if (placement.radius < 2.2) return;
+  if (placement.radius < 3) return; // slightly raised so we only draw when it will fit
 
-  let finalFontSize = fontSize;
+  // Adaptive cap: let big plots get big text, but never overflow the polygon
+  let finalFontSize = Math.min(
+    fontSize,
+    placement.radius * 1.45,
+    placement.height * 0.42,
+    placement.width * 0.42,
+    26, // absolute ceiling
+  );
+  const minFontSize = 9;
+  const maxTextWidth = Math.max(placement.radius * 1.9, 14);
 
-  // All plot numbers start from the same size. Only genuinely tiny plots
-  // reduce the size enough to stay within their own boundary.
-  const availableWidth = Math.max(placement.radius * 1.85, 8);
   ctx.font = `700 ${finalFontSize}px Arial`;
-
   while (
-    finalFontSize > 8 &&
-    ctx.measureText(value).width > availableWidth
+    finalFontSize > minFontSize &&
+    ctx.measureText(value).width > maxTextWidth
   ) {
     finalFontSize -= 0.5;
     ctx.font = `700 ${finalFontSize}px Arial`;
+  }
+
+  if (finalFontSize < minFontSize || ctx.measureText(value).width > maxTextWidth) {
+    return;
   }
 
   ctx.save();
@@ -961,7 +971,7 @@ const drawUniformPlotNumber = (
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.lineJoin = "round";
-  ctx.lineWidth = haloWidth;
+  ctx.lineWidth = Math.max(2.5, finalFontSize * 0.13);
   ctx.strokeStyle = "rgba(255,255,255,0.98)";
   ctx.strokeText(value, placement.x, placement.y);
   ctx.fillStyle = fillStyle;
@@ -979,28 +989,28 @@ const drawDetailedSelectedPlotLabel = (
   if (placement.radius < 5) return;
 
   const lines = [
-    { text: details.plotNo, size: 36, weight: 700, color: "#0b35d5" },
+    { text: details.plotNo, size: 44, weight: 700, color: "#001a66" },  // was 36 / #0b35d5
     {
       text: firstValue(details.plotArea, details.plotSize),
-      size: 20,
+      size: 26,
       weight: 600,
       color: "#1f2937",
     },
     {
       text: firstValue(details.landUse, details.plotCategory),
-      size: 15,
+      size: 20,
       weight: 600,
       color: "#1f2937",
     },
     {
       text: details.dimension,
-      size: 13,
+      size: 16,
       weight: 500,
       color: "#374151",
     },
     {
       text: details.roadFt ? `${details.roadFt} ft Road` : "",
-      size: 13,
+      size: 16,
       weight: 500,
       color: "#374151",
     },
@@ -1033,7 +1043,6 @@ const drawDetailedSelectedPlotLabel = (
 
   ctx.restore();
 };
-
 const drawSitePlotLabel = (
   ctx,
   details,
@@ -1047,24 +1056,24 @@ const drawSitePlotLabel = (
     {
       text: details.plotNo,
       weight: 700,
-      color: "#173d82",
-      sizeFactor: 0.85,
-      maxSize: 46,
-      minSize: 16,
+      color: "#001a66",   // ← much darker navy
+      sizeFactor: 1.35,   // ← was 0.85 (uses way more of the polygon)
+      maxSize: 60,        // ← was 46
+      minSize: 14,        // ← was 16
     },
     {
       text: firstValue(details.plotSize, details.plotArea),
       weight: 600,
       color: "#202020",
-      sizeFactor: 0.4,
-      maxSize: 22,
+      sizeFactor: 0.45,
+      maxSize: 26,
       minSize: 10,
     },
   ].filter((line) => line.text);
 
   if (lines.length === 0) return;
 
-  const maxTextWidth = Math.max(placement.radius * 1.7, 10);
+  const maxTextWidth = Math.max(placement.radius * 2.0, 10); // ← was 1.7
 
   const sized = lines.map((line) => {
     let fontSize = Math.min(line.maxSize, placement.radius * line.sizeFactor);
@@ -1293,19 +1302,18 @@ const drawClientOverviewLabel = (ctx, feature, ring, project) => {
       ],
       placement.x,
       placement.y,
-      Math.max(12, Math.min(24, placement.radius * 0.45)),
+      Math.max(14, Math.min(28, placement.radius * 0.55)),  // was 12 / 24 / 0.45
       "#111111",
     );
     return;
   }
 
   drawUniformPlotNumber(ctx, plotNo, ring, project, {
-    fontSize: 17,
-    fillStyle: "#0b35d5",
+    fontSize: 22,          // was 17
+    fillStyle: "#001a66",  // was #0b35d5 — darker
     haloWidth: 2.5,
   });
 };
-
 const drawAdjacentClientLabel = (ctx, feature, ring, project) => {
   const p = feature?.properties || {};
   const placement = getInteriorLabelPosition(ring, project);
@@ -1324,11 +1332,10 @@ const drawAdjacentClientLabel = (ctx, feature, ring, project) => {
     [plotNo, "Adjacent", "Plot"],
     placement.x,
     placement.y,
-    Math.max(15, Math.min(24, placement.radius * 0.48)),
+    Math.max(18, Math.min(32, placement.radius * 0.55)),  // was 15 / 24 / 0.48
     "#111111",
   );
 };
-
 const drawRoadLabelForPartPlan = (
   ctx,
   details,
@@ -1517,7 +1524,7 @@ export const createPlanCanvas = async ({
           ring,
           project,
           {
-            fontSize: mode === "location" ? 15 : 16,
+            fontSize: mode === "location" ? 17 : 20,
             fillStyle: "#0b35d5",
           },
         );
@@ -1553,7 +1560,7 @@ export const createPlanCanvas = async ({
       selectedRing,
       project,
       {
-        fontSize: mode === "partOverview" ? 24 : 17,
+        fontSize: mode === "partOverview" ? 32 : 22,
         fillStyle: "#0637ff",
         haloWidth: 4,
       },

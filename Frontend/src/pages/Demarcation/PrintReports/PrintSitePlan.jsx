@@ -527,7 +527,7 @@ export const printSitePlan = async ({
       coordinates,
       details,
       rightEdge - 70,
-      sectionY + planHeight - 36,
+      sectionY + planHeight - 42,
       67,
     );
 

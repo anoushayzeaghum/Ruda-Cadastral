@@ -8,9 +8,11 @@ import {
   loadPrintAssets,
   openPdfPreview,
   valueOrDash,
+  canvasAsPng,         
+  createPlanCanvas,
 } from "./printUtils";
 
-export const printReport = async ({ parcel, filters = {} }) => {
+export const printReport = async ({ parcel, filters = {}, contextGeojson }) => {
   if (!parcel) {
     alert("Please select a plot first.");
     return;
@@ -37,21 +39,30 @@ export const printReport = async ({ parcel, filters = {} }) => {
     const contentWidth = pageWidth - marginX * 2;
     let y = 8;
 
+    /* THEME: top navy bar (same position as site plan, does not shift anything) */
+    doc.setFillColor(30, 58, 95);
+    doc.rect(0, 0, pageWidth, 1.8, "F");
+
     const drawSectionHeader = (x, rowY, width, height, title) => {
-      doc.setFillColor(176, 196, 222);
-      doc.setDrawColor(120, 120, 120);
+      doc.setFillColor(30, 58, 95);
+      doc.setDrawColor(30, 58, 95);
       doc.rect(x, rowY, width, height, "FD");
-      doc.setFont("times", "normal");
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(9.5);
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(255, 255, 255);
       doc.text(String(title).toUpperCase(), x + 2, rowY + height - 2.2);
     };
 
-    const drawSimpleCell = (x, rowY, width, height, text, align = "left") => {
-      doc.rect(x, rowY, width, height);
-      doc.setFont("helvetica", "normal");
+    const drawSimpleCell = (x, rowY, width, height, text, align = "left", isHeader = false) => {
+      if (isHeader) {
+        doc.setFillColor(230, 235, 240);
+        doc.rect(x, rowY, width, height, "FD");
+      } else {
+        doc.rect(x, rowY, width, height);
+      }
+      doc.setFont("helvetica", isHeader ? "bold" : "normal");
       doc.setFontSize(8.2);
-      doc.setTextColor(35, 35, 35);
+      doc.setTextColor(isHeader ? 30 : 35, isHeader ? 58 : 35, isHeader ? 95 : 35);
       const lines = doc.splitTextToSize(String(text || "-"), width - 3);
       doc.text(
         lines,
@@ -64,27 +75,41 @@ export const printReport = async ({ parcel, filters = {} }) => {
     doc.setDrawColor(120, 120, 120);
     doc.setLineWidth(0.25);
 
-    if (gopLogo) {
-      doc.addImage(gopLogo, "PNG", marginX + 2, y + 1, 24, 24, undefined, "FAST");
+        if (gopLogo) {
+      addImageContained(
+        doc,
+        gopLogo,
+        gopLogo.width,
+        gopLogo.height,
+        marginX + 2,
+        y + 1,
+        24,
+        24,
+        "PNG",
+      );
     }
     if (rudaLogo) {
-      doc.addImage(
+      addImageContained(
+        doc,
         rudaLogo,
-        "PNG",
+        rudaLogo.width,
+        rudaLogo.height,
         marginX + contentWidth - 28,
         y + 1,
         24,
         24,
-        undefined,
-        "FAST",
+        "PNG",
       );
     }
 
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(0, 70, 140);
+    /* THEME: navy bold title, grey subtitle */
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 58, 95);
     doc.setFontSize(24);
     doc.text("PLOT DEMARCATION REPORT", pageWidth / 2, y + 14, { align: "center" });
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(18);
+    doc.setTextColor(100, 100, 100);
     doc.text("Ravi Urban Development Authority", pageWidth / 2, y + 24, {
       align: "center",
     });
@@ -101,7 +126,8 @@ export const printReport = async ({ parcel, filters = {} }) => {
       doc.rect(x, rowY, width, height);
       doc.setFont("helvetica", isLabel ? "bold" : "normal");
       doc.setFontSize(isLabel ? 7.7 : 7.5);
-      doc.setTextColor(35, 35, 35);
+      /* THEME: navy labels, dark grey values */
+      doc.setTextColor(isLabel ? 30 : 35, isLabel ? 58 : 35, isLabel ? 95 : 35);
       const lines = doc.splitTextToSize(String(text || "-"), width - 3);
       doc.text(lines.slice(0, 2), x + 1.5, rowY + 4.8);
     };
@@ -196,7 +222,6 @@ export const printReport = async ({ parcel, filters = {} }) => {
     doc.rect(marginX + leftWidth, y, rightWidth, lowerBodyHeight);
 
     if (mapCapture) {
-      // Preserve the original canvas aspect ratio. This fixes the squeezed map image.
       addImageContained(
         doc,
         mapCapture.dataUrl,
@@ -220,19 +245,22 @@ export const printReport = async ({ parcel, filters = {} }) => {
     let coordinateY = y;
     const coordinateRowHeight = 8;
 
-    const drawCoordinateRow = (rowY, point, easting, northing) => {
-      drawSimpleCell(coordinateX, rowY, 14, coordinateRowHeight, point, "center");
-      drawSimpleCell(coordinateX + 14, rowY, 35, coordinateRowHeight, easting);
+    const drawCoordinateRow = (rowY, point, easting, northing, isHeader = false) => {
+      drawSimpleCell(coordinateX, rowY, 14, coordinateRowHeight, point, "center", isHeader);
+      drawSimpleCell(coordinateX + 14, rowY, 35, coordinateRowHeight, easting, "left", isHeader);
       drawSimpleCell(
         coordinateX + 49,
         rowY,
         rightWidth - 49,
         coordinateRowHeight,
         northing,
+        "left",
+        isHeader,
       );
     };
 
-    drawCoordinateRow(coordinateY, "Point", "Easting (m)", "Northing (m)");
+    /* THEME: styled header row for coordinates */
+    drawCoordinateRow(coordinateY, "Point", "Easting (m)", "Northing (m)", true);
     coordinateY += coordinateRowHeight;
 
     cornerCoords.slice(0, 8).forEach((item) => {
