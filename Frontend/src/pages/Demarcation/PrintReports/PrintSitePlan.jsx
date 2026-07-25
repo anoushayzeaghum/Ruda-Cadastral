@@ -13,25 +13,17 @@ import {
   valueOrDash,
 } from "./printUtils";
 
-// Easy print-layout controls. Adjust these values whenever you need more or less zoom.
 const PRINT_LAYOUT = {
   gopLogoSize: 23,
   rudaLogoSize: 22,
-
-  // 1 = original size, values greater than 1 zoom in.
   mainMapZoom: 1.7,
   mainMapPanX: 0,
   mainMapPanY: 20,
-
   insetMapZoom: 1.3,
   insetMapPanX: 0,
   insetMapPanY: 0,
 };
 
-/**
- * Zooms and repositions an already-rendered plan canvas without requiring
- * any change inside printUtils/createPlanCanvas. Pan values are in pixels.
- */
 const createZoomedCanvas = (sourceCanvas, zoom = 1, panX = 0, panY = 0) => {
   if (!sourceCanvas || typeof document === "undefined") return sourceCanvas;
 
@@ -43,7 +35,6 @@ const createZoomedCanvas = (sourceCanvas, zoom = 1, panX = 0, panY = 0) => {
   const context = outputCanvas.getContext("2d");
   if (!context) return sourceCanvas;
 
-  // Keep any cropped area white so the PDF background remains clean.
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
 
@@ -63,30 +54,97 @@ const createZoomedCanvas = (sourceCanvas, zoom = 1, panX = 0, panY = 0) => {
   return outputCanvas;
 };
 
+/* ---------- NEW LAYOUT HELPERS ---------- */
+
+const drawSectionHeader = (doc, x, y, width, title) => {
+  const height = 6.5;
+  doc.setFillColor(30, 58, 95);
+  doc.setDrawColor(30, 58, 95);
+  doc.rect(x, y, width, height, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(title, x + 2.5, y + 4.5);
+  doc.setTextColor(15, 15, 15);
+  return y + height;
+};
+
+const drawSignatureBox = (doc, title, subtitle, x, y, width, height) => {
+  doc.setDrawColor(30, 58, 95);
+  doc.setLineWidth(0.35);
+  doc.rect(x, y, width, height);
+
+  doc.setFillColor(245, 247, 250);
+  doc.rect(x, y, width, 8, "F");
+  doc.line(x, y + 8, x + width, y + 8);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(30, 58, 95);
+  doc.text(title, x + width / 2, y + 5.5, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 100, 100);
+  doc.text(subtitle, x + width / 2, y + 12, { align: "center" });
+
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(0.25);
+
+  const lineX = x + 5;
+  const lineEnd = x + width - 5;
+  const baseY = y + 18;
+  const gap = 7.5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+
+  doc.text("Name:", lineX, baseY);
+  doc.line(lineX + 16, baseY + 0.6, lineEnd, baseY + 0.6);
+
+  doc.text("Designation:", lineX, baseY + gap);
+  doc.line(lineX + 24, baseY + gap + 0.6, lineEnd, baseY + gap + 0.6);
+
+  doc.text("Signature:", lineX, baseY + gap * 2);
+  doc.line(lineX + 20, baseY + gap * 2 + 0.6, lineEnd, baseY + gap * 2 + 0.6);
+
+  doc.text("Date:", lineX, baseY + gap * 3);
+  doc.line(lineX + 14, baseY + gap * 3 + 0.6, lineEnd, baseY + gap * 3 + 0.6);
+};
+
 const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
   const rows = coordinates.slice(0, 4);
-  const titleHeight = 5;
-  const headerHeight = 5;
-  const rowHeight = 5;
+  const titleHeight = 6;
+  const headerHeight = 5.5;
+  const rowHeight = 6;
   const totalHeight = titleHeight + headerHeight + rows.length * rowHeight;
-  const columns = [10, 27, width - 37];
+  const columns = [11, 27, width - 38];
 
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(105, 105, 105);
-  doc.setLineWidth(0.2);
-  doc.rect(x, y, width, totalHeight, "FD");
+  doc.setFillColor(30, 58, 95);
+  doc.setDrawColor(30, 58, 95);
+  doc.rect(x, y, width, titleHeight, "FD");
 
-  doc.setFont("times", "bold");
-  doc.setFontSize(7.2);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
   doc.text(
-    `Plot ${details.plotNo || ""}, Block ${details.block || ""}`,
+    `COORDINATES  —  Plot ${valueOrDash(details.plotNo)}, Block ${valueOrDash(details.block)}`,
     x + width / 2,
-    y + 3.6,
-    {
-      align: "center",
-    },
+    y + 4.2,
+    { align: "center" },
   );
-  doc.line(x, y + titleHeight, x + width, y + titleHeight);
+
+  const headerY = y + titleHeight;
+  doc.setFillColor(230, 235, 240);
+  doc.setDrawColor(180, 180, 180);
+  doc.rect(x, headerY, width, headerHeight, "FD");
+
+  doc.setFontSize(7);
+  doc.setTextColor(40, 40, 40);
+  doc.text("Corner", x + columns[0] / 2, headerY + 3.8, { align: "center" });
+  doc.text("Easting (m)", x + columns[0] + columns[1] / 2, headerY + 3.8, { align: "center" });
+  doc.text("Northing (m)", x + columns[0] + columns[1] + columns[2] / 2, headerY + 3.8, { align: "center" });
 
   let cursor = x;
   columns.slice(0, -1).forEach((columnWidth) => {
@@ -94,44 +152,22 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
     doc.line(cursor, y + titleHeight, cursor, y + totalHeight);
   });
 
-  doc.setFontSize(6.5);
-  doc.text("Name", x + columns[0] / 2, y + titleHeight + 3.5, {
-    align: "center",
-  });
-  doc.text(
-    "Easting (m)",
-    x + columns[0] + columns[1] / 2,
-    y + titleHeight + 3.5,
-    {
-      align: "center",
-    },
-  );
-  doc.text(
-    "Northing (m)",
-    x + columns[0] + columns[1] + columns[2] / 2,
-    y + titleHeight + 3.5,
-    { align: "center" },
-  );
-  doc.line(
-    x,
-    y + titleHeight + headerHeight,
-    x + width,
-    y + titleHeight + headerHeight,
-  );
-
   rows.forEach((coordinate, index) => {
     const rowTop = y + titleHeight + headerHeight + index * rowHeight;
-    const textY = rowTop + 3.55;
+    if (index % 2 === 1) {
+      doc.setFillColor(248, 248, 248);
+      doc.rect(x, rowTop, width, rowHeight, "F");
+    }
+    const textY = rowTop + 3.9;
     doc.setFont("times", "normal");
-    doc.setFontSize(6.6);
+    doc.setFontSize(6.8);
+    doc.setTextColor(20, 20, 20);
     doc.text(coordinate.label, x + columns[0] / 2, textY, { align: "center" });
     doc.text(
       coordinate.easting.toFixed(3),
       x + columns[0] + columns[1] / 2,
       textY,
-      {
-        align: "center",
-      },
+      { align: "center" },
     );
     doc.text(
       coordinate.northing.toFixed(3),
@@ -139,9 +175,14 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
       textY,
       { align: "center" },
     );
-    doc.line(x, rowTop + rowHeight, x + width, rowTop + rowHeight);
   });
+
+  doc.setDrawColor(120, 120, 120);
+  doc.setLineWidth(0.3);
+  doc.rect(x, y, width, totalHeight);
 };
+
+/* ---------- MAIN EXPORT ---------- */
 
 export const printSitePlan = async ({
   parcel,
@@ -218,20 +259,24 @@ export const printSitePlan = async ({
     });
 
     const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 11;
+    const margin = 10;
     const contentWidth = pageWidth - margin * 2;
+    const rightEdge = pageWidth - margin;
 
     doc.setTextColor(15, 15, 15);
     doc.setDrawColor(85, 85, 85);
     doc.setLineWidth(0.28);
 
-    // Header matching the approved paper site-plan format.
+    /* ===== HEADER ===== */
+    doc.setFillColor(30, 58, 95);
+    doc.rect(0, 0, pageWidth, 1.8, "F");
+
     if (gopLogo) {
       doc.addImage(
         gopLogo,
         "PNG",
-        margin + 9,
-        6,
+        margin + 6,
+        5,
         PRINT_LAYOUT.gopLogoSize,
         PRINT_LAYOUT.gopLogoSize,
         undefined,
@@ -242,8 +287,8 @@ export const printSitePlan = async ({
       doc.addImage(
         rudaLogo,
         "PNG",
-        pageWidth - margin - PRINT_LAYOUT.rudaLogoSize - 8,
-        7,
+        rightEdge - PRINT_LAYOUT.rudaLogoSize - 6,
+        6,
         PRINT_LAYOUT.rudaLogoSize,
         PRINT_LAYOUT.rudaLogoSize,
         undefined,
@@ -252,140 +297,187 @@ export const printSitePlan = async ({
     }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(15.5);
-    doc.text("RAVI URBAN DEVELOPMENT AUTHORITY", pageWidth / 2, 12.5, {
+    doc.setFontSize(15);
+    doc.setTextColor(30, 58, 95);
+    doc.text("RAVI URBAN DEVELOPMENT AUTHORITY", pageWidth / 2, 11, {
       align: "center",
     });
-    doc.setFontSize(14.2);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Government of the Punjab", pageWidth / 2, 15.5, { align: "center" });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(15, 15, 15);
     doc.text(
       valueOrDash(details.project, "CHAHAR BAGH PHASE-1").toUpperCase(),
       pageWidth / 2,
       20.5,
       { align: "center" },
     );
-    doc.setFontSize(14.5);
-    doc.text("SITE PLAN", pageWidth / 2, 28.5, { align: "center" });
 
-    const infoTop = 34;
-    const infoHeight = 48;
-    doc.rect(margin, infoTop, contentWidth, infoHeight);
+    const badgeW = 42;
+    const badgeH = 7.5;
+    const badgeX = (pageWidth - badgeW) / 2;
+    const badgeY = 23.5;
+    doc.setFillColor(30, 58, 95);
+    doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text("OFFICIAL SITE PLAN", pageWidth / 2, badgeY + 5, { align: "center" });
+    doc.setTextColor(15, 15, 15);
 
-    drawUnderlinedValue(
-      doc,
-      "Date:",
-      details.documentDate,
-      pageWidth - margin - 50,
-      infoTop + 7,
-      13,
-      31,
-      { fontSize: 8.8 },
-    );
+    /* ===== PLOT INFORMATION ===== */
+    let sectionY = 33;
+    sectionY = drawSectionHeader(doc, margin, sectionY, contentWidth, "PLOT & OWNER INFORMATION");
 
+    const infoTop = sectionY + 1;
+    const infoLeft = margin + 2;
+    const infoRight = rightEdge - 2;
+    const rowWidth = infoRight - infoLeft;
+    const colGap = 4;
+
+    // ----- Row 1: File Reference No (left) + Date (right, ends at infoRight) -----
+    const dateLabelX = infoLeft + rowWidth * 0.72;
     drawUnderlinedValue(
       doc,
       "File Reference No:",
       details.fileReference,
-      margin + 5,
-      infoTop + 17,
+      infoLeft,
+      infoTop + 5,
       36,
-      46,
-      { fontSize: 8.8 },
+      dateLabelX - colGap - (infoLeft + 36),
+      { fontSize: 8.5 },
     );
+    drawUnderlinedValue(
+      doc,
+      "Date:",
+      details.documentDate,
+      dateLabelX,
+      infoTop + 5,
+      13,
+      infoRight - (dateLabelX + 13),
+      { fontSize: 8.5 },
+    );
+
+    // ----- Row 2: Name of Owner (full width, ends at infoRight) -----
     drawUnderlinedValue(
       doc,
       "Name of Owner:",
       details.owner,
-      margin + 91,
-      infoTop + 17,
-      34,
-      52,
-      { fontSize: 8.8 },
+      infoLeft,
+      infoTop + 14,
+      30,
+      infoRight - (infoLeft + 30),
+      { fontSize: 8.5 },
     );
+
+    // ----- Row 3: Plot No / Street-Road No / Block / Phase — 4 equal columns -----
+    const row3Cols = 4;
+    const row3ColWidth = rowWidth / row3Cols;
+    const row3X = [0, 1, 2, 3].map((i) => infoLeft + row3ColWidth * i);
+    const row3End = [
+      row3X[1] - colGap,
+      row3X[2] - colGap,
+      row3X[3] - colGap,
+      infoRight,
+    ];
 
     drawUnderlinedValue(
       doc,
       "Plot No:",
       details.plotNo,
-      margin + 5,
-      infoTop + 29,
-      18,
-      19,
-      {
-        fontSize: 8.8,
-      },
+      row3X[0],
+      infoTop + 23,
+      15,
+      row3End[0] - (row3X[0] + 15),
+      { fontSize: 8.5 },
     );
     drawUnderlinedValue(
       doc,
-      "St/Road No:",
+      "Street/Road No:",
       details.streetRoadNo || details.roadFt,
-      margin + 45,
-      infoTop + 29,
-      24,
+      row3X[1],
+      infoTop + 23,
       27,
-      { fontSize: 8.8 },
+      row3End[1] - (row3X[1] + 27),
+      { fontSize: 8.5 },
     );
     drawUnderlinedValue(
       doc,
       "Block:",
       details.block,
-      margin + 101,
-      infoTop + 29,
-      15,
-      18,
-      {
-        fontSize: 8.8,
-      },
+      row3X[2],
+      infoTop + 23,
+      13,
+      row3End[2] - (row3X[2] + 13),
+      { fontSize: 8.5 },
     );
     drawUnderlinedValue(
       doc,
       "Phase:",
       details.phase,
-      margin + 145,
-      infoTop + 29,
-      15,
-      20,
-      {
-        fontSize: 8.8,
-      },
+      row3X[3],
+      infoTop + 23,
+      13,
+      row3End[3] - (row3X[3] + 13),
+      { fontSize: 8.5 },
     );
+
+    // ----- Row 4: Plot Size / Plot Category — 2 equal columns -----
+    const row4ColWidth = rowWidth / 2;
+    const row4X = [infoLeft, infoLeft + row4ColWidth];
+    const row4End = [row4X[1] - colGap, infoRight];
 
     drawUnderlinedValue(
       doc,
       "Plot Size:",
       details.plotSize || normalizeAreaText(details),
-      margin + 5,
-      infoTop + 40,
+      row4X[0],
+      infoTop + 32,
       20,
-      32,
-      { fontSize: 8.8 },
+      row4End[0] - (row4X[0] + 20),
+      { fontSize: 8.5 },
     );
     drawUnderlinedValue(
       doc,
       "Plot Category:",
       details.plotCategory,
-      margin + 92,
-      infoTop + 40,
-      30,
-      54,
-      { fontSize: 8.8 },
+      row4X[1],
+      infoTop + 32,
+      26,
+      row4End[1] - (row4X[1] + 26),
+      { fontSize: 8.5 },
     );
-
+       // Note box
+    const noteY = infoTop + 40;
+    doc.setFillColor(255, 245, 245);
+    doc.setDrawColor(198, 40, 40);
+    doc.setLineWidth(0.3);
+    doc.rect(margin + 1, noteY, contentWidth - 2, 6, "FD");
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.6);
-    doc.setTextColor(196, 50, 43);
-    doc.text("Note:", pageWidth / 2 - 31, infoTop + 46, { align: "right" });
-    doc.setTextColor(20, 20, 20);
-    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(198, 40, 40);
     doc.text(
-      "(This document is valid for six (06) months)",
-      pageWidth / 2 - 29,
-      infoTop + 46,
+      "IMPORTANT: This document is valid for six (06) months from the date of issue. Any alteration renders it invalid.",
+      pageWidth / 2,
+      noteY + 4.2,
+      { align: "center" },
     );
+    doc.setTextColor(15, 15, 15);
 
-    // Large, readable plot drawing area.
-    const planTop = infoTop + infoHeight;
-    const planHeight = 137;
-    doc.rect(margin, planTop, contentWidth, planHeight);
+    const infoBottom = noteY + 9;
+
+    /* ===== SITE PLAN DRAWING ===== */
+    const planTop = infoBottom + 1;
+    const planHeight = 122;
+    sectionY = drawSectionHeader(doc, margin, planTop, contentWidth, "SITE PLAN DRAWING");
+
+    doc.setDrawColor(160, 160, 160);
+    doc.setLineWidth(0.3);
+    doc.rect(margin, sectionY, contentWidth, planHeight - 6.5);
 
     if (mainImage) {
       addImageContained(
@@ -393,31 +485,40 @@ export const printSitePlan = async ({
         mainImage.dataUrl,
         mainImage.width,
         mainImage.height,
-        margin + 3,
-        planTop + 3,
-        contentWidth - 6,
-        planHeight - 6,
+        margin + 2,
+        sectionY + 2,
+        contentWidth - 4,
+        planHeight - 10.5,
       );
     }
 
-    // Full-scheme inset in the upper-right, without plot-number clutter.
     if (insetImage) {
-      const insetWidth = 50;
-      const insetHeight = 36;
-      const insetX = pageWidth - margin - insetWidth - 4;
-      const insetY = planTop + 5;
+      const insetW = 50;
+      const insetH = 36;
+      const insetX = rightEdge - insetW - 5;
+      const insetY = sectionY + 4;
       doc.setFillColor(255, 255, 255);
-      doc.setLineWidth(0.35);
-      doc.rect(insetX, insetY, insetWidth, insetHeight, "FD");
+      doc.setDrawColor(30, 58, 95);
+      doc.setLineWidth(0.5);
+      doc.rect(insetX, insetY, insetW, insetH, "FD");
+
+      doc.setFillColor(30, 58, 95);
+      doc.rect(insetX, insetY, insetW, 5, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.text("LOCATION MAP", insetX + insetW / 2, insetY + 3.5, { align: "center" });
+      doc.setTextColor(15, 15, 15);
+
       addImageContained(
         doc,
         insetImage.dataUrl,
         insetImage.width,
         insetImage.height,
         insetX + 1,
-        insetY + 1,
-        insetWidth - 2,
-        insetHeight - 2,
+        insetY + 6,
+        insetW - 2,
+        insetH - 7,
       );
     }
 
@@ -425,104 +526,98 @@ export const printSitePlan = async ({
       doc,
       coordinates,
       details,
-      pageWidth - margin - 69,
-      planTop + planHeight - 35,
-      65,
+      rightEdge - 70,
+      sectionY + planHeight - 36,
+      67,
     );
 
-    // Approval/signature section aligned to the supplied official site plan.
-    const approvalTop = planTop + planHeight;
-    const approvalHeight = 50;
-    doc.rect(margin, approvalTop, contentWidth, approvalHeight);
+    const planBottom = planTop + planHeight;
 
-    const leftLabelX = margin + 8;
-    const leftLineX = margin + 52;
-    const leftLineEnd = margin + 104;
-    const rightLabelX = margin + 111;
-    const rightLineX = margin + 151;
-    const rightLineEnd = pageWidth - margin - 7;
+    /* ===== CERTIFICATION ===== */
+    const certTop = planBottom + 2;
+    const certHeight = 42;
+    sectionY = drawSectionHeader(doc, margin, certTop, contentWidth, "OFFICIAL CERTIFICATION");
 
-    const drawApprovalField = (label, value, labelX, lineX, lineEnd, y) => {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.2);
-      doc.setTextColor(15, 15, 15);
-      doc.text(label, labelX, y);
-      doc.setLineWidth(0.28);
-      doc.line(lineX, y + 0.8, lineEnd, y + 0.8);
+    const boxW = (contentWidth - 5) / 3;
+    drawSignatureBox(doc, "PREPARED BY", "Land Surveyor", margin + 1, sectionY + 1, boxW, 34);
+    drawSignatureBox(doc, "CHECKED BY", "DD Demarcation", margin + 2 + boxW, sectionY + 1, boxW, 34);
+    drawSignatureBox(doc, "APPROVED BY", "DD GIS / Director", margin + 3 + boxW * 2, sectionY + 1, boxW, 34);
 
-      if (value) {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8.8);
-        const maxWidth = lineEnd - lineX - 2;
-        const fitted =
-          doc.getTextWidth(String(value)) <= maxWidth
-            ? String(value)
-            : `${String(value).slice(0, 25)}...`;
-        doc.text(fitted, lineX + 1, y - 0.5);
-      }
-    };
+    const certBottom = certTop + certHeight;
 
-    drawApprovalField(
-      "Land Surveyor-1",
-      "",
-      leftLabelX,
-      leftLineX,
-      leftLineEnd,
-      approvalTop + 12,
+    /* ===== HANDOVER ===== */
+    const handTop = certBottom + 2;
+    const handHeight = 28;
+    sectionY = drawSectionHeader(doc, margin, handTop, contentWidth, "DOCUMENT HANDOVER ACKNOWLEDGEMENT");
+
+    const handY = sectionY + 3;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(80, 80, 80);
+    doc.text(
+      "I hereby acknowledge that I have received the original Site Plan for the above-mentioned plot from RUDA.",
+      margin + 3,
+      handY,
     );
-    drawApprovalField(
-      "DD Demarcation",
-      "",
-      rightLabelX,
-      rightLineX,
-      rightLineEnd,
-      approvalTop + 12,
-    );
-    drawApprovalField(
-      "DD GIS",
-      "",
-      leftLabelX,
-      leftLineX,
-      leftLineEnd,
-      approvalTop + 25,
-    );
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(15, 15, 15);
 
-    drawApprovalField(
-      "Site Plan Handed to:",
-      details.owner,
-      leftLabelX,
-      margin + 62,
-      margin + 112,
-      approvalTop + 40,
-    );
-    drawApprovalField(
-      "CNIC No:",
-      details.cnic,
-      margin + 116,
-      margin + 138,
-      rightLineEnd,
-      approvalTop + 40,
-    );
+    const row1Y = handY + 7;
+    const halfW = contentWidth / 2;
 
-    const handoverTop = approvalTop + approvalHeight;
-    const handoverHeight = 20;
-    doc.rect(margin, handoverTop, contentWidth, handoverHeight);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(30, 58, 95);
+    doc.text("Handed To:", margin + 3, row1Y);
+    doc.text("CNIC No:", margin + halfW + 3, row1Y);
+    doc.setTextColor(15, 15, 15);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.text(valueOrDash(details.owner), margin + 22, row1Y);
+    doc.text(valueOrDash(details.cnic), margin + halfW + 22, row1Y);
+    doc.setDrawColor(120, 120, 120);
+    doc.setLineWidth(0.25);
+    doc.line(margin + 22, row1Y + 0.8, margin + halfW - 5, row1Y + 0.8);
+    doc.line(margin + halfW + 22, row1Y + 0.8, rightEdge - 5, row1Y + 0.8);
 
-    drawApprovalField(
-      "Signature:",
-      "",
-      leftLabelX,
-      margin + 32,
-      leftLineEnd,
-      handoverTop + 12,
-    );
-    drawApprovalField(
-      "Mobile No:",
-      "",
-      margin + 116,
-      margin + 143,
-      rightLineEnd,
-      handoverTop + 12,
+    const row2Y = row1Y + 7;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 58, 95);
+    doc.text("Recipient Signature:", margin + 3, row2Y);
+    doc.text("Mobile No:", margin + halfW + 3, row2Y);
+    doc.setTextColor(15, 15, 15);
+    doc.line(margin + 32, row2Y + 0.8, margin + halfW - 5, row2Y + 0.8);
+    doc.line(margin + halfW + 22, row2Y + 0.8, rightEdge - 5, row2Y + 0.8);
+
+    const row3Y = row2Y + 7;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 58, 95);
+    doc.text("Date:", margin + 3, row3Y);
+    doc.setTextColor(15, 15, 15);
+    doc.line(margin + 14, row3Y + 0.8, margin + 50, row3Y + 0.8);
+
+    // Stamp box — FIXED: changed setDashPattern to setLineDashPattern
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.3);
+    doc.setLineDashPattern([2, 2], 0);
+    doc.rect(rightEdge - 32, handY + 2, 28, 16);
+    doc.setLineDashPattern([], 0);
+    doc.setFontSize(7);
+    doc.setTextColor(160, 160, 160);
+    doc.text("Official Stamp", rightEdge - 18, handY + 11, { align: "center" });
+
+    /* ===== FOOTER ===== */
+    doc.setDrawColor(30, 58, 95);
+    doc.setLineWidth(0.5);
+    doc.line(margin, 286, rightEdge, 286);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Generated: ${new Date().toLocaleDateString("en-GB")} | RUDA Site Plan System | This is a computer-generated document.`,
+      pageWidth / 2,
+      290,
+      { align: "center" },
     );
 
     openPdfPreview(

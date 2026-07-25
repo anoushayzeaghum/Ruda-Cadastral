@@ -235,7 +235,21 @@ const intersectsBounds = (a, b) =>
   a.maxY >= b.minY;
 
 const boundsOfFeature = (feature) => getBounds(feature ? [feature] : []);
+const getFeatureId = (feature) =>
+  firstValue(
+    feature?.id,
+    feature?.properties?.gid,
+    feature?.properties?.plot_no,
+    feature?.properties?.plotno,
+  );
 
+const isSameFeature = (a, b) => {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const idA = getFeatureId(a);
+  const idB = getFeatureId(b);
+  return !!idA && idA === idB;
+};
 const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
   const all = contextGeojson?.features || [];
   if (!selectedFeature) return all;
@@ -1020,6 +1034,75 @@ const drawDetailedSelectedPlotLabel = (
   ctx.restore();
 };
 
+const drawSitePlotLabel = (
+  ctx,
+  details,
+  ring,
+  project,
+) => {
+  const placement = getInteriorLabelPosition(ring, project);
+  if (placement.radius < 4) return;
+
+  const lines = [
+    {
+      text: details.plotNo,
+      weight: 700,
+      color: "#173d82",
+      sizeFactor: 0.85,
+      maxSize: 46,
+      minSize: 16,
+    },
+    {
+      text: firstValue(details.plotSize, details.plotArea),
+      weight: 600,
+      color: "#202020",
+      sizeFactor: 0.4,
+      maxSize: 22,
+      minSize: 10,
+    },
+  ].filter((line) => line.text);
+
+  if (lines.length === 0) return;
+
+  const maxTextWidth = Math.max(placement.radius * 1.7, 10);
+
+  const sized = lines.map((line) => {
+    let fontSize = Math.min(line.maxSize, placement.radius * line.sizeFactor);
+    ctx.font = `${line.weight} ${fontSize}px Arial`;
+    while (fontSize > line.minSize && ctx.measureText(String(line.text)).width > maxTextWidth) {
+      fontSize -= 0.5;
+      ctx.font = `${line.weight} ${fontSize}px Arial`;
+    }
+    return { ...line, fontSize, lineHeight: fontSize * 1.15 };
+  });
+
+  const totalHeight = sized.reduce((sum, line) => sum + line.lineHeight, 0);
+  let cursorY = placement.y - totalHeight / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(placement.projectedRing[0][0], placement.projectedRing[0][1]);
+  placement.projectedRing.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+  ctx.closePath();
+  ctx.clip();
+
+  sized.forEach((line) => {
+    cursorY += line.lineHeight / 2;
+    ctx.font = `${line.weight} ${line.fontSize}px Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(2.5, line.fontSize * 0.12);
+    ctx.strokeStyle = "rgba(255,255,255,0.98)";
+    ctx.strokeText(String(line.text), placement.x, cursorY);
+    ctx.fillStyle = line.color;
+    ctx.fillText(String(line.text), placement.x, cursorY);
+    cursorY += line.lineHeight / 2;
+  });
+
+  ctx.restore();
+};
+
 const getTransform = (bounds, width, height, padding) => {
   const dataWidth = Math.max(bounds.maxX - bounds.minX, 1e-9);
   const dataHeight = Math.max(bounds.maxY - bounds.minY, 1e-9);
@@ -1055,7 +1138,6 @@ const drawPolygon = (ctx, ring, project, fill, stroke, lineWidth = 2) => {
     ctx.stroke();
   }
 };
-
 const drawNorthArrowCanvas = (ctx, x, y, size) => {
   ctx.save();
   ctx.translate(x, y);
@@ -1088,7 +1170,67 @@ const drawNorthArrowCanvas = (ctx, x, y, size) => {
   ctx.restore();
 };
 
+const drawLocatorPin = (ctx, x, y, size) => {
+  ctx.save();
+  // Wide soft halo so it reads clearly even against busy colored polygons.
+  ctx.beginPath();
+  ctx.arc(x, y, size * 2.2, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255,0,60,0.30)";
+  ctx.lineWidth = size * 0.55;
+  ctx.stroke();
 
+  // Mid ring.
+  ctx.beginPath();
+  ctx.arc(x, y, size * 1.5, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255,0,60,0.75)";
+  ctx.lineWidth = size * 0.3;
+  ctx.stroke();
+
+  // Solid center dot.
+  ctx.beginPath();
+  ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+  ctx.fillStyle = "#ff003c";
+  ctx.fill();
+  ctx.lineWidth = size * 0.22;
+  ctx.strokeStyle = "#ffffff";
+  ctx.stroke();
+  ctx.restore();
+};
+const drawSelectionRing = (ctx, ring, project, canvasWidth, canvasHeight) => {
+  if (ring.length < 3) return;
+
+  ctx.save();
+
+  // Hard clip to the canvas bounds so the glow can never bleed past the
+  // visible map area, even for plots sitting near the data edge.
+  if (canvasWidth && canvasHeight) {
+    ctx.beginPath();
+    ctx.rect(0, 0, canvasWidth, canvasHeight);
+    ctx.clip();
+  }
+
+  // Outer glow pass — soft, wide red halo traced around the actual polygon shape.
+  ctx.beginPath();
+  const first = project(ring[0]);
+  ctx.moveTo(first[0], first[1]);
+  ring.slice(1).forEach((point) => {
+    const p = project(point);
+    ctx.lineTo(p[0], p[1]);
+  });
+  ctx.closePath();
+  ctx.strokeStyle = "rgba(255,0,60,0.30)";
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // Crisp inner ring on top, dashed for a "selected" map-pin feel.
+  ctx.setLineDash([4, 3]);
+  ctx.strokeStyle = "#ff003c";
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.restore();
+};
 const drawWrappedCanvasText = (
   ctx,
   lines,
@@ -1262,7 +1404,19 @@ export const createPlanCanvas = async ({
   ctx.fillRect(0, 0, width, height);
 
   const features = getContextFeatures(selectedFeature, contextGeojson, mode);
-  const selectedRing = getGeometryRing(selectedFeature?.geometry);
+  let selectedRing = getGeometryRing(selectedFeature?.geometry);
+
+  // Fallback: if the selected feature passed in has no usable geometry
+  // (e.g. it came from a lightweight selection object), recover the full
+  // polygon boundary from the matching entry in the full scheme data.
+  if (selectedRing.length < 3) {
+    const matched = (contextGeojson?.features || []).find((f) =>
+      isSameFeature(f, selectedFeature),
+    );
+    if (matched) {
+      selectedRing = getGeometryRing(matched.geometry);
+    }
+  }
   const dimensionRing = simplifyPlotRing(selectedRing);
 
   // Main site plan is always framed from the selected plot itself. This keeps
@@ -1273,9 +1427,26 @@ export const createPlanCanvas = async ({
     contextGeojson?.features?.length ? contextGeojson.features : features,
   );
   const contextBounds = getBounds(features.length ? features : [selectedFeature]);
+
+  // Guarantee the selected plot always has clearance from the canvas edge,
+  // even when it sits at a corner/edge of the overall scheme — union the
+  // full scheme view with a generous zone around just the selected plot.
+  const locationViewBounds = (() => {
+    if (!fullSchemeBounds) return fullSchemeBounds;
+    if (!selectedBounds) return fullSchemeBounds;
+    const clearance = expandBounds(selectedBounds, 4);
+    if (!clearance) return fullSchemeBounds;
+    return {
+      minX: Math.min(fullSchemeBounds.minX, clearance.minX),
+      maxX: Math.max(fullSchemeBounds.maxX, clearance.maxX),
+      minY: Math.min(fullSchemeBounds.minY, clearance.minY),
+      maxY: Math.max(fullSchemeBounds.maxY, clearance.maxY),
+    };
+  })();
+
   const bounds =
     mode === "location"
-      ? expandBounds(fullSchemeBounds, 0.025)
+      ? expandBounds(locationViewBounds, 0.06)
       : mode === "partOverview"
         ? expandBounds(contextBounds, 0.01)
         : mode === "part"
@@ -1292,7 +1463,7 @@ export const createPlanCanvas = async ({
 
   const padding =
     mode === "location"
-      ? 18
+      ? 34
       : mode === "partOverview"
         ? 8
         : mode === "part"
@@ -1319,7 +1490,7 @@ export const createPlanCanvas = async ({
 
   features.forEach((feature) => {
     const ring = getGeometryRing(feature?.geometry);
-    if (ring.length < 3 || feature === selectedFeature) return;
+    if (ring.length < 3 || isSameFeature(feature, selectedFeature)) return;
 
     drawPolygon(
       ctx,
@@ -1361,7 +1532,7 @@ export const createPlanCanvas = async ({
     selectedFill,
     selectedStroke,
     mode === "location"
-      ? 7
+      ? 9
       : mode === "partOverview"
         ? 10
         : mode === "part"
@@ -1373,6 +1544,9 @@ export const createPlanCanvas = async ({
   const selectedProjectedBox = getProjectedRingBox(selectedRing, project);
 
   if (mode === "location" || mode === "partOverview") {
+    if (mode === "location") {
+      drawSelectionRing(ctx, selectedRing, project, width, height);
+    }
     drawUniformPlotNumber(
       ctx,
       details.plotNo,
@@ -1384,7 +1558,10 @@ export const createPlanCanvas = async ({
         haloWidth: 4,
       },
     );
-  } else if (mode === "part") {
+    if (mode === "location") {
+      drawLocatorPin(ctx, selectedCenter[0], selectedCenter[1], 22);
+    }
+  }  else if (mode === "part") {
     drawDetailedSelectedPlotLabel(
       ctx,
       details,
@@ -1392,35 +1569,7 @@ export const createPlanCanvas = async ({
       project,
     );
   } else {
-    drawCanvasLabel(
-      ctx,
-      details.plotNo,
-      selectedCenter[0],
-      selectedCenter[1] - selectedProjectedBox.height * 0.09,
-      selectedProjectedBox.width * 0.62,
-      selectedProjectedBox.height * 0.34,
-      {
-        maxFontSize: 52,
-        minFontSize: 24,
-        fontWeight: 700,
-        fillStyle: "#173d82",
-      },
-    );
-
-    drawCanvasLabel(
-      ctx,
-      firstValue(details.plotSize, details.plotArea),
-      selectedCenter[0],
-      selectedCenter[1] + selectedProjectedBox.height * 0.17,
-      selectedProjectedBox.width * 0.80,
-      selectedProjectedBox.height * 0.22,
-      {
-        maxFontSize: 28,
-        minFontSize: 14,
-        fontWeight: 600,
-        fillStyle: "#202020",
-      },
-    );
+    drawSitePlotLabel(ctx, details, selectedRing, project);
   }
 
   drawRoadLabelForPartPlan(
@@ -1751,25 +1900,39 @@ export const drawUnderlinedValue = (
   lineWidth,
   options = {},
 ) => {
-  const fontSize = options.fontSize || 9;
+  const fontSize = options.fontSize || 8.6;
+  const gap = options.gap ?? 1.4;
+
   doc.setFont("helvetica", options.boldLabel === false ? "normal" : "bold");
   doc.setFontSize(fontSize);
   doc.setTextColor(15, 15, 15);
   doc.text(label, x, y);
-  const lineX = x + labelWidth;
-  doc.line(lineX, y + 0.8, lineX + lineWidth, y + 0.8);
+
+  // Auto-measure the label's real width so the underline always starts
+  // right after the text, regardless of the labelWidth guess passed in.
+  const measuredWidth = doc.getTextWidth(label) + gap;
+  const lineX = x + measuredWidth;
+  const effectiveLineWidth = lineWidth + (labelWidth - measuredWidth);
+
+  doc.line(lineX, y + 0.8, lineX + effectiveLineWidth, y + 0.8);
+
   if (value) {
     doc.setFont("helvetica", "normal");
-    const maxTextWidth = lineWidth - 1;
+    doc.setFontSize(fontSize - 0.2);
+    const maxTextWidth = effectiveLineWidth - 1;
     const text = String(value);
     const fitted =
       doc.getTextWidth(text) <= maxTextWidth
         ? text
         : `${text.slice(0, Math.max(1, Math.floor(text.length * 0.8)))}...`;
-    doc.text(fitted, lineX + 1, y - 0.5);
+
+    if (options.centerValue) {
+      doc.text(fitted, lineX + effectiveLineWidth / 2, y - 0.5, { align: "center" });
+    } else {
+      doc.text(fitted, lineX + 1, y - 0.5);
+    }
   }
 };
-
 export const canvasAsPng = (canvas) =>
   canvas
     ? {
