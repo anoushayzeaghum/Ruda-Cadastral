@@ -25,13 +25,13 @@ export default function LayersPanel({
       />
       <RUDAMasterPlan map={map} />
       <Cadastral map={map} selectedProjectId={selectedProjectId} />
-      <BaseData map={map} />
       <ProjectMasterPlan
         map={map}
         selectedProjectId={selectedProjectId}
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
+      <BaseData map={map} />
     </div>
   );
 }

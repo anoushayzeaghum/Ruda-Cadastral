@@ -21,7 +21,7 @@ export default function ProjectMasterPlan({
         className="flex w-full items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]"
         onClick={() => setOpen((v) => !v)}
       >
-        <span>PROJECT MASTER PLAN</span>
+        <span>PROJECT</span>
         {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
       </button>
       {open && (
