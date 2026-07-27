@@ -755,6 +755,7 @@ export default function Cadastral({ map, selectedProjectId }) {
 
   const cachedData = useRef({});
   const boundaryRequests = useRef({});
+  const extraLayerRequests = useRef({});
 
   const [layers, setLayers] = useState(() =>
     Object.fromEntries(
@@ -765,19 +766,34 @@ export default function Cadastral({ map, selectedProjectId }) {
     ),
   );
 
+  const layersRef = useRef(layers);
+
+  useEffect(() => {
+    layersRef.current = layers;
+  }, [layers]);
+
   const selectedProjectKey = selectedProjectId ? String(selectedProjectId) : "";
   const hasSelectedProject = Boolean(selectedProjectKey);
 
   const setVisible = (key, visible) => {
+    layersRef.current = {
+      ...layersRef.current,
+      [key]: { ...layersRef.current[key], visible },
+    };
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], visible } }));
   };
 
   const setOpacity = (key, opacity) => {
+    const currentState = layersRef.current[key];
+    layersRef.current = {
+      ...layersRef.current,
+      [key]: { ...currentState, opacity },
+    };
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], opacity } }));
 
     if (EXTRA_LAYER_CONFIG[key]) {
       const geojson = cachedData.current[key];
-      if (geojson && layers[key]?.visible) {
+      if (geojson && currentState?.visible) {
         const displayGeoJSON =
           key === "possessionLand"
             ? filterPossessionLandGeoJSON(geojson, possessionTypeVisibility)
@@ -786,7 +802,7 @@ export default function Cadastral({ map, selectedProjectId }) {
         EXTRA_LAYER_CONFIG[key].addLayer(
           map,
           displayGeoJSON,
-          layers[key].color,
+          currentState.color,
           opacity / 100,
         );
       }
@@ -794,20 +810,25 @@ export default function Cadastral({ map, selectedProjectId }) {
     }
 
     if (key === "khasra") {
-      updateKhasraVectorStyle(map, opacity, layers[key]?.color);
+      updateKhasraVectorStyle(map, opacity, currentState?.color);
       return;
     }
 
     const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
-    updateOpacity(map, key, opacity, geojson, layers[key]?.color);
+    updateOpacity(map, key, opacity, geojson, currentState?.color);
   };
 
   const setColor = (key, color) => {
+    const currentState = layersRef.current[key];
+    layersRef.current = {
+      ...layersRef.current,
+      [key]: { ...currentState, color },
+    };
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], color } }));
 
     if (EXTRA_LAYER_CONFIG[key]) {
       const geojson = cachedData.current[key];
-      if (geojson && layers[key]?.visible) {
+      if (geojson && currentState?.visible) {
         const displayGeoJSON =
           key === "possessionLand"
             ? filterPossessionLandGeoJSON(geojson, possessionTypeVisibility)
@@ -817,22 +838,26 @@ export default function Cadastral({ map, selectedProjectId }) {
           map,
           displayGeoJSON,
           color,
-          layers[key].opacity / 100,
+          currentState.opacity / 100,
         );
       }
       return;
     }
 
     if (key === "khasra") {
-      updateKhasraVectorStyle(map, layers[key]?.opacity ?? 100, color);
+      updateKhasraVectorStyle(map, currentState?.opacity ?? 100, color);
       return;
     }
 
     const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
-    updateColor(map, key, color, geojson, layers[key]?.opacity ?? 100);
+    updateColor(map, key, color, geojson, currentState?.opacity ?? 100);
   };
 
   const setLoading = (key, loading) => {
+    layersRef.current = {
+      ...layersRef.current,
+      [key]: { ...layersRef.current[key], loading },
+    };
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], loading } }));
   };
 
@@ -862,16 +887,15 @@ export default function Cadastral({ map, selectedProjectId }) {
     if (cachedData.current.moza?.features?.length) {
       const cachedGeojson = cachedData.current.moza;
 
-      if (draw) {
+      if (draw && layersRef.current.moza?.visible) {
         addOrUpdatePolygonLayer(
           map,
           "moza",
           cachedGeojson,
-          layers.moza.opacity,
-          layers.moza.color,
+          layersRef.current.moza.opacity,
+          layersRef.current.moza.color,
         );
         if (zoom) fitToGeojson(map, cachedGeojson);
-        setVisible("moza", true);
       }
 
       return cachedGeojson;
@@ -895,16 +919,15 @@ export default function Cadastral({ map, selectedProjectId }) {
       setMauzas(allMauzas);
       setSelectedMauzas(allMauzaIds);
 
-      if (draw) {
+      if (draw && layersRef.current.moza?.visible) {
         addOrUpdatePolygonLayer(
           map,
           "moza",
           completeMauzaGeojson,
-          layers.moza.opacity,
-          layers.moza.color,
+          layersRef.current.moza.opacity,
+          layersRef.current.moza.color,
         );
         if (zoom) fitToGeojson(map, completeMauzaGeojson);
-        setVisible("moza", true);
       }
 
       return completeMauzaGeojson;
@@ -938,8 +961,13 @@ export default function Cadastral({ map, selectedProjectId }) {
         cachedData.current.khasraExtent = extentData;
       }
 
-      ensureKhasraVectorLayer(map, layers.khasra.opacity, layers.khasra.color);
-      setVisible("khasra", true);
+      if (!layersRef.current.khasra?.visible) return visibleKhasraGeojson;
+
+      ensureKhasraVectorLayer(
+        map,
+        layersRef.current.khasra.opacity,
+        layersRef.current.khasra.color,
+      );
       setKhasraPanelOpen("khasra");
 
       if (zoom) fitToKhasraExtent(map, extentData?.bbox);
@@ -960,16 +988,17 @@ export default function Cadastral({ map, selectedProjectId }) {
 
     const cachedGeojson = cachedData.current[key];
     if (cachedGeojson?.features) {
+      if (!layersRef.current[key]?.visible) return cachedGeojson;
+
       addOrUpdatePolygonLayer(
         map,
         key,
         cachedGeojson,
-        layers[key].opacity,
-        layers[key].color,
+        layersRef.current[key].opacity,
+        layersRef.current[key].color,
       );
 
       if (zoom) fitToGeojson(map, cachedGeojson);
-      setVisible(key, true);
 
       if (key === "khasra") {
         setKhasraPanelOpen("khasra");
@@ -994,16 +1023,17 @@ export default function Cadastral({ map, selectedProjectId }) {
 
         cachedData.current[key] = geojson;
 
+        if (!layersRef.current[key]?.visible) return geojson;
+
         addOrUpdatePolygonLayer(
           map,
           key,
           geojson,
-          layers[key].opacity,
-          layers[key].color,
+          layersRef.current[key].opacity,
+          layersRef.current[key].color,
         );
 
         if (zoom) fitToGeojson(map, geojson);
-        setVisible(key, true);
 
         if (key === "khasra") {
           setKhasraPanelOpen("khasra");
@@ -1044,25 +1074,38 @@ export default function Cadastral({ map, selectedProjectId }) {
       let geojson = cachedData.current[key];
 
       if (!geojson) {
-        const response = await axios.get(`${API_BASE}${config.endpoint}`);
-        geojson = unwrapGeoJSON(response.data);
-        cachedData.current[key] = geojson;
+        if (!extraLayerRequests.current[key]) {
+          extraLayerRequests.current[key] = (async () => {
+            try {
+              const response = await axios.get(`${API_BASE}${config.endpoint}`);
+              const loadedGeoJSON = unwrapGeoJSON(response.data);
+              cachedData.current[key] = loadedGeoJSON;
+              return loadedGeoJSON;
+            } finally {
+              delete extraLayerRequests.current[key];
+            }
+          })();
+        }
+
+        geojson = await extraLayerRequests.current[key];
       }
+
+      if (!layersRef.current[key]?.visible) return geojson;
 
       const displayGeoJSON =
         key === "possessionLand"
           ? filterPossessionLandGeoJSON(geojson, possessionTypeVisibility)
           : geojson;
+      const currentState = layersRef.current[key];
 
       config.addLayer(
         map,
         displayGeoJSON,
-        layers[key].color,
-        layers[key].opacity / 100,
+        currentState.color,
+        currentState.opacity / 100,
       );
       setExtraVisibility(map, key, true);
 
-      setVisible(key, true);
       if (key === "possessionLand") {
         setExtraDetailsOpen((prev) => ({
           ...prev,
@@ -1117,6 +1160,8 @@ export default function Cadastral({ map, selectedProjectId }) {
       return;
     }
 
+    setVisible(key, true);
+
     if (isExtraLayer) {
       await loadExtraLayer(key);
       return;
@@ -1146,13 +1191,14 @@ export default function Cadastral({ map, selectedProjectId }) {
     setPossessionTypeVisibility(nextVisibility);
 
     const geojson = cachedData.current.possessionLand;
-    if (!map || !geojson || !layers.possessionLand.visible) return;
+    const possessionState = layersRef.current.possessionLand;
+    if (!map || !geojson || !possessionState?.visible) return;
 
     addPossessionLandLayer(
       map,
       filterPossessionLandGeoJSON(geojson, nextVisibility),
-      layers.possessionLand.color,
-      layers.possessionLand.opacity / 100,
+      possessionState.color,
+      possessionState.opacity / 100,
     );
     setExtraVisibility(map, "possessionLand", true);
   };
@@ -1270,6 +1316,7 @@ export default function Cadastral({ map, selectedProjectId }) {
 
     cachedData.current = {};
     boundaryRequests.current = {};
+    extraLayerRequests.current = {};
     setMauzas([]);
     setSelectedMauzas([]);
     setKhasraMauzas([]);
@@ -1516,8 +1563,8 @@ export default function Cadastral({ map, selectedProjectId }) {
   const toggleAllCadastral = async (e) => {
     e.stopPropagation();
     const next = !allCadastralOn;
-    for (const def of ALL_CADASTRAL_LAYER_DEFS) {
-      await handleVisible(def.key, next);
+    for (const definition of ALL_CADASTRAL_LAYER_DEFS) {
+      await handleVisible(definition.key, next);
     }
   };
 
@@ -1541,13 +1588,13 @@ export default function Cadastral({ map, selectedProjectId }) {
               : "Show all cadastral layers"
           }
           onClick={toggleAllCadastral}
-          className={`relative ml-2 h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
+          className={`relative ml-2 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus:outline-none ${
             allCadastralOn ? "bg-[#65c96b]" : "bg-white/20"
           }`}
         >
           <span
-            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-              allCadastralOn ? "translate-x-4" : "translate-x-0.5"
+            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+              allCadastralOn ? "translate-x-4" : "translate-x-0"
             }`}
           />
         </button>
