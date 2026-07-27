@@ -1,13 +1,12 @@
 import { useCallback, useRef, useState } from "react";
-import FlyToHeader from "../FlyToDedicated/FlyToHeader";
+import MasterPlanHeader from "./MasterPlanHeader";
 import FlyToMap from "../FlyToDedicated/FlyToMap";
 import FlyToMapControls from "../FlyToDedicated/FlyToMapControls";
-import MasterPlanLeftToolbar from "./MasterPlanLeftToolbar";
 
 export default function MasterPlanDashboard() {
   const mapRef = useRef(null);
+
   const [isMapReady, setIsMapReady] = useState(false);
-  const [activeTool, setActiveTool] = useState(false);
   const [showMetaverseLegend, setShowMetaverseLegend] = useState(false);
 
   const defaultFilters = {
@@ -64,58 +63,30 @@ export default function MasterPlanDashboard() {
     proposedRoadsOpacity: 100,
   };
 
-  const [adminBoundaryVisibility, setAdminBoundaryVisibility] = useState(
-    defaultAdminBoundaryVisibility,
-  );
-
-  const [flytoFilters, setflytoFilters] = useState(defaultFilters);
-
+  const [filters] = useState(defaultFilters);
   const [layerVisibility, setLayerVisibility] = useState(
     defaultLayerVisibility,
   );
+  const [adminBoundaryVisibility] = useState(
+    defaultAdminBoundaryVisibility,
+  );
 
-  const handleIntroComplete = useCallback(() => {}, []);
-
-  const rebuildAllLayers = useCallback(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    map.fire("rebuild-layers");
-  }, []);
-
-  const handleReset = () => {
-    setflytoFilters(defaultFilters);
-    setLayerVisibility(defaultLayerVisibility);
-    setAdminBoundaryVisibility(defaultAdminBoundaryVisibility);
-    setShowMetaverseLegend(false);
-  };
+  const handleIntroComplete = useCallback(() => { }, []);
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#0f3d2e]">
-      <FlyToHeader />
+      <MasterPlanHeader />
 
       <div className="relative h-[calc(100vh-56px)] w-full">
         <FlyToMap
           mapRef={mapRef}
           isMapReady={isMapReady}
           setIsMapReady={setIsMapReady}
-          filters={flytoFilters}
+          filters={filters}
           layerVisibility={layerVisibility}
           setLayerVisibility={setLayerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}
           onIntroComplete={handleIntroComplete}
-        />
-
-        <MasterPlanLeftToolbar
-          activeTool={activeTool}
-          setActiveTool={setActiveTool}
-          map={isMapReady ? mapRef.current : null}
-          filters={flytoFilters}
-          setFilters={setflytoFilters}
-          layerVisibility={layerVisibility}
-          setLayerVisibility={setLayerVisibility}
-          adminBoundaryVisibility={adminBoundaryVisibility}
-          setAdminBoundaryVisibility={setAdminBoundaryVisibility}
-          rebuildAllLayers={rebuildAllLayers}
         />
 
         <FlyToMapControls
