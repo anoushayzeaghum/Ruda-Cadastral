@@ -34,34 +34,213 @@ const LAYERS = {
   selectedPlotLine: "demarcation-selected-plot-line",
 };
 
+export const MASTER_PLAN_LAND_USE_COLORS = {
+  greenOpenAreaParks: "#159E49",
+  condominiums: "#D5ACD2",
+  mixUse: "#9D9E31",
+  commercial: "#9FD3EB",
+  publicBuilding: "#EFA4AA",
+  residential10Marla: "#F89A1C",
+  residential1Kanal: "#C97800",
+  petrolPump: "#E34E52",
+  grandMosque: "#F8F07E",
+  rudaOffice: "#62D9AA",
+  convenienceShops: "#A84FA2",
+  cb1Boundary: "#00F51A",
+  canal: "#9FD3EB",
+  passage: "#F4F4F4",
+  utility: "#EFA4AA",
+  fallback: "#BFC3C9",
+};
+
+const normalizeText = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+const firstProperty = (properties = {}, keys = []) => {
+  for (const key of keys) {
+    const value = properties?.[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return String(value);
+    }
+  }
+  return "";
+};
+
+const classifyMasterPlanFeature = (feature) => {
+  const properties = feature?.properties || {};
+  const landUse = normalizeText(
+    firstProperty(properties, [
+      "land_use",
+      "landuse",
+      "land_use_type",
+      "category",
+      "type",
+      "name",
+    ]),
+  );
+
+  const residentialDetail = normalizeText(
+    [
+      properties.plot_area,
+      properties.plot_size,
+      properties.dimension,
+      properties.name,
+      properties.category,
+      properties.type,
+      properties.land_use,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+
+  if (
+    landUse.includes("cb - 1 boundary") ||
+    landUse.includes("cb-1 boundary") ||
+    landUse.includes("cb 1 boundary") ||
+    landUse.includes("cb1 boundary")
+  )
+    return "cb1Boundary";
+
+  if (
+    [
+      "green area",
+      "green areas",
+      "green",
+      "open area",
+      "open areas",
+      "open space",
+      "open spaces",
+      "park",
+      "parks",
+    ].includes(landUse)
+  )
+    return "greenOpenAreaParks";
+
+  if (landUse.includes("condominium") || landUse.includes("condo"))
+    return "condominiums";
+  if (
+    landUse.includes("mix use") ||
+    landUse.includes("mixed use") ||
+    landUse.includes("mix-use") ||
+    landUse.includes("mixed-use")
+  )
+    return "mixUse";
+  if (landUse.includes("commercial")) return "commercial";
+  if (
+    landUse.includes("public building") ||
+    landUse.includes("public use") ||
+    landUse.includes("public facility")
+  )
+    return "publicBuilding";
+  if (landUse.includes("residential")) {
+    if (
+      residentialDetail.includes("1 kanal") ||
+      residentialDetail.includes("1-kanal") ||
+      residentialDetail.includes("1kanal")
+    )
+      return "residential1Kanal";
+    return "residential10Marla";
+  }
+  if (
+    landUse.includes("petrol pump") ||
+    landUse.includes("fuel station") ||
+    landUse.includes("filling station")
+  )
+    return "petrolPump";
+  if (
+    landUse.includes("grand mosque") ||
+    landUse.includes("mosque") ||
+    landUse.includes("masjid") ||
+    landUse.includes("religious building")
+  )
+    return "grandMosque";
+  if (landUse.includes("ruda office")) return "rudaOffice";
+  if (
+    landUse.includes("convenience shop") ||
+    landUse.includes("convenience store")
+  )
+    return "convenienceShops";
+  if (landUse.includes("canal") || landUse.includes("water channel"))
+    return "canal";
+  if (
+    landUse.includes("passage") ||
+    landUse.includes("walkway") ||
+    landUse.includes("corridor") ||
+    landUse === "road"
+  )
+    return "passage";
+  if (landUse.includes("utility")) return "utility";
+  return "fallback";
+};
+
+const prepareMasterPlanGeoJSON = (data) => ({
+  ...(data || emptyFC),
+  features: (data?.features || []).map((feature) => {
+    const masterPlanClass = classifyMasterPlanFeature(feature);
+    return {
+      ...feature,
+      properties: {
+        ...(feature.properties || {}),
+        _masterplan_class: masterPlanClass,
+        _masterplan_color:
+          MASTER_PLAN_LAND_USE_COLORS[masterPlanClass] ||
+          MASTER_PLAN_LAND_USE_COLORS.fallback,
+      },
+    };
+  }),
+});
+
 export const plotColorExpression = [
   "match",
-  ["coalesce", ["get", "type"], ["get", "land_use"], ["get", "name"]],
-  "Residential",
-  "#2563eb",
-  "Residential Plot",
-  "#2563eb",
-  "Commercial",
-  "#facc15",
-  "Commercial Plot",
-  "#facc15",
-  "Green Belt",
-  "#22c55e",
-  "Barren Land",
-  "#92400e",
-  "Road",
-  "#ef4444",
-  "Park",
-  "#15803d",
-  "Public Use",
-  "#a855f7",
-  "Recreational Facility",
-  "#6366f1",
-  "Parking",
-  "#f97316",
-  "Religious Building",
-  "#c084fc",
-  "#9ca3af",
+  ["get", "_masterplan_class"],
+  "greenOpenAreaParks",
+  MASTER_PLAN_LAND_USE_COLORS.greenOpenAreaParks,
+  "condominiums",
+  MASTER_PLAN_LAND_USE_COLORS.condominiums,
+  "mixUse",
+  MASTER_PLAN_LAND_USE_COLORS.mixUse,
+  "commercial",
+  MASTER_PLAN_LAND_USE_COLORS.commercial,
+  "publicBuilding",
+  MASTER_PLAN_LAND_USE_COLORS.publicBuilding,
+  "residential10Marla",
+  MASTER_PLAN_LAND_USE_COLORS.residential10Marla,
+  "residential1Kanal",
+  MASTER_PLAN_LAND_USE_COLORS.residential1Kanal,
+  "petrolPump",
+  MASTER_PLAN_LAND_USE_COLORS.petrolPump,
+  "grandMosque",
+  MASTER_PLAN_LAND_USE_COLORS.grandMosque,
+  "rudaOffice",
+  MASTER_PLAN_LAND_USE_COLORS.rudaOffice,
+  "convenienceShops",
+  MASTER_PLAN_LAND_USE_COLORS.convenienceShops,
+  "canal",
+  MASTER_PLAN_LAND_USE_COLORS.canal,
+  "passage",
+  MASTER_PLAN_LAND_USE_COLORS.passage,
+  "utility",
+  MASTER_PLAN_LAND_USE_COLORS.utility,
+  "cb1Boundary",
+  "rgba(0,0,0,0)",
+  MASTER_PLAN_LAND_USE_COLORS.fallback,
+];
+
+const plotLineColorExpression = [
+  "case",
+  ["==", ["get", "_masterplan_class"], "cb1Boundary"],
+  MASTER_PLAN_LAND_USE_COLORS.cb1Boundary,
+  "#111111",
+];
+
+const plotLineWidthExpression = [
+  "case",
+  ["==", ["get", "_masterplan_class"], "cb1Boundary"],
+  2.5,
+  1.1,
 ];
 
 function ensureSource(map, id, data = emptyFC) {
@@ -164,7 +343,7 @@ function addBaseLayers(map) {
       id: LAYERS.plotFill,
       type: "fill",
       source: SOURCES.plots,
-      paint: { "fill-color": plotColorExpression, "fill-opacity": 0.55 },
+      paint: { "fill-color": plotColorExpression, "fill-opacity": 1 },
     });
   }
 
@@ -173,7 +352,11 @@ function addBaseLayers(map) {
       id: LAYERS.plotLine,
       type: "line",
       source: SOURCES.plots,
-      paint: { "line-color": "#111827", "line-width": 1 },
+      paint: {
+        "line-color": plotLineColorExpression,
+        "line-width": plotLineWidthExpression,
+        "line-opacity": 1,
+      },
     });
   }
 
@@ -343,16 +526,19 @@ export default function DemarcationMap({
         ensureSource(map, SOURCES.project, projectGeoJSON);
         ensureSource(map, SOURCES.block, blockGeoJSON);
         ensureSource(map, SOURCES.roads, roadGeoJSON);
-        ensureSource(map, SOURCES.plots, plotGeoJSON);
-        onFeaturesLoaded(plotGeoJSON);
+        const preparedPlotGeoJSON = prepareMasterPlanGeoJSON(plotGeoJSON);
+        ensureSource(map, SOURCES.plots, preparedPlotGeoJSON);
+        onFeaturesLoaded(preparedPlotGeoJSON);
         onContextFeaturesLoaded(contextPlotGeoJSON);
 
-        const exactSelected = (plotGeoJSON.features || []).find((feature) => {
-          const props = feature.properties || {};
-          return (
-            filters.plotNo && String(props.plot_no) === String(filters.plotNo)
-          );
-        });
+        const exactSelected = (preparedPlotGeoJSON.features || []).find(
+          (feature) => {
+            const props = feature.properties || {};
+            return (
+              filters.plotNo && String(props.plot_no) === String(filters.plotNo)
+            );
+          },
+        );
 
         ensureSource(
           map,
@@ -367,8 +553,8 @@ export default function DemarcationMap({
           fitGeoJSON(map, blockGeoJSON, 17);
         } else if (!filters.block && projectGeoJSON.features?.length) {
           fitGeoJSON(map, projectGeoJSON, 16);
-        } else if (plotGeoJSON.features?.length) {
-          fitGeoJSON(map, plotGeoJSON, filters.plotType ? 18 : 16);
+        } else if (preparedPlotGeoJSON.features?.length) {
+          fitGeoJSON(map, preparedPlotGeoJSON, filters.plotType ? 18 : 16);
         }
       } catch (error) {
         console.error("Failed to load demarcation map layers", error);
