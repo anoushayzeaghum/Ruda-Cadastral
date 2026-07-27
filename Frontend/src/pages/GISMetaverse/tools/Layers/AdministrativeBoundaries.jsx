@@ -106,6 +106,15 @@ export default function AdministrativeBoundaries({
   const [loading, setLoading] = useState({});
   const [featureCounts, setFeatureCounts] = useState({});
   const cache = useRef({});
+  const layerRequests = useRef({});
+  const visibilityRef = useRef({
+    rudaNotifiedBoundary: Boolean(
+      adminBoundaryVisibility?.rudaNotifiedBoundary,
+    ),
+    rudaPhasesBoundary: Boolean(adminBoundaryVisibility?.rudaPhasesBoundary),
+    districtBoundary: Boolean(adminBoundaryVisibility?.districtBoundary),
+    tehsilBoundary: Boolean(adminBoundaryVisibility?.tehsilBoundary),
+  });
 
   const [localVisibility, setLocalVisibility] = useState({
     rudaNotifiedBoundary: false,
@@ -123,10 +132,25 @@ export default function AdministrativeBoundaries({
     ),
   );
 
+  const stylesRef = useRef(styles);
+
+  useEffect(() => {
+    stylesRef.current = styles;
+  }, [styles]);
+
+  useEffect(() => {
+    Object.keys(LAYERS).forEach((key) => {
+      if (adminBoundaryVisibility?.[key] !== undefined) {
+        visibilityRef.current[key] = Boolean(adminBoundaryVisibility[key]);
+      }
+    });
+  }, [adminBoundaryVisibility]);
+
   const isVisible = (key) =>
     adminBoundaryVisibility?.[key] ?? localVisibility[key] ?? false;
 
   const setVisibleState = (key, visible) => {
+    visibilityRef.current[key] = visible;
     setLocalVisibility((prev) => ({ ...prev, [key]: visible }));
     setAdminBoundaryVisibility?.((prev) => ({ ...prev, [key]: visible }));
   };
@@ -138,6 +162,12 @@ export default function AdministrativeBoundaries({
       // The intro animation finishes on the notified phases layer.
       // Keep the regular RUDA Notified Boundary switched off.
       LAYERS.rudaNotifiedBoundary.setVisibility(map, false);
+
+      visibilityRef.current = {
+        ...visibilityRef.current,
+        rudaNotifiedBoundary: false,
+        rudaPhasesBoundary: true,
+      };
 
       setLocalVisibility((prev) => ({
         ...prev,
@@ -161,24 +191,34 @@ export default function AdministrativeBoundaries({
 
   const fetchLayer = async (key) => {
     if (cache.current[key]) return cache.current[key];
+    if (layerRequests.current[key]) return layerRequests.current[key];
 
     const def = LAYERS[key];
-    const geojson = def.fetchGeoJSON
-      ? await def.fetchGeoJSON()
-      : unwrapGeoJSON((await axios.get(`${API_BASE}${def.endpoint}`)).data);
+    const request = (async () => {
+      try {
+        const geojson = def.fetchGeoJSON
+          ? await def.fetchGeoJSON()
+          : unwrapGeoJSON((await axios.get(`${API_BASE}${def.endpoint}`)).data);
 
-    cache.current[key] = geojson;
-    setFeatureCounts((prev) => ({
-      ...prev,
-      [key]: geojson.features?.length || 0,
-    }));
+        cache.current[key] = geojson;
+        setFeatureCounts((prev) => ({
+          ...prev,
+          [key]: geojson.features?.length || 0,
+        }));
 
-    return geojson;
+        return geojson;
+      } finally {
+        delete layerRequests.current[key];
+      }
+    })();
+
+    layerRequests.current[key] = request;
+    return request;
   };
 
   const toggleLayer = async (key) => {
     const def = LAYERS[key];
-    const next = !isVisible(key);
+    const next = !visibilityRef.current[key];
 
     setVisibleState(key, next);
 
@@ -191,7 +231,9 @@ export default function AdministrativeBoundaries({
 
     try {
       const geojson = await fetchLayer(key);
-      def.addOrUpdate(map, geojson, styles[key]);
+      if (!visibilityRef.current[key]) return;
+
+      def.addOrUpdate(map, geojson, stylesRef.current[key]);
       fitToData(map, geojson);
     } catch (error) {
       console.error(`${def.label} load error:`, error);
@@ -204,8 +246,9 @@ export default function AdministrativeBoundaries({
   const updateStyle = (key, patch) => {
     setStyles((prev) => {
       const nextStyle = { ...prev[key], ...patch };
+      stylesRef.current = { ...stylesRef.current, [key]: nextStyle };
 
-      if (map && isVisible(key)) {
+      if (map && visibilityRef.current[key]) {
         const data = cache.current[key] || null;
         LAYERS[key].addOrUpdate(map, data, nextStyle);
       }
@@ -217,32 +260,37 @@ export default function AdministrativeBoundaries({
   useEffect(() => {
     if (!map) return;
 
-    let cancelled = false;
+    let active = true;
 
     const syncExternalVisibility = async () => {
-      for (const key of Object.keys(LAYERS)) {
-        const def = LAYERS[key];
-        const visible = isVisible(key);
+      await Promise.all(
+        Object.keys(LAYERS).map(async (key) => {
+          const def = LAYERS[key];
+          const visible = Boolean(
+            adminBoundaryVisibility?.[key] ?? localVisibility[key],
+          );
+          visibilityRef.current[key] = visible;
 
-        if (!visible) {
-          def.setVisibility(map, false);
-          continue;
-        }
+          if (!visible) {
+            def.setVisibility(map, false);
+            return;
+          }
 
-        try {
-          const geojson = cache.current[key] || (await fetchLayer(key));
-          if (cancelled) return;
-          def.addOrUpdate(map, geojson, styles[key]);
-        } catch (error) {
-          console.error(`${def.label} synchronization error:`, error);
-        }
-      }
+          try {
+            const geojson = cache.current[key] || (await fetchLayer(key));
+            if (!active || !visibilityRef.current[key]) return;
+            def.addOrUpdate(map, geojson, stylesRef.current[key]);
+          } catch (error) {
+            console.error(`${def.label} synchronization error:`, error);
+          }
+        }),
+      );
     };
 
     syncExternalVisibility();
 
     return () => {
-      cancelled = true;
+      active = false;
     };
   }, [
     map,
@@ -258,23 +306,38 @@ export default function AdministrativeBoundaries({
   const toggleAll = async (e) => {
     e.stopPropagation();
     const next = !allOn;
+
+    const nextVisibility = Object.fromEntries(
+      LAYER_KEYS.map((key) => [key, next]),
+    );
+    visibilityRef.current = {
+      ...visibilityRef.current,
+      ...nextVisibility,
+    };
+    setLocalVisibility((prev) => ({ ...prev, ...nextVisibility }));
+    setAdminBoundaryVisibility?.((prev) => ({
+      ...prev,
+      ...nextVisibility,
+    }));
+
+    if (!next) {
+      LAYER_KEYS.forEach((key) => LAYERS[key].setVisibility(map, false));
+      return;
+    }
+
     for (const key of LAYER_KEYS) {
       const def = LAYERS[key];
-      if (!next) {
+      setLoading((prev) => ({ ...prev, [key]: true }));
+
+      try {
+        const geojson = await fetchLayer(key);
+        if (!visibilityRef.current[key]) continue;
+        def.addOrUpdate(map, geojson, stylesRef.current[key]);
+      } catch (error) {
+        console.error(`${def.label} load error:`, error);
         setVisibleState(key, false);
-        def.setVisibility(map, false);
-      } else {
-        setVisibleState(key, true);
-        setLoading((prev) => ({ ...prev, [key]: true }));
-        try {
-          const geojson = await fetchLayer(key);
-          def.addOrUpdate(map, geojson, styles[key]);
-        } catch (err) {
-          console.error(`${def.label} load error:`, err);
-          setVisibleState(key, false);
-        } finally {
-          setLoading((prev) => ({ ...prev, [key]: false }));
-        }
+      } finally {
+        setLoading((prev) => ({ ...prev, [key]: false }));
       }
     }
   };
@@ -295,13 +358,13 @@ export default function AdministrativeBoundaries({
           type="button"
           title={allOn ? "Hide all administrative layers" : "Show all administrative layers"}
           onClick={toggleAll}
-          className={`relative ml-2 h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
+          className={`relative ml-2 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus:outline-none ${
             allOn ? "bg-[#65c96b]" : "bg-white/20"
           }`}
         >
           <span
-            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-              allOn ? "translate-x-4" : "translate-x-0.5"
+            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+              allOn ? "translate-x-4" : "translate-x-0"
             }`}
           />
         </button>
