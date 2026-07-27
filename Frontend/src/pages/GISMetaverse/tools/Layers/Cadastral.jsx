@@ -11,7 +11,10 @@ import PossessionLandAttribute from "./AttributeTable/PossessionLandAttribute";
 import GeodeticNetworkAttribute from "./AttributeTable/GeodeticNetworkAttribute";
 import { addAwardedLandLayer } from "./LayerManager/Cadastral/AwardedLandLayer";
 import { addStateLandLayer } from "./LayerManager/Cadastral/StateLandLayer";
-import { addPossessionLandLayer } from "./LayerManager/Cadastral/PossessionLandLayer";
+import {
+  addPossessionLandLayer,
+  POSSESSION_LAND_TYPES,
+} from "./LayerManager/Cadastral/PossessionLandLayer";
 import {
   addGeodeticPointsLayer,
   GEODETIC_POINTS_IDS,
@@ -96,9 +99,13 @@ const LAYER_DEFS = [
 const ALL_LAYER_DEFS = [MAUZA_DEF, ...LAYER_DEFS];
 
 const EXTRA_LAYER_DEFS = [
+  {
+    key: "possessionLand",
+    label: "Possession Land",
+    color: POSSESSION_LAND_TYPES[0].lineColor,
+  },
   { key: "awardedLand", label: "Awarded Land", color: "#854F0B" },
   { key: "stateLand", label: "State Land", color: "#5F5E5A" },
-  { key: "possessionLand", label: "Possession Land", color: "#27500A" },
   { key: "geodeticNetwork", label: "Geodetic Network", color: "#D92D20" },
 ];
 
@@ -142,6 +149,43 @@ const EXTRA_LAYER_CONFIG = {
 };
 
 const ALL_CADASTRAL_LAYER_DEFS = [...ALL_LAYER_DEFS, ...EXTRA_LAYER_DEFS];
+
+const DEFAULT_POSSESSION_TYPE_VISIBILITY = Object.fromEntries(
+  POSSESSION_LAND_TYPES.map((type) => [type.key, true]),
+);
+
+function normalizePossessionLandType(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function filterPossessionLandGeoJSON(geojson, typeVisibility) {
+  const allowedTypes = new Set(
+    POSSESSION_LAND_TYPES.filter((type) => typeVisibility[type.key]).map(
+      (type) => normalizePossessionLandType(type.value),
+    ),
+  );
+
+  return {
+    type: "FeatureCollection",
+    features: (geojson?.features || []).filter((feature) =>
+      allowedTypes.has(
+        normalizePossessionLandType(feature?.properties?.l_type),
+      ),
+    ),
+  };
+}
+
+function countPossessionLandTypeFeatures(geojson, typeValue) {
+  const normalizedType = normalizePossessionLandType(typeValue);
+
+  return (geojson?.features || []).filter(
+    (feature) =>
+      normalizePossessionLandType(feature?.properties?.l_type) ===
+      normalizedType,
+  ).length;
+}
 
 function setExtraVisibility(map, key, visible) {
   const config = EXTRA_LAYER_CONFIG[key];
@@ -705,9 +749,13 @@ export default function Cadastral({ map, selectedProjectId }) {
   const [open, setOpen] = useState(false);
   const [activeTable, setActiveTable] = useState(null);
   const [extraDetailsOpen, setExtraDetailsOpen] = useState({});
+  const [possessionTypeVisibility, setPossessionTypeVisibility] = useState(
+    () => ({ ...DEFAULT_POSSESSION_TYPE_VISIBILITY }),
+  );
 
   const cachedData = useRef({});
   const boundaryRequests = useRef({});
+  const extraLayerRequests = useRef({});
 
   const [layers, setLayers] = useState(() =>
     Object.fromEntries(
@@ -718,23 +766,43 @@ export default function Cadastral({ map, selectedProjectId }) {
     ),
   );
 
+  const layersRef = useRef(layers);
+
+  useEffect(() => {
+    layersRef.current = layers;
+  }, [layers]);
+
   const selectedProjectKey = selectedProjectId ? String(selectedProjectId) : "";
   const hasSelectedProject = Boolean(selectedProjectKey);
 
   const setVisible = (key, visible) => {
+    layersRef.current = {
+      ...layersRef.current,
+      [key]: { ...layersRef.current[key], visible },
+    };
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], visible } }));
   };
 
   const setOpacity = (key, opacity) => {
+    const currentState = layersRef.current[key];
+    layersRef.current = {
+      ...layersRef.current,
+      [key]: { ...currentState, opacity },
+    };
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], opacity } }));
 
     if (EXTRA_LAYER_CONFIG[key]) {
       const geojson = cachedData.current[key];
-      if (geojson && layers[key]?.visible) {
+      if (geojson && currentState?.visible) {
+        const displayGeoJSON =
+          key === "possessionLand"
+            ? filterPossessionLandGeoJSON(geojson, possessionTypeVisibility)
+            : geojson;
+
         EXTRA_LAYER_CONFIG[key].addLayer(
           map,
-          geojson,
-          layers[key].color,
+          displayGeoJSON,
+          currentState.color,
           opacity / 100,
         );
       }
@@ -742,40 +810,54 @@ export default function Cadastral({ map, selectedProjectId }) {
     }
 
     if (key === "khasra") {
-      updateKhasraVectorStyle(map, opacity, layers[key]?.color);
+      updateKhasraVectorStyle(map, opacity, currentState?.color);
       return;
     }
 
     const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
-    updateOpacity(map, key, opacity, geojson, layers[key]?.color);
+    updateOpacity(map, key, opacity, geojson, currentState?.color);
   };
 
   const setColor = (key, color) => {
+    const currentState = layersRef.current[key];
+    layersRef.current = {
+      ...layersRef.current,
+      [key]: { ...currentState, color },
+    };
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], color } }));
 
     if (EXTRA_LAYER_CONFIG[key]) {
       const geojson = cachedData.current[key];
-      if (geojson && layers[key]?.visible) {
+      if (geojson && currentState?.visible) {
+        const displayGeoJSON =
+          key === "possessionLand"
+            ? filterPossessionLandGeoJSON(geojson, possessionTypeVisibility)
+            : geojson;
+
         EXTRA_LAYER_CONFIG[key].addLayer(
           map,
-          geojson,
+          displayGeoJSON,
           color,
-          layers[key].opacity / 100,
+          currentState.opacity / 100,
         );
       }
       return;
     }
 
     if (key === "khasra") {
-      updateKhasraVectorStyle(map, layers[key]?.opacity ?? 100, color);
+      updateKhasraVectorStyle(map, currentState?.opacity ?? 100, color);
       return;
     }
 
     const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
-    updateColor(map, key, color, geojson, layers[key]?.opacity ?? 100);
+    updateColor(map, key, color, geojson, currentState?.opacity ?? 100);
   };
 
   const setLoading = (key, loading) => {
+    layersRef.current = {
+      ...layersRef.current,
+      [key]: { ...layersRef.current[key], loading },
+    };
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], loading } }));
   };
 
@@ -805,16 +887,15 @@ export default function Cadastral({ map, selectedProjectId }) {
     if (cachedData.current.moza?.features?.length) {
       const cachedGeojson = cachedData.current.moza;
 
-      if (draw) {
+      if (draw && layersRef.current.moza?.visible) {
         addOrUpdatePolygonLayer(
           map,
           "moza",
           cachedGeojson,
-          layers.moza.opacity,
-          layers.moza.color,
+          layersRef.current.moza.opacity,
+          layersRef.current.moza.color,
         );
         if (zoom) fitToGeojson(map, cachedGeojson);
-        setVisible("moza", true);
       }
 
       return cachedGeojson;
@@ -838,16 +919,15 @@ export default function Cadastral({ map, selectedProjectId }) {
       setMauzas(allMauzas);
       setSelectedMauzas(allMauzaIds);
 
-      if (draw) {
+      if (draw && layersRef.current.moza?.visible) {
         addOrUpdatePolygonLayer(
           map,
           "moza",
           completeMauzaGeojson,
-          layers.moza.opacity,
-          layers.moza.color,
+          layersRef.current.moza.opacity,
+          layersRef.current.moza.color,
         );
         if (zoom) fitToGeojson(map, completeMauzaGeojson);
-        setVisible("moza", true);
       }
 
       return completeMauzaGeojson;
@@ -881,8 +961,13 @@ export default function Cadastral({ map, selectedProjectId }) {
         cachedData.current.khasraExtent = extentData;
       }
 
-      ensureKhasraVectorLayer(map, layers.khasra.opacity, layers.khasra.color);
-      setVisible("khasra", true);
+      if (!layersRef.current.khasra?.visible) return visibleKhasraGeojson;
+
+      ensureKhasraVectorLayer(
+        map,
+        layersRef.current.khasra.opacity,
+        layersRef.current.khasra.color,
+      );
       setKhasraPanelOpen("khasra");
 
       if (zoom) fitToKhasraExtent(map, extentData?.bbox);
@@ -903,16 +988,17 @@ export default function Cadastral({ map, selectedProjectId }) {
 
     const cachedGeojson = cachedData.current[key];
     if (cachedGeojson?.features) {
+      if (!layersRef.current[key]?.visible) return cachedGeojson;
+
       addOrUpdatePolygonLayer(
         map,
         key,
         cachedGeojson,
-        layers[key].opacity,
-        layers[key].color,
+        layersRef.current[key].opacity,
+        layersRef.current[key].color,
       );
 
       if (zoom) fitToGeojson(map, cachedGeojson);
-      setVisible(key, true);
 
       if (key === "khasra") {
         setKhasraPanelOpen("khasra");
@@ -937,16 +1023,17 @@ export default function Cadastral({ map, selectedProjectId }) {
 
         cachedData.current[key] = geojson;
 
+        if (!layersRef.current[key]?.visible) return geojson;
+
         addOrUpdatePolygonLayer(
           map,
           key,
           geojson,
-          layers[key].opacity,
-          layers[key].color,
+          layersRef.current[key].opacity,
+          layersRef.current[key].color,
         );
 
         if (zoom) fitToGeojson(map, geojson);
-        setVisible(key, true);
 
         if (key === "khasra") {
           setKhasraPanelOpen("khasra");
@@ -987,21 +1074,45 @@ export default function Cadastral({ map, selectedProjectId }) {
       let geojson = cachedData.current[key];
 
       if (!geojson) {
-        const response = await axios.get(`${API_BASE}${config.endpoint}`);
-        geojson = unwrapGeoJSON(response.data);
-        cachedData.current[key] = geojson;
+        if (!extraLayerRequests.current[key]) {
+          extraLayerRequests.current[key] = (async () => {
+            try {
+              const response = await axios.get(`${API_BASE}${config.endpoint}`);
+              const loadedGeoJSON = unwrapGeoJSON(response.data);
+              cachedData.current[key] = loadedGeoJSON;
+              return loadedGeoJSON;
+            } finally {
+              delete extraLayerRequests.current[key];
+            }
+          })();
+        }
+
+        geojson = await extraLayerRequests.current[key];
       }
+
+      if (!layersRef.current[key]?.visible) return geojson;
+
+      const displayGeoJSON =
+        key === "possessionLand"
+          ? filterPossessionLandGeoJSON(geojson, possessionTypeVisibility)
+          : geojson;
+      const currentState = layersRef.current[key];
 
       config.addLayer(
         map,
-        geojson,
-        layers[key].color,
-        layers[key].opacity / 100,
+        displayGeoJSON,
+        currentState.color,
+        currentState.opacity / 100,
       );
       setExtraVisibility(map, key, true);
 
-      setVisible(key, true);
-      if (zoom) fitToExtraGeoJSON(map, geojson);
+      if (key === "possessionLand") {
+        setExtraDetailsOpen((prev) => ({
+          ...prev,
+          possessionLand: true,
+        }));
+      }
+      if (zoom) fitToExtraGeoJSON(map, displayGeoJSON);
 
       return geojson;
     } catch (error) {
@@ -1026,6 +1137,12 @@ export default function Cadastral({ map, selectedProjectId }) {
 
       if (isExtraLayer) {
         setExtraVisibility(map, key, false);
+        if (key === "possessionLand") {
+          setExtraDetailsOpen((prev) => ({
+            ...prev,
+            possessionLand: false,
+          }));
+        }
         return;
       }
 
@@ -1042,6 +1159,8 @@ export default function Cadastral({ map, selectedProjectId }) {
 
       return;
     }
+
+    setVisible(key, true);
 
     if (isExtraLayer) {
       await loadExtraLayer(key);
@@ -1061,6 +1180,27 @@ export default function Cadastral({ map, selectedProjectId }) {
     if (key === "square") {
       await loadBoundaryByMauzas(key, [], { zoom: true });
     }
+  };
+
+  const handlePossessionTypeVisible = (typeKey, visible) => {
+    const nextVisibility = {
+      ...possessionTypeVisibility,
+      [typeKey]: visible,
+    };
+
+    setPossessionTypeVisibility(nextVisibility);
+
+    const geojson = cachedData.current.possessionLand;
+    const possessionState = layersRef.current.possessionLand;
+    if (!map || !geojson || !possessionState?.visible) return;
+
+    addPossessionLandLayer(
+      map,
+      filterPossessionLandGeoJSON(geojson, nextVisibility),
+      possessionState.color,
+      possessionState.opacity / 100,
+    );
+    setExtraVisibility(map, "possessionLand", true);
   };
 
   useEffect(() => {
@@ -1176,6 +1316,7 @@ export default function Cadastral({ map, selectedProjectId }) {
 
     cachedData.current = {};
     boundaryRequests.current = {};
+    extraLayerRequests.current = {};
     setMauzas([]);
     setSelectedMauzas([]);
     setKhasraMauzas([]);
@@ -1184,6 +1325,8 @@ export default function Cadastral({ map, selectedProjectId }) {
     setKhasraPanelOpen(false);
     setOpen(false);
     setActiveTable(null);
+    setExtraDetailsOpen({});
+    setPossessionTypeVisibility({ ...DEFAULT_POSSESSION_TYPE_VISIBILITY });
 
     ["moza", "square", "khasra"].forEach((key) => hideLayer(map, key));
     EXTRA_LAYER_DEFS.forEach(({ key }) => setExtraVisibility(map, key, false));
@@ -1324,6 +1467,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     const { key, label, color } = definition;
     const detailsOpen = Boolean(extraDetailsOpen[key]);
     const featureCount = cachedData.current[key]?.features?.length || 0;
+    const isPossessionLayer = key === "possessionLand";
 
     return (
       <LayerItem
@@ -1336,11 +1480,15 @@ export default function Cadastral({ map, selectedProjectId }) {
         hasDropdown
         hasTable
         dropdownOpen={detailsOpen}
-        dropdownTitle={`Show ${label} details`}
+        dropdownTitle={
+          isPossessionLayer
+            ? "Show possession land types"
+            : `Show ${label} details`
+        }
         onChange={(checked) => handleVisible(key, checked)}
         onOpacityChange={(opacity) => setOpacity(key, opacity)}
         onColorChange={(value) => setColor(key, value)}
-        colorEditable
+        colorEditable={!isPossessionLayer}
         onDropdownToggle={() =>
           setExtraDetailsOpen((prev) => ({
             ...prev,
@@ -1349,7 +1497,51 @@ export default function Cadastral({ map, selectedProjectId }) {
         }
         onTableOpen={() => setActiveTable(key)}
       >
-        {detailsOpen && (
+        {detailsOpen && isPossessionLayer && (
+          <div
+            className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {POSSESSION_LAND_TYPES.map((type) => {
+              const typeCount = countPossessionLandTypeFeatures(
+                cachedData.current.possessionLand,
+                type.value,
+              );
+
+              return (
+                <label
+                  key={type.key}
+                  className={`flex items-center gap-2 py-1 text-[11px] ${
+                    layers.possessionLand.visible
+                      ? "cursor-pointer text-white/85 hover:text-white"
+                      : "cursor-not-allowed text-white/40"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(possessionTypeVisibility[type.key])}
+                    disabled={!layers.possessionLand.visible}
+                    onChange={(event) =>
+                      handlePossessionTypeVisible(
+                        type.key,
+                        event.target.checked,
+                      )
+                    }
+                    className="accent-[#65c96b] disabled:cursor-not-allowed"
+                  />
+                  <span
+                    className="h-3.5 w-3.5 shrink-0 rounded-sm border border-white/35"
+                    style={{ backgroundColor: type.lineColor }}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{type.value}</span>
+                  <span className="shrink-0 text-white/45">{typeCount}</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+
+        {detailsOpen && !isPossessionLayer && (
           <div
             className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80"
             onClick={(event) => event.stopPropagation()}
@@ -1371,8 +1563,8 @@ export default function Cadastral({ map, selectedProjectId }) {
   const toggleAllCadastral = async (e) => {
     e.stopPropagation();
     const next = !allCadastralOn;
-    for (const def of ALL_CADASTRAL_LAYER_DEFS) {
-      await handleVisible(def.key, next);
+    for (const definition of ALL_CADASTRAL_LAYER_DEFS) {
+      await handleVisible(definition.key, next);
     }
   };
 
@@ -1390,15 +1582,19 @@ export default function Cadastral({ map, selectedProjectId }) {
         {/* Toggle-all switch */}
         <button
           type="button"
-          title={allCadastralOn ? "Hide all cadastral layers" : "Show all cadastral layers"}
+          title={
+            allCadastralOn
+              ? "Hide all cadastral layers"
+              : "Show all cadastral layers"
+          }
           onClick={toggleAllCadastral}
-          className={`relative ml-2 h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
+          className={`relative ml-2 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus:outline-none ${
             allCadastralOn ? "bg-[#65c96b]" : "bg-white/20"
           }`}
         >
           <span
-            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-              allCadastralOn ? "translate-x-4" : "translate-x-0.5"
+            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+              allCadastralOn ? "translate-x-4" : "translate-x-0"
             }`}
           />
         </button>

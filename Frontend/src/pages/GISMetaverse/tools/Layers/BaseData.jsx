@@ -257,7 +257,7 @@ export default function BaseData({ map }) {
 
   const layersRef = useRef(layers);
   const loadedGeoJSONRef = useRef({});
-  const requestTokenRef = useRef({});
+  const layerRequestsRef = useRef({});
 
   useEffect(() => {
     layersRef.current = layers;
@@ -276,37 +276,44 @@ export default function BaseData({ map }) {
 
   const showLoadedLayer = (definition) => {
     const geojson = loadedGeoJSONRef.current[definition.key];
-    const state = layersRef.current[definition.key];
 
-    if (!geojson || !state) return;
+    if (!geojson) return;
 
     runWhenMapReady(() => {
+      const currentState = layersRef.current[definition.key];
+      if (!currentState?.visible) return;
+
       if (definition.customRoadStyle) {
-        addOrUpdateRoadNetworkLayer(map, geojson, state.opacity);
+        addOrUpdateRoadNetworkLayer(map, geojson, currentState.opacity);
       } else if (definition.customLandUseStyle) {
-        addOrUpdateLandUseLayer(map, geojson, state.opacity);
+        addOrUpdateLandUseLayer(map, geojson, currentState.opacity);
       } else {
         addOrUpdateMapLayer(
           map,
           definition.key,
           geojson,
-          state.color,
-          state.opacity,
+          currentState.color,
+          currentState.opacity,
         );
       }
     });
   };
 
   const loadLayer = async (definition) => {
-    if (!map || !definition.fetchGeoJSON) return;
+    if (!map || !definition.fetchGeoJSON) return null;
 
     if (loadedGeoJSONRef.current[definition.key]) {
       showLoadedLayer(definition);
-      return;
+      return loadedGeoJSONRef.current[definition.key];
     }
 
-    const token = Date.now();
-    requestTokenRef.current[definition.key] = token;
+    if (layerRequestsRef.current[definition.key]) {
+      const geojson = await layerRequestsRef.current[definition.key];
+      if (layersRef.current[definition.key]?.visible) {
+        showLoadedLayer(definition);
+      }
+      return geojson;
+    }
 
     setLayers((previous) => ({
       ...previous,
@@ -321,36 +328,44 @@ export default function BaseData({ map }) {
       [definition.key]: null,
     }));
 
-    try {
-      const geojson = normalizeGeoJSON(await definition.fetchGeoJSON());
+    const request = (async () => {
+      try {
+        const geojson = normalizeGeoJSON(await definition.fetchGeoJSON());
+        loadedGeoJSONRef.current[definition.key] = geojson;
 
-      if (requestTokenRef.current[definition.key] !== token) return;
+        setStatuses((previous) => ({
+          ...previous,
+          [definition.key]: geojson.features.length ? null : "No features",
+        }));
 
-      loadedGeoJSONRef.current[definition.key] = geojson;
-
-      setStatuses((previous) => ({
-        ...previous,
-        [definition.key]: geojson.features.length ? null : "No features",
-      }));
-
-      if (layersRef.current[definition.key]?.visible) {
-        showLoadedLayer(definition);
+        return geojson;
+      } catch (error) {
+        console.error(`Failed to load ${definition.label}`, error);
+        setStatuses((previous) => ({
+          ...previous,
+          [definition.key]: "Backend error",
+        }));
+        return null;
+      } finally {
+        delete layerRequestsRef.current[definition.key];
+        setLayers((previous) => ({
+          ...previous,
+          [definition.key]: {
+            ...previous[definition.key],
+            loading: false,
+          },
+        }));
       }
-    } catch (error) {
-      console.error(`Failed to load ${definition.label}`, error);
-      setStatuses((previous) => ({
-        ...previous,
-        [definition.key]: "Backend error",
-      }));
-    } finally {
-      setLayers((previous) => ({
-        ...previous,
-        [definition.key]: {
-          ...previous[definition.key],
-          loading: false,
-        },
-      }));
+    })();
+
+    layerRequestsRef.current[definition.key] = request;
+    const geojson = await request;
+
+    if (geojson && layersRef.current[definition.key]?.visible) {
+      showLoadedLayer(definition);
     }
+
+    return geojson;
   };
 
   useEffect(() => {
@@ -360,7 +375,6 @@ export default function BaseData({ map }) {
       const state = layers[definition.key];
 
       if (!state.visible) {
-        requestTokenRef.current[definition.key] = null;
         if (definition.customRoadStyle) {
           setRoadNetworkVisibility(map, false);
         } else if (definition.customLandUseStyle) {
@@ -475,17 +489,17 @@ export default function BaseData({ map }) {
             const next = !LAYER_DEFS.every((d) => layers[d.key]?.visible);
             LAYER_DEFS.forEach((d) => setVisible(d.key, next));
           }}
-          className={`relative ml-2 h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
+          className={`relative ml-2 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus:outline-none ${
             LAYER_DEFS.every((d) => layers[d.key]?.visible)
               ? "bg-[#65c96b]"
               : "bg-white/20"
           }`}
         >
           <span
-            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
               LAYER_DEFS.every((d) => layers[d.key]?.visible)
                 ? "translate-x-4"
-                : "translate-x-0.5"
+                : "translate-x-0"
             }`}
           />
         </button>
