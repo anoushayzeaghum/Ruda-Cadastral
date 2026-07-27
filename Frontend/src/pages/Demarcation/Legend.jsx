@@ -1,26 +1,112 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-const COLOR_MAP = {
-  Residential: "#2563eb",
-  "Residential Plot": "#2563eb",
-  Commercial: "#facc15",
-  "Commercial Plot": "#facc15",
-  "Green Belt": "#22c55e",
-  "Barren Land": "#92400e",
-  Road: "#ef4444",
-  Park: "#15803d",
-  "Public Use": "#a855f7",
-  "Recreational Facility": "#6366f1",
-  Parking: "#f97316",
-  "Religious Building": "#c084fc",
-  Other: "#9ca3af",
+const MASTER_PLAN_LAND_USE_COLORS = {
+  greenOpenAreaParks: "#159E49",
+  condominiums: "#D5ACD2",
+  mixUse: "#9D9E31",
+  commercial: "#9FD3EB",
+  publicBuilding: "#EFA4AA",
+  residential10Marla: "#F89A1C",
+  residential1Kanal: "#C97800",
+  petrolPump: "#E34E52",
+  grandMosque: "#F8F07E",
+  rudaOffice: "#62D9AA",
+  convenienceShops: "#A84FA2",
+  cb1Boundary: "#00F51A",
+  canal: "#9FD3EB",
+  passage: "#F4F4F4",
+  utility: "#EFA4AA",
+  fallback: "#BFC3C9",
 };
 
-const getColor = (label, index) => {
-  const fallback = ["#9ca3af", "#14b8a6", "#f43f5e", "#84cc16", "#06b6d4", "#8b5cf6"];
-  return COLOR_MAP[label] || fallback[index % fallback.length];
+const normalizeText = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+const getMasterPlanClass = (label) => {
+  const value = normalizeText(label);
+
+  if (
+    value.includes("cb - 1 boundary") ||
+    value.includes("cb-1 boundary") ||
+    value.includes("cb 1 boundary") ||
+    value.includes("cb1 boundary")
+  )
+    return "cb1Boundary";
+
+  if (
+    [
+      "green area",
+      "green areas",
+      "green",
+      "green belt",
+      "open area",
+      "open areas",
+      "open space",
+      "open spaces",
+      "park",
+      "parks",
+    ].includes(value)
+  )
+    return "greenOpenAreaParks";
+  if (value.includes("condominium") || value.includes("condo"))
+    return "condominiums";
+  if (
+    value.includes("mix use") ||
+    value.includes("mixed use") ||
+    value.includes("mix-use") ||
+    value.includes("mixed-use")
+  )
+    return "mixUse";
+  if (value.includes("commercial")) return "commercial";
+  if (
+    value.includes("public building") ||
+    value.includes("public use") ||
+    value.includes("public facility")
+  )
+    return "publicBuilding";
+  if (value.includes("residential")) {
+    return value.includes("1 kanal") ||
+      value.includes("1-kanal") ||
+      value.includes("1kanal")
+      ? "residential1Kanal"
+      : "residential10Marla";
+  }
+  if (
+    value.includes("petrol pump") ||
+    value.includes("fuel station") ||
+    value.includes("filling station")
+  )
+    return "petrolPump";
+  if (
+    value.includes("grand mosque") ||
+    value.includes("mosque") ||
+    value.includes("masjid") ||
+    value.includes("religious building")
+  )
+    return "grandMosque";
+  if (value.includes("ruda office")) return "rudaOffice";
+  if (value.includes("convenience shop") || value.includes("convenience store"))
+    return "convenienceShops";
+  if (value.includes("canal") || value.includes("water channel"))
+    return "canal";
+  if (
+    value.includes("passage") ||
+    value.includes("walkway") ||
+    value.includes("corridor") ||
+    value === "road"
+  )
+    return "passage";
+  if (value.includes("utility")) return "utility";
+  return "fallback";
 };
+
+const getColor = (label) =>
+  MASTER_PLAN_LAND_USE_COLORS[getMasterPlanClass(label)] ||
+  MASTER_PLAN_LAND_USE_COLORS.fallback;
 
 export default function Legend({ items = [], selectedParcelNumber = null }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -50,7 +136,9 @@ export default function Legend({ items = [], selectedParcelNumber = null }) {
       {!isCollapsed && (
         <div className="max-h-[180px] overflow-auto p-3 sm:max-h-[240px] sm:p-3">
           {!items.length ? (
-            <div className="py-6 text-center text-sm text-gray-400">No land use loaded.</div>
+            <div className="py-6 text-center text-sm text-gray-400">
+              No land use loaded.
+            </div>
           ) : (
             <div className="space-y-2 sm:space-y-3">
               {items.map((item, index) => (
@@ -61,11 +149,15 @@ export default function Legend({ items = [], selectedParcelNumber = null }) {
                   <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                     <span
                       className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5"
-                      style={{ backgroundColor: getColor(item.label, index) }}
+                      style={{ backgroundColor: getColor(item.label) }}
                     />
-                    <span className="truncate text-[#4d4d4d]">{item.label}</span>
+                    <span className="truncate text-[#4d4d4d]">
+                      {item.label}
+                    </span>
                   </div>
-                  <span className="shrink-0 font-semibold text-[#4d4d4d]">{item.count}</span>
+                  <span className="shrink-0 font-semibold text-[#4d4d4d]">
+                    {item.count}
+                  </span>
                 </div>
               ))}
             </div>
