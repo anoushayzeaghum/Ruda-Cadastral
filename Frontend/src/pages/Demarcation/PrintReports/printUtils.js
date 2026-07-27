@@ -1991,3 +1991,44 @@ export const normalizeAreaText = (details) => {
   }
   return firstValue(details.plotArea, details.plotSize);
 };
+
+/**
+ * Crops a loaded Image element into a circular PNG data URL using a canvas.
+ * This avoids jsPDF's unreliable clip()-on-raster-image behavior — the
+ * resulting image data is genuinely circular (transparent corners) before
+ * jsPDF ever touches it, so it always renders round regardless of jsPDF
+ * version quirks.
+ */
+export const getCircularLogoDataUrl = (image, sizePx = 300) => {
+  if (!image || typeof document === "undefined") return null;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = sizePx;
+  canvas.height = sizePx;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(sizePx / 2, sizePx / 2, sizePx / 2, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+
+  // Fill a light background inside the circle so logos with transparent
+  // backgrounds don't look odd against the PDF page.
+  ctx.fillStyle = "#fafafa";
+  ctx.fillRect(0, 0, sizePx, sizePx);
+
+  const iw = image.naturalWidth || image.width || sizePx;
+  const ih = image.naturalHeight || image.height || sizePx;
+  const scale = Math.max(sizePx / iw, sizePx / ih);
+  const drawWidth = iw * scale;
+  const drawHeight = ih * scale;
+  const drawX = (sizePx - drawWidth) / 2;
+  const drawY = (sizePx - drawHeight) / 2;
+
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  ctx.restore();
+
+  return canvas.toDataURL("image/png");
+};
