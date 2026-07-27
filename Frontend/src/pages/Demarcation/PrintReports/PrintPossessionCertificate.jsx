@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import {
   buildPlotDetails,
   createPdfPreviewWindow,
+  getCircularLogoDataUrl,
   getGeometryRing,
   getPlotSides,
   loadPrintAssets,
@@ -58,6 +59,35 @@ const drawFittedCenteredHeading = (
   doc.text(text, startX, y, { charSpace });
 
   return fontSize;
+};
+
+const drawCircularLogo = (doc, image, cx, cy, radius, logoSize) => {
+  if (!image) return;
+  const dataUrl = getCircularLogoDataUrl(image, 300);
+  if (!dataUrl) return;
+  doc.addImage(
+    dataUrl,
+    "PNG",
+    cx - logoSize / 2,
+    cy - logoSize / 2,
+    logoSize,
+    logoSize,
+    undefined,
+    "FAST",
+  );
+};
+
+const drawSectionHeader = (doc, x, y, width, title) => {
+  const height = 6.5;
+  doc.setFillColor(...THEME);
+  doc.setDrawColor(...THEME);
+  doc.rect(x, y, width, height, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(title, x + 2.5, y + 4.5);
+  doc.setTextColor(15, 15, 15);
+  return y + height;
 };
 
 const drawInlineRuns = (
@@ -188,26 +218,38 @@ const getProjectedSketchPoints = (ring, x, y, width, height) => {
 };
 
 const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
-  // --- sketch box background & border ---
-  doc.setFillColor(252, 252, 252);
-  doc.setDrawColor(160, 160, 160);
-  doc.setLineWidth(0.25);
+  doc.setDrawColor(...THEME);
+  doc.setLineWidth(0.4);
+  doc.setFillColor(255, 255, 255);
   doc.rect(x, y, width, height, "FD");
 
-  const ring = getGeometryRing(parcel?.geometry);
-  const points = getProjectedSketchPoints(ring, x, y, width, height);
+  doc.setFillColor(...THEME);
+  doc.rect(x, y, width, 5, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(6.6);
+  doc.setTextColor(255, 255, 255);
+  doc.text("PLOT SKETCH", x + width / 2, y + 3.4, { align: "center" });
+  doc.setTextColor(30, 30, 30);
 
-  // --- polygon ---
-  doc.setDrawColor(60, 60, 60);
-  doc.setFillColor(230, 120, 180);
-  doc.setLineWidth(0.4);
+  const pad = 9;
+  const innerX = x + pad;
+  const innerY = y + 7;
+  const innerWidth = width - pad * 2;
+  const innerHeight = height - 7 - pad;
+
+  const ring = getGeometryRing(parcel?.geometry);
+  const points = getProjectedSketchPoints(ring, innerX, innerY, innerWidth, innerHeight);
+
+  doc.setDrawColor(40, 40, 40);
+  doc.setFillColor(214, 82, 155);
+  doc.setLineWidth(0.5);
 
   if (points.length >= 3) {
     const vectors = [];
-    for (let i = 1; i < points.length; i++) {
+    for (let index = 1; index < points.length; index += 1) {
       vectors.push([
-        points[i][0] - points[i - 1][0],
-        points[i][1] - points[i - 1][1],
+        points[index][0] - points[index - 1][0],
+        points[index][1] - points[index - 1][1],
       ]);
     }
     vectors.push([
@@ -223,52 +265,77 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
   const centerY =
     points.reduce((sum, point) => sum + point[1], 0) / points.length;
 
-  // --- plot number inside ---
   doc.setTextColor(30, 30, 30);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11.5);
-  doc.text(`P-${valueOrDash(details.plotNo)}`, centerX, centerY + 1.8, {
+  doc.setFontSize(9);
+  doc.text(valueOrDash(details.plotNo), centerX, centerY - 0.5, {
     align: "center",
   });
-
-  // --- side dimensions (outside, clamped to box) ---
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.2);
-  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(5.6);
+  doc.text(
+    normalizeText(details.plotSize || normalizeAreaText(details), ""),
+    centerX,
+    centerY + 3,
+    { align: "center" },
+  );
 
-  const labelOffset = 2.8;
-  const pad = 1.5;
+  const labelOffset = 3.4;
+  const cornerDotRadius = 0.8;
 
   const sideLabels = sides.slice(0, Math.min(sides.length, points.length));
+
+  points.forEach((point, index) => {
+    const vx = point[0] - centerX;
+    const vy = point[1] - centerY;
+    const vLength = Math.max(Math.hypot(vx, vy), 1e-6);
+    const labelX = point[0] + (vx / vLength) * 3.2;
+    const labelY = point[1] + (vy / vLength) * 3.2;
+
+    doc.setFillColor(34, 197, 94);
+    doc.setDrawColor(6, 95, 45);
+    doc.setLineWidth(0.25);
+    doc.circle(point[0], point[1], cornerDotRadius, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(5.4);
+    doc.setTextColor(140, 45, 20);
+    doc.text(String.fromCharCode(65 + index), labelX, labelY, {
+      align: "center",
+    });
+  });
+
+  doc.setTextColor(20, 20, 20);
+
   sideLabels.forEach((side, index) => {
     const start = points[index];
     const end = points[(index + 1) % points.length];
-    const midX = (start[0] + end[0]) / 2;
-    const midY = (start[1] + end[1]) / 2;
+    const middleX = (start[0] + end[0]) / 2;
+    const middleY = (start[1] + end[1]) / 2;
 
     const dx = end[0] - start[0];
     const dy = end[1] - start[1];
-    const edgeLen = Math.max(Math.hypot(dx, dy), 1e-6);
+    const edgeLength = Math.max(Math.hypot(dx, dy), 1e-6);
 
-    let nx = -dy / edgeLen;
-    let ny = dx / edgeLen;
-    const towardCenter = (centerX - midX) * nx + (centerY - midY) * ny;
+    let normalX = -dy / edgeLength;
+    let normalY = dx / edgeLength;
+    const towardCenter = (centerX - middleX) * normalX + (centerY - middleY) * normalY;
     if (towardCenter > 0) {
-      nx = -nx;
-      ny = -ny;
+      normalX = -normalX;
+      normalY = -normalY;
     }
 
-    let labelX = midX + nx * labelOffset;
-    let labelY = midY + ny * labelOffset;
+    const labelX = middleX + normalX * labelOffset;
+    const labelY = middleY + normalY * labelOffset;
 
-    // clamp so text never leaves the sketch box
-    labelX = Math.max(x + pad, Math.min(x + width - pad, labelX));
-    labelY = Math.max(y + pad, Math.min(y + height - pad, labelY));
+    let angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    if (angle > 90 || angle < -90) angle += 180;
 
-    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
     const label = normalizeText(side.length, "");
 
     if (label) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.3);
       doc.text(label, labelX, labelY, {
         align: "center",
         angle: -angle,
@@ -276,16 +343,19 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
     }
   });
 
-  // --- road label ---
   const roadLabel = normalizeText(
     details.streetRoadNo || details.roadFacing,
     details.roadFt ? `${details.roadFt} ft wide road` : "",
   );
 
   if (roadLabel) {
-    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(5.2);
     doc.setTextColor(80, 80, 80);
-    doc.text(roadLabel, x + width - 2, y + height - 2, { align: "right" });
+    doc.text(roadLabel, x + width - 2, y + height - 1.3, {
+      align: "right",
+    });
+    doc.setTextColor(20, 20, 20);
   }
 };
 
@@ -376,7 +446,7 @@ export const printPossessionCertificate = async ({
     doc.setLineWidth(0.2);
 
     // ------------------------------------------------------------------
-    // HEADER — round logos, navy accents, original vertical spacing kept
+    // HEADER — round logos (circular-clipped), navy accents
     // ------------------------------------------------------------------
     const logoSize = 22;
     const frameRadius = 12;
@@ -389,16 +459,7 @@ export const printPossessionCertificate = async ({
       doc.setDrawColor(...navy);
       doc.setLineWidth(0.4);
       doc.ellipse(cx, cy, frameRadius, frameRadius, "FD");
-      doc.addImage(
-        gopLogo,
-        "PNG",
-        cx - logoSize / 2,
-        cy - logoSize / 2,
-        logoSize,
-        logoSize,
-        undefined,
-        "FAST",
-      );
+      drawCircularLogo(doc, gopLogo, cx, cy, frameRadius - 0.4, logoSize);
     }
 
     if (rudaLogo) {
@@ -408,16 +469,7 @@ export const printPossessionCertificate = async ({
       doc.setDrawColor(...navy);
       doc.setLineWidth(0.4);
       doc.ellipse(cx, cy, frameRadius, frameRadius, "FD");
-      doc.addImage(
-        rudaLogo,
-        "PNG",
-        cx - logoSize / 2,
-        cy - logoSize / 2,
-        logoSize,
-        logoSize,
-        undefined,
-        "FAST",
-      );
+      drawCircularLogo(doc, rudaLogo, cx, cy, frameRadius - 0.4, logoSize);
     }
 
     const leftLogoEdge = margin + 2 + frameRadius * 2;
@@ -484,16 +536,22 @@ export const printPossessionCertificate = async ({
       },
     );
 
-    doc.setTextColor(...navy);
-
     doc.setTextColor(15, 15, 15);
     doc.setDrawColor(45, 45, 45);
     doc.setLineWidth(0.2);
 
     // ------------------------------------------------------------------
-    // BASIC INFORMATION
+    // PLOT & OWNER INFORMATION
     // ------------------------------------------------------------------
-    const infoTop = 45;
+    let sectionBottom = drawSectionHeader(
+      doc,
+      margin,
+      37,
+      contentWidth,
+      "PLOT & OWNER INFORMATION",
+    );
+
+    const infoTop = sectionBottom + 6;
 
     drawFieldLine(doc, "File Reference No:", fileReference, margin, infoTop, {
       labelWidth: 39,
@@ -585,17 +643,26 @@ export const printPossessionCertificate = async ({
     // ------------------------------------------------------------------
     // BOUNDARY DETAILS + PLOT SKETCH
     // ------------------------------------------------------------------
-    const sidesTop = certificationEndY + 12;
-    const sketchWidth = 44;
-    const sketchHeight = 39;
+    const boundaryHeaderY = certificationEndY + 7;
+    sectionBottom = drawSectionHeader(
+      doc,
+      margin,
+      boundaryHeaderY,
+      contentWidth,
+      "BOUNDARY DETAILS & PLOT SKETCH",
+    );
+
+    const sidesTop = sectionBottom + 7;
+    const sketchWidth = 50;
+    const sketchHeight = 46;
     const sketchX = pageWidth - margin - sketchWidth;
     const sketchY = sidesTop - 5;
 
-    const tableRight = sketchX - 5;
+        const tableRight = sketchX - 6;
     const sideNameX = margin + 8;
-    const lengthX = margin + 58;
-    const boundedLabelX = margin + 88;
-    const boundedValueX = margin + 122;
+    const lengthX = margin + 42;
+    const boundedLabelX = margin + 64;
+    const boundedValueX = margin + 86;
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.1);
@@ -629,69 +696,37 @@ export const printPossessionCertificate = async ({
     // ------------------------------------------------------------------
     // TOTAL AREA / EXTRA LAND / OFFICIAL SIGNATURES
     // ------------------------------------------------------------------
-    const totalsY = sidesTop + 39;
+        const totalsY = sidesTop + 48;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.8);
     doc.text("Total Area:", margin, totalsY);
     doc.text(areaText, margin + 28, totalsY);
-    drawUnderline(
-      doc,
-      margin + 28,
-      margin + 68,
-      totalsY + 1,
-      0.25,
-    );
+    drawUnderline(doc, margin + 28, margin + 68, totalsY + 1, 0.25);
 
     doc.text("Extra Land:", margin + 103, totalsY);
     doc.text(extraLand, margin + 132, totalsY);
-    drawUnderline(
-      doc,
-      margin + 132,
-      pageWidth - margin,
-      totalsY + 1,
-      0.25,
-    );
+    drawUnderline(doc, margin + 132, pageWidth - margin, totalsY + 1, 0.25);
 
     const signaturesY = totalsY + 17;
     doc.setFontSize(9.2);
     doc.text("DD Demarcation:", margin, signaturesY);
-    drawUnderline(
-      doc,
-      margin + 40,
-      margin + 86,
-      signaturesY + 1,
-      0.28,
-    );
+    drawUnderline(doc, margin + 40, margin + 86, signaturesY + 1, 0.28);
 
     doc.text("Director Land:", margin + 105, signaturesY);
-    drawUnderline(
-      doc,
-      margin + 139,
-      pageWidth - margin,
-      signaturesY + 1,
-      0.28,
-    );
+    drawUnderline(doc, margin + 139, pageWidth - margin, signaturesY + 1, 0.28);
 
     // ------------------------------------------------------------------
     // TERMS AND CONDITIONS
     // ------------------------------------------------------------------
-    const termsHeadingY = signaturesY + 18;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11.4);
-    doc.setTextColor(...navy);
-    doc.text("Terms and Conditions", margin, termsHeadingY);
-    doc.setDrawColor(...navy);
-    drawUnderline(
+    const termsHeaderY = signaturesY + 10;
+    sectionBottom = drawSectionHeader(
       doc,
       margin,
-      margin + 47,
-      termsHeadingY + 1.4,
-      0.35,
+      termsHeaderY,
+      contentWidth,
+      "TERMS AND CONDITIONS",
     );
-    doc.setTextColor(15, 15, 15);
-    doc.setDrawColor(45, 45, 45);
 
     const terms = [
       "By accepting this Provisional Possession Certificate, I confirm that I have personally inspected the plot and am satisfied that it is free from any unauthorized occupation or encroachment.",
@@ -709,67 +744,42 @@ export const printPossessionCertificate = async ({
       doc,
       terms,
       margin,
-      termsHeadingY + 11,
+      sectionBottom + 6,
       contentWidth,
     );
 
     // ------------------------------------------------------------------
     // POSSESSION TAKEN OVER
     // ------------------------------------------------------------------
-    const takeoverY = Math.min(
-      Math.max(termsEndY + 7, 258),
-      pageHeight - 40,
+    const takeoverHeaderY = Math.min(
+      Math.max(termsEndY + 6, 258),
+      pageHeight - 45,
     );
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.7);
-    doc.setTextColor(...navy);
-    doc.text(
-      "POSSESSION TAKEN OVER BY ALLOTTEE / ATTORNEY",
+    sectionBottom = drawSectionHeader(
+      doc,
       margin,
-      takeoverY,
+      takeoverHeaderY,
+      contentWidth,
+      "POSSESSION TAKEN OVER BY ALLOTTEE / ATTORNEY",
     );
-    doc.setTextColor(15, 15, 15);
 
-    const firstLineY = takeoverY + 13;
-    const secondLineY = takeoverY + 26;
+    const firstLineY = sectionBottom + 9;
+    const secondLineY = sectionBottom + 18;
 
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(9.2);
     doc.text("NAME:", margin, firstLineY);
-    drawUnderline(
-      doc,
-      margin + 14,
-      margin + 72,
-      firstLineY + 1,
-      0.28,
-    );
+    drawUnderline(doc, margin + 14, margin + 72, firstLineY + 1, 0.28);
 
     doc.text("THUMB & SIGNATURE:", margin + 92, firstLineY);
-    drawUnderline(
-      doc,
-      margin + 141,
-      pageWidth - margin,
-      firstLineY + 1,
-      0.28,
-    );
+    drawUnderline(doc, margin + 141, pageWidth - margin, firstLineY + 1, 0.28);
 
     doc.text("CNIC:", margin, secondLineY);
-    drawUnderline(
-      doc,
-      margin + 14,
-      margin + 72,
-      secondLineY + 1,
-      0.28,
-    );
+    drawUnderline(doc, margin + 14, margin + 72, secondLineY + 1, 0.28);
 
     doc.text("DATED:", margin + 95, secondLineY);
-    drawUnderline(
-      doc,
-      margin + 114,
-      pageWidth - margin,
-      secondLineY + 1,
-      0.28,
-    );
+    drawUnderline(doc, margin + 114, pageWidth - margin, secondLineY + 1, 0.28);
 
     // ------------------------------------------------------------------
     // FOOTER
