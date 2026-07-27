@@ -821,7 +821,7 @@ export default function RUDAMasterPlan({ map }) {
   );
 
   const loadedGeoJSONRef = useRef({});
-  const requestTokenRef = useRef({});
+  const layerRequestsRef = useRef({});
   const layerStateRef = useRef(layerState);
   const zoomOnLoadRef = useRef({});
   const categorizedColorsRef = useRef(categorizedColors);
@@ -829,6 +829,16 @@ export default function RUDAMasterPlan({ map }) {
   useEffect(() => {
     layerStateRef.current = layerState;
   }, [layerState]);
+
+  const setLayerStateSynced = (updater) => {
+    const currentState = layerStateRef.current;
+    const nextState =
+      typeof updater === "function" ? updater(currentState) : updater;
+
+    layerStateRef.current = nextState;
+    setLayerState(nextState);
+    return nextState;
+  };
 
   useEffect(() => {
     categorizedColorsRef.current = categorizedColors;
@@ -906,12 +916,15 @@ export default function RUDAMasterPlan({ map }) {
     if (!map || !config || !geojson) return;
 
     runWhenMapReady(() => {
+      const currentState = layerStateRef.current[layerKey] || state;
+      if (!currentState?.checked) return;
+
       addOrUpdateRudaMapLayer({
         map,
         layerKey,
         geojson,
-        color: state.color || layerLookup[layerKey]?.color || "#6bb7e8",
-        opacity: state.opacity ?? 100,
+        color: currentState.color || layerLookup[layerKey]?.color || "#6bb7e8",
+        opacity: currentState.opacity ?? 100,
         config,
         categorizedColors: categorizedColorsRef.current,
       });
@@ -922,7 +935,7 @@ export default function RUDAMasterPlan({ map }) {
 
   const loadRudaLayer = async (layerKey, state, shouldZoom = false) => {
     const config = RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey];
-    if (!map || !config) return;
+    if (!map || !config) return null;
 
     if (loadedGeoJSONRef.current[layerKey]) {
       applyVisibleLayer(layerKey, state, shouldZoom);
@@ -934,11 +947,20 @@ export default function RUDAMasterPlan({ map }) {
           featureCount: getFeatureCount(loadedGeoJSONRef.current[layerKey]),
         },
       }));
-      return;
+      return loadedGeoJSONRef.current[layerKey];
     }
 
-    const token = Date.now();
-    requestTokenRef.current[layerKey] = token;
+    if (layerRequestsRef.current[layerKey]) {
+      const geojson = await layerRequestsRef.current[layerKey];
+      if (geojson && layerStateRef.current[layerKey]?.checked) {
+        applyVisibleLayer(
+          layerKey,
+          layerStateRef.current[layerKey],
+          shouldZoom,
+        );
+      }
+      return geojson;
+    }
 
     setLayerMeta((previous) => ({
       ...previous,
@@ -949,36 +971,46 @@ export default function RUDAMasterPlan({ map }) {
       },
     }));
 
-    try {
-      const geojson = normalizeGeoJSON(await config.fetchGeoJSON());
-      if (requestTokenRef.current[layerKey] !== token) return;
+    const request = (async () => {
+      try {
+        const geojson = normalizeGeoJSON(await config.fetchGeoJSON());
+        loadedGeoJSONRef.current[layerKey] = geojson;
 
-      loadedGeoJSONRef.current[layerKey] = geojson;
+        setLayerMeta((previous) => ({
+          ...previous,
+          [layerKey]: {
+            status: "Loaded",
+            endpoint: config.endpoint,
+            featureCount: getFeatureCount(geojson),
+          },
+        }));
 
-      setLayerMeta((previous) => ({
-        ...previous,
-        [layerKey]: {
-          status: "Loaded",
-          endpoint: config.endpoint,
-          featureCount: getFeatureCount(geojson),
-        },
-      }));
+        return geojson;
+      } catch (error) {
+        console.error(`RUDA Master Plan layer load failed: ${layerKey}`, error);
 
-      if (layerStateRef.current[layerKey]?.checked) {
-        applyVisibleLayer(layerKey, state, shouldZoom);
+        setLayerMeta((previous) => ({
+          ...previous,
+          [layerKey]: {
+            status: "Error",
+            endpoint: config.endpoint,
+            featureCount: 0,
+          },
+        }));
+        return null;
+      } finally {
+        delete layerRequestsRef.current[layerKey];
       }
-    } catch (error) {
-      console.error(`RUDA Master Plan layer load failed: ${layerKey}`, error);
+    })();
 
-      setLayerMeta((previous) => ({
-        ...previous,
-        [layerKey]: {
-          status: "Error",
-          endpoint: config.endpoint,
-          featureCount: 0,
-        },
-      }));
+    layerRequestsRef.current[layerKey] = request;
+    const geojson = await request;
+
+    if (geojson && layerStateRef.current[layerKey]?.checked) {
+      applyVisibleLayer(layerKey, layerStateRef.current[layerKey], shouldZoom);
     }
+
+    return geojson;
   };
 
   useEffect(() => {
@@ -993,7 +1025,6 @@ export default function RUDAMasterPlan({ map }) {
         delete zoomOnLoadRef.current[layerKey];
         loadRudaLayer(layerKey, state, shouldZoom);
       } else {
-        requestTokenRef.current[layerKey] = null;
         setRudaLayerVisibility(map, layerKey, false);
       }
     });
@@ -1017,6 +1048,15 @@ export default function RUDAMasterPlan({ map }) {
   }, [map]);
 
   useEffect(() => {
+    if (!map || !open) return;
+
+    Object.entries(layerStateRef.current).forEach(([layerKey, state]) => {
+      if (!state?.checked) return;
+      loadRudaLayer(layerKey, state, false);
+    });
+  }, [map, open]);
+
+  useEffect(() => {
     if (!map) return undefined;
 
     return () => {
@@ -1038,7 +1078,7 @@ export default function RUDAMasterPlan({ map }) {
   };
 
   const toggleGroup = (group) => {
-    setLayerState((previous) => {
+    setLayerStateSynced((previous) => {
       const allSelected = group.children.every(
         (layer) => previous[layer.key]?.checked,
       );
@@ -1070,23 +1110,24 @@ export default function RUDAMasterPlan({ map }) {
   };
 
   const toggleLayer = (layerKey) => {
-    const willBeChecked = !layerState[layerKey]?.checked;
+    const currentLayerState = layerStateRef.current[layerKey] || {};
+    const willBeChecked = !currentLayerState.checked;
 
     if (willBeChecked) {
       zoomOnLoadRef.current[layerKey] = true;
     }
 
-    setLayerState((previous) => ({
+    setLayerStateSynced((previous) => ({
       ...previous,
       [layerKey]: {
         ...previous[layerKey],
-        checked: !previous[layerKey]?.checked,
+        checked: willBeChecked,
       },
     }));
   };
 
   const updateLayerColor = (layerKey, color) => {
-    setLayerState((previous) => ({
+    setLayerStateSynced((previous) => ({
       ...previous,
       [layerKey]: {
         ...previous[layerKey],
@@ -1105,7 +1146,7 @@ export default function RUDAMasterPlan({ map }) {
   };
 
   const updateLayerOpacity = (layerKey, opacity) => {
-    setLayerState((previous) => ({
+    setLayerStateSynced((previous) => ({
       ...previous,
       [layerKey]: {
         ...previous[layerKey],
@@ -1149,7 +1190,7 @@ export default function RUDAMasterPlan({ map }) {
   };
 
   const toggleLayerDropdown = (layerKey) => {
-    setLayerState((previous) => ({
+    setLayerStateSynced((previous) => ({
       ...previous,
       [layerKey]: {
         ...previous[layerKey],
@@ -1200,17 +1241,48 @@ export default function RUDAMasterPlan({ map }) {
 
   const toggleAllRudaLayers = (e) => {
     e.stopPropagation();
-    const next = !allOn;
-    setLayerState((prev) => {
-      const updated = { ...prev };
+
+    const currentState = layerStateRef.current;
+    const currentlyAllOn = allLayerKeys.every(
+      (key) => currentState[key]?.checked,
+    );
+    const next = !currentlyAllOn;
+
+    const updated = { ...currentState };
+    allLayerKeys.forEach((key) => {
+      if (next) {
+        zoomOnLoadRef.current[key] = false;
+      }
+
+      updated[key] = {
+        ...updated[key],
+        checked: next,
+      };
+    });
+
+    setLayerStateSynced(updated);
+
+    if (!map) return;
+
+    if (!next) {
       allLayerKeys.forEach((key) => {
-        if (next) zoomOnLoadRef.current[key] = false; // Disable zoom for bulk toggle
-        updated[key] = {
-          ...updated[key],
-          checked: next,
-        };
+        setRudaLayerVisibility(map, key, false);
       });
-      return updated;
+      return;
+    }
+
+    // Restore every selected layer explicitly from its cached GeoJSON or its
+    // own in-progress request. Keeping the ref synchronized before restoring
+    // prevents the second and later toggle cycles from treating the other
+    // layers as unchecked and leaving only one layer visible.
+    void Promise.all(
+      allLayerKeys.map((key) => loadRudaLayer(key, updated[key], false)),
+    ).then(() => {
+      allLayerKeys.forEach((key) => {
+        if (layerStateRef.current[key]?.checked) {
+          setRudaLayerVisibility(map, key, true);
+        }
+      });
     });
   };
 
@@ -1234,13 +1306,13 @@ export default function RUDAMasterPlan({ map }) {
               : "Show all RUDA Master Plan layers"
           }
           onClick={toggleAllRudaLayers}
-          className={`relative ml-2 h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus:outline-none ${
+          className={`relative ml-2 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus:outline-none ${
             allOn ? "bg-[#65c96b]" : "bg-white/20"
           }`}
         >
           <span
-            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-              allOn ? "translate-x-4" : "translate-x-0.5"
+            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+              allOn ? "translate-x-4" : "translate-x-0"
             }`}
           />
         </button>
