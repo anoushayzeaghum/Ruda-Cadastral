@@ -8,14 +8,46 @@ import {
 } from "lucide-react";
 import { exportSelectedParcelsKMZ } from "../exportKMZ.jsx";
 
-const firstValue = (...values) =>
-  values.find(
-    (value) =>
-      value !== undefined && value !== null && String(value).trim() !== "",
-  ) ?? "N/A";
+const hasValue = (value) =>
+  value !== undefined && value !== null && String(value).trim() !== "";
 
-const getKhasra = (properties = {}) =>
-  firstValue(
+const firstValue = (...values) =>
+  values.find((value) => hasValue(value)) ?? "N/A";
+
+const firstKhasraValue = (...values) =>
+  values.find((value) => hasValue(value) && String(value).trim() !== "0") ??
+  "N/A";
+
+const valueFromObject = (item, keys = []) => {
+  if (!item || typeof item !== "object") return undefined;
+
+  for (const key of keys) {
+    const value = item?.[key];
+    if (hasValue(value) && typeof value !== "object") return value;
+  }
+
+  return undefined;
+};
+
+const getSelectionName = (selection, keys = []) => {
+  const items = Array.isArray(selection)
+    ? selection
+    : selection
+      ? [selection]
+      : [];
+
+  for (const item of items) {
+    if (hasValue(item) && typeof item !== "object") return item;
+
+    const value = valueFromObject(item, keys);
+    if (hasValue(value)) return value;
+  }
+
+  return undefined;
+};
+
+const getKhasraNumber = (properties = {}) =>
+  firstKhasraValue(
     properties.kh,
     properties.KH,
     properties.k,
@@ -26,12 +58,82 @@ const getKhasra = (properties = {}) =>
     properties.join_shp,
   );
 
+const getMauzaName = (properties = {}, boundaryStatus, fallbackName) => {
+  if (boundaryStatus === "unverified") {
+    return firstValue(
+      properties.mauza_name,
+      properties.mauza_text,
+      properties.mouza_name,
+      properties.moza,
+      properties.mouza,
+      fallbackName,
+    );
+  }
+
+  return firstValue(
+    properties.mauza_name,
+    properties.mauza,
+    properties.Mauza,
+    properties.moza,
+    properties.mouza,
+    fallbackName,
+  );
+};
+
+const getTehsilName = (properties = {}, boundaryStatus, fallbackName) => {
+  if (boundaryStatus === "unverified") {
+    return firstValue(
+      properties.tehsil_name,
+      properties.tehsil_text,
+      properties.Tehsil,
+      fallbackName,
+    );
+  }
+
+  return firstValue(
+    properties.tehsil_name,
+    properties.tehsil,
+    properties.Tehsil,
+    fallbackName,
+  );
+};
+
+const getDistrictName = (properties = {}, boundaryStatus, fallbackName) => {
+  if (boundaryStatus === "unverified") {
+    return firstValue(
+      properties.district_name,
+      properties.district_text,
+      properties.District,
+      fallbackName,
+    );
+  }
+
+  return firstValue(
+    properties.district_name,
+    properties.district,
+    properties.District,
+    fallbackName,
+  );
+};
+
+const getOwnership = (properties = {}) =>
+  firstValue(
+    properties.ownership,
+    properties.owner,
+    properties.owner_name,
+    properties.land_owner,
+    properties.lp_name,
+  );
+
 const getAreaAcres = (parcel) => {
   const props = parcel?.properties || {};
-  const direct = Number(props._area_acres);
-  if (Number.isFinite(direct)) return direct;
 
-  const squareMetres = Number(props._area_m2);
+  const directAcres = Number(
+    props._area_acres ?? props.area_acres ?? props.area_acre,
+  );
+  if (Number.isFinite(directAcres)) return directAcres;
+
+  const squareMetres = Number(props._area_m2 ?? props.area_m2);
   if (Number.isFinite(squareMetres)) return squareMetres / 4046.8564224;
 
   const areaSqFt = Number(props.area_sqft ?? props.area_sq_ft);
@@ -45,53 +147,81 @@ export default function MultipleParcelPanel({
   isOpen = false,
   onClear = () => {},
   boundaryStatus = "verified",
+  selectedMauza = null,
+  selectedDistrict = [],
+  selectedTehsil = [],
 }) {
   const [minimized, setMinimized] = useState(false);
+
+  const selectedMauzaName = getSelectionName(selectedMauza, [
+    "mauza_name",
+    "mauza",
+    "name",
+    "Mauza",
+    "moza",
+    "mouza",
+    "label",
+  ]);
+  const selectedTehsilName = getSelectionName(selectedTehsil, [
+    "tehsil_name",
+    "tehsil",
+    "name",
+    "Tehsil",
+    "label",
+  ]);
+  const selectedDistrictName = getSelectionName(selectedDistrict, [
+    "district_name",
+    "district",
+    "name",
+    "District",
+    "label",
+  ]);
 
   const rows = useMemo(
     () =>
       parcels.map((parcel, index) => {
         const props = parcel?.properties || {};
-        const areaAcres = getAreaAcres(parcel);
+
         return {
           key: String(
             props.gid ?? props.id ?? props.khasra_id ?? parcel?.id ?? index,
           ),
-          parcelId: firstValue(parcel?.id, props.gid, props.id),
-          khasra: getKhasra(props),
-          mauza: firstValue(props.mauza, props.mauza_name, props.Mauza),
-          tehsil: firstValue(props.tehsil, props.tehsil_name, props.Tehsil),
-          district: firstValue(
-            props.district,
-            props.district_name,
-            props.District,
+          khasra: getKhasraNumber(props),
+          mauza: getMauzaName(props, boundaryStatus, selectedMauzaName),
+          tehsil: getTehsilName(props, boundaryStatus, selectedTehsilName),
+          district: getDistrictName(
+            props,
+            boundaryStatus,
+            selectedDistrictName,
           ),
-          areaAcres,
-          ownership: firstValue(
-            props.ownership,
-            props.owner,
-            props.owner_name,
-            props.land_owner,
-          ),
-          landType: firstValue(props.type, props.land_type),
-          assessmentCircle: firstValue(props.asse_cir, props.rthIff),
+          areaAcres: getAreaAcres(parcel),
+          ownership: getOwnership(props),
         };
       }),
-    [parcels],
+    [
+      parcels,
+      boundaryStatus,
+      selectedMauzaName,
+      selectedTehsilName,
+      selectedDistrictName,
+    ],
   );
 
   const totalArea = useMemo(() => {
     const available = rows
       .map((row) => row.areaAcres)
       .filter((value) => Number.isFinite(value));
+
     if (!available.length) return null;
     return available.reduce((sum, value) => sum + value, 0);
   }, [rows]);
 
+  const datasetLabel = boundaryStatus === "verified" ? "Khasra" : "RUDA Khasra";
+
   if (!isOpen) return null;
 
   return (
-    <div className="absolute right-1 bottom-4 z-20 flex w-[calc(100vw-24px)] max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl sm:right-3 sm:bottom-6 sm:w-[min(760px,calc(100vw-90px))]">
+    <div className="absolute right-1 bottom-4 z-20 flex w-[calc(100vw-28px)] max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl sm:right-3 sm:bottom-6 sm:w-[min(620px,calc(100vw-90px))]">
       {" "}
       <div className="flex items-center justify-between gap-2 bg-[#0f3d2e] px-3 py-2.5 text-white">
         <div className="flex min-w-0 items-center gap-2 text-sm font-semibold uppercase tracking-wide">
@@ -132,40 +262,18 @@ export default function MultipleParcelPanel({
       </div>
       {!minimized && (
         <>
-          <div className="grid grid-cols-2 gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-            <div>
-              <p className="text-[11px] font-medium text-slate-500">
-                Selected Parcels
-              </p>
-              <p className="font-bold text-slate-900">{rows.length}</p>
-            </div>
-            {totalArea !== null && (
-              <div>
-                <p className="text-[11px] font-medium text-slate-500">
-                  Total Area
-                </p>
-                <p className="font-bold text-slate-900">
-                  {totalArea.toFixed(3)} acres
-                </p>
-              </div>
-            )}
-          </div>
-
           <div className="max-h-[45vh] overflow-auto">
             <table className="min-w-full border-collapse text-left text-[11px]">
               <thead className="sticky top-0 z-10 bg-slate-100 text-slate-600">
                 <tr>
                   {[
-                    "Parcel ID",
-                    "KH",
+                    "Khasra No",
                     "Mauza",
                     "Tehsil",
                     "District",
                     "Area",
                     "Verified",
                     "Ownership",
-                    "Land Type",
-                    "Assessment Circle",
                   ].map((heading) => (
                     <th
                       key={heading}
@@ -179,7 +287,6 @@ export default function MultipleParcelPanel({
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.key} className="hover:bg-slate-50">
-                    <Cell value={row.parcelId} />
                     <Cell value={row.khasra} />
                     <Cell value={row.mauza} />
                     <Cell value={row.tehsil} />
@@ -195,8 +302,6 @@ export default function MultipleParcelPanel({
                       value={boundaryStatus === "verified" ? "Yes" : "No"}
                     />
                     <Cell value={row.ownership} />
-                    <Cell value={row.landType} />
-                    <Cell value={row.assessmentCircle} />
                   </tr>
                 ))}
               </tbody>
@@ -204,6 +309,22 @@ export default function MultipleParcelPanel({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+function SummaryMetric({ label, value }) {
+  return (
+    <div className="min-w-0 px-2 text-center sm:px-3">
+      <p className="truncate text-[10px] font-medium text-slate-500 sm:text-[11px]">
+        {label}
+      </p>
+      <p
+        className="truncate text-[12px] font-bold text-slate-900 sm:text-sm"
+        title={String(value ?? "N/A")}
+      >
+        {value ?? "N/A"}
+      </p>
     </div>
   );
 }

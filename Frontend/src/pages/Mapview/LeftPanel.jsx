@@ -62,7 +62,7 @@ export default function LeftPanel({
   multiSelectionMode = false,
   onMultiSelectionModeChange = () => {},
 }) {
-  const [activePanel, setActivePanel] = useState("layers");
+  const [activePanel, setActivePanel] = useState("");
   const initializedOpacityKeysRef = useRef(new Set());
   const [openAttributeTable, setOpenAttributeTable] = useState(null);
   const [dropdownOpenByKey, setDropdownOpenByKey] = useState({});

@@ -663,6 +663,7 @@ export default function MapPage() {
           selectedTehsil={filters?.selectedTehsilOptions}
           viewBy={filters?.viewBy}
           layers={layers}
+          selectedFilterLayers={selectedFilterLayers}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
           selectedProposedRoadIds={selectedProposedRoadIds}
           basemap={basemap}
@@ -745,6 +746,9 @@ export default function MapPage() {
           isOpen={multiSelectionMode && selectedParcels.length > 0}
           onClear={clearMultiSelection}
           boundaryStatus={boundaryStatus}
+          selectedMauza={activeFilters?.selectedMauzaDetails}
+          selectedDistrict={filters?.selectedDistrictOptions}
+          selectedTehsil={filters?.selectedTehsilOptions}
         />
       </div>
     </div>
