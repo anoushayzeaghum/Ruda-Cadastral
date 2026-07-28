@@ -53,7 +53,7 @@ export default function LayerManager({
   rudaPhases,
   selectedRudaPhaseIds,
   setSelectedRudaPhaseIds,
-  rudaProposedRoads,
+  proposedRoads,
   selectedProposedRoadIds,
   setSelectedProposedRoadIds,
   getAllProposedRoadIds,
@@ -243,7 +243,7 @@ export default function LayerManager({
 
         {proposedDropdownOpen && (
           <ProposedRoadDropdown
-            roads={rudaProposedRoads}
+            roads={proposedRoads}
             selectedIds={selectedProposedRoadIds}
             setSelectedIds={setSelectedProposedRoadIds}
             getAllIds={getAllProposedRoadIds}
@@ -521,7 +521,13 @@ function ProposedRoadDropdown({
   setSelectedIds,
   getAllIds,
 }) {
+  const allIds = (getAllIds?.() || []).filter(
+    (id) => id !== undefined && id !== null,
+  );
   const selectedSet = new Set((selectedIds || []).map(String));
+  const allChecked =
+    allIds.length > 0 && allIds.every((id) => selectedSet.has(String(id)));
+
   return (
     <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
       <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -532,8 +538,8 @@ function ProposedRoadDropdown({
         ) : (
           <>
             <SelectAllRow
-              checked={(selectedIds || []).length === roads.length}
-              onChange={(checked) => setSelectedIds(checked ? getAllIds() : [])}
+              checked={allChecked}
+              onChange={(checked) => setSelectedIds(checked ? allIds : [])}
               onReset={() => setSelectedIds([])}
             />
             {(roads || []).map((road) => {
@@ -559,7 +565,11 @@ function ProposedRoadDropdown({
                     className="h-3.5 w-3.5 accent-[#9be37b]"
                   />
                   <span className="truncate text-[12px] font-medium leading-tight text-white/85">
-                    {road.name ?? road.layer ?? `Road ${id}`}
+                    {road.road_type ??
+                      road.type ??
+                      road.name ??
+                      road.layer ??
+                      `Road ${id}`}
                   </span>
                 </label>
               );

@@ -1931,7 +1931,7 @@ class ProposedRoads(models.Model):
 
     class Meta:
         managed = False
-        db_table = "ruda_proposed_road"
+        db_table = "proposed_road"
 
 
 # =================================================================================================

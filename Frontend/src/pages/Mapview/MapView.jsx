@@ -16,7 +16,7 @@ import {
   getAcres,
   getFieldPoints,
   getRudaGeoJSON,
-  getRudaProposedRoadsGeoJSON,
+  getProposedRoadsGeoJSON,
   getGeodeticNetworkGeoJSON,
   getTrijunctionPoints,
   getRudaMauzas,
@@ -76,7 +76,6 @@ import {
   getPointLabelLayerId,
   VECTOR_LABEL_FIELDS,
   prepareRudaGeojsonForDisplay,
-  normalizeRoadLayerName,
   emptyFeatureCollection,
   mergeFeatureCollections,
   computeArea,
@@ -239,6 +238,62 @@ const KHASRA_ONLY_LABEL = [
   "",
 ];
 
+const PROPOSED_ROADS_SOURCE = "metaverse-proposed-roads-source";
+const PROPOSED_ROADS_FILL = "metaverse-proposed-roads-fill";
+const PROPOSED_ROADS_LINE = "metaverse-proposed-roads-line";
+
+const PROPOSED_ROAD_TYPE_EXPRESSION = [
+  "downcase",
+  [
+    "to-string",
+    [
+      "coalesce",
+      ["get", "road_type"],
+      ["get", "type"],
+      ["get", "Type"],
+      ["get", "TYPE"],
+      "",
+    ],
+  ],
+];
+
+// Exact symbology used by RoadLayer.jsx.
+const PROPOSED_ROAD_FILL_COLOR = [
+  "match",
+  PROPOSED_ROAD_TYPE_EXPRESSION,
+  "street",
+  "#ef4444",
+  "secondary road",
+  "#dc2626",
+  "primary road",
+  "#991b1b",
+  "#d01f1f",
+];
+
+const PROPOSED_ROAD_LINE_COLOR = [
+  "match",
+  PROPOSED_ROAD_TYPE_EXPRESSION,
+  "street",
+  "#dc2626",
+  "secondary road",
+  "#b91c1c",
+  "primary road",
+  "#7f1d1d",
+  "#991b1b",
+];
+
+const PROPOSED_ROAD_LINE_WIDTH = [
+  "match",
+  PROPOSED_ROAD_TYPE_EXPRESSION,
+  "street",
+  1.2,
+  "secondary road",
+  1.7,
+  "primary road",
+  2.2,
+  1.5,
+];
+
 export default function MapView({
   selectedDistrict,
   selectedTehsil,
@@ -287,7 +342,6 @@ export default function MapView({
   useEffect(() => {
     onMultiParcelToggleRef.current = onMultiParcelToggle;
   }, [onMultiParcelToggle]);
-
 
   const proposedRoadsVisible = getLayerVisible(layers, "proposedRoads", false);
   const proposedRoadsOpacity = getLayerOpacity(layers, "proposedRoads", 100);
@@ -395,15 +449,109 @@ export default function MapView({
   const selectedMauzaName = getMauzaName(selectedMauza);
   const orthoTileUrl = getOrthoTileUrlFromMauza(selectedMauza);
 
+  const handleProposedRoadMouseEnter = () => {
+    const map = mapInstance.current;
+    if (map) map.getCanvas().style.cursor = "pointer";
+  };
+
+  const handleProposedRoadMouseLeave = () => {
+    const map = mapInstance.current;
+    if (map) map.getCanvas().style.cursor = "";
+  };
+
+  const handleProposedRoadClick = (event) => {
+    const feature = event.features?.[0];
+    if (!feature) return;
+
+    showPolygonPopup("proposedRoad", feature.properties || {}, event.lngLat);
+  };
+
   const clearProposedRoads = () => {
+    const map = mapInstance.current;
+
     try {
-      Object.keys(currentGeojson.current || {})
-        .filter((key) => key.startsWith("proposed-road"))
-        .forEach((level) => {
-          clearBoundaryLevel(level);
-          delete currentGeojson.current[level];
-        });
-    } catch (e) {}
+      if (map) {
+        map.off("click", PROPOSED_ROADS_FILL, handleProposedRoadClick);
+        map.off(
+          "mouseenter",
+          PROPOSED_ROADS_FILL,
+          handleProposedRoadMouseEnter,
+        );
+        map.off(
+          "mouseleave",
+          PROPOSED_ROADS_FILL,
+          handleProposedRoadMouseLeave,
+        );
+
+        if (map.getLayer(PROPOSED_ROADS_LINE)) {
+          map.removeLayer(PROPOSED_ROADS_LINE);
+        }
+        if (map.getLayer(PROPOSED_ROADS_FILL)) {
+          map.removeLayer(PROPOSED_ROADS_FILL);
+        }
+        if (map.getSource(PROPOSED_ROADS_SOURCE)) {
+          map.removeSource(PROPOSED_ROADS_SOURCE);
+        }
+      }
+    } catch (error) {
+      console.warn("Error clearing Proposed Roads layer", error);
+    }
+
+    delete currentGeojson.current["proposed-roads"];
+  };
+
+  const drawProposedRoadsLayer = (
+    geojson,
+    opacityPercent = proposedRoadsOpacity,
+  ) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    clearProposedRoads();
+
+    if (!Array.isArray(geojson?.features) || !geojson.features.length) {
+      return;
+    }
+
+    const opacity = clampOpacity(opacityPercent);
+
+    try {
+      map.addSource(PROPOSED_ROADS_SOURCE, {
+        type: "geojson",
+        data: geojson,
+      });
+
+      map.addLayer({
+        id: PROPOSED_ROADS_FILL,
+        type: "fill",
+        source: PROPOSED_ROADS_SOURCE,
+        paint: {
+          "fill-color": PROPOSED_ROAD_FILL_COLOR,
+          "fill-opacity": 0.35 * opacity,
+        },
+      });
+
+      map.addLayer({
+        id: PROPOSED_ROADS_LINE,
+        type: "line",
+        source: PROPOSED_ROADS_SOURCE,
+        paint: {
+          "line-color": PROPOSED_ROAD_LINE_COLOR,
+          "line-width": PROPOSED_ROAD_LINE_WIDTH,
+          "line-opacity": opacity,
+        },
+      });
+
+      map.on("mouseenter", PROPOSED_ROADS_FILL, handleProposedRoadMouseEnter);
+      map.on("mouseleave", PROPOSED_ROADS_FILL, handleProposedRoadMouseLeave);
+      map.on("click", PROPOSED_ROADS_FILL, handleProposedRoadClick);
+
+      currentGeojson.current["proposed-roads"] = geojson;
+      movePointLayersToTop();
+    } catch (error) {
+      console.error("Failed to draw Proposed Roads layer", error);
+      clearProposedRoads();
+    }
   };
 
   const movePointLayersToTop = () => {
@@ -530,6 +678,11 @@ export default function MapView({
               drawKhasras(g);
             } else if (key === "murabba") {
               drawMurabbas(g);
+            } else if (key === "proposed-roads") {
+              drawProposedRoadsLayer(
+                g,
+                getLayerOpacity(layers, "proposedRoads", 100),
+              );
             } else if (THEMATIC_LAND_LAYERS[key]) {
               drawThematicLandLayer(key, g, getLayerOpacity(layers, key, 100));
             } else if (key === "control-points") {
@@ -631,7 +784,7 @@ export default function MapView({
       try {
         setIsLoading(true);
 
-        const allRoadsGeojson = await getRudaProposedRoadsGeoJSON();
+        const allRoadsGeojson = await getProposedRoadsGeoJSON();
         const selectedIds = new Set(
           selectedProposedRoadIds.map((id) => String(id)),
         );
@@ -641,29 +794,44 @@ export default function MapView({
           features: (allRoadsGeojson.features || [])
             .filter((feature) => {
               const props = feature?.properties || {};
-              const featureId =
-                props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid;
+              const featureIds = [
+                props.gid,
+                feature?.id,
+                props.id,
+                props.oid,
+                props.fid,
+              ]
+                .filter(
+                  (value) =>
+                    value !== undefined && value !== null && value !== "",
+                )
+                .map(String);
 
-              return selectedIds.has(String(featureId));
+              return featureIds.some((id) => selectedIds.has(id));
             })
-            .map((feature) => ({
-              ...feature,
-              properties: {
-                ...(feature?.properties || {}),
-                layer: normalizeRoadLayerName(feature?.properties?.layer),
-              },
-            })),
+            .map((feature) => {
+              const properties = feature?.properties || {};
+              const roadType =
+                properties.road_type ??
+                properties.type ??
+                properties.Type ??
+                properties.TYPE ??
+                "";
+
+              return {
+                ...feature,
+                properties: {
+                  ...properties,
+                  road_type: roadType,
+                  type: roadType,
+                },
+              };
+            }),
         };
 
         if (!filteredGeojson.features.length) return;
 
-        drawBoundaryLevel(
-          "proposed-roads",
-          filteredGeojson,
-          proposedRoadsOpacity,
-        );
-
-        currentGeojson.current["proposed-roads"] = filteredGeojson;
+        drawProposedRoadsLayer(filteredGeojson, proposedRoadsOpacity);
         zoomToGeoJSON(filteredGeojson, { padding: 70, duration: 500 });
         movePointLayersToTop();
       } catch (e) {
@@ -1139,6 +1307,15 @@ export default function MapView({
           ["Phase", props._ruda_phase_label ?? props.phase ?? props.name],
           ["Name", props.name],
         ];
+      case "proposedRoad":
+        return [
+          [
+            "Road Type",
+            props.road_type ?? props.type ?? props.Type ?? props.TYPE,
+          ],
+          ["ROW", props.row ?? props.ROW ?? props.right_of_way],
+          ["Road ID", props.gid ?? props.id ?? props.oid ?? props.fid],
+        ];
       case "geodetic":
         return [
           ["Name", props.name],
@@ -1177,6 +1354,7 @@ export default function MapView({
     square: "Square",
     acre: "Acre",
     ruda: "RUDA Phase",
+    proposedRoad: "Proposed Road",
     geodetic: "Geodetic Point",
     fieldPoint: "Field Point",
     trijunction: "Tri-junction Point",
@@ -1822,7 +2000,26 @@ export default function MapView({
 
   useEffect(() => {
     if (!isMapReady) return;
-    applyOpacityToBoundaryLevel("proposed-roads", proposedRoadsOpacity);
+
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const opacity = clampOpacity(proposedRoadsOpacity);
+
+    try {
+      if (map.getLayer(PROPOSED_ROADS_FILL)) {
+        map.setPaintProperty(
+          PROPOSED_ROADS_FILL,
+          "fill-opacity",
+          0.35 * opacity,
+        );
+      }
+      if (map.getLayer(PROPOSED_ROADS_LINE)) {
+        map.setPaintProperty(PROPOSED_ROADS_LINE, "line-opacity", opacity);
+      }
+    } catch (error) {
+      console.warn("Could not update Proposed Roads opacity", error);
+    }
   }, [isMapReady, proposedRoadsOpacity]);
 
   useEffect(() => {
@@ -2089,6 +2286,11 @@ export default function MapView({
               drawKhasras(g);
             } else if (key === "murabba") {
               drawMurabbas(g);
+            } else if (key === "proposed-roads") {
+              drawProposedRoadsLayer(
+                g,
+                getLayerOpacity(layers, "proposedRoads", 100),
+              );
             } else if (THEMATIC_LAND_LAYERS[key]) {
               drawThematicLandLayer(key, g, getLayerOpacity(layers, key, 100));
             } else if (key === "control-points") {
@@ -2290,7 +2492,13 @@ export default function MapView({
         console.warn("Could not highlight selected parcel", e);
       }
     }
-  }, [selectedFeatureNumber, viewBy, isMapReady, featureCount, multiSelectionMode]);
+  }, [
+    selectedFeatureNumber,
+    viewBy,
+    isMapReady,
+    featureCount,
+    multiSelectionMode,
+  ]);
 
   useEffect(() => {
     if (!isMapReady) return;

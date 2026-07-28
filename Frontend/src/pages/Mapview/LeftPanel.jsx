@@ -192,7 +192,7 @@ export default function LeftPanel({
   const toggleDropdownForKey = (key) =>
     setDropdownOpenByKey((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const [rudaProposedRoads, setRudaProposedRoads] = useState([]);
+  const [proposedRoads, setProposedRoads] = useState([]);
   const [proposedDropdownOpen, setProposedDropdownOpen] = useState(false);
 
   const [layerAvailability, setLayerAvailability] = useState({
@@ -543,17 +543,19 @@ export default function LeftPanel({
     let mounted = true;
 
     const loadProposedRoads = async () => {
-      if (rudaProposedRoads?.length) return;
+      if (proposedRoads?.length) return;
 
       try {
-        const { getRudaProposedRoadsList } = await import("../../services/api");
-        const list = await getRudaProposedRoadsList();
+        const { getProposedRoadsList } = await import("../../services/api");
+        const list = await getProposedRoadsList();
 
         if (!mounted) return;
 
-        const ids = (list || []).map((r) => r.gid ?? r.id ?? r.oid);
+        const ids = (list || [])
+          .map((road) => road.gid ?? road.id ?? road.oid)
+          .filter((id) => id !== undefined && id !== null);
 
-        setRudaProposedRoads(list || []);
+        setProposedRoads(list || []);
         setSelectedProposedRoadIds(ids); // select all by default
       } catch (e) {
         console.error("Failed to load proposed roads", e);
@@ -568,9 +570,9 @@ export default function LeftPanel({
   }, []);
 
   const getAllProposedRoadIds = () =>
-    (rudaProposedRoads || [])
+    (proposedRoads || [])
       .map((r) => r.gid ?? r.id ?? r.oid)
-      .filter(Boolean);
+      .filter((id) => id !== undefined && id !== null);
 
   const toggleProposedRoadLayer = () => {
     const willOpen = !getLayerVisible("proposedRoads");
@@ -801,7 +803,7 @@ export default function LeftPanel({
                   rudaPhases={rudaPhases}
                   selectedRudaPhaseIds={selectedRudaPhaseIds}
                   setSelectedRudaPhaseIds={setSelectedRudaPhaseIds}
-                  rudaProposedRoads={rudaProposedRoads}
+                  proposedRoads={proposedRoads}
                   selectedProposedRoadIds={selectedProposedRoadIds}
                   setSelectedProposedRoadIds={setSelectedProposedRoadIds}
                   getAllProposedRoadIds={getAllProposedRoadIds}

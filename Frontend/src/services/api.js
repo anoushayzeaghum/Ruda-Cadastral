@@ -502,12 +502,74 @@ export const getRudaProposedRoadsGeoJSON = async (gid = null) => {
 };
 
 ///////////////////////////////////////////////////////
-//////// RUDA PROPOSED ROADS POLYGON APIs /////////////
+//////// PROPOSED ROADS POLYGON APIs /////////////////
 ///////////////////////////////////////////////////////
+
+const normalizeProposedRoadProperties = (properties = {}) => {
+  const roadType =
+    properties.road_type ??
+    properties.type ??
+    properties.Type ??
+    properties.TYPE ??
+    "";
+
+  return {
+    ...properties,
+    road_type: roadType,
+    // Keep `type` populated for compatibility with the existing RoadLayer
+    // symbology expression while the new backend field remains `road_type`.
+    type: roadType,
+  };
+};
 
 export const getProposedRoadsList = async () => {
   const res = await API.get(`/proposed-roads/`);
-  return normalizeData(res);
+  const geojson = normalizeGeoJson(res);
+
+  // GeoFeatureModelSerializer puts `gid` in the Feature's top-level `id`,
+  // while this table also has a separate database column named `id` inside
+  // properties. Preserve both values so selection always uses the real gid.
+  return (geojson.features || []).map((feature, index) => {
+    const properties = normalizeProposedRoadProperties(
+      feature?.properties || {},
+    );
+    const gid = feature?.id ?? properties.gid ?? properties.id ?? index;
+
+    return {
+      ...properties,
+      gid,
+      geometry: feature?.geometry || null,
+    };
+  });
+};
+
+export const getProposedRoadsGeoJSON = async (gid = null) => {
+  const res = await API.get(`/proposed-roads/`);
+  const normalized = normalizeGeoJson(res);
+  const geojson = {
+    ...normalized,
+    features: (normalized.features || []).map((feature) => ({
+      ...feature,
+      properties: normalizeProposedRoadProperties(feature?.properties || {}),
+    })),
+  };
+
+  if (gid === null || gid === undefined || gid === "") {
+    return geojson;
+  }
+
+  const selectedId = String(gid);
+
+  return {
+    type: "FeatureCollection",
+    features: (geojson.features || []).filter((feature) => {
+      const props = feature?.properties || {};
+      const featureId =
+        props.gid ?? feature?.id ?? props.id ?? props.oid ?? props.fid;
+
+      return String(featureId) === selectedId;
+    }),
+  };
 };
 
 ///////////////////////////////////////////////////////
