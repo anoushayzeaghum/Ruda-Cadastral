@@ -4,10 +4,7 @@ from rest_framework.routers import DefaultRouter
 from api.views import *
 from api.views.RudaMasterPlan import *
 from api.views.GISMetaverse import *
-from api.views.RudaMasterPlan.CreateProposedRoadsView import CreateProposedRoadsView
-from api.views.RudaMasterPlan.DeleteProposedRoadsView import DeleteProposedRoadsView
-from api.views.RudaMasterPlan.ListProposedRoadsView import ListProposedRoadsView
-from api.views.RudaMasterPlan.UpdateProposedRoadsView import UpdateProposedRoadsView
+
 from api.views.RudaMasterPlan.RudaNotifiedPhasesBoundary import (
     CreateRudaNotifiedPhasesBoundaryView,
     DeleteRudaNotifiedPhasesBoundaryView,

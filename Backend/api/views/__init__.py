@@ -9,6 +9,7 @@ from .MasterPlanView import *
 from .SpotLevelView import *
 from .ContourView import *
 from .RudaProposedRoadsView import *
+from .ProposedRoads import *
 from .Trijunction import *
 from .RudaBoundary import *
 from .UserView import *
