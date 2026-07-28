@@ -140,19 +140,19 @@ export default function MapPage() {
   const [selectedParcels, setSelectedParcels] = useState([]);
   const [boundaryStatus, setBoundaryStatus] = useState("verified");
   const [layers, setLayers] = useState({
-    rudaBoundary: { visible: false, opacity: 70, color: "#22c55e" },
+    rudaBoundary: { visible: false, opacity: 100, color: "#22c55e" },
     proposedRoads: { visible: false, opacity: 100, color: "#ef4444" },
     geodeticNetwork: { visible: false, opacity: 100, color: "#d81d1d" },
-    districtBoundary: { visible: true, opacity: 0, color: "#f59e0b" },
-    tehsilBoundary: { visible: true, opacity: 0, color: "#06b6d4" },
-    mauzaBoundary: { visible: true, opacity: 0, color: "#16a34a" },
-    khasraLayer: { visible: false, opacity: 25, color: "#16a34a" },
+    districtBoundary: { visible: true, opacity: 100, color: "#f59e0b" },
+    tehsilBoundary: { visible: true, opacity: 100, color: "#06b6d4" },
+    mauzaBoundary: { visible: true, opacity: 100, color: "#16a34a" },
+    khasraLayer: { visible: false, opacity: 100, color: "#16a34a" },
     possessionLand: { visible: false, opacity: 100, color: "#5F7F00" },
     awardedLand: { visible: false, opacity: 100, color: "#854F0B" },
     stateLand: { visible: false, opacity: 100, color: "#5F5E5A" },
-    squareLayer: { visible: false, opacity: 35, color: "#8b5cf6" },
-    acreLayer: { visible: false, opacity: 35, color: "#14b8a6" },
-    murabbaLayer: { visible: false, opacity: 25, color: "#facc15" },
+    squareLayer: { visible: false, opacity: 100, color: "#8b5cf6" },
+    acreLayer: { visible: false, opacity: 100, color: "#14b8a6" },
+    murabbaLayer: { visible: false, opacity: 100, color: "#facc15" },
     controlPoints: { visible: false, opacity: 100, color: "#38bdf8" },
     triJunctionPoints: { visible: false, opacity: 100, color: "#e11d48" },
     fieldPoints: { visible: false, opacity: 100, color: "#2563eb" },
@@ -294,7 +294,7 @@ export default function MapPage() {
       khasraLayer: {
         ...(typeof prev.khasraLayer === "object"
           ? prev.khasraLayer
-          : { visible: !!prev.khasraLayer, opacity: 25 }),
+          : { visible: !!prev.khasraLayer, opacity: 100 }),
         color: statusColor,
       },
     }));
@@ -529,7 +529,7 @@ export default function MapPage() {
             ? next[key]
             : {
                 visible: !!next[key],
-                opacity: key === "khasraLayer" ? 25 : 35,
+                opacity: 100,
               };
 
         const shouldBeVisible = key === activeViewByLayerKey;

@@ -202,23 +202,7 @@ export default function LeftPanel({
     murabba: false,
   });
 
-  const getDefaultOpacityForSelectedLayer = (item) => {
-    const text = `${item?.key || ""} ${item?.label || ""}`.toLowerCase();
-
-    if (
-      text.includes("district") ||
-      text.includes("tehsil") ||
-      text.includes("mauza")
-    ) {
-      return 0;
-    }
-
-    if (text.includes("khasra") || text.includes("murabba")) {
-      return 25;
-    }
-
-    return 100;
-  };
+  const getDefaultOpacityForSelectedLayer = () => 100;
 
   const getDefaultColorForLayer = (layerKey) => {
     const defaults = {
@@ -415,7 +399,7 @@ export default function LeftPanel({
       const next = { ...prev };
 
       const rudaLayerDefaults = {
-        rudaBoundary: 70,
+        rudaBoundary: 100,
         proposedRoads: 100,
         geodeticNetwork: 100,
       };
@@ -648,18 +632,6 @@ export default function LeftPanel({
             icon={<Satellite size={15} className="sm:hidden" />}
             iconLg={<Satellite size={18} className="hidden sm:block" />}
           />
-          <PanelIcon
-            title="Multiple Khasra Selection"
-            active={multiSelectionMode}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onMultiSelectionModeChange(!multiSelectionMode);
-            }}
-            icon={<ListChecks size={15} className="sm:hidden" />}
-            iconLg={<ListChecks size={18} className="hidden sm:block" />}
-          />
-
           {/* Close button for mobile - only shown when a panel is active */}
           {isMobile && activePanel && (
             <PanelIcon
@@ -670,6 +642,38 @@ export default function LeftPanel({
               iconLg={<X size={18} />}
             />
           )}
+        </div>
+      </div>
+
+      {/* Prominent multiple Khasra selection control */}
+      <div
+        className={`pointer-events-auto absolute z-50 ${
+          isMobile
+            ? "bottom-14 left-1/2 -translate-x-1/2"
+            : "bottom-4 left-1.5 sm:left-3"
+        }`}
+      >
+        <div className="flex items-center gap-2 rounded-md border border-[#13593f] bg-[#031a14]/95 px-2.5 py-2 text-white shadow-xl backdrop-blur-sm">
+          <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold sm:text-xs">
+            <ListChecks size={16} className="text-[#9be37b]" />
+            <span className="whitespace-nowrap">Select Multiple Khasra:</span>
+          </div>
+
+          <select
+            value={multiSelectionMode ? "enabled" : "disabled"}
+            onChange={(event) =>
+              onMultiSelectionModeChange(event.target.value === "enabled")
+            }
+            aria-label="Multiple Khasra selection status"
+            className={`h-8 min-w-[104px] cursor-pointer rounded border px-2 text-[11px] font-semibold outline-none transition focus:ring-2 focus:ring-[#9be37b]/60 ${
+              multiSelectionMode
+                ? "border-[#9be37b] bg-[#0f5132] text-white"
+                : "border-white/25 bg-white text-slate-800"
+            }`}
+          >
+            <option value="disabled">Disabled</option>
+            <option value="enabled">Enabled</option>
+          </select>
         </div>
       </div>
 

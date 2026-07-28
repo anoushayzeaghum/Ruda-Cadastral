@@ -28,6 +28,11 @@ import {
 } from "../../services/api";
 
 import {
+  getRudaProposedRoadFillPaint,
+  getRudaProposedRoadLinePaint,
+} from "./LayerManager/ProposedRoadsLayer.jsx";
+
+import {
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
   KHASRA_SOURCE,
@@ -242,58 +247,6 @@ const PROPOSED_ROADS_SOURCE = "metaverse-proposed-roads-source";
 const PROPOSED_ROADS_FILL = "metaverse-proposed-roads-fill";
 const PROPOSED_ROADS_LINE = "metaverse-proposed-roads-line";
 
-const PROPOSED_ROAD_TYPE_EXPRESSION = [
-  "downcase",
-  [
-    "to-string",
-    [
-      "coalesce",
-      ["get", "road_type"],
-      ["get", "type"],
-      ["get", "Type"],
-      ["get", "TYPE"],
-      "",
-    ],
-  ],
-];
-
-// Exact symbology used by RoadLayer.jsx.
-const PROPOSED_ROAD_FILL_COLOR = [
-  "match",
-  PROPOSED_ROAD_TYPE_EXPRESSION,
-  "street",
-  "#ef4444",
-  "secondary road",
-  "#dc2626",
-  "primary road",
-  "#991b1b",
-  "#d01f1f",
-];
-
-const PROPOSED_ROAD_LINE_COLOR = [
-  "match",
-  PROPOSED_ROAD_TYPE_EXPRESSION,
-  "street",
-  "#dc2626",
-  "secondary road",
-  "#b91c1c",
-  "primary road",
-  "#7f1d1d",
-  "#991b1b",
-];
-
-const PROPOSED_ROAD_LINE_WIDTH = [
-  "match",
-  PROPOSED_ROAD_TYPE_EXPRESSION,
-  "street",
-  1.2,
-  "secondary road",
-  1.7,
-  "primary road",
-  2.2,
-  1.5,
-];
-
 export default function MapView({
   selectedDistrict,
   selectedTehsil,
@@ -330,6 +283,11 @@ export default function MapView({
   const suppressAutoZoomUntilRef = useRef(0);
   const multiSelectionModeRef = useRef(multiSelectionMode);
   const onMultiParcelToggleRef = useRef(onMultiParcelToggle);
+  const khasraEventHandlersRef = useRef({
+    click: null,
+    mouseenter: null,
+    mouseleave: null,
+  });
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
@@ -346,7 +304,7 @@ export default function MapView({
   const proposedRoadsVisible = getLayerVisible(layers, "proposedRoads", false);
   const proposedRoadsOpacity = getLayerOpacity(layers, "proposedRoads", 100);
   const rudaBoundaryVisible = getLayerVisible(layers, "rudaBoundary", false);
-  const rudaBoundaryOpacity = getLayerOpacity(layers, "rudaBoundary", 70);
+  const rudaBoundaryOpacity = getLayerOpacity(layers, "rudaBoundary", 100);
   const geodeticNetworkVisible = getLayerVisible(
     layers,
     "geodeticNetwork",
@@ -372,14 +330,14 @@ export default function MapView({
   const mauzaBoundaryVisible = getLayerVisible(layers, "mauzaBoundary", true);
   const mauzaBoundaryOpacity = getLayerOpacity(layers, "mauzaBoundary", 100);
   const squareLayerVisible = getLayerVisible(layers, "squareLayer", false);
-  const squareLayerOpacity = getLayerOpacity(layers, "squareLayer", 35);
+  const squareLayerOpacity = getLayerOpacity(layers, "squareLayer", 100);
   const acreLayerVisible = getLayerVisible(layers, "acreLayer", false);
-  const acreLayerOpacity = getLayerOpacity(layers, "acreLayer", 35);
+  const acreLayerOpacity = getLayerOpacity(layers, "acreLayer", 100);
   const khasraLayerVisible = getLayerVisible(layers, "khasraLayer", false);
-  const khasraLayerOpacity = getLayerOpacity(layers, "khasraLayer", 25);
+  const khasraLayerOpacity = getLayerOpacity(layers, "khasraLayer", 100);
   const khasraLayerForceLoad = getLayerForceLoad(layers, "khasraLayer");
   const murabbaLayerVisible = getLayerVisible(layers, "murabbaLayer", false);
-  const murabbaLayerOpacity = getLayerOpacity(layers, "murabbaLayer", 25);
+  const murabbaLayerOpacity = getLayerOpacity(layers, "murabbaLayer", 100);
   const murabbaLayerForceLoad = getLayerForceLoad(layers, "murabbaLayer");
   const triJunctionPointsVisible = getLayerVisible(
     layers,
@@ -525,21 +483,14 @@ export default function MapView({
         id: PROPOSED_ROADS_FILL,
         type: "fill",
         source: PROPOSED_ROADS_SOURCE,
-        paint: {
-          "fill-color": PROPOSED_ROAD_FILL_COLOR,
-          "fill-opacity": 0.35 * opacity,
-        },
+        paint: getRudaProposedRoadFillPaint(undefined, opacity),
       });
 
       map.addLayer({
         id: PROPOSED_ROADS_LINE,
         type: "line",
         source: PROPOSED_ROADS_SOURCE,
-        paint: {
-          "line-color": PROPOSED_ROAD_LINE_COLOR,
-          "line-width": PROPOSED_ROAD_LINE_WIDTH,
-          "line-opacity": opacity,
-        },
+        paint: getRudaProposedRoadLinePaint(undefined, opacity),
       });
 
       map.on("mouseenter", PROPOSED_ROADS_FILL, handleProposedRoadMouseEnter);
@@ -936,6 +887,17 @@ export default function MapView({
         layerOpacity,
       });
 
+      // Apply the slider to the layer's original style values. This keeps
+      // light polygon fills light instead of replacing them with a solid fill.
+      applyOpacityToBoundaryLevel(
+        level,
+        opacityOverride !== null && opacityOverride !== undefined
+          ? opacityOverride
+          : isRudaLayer
+            ? rudaBoundaryOpacity
+            : 100,
+      );
+
       currentGeojson.current[level] = sourceGeojson;
       const thematicColor = boundaryLevelColor(level);
       if (thematicColor) applyColorToBoundaryLevel(level, thematicColor);
@@ -980,40 +942,70 @@ export default function MapView({
     }
   };
 
-  const applyOpacityToMapLayer = (layerId, opacityValue) => {
+  const applyOpacityToMapLayer = (layerId, opacityValue, baseOpacity = 1) => {
     const map = mapInstance.current;
     if (!map || !layerId || !map.getLayer(layerId)) return;
 
     const layer = map.getLayer(layerId);
     const opacity = clampOpacity(opacityValue);
+    const finalOpacity = Math.max(
+      0,
+      Math.min(1, Number(baseOpacity) * opacity),
+    );
 
     try {
       if (layer.type === "fill") {
-        map.setPaintProperty(layerId, "fill-opacity", opacity);
+        map.setPaintProperty(layerId, "fill-opacity", finalOpacity);
       } else if (layer.type === "line") {
-        map.setPaintProperty(layerId, "line-opacity", opacity);
+        map.setPaintProperty(layerId, "line-opacity", finalOpacity);
       } else if (layer.type === "circle") {
-        map.setPaintProperty(layerId, "circle-opacity", opacity);
-        map.setPaintProperty(layerId, "circle-stroke-opacity", opacity);
+        map.setPaintProperty(layerId, "circle-opacity", finalOpacity);
+        map.setPaintProperty(layerId, "circle-stroke-opacity", finalOpacity);
       } else if (layer.type === "symbol") {
-        map.setPaintProperty(layerId, "text-opacity", opacity);
-        map.setPaintProperty(layerId, "icon-opacity", opacity);
+        map.setPaintProperty(layerId, "text-opacity", finalOpacity);
+        map.setPaintProperty(layerId, "icon-opacity", finalOpacity);
       } else if (layer.type === "raster") {
-        map.setPaintProperty(layerId, "raster-opacity", opacity);
+        map.setPaintProperty(layerId, "raster-opacity", finalOpacity);
       } else if (layer.type === "fill-extrusion") {
-        map.setPaintProperty(layerId, "fill-extrusion-opacity", opacity);
+        map.setPaintProperty(layerId, "fill-extrusion-opacity", finalOpacity);
       }
     } catch (e) {
       console.warn(`Could not update opacity for ${layerId}`, e);
     }
   };
 
-  const applyOpacityToBoundaryLevel = (level, opacityValue) => {
-    const ids = getBoundaryIds(level);
+  const getBoundaryThemeForOpacity = (level) => {
+    if (level === "mauza") return VECTOR_LAYER_THEME.mauza;
+    if (level === SQUARE_LEVEL) return VECTOR_LAYER_THEME.square;
+    if (level === ACRE_LEVEL) return VECTOR_LAYER_THEME.acre;
+    return VECTOR_LAYER_THEME.defaultBoundary;
+  };
 
-    Object.values(ids || {})
-      .flat()
-      .forEach((layerId) => applyOpacityToMapLayer(layerId, opacityValue));
+  const applyOpacityToBoundaryLevel = (level, opacityValue) => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const ids = getBoundaryIds(level);
+    const isRudaLayer = String(level).startsWith("ruda");
+    const isProposedRoadLayer = String(level).startsWith("proposed-road");
+
+    if (isProposedRoadLayer) {
+      applyOpacityToMapLayer(ids.line, opacityValue);
+      return;
+    }
+
+    if (isRudaLayer) {
+      applyOpacityToMapLayer(ids.fill, opacityValue);
+      applyOpacityToMapLayer(ids.line, opacityValue, 0.95);
+      applyOpacityToMapLayer(ids.dashLine, opacityValue, 0.9);
+      applyOpacityToMapLayer(ids.label, opacityValue);
+      return;
+    }
+
+    const theme = getBoundaryThemeForOpacity(level);
+    applyOpacityToMapLayer(ids.fill, opacityValue, theme?.fillOpacity ?? 0.04);
+    applyOpacityToMapLayer(ids.line, opacityValue, 0.95);
+    applyOpacityToMapLayer(ids.label, opacityValue);
   };
 
   const boundaryLevelColor = (level) => {
@@ -1050,10 +1042,25 @@ export default function MapView({
   };
 
   const applyColorToBoundaryLevel = (level, colorValue) => {
+    const map = mapInstance.current;
+    if (!map || !colorValue) return;
+
     const ids = getBoundaryIds(level);
-    Object.values(ids || {})
-      .flat()
-      .forEach((layerId) => applyColorToMapLayer(layerId, colorValue));
+
+    // Keep the thematic light fill supplied by the layer style. The colour
+    // picker controls the boundary/label colour only, so changing opacity
+    // never turns the entire polygon into the dark outline colour.
+    try {
+      if (map.getLayer(ids.fill)) {
+        map.setPaintProperty(ids.fill, "fill-outline-color", colorValue);
+      }
+    } catch (e) {
+      console.warn(`Could not update fill outline for ${level}`, e);
+    }
+
+    [ids.line, ids.dashLine, ids.label].forEach((layerId) =>
+      applyColorToMapLayer(layerId, colorValue),
+    );
   };
 
   const clearLayerAndSource = (fillId, lineId, sourceId) => {
@@ -1113,8 +1120,39 @@ export default function MapView({
     // Keep this as a safe no-op because existing layer cleanup flows still call it.
   };
 
+  const detachKhasraEventHandlers = (map = mapInstance.current) => {
+    if (!map) return;
+
+    const handlers = khasraEventHandlersRef.current;
+
+    try {
+      if (handlers.click) {
+        map.off("click", KHASRA_FILL, handlers.click);
+      }
+      if (handlers.mouseenter) {
+        map.off("mouseenter", KHASRA_FILL, handlers.mouseenter);
+      }
+      if (handlers.mouseleave) {
+        map.off("mouseleave", KHASRA_FILL, handlers.mouseleave);
+      }
+    } catch (error) {
+      // The layer may already have been removed during a style change.
+    } finally {
+      khasraEventHandlersRef.current = {
+        click: null,
+        mouseenter: null,
+        mouseleave: null,
+      };
+    }
+  };
+
   const clearKhasraLayers = () => {
     const map = mapInstance.current;
+
+    // Delegated Mapbox listeners survive source/layer redraws unless the exact
+    // callback is removed. Detach them first so one click toggles only once.
+    detachKhasraEventHandlers(map);
+
     try {
       if (map?.getLayer(KHASRA_LABEL)) map.removeLayer(KHASRA_LABEL);
     } catch (e) {}
@@ -1691,6 +1729,14 @@ export default function MapView({
         color: khasraLayerColor,
       });
 
+      applyOpacityToMapLayer(
+        KHASRA_FILL,
+        khasraLayerOpacity,
+        VECTOR_LAYER_THEME.khasra.fillOpacity,
+      );
+      applyOpacityToMapLayer(KHASRA_LINE, khasraLayerOpacity, 0.95);
+      applyOpacityToMapLayer(KHASRA_LABEL, khasraLayerOpacity);
+
       // Reapply the current status color after every redraw/style reload.
       [KHASRA_FILL, KHASRA_LINE, KHASRA_LABEL].forEach((layerId) =>
         applyColorToMapLayer(layerId, khasraLayerColor),
@@ -1700,63 +1746,74 @@ export default function MapView({
 
       ensureSelectedLayers(map);
 
-      map.off("click", KHASRA_FILL);
-      map.off("mouseenter", KHASRA_FILL);
-      map.off("mouseleave", KHASRA_FILL);
+      // Always register one stable set of handlers for the current Khasra
+      // layer. This prevents duplicate callbacks after redraws/style reloads.
+      detachKhasraEventHandlers(map);
 
-      map.on("click", KHASRA_FILL, (e) => {
-        if (e.features && e.features.length > 0) {
-          const feature = e.features[0];
-          const area_m2 = computeArea(feature);
-          const area_acres = area_m2 / 4046.8564224;
+      const handleKhasraClick = (e) => {
+        if (!e.features?.length) return;
 
-          const cloned = JSON.parse(JSON.stringify(feature));
-          cloned.properties = cloned.properties || {};
-          cloned.properties._area_m2 = area_m2;
-          cloned.properties._area_acres = area_acres;
-          cloned.properties._layerType = "khasra";
+        const feature = e.features[0];
+        const area_m2 = computeArea(feature);
+        const area_acres = area_m2 / 4046.8564224;
 
-          if (multiSelectionModeRef.current) {
-            closeActivePopup();
-            if (typeof onMultiParcelToggleRef.current === "function") {
-              onMultiParcelToggleRef.current(cloned);
-            }
-          } else {
-            const selectedGeo = {
-              type: "FeatureCollection",
-              features: [feature],
-            };
+        const cloned = JSON.parse(JSON.stringify(feature));
+        cloned.properties = cloned.properties || {};
+        cloned.properties._area_m2 = area_m2;
+        cloned.properties._area_acres = area_acres;
+        cloned.properties._layerType = "khasra";
 
-            currentGeojson.current["selected-area"] = selectedGeo;
-
-            try {
-              const src = map.getSource(SELECTED_SOURCE);
-              if (src) src.setData(selectedGeo);
-            } catch (err) {
-              console.warn("Could not set selected feature", err);
-            }
-
-            // Preserve the existing single-selection popup and callback.
-            const propsWithArea = {
-              ...(feature.properties || {}),
-              _area_acres: area_acres,
-            };
-            showPolygonPopup("khasra", propsWithArea, e.lngLat);
-
-            if (typeof onParcelSelect === "function") {
-              onParcelSelect(cloned);
-            }
+        if (multiSelectionModeRef.current) {
+          closeActivePopup();
+          if (typeof onMultiParcelToggleRef.current === "function") {
+            onMultiParcelToggleRef.current(cloned);
           }
+          return;
         }
-      });
 
-      map.on("mouseenter", KHASRA_FILL, () => {
+        const selectedGeo = {
+          type: "FeatureCollection",
+          features: [feature],
+        };
+
+        currentGeojson.current["selected-area"] = selectedGeo;
+
+        try {
+          const src = map.getSource(SELECTED_SOURCE);
+          if (src) src.setData(selectedGeo);
+        } catch (err) {
+          console.warn("Could not set selected feature", err);
+        }
+
+        // Preserve the existing single-selection popup and callback.
+        const propsWithArea = {
+          ...(feature.properties || {}),
+          _area_acres: area_acres,
+        };
+        showPolygonPopup("khasra", propsWithArea, e.lngLat);
+
+        if (typeof onParcelSelect === "function") {
+          onParcelSelect(cloned);
+        }
+      };
+
+      const handleKhasraMouseEnter = () => {
         map.getCanvas().style.cursor = "pointer";
-      });
+      };
 
-      map.on("mouseleave", KHASRA_FILL, () => {
+      const handleKhasraMouseLeave = () => {
         map.getCanvas().style.cursor = "";
-      });
+      };
+
+      khasraEventHandlersRef.current = {
+        click: handleKhasraClick,
+        mouseenter: handleKhasraMouseEnter,
+        mouseleave: handleKhasraMouseLeave,
+      };
+
+      map.on("click", KHASRA_FILL, handleKhasraClick);
+      map.on("mouseenter", KHASRA_FILL, handleKhasraMouseEnter);
+      map.on("mouseleave", KHASRA_FILL, handleKhasraMouseLeave);
 
       zoomToGeoJSON(geojson);
       movePointLayersToTop();
@@ -1792,6 +1849,14 @@ export default function MapView({
         geojson,
         opacity: murabbaOpacity,
       });
+
+      applyOpacityToMapLayer(
+        MURABBA_FILL,
+        murabbaLayerOpacity,
+        VECTOR_LAYER_THEME.murabba.fillOpacity,
+      );
+      applyOpacityToMapLayer(MURABBA_LINE, murabbaLayerOpacity, 0.95);
+      applyOpacityToMapLayer(MURABBA_LABEL, murabbaLayerOpacity);
 
       currentGeojson.current.murabba = geojson;
 
@@ -2005,17 +2070,23 @@ export default function MapView({
     if (!map) return;
 
     const opacity = clampOpacity(proposedRoadsOpacity);
+    const fillPaint = getRudaProposedRoadFillPaint(undefined, opacity);
+    const linePaint = getRudaProposedRoadLinePaint(undefined, opacity);
 
     try {
       if (map.getLayer(PROPOSED_ROADS_FILL)) {
         map.setPaintProperty(
           PROPOSED_ROADS_FILL,
           "fill-opacity",
-          0.35 * opacity,
+          fillPaint["fill-opacity"],
         );
       }
       if (map.getLayer(PROPOSED_ROADS_LINE)) {
-        map.setPaintProperty(PROPOSED_ROADS_LINE, "line-opacity", opacity);
+        map.setPaintProperty(
+          PROPOSED_ROADS_LINE,
+          "line-opacity",
+          linePaint["line-opacity"],
+        );
       }
     } catch (error) {
       console.warn("Could not update Proposed Roads opacity", error);
@@ -2058,16 +2129,26 @@ export default function MapView({
 
   useEffect(() => {
     if (!isMapReady) return;
-    [KHASRA_FILL, KHASRA_LINE, KHASRA_LABEL].forEach((layerId) =>
-      applyOpacityToMapLayer(layerId, khasraLayerOpacity),
+
+    applyOpacityToMapLayer(
+      KHASRA_FILL,
+      khasraLayerOpacity,
+      VECTOR_LAYER_THEME.khasra.fillOpacity,
     );
+    applyOpacityToMapLayer(KHASRA_LINE, khasraLayerOpacity, 0.95);
+    applyOpacityToMapLayer(KHASRA_LABEL, khasraLayerOpacity);
   }, [isMapReady, khasraLayerOpacity]);
 
   useEffect(() => {
     if (!isMapReady) return;
-    [MURABBA_FILL, MURABBA_LINE, MURABBA_LABEL].forEach((layerId) =>
-      applyOpacityToMapLayer(layerId, murabbaLayerOpacity),
+
+    applyOpacityToMapLayer(
+      MURABBA_FILL,
+      murabbaLayerOpacity,
+      VECTOR_LAYER_THEME.murabba.fillOpacity,
     );
+    applyOpacityToMapLayer(MURABBA_LINE, murabbaLayerOpacity, 0.95);
+    applyOpacityToMapLayer(MURABBA_LABEL, murabbaLayerOpacity);
   }, [isMapReady, murabbaLayerOpacity]);
 
   useEffect(() => {
