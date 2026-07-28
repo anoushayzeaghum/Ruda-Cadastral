@@ -773,3 +773,22 @@ export const getRudaKhasras = async (mauzaId) =>
 
 export const getRudaSquares = async (mauzaId) =>
   getRudaGeoJSONByMauza("/rudasquare/", mauzaId);
+
+///////////////////////////////////////////////////////
+//////////// THEMATIC KHASRA CHILD LAYERS ////////////
+///////////////////////////////////////////////////////
+
+export const getPossessionLandGeoJSON = async () => {
+  const res = await API.get("/possessionland/");
+  return normalizeGeoJson(res);
+};
+
+export const getAwardedLandGeoJSON = async () => {
+  const res = await API.get("/awardedland/");
+  return normalizeGeoJson(res);
+};
+
+export const getStateLandGeoJSON = async () => {
+  const res = await API.get("/stateland/");
+  return normalizeGeoJson(res);
+};
