@@ -817,7 +817,7 @@ export default function GISMetaverseMap({
       applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
 
       if (filters.block || layerVisibility.blockBoundary) {
-        fitGeoJSON(map, blockGeoJSON);
+        // fitGeoJSON(map, blockGeoJSON);
       }
     };
 
@@ -902,7 +902,7 @@ export default function GISMetaverseMap({
       applyMetaverseLayerStyles(map, layerVisibility, adminBoundaryVisibility);
 
       if (hasPlotFilter) {
-        fitGeoJSON(map, plotGeoJSON);
+        // fitGeoJSON(map, plotGeoJSON);
       }
     };
 

@@ -624,6 +624,7 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
 
     try {
       const geojson = await getProjectMauzasGeoJSON(selectedProjectId);
+      console.log("Mauza GeoJSON:", geojson);
       const projectMauzas = uniqueByMauza(geojson?.features || []);
       const projectGeojson = {
         type: "FeatureCollection",
@@ -661,14 +662,15 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     }
   };
 
-  const loadMauzas = async ({ zoom = true } = {}) => {
-    return loadProjectMauzas({ draw: true, zoom });
-  };
+const loadMauzas = async ({ zoom = false } = {}) => {
+  return loadProjectMauzas({ draw: true, zoom });
+};
+
 
   const loadBoundaryByMauzas = async (
     key,
     mauzaIds,
-    { zoom = true, mauzaFeatures = activeMauzaFeatures } = {},
+    { zoom = false, mauzaFeatures = activeMauzaFeatures } = {},
   ) => {
     if (!map || !mauzaIds?.length) {
       cachedData.current[key] = emptyFC();
@@ -766,7 +768,10 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
 
     if (key === "square" || key === "khasra") {
       const { ids, features } = await ensureProjectMauzas();
-      await loadBoundaryByMauzas(key, ids, { mauzaFeatures: features });
+      await loadBoundaryByMauzas(key, ids, {
+        zoom: false,
+        mauzaFeatures: features,
+      });
     }
   };
 

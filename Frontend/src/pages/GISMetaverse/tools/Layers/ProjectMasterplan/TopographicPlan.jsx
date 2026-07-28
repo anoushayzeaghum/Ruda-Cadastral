@@ -220,9 +220,9 @@ export default function TopographicPlan({
     }));
   };
 
-  const flyToChaharbagh = () => {
-    map?.fitBounds?.(CB_BOUNDS, { padding: 50, duration: 1500 });
-  };
+  // const flyToChaharbagh = () => {
+  //   map?.fitBounds?.(CB_BOUNDS, { padding: 50, duration: 1500 });
+  // };
 
   useEffect(() => {
     if (selectedProjectId) return;
@@ -264,7 +264,7 @@ export default function TopographicPlan({
         topoOpacity,
       );
 
-      if (anyGeoJsonLayerVisible) flyToChaharbagh();
+      // if (anyGeoJsonLayerVisible) flyToChaharbagh();
     };
 
     if (topoDataRef.current) {
@@ -317,7 +317,7 @@ export default function TopographicPlan({
             paint: { "raster-opacity": opacity / 100 },
             layout: { visibility: "visible" },
           });
-          flyToChaharbagh();
+          // flyToChaharbagh();
         } else {
           map.setLayoutProperty(layerId, "visibility", "visible");
           map.setPaintProperty(layerId, "raster-opacity", opacity / 100);
