@@ -52,16 +52,26 @@ export const DEFAULT_RUDA_PROPOSED_ROAD_COLORS =
 export const buildRudaProposedRoadColorExpression = (
   roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
 ) => [
-    "match",
-    RUDA_PROPOSED_ROAD_TYPE_EXPRESSION,
-    ...RUDA_PROPOSED_ROAD_LEGEND.flatMap((item) =>
-      item.values.flatMap((value) => [
-        value,
-        roadColors[item.label] || item.color,
-      ]),
-    ),
-    "#19598d",
-  ];
+  "match",
+  RUDA_PROPOSED_ROAD_TYPE_EXPRESSION,
+  ...RUDA_PROPOSED_ROAD_LEGEND.flatMap((item) =>
+    item.values.flatMap((value) => [
+      value,
+      roadColors[item.label] || item.color,
+    ]),
+  ),
+  "#19598d",
+];
+
+export const RUDA_PROPOSED_ROAD_FILL_OPACITY = 0.35;
+
+export const getRudaProposedRoadFillPaint = (
+  roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
+  opacity = 1,
+) => ({
+  "fill-color": buildRudaProposedRoadColorExpression(roadColors),
+  "fill-opacity": RUDA_PROPOSED_ROAD_FILL_OPACITY * opacity,
+});
 
 export const getRudaProposedRoadLinePaint = (
   roadColors = DEFAULT_RUDA_PROPOSED_ROAD_COLORS,

@@ -45,14 +45,14 @@ export const addKhasraLayerStyles = ({ map, geojson, opacity, color }) => {
     minzoom: khasraTheme.labelMinZoom,
     layout: {
       "text-field": VECTOR_LABEL_FIELDS.khasra,
-      "text-size": ["interpolate", ["linear"], ["zoom"], 16, 9, 19, 12],
+      "text-size": ["interpolate", ["linear"], ["zoom"], 14, 12, 19, 18],
       "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
       "text-allow-overlap": false,
       "text-ignore-placement": false,
       "text-optional": true,
     },
     paint: {
-      "text-color": statusColor,
+      "text-color": "#000000",
       "text-halo-color": "#ffffff",
       "text-halo-width": 1.2,
       "text-halo-blur": 0.15,
