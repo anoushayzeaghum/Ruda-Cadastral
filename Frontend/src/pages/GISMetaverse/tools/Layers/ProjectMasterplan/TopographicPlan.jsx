@@ -193,7 +193,7 @@ export default function TopographicPlan({
   setLayerVisibility,
 }) {
   const [open, setOpen] = useState(false);
-
+  const hasSelectedProject = Boolean(selectedProjectId);
   const [spotLevelVisible, setSpotLevelVisible] = useState(false);
   const [spotLevelOpacity, setSpotLevelOpacity] = useState(100);
   const [contoursVisible, setContoursVisible] = useState(false);
@@ -360,7 +360,7 @@ export default function TopographicPlan({
           <LayerRow
             label="Spot Level"
             checked={spotLevelVisible}
-            disabled={false}
+            disabled={!hasSelectedProject}
             opacity={spotLevelOpacity}
             loading={topoLoading && spotLevelVisible}
             onCheckedChange={setSpotLevelVisible}
@@ -380,7 +380,7 @@ export default function TopographicPlan({
           <LayerRow
             label="Topographic Boundary"
             checked={topoVisible}
-            disabled={false}
+            disabled={!hasSelectedProject}
             opacity={topoOpacity}
             loading={topoLoading && topoVisible}
             onCheckedChange={setTopoVisible}
@@ -390,7 +390,7 @@ export default function TopographicPlan({
           <LayerRow
             label="DSM"
             checked={dsmVisible}
-            disabled={false}
+            disabled={!hasSelectedProject}
             opacity={dsmOpacity}
             onCheckedChange={setDsmVisible}
             onOpacityChange={setDsmOpacity}
@@ -399,7 +399,7 @@ export default function TopographicPlan({
           <LayerRow
             label="DTM"
             checked={dtmVisible}
-            disabled={false}
+            disabled={!hasSelectedProject}
             opacity={dtmOpacity}
             onCheckedChange={setDtmVisible}
             onOpacityChange={setDtmOpacity}
