@@ -11,9 +11,7 @@ const escapeXml = (value) =>
 const meaningfulValue = (...values) =>
   values.find(
     (value) =>
-      value !== undefined &&
-      value !== null &&
-      String(value).trim() !== "",
+      value !== undefined && value !== null && String(value).trim() !== "",
   );
 
 const safeFilePart = (value, fallback = "parcel") => {
@@ -164,9 +162,7 @@ const buildDescription = (properties) => {
   const rows = Object.entries(properties)
     .filter(
       ([, value]) =>
-        value !== undefined &&
-        value !== null &&
-        String(value).trim() !== "",
+        value !== undefined && value !== null && String(value).trim() !== "",
     )
     .map(
       ([key, value]) =>
@@ -374,14 +370,13 @@ const triggerDownload = (bytes, filename) => {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-export const exportSelectedParcelKMZ = (
-  parcel,
-  { verified = false } = {},
-) => {
+export const exportSelectedParcelKMZ = (parcel, { verified = false } = {}) => {
   const feature = normalizeFeature(parcel);
 
   if (!feature?.geometry) {
-    console.error("KMZ export failed: selected parcel geometry is unavailable.");
+    console.error(
+      "KMZ export failed: selected parcel geometry is unavailable.",
+    );
     return;
   }
 
@@ -399,12 +394,118 @@ export const exportSelectedParcelKMZ = (
     );
     const kmzBytes = createStoredZip("doc.kml", kml);
 
-    triggerDownload(
-      kmzBytes,
-      `${safeFilePart(`parcel_${identifier}`)}.kmz`,
-    );
+    triggerDownload(kmzBytes, `${safeFilePart(`parcel_${identifier}`)}.kmz`);
   } catch (error) {
     console.error("KMZ export failed:", error);
+  }
+};
+
+const buildMultiPlacemark = (feature, { verified }, index) => {
+  const sourceProperties = { ...(feature.properties || {}) };
+  const exportProperties = {
+    ...sourceProperties,
+    parcel_id: meaningfulValue(
+      sourceProperties.parcel_id,
+      sourceProperties.gid,
+      sourceProperties.id,
+      feature.id,
+    ),
+    khasra_number: meaningfulValue(
+      sourceProperties.kh,
+      sourceProperties.KH,
+      sourceProperties.k,
+      sourceProperties.K,
+      sourceProperties.khasra,
+      sourceProperties.khasra_no,
+      sourceProperties.khasra_id,
+      sourceProperties.join_shp,
+    ),
+    mauza: meaningfulValue(
+      sourceProperties.mauza,
+      sourceProperties.mauza_name,
+      sourceProperties.Mauza,
+      sourceProperties.moza,
+    ),
+    tehsil: meaningfulValue(
+      sourceProperties.tehsil,
+      sourceProperties.tehsil_name,
+      sourceProperties.Tehsil,
+    ),
+    district: meaningfulValue(
+      sourceProperties.district,
+      sourceProperties.district_name,
+      sourceProperties.District,
+    ),
+    verified_status: verified ? "Yes" : "No",
+  };
+
+  const name = meaningfulValue(
+    exportProperties.khasra_number,
+    exportProperties.parcel_id,
+    `Selected Parcel ${index + 1}`,
+  );
+
+  return `
+    <Placemark>
+      <name>${escapeXml(name)}</name>
+      <styleUrl>#selectedParcelStyle</styleUrl>
+      <description>${buildDescription(exportProperties)}</description>
+      <ExtendedData>${buildExtendedData(exportProperties)}
+      </ExtendedData>
+      ${geometryToKml(feature.geometry)}
+    </Placemark>`;
+};
+
+const buildMultiKml = (
+  features,
+  { verified },
+) => `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Selected Parcels</name>
+    <Style id="selectedParcelStyle">
+      <LineStyle>
+        <color>ff00ffff</color>
+        <width>2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>6600ffff</color>
+        <fill>1</fill>
+        <outline>1</outline>
+      </PolyStyle>
+    </Style>
+    ${features
+      .map((feature, index) =>
+        buildMultiPlacemark(feature, { verified }, index),
+      )
+      .join("")}
+  </Document>
+</kml>`;
+
+export const exportSelectedParcelsKMZ = (
+  parcels = [],
+  { verified = false } = {},
+) => {
+  const features = (Array.isArray(parcels) ? parcels : [])
+    .map(normalizeFeature)
+    .filter((feature) => feature?.geometry);
+
+  if (!features.length) {
+    console.error(
+      "KMZ export failed: no selected parcel geometry is available.",
+    );
+    return;
+  }
+
+  try {
+    const kml = buildMultiKml(features, { verified });
+    const kmzBytes = createStoredZip("doc.kml", kml);
+    triggerDownload(
+      kmzBytes,
+      `${safeFilePart(`selected_parcels_${features.length}`)}.kmz`,
+    );
+  } catch (error) {
+    console.error("Multiple parcel KMZ export failed:", error);
   }
 };
 

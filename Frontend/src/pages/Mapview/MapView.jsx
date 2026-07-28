@@ -246,6 +246,9 @@ export default function MapView({
   viewBy,
   demarcationMode = false,
   onParcelSelect,
+  multiSelectionMode = false,
+  selectedParcels = [],
+  onMultiParcelToggle,
   layers = {},
   selectedFilterLayers = [],
   selectedRudaPhaseIds = [],
@@ -270,11 +273,21 @@ export default function MapView({
   const coordPickerPopupRef = useRef(null);
   const previousBoundaryStatusRef = useRef(boundaryStatus);
   const suppressAutoZoomUntilRef = useRef(0);
+  const multiSelectionModeRef = useRef(multiSelectionMode);
+  const onMultiParcelToggleRef = useRef(onMultiParcelToggle);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => {
+    multiSelectionModeRef.current = multiSelectionMode;
+  }, [multiSelectionMode]);
+
+  useEffect(() => {
+    onMultiParcelToggleRef.current = onMultiParcelToggle;
+  }, [onMultiParcelToggle]);
+
 
   const proposedRoadsVisible = getLayerVisible(layers, "proposedRoads", false);
   const proposedRoadsOpacity = getLayerOpacity(layers, "proposedRoads", 100);
@@ -1519,34 +1532,42 @@ export default function MapView({
           const area_m2 = computeArea(feature);
           const area_acres = area_m2 / 4046.8564224;
 
-          const selectedGeo = {
-            type: "FeatureCollection",
-            features: [feature],
-          };
+          const cloned = JSON.parse(JSON.stringify(feature));
+          cloned.properties = cloned.properties || {};
+          cloned.properties._area_m2 = area_m2;
+          cloned.properties._area_acres = area_acres;
+          cloned.properties._layerType = "khasra";
 
-          currentGeojson.current["selected-area"] = selectedGeo;
+          if (multiSelectionModeRef.current) {
+            closeActivePopup();
+            if (typeof onMultiParcelToggleRef.current === "function") {
+              onMultiParcelToggleRef.current(cloned);
+            }
+          } else {
+            const selectedGeo = {
+              type: "FeatureCollection",
+              features: [feature],
+            };
 
-          try {
-            const src = map.getSource(SELECTED_SOURCE);
-            if (src) src.setData(selectedGeo);
-          } catch (err) {
-            console.warn("Could not set selected feature", err);
-          }
+            currentGeojson.current["selected-area"] = selectedGeo;
 
-          // Show popup with computed area
-          const propsWithArea = {
-            ...(feature.properties || {}),
-            _area_acres: area_acres,
-          };
-          showPolygonPopup("khasra", propsWithArea, e.lngLat);
+            try {
+              const src = map.getSource(SELECTED_SOURCE);
+              if (src) src.setData(selectedGeo);
+            } catch (err) {
+              console.warn("Could not set selected feature", err);
+            }
 
-          if (typeof onParcelSelect === "function") {
-            const cloned = JSON.parse(JSON.stringify(feature));
-            cloned.properties = cloned.properties || {};
-            cloned.properties._area_m2 = area_m2;
-            cloned.properties._area_acres = area_acres;
-            cloned.properties._layerType = "khasra";
-            onParcelSelect(cloned);
+            // Preserve the existing single-selection popup and callback.
+            const propsWithArea = {
+              ...(feature.properties || {}),
+              _area_acres: area_acres,
+            };
+            showPolygonPopup("khasra", propsWithArea, e.lngLat);
+
+            if (typeof onParcelSelect === "function") {
+              onParcelSelect(cloned);
+            }
           }
         }
       });
@@ -2139,10 +2160,51 @@ export default function MapView({
   }, [selectedMauza, viewBy]);
 
   useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !isMapReady || !multiSelectionMode) return;
+
+    try {
+      ensureSelectedLayers(map);
+      const source = map.getSource(SELECTED_SOURCE);
+      if (source) {
+        source.setData({
+          type: "FeatureCollection",
+          features: Array.isArray(selectedParcels) ? selectedParcels : [],
+        });
+      }
+
+      currentGeojson.current["selected-area"] = {
+        type: "FeatureCollection",
+        features: Array.isArray(selectedParcels) ? selectedParcels : [],
+      };
+      movePointLayersToTop();
+    } catch (error) {
+      console.warn("Could not update multiple parcel highlights", error);
+    }
+  }, [multiSelectionMode, selectedParcels, isMapReady, featureCount]);
+
+  useEffect(() => {
+    if (!multiSelectionMode) return;
+    return () => {
+      const map = mapInstance.current;
+      if (!map) return;
+      try {
+        const source = map.getSource(SELECTED_SOURCE);
+        if (source) source.setData(emptyFeatureCollection());
+        delete currentGeojson.current["selected-area"];
+      } catch (error) {
+        console.warn("Could not clear multiple parcel highlights", error);
+      }
+    };
+  }, [multiSelectionMode]);
+
+  useEffect(() => {
     if (!isMapReady) return;
 
     const map = mapInstance.current;
     if (!map) return;
+
+    if (multiSelectionMode) return;
 
     if (!selectedFeatureNumber) {
       lastSyncedSelectionRef.current = "";
@@ -2228,7 +2290,7 @@ export default function MapView({
         console.warn("Could not highlight selected parcel", e);
       }
     }
-  }, [selectedFeatureNumber, viewBy, isMapReady, featureCount]);
+  }, [selectedFeatureNumber, viewBy, isMapReady, featureCount, multiSelectionMode]);
 
   useEffect(() => {
     if (!isMapReady) return;

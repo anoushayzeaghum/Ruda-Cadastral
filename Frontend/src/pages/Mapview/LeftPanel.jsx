@@ -20,6 +20,7 @@ import {
   Image as ImageIcon,
   X,
   Table2,
+  ListChecks,
 } from "lucide-react";
 import Measurement from "../GISMetaverse/tools/Measurement";
 import LayerManager from "./Layers/LayerManager.jsx";
@@ -51,7 +52,9 @@ const ORTHO_TILE_NAME_BY_MAUZA = {
 };
 
 const getOrthoTileNameFromMauzaName = (mauzaName = "") => {
-  const normalized = String(mauzaName || "").trim().toLowerCase();
+  const normalized = String(mauzaName || "")
+    .trim()
+    .toLowerCase();
   return ORTHO_TILE_NAME_BY_MAUZA[normalized] || "";
 };
 
@@ -168,6 +171,8 @@ export default function LeftPanel({
   loadedParcelsGeojson = null,
   boundaryStatus,
   setBoundaryStatus,
+  multiSelectionMode = false,
+  onMultiSelectionModeChange = () => {},
 }) {
   const [activePanel, setActivePanel] = useState("layers");
   const [rudaSectionOpen, setRudaSectionOpen] = useState(false);
@@ -598,7 +603,7 @@ export default function LeftPanel({
     <>
       {/* Icon toolbar - positioned left on desktop, bottom on mobile */}
       <div
-        className={`pointer-events-none absolute z-30 ${
+        className={`pointer-events-none absolute z-50 ${
           isMobile
             ? "bottom-3 left-1/2 -translate-x-1/2 flex-row"
             : "left-1.5 sm:left-3 top-3 sm:top-5 flex-col"
@@ -640,6 +645,17 @@ export default function LeftPanel({
             }
             icon={<Satellite size={15} className="sm:hidden" />}
             iconLg={<Satellite size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Multiple Khasra Selection"
+            active={multiSelectionMode}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onMultiSelectionModeChange(!multiSelectionMode);
+            }}
+            icon={<ListChecks size={15} className="sm:hidden" />}
+            iconLg={<ListChecks size={18} className="hidden sm:block" />}
           />
 
           {/* Close button for mobile - only shown when a panel is active */}

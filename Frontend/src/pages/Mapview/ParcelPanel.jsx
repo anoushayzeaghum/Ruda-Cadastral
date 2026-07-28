@@ -9,7 +9,7 @@ import {
   Download,
   X,
 } from "lucide-react";
-import { exportSelectedParcelKMZ } from "./exportKMZ";
+import { exportSelectedParcelKMZ } from "./exportKMZ.jsx";
 
 const getActualKhasraNumber = (properties = {}) => {
   const candidates = [

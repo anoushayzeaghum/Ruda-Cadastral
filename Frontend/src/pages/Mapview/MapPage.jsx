@@ -7,13 +7,13 @@ import React, {
   useRef,
 } from "react";
 
-import Header from "./Header";
-import SubHeader from "./SubHeader";
-import LeftPanel from "./LeftPanel";
-import ParcelPanel from "./ParcelPanel";
-import MapControls from "./MapControls";
-import Legend from "./Legend";
-import MapView from "./MapView";
+import Header from "./Header.jsx";
+import SubHeader from "./SubHeader.jsx";
+import LeftPanel from "./LeftPanel.jsx";
+import ParcelPanel from "./ParcelPanel.jsx";
+import MultipleParcelPanel from "./Layers/MultipleParcelPanel.jsx";
+import Legend from "./Legend.jsx";
+import MapView from "./MapView.jsx";
 import { getRudaMauzas } from "../../services/api";
 
 const getKhasraNumber = (props = {}) => {
@@ -101,6 +101,16 @@ const getLandType = (props = {}) => {
 const getMauzaId = (mauza = {}) =>
   mauza?.mauza_id ?? mauza?.id ?? mauza?.gid ?? "";
 
+const getFeatureSelectionKey = (feature = {}) => {
+  const props = feature?.properties || {};
+  return String(
+    props.gid ??
+      props.id ??
+      props.khasra_id ??
+      `${props.mauza_id ?? ""}:${getKhasraNumber(props) ?? ""}:${feature?.id ?? ""}`,
+  );
+};
+
 const geoJSONMauzasToOptions = (geojson) => {
   const features = Array.isArray(geojson?.features) ? geojson.features : [];
 
@@ -126,6 +136,8 @@ export default function MapPage() {
   const [mapboxMap, setMapboxMap] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [parcelPanelOpen, setParcelPanelOpen] = useState(false);
+  const [multiSelectionMode, setMultiSelectionMode] = useState(false);
+  const [selectedParcels, setSelectedParcels] = useState([]);
   const [boundaryStatus, setBoundaryStatus] = useState("verified");
   const [layers, setLayers] = useState({
     rudaBoundary: { visible: false, opacity: 70, color: "#22c55e" },
@@ -263,6 +275,7 @@ export default function MapPage() {
     setSelectedParcel(null);
     setParcelPanelOpen(false);
     setLoadedParcelsGeojson(null);
+    setSelectedParcels([]);
   }, [filters?.selectedMauza, filters?.viewBy, boundaryStatus]);
 
   useEffect(() => {
@@ -590,6 +603,29 @@ export default function MapPage() {
     }
   }, [filters?.viewBy, isMurabbaBasedKhasra]);
 
+  const handleMultiParcelToggle = useCallback((feature) => {
+    const key = getFeatureSelectionKey(feature);
+    setSelectedParcels((previous) => {
+      const exists = previous.some(
+        (item) => getFeatureSelectionKey(item) === key,
+      );
+      return exists
+        ? previous.filter((item) => getFeatureSelectionKey(item) !== key)
+        : [...previous, feature];
+    });
+  }, []);
+
+  const clearMultiSelection = useCallback(() => {
+    setSelectedParcels([]);
+  }, []);
+
+  const handleMultiSelectionModeChange = useCallback((enabled) => {
+    setMultiSelectionMode(enabled);
+    setSelectedParcels([]);
+    setParcelPanelOpen(false);
+    setSelectedParcel(null);
+  }, []);
+
   const handleMapReady = useCallback((map) => {
     setMapboxMap(map || null);
   }, []);
@@ -641,6 +677,9 @@ export default function MapPage() {
             }
           }}
           onParcelSelect={handleParcelSelect}
+          multiSelectionMode={multiSelectionMode}
+          selectedParcels={selectedParcels}
+          onMultiParcelToggle={handleMultiParcelToggle}
           onMapReady={handleMapReady}
           boundaryStatus={boundaryStatus}
         />
@@ -682,6 +721,8 @@ export default function MapPage() {
           loadedParcelsGeojson={loadedParcelsGeojson}
           boundaryStatus={boundaryStatus}
           setBoundaryStatus={setBoundaryStatus}
+          multiSelectionMode={multiSelectionMode}
+          onMultiSelectionModeChange={handleMultiSelectionModeChange}
         />
 
         <Legend
@@ -691,10 +732,19 @@ export default function MapPage() {
           selectedProposedRoadIds={selectedProposedRoadIds}
         />
 
-        <ParcelPanel
-          parcel={selectedParcel}
-          isOpen={parcelPanelOpen}
-          onClose={handleParcelPanelClose}
+        {!multiSelectionMode && (
+          <ParcelPanel
+            parcel={selectedParcel}
+            isOpen={parcelPanelOpen}
+            onClose={handleParcelPanelClose}
+            boundaryStatus={boundaryStatus}
+          />
+        )}
+
+        <MultipleParcelPanel
+          parcels={selectedParcels}
+          isOpen={multiSelectionMode && selectedParcels.length > 0}
+          onClear={clearMultiSelection}
           boundaryStatus={boundaryStatus}
         />
       </div>
