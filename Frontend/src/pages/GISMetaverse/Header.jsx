@@ -6,7 +6,7 @@ export default function Header() {
   const navigate = useNavigate();
 
   const handleHome = () => {
-    navigate("/landing");
+    window.location.assign("/landing");
   };
 
   const handleLogout = () => {
