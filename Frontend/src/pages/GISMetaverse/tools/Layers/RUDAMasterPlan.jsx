@@ -187,7 +187,7 @@ const RUDA_MASTER_PLAN_GROUPS = [
     key: "riverTrainingWorks",
     label: "River Training Works - RTW",
     children: [
-      { key: "rtwPackages", label: "RTW Packages", color: "#8b5cf6" },
+      // { key: "rtwPackages", label: "RTW Packages", color: "#8b5cf6" },
       {
         key: "rtwAlignment",
         label: "RTW Alignment",
@@ -195,7 +195,7 @@ const RUDA_MASTER_PLAN_GROUPS = [
       },
       {
         key: "riverBoundaryLayer",
-        label: "River Boundary",
+        label: "Proposed River",
         color: RIVER_BOUNDARY_COLOR,
       },
       { key: "riverRavi", label: "River 2025", color: RIVER_RAVI_COLOR },
@@ -211,7 +211,7 @@ const RUDA_MASTER_PLAN_GROUPS = [
         label: "Proposed WWTP",
         color: PROPOSED_WWTP_COLOR,
       },
-      { key: "wwtpSite", label: "WWTP Sites", color: WWTP_SITES_COLOR },
+      { key: "wwtpSite", label: "Proposed WWTP Sites", color: WWTP_SITES_COLOR },
       { key: "swtpSite", label: "SWTP Sites", color: SWTP_SITES_COLOR },
     ],
   },
@@ -965,11 +965,7 @@ export default function RUDAMasterPlan({ map }) {
       if (!currentState?.checked) return;
 
       if (config.customLandUseStyle) {
-        addOrUpdateLandUseLayer(
-          map,
-          geojson,
-          currentState.opacity ?? 100,
-        );
+        addOrUpdateLandUseLayer(map, geojson, currentState.opacity ?? 100);
       } else {
         addOrUpdateRudaMapLayer({
           map,
@@ -1458,12 +1454,10 @@ function LayerDetails({
         />
       )}
 
-     
       <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
         <span>Features</span>
         <span>{meta.featureCount ?? 0}</span>
       </div>
-     
     </div>
   );
 }
