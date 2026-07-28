@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useParams } from "react-router-dom";
 
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -203,8 +204,10 @@ export const getKhasras = async (mauza_id) => {
   const res = await API.get("/khasra/", {
     params: { mauza_id },
   });
+  console.log(res);
   return normalizeGeoJson(res);
 };
+
 
 export const importKhasra = async ({ file }) => {
   const formData = new FormData();
