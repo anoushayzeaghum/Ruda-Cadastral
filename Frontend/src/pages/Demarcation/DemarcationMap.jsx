@@ -414,6 +414,7 @@ export default function DemarcationMap({
   onParcelSelect = () => {},
   onFeaturesLoaded = () => {},
   onContextFeaturesLoaded = () => {},
+  onRoadFeaturesLoaded = () => {},
 }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
@@ -480,6 +481,7 @@ export default function DemarcationMap({
         ensureSource(map, SOURCES.selectedPlot, emptyFC);
         onFeaturesLoaded(emptyFC);
         onContextFeaturesLoaded(emptyFC);
+        onRoadFeaturesLoaded(emptyFC);
         onParcelSelect(null);
         return;
       }
@@ -530,6 +532,7 @@ export default function DemarcationMap({
         ensureSource(map, SOURCES.plots, preparedPlotGeoJSON);
         onFeaturesLoaded(preparedPlotGeoJSON);
         onContextFeaturesLoaded(contextPlotGeoJSON);
+        onRoadFeaturesLoaded(roadGeoJSON);
 
         const exactSelected = (preparedPlotGeoJSON.features || []).find(
           (feature) => {
@@ -565,6 +568,7 @@ export default function DemarcationMap({
         ensureSource(map, SOURCES.selectedPlot, emptyFC);
         onFeaturesLoaded(emptyFC);
         onContextFeaturesLoaded(emptyFC);
+        onRoadFeaturesLoaded(emptyFC);
         onParcelSelect(null);
       }
     };
@@ -580,6 +584,7 @@ export default function DemarcationMap({
     filters?.searchNonce,
     onFeaturesLoaded,
     onContextFeaturesLoaded,
+    onRoadFeaturesLoaded,
     onParcelSelect,
   ]);
 

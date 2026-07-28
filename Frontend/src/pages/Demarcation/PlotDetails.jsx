@@ -11,6 +11,7 @@ export default function PlotDetails({
   parcel = null,
   filters = {},
   contextGeojson = null,
+  roadsGeojson = null,
 }) {
   const [showPrintOptions, setShowPrintOptions] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(!parcel);
@@ -51,6 +52,7 @@ export default function PlotDetails({
       filters,
       details,
       contextGeojson,
+      roadsGeojson,
     });
   };
 
@@ -66,7 +68,7 @@ export default function PlotDetails({
     {
       label: "Print Report",
       action: printReport,
-    },    
+    },
     {
       label: "Print Official Demarcation",
       action: printOfficialDemarcation,

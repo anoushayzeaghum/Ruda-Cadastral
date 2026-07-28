@@ -48,6 +48,7 @@ export default function Demarcation() {
 
   const [loadedPlotsGeojson, setLoadedPlotsGeojson] = useState(null);
   const [reportContextGeojson, setReportContextGeojson] = useState(null);
+  const [reportRoadsGeojson, setReportRoadsGeojson] = useState(null);
   const [selectedPlot, setSelectedPlot] = useState(null);
 
   const landUseSummary = useMemo(
@@ -84,6 +85,7 @@ export default function Demarcation() {
           onParcelSelect={handlePlotSelect}
           onFeaturesLoaded={setLoadedPlotsGeojson}
           onContextFeaturesLoaded={setReportContextGeojson}
+          onRoadFeaturesLoaded={setReportRoadsGeojson}
         />
 
         <div
@@ -101,6 +103,7 @@ export default function Demarcation() {
             parcel={selectedPlot}
             filters={filters}
             contextGeojson={reportContextGeojson || loadedPlotsGeojson}
+            roadsGeojson={reportRoadsGeojson}
           />
         </div>
 
