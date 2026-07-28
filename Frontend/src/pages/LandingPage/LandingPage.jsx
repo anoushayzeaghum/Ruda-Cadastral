@@ -36,16 +36,16 @@ import {
   Radio,
   Users,
   Leaf,
-} from "lucide-react";
+} from "lucide-react"; 
 
 const HERO_SLIDES = [
-  "/s11.png",
+  // "/s11.png",
   "/s22.png",
   "/s33.png",
   "/s44.png",
   "/s55.png",
   "/s6.png",
-  "/s7.png",
+  // "/s7.png",
 ];
 
 const NAV_LINKS = [
