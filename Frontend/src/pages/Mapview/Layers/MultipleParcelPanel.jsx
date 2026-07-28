@@ -91,7 +91,8 @@ export default function MultipleParcelPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute right-1 top-16 z-20 flex w-[calc(100vw-24px)] max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl sm:right-3 sm:top-60 sm:w-[min(760px,calc(100vw-90px))]">
+    <div className="absolute right-1 bottom-4 z-20 flex w-[calc(100vw-24px)] max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl sm:right-3 sm:bottom-6 sm:w-[min(760px,calc(100vw-90px))]">
+      {" "}
       <div className="flex items-center justify-between gap-2 bg-[#0f3d2e] px-3 py-2.5 text-white">
         <div className="flex min-w-0 items-center gap-2 text-sm font-semibold uppercase tracking-wide">
           <ListChecks size={18} className="shrink-0" />
@@ -129,7 +130,6 @@ export default function MultipleParcelPanel({
           </button>
         </div>
       </div>
-
       {!minimized && (
         <>
           <div className="grid grid-cols-2 gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-sm">
@@ -191,7 +191,9 @@ export default function MultipleParcelPanel({
                           : "N/A"
                       }
                     />
-                    <Cell value={boundaryStatus === "verified" ? "Yes" : "No"} />
+                    <Cell
+                      value={boundaryStatus === "verified" ? "Yes" : "No"}
+                    />
                     <Cell value={row.ownership} />
                     <Cell value={row.landType} />
                     <Cell value={row.assessmentCircle} />
