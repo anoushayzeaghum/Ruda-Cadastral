@@ -1,6 +1,6 @@
 import { addCadastralBoundaryLayer } from "./_cadastralBoundaryLayerFactory";
 
-export const MAUZA_BOUNDARY_COLOR = "#2C2C2A";
+export const MAUZA_BOUNDARY_COLOR = "#d3962d";
 
 export const MAUZA_BOUNDARY_IDS = {
   src: "gism-lrr-moza-src",
