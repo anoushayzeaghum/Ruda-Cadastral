@@ -1885,6 +1885,55 @@ class ProposedRoadNetwork(models.Model):
         managed = False
         db_table = "proposed_road_network"
 
+
+
+# =========================
+# Proposed Roads
+# DB table: ruda_proposed_road
+# =========================
+class ProposedRoads(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    id = models.IntegerField(
+        db_column="id",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    road_type = models.CharField(
+        db_column="road_type",
+        max_length=50,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    row = models.FloatField(
+        db_column="row",
+        null=True,
+        blank=True,
+    )
+
+    # The imported geometry is EWKB MultiPolygon with SRID 4326.
+    geom = gis_models.MultiPolygonField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.road_type or f"Proposed Road {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "ruda_proposed_road"
+
+
 # =================================================================================================
 # IMPORTED LAND TABLES
 # These models map directly to the existing PostGIS tables. Table names are kept unchanged.

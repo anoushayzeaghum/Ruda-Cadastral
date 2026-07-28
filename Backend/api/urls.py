@@ -4,6 +4,10 @@ from rest_framework.routers import DefaultRouter
 from api.views import *
 from api.views.RudaMasterPlan import *
 from api.views.GISMetaverse import *
+from api.views.RudaMasterPlan.CreateProposedRoadsView import CreateProposedRoadsView
+from api.views.RudaMasterPlan.DeleteProposedRoadsView import DeleteProposedRoadsView
+from api.views.RudaMasterPlan.ListProposedRoadsView import ListProposedRoadsView
+from api.views.RudaMasterPlan.UpdateProposedRoadsView import UpdateProposedRoadsView
 from api.views.RudaMasterPlan.RudaNotifiedPhasesBoundary import (
     CreateRudaNotifiedPhasesBoundaryView,
     DeleteRudaNotifiedPhasesBoundaryView,
@@ -236,6 +240,14 @@ router.register(r"proposed-road-network", ListProposedRoadNetworkView, basename=
 router.register(r"proposed-road-network/create", CreateProposedRoadNetworkView, basename="create-proposed-road-network")
 router.register(r"proposed-road-network/update", UpdateProposedRoadNetworkView, basename="update-proposed-road-network")
 router.register(r"proposed-road-network/delete", DeleteProposedRoadNetworkView, basename="delete-proposed-road-network")
+
+
+# ------------------------------ Proposed Roads Views ------------------------------
+# DB table: public.ruda_proposed_road
+router.register(r"proposed-roads", ListProposedRoadsView, basename="proposed-roads")
+router.register(r"proposed-roads/create", CreateProposedRoadsView, basename="create-proposed-roads")
+router.register(r"proposed-roads/update", UpdateProposedRoadsView, basename="update-proposed-roads")
+router.register(r"proposed-roads/delete", DeleteProposedRoadsView, basename="delete-proposed-roads")
 
 # ------------------------------ Imported Land Table Views ------------------------------
 router.register(r"stateland", ListStateLandView, basename="stateland")
