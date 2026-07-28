@@ -1013,22 +1013,21 @@ export default function RUDAMasterPlan({ map }) {
     return geojson;
   };
 
+  // Each layer is controlled explicitly from its own toggle handler.
+  // Avoid running through every layer whenever any checkbox, opacity, colour,
+  // or details dropdown changes, because queued Mapbox style callbacks from
+  // unrelated layers can otherwise restore/hide the wrong layer later.
   useEffect(() => {
     if (!map) return;
 
-    Object.entries(layerState).forEach(([layerKey, state]) => {
-      const config = RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey];
-      if (!config) return;
-
+    Object.entries(layerStateRef.current).forEach(([layerKey, state]) => {
       if (state?.checked) {
-        const shouldZoom = Boolean(zoomOnLoadRef.current[layerKey]);
-        delete zoomOnLoadRef.current[layerKey];
-        loadRudaLayer(layerKey, state, shouldZoom);
+        void loadRudaLayer(layerKey, state, false);
       } else {
         setRudaLayerVisibility(map, layerKey, false);
       }
     });
-  }, [map, layerState]);
+  }, [map]);
 
   useEffect(() => {
     if (!map) return undefined;
@@ -1078,7 +1077,7 @@ export default function RUDAMasterPlan({ map }) {
   };
 
   const toggleGroup = (group) => {
-    setLayerStateSynced((previous) => {
+    const updated = setLayerStateSynced((previous) => {
       const allSelected = group.children.every(
         (layer) => previous[layer.key]?.checked,
       );
@@ -1100,6 +1099,17 @@ export default function RUDAMasterPlan({ map }) {
       ...previous,
       [group.key]: true,
     }));
+
+    if (!map) return;
+
+    group.children.forEach((layer) => {
+      const state = updated[layer.key];
+      if (state?.checked) {
+        void loadRudaLayer(layer.key, state, false);
+      } else {
+        setRudaLayerVisibility(map, layer.key, false);
+      }
+    });
   };
 
   const toggleGroupDropdown = (groupKey) => {
@@ -1113,17 +1123,27 @@ export default function RUDAMasterPlan({ map }) {
     const currentLayerState = layerStateRef.current[layerKey] || {};
     const willBeChecked = !currentLayerState.checked;
 
-    if (willBeChecked) {
-      zoomOnLoadRef.current[layerKey] = true;
-    }
-
-    setLayerStateSynced((previous) => ({
+    const nextState = setLayerStateSynced((previous) => ({
       ...previous,
       [layerKey]: {
         ...previous[layerKey],
         checked: willBeChecked,
       },
     }));
+
+    if (!map) return;
+
+    if (!willBeChecked) {
+      // Hide only this layer. Keep its source/data cached so it can be opened
+      // again immediately and repeatedly without depending on another layer.
+      delete zoomOnLoadRef.current[layerKey];
+      setRudaLayerVisibility(map, layerKey, false);
+      return;
+    }
+
+    // Load or restore only the selected layer. The current ref is already
+    // synchronized, so async completion cannot use stale checkbox state.
+    void loadRudaLayer(layerKey, nextState[layerKey], true);
   };
 
   const updateLayerColor = (layerKey, color) => {
