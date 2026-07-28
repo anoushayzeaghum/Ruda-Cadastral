@@ -17,7 +17,7 @@ export const POSSESSION_LAND_TYPES = [
     key: "demarcatedLand",
     value: "Demarcated Land",
     lineColor: "#7A0C0C",
-    fillColor: "#C96A6A",
+    fillColor: "#ca3c3c",
   },
   {
     key: "possessionLand",
