@@ -1,83 +1,100 @@
 import { useCallback, useRef, useState } from "react";
 import MasterPlanHeader from "./MasterPlanHeader";
+import MasterPlanLeftToolbar from "./MasterPlanLeftToolbar";
 import FlyToMap from "../FlyToDedicated/FlyToMap";
 import FlyToMapControls from "../FlyToDedicated/FlyToMapControls";
+
+const DEFAULT_FILTERS = {
+  projectId: "",
+  block: "",
+  plotType: "",
+  plotNo: "",
+  area: "",
+  parkfront: "",
+  rd_facing: "",
+  poss_st: "",
+  plotStatus: "",
+  tr_cate: "",
+  tr_own: "",
+  site_plan: "",
+};
+
+const DEFAULT_LAYER_VISIBILITY = {
+  boundary: false,
+  blockBoundary: false,
+  masterPlan: false,
+  spotLevel: false,
+  contours: false,
+  roads: false,
+  plotLimits: false,
+  topography: false,
+
+  boundaryOpacity: 100,
+  blockBoundaryOpacity: 100,
+  masterPlanOpacity: 100,
+  spotLevelOpacity: 100,
+  contoursOpacity: 100,
+  roadsOpacity: 100,
+  plotLimitsOpacity: 100,
+  topographyOpacity: 80,
+
+  waterSupplyPoints: false,
+  waterSupplyLines: false,
+  sewagePoints: false,
+  cameraLocations: false,
+  notifiedBoundary: false,
+
+  waterSupplyPointsOpacity: 100,
+  waterSupplyLinesOpacity: 100,
+  sewagePointsOpacity: 100,
+  cameraLocationsOpacity: 100,
+  notifiedBoundaryOpacity: 100,
+};
+
+const DEFAULT_ADMIN_BOUNDARY_VISIBILITY = {
+  rudaBoundary: false,
+  rudaMauzaBoundary: false,
+  geodeticNetwork: false,
+  proposedRoads: false,
+  rtwPackage: false,
+  rtwAlignment: false,
+  stateLand: false,
+  awardedLand: false,
+  possessionLand: false,
+
+  rudaBoundaryOpacity: 50,
+  rudaMauzaBoundaryOpacity: 100,
+  geodeticNetworkOpacity: 100,
+  proposedRoadsOpacity: 100,
+  rtwPackageOpacity: 100,
+  rtwAlignmentOpacity: 100,
+  stateLandOpacity: 100,
+  awardedLandOpacity: 100,
+  possessionLandOpacity: 100,
+};
 
 export default function MasterPlanDashboard() {
   const mapRef = useRef(null);
 
   const [isMapReady, setIsMapReady] = useState(false);
+  const [activeTool, setActiveTool] = useState("layers");
   const [showMetaverseLegend, setShowMetaverseLegend] = useState(false);
 
-  const defaultFilters = {
-    projectId: "",
-    block: "",
-    plotType: "",
-    plotNo: "",
-    area: "",
-    parkfront: "",
-    rd_facing: "",
-    poss_st: "",
-    plotStatus: "",
-    tr_cate: "",
-    tr_own: "",
-    site_plan: "",
-  };
-
-  const defaultLayerVisibility = {
-    boundary: false,
-    masterPlan: false,
-    spotLevel: false,
-    contours: false,
-    roads: false,
-    plotLimits: false,
-
-    boundaryOpacity: 100,
-    masterPlanOpacity: 100,
-    spotLevelOpacity: 100,
-    contoursOpacity: 100,
-    roadsOpacity: 100,
-    plotLimitsOpacity: 100,
-
-    waterSupplyPoints: false,
-    waterSupplyLines: false,
-    sewagePoints: false,
-    cameraLocations: false,
-    notifiedBoundary: false,
-
-    waterSupplyPointsOpacity: 100,
-    waterSupplyLinesOpacity: 100,
-    sewagePointsOpacity: 100,
-    cameraLocationsOpacity: 100,
-    notifiedBoundaryOpacity: 100,
-  };
-
-  const defaultAdminBoundaryVisibility = {
-    rudaBoundary: false,
-    rudaMauzaBoundary: false,
-    geodeticNetwork: false,
-    proposedRoads: false,
-
-    rudaBoundaryOpacity: 50,
-    geodeticNetworkOpacity: 100,
-    proposedRoadsOpacity: 100,
-  };
-
-  const [filters] = useState(defaultFilters);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [layerVisibility, setLayerVisibility] = useState(
-    defaultLayerVisibility,
+    DEFAULT_LAYER_VISIBILITY,
   );
   const [adminBoundaryVisibility] = useState(
-    defaultAdminBoundaryVisibility,
+    DEFAULT_ADMIN_BOUNDARY_VISIBILITY,
   );
 
-  const handleIntroComplete = useCallback(() => { }, []);
+  const handleIntroComplete = useCallback(() => {}, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#0f3d2e]">
+    <main className="h-screen w-screen overflow-hidden bg-[#0f3d2e]">
       <MasterPlanHeader />
 
-      <div className="relative h-[calc(100vh-56px)] w-full">
+      <section className="relative h-[calc(100vh-56px)] w-full overflow-hidden">
         <FlyToMap
           mapRef={mapRef}
           isMapReady={isMapReady}
@@ -89,13 +106,23 @@ export default function MasterPlanDashboard() {
           onIntroComplete={handleIntroComplete}
         />
 
+        <MasterPlanLeftToolbar
+          activeTool={activeTool}
+          setActiveTool={setActiveTool}
+          map={isMapReady ? mapRef.current : null}
+          filters={filters}
+          setFilters={setFilters}
+          layerVisibility={layerVisibility}
+          setLayerVisibility={setLayerVisibility}
+        />
+
         <FlyToMapControls
           map={isMapReady ? mapRef.current : null}
           showMetaverseLegend={showMetaverseLegend}
           setShowMetaverseLegend={setShowMetaverseLegend}
           adminBoundaryVisibility={adminBoundaryVisibility}
         />
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
