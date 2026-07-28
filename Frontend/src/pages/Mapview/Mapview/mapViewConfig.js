@@ -48,7 +48,9 @@ export const getOrthoBoundsFromMauzaName = (
   mauzaName = "",
   handuGujranBounds,
 ) => {
-  const normalized = String(mauzaName || "").trim().toLowerCase();
+  const normalized = String(mauzaName || "")
+    .trim()
+    .toLowerCase();
   return normalized === "handu gujran" ? handuGujranBounds : null;
 };
 
@@ -72,30 +74,6 @@ export const THEMATIC_LAND_LAYERS = {
     label: "metaverse-state-land-label",
   },
 };
-
-export const POSSESSION_TYPE_FILL = [
-  "match",
-  ["downcase", ["to-string", ["coalesce", ["get", "l_type"], ""]]],
-  "mutated land",
-  "#AFCB4F",
-  "demarcated land",
-  "#ca3c3c",
-  "possession land",
-  "#F48FB1",
-  "#EAF3DE",
-];
-
-export const POSSESSION_TYPE_LINE = [
-  "match",
-  ["downcase", ["to-string", ["coalesce", ["get", "l_type"], ""]]],
-  "mutated land",
-  "#5F7F00",
-  "demarcated land",
-  "#7A0C0C",
-  "possession land",
-  "#D81B60",
-  "#27500A",
-];
 
 export const KHASRA_ONLY_LABEL = [
   "case",

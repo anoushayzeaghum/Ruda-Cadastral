@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { ChevronDown, Table2 } from "lucide-react";
+import {
+  DEFAULT_POSSESSION_LAND_TYPES,
+  POSSESSION_LAND_TYPES,
+  normalizePossessionLandTypes,
+} from "../LayerManager/PossessionLandLayer.js";
 
 const ADMINISTRATIVE_LAYERS = [
   { key: "districtBoundary", label: "District Boundary" },
@@ -59,6 +64,8 @@ export default function LayerManager({
   getAllProposedRoadIds,
   getLayerVisible,
   getLayerOpacity,
+  getLayerSelectedTypes = () => DEFAULT_POSSESSION_LAND_TYPES,
+  setLayerSelectedTypes = () => {},
   toggleLayer,
   toggleVectorBoundaryLayer,
   toggleRudaBoundaryLayer,
@@ -93,36 +100,54 @@ export default function LayerManager({
     );
   };
 
-  const renderStandardLayer = (item, index, items, vectorLayer = false) => (
-    <div key={item.key}>
-      <AdminLayerRow
-        label={item.label}
-        checked={getLayerVisible(item.key)}
-        opacity={getLayerOpacity(item.key)}
-        color={getLayerColor(item.key)}
-        isOpen={!!dropdownOpenByKey?.[item.key]}
-        isLast={index === items.length - 1}
-        onToggle={() =>
-          vectorLayer
-            ? toggleVectorBoundaryLayer(item.key)
-            : toggleLayer(item.key)
-        }
-        onOpacity={(value) => updateLayer(item.key, { opacity: value })}
-        onColor={(value) => setLayerColor(item.key, value)}
-        onDropdownToggle={() => {
-          toggleDropdownForKey(item.key);
-          loadLayerRecords(item.key, boundaryStatus);
-        }}
-        onTable={() => {
-          loadLayerRecords(item.key, boundaryStatus);
-          openAttributeTable(item.key);
-        }}
-      />
-      {dropdownOpenByKey?.[item.key] && (
-        <LayerDropdownPanel geojson={getGeojsonForKey(item.key)} />
-      )}
-    </div>
-  );
+  const renderStandardLayer = (item, index, items, vectorLayer = false) => {
+    const isPossessionLayer = item.key === "possessionLand";
+
+    return (
+      <div key={item.key}>
+        <AdminLayerRow
+          label={item.label}
+          checked={getLayerVisible(item.key)}
+          opacity={getLayerOpacity(item.key)}
+          color={getLayerColor(item.key)}
+          isOpen={!!dropdownOpenByKey?.[item.key]}
+          isLast={index === items.length - 1}
+          onToggle={() =>
+            vectorLayer
+              ? toggleVectorBoundaryLayer(item.key)
+              : toggleLayer(item.key)
+          }
+          onOpacity={(value) => updateLayer(item.key, { opacity: value })}
+          onColor={(value) => setLayerColor(item.key, value)}
+          onDropdownToggle={() => {
+            toggleDropdownForKey(item.key);
+
+            // Possession Land uses its subtype selector and already-loaded
+            // map data, so opening this dropdown must not call an API.
+            if (!isPossessionLayer) {
+              loadLayerRecords(item.key, boundaryStatus);
+            }
+          }}
+          onTable={() => {
+            loadLayerRecords(item.key, boundaryStatus);
+            openAttributeTable(item.key);
+          }}
+        />
+
+        {dropdownOpenByKey?.[item.key] &&
+          (isPossessionLayer ? (
+            <PossessionLandTypeDropdown
+              selectedTypes={getLayerSelectedTypes(item.key)}
+              setSelectedTypes={(selectedTypes) =>
+                setLayerSelectedTypes(item.key, selectedTypes)
+              }
+            />
+          ) : (
+            <LayerDropdownPanel geojson={getGeojsonForKey(item.key)} />
+          ))}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -402,6 +427,49 @@ function SmallColorPicker({ color, onChange }) {
         className="absolute inset-0 cursor-pointer opacity-0"
       />
     </label>
+  );
+}
+
+function PossessionLandTypeDropdown({ selectedTypes, setSelectedTypes }) {
+  const normalizedSelectedTypes = normalizePossessionLandTypes(selectedTypes);
+  const selectedSet = new Set(normalizedSelectedTypes);
+
+  const toggleType = (typeValue) => {
+    const nextTypes = selectedSet.has(typeValue)
+      ? normalizedSelectedTypes.filter((value) => value !== typeValue)
+      : [...normalizedSelectedTypes, typeValue];
+
+    setSelectedTypes(nextTypes);
+  };
+
+  return (
+    <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+      <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1 shadow-sm">
+        {POSSESSION_LAND_TYPES.map((item) => (
+          <label
+            key={item.value}
+            className="flex cursor-pointer items-center gap-2 border-b border-[#0c3d2d]/70 py-2 last:border-b-0"
+          >
+            <input
+              type="checkbox"
+              checked={selectedSet.has(item.value)}
+              onChange={() => toggleType(item.value)}
+              className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
+            />
+            <span
+              className="h-3.5 w-3.5 shrink-0 rounded-sm"
+              style={{
+                backgroundColor: item.fillColor,
+                border: `1.5px solid ${item.lineColor}`,
+              }}
+            />
+            <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
+              {item.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
   );
 }
 

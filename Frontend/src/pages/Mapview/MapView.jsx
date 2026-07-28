@@ -26,6 +26,11 @@ import {
   getRudaProposedRoadFillPaint,
   getRudaProposedRoadLinePaint,
 } from "./LayerManager/ProposedRoadsLayer.jsx";
+import {
+  addPossessionLandLayerStyles,
+  applyPossessionLandTypeFilter,
+  normalizePossessionLandTypes,
+} from "./LayerManager/PossessionLandLayer.js";
 
 import {
   DEFAULT_CENTER,
@@ -97,8 +102,6 @@ import {
   getOrthoTileUrlFromMauza,
   getOrthoBoundsFromMauzaName,
   THEMATIC_LAND_LAYERS,
-  POSSESSION_TYPE_FILL,
-  POSSESSION_TYPE_LINE,
   KHASRA_ONLY_LABEL,
   PROPOSED_ROADS_SOURCE,
   PROPOSED_ROADS_FILL,
@@ -157,6 +160,7 @@ export default function MapView({
     mouseleave: null,
   });
   const layerEventHandlersRef = useRef(new Map());
+  const possessionLandSelectedTypesRef = useRef([]);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
@@ -227,6 +231,14 @@ export default function MapView({
     false,
   );
   const possessionLandOpacity = getLayerOpacity(layers, "possessionLand", 100);
+  const possessionLandSelectedTypes = normalizePossessionLandTypes(
+    typeof layers?.possessionLand === "object"
+      ? layers.possessionLand.selectedTypes
+      : undefined,
+  );
+  const possessionLandTypeSelectionKey = possessionLandSelectedTypes.join("|");
+  possessionLandSelectedTypesRef.current = possessionLandSelectedTypes;
+
   const awardedLandVisible = getLayerVisible(layers, "awardedLand", false);
   const awardedLandOpacity = getLayerOpacity(layers, "awardedLand", 100);
   const stateLandVisible = getLayerVisible(layers, "stateLand", false);
@@ -1491,70 +1503,75 @@ export default function MapView({
     if (!map || !ids) return;
 
     removeThematicLandLayer(key);
-    map.addSource(ids.source, { type: "geojson", data: geojson });
 
     const opacity = clampOpacity(opacityPercent);
     const isPossession = key === "possessionLand";
-    const fillColor = isPossession
-      ? POSSESSION_TYPE_FILL
-      : key === "awardedLand"
-        ? "#FAEEDA"
-        : "#F1EFE8";
-    const lineColor = isPossession
-      ? POSSESSION_TYPE_LINE
-      : key === "awardedLand"
-        ? "#854F0B"
-        : "#5F5E5A";
-    const labelMinZoom = isPossession ? 15 : 14;
 
-    map.addLayer({
-      id: ids.fill,
-      type: "fill",
-      source: ids.source,
-      paint: {
-        "fill-color": fillColor,
-        "fill-opacity": (isPossession ? 0.45 : 0.65) * opacity,
-      },
-    });
-    map.addLayer({
-      id: ids.line,
-      type: "line",
-      source: ids.source,
-      paint: {
-        "line-color": lineColor,
-        "line-width": 1.3,
-        "line-opacity": opacity,
-      },
-    });
-    map.addLayer({
-      id: ids.label,
-      type: "symbol",
-      source: ids.source,
-      minzoom: labelMinZoom,
-      maxzoom: 24,
-      layout: {
-        "text-field": KHASRA_ONLY_LABEL,
-        "text-size": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          labelMinZoom,
-          10,
-          16,
-          11,
-          18,
-          13,
-        ],
-        "text-allow-overlap": false,
-        "text-ignore-placement": false,
-      },
-      paint: {
-        "text-color": lineColor,
-        "text-opacity": opacity,
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 1,
-      },
-    });
+    if (isPossession) {
+      addPossessionLandLayerStyles({
+        map,
+        layerIds: ids,
+        geojson,
+        opacity,
+        selectedTypes: possessionLandSelectedTypesRef.current,
+        labelExpression: KHASRA_ONLY_LABEL,
+      });
+    } else {
+      const fillColor = key === "awardedLand" ? "#FAEEDA" : "#F1EFE8";
+      const lineColor = key === "awardedLand" ? "#854F0B" : "#5F5E5A";
+      const labelMinZoom = 14;
+
+      map.addSource(ids.source, { type: "geojson", data: geojson });
+
+      map.addLayer({
+        id: ids.fill,
+        type: "fill",
+        source: ids.source,
+        paint: {
+          "fill-color": fillColor,
+          "fill-opacity": 0.65 * opacity,
+        },
+      });
+      map.addLayer({
+        id: ids.line,
+        type: "line",
+        source: ids.source,
+        paint: {
+          "line-color": lineColor,
+          "line-width": 1.3,
+          "line-opacity": opacity,
+        },
+      });
+      map.addLayer({
+        id: ids.label,
+        type: "symbol",
+        source: ids.source,
+        minzoom: labelMinZoom,
+        maxzoom: 24,
+        layout: {
+          "text-field": KHASRA_ONLY_LABEL,
+          "text-size": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            labelMinZoom,
+            10,
+            16,
+            11,
+            18,
+            13,
+          ],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+        },
+        paint: {
+          "text-color": lineColor,
+          "text-opacity": opacity,
+          "text-halo-color": "#ffffff",
+          "text-halo-width": 1,
+        },
+      });
+    }
 
     currentGeojson.current[key] = geojson;
     movePointLayersToTop();
@@ -1616,6 +1633,16 @@ export default function MapView({
     stateLandVisible,
     stateLandOpacity,
   ]);
+
+  useEffect(() => {
+    if (!isMapReady || !possessionLandVisible) return;
+
+    applyPossessionLandTypeFilter(
+      mapInstance.current,
+      THEMATIC_LAND_LAYERS.possessionLand,
+      possessionLandSelectedTypesRef.current,
+    );
+  }, [isMapReady, possessionLandVisible, possessionLandTypeSelectionKey]);
 
   useEffect(() => {
     if (!isMapReady) return;

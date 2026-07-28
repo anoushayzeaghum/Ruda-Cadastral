@@ -11,6 +11,7 @@ import LayerManager from "./Layers/LayerManager.jsx";
 import Toolbox from "./Layers/Toolbox.jsx";
 import RasterData from "./Layers/RasterData.jsx";
 import BaseMap from "./Layers/BaseMap.jsx";
+import { normalizePossessionLandTypes } from "./LayerManager/PossessionLandLayer.js";
 
 import RudaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaBoundaryAttribute";
 import ProposedRoadAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProposedRoadAttribute";
@@ -340,6 +341,23 @@ export default function LeftPanel({
     return typeof value === "object" && Number.isFinite(Number(value.opacity))
       ? Number(value.opacity)
       : 100;
+  };
+
+  const getLayerSelectedTypes = (layerKey) => {
+    if (layerKey !== "possessionLand") return [];
+
+    const value = layers?.[layerKey];
+    return normalizePossessionLandTypes(
+      typeof value === "object" ? value.selectedTypes : undefined,
+    );
+  };
+
+  const setLayerSelectedTypes = (layerKey, selectedTypes) => {
+    if (layerKey !== "possessionLand") return;
+
+    updateLayer(layerKey, {
+      selectedTypes: normalizePossessionLandTypes(selectedTypes),
+    });
   };
 
   const toggleLayer = (layerKey) =>
@@ -681,6 +699,8 @@ export default function LeftPanel({
                   getAllProposedRoadIds={getAllProposedRoadIds}
                   getLayerVisible={getLayerVisible}
                   getLayerOpacity={getLayerOpacity}
+                  getLayerSelectedTypes={getLayerSelectedTypes}
+                  setLayerSelectedTypes={setLayerSelectedTypes}
                   toggleLayer={toggleLayer}
                   toggleVectorBoundaryLayer={toggleVectorBoundaryLayer}
                   toggleRudaBoundaryLayer={toggleRudaBoundaryLayer}
