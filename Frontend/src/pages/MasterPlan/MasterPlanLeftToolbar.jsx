@@ -1,191 +1,210 @@
-import { useState } from "react";
-import { Globe2, Layers, Filter as FilterIcon, Search } from "lucide-react";
+import { useMemo } from "react";
+import { Layers3, MapPinned, X } from "lucide-react";
 
-import Basemaps from "../FlyToDedicated/tools/Basemaps";
 import FlyTo from "../FlyToDedicated/tools/FlyTo";
-import SegmentMeasurement from "../FlyToDedicated/tools/SegmentMeasurement";
-import FlyToFilter from "../FlyToDedicated/tools/Filter";
-import AttributeTable from "../FlyToDedicated/AttributeTable";
 
-// Full GISMetaverse layers panel (AdministrativeBoundaries, RUDAMasterPlan,
-// Cadastral, BaseData, ProjectMasterPlan)
-import LayersPanel from "../GISMetaverse/tools/Layers.jsx";
+import Administrative from "../GISMetaverse/tools/Layers/ProjectMasterplan/Administrative";
+import LandRevenueRecord from "../GISMetaverse/tools/Layers/ProjectMasterplan/LandRevenueRecord";
+import TopographicPlan from "../GISMetaverse/tools/Layers/ProjectMasterplan/TopographicPlan";
+import Utilities from "../GISMetaverse/tools/Layers/ProjectMasterplan/Utilities";
+import LiveCamera from "../GISMetaverse/tools/Layers/ProjectMasterplan/LiveCamera";
+import NotifiedBoundaries from "../GISMetaverse/tools/Layers/ProjectMasterplan/NotifiedBoundaries";
+
+const TOOL_BUTTON_SIZE = 40;
+const TOOL_GAP = 8;
+
+const TOOL_ITEMS = [
+  {
+    id: "layers",
+    label: "Master Plan Layers",
+    icon: Layers3,
+  },
+  {
+    id: "project",
+    label: "Select Project",
+    icon: MapPinned,
+  },
+];
 
 export default function MasterPlanLeftToolbar({
+  activeTool,
+  setActiveTool,
   map,
   filters,
   setFilters,
   layerVisibility,
   setLayerVisibility,
-  adminBoundaryVisibility,
-  setAdminBoundaryVisibility,
-  rebuildAllLayers,
 }) {
-  const [bottomPanel, setBottomPanel] = useState(null);
+  const selectedProjectId = filters?.projectId || "";
 
-  const handleBottomPanel = (panel) => {
-    setBottomPanel((prev) => (prev === panel ? null : panel));
+  const selectedProjectLabel = useMemo(() => {
+    if (!selectedProjectId) return "No project selected";
+    return `Selected project: ${selectedProjectId}`;
+  }, [selectedProjectId]);
+
+  const activeToolIndex = TOOL_ITEMS.findIndex(
+    (tool) => tool.id === activeTool,
+  );
+
+  const panelTop =
+    activeToolIndex >= 0
+      ? 12 + activeToolIndex * (TOOL_BUTTON_SIZE + TOOL_GAP)
+      : 12;
+
+  const toggleTool = (toolId) => {
+    setActiveTool((currentTool) =>
+      currentTool === toolId ? null : toolId,
+    );
   };
 
   return (
     <>
-      {/* ================= TOP LEFT TOOL GROUP ================= */}
-      <div className="absolute top-3 left-2 z-50 flex flex-col items-start gap-2">
+      <aside
+        className="absolute left-2 top-3 z-40 flex flex-col gap-2 sm:left-3"
+        aria-label="Master Plan tools"
+      >
+        {TOOL_ITEMS.map((tool) => {
+          const Icon = tool.icon;
+          const isActive = activeTool === tool.id;
 
-        {/* FILTER */}
-        <div className="relative">
-          {bottomPanel === "filter" && (
-            <div className="absolute top-0 left-10 ml-2 w-[320px] max-h-[70vh] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
-              <FlyToFilter
-                filters={filters}
-                onClose={() => setBottomPanel(null)}
-                onApply={(applied) => {
-                  setFilters((prev) => ({
-                    ...prev,
-                    ...applied,
-                    selectedPlotId: applied.selectedPlotId || "",
-                    selectedPlotGid: applied.selectedPlotGid || "",
-                    selectedPlotGeometry: applied.selectedPlotGeometry || null,
-                    flyToPlotTrigger: Date.now(),
-                  }));
-                  setLayerVisibility((prev) => ({
-                    ...prev,
-                    masterPlan: true,
-                    blockBoundary: false,
-                  }));
-                  setBottomPanel(null);
-                }}
-              />
-            </div>
-          )}
+          return (
+            <button
+              key={tool.id}
+              type="button"
+              title={tool.label}
+              aria-label={tool.label}
+              aria-pressed={isActive}
+              onClick={() => toggleTool(tool.id)}
+              className={`flex h-10 w-10 items-center justify-center rounded-xl border shadow-xl backdrop-blur-md transition focus:outline-none focus:ring-2 focus:ring-[#8fd36f]/70 ${isActive
+                  ? "border-[#8fd36f] bg-white text-[#0f3d2e]"
+                  : "border-white/15 bg-[#10261f]/95 text-white hover:border-[#8fd36f]/70 hover:bg-[#0f3d2e]"
+                }`}
+            >
+              <Icon size={20} />
+            </button>
+          );
+        })}
+      </aside>
 
-          <button
-            type="button"
-            title="Filter"
-            onClick={() => handleBottomPanel("filter")}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm transition ${
-              bottomPanel === "filter"
-                ? "border-[#9be37b] bg-[#0a3327] text-white"
-                : "border-[#0c3d2d] bg-[#06291f] text-white hover:bg-[#0a3327]"
-            }`}
-          >
-            <FilterIcon size={20} strokeWidth={2.2} />
-          </button>
-        </div>
+      {activeTool === "layers" && (
+        <ToolbarPanel
+          title="Master Plan Layers"
+          subtitle={selectedProjectLabel}
+          panelTop={panelTop}
+          widthClass="sm:w-[370px] lg:w-[400px]"
+          onClose={() => setActiveTool(null)}
+        >
+          <div className="h-full overflow-y-auto overscroll-contain [scrollbar-color:#3f6f5e_#06291f] [scrollbar-width:thin]">
+            <Administrative
+              map={map}
+              title="ADMINISTRATIVE"
+              selectedProjectId={selectedProjectId}
+              layerVisibility={layerVisibility}
+              setLayerVisibility={setLayerVisibility}
+            />
 
-        {/* SEARCH (Attribute Table) */}
-        <div className="relative">
-          {bottomPanel === "attribute" && (
-            <div className="absolute top-0 left-10 ml-2 z-50">
-              <AttributeTable
-                map={map}
-                filters={filters}
-                onClose={() => setBottomPanel(null)}
-                onSelectPlot={(plotData) => {
-                  setFilters((prev) => ({
-                    ...prev,
-                    ...plotData,
-                    projectId: plotData.projectId || prev.projectId,
-                    block: plotData.block || "",
-                    plotType: plotData.plotType || "",
-                    area: plotData.area || "",
-                    plotNo: plotData.plotNo || "",
-                    selectedPlotId: plotData.selectedPlotId || "",
-                    selectedPlotGid: plotData.selectedPlotGid || "",
-                    selectedPlotGeometry: plotData.selectedPlotGeometry || null,
-                    flyToPlotTrigger: Date.now(),
-                  }));
-                  setLayerVisibility((prev) => ({
-                    ...prev,
-                    masterPlan: true,
-                    blockBoundary: false,
-                  }));
-                }}
-              />
-            </div>
-          )}
+            <LandRevenueRecord
+              map={map}
+              selectedProjectId={selectedProjectId}
+              layerVisibility={layerVisibility}
+              setLayerVisibility={setLayerVisibility}
+            />
 
-          <button
-            type="button"
-            title="Attribute Search"
-            onClick={() => handleBottomPanel("attribute")}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm transition ${
-              bottomPanel === "attribute"
-                ? "border-[#9be37b] bg-[#0a3327] text-white"
-                : "border-[#0c3d2d] bg-[#06291f] text-white hover:bg-[#0a3327]"
-            }`}
-          >
-            <Search size={20} />
-          </button>
-        </div>
-      </div>
+            <TopographicPlan
+              map={map}
+              selectedProjectId={selectedProjectId}
+              layerVisibility={layerVisibility}
+              setLayerVisibility={setLayerVisibility}
+            />
 
-      {/* ================= BOTTOM LEFT TOOLBAR ================= */}
-      <div className="absolute bottom-4 left-2 z-40 flex flex-col items-start gap-2">
+            <Utilities
+              map={map}
+              selectedProjectId={selectedProjectId}
+              layerVisibility={layerVisibility}
+              setLayerVisibility={setLayerVisibility}
+            />
 
-        {/* BASEMAPS */}
-        <div className="relative">
-          {bottomPanel === "basemaps" && (
-            <div className="absolute bottom-0 left-10 ml-1 w-[calc(100vw-4rem)] max-h-[340px] overflow-y-auto rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:w-[380px]">
-              <Basemaps map={map} rebuildAllLayers={rebuildAllLayers} />
-            </div>
-          )}
+            <LiveCamera
+              map={map}
+              selectedProjectId={selectedProjectId}
+              layerVisibility={layerVisibility}
+              setLayerVisibility={setLayerVisibility}
+            />
 
-          <button
-            type="button"
-            title="Basemaps"
-            onClick={() => handleBottomPanel("basemaps")}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm transition ${
-              bottomPanel === "basemaps"
-                ? "border-[#9be37b] bg-[#0a3327] text-white"
-                : "border-[#0c3d2d] bg-[#06291f] text-white hover:bg-[#0a3327]"
-            }`}
-          >
-            <Globe2 size={20} strokeWidth={2.2} />
-          </button>
-        </div>
+            <NotifiedBoundaries
+              map={map}
+              selectedProjectId={selectedProjectId}
+              layerVisibility={layerVisibility}
+              setLayerVisibility={setLayerVisibility}
+            />
+          </div>
+        </ToolbarPanel>
+      )}
 
-        {/* LAYERS — full GISMetaverse panel */}
-        <div className="relative">
-          {bottomPanel === "layers" && (
-            <div className="absolute bottom-0 left-10 ml-1 w-[300px] max-h-[calc(100vh-120px)] overflow-hidden rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl">
-              <LayersPanel
-                map={map}
-                filters={filters}
-                layerVisibility={layerVisibility}
-                setLayerVisibility={setLayerVisibility}
-                adminBoundaryVisibility={adminBoundaryVisibility}
-                setAdminBoundaryVisibility={setAdminBoundaryVisibility}
-              />
-            </div>
-          )}
-
-          <button
-            type="button"
-            title="Layers"
-            onClick={() => handleBottomPanel("layers")}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg border shadow-sm transition ${
-              bottomPanel === "layers"
-                ? "border-[#9be37b] bg-[#0a3327] text-white"
-                : "border-[#0c3d2d] bg-[#06291f] text-white hover:bg-[#0a3327]"
-            }`}
-          >
-            <Layers size={20} strokeWidth={2.2} />
-          </button>
-        </div>
-
-        {/* FLY TO */}
-        <div className="relative">
-          <FlyTo
-            filters={filters}
-            setFilters={setFilters}
-            setLayerVisibility={setLayerVisibility}
-          />
-        </div>
-
-        {/* MEASUREMENT */}
-        <SegmentMeasurement map={map} />
-      </div>
+      {activeTool === "project" && (
+        <ToolbarPanel
+          title="Select Project"
+          subtitle="Choose a project to load its Master Plan layers"
+          panelTop={panelTop}
+          widthClass="sm:w-[340px]"
+          onClose={() => setActiveTool(null)}
+        >
+          <div className="h-full overflow-y-auto p-3">
+            <FlyTo
+              filters={filters}
+              setFilters={setFilters}
+              setLayerVisibility={setLayerVisibility}
+            />
+          </div>
+        </ToolbarPanel>
+      )}
     </>
+  );
+}
+
+function ToolbarPanel({
+  title,
+  subtitle,
+  panelTop,
+  widthClass,
+  onClose,
+  children,
+}) {
+  return (
+    <section
+      className={`fixed inset-x-2 bottom-2 z-50 flex max-h-[78vh] flex-col overflow-hidden rounded-2xl border border-[#245f4a] bg-[#06291f]/98 text-white shadow-2xl backdrop-blur-md sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-[60px] sm:max-h-[calc(100vh-82px)] ${widthClass}`}
+      style={{
+        top:
+          typeof window !== "undefined" && window.innerWidth >= 640
+            ? `${panelTop}px`
+            : undefined,
+      }}
+    >
+      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-[#0a3327] px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-xs font-bold uppercase tracking-[0.12em]">
+            {title}
+          </h2>
+
+          {subtitle && (
+            <p className="mt-1 truncate text-[10px] text-white/55">
+              {subtitle}
+            </p>
+          )}
+        </div>
+
+        <button
+          type="button"
+          title="Close"
+          aria-label={`Close ${title}`}
+          onClick={onClose}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white/60 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+        >
+          <X size={15} />
+        </button>
+      </div>
+
+      <div className="min-h-0 flex-1">{children}</div>
+    </section>
   );
 }

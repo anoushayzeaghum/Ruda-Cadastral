@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   X,
   Upload,
@@ -6,13 +6,13 @@ import {
   FileCheck,
   AlertTriangle,
   Loader2,
-  Printer,
 } from "lucide-react";
 import bbox from "@turf/bbox";
 import shp from "shpjs";
 import JSZip from "jszip";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import RudaLogo from "../../../assets/Ruda.png";
+import { PRINT_EVENTS, dispatchPrintEvent } from "../Printing/PrintEvents";
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -470,6 +470,7 @@ export default function Import({ map, onClose }) {
   const [warning, setWarning] = useState(null);
   const [summary, setSummary] = useState(null); // { fileName, count, types }
   const [importedGeoJSON, setImportedGeoJSON] = useState(null);
+  const [importedFileType, setImportedFileType] = useState(null);
   const [printLoading, setPrintLoading] = useState(false);
   const [hasLayer, setHasLayer] = useState(() => {
     return !!(map && map.getSource(SOURCE_ID));
@@ -482,6 +483,7 @@ export default function Import({ map, onClose }) {
     setHasLayer(false);
     setSummary(null);
     setImportedGeoJSON(null);
+    setImportedFileType(null);
     setError(null);
     setWarning(null);
   };
@@ -776,6 +778,7 @@ export default function Import({ map, onClose }) {
 
       addLayers(preparedGeoJSON);
       setImportedGeoJSON(preparedGeoJSON);
+      setImportedFileType(type);
 
       const { count, types } = summarise(preparedGeoJSON);
       setSummary({ fileName: file.name, title: importTitle, count, types });
@@ -789,10 +792,8 @@ export default function Import({ map, onClose }) {
   };
 
   const handlePrint = async () => {
-    if (!map || !importedGeoJSON?.features?.length) {
-      setError(
-        "Import a KMZ, KML, GeoJSON or zipped Shapefile before printing.",
-      );
+    if (!map || importedFileType !== "kmz" || !importedGeoJSON?.features?.length) {
+      setError("Import a .KMZ file before using Print Imported .KMZ.");
       return;
     }
 
@@ -905,6 +906,47 @@ export default function Import({ map, onClose }) {
     }
   };
 
+  // Allow the main Header print button to use this exact printing workflow.
+  useEffect(() => {
+    const handleHeaderPrint = () => {
+      handlePrint();
+    };
+
+    window.addEventListener(PRINT_EVENTS.PRINT_IMPORTED_KMZ, handleHeaderPrint);
+
+    return () => {
+      window.removeEventListener(
+        PRINT_EVENTS.PRINT_IMPORTED_KMZ,
+        handleHeaderPrint,
+      );
+    };
+  }, [map, importedGeoJSON, importedFileType, summary]);
+
+  // Keep the main Header print button synchronized with the imported-layer state.
+  useEffect(() => {
+    const publishPrintState = () => {
+      window.dispatchEvent(
+        new CustomEvent(PRINT_EVENTS.IMPORT_STATE, {
+          detail: {
+            hasLayer,
+            hasKmz: hasLayer && importedFileType === "kmz",
+            printLoading,
+          },
+        }),
+      );
+    };
+
+    publishPrintState();
+    window.addEventListener(PRINT_EVENTS.REQUEST_IMPORT_STATE, publishPrintState);
+
+    return () => {
+      window.removeEventListener(
+        PRINT_EVENTS.REQUEST_IMPORT_STATE,
+        publishPrintState,
+      );
+    };
+  }, [hasLayer, importedFileType, printLoading]);
+
   // ── event handlers ───────────────────────────────────────────────────────────
   const onFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -933,21 +975,6 @@ export default function Import({ map, onClose }) {
         <span className="font-bold text-sm tracking-wide">Import Data</span>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handlePrint}
-            disabled={!hasLayer || printLoading}
-            className="inline-flex items-center gap-1.5 rounded-md border border-amber-300/30 bg-amber-400/10 px-2.5 py-1.5 text-[11px] font-semibold text-amber-300 transition-colors hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-40"
-            title="Print imported map"
-          >
-            {printLoading ? (
-              <Loader2 size={13} className="animate-spin" />
-            ) : (
-              <Printer size={13} />
-            )}
-            Print
-          </button>
-
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors"

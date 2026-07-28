@@ -563,12 +563,11 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
-        hover:-translate-y-1
-        hover:scale-[1.012]
+      className={`group relative w-full overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
+        hover:-translate-y-1 hover:scale-[1.012]
         ${compact
-          ? "min-h-[114px] rounded-xl px-3 py-3"
-          : "h-[126px] rounded-[18px] px-4 py-3 2xl:h-[130px]"
+          ? "min-h-[118px] rounded-xl px-3 py-3"
+          : "h-full min-h-0 rounded-[18px] px-4 py-3"
         }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
@@ -593,10 +592,11 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
         style={{ backgroundColor: `${area.accent}30` }}
       />
 
-      {/* Top-right Lucide icon. No emojis are used. */}
       <div
-        className={`${compact ? "right-3 top-3 h-9 w-9" : "right-4 top-3.5 h-10 w-10"}
-          absolute z-20 flex items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-300 group-hover:scale-105`}
+        className={`${compact
+            ? "right-3 top-3 h-9 w-9"
+            : "right-4 top-3.5 h-10 w-10"
+          } absolute z-20 flex items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-300 group-hover:scale-105`}
         style={{
           borderColor: `${area.accent}80`,
           backgroundColor: `${area.accent}18`,
@@ -607,13 +607,13 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
         <Icon size={compact ? 17 : 19} strokeWidth={2} />
       </div>
 
-      <div className="relative z-10 flex h-full items-center gap-3 pr-12">
-        <div className="flex shrink-0 items-center justify-center">
+      <div className="relative z-10 grid h-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 pr-12">
+        <div className="flex items-center justify-center">
           <div
             className={`${compact
-              ? "h-9 w-9 text-sm"
-              : "h-11 w-11 text-base 2xl:h-12 2xl:w-12"
-              } flex items-center justify-center rounded-full border-2 font-black`}
+                ? "h-9 w-9 text-sm"
+                : "h-11 w-11 text-base 2xl:h-12 2xl:w-12"
+              } flex shrink-0 items-center justify-center rounded-full border-2 font-black`}
             style={{
               borderColor: area.accent,
               color: "white",
@@ -625,23 +625,23 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
           </div>
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="grid min-w-0 content-center">
           <h3
             className={`${compact
-              ? "text-[11px]"
-              : "text-[12px] 2xl:text-[13px]"
-              } font-black uppercase leading-[1.12] tracking-[0.025em]`}
+                ? "min-h-[25px] text-[11px]"
+                : "min-h-[30px] text-[12px] 2xl:min-h-[32px] 2xl:text-[13px]"
+              } flex items-center font-black uppercase leading-[1.12] tracking-[0.025em]`}
           >
             {compact ? area.shortTitle : area.title}
           </h3>
 
-          <ul className={`${compact ? "mt-2 space-y-1" : "mt-2 space-y-1.5"}`}>
+          <ul className={`${compact ? "mt-1.5 space-y-1" : "mt-1.5 space-y-1.5"}`}>
             {area.bullets.slice(0, 2).map((bullet) => (
               <li
                 key={bullet}
                 className={`${compact
-                  ? "text-[10px]"
-                  : "text-[10.5px] 2xl:text-[11px]"
+                    ? "text-[10px]"
+                    : "text-[10.5px] 2xl:text-[11px]"
                   } flex items-start gap-2 leading-[1.32] text-white/90`}
               >
                 <span
@@ -1135,7 +1135,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-1 grid flex-1 items-center gap-5 xl:items-start xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
-            <div className="hidden flex-col gap-[7px] xl:flex">
+            <div className="hidden h-[394px] grid-rows-3 gap-3 xl:grid 2xl:h-[406px]">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
@@ -1220,7 +1220,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="hidden flex-col gap-[7px] xl:flex">
+            <div className="hidden h-[394px] grid-rows-3 gap-3 xl:grid 2xl:h-[406px]">
               {DECISION_AREAS.slice(3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
