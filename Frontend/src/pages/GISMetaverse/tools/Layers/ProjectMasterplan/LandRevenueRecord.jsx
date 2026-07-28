@@ -63,7 +63,7 @@ const LAYER_DEFS = [
     color: "#d7bf32",
     type: "polygon",
   },
-  { key: "masawi", label: "Masabi", color: "#84cc16", type: "raster" },
+  { key: "masawi", label: "Masawi", color: "#84cc16", type: "raster" },
 ];
 
 const ALL_LAYER_DEFS = [MAUZA_DEF, ...LAYER_DEFS];
@@ -244,7 +244,6 @@ function getMauzaName(feature) {
     `Mauza ${getMauzaId(feature) || ""}`
   );
 }
-
 
 function getFeatureAreaLabel(feature) {
   const sqft = readAreaSqft(feature);
@@ -868,7 +867,9 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
         opacity={layers[key].opacity}
         hasDropdown={dropdown || isSquare || isMasawi}
         hasTable={isKhasra || isSquare}
-        dropdownOpen={(isKhasra || isSquare || isMasawi) && khasraPanelOpen === key}
+        dropdownOpen={
+          (isKhasra || isSquare || isMasawi) && khasraPanelOpen === key
+        }
         dropdownTitle={`Show ${label} details`}
         onChange={(checked) => handleVisible(key, checked)}
         onOpacityChange={(opacity) => setOpacity(key, opacity)}
@@ -891,7 +892,9 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                   className="h-1.5 w-1.5 shrink-0 rounded-full"
                   style={{ backgroundColor: layers.masawi.color }}
                 />
-                <span className="truncate">Handu Gujran Masawi / Ortho Image</span>
+                <span className="truncate">
+                  Handu Gujran Masawi / Ortho Image
+                </span>
               </div>
             ) : !layers[key].visible ? (
               <div className="py-1 text-[11px] text-white/45">
@@ -899,7 +902,8 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
               </div>
             ) : !boundaryFeatures.length && !layers[key].loading ? (
               <div className="py-1 text-[11px] text-white/45">
-                No {label.toLowerCase()} records loaded for selected project mauzas.
+                No {label.toLowerCase()} records loaded for selected project
+                mauzas.
               </div>
             ) : (
               boundaryFeatures.map((feature, index) => {
@@ -917,7 +921,9 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
                       className="h-1.5 w-1.5 shrink-0 rounded-full"
                       style={{ backgroundColor: layers[key].color }}
                     />
-                    <span className="min-w-0 flex-1 truncate">{displayName}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {displayName}
+                    </span>
                     <span className="shrink-0 text-white/50">
                       {getFeatureAreaLabel(feature)}
                     </span>

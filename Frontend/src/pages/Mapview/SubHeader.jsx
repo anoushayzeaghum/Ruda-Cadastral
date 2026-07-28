@@ -35,6 +35,10 @@ export default function SubHeader({
   );
 
   const selectedMauza = filters.selectedMauza ?? "";
+  const getMauzaOptionId = (mauza = {}) =>
+    mauza?.mauza_id ?? mauza?.id ?? mauza?.gid ?? "";
+  const getMauzaOptionLabel = (mauza = {}) =>
+    mauza?.mauza ?? mauza?.name ?? mauza?.moza ?? mauza?.mouza ?? "";
   const viewBy = filters.viewBy ?? "";
 
   const mauzaCount = mauzas.length;
@@ -96,8 +100,11 @@ export default function SubHeader({
         <FilterCard
           label="Mauza — موضع"
           value={
-            mauzas.find((m) => String(m.mauza_id) === String(selectedMauza))
-              ?.mauza || "Select"
+            getMauzaOptionLabel(
+              mauzas.find(
+                (m) => String(getMauzaOptionId(m)) === String(selectedMauza),
+              ),
+            ) || "Select"
           }
         >
           <NativeSelectOverlay
@@ -106,11 +113,14 @@ export default function SubHeader({
             disabled={!selectedTehsil.length || filters.loading?.mauzas}
           >
             <option value="">-- Mauza --</option>
-            {mauzas.map((m) => (
-              <option key={m.mauza_id} value={m.mauza_id}>
-                {m.mauza}
-              </option>
-            ))}
+            {mauzas.map((m) => {
+              const optionId = getMauzaOptionId(m);
+              return (
+                <option key={optionId} value={optionId}>
+                  {getMauzaOptionLabel(m)}
+                </option>
+              );
+            })}
           </NativeSelectOverlay>
         </FilterCard>
 

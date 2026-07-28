@@ -17,15 +17,25 @@ import MapView from "./MapView";
 import { getRudaMauzas } from "../../services/api";
 
 const getKhasraNumber = (props = {}) => {
+  const candidates = [
+    props.kh,
+    props.KH,
+    props.k,
+    props.K,
+    props.khasra,
+    props.khasra_no,
+    props.khasra_id,
+    props.join_shp,
+  ];
+
   return (
-    props.kh ??
-    props.KH ??
-    props.k ??
-    props.K ??
-    props.khasra ??
-    props.khasra_no ??
-    props.khasra_id ??
-    null
+    candidates.find(
+      (value) =>
+        value !== undefined &&
+        value !== null &&
+        value !== "" &&
+        String(value).trim() !== "0",
+    ) ?? null
   );
 };
 
@@ -179,18 +189,17 @@ export default function MapPage() {
       return filters?.selectedMauzaDetails ?? null;
     }
 
-    const selectedMauzaId = filters?.selectedMauza;
-    if (
-      selectedMauzaId === undefined ||
-      selectedMauzaId === null ||
-      selectedMauzaId === ""
-    ) {
-      return null;
-    }
+    const verifiedSelection = filters?.selectedMauzaDetails;
+    const selectedMauzaKey =
+      getMauzaId(verifiedSelection) || filters?.selectedMauza || "";
+
+    if (!selectedMauzaKey) return null;
 
     return (
-      unverifiedMauzas.find(
-        (mauza) => String(getMauzaId(mauza)) === String(selectedMauzaId),
+      unverifiedMauzas.find((mauza) =>
+        [mauza?.mauza_id, mauza?.id, mauza?.gid].some(
+          (value) => String(value ?? "") === String(selectedMauzaKey),
+        ),
       ) || null
     );
   }, [
@@ -205,9 +214,12 @@ export default function MapPage() {
 
     const isUnverified = boundaryStatus === "unverified";
     const selectedMauza = isUnverified
-      ? activeSelectedMauzaDetails
-        ? String(getMauzaId(activeSelectedMauzaDetails))
-        : ""
+      ? String(
+          getMauzaId(activeSelectedMauzaDetails) ||
+            getMauzaId(filters.selectedMauzaDetails) ||
+            filters.selectedMauza ||
+            "",
+        )
       : filters.selectedMauza;
 
     return {
