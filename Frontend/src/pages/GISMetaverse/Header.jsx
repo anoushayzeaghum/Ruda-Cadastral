@@ -1,19 +1,102 @@
-import { Home, LogOut } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ChevronDown,
+  Home,
+  Loader2,
+  LogOut,
+  Map,
+  PackageOpen,
+  Printer,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
+import {
+  PRINT_EVENTS,
+  dispatchPrintEvent,
+} from "./Printing/PrintEvents";
 
 export default function Header() {
   const navigate = useNavigate();
+  const dropdownRef = useRef(null);
+  const [isPrintMenuOpen, setIsPrintMenuOpen] = useState(false);
+  const [mapPrintState, setMapPrintState] = useState({
+    mapReady: false,
+    printLoading: false,
+  });
+  const [importPrintState, setImportPrintState] = useState({
+    hasKmz: false,
+    printLoading: false,
+  });
 
-  const handleHome = () => {
-    navigate("/landing");
+  useEffect(() => {
+    const handleMapPrintState = (event) => {
+      setMapPrintState({
+        mapReady: Boolean(event.detail?.mapReady),
+        printLoading: Boolean(event.detail?.printLoading),
+      });
+    };
+
+    const handleImportPrintState = (event) => {
+      setImportPrintState({
+        hasKmz: Boolean(event.detail?.hasKmz),
+        printLoading: Boolean(event.detail?.printLoading),
+      });
+    };
+
+    window.addEventListener(PRINT_EVENTS.PRINT_STATE, handleMapPrintState);
+    window.addEventListener(PRINT_EVENTS.IMPORT_STATE, handleImportPrintState);
+    dispatchPrintEvent(PRINT_EVENTS.REQUEST_PRINT_STATE);
+    dispatchPrintEvent(PRINT_EVENTS.REQUEST_IMPORT_STATE);
+
+    return () => {
+      window.removeEventListener(
+        PRINT_EVENTS.PRINT_STATE,
+        handleMapPrintState,
+      );
+      window.removeEventListener(
+        PRINT_EVENTS.IMPORT_STATE,
+        handleImportPrintState,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event) => {
+      if (!dropdownRef.current?.contains(event.target)) {
+        setIsPrintMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setIsPrintMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
+  const isAnyPrintLoading =
+    mapPrintState.printLoading || importPrintState.printLoading;
+
+  const handleCurrentMapPrint = () => {
+    setIsPrintMenuOpen(false);
+    dispatchPrintEvent(PRINT_EVENTS.PRINT_CURRENT_MAP);
   };
+
+  const handleImportedKmzPrint = () => {
+    setIsPrintMenuOpen(false);
+    dispatchPrintEvent(PRINT_EVENTS.PRINT_IMPORTED_KMZ);
+  };
+
+  const handleHome = () => navigate("/landing");
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
-
     navigate("/login", { replace: true });
   };
 
@@ -41,6 +124,61 @@ export default function Header() {
             icon={<Home size={18} />}
           />
 
+          <div ref={dropdownRef} className="relative">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={isPrintMenuOpen}
+              onClick={() => setIsPrintMenuOpen((current) => !current)}
+              className="flex h-9 items-center justify-center gap-2 rounded-lg border border-white/30 bg-white/15 px-3 text-xs font-bold tracking-wide text-white shadow-sm transition hover:border-white/50 hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50 sm:text-sm"
+            >
+              {isAnyPrintLoading ? (
+                <Loader2 size={17} className="animate-spin" />
+              ) : (
+                <Printer size={17} />
+              )}
+              <span>PRINT</span>
+              <ChevronDown
+                size={15}
+                className={`transition-transform ${isPrintMenuOpen ? "rotate-180" : ""
+                  }`}
+              />
+            </button>
+
+            {isPrintMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-11 z-50 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 text-slate-800 shadow-2xl"
+              >
+                <PrintMenuButton
+                  icon={<Map size={17} />}
+                  label="Print Map Page"
+                  description="Print only the layers currently visible on the map."
+                  onClick={handleCurrentMapPrint}
+                  disabled={
+                    !mapPrintState.mapReady || mapPrintState.printLoading
+                  }
+                />
+
+                <div className="my-1 h-px bg-slate-200" />
+
+                <PrintMenuButton
+                  icon={<PackageOpen size={17} />}
+                  label="Print Imported .KMZ"
+                  description={
+                    importPrintState.hasKmz
+                      ? "Print the imported KMZ with the approved layout."
+                      : "Import a KMZ file first to enable this option."
+                  }
+                  onClick={handleImportedKmzPrint}
+                  disabled={
+                    !importPrintState.hasKmz || importPrintState.printLoading
+                  }
+                />
+              </div>
+            )}
+          </div>
+
           <IconButton
             title="Logout"
             onClick={handleLogout}
@@ -52,14 +190,41 @@ export default function Header() {
   );
 }
 
-function IconButton({ title, icon, onClick }) {
+function PrintMenuButton({
+  icon,
+  label,
+  description,
+  onClick,
+  disabled = false,
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent"
+    >
+      <span className="mt-0.5 text-[#0f3d2e]">{icon}</span>
+      <span>
+        <span className="block text-sm font-semibold">{label}</span>
+        <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
+          {description}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function IconButton({ title, ariaLabel, icon, onClick, disabled = false }) {
   return (
     <button
       type="button"
       title={title}
-      aria-label={title}
+      aria-label={ariaLabel || title}
       onClick={onClick}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/25 bg-white/15 text-white shadow-sm transition hover:border-white/40 hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50"
+      disabled={disabled}
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/25 bg-white/15 text-white shadow-sm transition hover:border-white/40 hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:cursor-not-allowed disabled:opacity-40"
     >
       {icon}
     </button>

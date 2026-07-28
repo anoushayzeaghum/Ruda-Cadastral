@@ -6,6 +6,7 @@ import MetaverseLeftToolbar from "./MetaverseLeftToolbar";
 import MetaverseSubHeader from "./MetaverseSubHeader";
 import MetaverseMapControls from "./MetaverseMapControls";
 import MetaverseLegend from "./tools/Layers/MetaverseLegend";
+import MapPrinter from "./Printing/MapPrinter";
 
 export default function MetaverseDashboard() {
   const mapRef = useRef(null);
@@ -29,10 +30,10 @@ export default function MetaverseDashboard() {
   // };
 
   const defaultFilters = {
-  phase: "",
-  projectType: "",
-  projectId: "",
-};
+    phase: "",
+    projectType: "",
+    projectId: "",
+  };
 
   const defaultLayerVisibility = {
     boundary: false,
@@ -119,6 +120,14 @@ export default function MetaverseDashboard() {
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#0f3d2e]">
       <Header />
+
+      <MapPrinter
+        map={isMapReady ? mapRef.current : null}
+        isMapReady={isMapReady}
+        filters={metaverseFilters}
+        layerVisibility={layerVisibility}
+        adminBoundaryVisibility={adminBoundaryVisibility}
+      />
 
       <div className="relative h-[calc(100vh-56px)] w-full">
         <GISMetaverseMap
