@@ -234,7 +234,7 @@ export default function AdministrativeBoundaries({
       if (!visibilityRef.current[key]) return;
 
       def.addOrUpdate(map, geojson, stylesRef.current[key]);
-      fitToData(map, geojson);
+      // fitToData(map, geojson);
     } catch (error) {
       console.error(`${def.label} load error:`, error);
       setVisibleState(key, false);

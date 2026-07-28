@@ -222,13 +222,13 @@ function fitToExtraGeoJSON(map, geojson) {
 
     geojson.features.forEach((feature) => walk(feature?.geometry?.coordinates));
 
-    if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, {
-        padding: 50,
-        duration: 900,
-        maxZoom: 15,
-      });
-    }
+    // if (!bounds.isEmpty()) {
+    //   map.fitBounds(bounds, {
+    //     padding: 50,
+    //     duration: 900,
+    //     maxZoom: 15,
+    //   });
+    // }
   });
 }
 
@@ -430,13 +430,13 @@ function fitToGeojson(map, geojson) {
     bbox.length >= 4 &&
     bbox.slice(0, 4).every((value) => Number.isFinite(Number(value)))
   ) {
-    map.fitBounds(
-      [
-        [Number(bbox[0]), Number(bbox[1])],
-        [Number(bbox[2]), Number(bbox[3])],
-      ],
-      { padding: 40, duration: 900 },
-    );
+    // map.fitBounds(
+    //   [
+    //     [Number(bbox[0]), Number(bbox[1])],
+    //     [Number(bbox[2]), Number(bbox[3])],
+    //   ],
+    //   { padding: 40, duration: 900 },
+    // );
     return;
   }
 
@@ -462,9 +462,9 @@ function fitToGeojson(map, geojson) {
       traverse(feature.geometry?.coordinates);
     });
 
-    if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, { padding: 40, duration: 900 });
-    }
+    // if (!bounds.isEmpty()) {
+    //   map.fitBounds(bounds, { padding: 40, duration: 900 });
+    // }
   });
 }
 
@@ -623,33 +623,33 @@ function updateKhasraVectorStyle(map, opacity, color) {
   } catch (_) {}
 }
 
-function fitToKhasraExtent(map, bbox) {
-  if (
-    !map ||
-    !Array.isArray(bbox) ||
-    bbox.length < 4 ||
-    !bbox.slice(0, 4).every((value) => Number.isFinite(Number(value)))
-  ) {
-    return;
-  }
+// function fitToKhasraExtent(map, bbox) {
+//   if (
+//     !map ||
+//     !Array.isArray(bbox) ||
+//     bbox.length < 4 ||
+//     !bbox.slice(0, 4).every((value) => Number.isFinite(Number(value)))
+//   ) {
+//     return;
+//   }
 
-  const bounds = [
-    [Number(bbox[0]), Number(bbox[1])],
-    [Number(bbox[2]), Number(bbox[3])],
-  ];
-  const camera = map.cameraForBounds(bounds, { padding: 55 });
+//   const bounds = [
+//     [Number(bbox[0]), Number(bbox[1])],
+//     [Number(bbox[2]), Number(bbox[3])],
+//   ];
+//   const camera = map.cameraForBounds(bounds, { padding: 55 });
 
-  if (!camera) return;
+//   if (!camera) return;
 
-  map.easeTo({
-    center: camera.center,
-    zoom: Math.max(camera.zoom ?? KHASRA_MIN_ZOOM, KHASRA_MIN_ZOOM),
-    bearing: camera.bearing ?? map.getBearing(),
-    pitch: camera.pitch ?? map.getPitch(),
-    duration: 900,
-    essential: true,
-  });
-}
+//   map.easeTo({
+//     center: camera.center,
+//     zoom: Math.max(camera.zoom ?? KHASRA_MIN_ZOOM, KHASRA_MIN_ZOOM),
+//     bearing: camera.bearing ?? map.getBearing(),
+//     pitch: camera.pitch ?? map.getPitch(),
+//     duration: 900,
+//     essential: true,
+//   });
+// }
 
 function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
   const config = BOUNDARY_LAYER_CONFIG[key];
@@ -736,7 +736,7 @@ function addOrUpdateMasawiLayer(map, opacity) {
     map.setPaintProperty(MASAWI_LAYER, "raster-opacity", opacity / 100);
   }
 
-  map.fitBounds(MASAWI_BOUNDS, { padding: 50, duration: 1500 });
+  // map.fitBounds(MASAWI_BOUNDS, { padding: 50, duration: 1500 });
 }
 
 export default function Cadastral({ map, selectedProjectId }) {

@@ -252,28 +252,30 @@ export default function BaseData({ map }) {
   };
 
   const showLoadedLayer = (definition) => {
-    const geojson = loadedGeoJSONRef.current[definition.key];
+  const geojson = loadedGeoJSONRef.current[definition.key];
 
-    if (!geojson) return;
+  if (!geojson) return;
 
-    runWhenMapReady(() => {
-      const currentState = layersRef.current[definition.key];
-      if (!currentState?.visible) return;
+  runWhenMapReady(() => {
+    // Style may have changed before this callback runs
+    if (!map || !map.isStyleLoaded?.()) return;
 
-      if (definition.customRoadStyle) {
-        addOrUpdateRoadNetworkLayer(map, geojson, currentState.opacity);
-      } else {
-        addOrUpdateMapLayer(
-          map,
-          definition.key,
-          geojson,
-          currentState.color,
-          currentState.opacity,
-        );
-      }
-    });
-  };
+    const currentState = layersRef.current[definition.key];
+    if (!currentState?.visible) return;
 
+    if (definition.customRoadStyle) {
+      addOrUpdateRoadNetworkLayer(map, geojson, currentState.opacity);
+    } else {
+      addOrUpdateMapLayer(
+        map,
+        definition.key,
+        geojson,
+        currentState.color,
+        currentState.opacity,
+      );
+    }
+  });
+};
   const loadLayer = async (definition) => {
     if (!map || !definition.fetchGeoJSON) return null;
 

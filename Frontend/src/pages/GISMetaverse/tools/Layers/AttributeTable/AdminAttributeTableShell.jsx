@@ -37,20 +37,20 @@ export const extendBounds = (bounds, coords) => {
   coords.forEach((item) => extendBounds(bounds, item));
 };
 
-export const zoomToGeometry = (map, geometry) => {
-  if (!map || !geometry?.coordinates) return;
+// export const zoomToGeometry = (map, geometry) => {
+//   if (!map || !geometry?.coordinates) return;
 
-  const bounds = new mapboxgl.LngLatBounds();
-  extendBounds(bounds, geometry.coordinates);
+//   const bounds = new mapboxgl.LngLatBounds();
+//   extendBounds(bounds, geometry.coordinates);
 
-  if (!bounds.isEmpty()) {
-    map.fitBounds(bounds, {
-      padding: 80,
-      maxZoom: geometry.type?.includes("Point") ? 17 : 14,
-      duration: 900,
-    });
-  }
-};
+//   if (!bounds.isEmpty()) {
+//     map.fitBounds(bounds, {
+//       padding: 80,
+//       maxZoom: geometry.type?.includes("Point") ? 17 : 14,
+//       duration: 900,
+//     });
+//   }
+// };
 
 export const formatNumber = (value, digits = 2) => {
   const num = Number(value);
@@ -289,11 +289,15 @@ export default function AdminAttributeTableShell({
                   </tr>
                 ) : (
                   filteredRows.map((row, index) => (
+                    // <tr
+                    //   key={row.id || index}
+                    //   onClick={() => zoomToGeometry(map, row.geometry)}
+                    //   className="group cursor-pointer transition-colors duration-150 hover:bg-[#9be37b]/5"
+                    //   title="Click to zoom to this feature"
+                    // >
                     <tr
                       key={row.id || index}
-                      onClick={() => zoomToGeometry(map, row.geometry)}
-                      className="group cursor-pointer transition-colors duration-150 hover:bg-[#9be37b]/5"
-                      title="Click to zoom to this feature"
+                      className="group transition-colors duration-150 hover:bg-[#9be37b]/5"
                     >
                       {columns.map((column) => (
                         <td

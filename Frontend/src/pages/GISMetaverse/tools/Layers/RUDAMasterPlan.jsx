@@ -922,36 +922,36 @@ export default function RUDAMasterPlan({ map }) {
   const zoomToGeoJSON = (geojson) => {
     if (!map) return;
 
-    try {
-      const data = normalizeGeoJSON(geojson);
-      if (!data.features.length) return;
+    // try {
+    //   const data = normalizeGeoJSON(geojson);
+    //   if (!data.features.length) return;
 
-      const bounds = new mapboxgl.LngLatBounds();
+    //   const bounds = new mapboxgl.LngLatBounds();
 
-      data.features.forEach((feature) => {
-        const geometry = feature?.geometry;
-        if (!geometry) return;
+    //   data.features.forEach((feature) => {
+    //     const geometry = feature?.geometry;
+    //     if (!geometry) return;
 
-        if (geometry.type === "GeometryCollection") {
-          geometry.geometries?.forEach((geometryItem) => {
-            extendBounds(bounds, geometryItem.coordinates);
-          });
-          return;
-        }
+    //     if (geometry.type === "GeometryCollection") {
+    //       geometry.geometries?.forEach((geometryItem) => {
+    //         extendBounds(bounds, geometryItem.coordinates);
+    //       });
+    //       return;
+    //     }
 
-        extendBounds(bounds, geometry.coordinates);
-      });
+    //     extendBounds(bounds, geometry.coordinates);
+    //   });
 
-      if (bounds.isEmpty()) return;
+    //   if (bounds.isEmpty()) return;
 
-      map.fitBounds(bounds, {
-        padding: 70,
-        duration: 1000,
-        maxZoom: 14,
-      });
-    } catch (error) {
-      console.error("RUDA Master Plan zoom error:", error);
-    }
+    //   map.fitBounds(bounds, {
+    //     padding: 70,
+    //     duration: 1000,
+    //     maxZoom: 14,
+    //   });
+    // } catch (error) {
+    //   console.error("RUDA Master Plan zoom error:", error);
+    // }
   };
 
   const applyVisibleLayer = (layerKey, state, shouldZoom = false) => {
