@@ -180,7 +180,11 @@ export default function MapPage() {
     }
 
     const selectedMauzaId = filters?.selectedMauza;
-    if (selectedMauzaId === undefined || selectedMauzaId === null || selectedMauzaId === "") {
+    if (
+      selectedMauzaId === undefined ||
+      selectedMauzaId === null ||
+      selectedMauzaId === ""
+    ) {
       return null;
     }
 
@@ -613,7 +617,14 @@ export default function MapPage() {
           selectedProposedRoadIds={selectedProposedRoadIds}
           basemap={basemap}
           selectedFeatureNumber={selectedFeatureNumber}
-          onFeaturesLoaded={(geojson) => setLoadedParcelsGeojson(geojson)}
+          onFeaturesLoaded={(geojson, featureType) => {
+            // Only let the active header view update its dropdown records.
+            // This prevents hidden Square/Acre/Murabba loaders from replacing
+            // the Khasra list after verified or RUDA Khasras are drawn.
+            if (!featureType || featureType === filters?.viewBy) {
+              setLoadedParcelsGeojson(geojson);
+            }
+          }}
           onParcelSelect={handleParcelSelect}
           onMapReady={handleMapReady}
           boundaryStatus={boundaryStatus}
