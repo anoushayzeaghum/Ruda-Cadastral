@@ -254,23 +254,77 @@ class RudaMauzaSerializer(GeoFeatureModelSerializer):
 # District → Tehsil → Mauza → Khasra
 # --------------------------------------------------------
 class KhasraSerializer(GeoFeatureModelSerializer):
-    district_name = serializers.CharField(
-        source="district",
-        read_only=True,
-        allow_null=True,
-    )
+    """
+    Verified Khasra GeoJSON.
 
-    tehsil_name = serializers.CharField(
-        source="tehsil",
-        read_only=True,
-        allow_null=True,
-    )
+    The verified ``khasra`` table stores the readable administrative names
+    directly in district, tehsil, and mauza. Some imported rows can have one
+    or more of those text columns empty, so the serializer falls back to the
+    matching ``mauza`` row using mauza_id.
+    """
 
-    mauza_name = serializers.CharField(
-        source="mauza",
-        read_only=True,
-        allow_null=True,
-    )
+    district_name = serializers.SerializerMethodField()
+    tehsil_name = serializers.SerializerMethodField()
+    mauza_name = serializers.SerializerMethodField()
+
+    @staticmethod
+    def _clean_name(value):
+        if value is None:
+            return None
+
+        value = str(value).strip()
+        return value or None
+
+    def _get_mauza_record(self, obj):
+        mauza_id = getattr(obj, "mauza_id", None)
+        if mauza_id is None:
+            return None
+
+        cache = getattr(self, "_verified_mauza_cache", None)
+        if cache is None:
+            cache = {}
+            self._verified_mauza_cache = cache
+
+        cache_key = str(mauza_id)
+        if cache_key not in cache:
+            cache[cache_key] = (
+                Mauza.objects
+                .filter(mauza_id=mauza_id)
+                .only("mauza_id", "mauza", "tehsil", "district")
+                .first()
+            )
+
+        return cache[cache_key]
+
+    def get_district_name(self, obj):
+        direct_name = self._clean_name(getattr(obj, "district", None))
+        if direct_name:
+            return direct_name
+
+        mauza_record = self._get_mauza_record(obj)
+        return self._clean_name(
+            getattr(mauza_record, "district", None) if mauza_record else None
+        )
+
+    def get_tehsil_name(self, obj):
+        direct_name = self._clean_name(getattr(obj, "tehsil", None))
+        if direct_name:
+            return direct_name
+
+        mauza_record = self._get_mauza_record(obj)
+        return self._clean_name(
+            getattr(mauza_record, "tehsil", None) if mauza_record else None
+        )
+
+    def get_mauza_name(self, obj):
+        direct_name = self._clean_name(getattr(obj, "mauza", None))
+        if direct_name:
+            return direct_name
+
+        mauza_record = self._get_mauza_record(obj)
+        return self._clean_name(
+            getattr(mauza_record, "mauza", None) if mauza_record else None
+        )
 
     class Meta:
         model = Khasra
@@ -322,7 +376,8 @@ class KhasraSerializer(GeoFeatureModelSerializer):
         read_only_fields = (
             "gid",
         )
-        
+
+
 # --------------------------------------------------------
 # Ruda Khasra Serializer - New Format
 # District → Tehsil → Mauza → Khasra
