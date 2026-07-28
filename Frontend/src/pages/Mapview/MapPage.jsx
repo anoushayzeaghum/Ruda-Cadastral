@@ -695,6 +695,7 @@ export default function MapPage() {
           parcel={selectedParcel}
           isOpen={parcelPanelOpen}
           onClose={handleParcelPanelClose}
+          boundaryStatus={boundaryStatus}
         />
       </div>
     </div>

@@ -1,10 +1,7 @@
 import { useState } from "react";
 import {
   MapPin,
-  User,
-  Grid2X2,
   FileText,
-  HelpCircle,
   ChevronDown,
   Landmark,
   Ruler,
@@ -12,6 +9,7 @@ import {
   Download,
   X,
 } from "lucide-react";
+import { exportSelectedParcelKMZ } from "./exportKMZ";
 
 const getActualKhasraNumber = (properties = {}) => {
   const candidates = [
@@ -40,6 +38,7 @@ export default function ParcelPanel({
   parcel = null,
   isOpen = false,
   onClose = () => {},
+  boundaryStatus = "verified",
 }) {
   const [activeTab, setActiveTab] = useState("parcelInfo");
 
@@ -88,17 +87,10 @@ export default function ParcelPanel({
   const isViewByKhasra = parcel?.properties?._layerType !== "murabba";
   const showMurabbaWithKhasra = isMurabbaType && isViewByKhasra;
 
-  const timelineData = [
-    { year: "2018", label: "Personal Ownership" },
-    { year: "2020", label: "Bequisition Notice" },
-    { year: "2023", label: "Acquisition Notice" },
-    { year: "2023", label: "RUDA Owned & Planning Zone" },
-  ];
-
   if (!isOpen) return null;
 
   return (
-    <div className="absolute right-1 sm:right-3 top-16 sm:top-24 z-20 w-[calc(100vw-60px)] xs:w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-130px)] sm:max-h-[calc(100vh-170px)]">
+    <div className="absolute right-1 sm:right-3 top-16 sm:top-60 z-20 w-[calc(100vw-60px)] xs:w-80 sm:w-96 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-130px)] sm:max-h-[calc(100vh-170px)]">
       <div className="border-b border-slate-200">
         <div className="flex items-center justify-between gap-2 bg-[#0f3d2e] px-3 py-2.5">
           <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-white min-w-0">
@@ -107,14 +99,25 @@ export default function ParcelPanel({
           </div>
 
           <div className="flex items-center gap-2 shrink-0 text-white">
-            <User size={17} className="cursor-default" />
-            <Grid2X2 size={17} className="cursor-default" />
-            <FileText size={17} className="cursor-default" />
-            <HelpCircle size={17} className="cursor-default" />
+            <button
+              type="button"
+              onClick={() =>
+                exportSelectedParcelKMZ(parcel, {
+                  verified: boundaryStatus === "verified",
+                })
+              }
+              disabled={!parcel?.geometry}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/25 bg-white/15 px-2.5 text-[11px] font-semibold text-white transition hover:bg-white/25 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Download selected parcel as KMZ"
+              title="Download selected parcel as KMZ"
+            >
+              <Download size={15} />
+              <span>KMZ</span>
+            </button>
             <button
               type="button"
               onClick={() => onClose()}
-              className="ml-1 rounded-lg p-1.5 text-white transition hover:bg-white/10"
+              className="rounded-lg p-1.5 text-white transition hover:bg-white/10"
               aria-label="Close parcel panel"
             >
               <X size={19} />
@@ -228,45 +231,28 @@ export default function ParcelPanel({
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-slate-200">
-                <InfoBlock
-                  label={
-                    parcel?.properties?._layerType === "murabba"
-                      ? "Sheet"
-                      : "Parcel ID"
-                  }
-                  value={
-                    parcel?.properties?._layerType === "murabba"
-                      ? (parcel?.properties?.sheets ?? parcelData.parcelId)
-                      : parcelData.parcelId
-                  }
-                />
+                <div className="space-y-3">
+                  <InfoBlock
+                    label={
+                      parcel?.properties?._layerType === "murabba"
+                        ? "Sheet"
+                        : "Parcel ID"
+                    }
+                    value={
+                      parcel?.properties?._layerType === "murabba"
+                        ? (parcel?.properties?.sheets ?? parcelData.parcelId)
+                        : parcelData.parcelId
+                    }
+                  />
+                  <InfoBlock
+                    label="Verified Status"
+                    value={boundaryStatus === "verified" ? "Yes" : "No"}
+                  />
+                </div>
                 <InfoBlock
                   label="Assessment Circle"
                   value={parcelData.rthIff}
                 />
-              </div>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-              <h3 className="text-[12px] font-semibold leading-tight text-slate-700 mb-3">
-                Past Status Timeline
-              </h3>
-
-              <div className="flex items-center justify-between text-[11px] text-slate-600">
-                {timelineData.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col items-center flex-1"
-                  >
-                    <span className="font-semibold text-slate-700">
-                      {item.year}
-                    </span>
-                    <div className="w-3 h-3 bg-green-600 rounded-full mt-2 mb-2" />
-                    <span className="text-center text-[11px] text-slate-600">
-                      {item.label}
-                    </span>
-                  </div>
-                ))}
               </div>
             </div>
           </>
