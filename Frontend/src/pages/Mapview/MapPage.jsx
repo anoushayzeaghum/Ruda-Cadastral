@@ -663,7 +663,6 @@ export default function MapPage() {
           selectedTehsil={filters?.selectedTehsilOptions}
           viewBy={filters?.viewBy}
           layers={layers}
-          selectedFilterLayers={selectedFilterLayers}
           selectedRudaPhaseIds={selectedRudaPhaseIds}
           selectedProposedRoadIds={selectedProposedRoadIds}
           basemap={basemap}

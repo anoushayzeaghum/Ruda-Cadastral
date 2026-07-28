@@ -2,68 +2,27 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Layers,
   Wrench,
-  MapPin,
   Satellite,
-  Ruler,
-  ChevronRight,
-  Map,
-  Info,
-  Search,
-  ChevronDown,
-  Crosshair,
-  SquareDashedIcon,
-  Compass,
-  Printer,
-  CircleDot,
-  Network,
-  Route,
   Image as ImageIcon,
   X,
-  Table2,
   ListChecks,
 } from "lucide-react";
-import Measurement from "../GISMetaverse/tools/Measurement";
 import LayerManager from "./Layers/LayerManager.jsx";
 import Toolbox from "./Layers/Toolbox.jsx";
 import RasterData from "./Layers/RasterData.jsx";
 import BaseMap from "./Layers/BaseMap.jsx";
 
 import RudaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaBoundaryAttribute";
-import RudaMozaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaMozaBoundaryAttribute";
 import ProposedRoadAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProposedRoadAttribute";
 import GeodeticNetworkAttribute from "../GISMetaverse/tools/Layers/AttributeTable/GeodeticNetworkAttribute";
 import MauzaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/MauzaBoundaryAttribute";
-
-const getMauzaName = (selectedMauza) => {
-  if (!selectedMauza) return "";
-  return (
-    selectedMauza?.mauza ??
-    selectedMauza?.name ??
-    selectedMauza?.Mauza ??
-    selectedMauza?.moza ??
-    selectedMauza?.mouza ??
-    ""
-  ).trim();
-};
-
-const ORTHO_TILE_NAME_BY_MAUZA = {
-  "handu gujran": "Handu_Gujran_Ortho",
-  "lakho dair": "Lakho_Dair_Ortho",
-};
-
-const getOrthoTileNameFromMauzaName = (mauzaName = "") => {
-  const normalized = String(mauzaName || "")
-    .trim()
-    .toLowerCase();
-  return ORTHO_TILE_NAME_BY_MAUZA[normalized] || "";
-};
-
-const getOrthoTileUrlFromMauza = (selectedMauza) => {
-  const tileName = getOrthoTileNameFromMauzaName(getMauzaName(selectedMauza));
-  return tileName
-    ? `https://rudametaverse.nespakprogresscenter.com/tiles/data/${tileName}/{z}/{x}/{y}.png`
-    : "";
-};
+import KhasraBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/KhasraBoundaryAttribute";
+import SquareBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/SquareBoundaryAttribute";
+import DistrictBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/DistrictBoundaryAttribute";
+import TehsilBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TehsilBoundaryAttribute";
+import AcreBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/AcreBoundaryAttribute";
+import TriJunctionPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TriJunctionPointsAttribute";
+import FieldPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/FieldPointsAttribute";
 
 // Hook — true when viewport width is below the sm breakpoint (640 px)
 function useIsMobile() {
@@ -80,78 +39,6 @@ function useIsMobile() {
 
   return isMobile;
 }
-import KhasraBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/KhasraBoundaryAttribute";
-import SquareBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/SquareBoundaryAttribute";
-import DistrictBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/DistrictBoundaryAttribute";
-import TehsilBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TehsilBoundaryAttribute";
-import AcreBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/AcreBoundaryAttribute";
-import TriJunctionPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TriJunctionPointsAttribute";
-import FieldPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/FieldPointsAttribute";
-
-const BASEMAPS = [
-  {
-    name: "Satellite",
-    preview:
-      "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/4640/3075",
-  },
-  {
-    name: "Streets",
-    preview:
-      "https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/13/4640/3075",
-  },
-  {
-    name: "Light",
-    preview: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6",
-  },
-  {
-    name: "Dark",
-    preview: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21",
-  },
-  {
-    name: "Outdoors",
-    preview: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-  },
-];
-
-const VECTOR_BOUNDARY_LAYERS = [
-  { key: "khasraLayer", label: "Khasra Boundary" },
-  { key: "squareLayer", label: "Square Boundary" },
-  { key: "acreLayer", label: "Acre Boundary" },
-  { key: "triJunctionPoints", label: "Tri Junction Points" },
-  { key: "fieldPoints", label: "Field Points" },
-];
-
-const RASTER_DATA_LAYERS = [{ key: "mussaviLayer", label: "Massavi" }];
-
-const RUDA_PHASE_COLORS = [
-  "#6bb7e8",
-  "#f8d56b",
-  "#6bd69a",
-  "#f59e72",
-  "#b99cf3",
-  "#78d6d0",
-  "#f3a6c8",
-  "#a7d77b",
-  "#f4b860",
-  "#86a8e7",
-  "#d7b377",
-  "#8dd3c7",
-];
-
-const hashString = (value = "") => {
-  const text = String(value || "");
-  let hash = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-};
-
-const getRudaPhaseColor = (phaseId) => {
-  const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
-  return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
-};
-
 export default function LeftPanel({
   map,
   layers,
@@ -175,9 +62,6 @@ export default function LeftPanel({
   onMultiSelectionModeChange = () => {},
 }) {
   const [activePanel, setActivePanel] = useState("layers");
-  const [rudaSectionOpen, setRudaSectionOpen] = useState(false);
-  const [rudaDropdownOpen, setRudaDropdownOpen] = useState(false);
-  const hasMauza = !!selectedMauza;
   const initializedOpacityKeysRef = useRef(new Set());
   const [openAttributeTable, setOpenAttributeTable] = useState(null);
   const [dropdownOpenByKey, setDropdownOpenByKey] = useState({});
@@ -193,14 +77,6 @@ export default function LeftPanel({
     setDropdownOpenByKey((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const [proposedRoads, setProposedRoads] = useState([]);
-  const [proposedDropdownOpen, setProposedDropdownOpen] = useState(false);
-
-  const [layerAvailability, setLayerAvailability] = useState({
-    khasra: false,
-    square: false,
-    acre: false,
-    murabba: false,
-  });
 
   const getDefaultOpacityForSelectedLayer = () => 100;
 
@@ -577,14 +453,6 @@ export default function LeftPanel({
     updateLayer("khasraLayer", { visible: true, forceLoad: true });
   }, [selectedMauza]);
 
-  useEffect(() => {
-    if (!selectedMauza) return;
-
-    // Refresh the status-sensitive records without changing checkbox state.
-    loadLayerRecords("mauzaBoundary", boundaryStatus);
-    loadLayerRecords("khasraLayer", boundaryStatus);
-    loadLayerRecords("squareLayer", boundaryStatus);
-  }, [selectedMauza, boundaryStatus]);
   return (
     <>
       {/* Icon toolbar - positioned left on desktop, bottom on mobile */}
