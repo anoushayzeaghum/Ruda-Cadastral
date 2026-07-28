@@ -156,7 +156,9 @@ const ORTHO_TILE_NAME_BY_MAUZA = {
 };
 
 const getOrthoTileNameFromMauzaName = (mauzaName = "") => {
-  const normalized = String(mauzaName || "").trim().toLowerCase();
+  const normalized = String(mauzaName || "")
+    .trim()
+    .toLowerCase();
   return ORTHO_TILE_NAME_BY_MAUZA[normalized] || "";
 };
 
@@ -168,7 +170,9 @@ const getOrthoTileUrlFromMauza = (selectedMauza) => {
 };
 
 const getOrthoBoundsFromMauzaName = (mauzaName = "") => {
-  const normalized = String(mauzaName || "").trim().toLowerCase();
+  const normalized = String(mauzaName || "")
+    .trim()
+    .toLowerCase();
   const known = {
     "handu gujran": HANDU_GUJRAN_BOUNDS,
   };
@@ -615,9 +619,11 @@ export default function MapView({
     }
   };
 
-  const reportLoadedFeatures = (geojson) => {
+  const reportLoadedFeatures = (geojson, featureType = null) => {
     try {
-      if (typeof onFeaturesLoaded === "function") onFeaturesLoaded(geojson);
+      if (typeof onFeaturesLoaded === "function") {
+        onFeaturesLoaded(geojson, featureType);
+      }
     } catch (e) {
       console.warn("onFeaturesLoaded callback failed", e);
     }
@@ -1474,7 +1480,7 @@ export default function MapView({
       zoomToGeoJSON(geojson);
       movePointLayersToTop();
       setFeatureCount(geojson.features.length);
-      reportLoadedFeatures(geojson);
+      reportLoadedFeatures(geojson, "khasra");
     } catch (e) {
       console.error("Khasra drawing error:", e);
       setError("Failed to display Khasras");
@@ -1563,7 +1569,7 @@ export default function MapView({
       zoomToGeoJSON(geojson);
       movePointLayersToTop();
       setFeatureCount(geojson.features.length);
-      reportLoadedFeatures(geojson);
+      reportLoadedFeatures(geojson, "murabba");
     } catch (e) {
       console.error("Murabba drawing error:", e);
       setError("Failed to display Murabbas");
@@ -2139,7 +2145,7 @@ export default function MapView({
         // Clear the previous status source before loading the replacement.
         clearBoundaryLevel(SQUARE_LEVEL);
         delete currentGeojson.current[SQUARE_LEVEL];
-        reportLoadedFeatures(emptyFeatureCollection());
+        reportLoadedFeatures(emptyFeatureCollection(), "square");
 
         const mauzaId = getSelectedMauzaId(selectedMauza);
         const geojson =
@@ -2153,19 +2159,19 @@ export default function MapView({
           drawBoundaryLevel(SQUARE_LEVEL, geojson, squareLayerOpacity);
           currentGeojson.current[SQUARE_LEVEL] = geojson;
           setFeatureCount(geojson.features.length);
-          reportLoadedFeatures(geojson);
+          reportLoadedFeatures(geojson, "square");
           zoomToGeoJSON(geojson, { padding: 70, duration: 500 });
         } else {
           clearBoundaryLevel(SQUARE_LEVEL);
           delete currentGeojson.current[SQUARE_LEVEL];
           setFeatureCount(0);
-          reportLoadedFeatures(emptyFeatureCollection());
+          reportLoadedFeatures(emptyFeatureCollection(), "square");
         }
       } catch (e) {
         if (!cancelled) {
           console.error("Square boundary load error:", e);
           setError("Failed to load Square Boundary");
-          reportLoadedFeatures(emptyFeatureCollection());
+          reportLoadedFeatures(emptyFeatureCollection(), "square");
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -2202,13 +2208,13 @@ export default function MapView({
           drawBoundaryLevel(ACRE_LEVEL, geojson, acreLayerOpacity);
           currentGeojson.current[ACRE_LEVEL] = geojson;
           setFeatureCount(geojson.features.length);
-          reportLoadedFeatures(geojson);
+          reportLoadedFeatures(geojson, "acre");
           zoomToGeoJSON(geojson, { padding: 70, duration: 500 });
         } else {
           clearBoundaryLevel(ACRE_LEVEL);
           delete currentGeojson.current[ACRE_LEVEL];
           setFeatureCount(0);
-          reportLoadedFeatures(emptyFeatureCollection());
+          reportLoadedFeatures(emptyFeatureCollection(), "acre");
         }
       } catch (e) {
         console.error("Acre boundary load error:", e);
@@ -2394,7 +2400,7 @@ export default function MapView({
         // shown while the unverified request (or vice versa) is in flight.
         clearKhasraLayers();
         delete currentGeojson.current.khasra;
-        reportLoadedFeatures(emptyFeatureCollection());
+        reportLoadedFeatures(emptyFeatureCollection(), "khasra");
 
         const mauzaId = getSelectedMauzaId(selectedMauza);
         const geojson =
@@ -2410,13 +2416,13 @@ export default function MapView({
           clearKhasraLayers();
           delete currentGeojson.current.khasra;
           setFeatureCount(0);
-          reportLoadedFeatures(emptyFeatureCollection());
+          reportLoadedFeatures(emptyFeatureCollection(), "khasra");
         }
       } catch (e) {
         if (!cancelled) {
           console.error("Khasra load error:", e);
           setError("Failed to load Khasras");
-          reportLoadedFeatures(emptyFeatureCollection());
+          reportLoadedFeatures(emptyFeatureCollection(), "khasra");
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -2574,7 +2580,13 @@ export default function MapView({
     return () => {
       map.off("style.load", restoreOrtho);
     };
-  }, [massaviLayerVisible, massaviLayerOpacity, orthoTileUrl, isMapReady, selectedMauzaName]);
+  }, [
+    massaviLayerVisible,
+    massaviLayerOpacity,
+    orthoTileUrl,
+    isMapReady,
+    selectedMauzaName,
+  ]);
 
   useEffect(() => {
     const map = mapInstance.current;
