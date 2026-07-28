@@ -3,7 +3,10 @@ import { LAYERS } from "./LayerManager/FlyToLayerConfig";
 const ADMIN_LOCATION_FIELDS = [
   { keys: ["district", "District"], label: "District" },
   { keys: ["tehsil", "Tehsil"], label: "Tehsil" },
-  { keys: ["mauza", "Mauza", "Mouza", "mouza", "moza", "Moza"], label: "Mauza" },
+  {
+    keys: ["mauza", "Mauza", "Mouza", "mouza", "moza", "Moza"],
+    label: "Mauza",
+  },
 ];
 
 export const PLOT_POPUP_FIELDS = [

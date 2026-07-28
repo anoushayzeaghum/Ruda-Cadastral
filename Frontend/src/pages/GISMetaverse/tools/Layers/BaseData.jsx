@@ -3,7 +3,6 @@ import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import {
   getExistingForestGeoJSON,
   getLahoreTransportationRoadsGeoJSON,
-  getMpPrincipleZoningGeoJSON,
 } from "../../../../services/metaverseApi";
 import RoadNetworkLegend, {
   addOrUpdateRoadNetworkLayer,
@@ -11,12 +10,6 @@ import RoadNetworkLegend, {
   setRoadNetworkOpacity,
   setRoadNetworkVisibility,
 } from "./LayerManager/BaseData/RoadNetworkLayer";
-import LandUseLegend, {
-  addOrUpdateLandUseLayer,
-  removeLandUseLayer,
-  setLandUseOpacity,
-  setLandUseVisibility,
-} from "./LayerManager/BaseData/LandUseLayer";
 
 const SOURCE_PREFIX = "gism-base-data";
 
@@ -45,22 +38,6 @@ const POINT_FILTER = [
 ];
 
 const LAYER_DEFS = [
-  {
-    key: "existingLandUse",
-    label: "Existing Land Use",
-    color: "#d4a72c",
-    previewColors: [
-      "#facc15",
-      "#84cc16",
-      "#22c55e",
-      "#06b6d4",
-      "#3b82f6",
-      "#a855f7",
-      "#ef4444",
-    ],
-    fetchGeoJSON: getMpPrincipleZoningGeoJSON,
-    customLandUseStyle: true,
-  },
   {
     key: "transportationRoadNetwork",
     label: "Transportation Road Network",
@@ -285,8 +262,6 @@ export default function BaseData({ map }) {
 
       if (definition.customRoadStyle) {
         addOrUpdateRoadNetworkLayer(map, geojson, currentState.opacity);
-      } else if (definition.customLandUseStyle) {
-        addOrUpdateLandUseLayer(map, geojson, currentState.opacity);
       } else {
         addOrUpdateMapLayer(
           map,
@@ -377,8 +352,6 @@ export default function BaseData({ map }) {
       if (!state.visible) {
         if (definition.customRoadStyle) {
           setRoadNetworkVisibility(map, false);
-        } else if (definition.customLandUseStyle) {
-          setLandUseVisibility(map, false);
         } else {
           setLayerVisibility(map, definition.key, false);
         }
@@ -420,7 +393,6 @@ export default function BaseData({ map }) {
       if (!map) return;
       LAYER_DEFS.forEach((definition) => {
         if (definition.customRoadStyle) removeRoadNetworkLayer(map);
-        else if (definition.customLandUseStyle) removeLandUseLayer(map);
         else removeMapLayer(map, definition.key);
       });
     };
@@ -448,8 +420,6 @@ export default function BaseData({ map }) {
 
     if (definition?.customRoadStyle) {
       setRoadNetworkOpacity(map, opacity);
-    } else if (definition?.customLandUseStyle) {
-      setLandUseOpacity(map, opacity);
     } else {
       applyLayerStyle(map, key, state?.color || "#ffffff", opacity);
     }
@@ -523,16 +493,9 @@ export default function BaseData({ map }) {
                     setOpacity(definition.key, opacity)
                   }
                   onColorChange={(color) => setColor(definition.key, color)}
-                  showColorPicker={
-                    !definition.customRoadStyle &&
-                    !definition.customLandUseStyle
-                  }
+                  showColorPicker={!definition.customRoadStyle}
                   previewColors={definition.previewColors}
                 />
-
-                {definition.customLandUseStyle && state.visible && (
-                  <LandUseLegend />
-                )}
 
                 {definition.customRoadStyle && state.visible && (
                   <RoadNetworkLegend />

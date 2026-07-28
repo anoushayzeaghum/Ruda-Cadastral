@@ -11,6 +11,7 @@ import {
   normalizeAreaText,
   openPdfPreview,
   valueOrDash,
+  getCircularLogoDataUrl,
 } from "./printUtils";
 
 const PRINT_LAYOUT = {
@@ -23,7 +24,21 @@ const PRINT_LAYOUT = {
   insetMapPanX: 0,
   insetMapPanY: 0,
 };
-
+const drawCircularLogo = (doc, image, cx, cy, radius, logoSize) => {
+  if (!image) return;
+  const dataUrl = getCircularLogoDataUrl(image, 300);
+  if (!dataUrl) return;
+  doc.addImage(
+    dataUrl,
+    "PNG",
+    cx - logoSize / 2,
+    cy - logoSize / 2,
+    logoSize,
+    logoSize,
+    undefined,
+    "FAST",
+  );
+};
 const createZoomedCanvas = (sourceCanvas, zoom = 1, panX = 0, panY = 0) => {
   if (!sourceCanvas || typeof document === "undefined") return sourceCanvas;
 
@@ -272,28 +287,14 @@ export const printSitePlan = async ({
     doc.rect(0, 0, pageWidth, 1.8, "F");
 
     if (gopLogo) {
-      doc.addImage(
-        gopLogo,
-        "PNG",
-        margin + 6,
-        5,
-        PRINT_LAYOUT.gopLogoSize,
-        PRINT_LAYOUT.gopLogoSize,
-        undefined,
-        "FAST",
-      );
+      const cx = margin + 6 + PRINT_LAYOUT.gopLogoSize / 2;
+      const cy = 5 + PRINT_LAYOUT.gopLogoSize / 2;
+      drawCircularLogo(doc, gopLogo, cx, cy, PRINT_LAYOUT.gopLogoSize / 2, PRINT_LAYOUT.gopLogoSize);
     }
     if (rudaLogo) {
-      doc.addImage(
-        rudaLogo,
-        "PNG",
-        rightEdge - PRINT_LAYOUT.rudaLogoSize - 6,
-        6,
-        PRINT_LAYOUT.rudaLogoSize,
-        PRINT_LAYOUT.rudaLogoSize,
-        undefined,
-        "FAST",
-      );
+      const cx = rightEdge - PRINT_LAYOUT.rudaLogoSize / 2 - 6;
+      const cy = 6 + PRINT_LAYOUT.rudaLogoSize / 2;
+      drawCircularLogo(doc, rudaLogo, cx, cy, PRINT_LAYOUT.rudaLogoSize / 2, PRINT_LAYOUT.rudaLogoSize);
     }
 
     doc.setFont("helvetica", "bold");

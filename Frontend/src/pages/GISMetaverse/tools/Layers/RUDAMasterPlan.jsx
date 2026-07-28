@@ -31,6 +31,12 @@ import CityLevelServicesLayer, {
   getCityLevelServicesOutlinePaint,
   getCityLevelServicesPatternFillPaint,
 } from "./LayerManager/RudaMasterPlanLayers/CityLevelServicesLayer";
+import LandUseLegend, {
+  addOrUpdateLandUseLayer,
+  removeLandUseLayer,
+  setLandUseOpacity,
+  setLandUseVisibility,
+} from "./LayerManager/BaseData/LandUseLayer";
 import ProposedRoadsLayer, {
   DEFAULT_RUDA_PROPOSED_ROAD_COLORS,
   RUDA_PROPOSED_ROAD_LEGEND,
@@ -85,6 +91,7 @@ import {
 
 import {
   getCityLevelServiceGeoJSON,
+  getMpPrincipleZoningGeoJSON,
   getPrecientBoundaryGeoJSON,
   getProposedRoadNetworkGeoJSON,
   getProposedWWTPGeoJSON,
@@ -156,10 +163,31 @@ const RUDA_MASTER_PLAN_GROUPS = [
     ],
   },
   {
+    key: "principleLandUseZoningGroup",
+    label: "Principle Land Use Zoning",
+    standalone: true,
+    children: [
+      {
+        key: "principleLandUseZoning",
+        label: "Principle Land Use Zoning",
+        color: "#d4a72c",
+        previewColors: [
+          "#facc15",
+          "#84cc16",
+          "#22c55e",
+          "#06b6d4",
+          "#3b82f6",
+          "#a855f7",
+          "#ef4444",
+        ],
+      },
+    ],
+  },
+  {
     key: "riverTrainingWorks",
     label: "River Training Works - RTW",
     children: [
-      { key: "rtwPackages", label: "RTW Packages", color: "#8b5cf6" },
+      // { key: "rtwPackages", label: "RTW Packages", color: "#8b5cf6" },
       {
         key: "rtwAlignment",
         label: "RTW Alignment",
@@ -167,7 +195,7 @@ const RUDA_MASTER_PLAN_GROUPS = [
       },
       {
         key: "riverBoundaryLayer",
-        label: "River Boundary",
+        label: "Proposed River",
         color: RIVER_BOUNDARY_COLOR,
       },
       { key: "riverRavi", label: "River 2025", color: RIVER_RAVI_COLOR },
@@ -183,7 +211,7 @@ const RUDA_MASTER_PLAN_GROUPS = [
         label: "Proposed WWTP",
         color: PROPOSED_WWTP_COLOR,
       },
-      { key: "wwtpSite", label: "WWTP Sites", color: WWTP_SITES_COLOR },
+      { key: "wwtpSite", label: "Proposed WWTP Sites", color: WWTP_SITES_COLOR },
       { key: "swtpSite", label: "SWTP Sites", color: SWTP_SITES_COLOR },
     ],
   },
@@ -308,6 +336,12 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     getLinePaint: getRudaProposedRoadLinePaint,
     outlineLineCap: "round",
     lineCap: "round",
+  },
+  principleLandUseZoning: {
+    endpoint: "/mp-principle-zoning/",
+    fetchGeoJSON: getMpPrincipleZoningGeoJSON,
+    customLandUseStyle: true,
+    LegendComponent: LandUseLegend,
   },
   proposedWWTP: {
     endpoint: "/proposed-wwtp/",
@@ -541,6 +575,12 @@ const applyRudaLayerPaint = (
 const setRudaLayerVisibility = (map, layerKey, visible) => {
   if (!map) return;
 
+  const config = RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey];
+  if (config?.customLandUseStyle) {
+    setLandUseVisibility(map, visible);
+    return;
+  }
+
   const ids = getLayerIds(layerKey);
 
   [
@@ -725,6 +765,11 @@ const addOrUpdateRudaMapLayer = ({
 
 const removeRudaMapLayer = (map, layerKey) => {
   if (!map || typeof map.getStyle !== "function") return;
+
+  if (RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey]?.customLandUseStyle) {
+    removeLandUseLayer(map);
+    return;
+  }
 
   try {
     if (!map.getStyle()) return;
@@ -919,15 +964,20 @@ export default function RUDAMasterPlan({ map }) {
       const currentState = layerStateRef.current[layerKey] || state;
       if (!currentState?.checked) return;
 
-      addOrUpdateRudaMapLayer({
-        map,
-        layerKey,
-        geojson,
-        color: currentState.color || layerLookup[layerKey]?.color || "#6bb7e8",
-        opacity: currentState.opacity ?? 100,
-        config,
-        categorizedColors: categorizedColorsRef.current,
-      });
+      if (config.customLandUseStyle) {
+        addOrUpdateLandUseLayer(map, geojson, currentState.opacity ?? 100);
+      } else {
+        addOrUpdateRudaMapLayer({
+          map,
+          layerKey,
+          geojson,
+          color:
+            currentState.color || layerLookup[layerKey]?.color || "#6bb7e8",
+          opacity: currentState.opacity ?? 100,
+          config,
+          categorizedColors: categorizedColorsRef.current,
+        });
+      }
 
       if (shouldZoom) zoomToGeoJSON(geojson);
     });
@@ -1013,22 +1063,21 @@ export default function RUDAMasterPlan({ map }) {
     return geojson;
   };
 
+  // Each layer is controlled explicitly from its own toggle handler.
+  // Avoid running through every layer whenever any checkbox, opacity, colour,
+  // or details dropdown changes, because queued Mapbox style callbacks from
+  // unrelated layers can otherwise restore/hide the wrong layer later.
   useEffect(() => {
     if (!map) return;
 
-    Object.entries(layerState).forEach(([layerKey, state]) => {
-      const config = RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey];
-      if (!config) return;
-
+    Object.entries(layerStateRef.current).forEach(([layerKey, state]) => {
       if (state?.checked) {
-        const shouldZoom = Boolean(zoomOnLoadRef.current[layerKey]);
-        delete zoomOnLoadRef.current[layerKey];
-        loadRudaLayer(layerKey, state, shouldZoom);
+        void loadRudaLayer(layerKey, state, false);
       } else {
         setRudaLayerVisibility(map, layerKey, false);
       }
     });
-  }, [map, layerState]);
+  }, [map]);
 
   useEffect(() => {
     if (!map) return undefined;
@@ -1078,7 +1127,7 @@ export default function RUDAMasterPlan({ map }) {
   };
 
   const toggleGroup = (group) => {
-    setLayerStateSynced((previous) => {
+    const updated = setLayerStateSynced((previous) => {
       const allSelected = group.children.every(
         (layer) => previous[layer.key]?.checked,
       );
@@ -1100,6 +1149,17 @@ export default function RUDAMasterPlan({ map }) {
       ...previous,
       [group.key]: true,
     }));
+
+    if (!map) return;
+
+    group.children.forEach((layer) => {
+      const state = updated[layer.key];
+      if (state?.checked) {
+        void loadRudaLayer(layer.key, state, false);
+      } else {
+        setRudaLayerVisibility(map, layer.key, false);
+      }
+    });
   };
 
   const toggleGroupDropdown = (groupKey) => {
@@ -1113,17 +1173,27 @@ export default function RUDAMasterPlan({ map }) {
     const currentLayerState = layerStateRef.current[layerKey] || {};
     const willBeChecked = !currentLayerState.checked;
 
-    if (willBeChecked) {
-      zoomOnLoadRef.current[layerKey] = true;
-    }
-
-    setLayerStateSynced((previous) => ({
+    const nextState = setLayerStateSynced((previous) => ({
       ...previous,
       [layerKey]: {
         ...previous[layerKey],
         checked: willBeChecked,
       },
     }));
+
+    if (!map) return;
+
+    if (!willBeChecked) {
+      // Hide only this layer. Keep its source/data cached so it can be opened
+      // again immediately and repeatedly without depending on another layer.
+      delete zoomOnLoadRef.current[layerKey];
+      setRudaLayerVisibility(map, layerKey, false);
+      return;
+    }
+
+    // Load or restore only the selected layer. The current ref is already
+    // synchronized, so async completion cannot use stale checkbox state.
+    void loadRudaLayer(layerKey, nextState[layerKey], true);
   };
 
   const updateLayerColor = (layerKey, color) => {
@@ -1154,12 +1224,18 @@ export default function RUDAMasterPlan({ map }) {
       },
     }));
 
+    const config = RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey];
+    if (config?.customLandUseStyle) {
+      setLandUseOpacity(map, opacity);
+      return;
+    }
+
     applyRudaLayerPaint(
       map,
       layerKey,
       layerStateRef.current[layerKey]?.color || layerLookup[layerKey]?.color,
       opacity,
-      RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey],
+      config,
       categorizedColorsRef.current,
     );
   };
@@ -1215,6 +1291,7 @@ export default function RUDAMasterPlan({ map }) {
           categorized={Boolean(currentLayerConfig.categorized)}
           categoryLegend={currentLayerConfig.categoryLegend || []}
           categorizedColors={categorizedColors[layer.key] || {}}
+          previewColors={layer.previewColors || []}
           onChange={() => toggleLayer(layer.key)}
           onColorChange={(value) => updateLayerColor(layer.key, value)}
           onOpacityChange={(value) => updateLayerOpacity(layer.key, value)}
@@ -1378,18 +1455,8 @@ function LayerDetails({
       )}
 
       <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
-        <span>Status</span>
-        <span>{meta.status || "Not loaded"}</span>
-      </div>
-      <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
         <span>Features</span>
         <span>{meta.featureCount ?? 0}</span>
-      </div>
-      <div className="flex justify-between gap-3 py-1">
-        <span>Data source</span>
-        <span className="truncate text-right">
-          {meta.endpoint || config.endpoint || `${layerKey} not connected`}
-        </span>
       </div>
     </div>
   );
@@ -1465,6 +1532,7 @@ function LayerItem({
   categorized = false,
   categoryLegend = [],
   categorizedColors = {},
+  previewColors = [],
   onChange,
   onColorChange,
   onOpacityChange,
@@ -1479,12 +1547,21 @@ function LayerItem({
     onColorChange?.(event.target.value);
   };
 
-  const categorizedGradient = `linear-gradient(90deg, ${categoryLegend
+  const paletteItems = previewColors.length
+    ? previewColors.map((itemColor, index) => ({
+        label: `${label}-${index}`,
+        color: itemColor,
+      }))
+    : categoryLegend;
+
+  const categorizedGradient = `linear-gradient(90deg, ${paletteItems
     .map((item, index) => {
-      const categoryCount = Math.max(categoryLegend.length, 1);
+      const categoryCount = Math.max(paletteItems.length, 1);
       const start = index * (100 / categoryCount);
       const end = (index + 1) * (100 / categoryCount);
-      const itemColor = categorizedColors[item.label] || item.color;
+      const itemColor = previewColors.length
+        ? item.color
+        : categorizedColors[item.label] || item.color;
       return `${itemColor} ${start}% ${end}%`;
     })
     .join(", ")})`;
@@ -1503,7 +1580,7 @@ function LayerItem({
           <span
             className="relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/50"
             style={
-              categorized
+              categorized || previewColors.length
                 ? {
                     background: categorizedGradient,
                     borderColor: "rgba(255,255,255,0.6)",
@@ -1511,8 +1588,8 @@ function LayerItem({
                 : { backgroundColor: color, borderColor: color }
             }
             title={
-              categorized
-                ? `${label} classified colors - expand details to edit each color`
+              categorized || previewColors.length
+                ? `${label} classified colours - expand details to view them`
                 : `Change ${label} color`
             }
             onClick={stopColorEvent}
@@ -1521,9 +1598,9 @@ function LayerItem({
             <input
               type="color"
               value={color}
-              disabled={categorized}
+              disabled={categorized || previewColors.length > 0}
               aria-label={
-                categorized
+                categorized || previewColors.length > 0
                   ? `${label} classified colors`
                   : `Change ${label} color`
               }
