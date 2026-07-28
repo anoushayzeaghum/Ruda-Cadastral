@@ -6,9 +6,14 @@ const ADMINISTRATIVE_LAYERS = [
   { key: "tehsilBoundary", label: "Tehsil Boundary" },
   { key: "mauzaBoundary", label: "Mauza Boundary" },
   { key: "khasraLayer", label: "Khasra Boundary" },
+  { key: "possessionLand", label: "Possession Land" },
+  { key: "awardedLand", label: "Awarded Land" },
+  { key: "stateLand", label: "State Land" },
   { key: "squareLayer", label: "Square Boundary" },
   { key: "acreLayer", label: "Acre Boundary" },
 ];
+
+const KHASRA_CHILD_LAYERS = [];
 
 const BASE_DATA_LAYERS = [
   { key: "triJunctionPoints", label: "Tri Junction Points" },
@@ -171,9 +176,30 @@ export default function LayerManager({
         </div>
 
         {/* Existing Layers */}
-        {ADMINISTRATIVE_LAYERS.map((item, index) =>
-          renderStandardLayer(item, index, ADMINISTRATIVE_LAYERS, true),
-        )}
+        {ADMINISTRATIVE_LAYERS.map((item, index) => (
+          <div key={item.key}>
+            {renderStandardLayer(item, index, ADMINISTRATIVE_LAYERS, true)}
+            {item.key === "khasraLayer" && dropdownOpenByKey?.khasraLayer && (
+              <div className="border-b border-[#0c3d2d] bg-[#031a14]">
+                {KHASRA_CHILD_LAYERS.map((child, childIndex) => (
+                  <AdminLayerRow
+                    key={child.key}
+                    child
+                    label={child.label}
+                    checked={getLayerVisible(child.key)}
+                    opacity={getLayerOpacity(child.key)}
+                    color={getLayerColor(child.key)}
+                    isLast={childIndex === KHASRA_CHILD_LAYERS.length - 1}
+                    onToggle={() => toggleLayer(child.key)}
+                    onOpacity={(value) =>
+                      updateLayer(child.key, { opacity: value })
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </LayerSection>
 
       <LayerSection
@@ -298,10 +324,11 @@ function AdminLayerRow({
   onColor,
   onDropdownToggle,
   onTable,
+  child = false,
 }) {
   return (
     <div
-      className={`bg-[#06291f] px-2.5 py-2 ${isLast ? "" : "border-b border-[#0c3d2d]"}`}
+      className={`bg-[#06291f] py-2 ${child ? "pl-8 pr-2.5" : "px-2.5"} ${isLast ? "" : "border-b border-[#0c3d2d]"}`}
     >
       <div className="flex items-center gap-2">
         <input

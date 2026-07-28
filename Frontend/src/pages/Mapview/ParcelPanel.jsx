@@ -13,10 +13,33 @@ import {
   X,
 } from "lucide-react";
 
+const getActualKhasraNumber = (properties = {}) => {
+  const candidates = [
+    properties.kh,
+    properties.KH,
+    properties.k,
+    properties.K,
+    properties.khasra,
+    properties.khasra_no,
+    properties.khasra_id,
+    properties.join_shp,
+  ];
+
+  return (
+    candidates.find(
+      (value) =>
+        value !== undefined &&
+        value !== null &&
+        value !== "" &&
+        String(value).trim() !== "0",
+    ) ?? "N/A"
+  );
+};
+
 export default function ParcelPanel({
   parcel = null,
   isOpen = false,
-  onClose = () => { },
+  onClose = () => {},
 }) {
   const [activeTab, setActiveTab] = useState("parcelInfo");
 
@@ -25,8 +48,7 @@ export default function ParcelPanel({
       ? parcel.properties._area_acres
       : null;
 
-  const areaSqFt =
-    areaAcres !== null ? (areaAcres * 43560).toFixed(2) : null;
+  const areaSqFt = areaAcres !== null ? (areaAcres * 43560).toFixed(2) : null;
 
   const rawLandType = parcel?.properties?.type ?? "N/A";
 
@@ -37,15 +59,7 @@ export default function ParcelPanel({
   };
 
   const parcelData = {
-    khasraNo:
-      parcel?.properties?.kh ??
-      parcel?.properties?.KH ??
-      parcel?.properties?.k ??
-      parcel?.properties?.K ??
-      parcel?.properties?.khasra ??
-      parcel?.properties?.khasra_no ??
-      parcel?.properties?.khasra_id ??
-      "N/A",
+    khasraNo: getActualKhasraNumber(parcel?.properties || {}),
 
     murabbaNo:
       parcel?.properties?.m ??
@@ -60,7 +74,7 @@ export default function ParcelPanel({
     area:
       areaSqFt !== null
         ? `${Number(areaSqFt).toLocaleString()} sq ft`
-        : parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A",
+        : (parcel?.properties?.area ?? parcel?.properties?.mn ?? "N/A"),
 
     agricultureArea:
       areaSqFt !== null ? `${Number(areaSqFt).toLocaleString()} sq ft` : "N/A",
@@ -149,7 +163,10 @@ export default function ParcelPanel({
                         {parcelData.murabbaNo}
                       </strong>
                     </span>
-                    <ChevronDown size={16} className="text-slate-400 shrink-0" />
+                    <ChevronDown
+                      size={16}
+                      className="text-slate-400 shrink-0"
+                    />
                   </>
                 ) : (
                   <>
@@ -171,7 +188,10 @@ export default function ParcelPanel({
                       )}
                     </div>
 
-                    <ChevronDown size={16} className="text-slate-400 shrink-0" />
+                    <ChevronDown
+                      size={16}
+                      className="text-slate-400 shrink-0"
+                    />
                   </>
                 )}
               </div>
@@ -216,11 +236,14 @@ export default function ParcelPanel({
                   }
                   value={
                     parcel?.properties?._layerType === "murabba"
-                      ? parcel?.properties?.sheets ?? parcelData.parcelId
+                      ? (parcel?.properties?.sheets ?? parcelData.parcelId)
                       : parcelData.parcelId
                   }
                 />
-                <InfoBlock label="Assessment Circle" value={parcelData.rthIff} />
+                <InfoBlock
+                  label="Assessment Circle"
+                  value={parcelData.rthIff}
+                />
               </div>
             </div>
 
@@ -231,7 +254,10 @@ export default function ParcelPanel({
 
               <div className="flex items-center justify-between text-[11px] text-slate-600">
                 {timelineData.map((item, index) => (
-                  <div key={index} className="flex flex-col items-center flex-1">
+                  <div
+                    key={index}
+                    className="flex flex-col items-center flex-1"
+                  >
                     <span className="font-semibold text-slate-700">
                       {item.year}
                     </span>
@@ -278,10 +304,11 @@ function TabButton({ label, value, active, onChange }) {
   return (
     <button
       onClick={() => onChange(value)}
-      className={`text-[10px] sm:text-[12px] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md font-semibold leading-tight transition shrink-0 ${isActive
+      className={`text-[10px] sm:text-[12px] px-2 sm:px-3 py-1 sm:py-1.5 rounded-md font-semibold leading-tight transition shrink-0 ${
+        isActive
           ? "bg-green-700 text-white"
           : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-        }`}
+      }`}
     >
       {label}
     </button>

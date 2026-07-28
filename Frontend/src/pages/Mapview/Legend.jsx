@@ -90,14 +90,20 @@ export default function Legend({
 
   const showRudaLegend = getLayerVisible(layers, "rudaBoundary", false);
   const showRoadLegend = getLayerVisible(layers, "proposedRoads", false);
-  const shouldShow = showRudaLegend || showRoadLegend;
+  const showPossessionLand = getLayerVisible(layers, "possessionLand", false);
+  const showAwardedLand = getLayerVisible(layers, "awardedLand", false);
+  const showStateLand = getLayerVisible(layers, "stateLand", false);
+  const showLandLegend = showPossessionLand || showAwardedLand || showStateLand;
+  const shouldShow = showRudaLegend || showRoadLegend || showLandLegend;
 
   useEffect(() => {
     if (shouldShow) setCollapsed(false);
   }, [shouldShow]);
 
   const rudaLegendItems = useMemo(() => {
-    const selected = new Set((selectedRudaPhaseIds || []).map((id) => String(id)));
+    const selected = new Set(
+      (selectedRudaPhaseIds || []).map((id) => String(id)),
+    );
 
     return (rudaPhases || [])
       .filter((phase) => {
@@ -153,7 +159,10 @@ export default function Legend({
               <div className="space-y-2">
                 {rudaLegendItems.length ? (
                   rudaLegendItems.map((item) => (
-                    <div key={`ruda-${item.id}`} className="flex items-center gap-2.5">
+                    <div
+                      key={`ruda-${item.id}`}
+                      className="flex items-center gap-2.5"
+                    >
                       <span
                         className="h-4 w-7 shrink-0 rounded border border-slate-600"
                         style={{ backgroundColor: item.color }}
@@ -164,14 +173,63 @@ export default function Legend({
                     </div>
                   ))
                 ) : (
-                  <div className="text-[11px] text-slate-400">No selected RUDA phases.</div>
+                  <div className="text-[11px] text-slate-400">
+                    No selected RUDA phases.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {showLandLegend && (
+            <div
+              className={`${showRudaLegend ? "border-t border-slate-200 pt-3" : ""} mb-4`}
+            >
+              <p className="mb-2 text-[12px] font-semibold text-slate-800">
+                Khasra Thematic Layers
+              </p>
+              <div className="space-y-2">
+                {showPossessionLand && (
+                  <>
+                    <LegendSwatch
+                      label="Mutated Land"
+                      fill="#AFCB4F"
+                      line="#5F7F00"
+                    />
+                    <LegendSwatch
+                      label="Demarcated Land"
+                      fill="#ca3c3c"
+                      line="#7A0C0C"
+                    />
+                    <LegendSwatch
+                      label="Possession Land"
+                      fill="#F48FB1"
+                      line="#D81B60"
+                    />
+                  </>
+                )}
+                {showAwardedLand && (
+                  <LegendSwatch
+                    label="Awarded Land"
+                    fill="#FAEEDA"
+                    line="#854F0B"
+                  />
+                )}
+                {showStateLand && (
+                  <LegendSwatch
+                    label="State Land"
+                    fill="#F1EFE8"
+                    line="#5F5E5A"
+                  />
                 )}
               </div>
             </div>
           )}
 
           {showRoadLegend && (
-            <div className={showRudaLegend ? "border-t border-slate-200 pt-3" : ""}>
+            <div
+              className={showRudaLegend ? "border-t border-slate-200 pt-3" : ""}
+            >
               <div className="mb-2 flex items-center justify-between">
                 <p className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-800">
                   <Route size={14} />
@@ -207,5 +265,19 @@ export default function Legend({
         </div>
       )}
     </aside>
+  );
+}
+
+function LegendSwatch({ label, fill, line }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span
+        className="h-4 w-7 shrink-0 rounded"
+        style={{ backgroundColor: fill, border: `1.3px solid ${line}` }}
+      />
+      <span className="min-w-0 flex-1 truncate text-[11.5px] leading-tight text-slate-700">
+        {label}
+      </span>
+    </div>
   );
 }

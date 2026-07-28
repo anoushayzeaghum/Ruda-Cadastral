@@ -127,11 +127,51 @@ const normalizeData = (res) => {
   });
 };
 
+const firstMeaningfulValue = (...values) =>
+  values.find(
+    (value) =>
+      value !== undefined &&
+      value !== null &&
+      value !== "" &&
+      !(typeof value === "number" && value === 0) &&
+      String(value).trim() !== "0",
+  );
+
+const normalizeCadastralProperties = (properties = {}) => {
+  const normalized = { ...properties };
+
+  const khasraNumber = firstMeaningfulValue(
+    properties.kh,
+    properties.KH,
+    properties.k,
+    properties.K,
+    properties.khasra,
+    properties.khasra_no,
+    properties.khasra_id,
+    properties.join_shp,
+  );
+
+  if (khasraNumber !== undefined) normalized.kh = khasraNumber;
+
+  const mauzaId = firstMeaningfulValue(
+    properties.mauza_id,
+    properties.moza_id,
+    properties.mouza_id,
+    properties.mauza_gid,
+  );
+  if (mauzaId !== undefined) normalized.mauza_id = mauzaId;
+
+  return normalized;
+};
+
 const normalizeGeoJson = (res) => {
   const payload = extractPayload(res);
   const geojson = {
     type: "FeatureCollection",
-    features: toGeoJSONFeatures(payload),
+    features: toGeoJSONFeatures(payload).map((feature) => ({
+      ...feature,
+      properties: normalizeCadastralProperties(feature?.properties || {}),
+    })),
   };
 
   // Preserve an API-provided bbox so map screens can fit the layer without
@@ -736,3 +776,22 @@ export const getRudaKhasras = async (mauzaId) =>
 
 export const getRudaSquares = async (mauzaId) =>
   getRudaGeoJSONByMauza("/rudasquare/", mauzaId);
+
+///////////////////////////////////////////////////////
+//////////// THEMATIC KHASRA CHILD LAYERS ////////////
+///////////////////////////////////////////////////////
+
+export const getPossessionLandGeoJSON = async () => {
+  const res = await API.get("/possessionland/");
+  return normalizeGeoJson(res);
+};
+
+export const getAwardedLandGeoJSON = async () => {
+  const res = await API.get("/awardedland/");
+  return normalizeGeoJson(res);
+};
+
+export const getStateLandGeoJSON = async () => {
+  const res = await API.get("/stateland/");
+  return normalizeGeoJson(res);
+};

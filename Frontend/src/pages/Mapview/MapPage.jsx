@@ -17,15 +17,25 @@ import MapView from "./MapView";
 import { getRudaMauzas } from "../../services/api";
 
 const getKhasraNumber = (props = {}) => {
+  const candidates = [
+    props.kh,
+    props.KH,
+    props.k,
+    props.K,
+    props.khasra,
+    props.khasra_no,
+    props.khasra_id,
+    props.join_shp,
+  ];
+
   return (
-    props.kh ??
-    props.KH ??
-    props.k ??
-    props.K ??
-    props.khasra ??
-    props.khasra_no ??
-    props.khasra_id ??
-    null
+    candidates.find(
+      (value) =>
+        value !== undefined &&
+        value !== null &&
+        value !== "" &&
+        String(value).trim() !== "0",
+    ) ?? null
   );
 };
 
@@ -125,6 +135,9 @@ export default function MapPage() {
     tehsilBoundary: { visible: true, opacity: 0, color: "#06b6d4" },
     mauzaBoundary: { visible: true, opacity: 0, color: "#16a34a" },
     khasraLayer: { visible: false, opacity: 25, color: "#16a34a" },
+    possessionLand: { visible: false, opacity: 100, color: "#5F7F00" },
+    awardedLand: { visible: false, opacity: 100, color: "#854F0B" },
+    stateLand: { visible: false, opacity: 100, color: "#5F5E5A" },
     squareLayer: { visible: false, opacity: 35, color: "#8b5cf6" },
     acreLayer: { visible: false, opacity: 35, color: "#14b8a6" },
     murabbaLayer: { visible: false, opacity: 25, color: "#facc15" },
@@ -179,18 +192,17 @@ export default function MapPage() {
       return filters?.selectedMauzaDetails ?? null;
     }
 
-    const selectedMauzaId = filters?.selectedMauza;
-    if (
-      selectedMauzaId === undefined ||
-      selectedMauzaId === null ||
-      selectedMauzaId === ""
-    ) {
-      return null;
-    }
+    const verifiedSelection = filters?.selectedMauzaDetails;
+    const selectedMauzaKey =
+      getMauzaId(verifiedSelection) || filters?.selectedMauza || "";
+
+    if (!selectedMauzaKey) return null;
 
     return (
-      unverifiedMauzas.find(
-        (mauza) => String(getMauzaId(mauza)) === String(selectedMauzaId),
+      unverifiedMauzas.find((mauza) =>
+        [mauza?.mauza_id, mauza?.id, mauza?.gid].some(
+          (value) => String(value ?? "") === String(selectedMauzaKey),
+        ),
       ) || null
     );
   }, [
@@ -205,9 +217,12 @@ export default function MapPage() {
 
     const isUnverified = boundaryStatus === "unverified";
     const selectedMauza = isUnverified
-      ? activeSelectedMauzaDetails
-        ? String(getMauzaId(activeSelectedMauzaDetails))
-        : ""
+      ? String(
+          getMauzaId(activeSelectedMauzaDetails) ||
+            getMauzaId(filters.selectedMauzaDetails) ||
+            filters.selectedMauza ||
+            "",
+        )
       : filters.selectedMauza;
 
     return {

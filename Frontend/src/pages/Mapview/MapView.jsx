@@ -22,6 +22,9 @@ import {
   getRudaMauzas,
   getRudaKhasras,
   getRudaSquares,
+  getPossessionLandGeoJSON,
+  getAwardedLandGeoJSON,
+  getStateLandGeoJSON,
 } from "../../services/api";
 
 import {
@@ -179,6 +182,63 @@ const getOrthoBoundsFromMauzaName = (mauzaName = "") => {
   return known[normalized] || null;
 };
 
+const THEMATIC_LAND_LAYERS = {
+  possessionLand: {
+    source: "metaverse-possession-land-source",
+    fill: "metaverse-possession-land-fill",
+    line: "metaverse-possession-land-line",
+    label: "metaverse-possession-land-label",
+  },
+  awardedLand: {
+    source: "metaverse-awarded-land-source",
+    fill: "metaverse-awarded-land-fill",
+    line: "metaverse-awarded-land-line",
+    label: "metaverse-awarded-land-label",
+  },
+  stateLand: {
+    source: "metaverse-state-land-source",
+    fill: "metaverse-state-land-fill",
+    line: "metaverse-state-land-line",
+    label: "metaverse-state-land-label",
+  },
+};
+
+const POSSESSION_TYPE_FILL = [
+  "match",
+  ["downcase", ["to-string", ["coalesce", ["get", "l_type"], ""]]],
+  "mutated land",
+  "#AFCB4F",
+  "demarcated land",
+  "#ca3c3c",
+  "possession land",
+  "#F48FB1",
+  "#EAF3DE",
+];
+
+const POSSESSION_TYPE_LINE = [
+  "match",
+  ["downcase", ["to-string", ["coalesce", ["get", "l_type"], ""]]],
+  "mutated land",
+  "#5F7F00",
+  "demarcated land",
+  "#7A0C0C",
+  "possession land",
+  "#D81B60",
+  "#27500A",
+];
+
+const KHASRA_ONLY_LABEL = [
+  "case",
+  [
+    "all",
+    ["has", "khasra"],
+    ["!=", ["get", "khasra"], null],
+    ["!=", ["to-string", ["get", "khasra"]], ""],
+  ],
+  ["to-string", ["get", "khasra"]],
+  "",
+];
+
 export default function MapView({
   selectedDistrict,
   selectedTehsil,
@@ -208,6 +268,8 @@ export default function MapView({
   const measureAreaCoordsRef = useRef([]);
   const bearingCoordsRef = useRef([]);
   const coordPickerPopupRef = useRef(null);
+  const previousBoundaryStatusRef = useRef(boundaryStatus);
+  const suppressAutoZoomUntilRef = useRef(0);
 
   const [isMapReady, setIsMapReady] = useState(false);
   const [featureCount, setFeatureCount] = useState(0);
@@ -264,6 +326,16 @@ export default function MapView({
   );
   const fieldPointsVisible = getLayerVisible(layers, "fieldPoints", false);
   const fieldPointsOpacity = getLayerOpacity(layers, "fieldPoints", 100);
+  const possessionLandVisible = getLayerVisible(
+    layers,
+    "possessionLand",
+    false,
+  );
+  const possessionLandOpacity = getLayerOpacity(layers, "possessionLand", 100);
+  const awardedLandVisible = getLayerVisible(layers, "awardedLand", false);
+  const awardedLandOpacity = getLayerOpacity(layers, "awardedLand", 100);
+  const stateLandVisible = getLayerVisible(layers, "stateLand", false);
+  const stateLandOpacity = getLayerOpacity(layers, "stateLand", 100);
   const getLayerColorValue = (layerKey, fallback) => {
     const value = layers?.[layerKey];
     return typeof value === "object" && value.color ? value.color : fallback;
@@ -445,6 +517,8 @@ export default function MapView({
               drawKhasras(g);
             } else if (key === "murabba") {
               drawMurabbas(g);
+            } else if (THEMATIC_LAND_LAYERS[key]) {
+              drawThematicLandLayer(key, g, getLayerOpacity(layers, key, 100));
             } else if (key === "control-points") {
               drawPointLayer({
                 sourceId: CONTROL_POINTS_SOURCE,
@@ -589,7 +663,15 @@ export default function MapView({
     loadProposedRoads();
   }, [isMapReady, proposedRoadsVisible, selectedProposedRoadIds]);
 
+  useEffect(() => {
+    if (previousBoundaryStatusRef.current !== boundaryStatus) {
+      previousBoundaryStatusRef.current = boundaryStatus;
+      suppressAutoZoomUntilRef.current = Date.now() + 1600;
+    }
+  }, [boundaryStatus]);
+
   const zoomToGeoJSON = (geojson, options = {}) => {
+    if (Date.now() < suppressAutoZoomUntilRef.current) return;
     const map = mapInstance.current;
     if (!map || !geojson?.features?.length) return;
 
@@ -1576,6 +1658,147 @@ export default function MapView({
     }
   };
 
+  const removeThematicLandLayer = (key) => {
+    const map = mapInstance.current;
+    const ids = THEMATIC_LAND_LAYERS[key];
+    if (!map || !ids) return;
+    [ids.label, ids.line, ids.fill].forEach((id) => {
+      if (map.getLayer(id)) map.removeLayer(id);
+    });
+    if (map.getSource(ids.source)) map.removeSource(ids.source);
+    delete currentGeojson.current[key];
+  };
+
+  const drawThematicLandLayer = (key, geojson, opacityPercent) => {
+    const map = mapInstance.current;
+    const ids = THEMATIC_LAND_LAYERS[key];
+    if (!map || !ids) return;
+
+    removeThematicLandLayer(key);
+    map.addSource(ids.source, { type: "geojson", data: geojson });
+
+    const opacity = clampOpacity(opacityPercent);
+    const isPossession = key === "possessionLand";
+    const fillColor = isPossession
+      ? POSSESSION_TYPE_FILL
+      : key === "awardedLand"
+        ? "#FAEEDA"
+        : "#F1EFE8";
+    const lineColor = isPossession
+      ? POSSESSION_TYPE_LINE
+      : key === "awardedLand"
+        ? "#854F0B"
+        : "#5F5E5A";
+    const labelMinZoom = isPossession ? 15 : 14;
+
+    map.addLayer({
+      id: ids.fill,
+      type: "fill",
+      source: ids.source,
+      paint: {
+        "fill-color": fillColor,
+        "fill-opacity": (isPossession ? 0.45 : 0.65) * opacity,
+      },
+    });
+    map.addLayer({
+      id: ids.line,
+      type: "line",
+      source: ids.source,
+      paint: {
+        "line-color": lineColor,
+        "line-width": 1.3,
+        "line-opacity": opacity,
+      },
+    });
+    map.addLayer({
+      id: ids.label,
+      type: "symbol",
+      source: ids.source,
+      minzoom: labelMinZoom,
+      maxzoom: 24,
+      layout: {
+        "text-field": KHASRA_ONLY_LABEL,
+        "text-size": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          labelMinZoom,
+          10,
+          16,
+          11,
+          18,
+          13,
+        ],
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+      },
+      paint: {
+        "text-color": lineColor,
+        "text-opacity": opacity,
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1,
+      },
+    });
+
+    currentGeojson.current[key] = geojson;
+    movePointLayersToTop();
+  };
+
+  useEffect(() => {
+    if (!isMapReady) return;
+
+    const configs = [
+      {
+        key: "possessionLand",
+        visible: possessionLandVisible,
+        opacity: possessionLandOpacity,
+        loader: getPossessionLandGeoJSON,
+      },
+      {
+        key: "awardedLand",
+        visible: awardedLandVisible,
+        opacity: awardedLandOpacity,
+        loader: getAwardedLandGeoJSON,
+      },
+      {
+        key: "stateLand",
+        visible: stateLandVisible,
+        opacity: stateLandOpacity,
+        loader: getStateLandGeoJSON,
+      },
+    ];
+
+    let cancelled = false;
+
+    configs.forEach(async ({ key, visible, opacity, loader }) => {
+      if (!visible) {
+        removeThematicLandLayer(key);
+        return;
+      }
+
+      try {
+        const cached = currentGeojson.current[key];
+        const geojson = cached?.features ? cached : await loader();
+        if (!cancelled) drawThematicLandLayer(key, geojson, opacity);
+      } catch (error) {
+        console.error(`${key} layer load error`, error);
+        if (!cancelled) removeThematicLandLayer(key);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isMapReady,
+    possessionLandVisible,
+    possessionLandOpacity,
+    awardedLandVisible,
+    awardedLandOpacity,
+    stateLandVisible,
+    stateLandOpacity,
+  ]);
+
   useEffect(() => {
     if (!isMapReady) return;
     applyOpacityToBoundaryLevel("proposed-roads", proposedRoadsOpacity);
@@ -1845,6 +2068,8 @@ export default function MapView({
               drawKhasras(g);
             } else if (key === "murabba") {
               drawMurabbas(g);
+            } else if (THEMATIC_LAND_LAYERS[key]) {
+              drawThematicLandLayer(key, g, getLayerOpacity(layers, key, 100));
             } else if (key === "control-points") {
               drawPointLayer({
                 sourceId: CONTROL_POINTS_SOURCE,
