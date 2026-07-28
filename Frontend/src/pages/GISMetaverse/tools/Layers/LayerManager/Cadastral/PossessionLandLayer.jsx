@@ -10,20 +10,20 @@ export const POSSESSION_LAND_TYPES = [
   {
     key: "mutatedLand",
     value: "Mutated Land",
-    lineColor: "#2E7D32",
-    fillColor: "#C8E6C9",
+    lineColor: "#5F7F00",
+    fillColor: "#AFCB4F",
   },
   {
     key: "demarcatedLand",
     value: "Demarcated Land",
-    lineColor: "#9C27B0",
-    fillColor: "#E8D5F0",
+    lineColor: "#7A0C0C",
+    fillColor: "#C96A6A",
   },
   {
     key: "possessionLand",
     value: "Possession Land",
-    lineColor: "#00BCD4",
-    fillColor: "#C7F3F7",
+    lineColor: "#D81B60",
+    fillColor: "#F48FB1",
   },
 ];
 
@@ -126,7 +126,7 @@ export function addPossessionLandLayer(
     lineColor: fallbackColor,
     labelColor: fallbackColor,
     opacity,
-    fillOpacity: 0.65,
+    fillOpacity: 0.45,
     labelFields: ["khasra"],
     labelMinZoom: LAND_LABEL_MIN_ZOOM,
     lineWidth: 1.3,
