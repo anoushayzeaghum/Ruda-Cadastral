@@ -283,7 +283,7 @@ export default function MapView({
       : !!massaviLayerState;
   const massaviLayerOpacity =
     typeof massaviLayerState === "object" &&
-    Number.isFinite(Number(massaviLayerState.opacity))
+      Number.isFinite(Number(massaviLayerState.opacity))
       ? Number(massaviLayerState.opacity) / 100
       : 1.0;
   const selectedMauzaName = getMauzaName(selectedMauza);
@@ -440,7 +440,7 @@ export default function MapView({
         if (map.getLayer(layerId)) {
           map.moveLayer(layerId);
         }
-      } catch (e) {}
+      } catch (e) { }
     });
   };
 
@@ -1000,7 +1000,7 @@ export default function MapView({
 
     try {
       if (map?.getLayer(KHASRA_LABEL)) map.removeLayer(KHASRA_LABEL);
-    } catch (e) {}
+    } catch (e) { }
     clearLayerAndSource(KHASRA_FILL, KHASRA_LINE, KHASRA_SOURCE);
   };
 
@@ -1009,7 +1009,7 @@ export default function MapView({
     unbindLayerEvents(MURABBA_FILL);
     try {
       if (map?.getLayer(MURABBA_LABEL)) map.removeLayer(MURABBA_LABEL);
-    } catch (e) {}
+    } catch (e) { }
     clearLayerAndSource(MURABBA_FILL, MURABBA_LINE, MURABBA_SOURCE);
   };
 
@@ -1281,7 +1281,7 @@ export default function MapView({
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) {}
+      } catch (err) { }
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -1403,7 +1403,7 @@ export default function MapView({
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) {}
+      } catch (err) { }
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -2203,10 +2203,10 @@ export default function MapView({
             : viewBy === "acre"
               ? currentGeojson.current[ACRE_LEVEL]
               : currentGeojson.current.khasra ||
-                currentGeojson.current.murabba ||
-                currentGeojson.current[SQUARE_LEVEL] ||
-                currentGeojson.current[ACRE_LEVEL] ||
-                {};
+              currentGeojson.current.murabba ||
+              currentGeojson.current[SQUARE_LEVEL] ||
+              currentGeojson.current[ACRE_LEVEL] ||
+              {};
 
     const features = Array.isArray(current?.features) ? current.features : [];
 
@@ -2276,7 +2276,7 @@ export default function MapView({
               clearBoundaryLevel(level);
               delete currentGeojson.current[level];
             });
-        } catch (e) {}
+        } catch (e) { }
       };
 
       if (!rudaBoundaryVisible) {

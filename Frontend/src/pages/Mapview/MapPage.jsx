@@ -14,6 +14,7 @@ import ParcelPanel from "./ParcelPanel.jsx";
 import MultipleParcelPanel from "./Layers/MultipleParcelPanel.jsx";
 import Legend from "./Legend.jsx";
 import MapView from "./MapView.jsx";
+import MapPrinter from "../GISMetaverse/Printing/MapPrinter.jsx";
 import { getRudaMauzas } from "../../services/api";
 
 const getKhasraNumber = (props = {}) => {
@@ -652,6 +653,16 @@ export default function MapPage() {
   return (
     <div className="w-full h-screen flex flex-col bg-white">
       <Header />
+
+      <MapPrinter
+        mode="cadastral"
+        map={mapboxMap}
+        isMapReady={Boolean(mapboxMap)}
+        filters={activeFilters || filters || {}}
+        layers={layers}
+        basemap={basemap}
+        boundaryStatus={boundaryStatus}
+      />
 
       <div
         ref={mapShellRef}
