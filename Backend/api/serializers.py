@@ -1675,10 +1675,10 @@ class LahoreTransportationRoadSerializer(GeoFeatureModelSerializer):
         read_only_fields = (
             "gid",
         )
-class PPPSchemeSerializer(GeoFeatureModelSerializer):
+class PHSPPPSchemeSerializer(GeoFeatureModelSerializer):
 
     class Meta:
-        model = PPPScheme
+        model = PHSPPPScheme
         geo_field = "geom"
         id_field = "gid"
 

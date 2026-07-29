@@ -1,18 +1,18 @@
 from ..common_imports import *
 
 
-class UpdatePPPSchemeView(viewsets.ViewSet):
-    queryset = PPPScheme.objects.all()
-    serializer_class = PPPSchemeSerializer
+class UpdatePHSPPPSchemeView(viewsets.ViewSet):
+    queryset = PHSPPPScheme.objects.all()
+    serializer_class = PHSPPPSchemeSerializer
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
         try:
-            obj = PPPScheme.objects.get(
+            obj = PHSPPPScheme.objects.get(
                 gid=kwargs.get("pk")
             )
 
-        except PPPScheme.DoesNotExist:
+        except PHSPPPScheme.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
                 message="PPP Scheme not found.",
@@ -20,7 +20,7 @@ class UpdatePPPSchemeView(viewsets.ViewSet):
             ).create_response()
 
         try:
-            serializer = PPPSchemeSerializer(
+            serializer = PHSPPPSchemeSerializer(
                 obj,
                 data=request.data,
                 partial=True
@@ -32,7 +32,7 @@ class UpdatePPPSchemeView(viewsets.ViewSet):
                 return ApiResponse(
                     status=status.HTTP_200_OK,
                     message="PPP Scheme updated successfully.",
-                    data=PPPSchemeSerializer(obj).data,
+                    data=PHSPPPSchemeSerializer(obj).data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 

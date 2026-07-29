@@ -1,14 +1,14 @@
 from ..common_imports import *
 
 
-class CreatePPPSchemeView(viewsets.ViewSet):
-    queryset = PPPScheme.objects.all()
-    serializer_class = PPPSchemeSerializer
+class CreatePHSPPPSchemeView(viewsets.ViewSet):
+    queryset = PHSPPPScheme.objects.all()
+    serializer_class = PHSPPPSchemeSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         try:
-            serializer = PPPSchemeSerializer(
+            serializer = PHSPPPSchemeSerializer(
                 data=request.data
             )
 
@@ -19,7 +19,7 @@ class CreatePPPSchemeView(viewsets.ViewSet):
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
                 message="PPP Scheme created successfully.",
-                data=PPPSchemeSerializer(obj).data,
+                data=PHSPPPSchemeSerializer(obj).data,
                 http_status=status.HTTP_201_CREATED,
             ).create_response()
 

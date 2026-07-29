@@ -1,18 +1,18 @@
 from ..common_imports import *
 
 
-class DeletePPPSchemeView(viewsets.ViewSet):
-    queryset = PPPScheme.objects.all()
-    serializer_class = PPPSchemeSerializer
+class DeletePHSPPPSchemeView(viewsets.ViewSet):
+    queryset = PHSPPPScheme.objects.all()
+    serializer_class = PHSPPPSchemeSerializer
     permission_classes = [AllowAny]
 
     def destroy(self, request, *args, **kwargs):
         try:
-            obj = PPPScheme.objects.get(
+            obj = PHSPPPScheme.objects.get(
                 gid=kwargs.get("pk")
             )
 
-        except PPPScheme.DoesNotExist:
+        except PHSPPPScheme.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
                 message="PPP Scheme not found.",

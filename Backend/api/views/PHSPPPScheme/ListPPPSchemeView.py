@@ -1,9 +1,9 @@
 from ..common_imports import *
 
 
-class ListPPPSchemeView(viewsets.ViewSet):
-    queryset = PPPScheme.objects.all()
-    serializer_class = PPPSchemeSerializer
+class ListPHSPPPSchemeView(viewsets.ViewSet):
+    queryset = PHSPPPScheme.objects.all()
+    serializer_class = PHSPPPSchemeSerializer
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
@@ -12,7 +12,7 @@ class ListPPPSchemeView(viewsets.ViewSet):
             scheme_nam = request.query_params.get("scheme_nam")
             ruda_st = request.query_params.get("ruda_st")
 
-            queryset = PPPScheme.objects.all().order_by("gid")
+            queryset = PHSPPPScheme.objects.all().order_by("gid")
 
             if gid:
                 queryset = queryset.filter(gid=gid)
@@ -27,7 +27,7 @@ class ListPPPSchemeView(viewsets.ViewSet):
                     ruda_st__iexact=ruda_st
                 )
 
-            serializer = PPPSchemeSerializer(
+            serializer = PHSPPPSchemeSerializer(
                 queryset,
                 many=True
             )

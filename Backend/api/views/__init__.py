@@ -55,4 +55,4 @@ from .RudaMasterPlan.RudaNotifiedPhasesBoundary import *
 from .RudaMasterPlan.LahoreTransportationRoadView import *
 
 
-from .PPPScheme import *
+from .PHSPPPScheme import *
