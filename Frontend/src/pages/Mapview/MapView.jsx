@@ -114,8 +114,8 @@ import {
   buildUnifiedPopupHtml,
   buildPopupRowsForType,
   POPUP_TITLES,
-} from "./MapView/popupUtils.js";
-import useMapTools from "./MapView/useMapTools.js";
+} from "./Mapview/popupUtils.js";
+import useMapTools from "./Mapview/useMapTools.js";
 import {
   CADASTRAL_BOUNDARY_STYLES,
   getKhasraStatusColorExpression,
