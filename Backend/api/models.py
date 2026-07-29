@@ -2505,3 +2505,48 @@ class LahoreTransportationRoad(models.Model):
         db_table = "lahore_transportation_roads"
 
 
+class PPPScheme(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    scheme_nam = models.CharField(
+        db_column="scheme_nam",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    area_225a = models.FloatField(
+        db_column="area_225a",
+        null=True,
+        blank=True,
+    )
+
+    ruda_st = models.CharField(
+        db_column="ruda_st",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    area = models.FloatField(
+        db_column="area",
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.scheme_nam or f"Scheme {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "phs_ppp_schemes"

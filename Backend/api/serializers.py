@@ -1675,3 +1675,22 @@ class LahoreTransportationRoadSerializer(GeoFeatureModelSerializer):
         read_only_fields = (
             "gid",
         )
+class PPPSchemeSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = PPPScheme
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "scheme_nam",
+            "area_225a",
+            "ruda_st",
+            "area",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )

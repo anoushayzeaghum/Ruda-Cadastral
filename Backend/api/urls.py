@@ -238,6 +238,10 @@ router.register(r"proposed-road-network/create", CreateProposedRoadNetworkView, 
 router.register(r"proposed-road-network/update", UpdateProposedRoadNetworkView, basename="update-proposed-road-network")
 router.register(r"proposed-road-network/delete", DeleteProposedRoadNetworkView, basename="delete-proposed-road-network")
 
+router.register(r"ppp-schemes", ListPPPSchemeView, basename="ppp-schemes",)
+router.register(r"ppp-schemes/create", CreatePPPSchemeView, basename="create-ppp-schemes",)
+router.register(r"ppp-schemes/update", UpdatePPPSchemeView, basename="update-ppp-schemes",)
+router.register(r"ppp-schemes/delete", DeletePPPSchemeView, basename="delete-ppp-schemes",)
 
 # ------------------------------ Proposed Roads Views ------------------------------
 # DB table: public.ruda_proposed_road
