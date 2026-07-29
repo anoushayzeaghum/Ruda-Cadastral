@@ -1,16 +1,11 @@
-import { LayoutDashboard, LogOut, Home } from "lucide-react";
+import { LayoutDashboard, LogOut, Home, Loader2, Printer } from "lucide-react";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-// const headerBackgroundStyle = {
-//   backgroundImage: [
-//     "linear-gradient(90deg, rgba(20, 83, 45, 0.96) 0%, rgba(22, 101, 52, 0.86) 42%, rgba(21, 128, 61, 0.72) 70%, rgba(20, 83, 45, 0.82) 100%)",
-//     "url('/ruda_bg.png')",
-//   ].join(", "),
-//   backgroundSize: "cover",
-//   backgroundPosition: "center center",
-//   backgroundRepeat: "no-repeat",
-// };
+import {
+  PRINT_EVENTS,
+  dispatchPrintEvent,
+} from "../GISMetaverse/Printing/PrintEvents";
 
 const headerBackgroundStyle = {
   backgroundColor: "#0f3d2e",
@@ -18,6 +13,31 @@ const headerBackgroundStyle = {
 
 export default function Header() {
   const navigate = useNavigate();
+  const [printState, setPrintState] = useState({
+    mapReady: false,
+    printLoading: false,
+  });
+
+  useEffect(() => {
+    const handlePrintState = (event) => {
+      if (event.detail?.mode && event.detail.mode !== "cadastral") return;
+      setPrintState({
+        mapReady: Boolean(event.detail?.mapReady),
+        printLoading: Boolean(event.detail?.printLoading),
+      });
+    };
+
+    window.addEventListener(PRINT_EVENTS.PRINT_STATE, handlePrintState);
+    dispatchPrintEvent(PRINT_EVENTS.REQUEST_PRINT_STATE);
+
+    return () => {
+      window.removeEventListener(PRINT_EVENTS.PRINT_STATE, handlePrintState);
+    };
+  }, []);
+
+  const handlePrint = () => {
+    dispatchPrintEvent(PRINT_EVENTS.PRINT_CURRENT_MAP);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
@@ -52,6 +72,22 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handlePrint}
+            disabled={!printState.mapReady || printState.printLoading}
+            className="h-7 sm:h-9 rounded-lg bg-white/15 border border-white/25 px-2 sm:px-3 text-white flex items-center justify-center gap-1.5 shadow-sm transition hover:bg-white/25 hover:border-white/40 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Print current cadastral map"
+            title={printState.mapReady ? "Print current cadastral map" : "Map is still loading"}
+          >
+            {printState.printLoading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Printer size={16} />
+            )}
+            <span className="hidden sm:inline text-xs font-semibold">PRINT</span>
+          </button>
+
           <button
             onClick={() => navigate("/")}
             className="bg-white/15 hover:bg-white/25 text-white p-1.5 sm:p-2 rounded-md flex items-center justify-center transition"

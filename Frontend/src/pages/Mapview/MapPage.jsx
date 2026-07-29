@@ -14,6 +14,7 @@ import ParcelPanel from "./ParcelPanel.jsx";
 import MultipleParcelPanel from "./Layers/MultipleParcelPanel.jsx";
 import Legend from "./Legend.jsx";
 import MapView from "./MapView.jsx";
+import MapPrinter from "../Mapview/Printing/MapPrinter.jsx";
 import { getRudaMauzas } from "../../services/api";
 
 const getKhasraNumber = (props = {}) => {
@@ -105,9 +106,9 @@ const getFeatureSelectionKey = (feature = {}) => {
   const props = feature?.properties || {};
   return String(
     props.gid ??
-      props.id ??
-      props.khasra_id ??
-      `${props.mauza_id ?? ""}:${getKhasraNumber(props) ?? ""}:${feature?.id ?? ""}`,
+    props.id ??
+    props.khasra_id ??
+    `${props.mauza_id ?? ""}:${getKhasraNumber(props) ?? ""}:${feature?.id ?? ""}`,
   );
 };
 
@@ -230,11 +231,11 @@ export default function MapPage() {
     const isUnverified = boundaryStatus === "unverified";
     const selectedMauza = isUnverified
       ? String(
-          getMauzaId(activeSelectedMauzaDetails) ||
-            getMauzaId(filters.selectedMauzaDetails) ||
-            filters.selectedMauza ||
-            "",
-        )
+        getMauzaId(activeSelectedMauzaDetails) ||
+        getMauzaId(filters.selectedMauzaDetails) ||
+        filters.selectedMauza ||
+        "",
+      )
       : filters.selectedMauza;
 
     return {
@@ -522,9 +523,9 @@ export default function MapPage() {
           typeof next[key] === "object"
             ? next[key]
             : {
-                visible: !!next[key],
-                opacity: 100,
-              };
+              visible: !!next[key],
+              opacity: 100,
+            };
 
         const shouldBeVisible = key === activeViewByLayerKey;
 
@@ -646,6 +647,16 @@ export default function MapPage() {
   return (
     <div className="w-full h-screen flex flex-col bg-white">
       <Header />
+
+      <MapPrinter
+        mode="cadastral"
+        map={mapboxMap}
+        isMapReady={Boolean(mapboxMap)}
+        filters={activeFilters || filters || {}}
+        layers={layers}
+        basemap={basemap}
+        boundaryStatus={boundaryStatus}
+      />
 
       <div
         ref={mapShellRef}
