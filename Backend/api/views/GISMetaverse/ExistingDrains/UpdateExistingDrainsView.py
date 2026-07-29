@@ -1,26 +1,26 @@
-from ..common_imports import *
+from ...common_imports import *
 
 
-class UpdateForestBoundaryView(viewsets.ViewSet):
-    queryset = ForestBoundary.objects.all()
-    serializer_class = ForestBoundarySerializer
+class UpdateExistingDrainView(viewsets.ViewSet):
+    queryset = ExistingDrain.objects.all()
+    serializer_class = ExistingDrainSerializer
     permission_classes = [AllowAny]
 
     def update(self, request, *args, **kwargs):
         try:
-            obj = ForestBoundary.objects.get(
+            obj = ExistingDrain.objects.get(
                 gid=kwargs.get("pk")
             )
 
-        except ForestBoundary.DoesNotExist:
+        except ExistingDrain.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="Forest boundary not found.",
+                message="Existing drain not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
         try:
-            serializer = ForestBoundarySerializer(
+            serializer = ExistingDrainSerializer(
                 obj,
                 data=request.data,
                 partial=True
@@ -31,8 +31,8 @@ class UpdateForestBoundaryView(viewsets.ViewSet):
 
                 return ApiResponse(
                     status=status.HTTP_200_OK,
-                    message="Forest boundary updated successfully.",
-                    data=ForestBoundarySerializer(obj).data,
+                    message="Existing drain updated successfully.",
+                    data=ExistingDrainSerializer(obj).data,
                     http_status=status.HTTP_200_OK,
                 ).create_response()
 

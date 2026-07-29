@@ -1,22 +1,25 @@
-from ..common_imports import *
+from ...common_imports import *
 
 
-class CreateForestBoundaryView(viewsets.ViewSet):
-    queryset = ForestBoundary.objects.all()
-    serializer_class = ForestBoundarySerializer
+class CreatePHSPPPSchemeView(viewsets.ViewSet):
+    queryset = PHSPPPScheme.objects.all()
+    serializer_class = PHSPPPSchemeSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         try:
-            serializer = ForestBoundarySerializer(data=request.data)
+            serializer = PHSPPPSchemeSerializer(
+                data=request.data
+            )
+
             serializer.is_valid(raise_exception=True)
 
             obj = serializer.save()
 
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
-                message="Forest boundary created successfully.",
-                data=ForestBoundarySerializer(obj).data,
+                message="PPP Scheme created successfully.",
+                data=PHSPPPSchemeSerializer(obj).data,
                 http_status=status.HTTP_201_CREATED,
             ).create_response()
 

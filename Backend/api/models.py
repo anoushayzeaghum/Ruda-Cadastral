@@ -2618,3 +2618,31 @@ class ForestBoundary(models.Model):
     class Meta:
         managed = False
         db_table = "forest_boundary"
+
+
+class ExistingDrain(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    name = models.CharField(
+        db_column="name",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiLineStringField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Existing Drain {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "existing_drains"

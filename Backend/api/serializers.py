@@ -1694,3 +1694,20 @@ class ForestBoundarySerializer(GeoFeatureModelSerializer):
         read_only_fields = (
             "gid",
         )
+
+class ExistingDrainSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ExistingDrain
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )

@@ -1,21 +1,21 @@
-from ..common_imports import *
+from ...common_imports import *
 
 
-class DeletePHSPPPSchemeView(viewsets.ViewSet):
-    queryset = PHSPPPScheme.objects.all()
-    serializer_class = PHSPPPSchemeSerializer
+class DeleteForestBoundaryView(viewsets.ViewSet):
+    queryset = ForestBoundary.objects.all()
+    serializer_class = ForestBoundarySerializer
     permission_classes = [AllowAny]
 
     def destroy(self, request, *args, **kwargs):
         try:
-            obj = PHSPPPScheme.objects.get(
+            obj = ForestBoundary.objects.get(
                 gid=kwargs.get("pk")
             )
 
-        except PHSPPPScheme.DoesNotExist:
+        except ForestBoundary.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message="PPP Scheme not found.",
+                message="Forest boundary not found.",
                 http_status=status.HTTP_404_NOT_FOUND,
             ).create_response()
 
@@ -24,7 +24,7 @@ class DeletePHSPPPSchemeView(viewsets.ViewSet):
 
             return ApiResponse(
                 status=status.HTTP_200_OK,
-                message="PPP Scheme deleted successfully.",
+                message="Forest boundary deleted successfully.",
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
