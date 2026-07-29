@@ -1,23 +1,19 @@
 import { escapeHtml } from "./PrintUtils";
 
 const northArrowSvg = `
-  <svg viewBox="0 0 100 100" role="img" aria-label="North arrow">
-    <text x="50" y="10" text-anchor="middle" font-size="12" font-family="Arial" font-weight="700">N</text>
-    <text x="50" y="98" text-anchor="middle" font-size="12" font-family="Arial" font-weight="700">S</text>
-    <text x="7" y="55" text-anchor="middle" font-size="12" font-family="Arial" font-weight="700">W</text>
-    <text x="93" y="55" text-anchor="middle" font-size="12" font-family="Arial" font-weight="700">E</text>
-    <circle cx="50" cy="52" r="34" fill="#fff" stroke="#111" stroke-width="1.5"/>
-    <circle cx="50" cy="52" r="27" fill="none" stroke="#111" stroke-width="1"/>
-    <path d="M50 15 L57 46 L50 41 L43 46 Z" fill="#111"/>
-    <path d="M50 89 L43 58 L50 63 L57 58 Z" fill="#fff" stroke="#111" stroke-width="1"/>
-    <path d="M13 52 L44 45 L39 52 L44 59 Z" fill="#fff" stroke="#111" stroke-width="1"/>
-    <path d="M87 52 L56 59 L61 52 L56 45 Z" fill="#111"/>
-    <path d="M27 29 L46 46 L39 43 L36 50 Z" fill="#111"/>
-    <path d="M73 75 L54 58 L61 61 L64 54 Z" fill="#fff" stroke="#111" stroke-width="1"/>
-    <path d="M73 29 L54 46 L61 43 L64 50 Z" fill="#fff" stroke="#111" stroke-width="1"/>
-    <path d="M27 75 L46 58 L39 61 L36 54 Z" fill="#111"/>
-    <circle cx="50" cy="52" r="3" fill="#111"/>
-  </svg>`;
+<svg viewBox="0 0 120 120" role="img" aria-label="North arrow">
+  <circle cx="60" cy="60" r="45" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+  <circle cx="60" cy="60" r="34" fill="none" stroke="#64748b" stroke-width="1"/>
+  <path d="M60 8 L72 57 L60 48 L48 57 Z" fill="#0f3d2e"/>
+  <path d="M60 112 L48 63 L60 72 L72 63 Z" fill="#ffffff" stroke="#0f172a" stroke-width="1.5"/>
+  <path d="M8 60 L57 48 L48 60 L57 72 Z" fill="#ffffff" stroke="#0f172a" stroke-width="1.5"/>
+  <path d="M112 60 L63 72 L72 60 L63 48 Z" fill="#0f172a"/>
+  <circle cx="60" cy="60" r="5" fill="#0f172a"/>
+  <text x="60" y="15" text-anchor="middle" font-size="13" font-family="Arial" font-weight="800">N</text>
+  <text x="60" y="117" text-anchor="middle" font-size="11" font-family="Arial" font-weight="700">S</text>
+  <text x="8" y="64" text-anchor="middle" font-size="11" font-family="Arial" font-weight="700">W</text>
+  <text x="112" y="64" text-anchor="middle" font-size="11" font-family="Arial" font-weight="700">E</text>
+</svg>`;
 
 const legendSymbol = (item) => {
   const color = escapeHtml(item.color || "#111827");
@@ -27,21 +23,27 @@ const legendSymbol = (item) => {
   if (kind === "point") {
     return `<span class="legend-point" style="background:${color}"></span>`;
   }
+
   if (kind === "polygon") {
     return `<span class="legend-polygon" style="border-color:${color};background:${fillColor}"></span>`;
   }
+
   if (kind === "line-dash") {
     return `<span class="legend-line dashed" style="border-color:${color}"></span>`;
   }
+
   if (kind === "line-wide") {
     return `<span class="legend-line wide" style="border-color:${color}"></span>`;
   }
+
   if (kind === "gradient") {
     return `<span class="legend-gradient"></span>`;
   }
+
   if (kind === "raster") {
     return `<span class="legend-raster" style="border-color:${color}"></span>`;
   }
+
   return `<span class="legend-line" style="border-color:${color}"></span>`;
 };
 
@@ -53,7 +55,7 @@ export const makePrintableHtml = ({
   legendRows = [],
   logoUrl,
   metadata = {},
-  insetTitle = "RUDA / LP Principle Boundary Overview",
+  insetTitle = "Map Overview",
 }) => {
   const legendHtml = legendRows.length
     ? legendRows
@@ -61,11 +63,14 @@ export const makePrintableHtml = ({
           (item) => `
             <div class="legend-row">
               <span class="legend-symbol">${legendSymbol(item)}</span>
-              <span>${escapeHtml(item.label)}</span>
+              <span class="legend-label">${escapeHtml(item.label)}</span>
             </div>`,
         )
         .join("")
-    : '<div class="legend-empty">No operational GIS layer is currently enabled.</div>';
+    : `
+      <div class="legend-empty">
+        The map contains no visible operational layer.
+      </div>`;
 
   return `<!doctype html>
 <html>
@@ -74,81 +79,436 @@ export const makePrintableHtml = ({
   <title>${escapeHtml(title)}</title>
   <style>
     @page { size: A3 landscape; margin: 0; }
+
     * { box-sizing: border-box; }
-    html, body { margin: 0; width: 100%; height: 100%; font-family: Arial, Helvetica, sans-serif; }
-    body { background: #fff; }
-    .sheet { position: relative; width: 420mm; height: 297mm; overflow: hidden; border: 3px solid #1f2937; background: #f8fafc; }
-    .map { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
-    .title { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); min-width: 38%; max-width: 65%; padding: 10px 20px; background: rgba(255,255,255,.94); border: 1px solid #334155; text-align: center; font-size: 28px; font-weight: 800; letter-spacing: .02em; box-shadow: 0 8px 22px rgba(0,0,0,.18); }
-    .subtitle { margin-top: 4px; font-size: 12px; font-weight: 600; color: #475569; }
-    .logo-box { position: absolute; left: 16px; top: 16px; width: 108px; height: 108px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.96); border: 1px solid #334155; padding: 8px; }
-    .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .north { position: absolute; right: 18px; top: 16px; width: 108px; height: 108px; border: 1px solid #334155; background: rgba(255,255,255,.96); display: flex; align-items: center; justify-content: center; padding: 5px; }
-    .north svg { width: 96px; height: 96px; display: block; }
-    .inset { position: absolute; left: 18px; bottom: 18px; width: 300px; background: rgba(255,255,255,.96); border: 2px solid #334155; padding: 8px; }
-    .inset-title { font-size: 12px; font-weight: 800; margin-bottom: 6px; }
-    .inset img { width: 100%; height: 165px; object-fit: cover; background: #eef2f7; border: 1px solid #64748b; }
-    .legend { position: absolute; right: 18px; bottom: 18px; width: 285px; max-height: 405px; overflow: hidden; background: rgba(255,255,255,.96); border: 2px solid #334155; padding: 12px; }
-    .legend h3 { margin: 0 0 8px; font-size: 18px; }
-    .legend-grid { display: grid; grid-template-columns: 1fr; gap: 3px; }
-    .legend-row { display: flex; align-items: center; gap: 9px; min-height: 23px; font-size: 11px; }
-    .legend-symbol { width: 36px; height: 18px; flex: 0 0 36px; display: flex; align-items: center; justify-content: center; }
-    .legend-line { width: 34px; border-top: 3px solid #111827; }
-    .legend-line.dashed { border-top-style: dashed; }
-    .legend-line.wide { border-top-width: 7px; }
-    .legend-point { width: 13px; height: 13px; border: 2px solid #fff; outline: 1px solid #334155; border-radius: 999px; }
-    .legend-polygon { width: 34px; height: 17px; border: 3px solid #111827; }
-    .legend-gradient { width: 34px; height: 17px; border: 1px solid #334155; background: linear-gradient(90deg,#166534,#eab308,#dc2626); }
-    .legend-raster { width: 34px; height: 17px; border: 1px solid #334155; background: repeating-linear-gradient(45deg,#cbd5e1 0 4px,#f8fafc 4px 8px); }
-    .legend-empty { font-size: 11px; color: #64748b; }
-    .scale { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); min-width: 245px; background: rgba(255,255,255,.94); border: 1px solid #334155; padding: 7px 12px; text-align: center; font-size: 12px; font-weight: 700; }
-    .scale-bar { width: 210px; height: 10px; margin: 5px auto 0; border: 1px solid #111827; background: linear-gradient(90deg,#111827 0 25%,#fff 25% 50%,#111827 50% 75%,#fff 75% 100%); }
-    .credit { position: absolute; left: 18px; bottom: 203px; padding: 5px 8px; background: rgba(255,255,255,.92); border: 1px solid #334155; font-size: 10px; font-weight: 700; }
-    .metadata { position: absolute; left: 334px; bottom: 18px; width: 270px; padding: 8px 10px; background: rgba(255,255,255,.94); border: 1px solid #334155; font-size: 10px; line-height: 1.5; }
-    .metadata strong { display: inline-block; min-width: 70px; }
-    @media print { html, body, .sheet { width: 420mm; height: 297mm; } }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .sheet {
+      position: relative;
+      width: 420mm;
+      height: 297mm;
+      overflow: hidden;
+      background: #e2e8f0;
+      border: 3px solid #0f172a;
+    }
+
+    .map-frame {
+      position: absolute;
+      inset: 10px;
+      overflow: hidden;
+      border: 1px solid #475569;
+      background: #e2e8f0;
+    }
+
+    .map {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .glass {
+      background: rgba(255,255,255,.96);
+      border: 1px solid #334155;
+      box-shadow: 0 8px 24px rgba(15,23,42,.16);
+    }
+
+    .title-box {
+      position: absolute;
+      z-index: 4;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 390px;
+      max-width: 720px;
+      padding: 11px 24px 10px;
+      text-align: center;
+      border-top: 5px solid #0f3d2e;
+    }
+
+    .title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: .025em;
+    }
+
+    .subtitle {
+      margin-top: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #475569;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .logo-box {
+      position: absolute;
+      z-index: 4;
+      left: 20px;
+      top: 20px;
+      width: 102px;
+      height: 102px;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 5px solid #0f3d2e;
+    }
+
+    .logo-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .north-box {
+      position: absolute;
+      z-index: 4;
+      right: 20px;
+      top: 20px;
+      width: 102px;
+      height: 102px;
+      padding: 4px;
+      border-top: 5px solid #0f3d2e;
+    }
+
+    .north-box svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .bottom-strip {
+      position: absolute;
+      z-index: 4;
+      left: 20px;
+      right: 20px;
+      bottom: 20px;
+      display: grid;
+      grid-template-columns: 300px 290px minmax(250px, 1fr) 310px;
+      gap: 10px;
+      align-items: end;
+      pointer-events: none;
+    }
+
+    .panel {
+      overflow: hidden;
+      border-top: 5px solid #0f3d2e;
+    }
+
+    .panel-heading {
+      padding: 7px 10px;
+      border-bottom: 1px solid #cbd5e1;
+      background: #f8fafc;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .045em;
+      text-transform: uppercase;
+    }
+
+    .overview-content {
+      padding: 7px;
+    }
+
+    .overview-content img {
+      display: block;
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border: 1px solid #94a3b8;
+      background: #e2e8f0;
+    }
+
+    .credit {
+      margin-top: 6px;
+      font-size: 9px;
+      font-weight: 700;
+      color: #334155;
+    }
+
+    .metadata-grid {
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 4px 8px;
+      padding: 9px 10px 10px;
+      font-size: 10px;
+      line-height: 1.35;
+    }
+
+    .metadata-label {
+      font-weight: 800;
+      color: #334155;
+    }
+
+    .metadata-value {
+      overflow-wrap: anywhere;
+    }
+
+    .scale-panel {
+      padding: 11px 14px;
+      text-align: center;
+    }
+
+    .scale-title {
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .scale-bar {
+      position: relative;
+      width: 250px;
+      max-width: 100%;
+      height: 12px;
+      margin: 7px auto 0;
+      border: 1px solid #0f172a;
+      background:
+        linear-gradient(
+          90deg,
+          #0f172a 0 25%,
+          #ffffff 25% 50%,
+          #0f172a 50% 75%,
+          #ffffff 75% 100%
+        );
+    }
+
+    .scale-ticks {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 3px;
+      font-size: 8px;
+      color: #334155;
+    }
+
+    .legend-panel {
+      max-height: 236px;
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2px;
+      max-height: 195px;
+      overflow: hidden;
+      padding: 7px 10px 9px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 22px;
+      font-size: 10px;
+    }
+
+    .legend-label {
+      line-height: 1.2;
+    }
+
+    .legend-symbol {
+      width: 34px;
+      min-width: 34px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .legend-line {
+      width: 32px;
+      border-top: 3px solid #111827;
+    }
+
+    .legend-line.dashed {
+      border-top-style: dashed;
+    }
+
+    .legend-line.wide {
+      border-top-width: 7px;
+    }
+
+    .legend-point {
+      width: 12px;
+      height: 12px;
+      border: 2px solid #ffffff;
+      outline: 1px solid #334155;
+      border-radius: 999px;
+    }
+
+    .legend-polygon {
+      width: 32px;
+      height: 16px;
+      border: 3px solid #111827;
+    }
+
+    .legend-gradient {
+      width: 32px;
+      height: 16px;
+      border: 1px solid #334155;
+      background: linear-gradient(90deg,#166534,#eab308,#dc2626);
+    }
+
+    .legend-raster {
+      width: 32px;
+      height: 16px;
+      border: 1px solid #334155;
+      background:
+        repeating-linear-gradient(
+          45deg,
+          #cbd5e1 0 4px,
+          #f8fafc 4px 8px
+        );
+    }
+
+    .legend-empty {
+      padding: 8px 0;
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    @media print {
+      html, body, .sheet {
+        width: 420mm;
+        height: 297mm;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="sheet">
-    <img class="map" src="${mapImage}" alt="Printed map" />
-    <div class="logo-box"><img src="${logoUrl}" alt="RUDA Logo" /></div>
-    <div class="title">${escapeHtml(title)}${subtitle ? `<div class="subtitle">${escapeHtml(subtitle)}</div>` : ""}</div>
-    <div class="north">${northArrowSvg}</div>
-    <div class="inset"><div class="inset-title">${escapeHtml(insetTitle)}</div><img src="${insetImage || mapImage}" alt="Overview map" /></div>
-    <div class="credit">Prepared by: GIS Section, LA&amp;EM Department — RUDA</div>
-    <div class="metadata">
-      <div><strong>Center:</strong> ${escapeHtml(metadata.centerText || "-")}</div>
-      <div><strong>Zoom:</strong> ${escapeHtml(metadata.zoomText || "-")}</div>
-      <div><strong>Bearing:</strong> ${escapeHtml(metadata.bearingText || "-")}</div>
-      <div><strong>Pitch:</strong> ${escapeHtml(metadata.pitchText || "-")}</div>
-      <div><strong>Basemap:</strong> ${escapeHtml(metadata.basemap || "-")}</div>
-      <div><strong>Status:</strong> ${escapeHtml(metadata.boundaryStatus || "-")}</div>
-      <div><strong>Printed:</strong> ${escapeHtml(metadata.printedAt || "-")}</div>
+    <div class="map-frame">
+      <img class="map" src="${mapImage}" alt="Printed GIS map" />
     </div>
-    <div class="legend"><h3>Legend</h3><div class="legend-grid">${legendHtml}</div></div>
-    <div class="scale">Approximate scale: ${escapeHtml(metadata.scaleText || "-")}<div class="scale-bar"></div></div>
+
+    <div class="logo-box glass">
+      <img src="${logoUrl}" alt="RUDA Logo" />
+    </div>
+
+    <div class="title-box glass">
+      <div class="title">${escapeHtml(title)}</div>
+      ${
+        subtitle
+          ? `<div class="subtitle">${escapeHtml(subtitle)}</div>`
+          : ""
+      }
+    </div>
+
+    <div class="north-box glass">
+      ${northArrowSvg}
+    </div>
+
+    <div class="bottom-strip">
+      <section class="panel glass">
+        <div class="panel-heading">${escapeHtml(insetTitle)}</div>
+        <div class="overview-content">
+          <img src="${insetImage || mapImage}" alt="Map overview" />
+          <div class="credit">
+            Prepared by GIS Section, LA&amp;EM Department — RUDA
+          </div>
+        </div>
+      </section>
+
+      <section class="panel glass">
+        <div class="panel-heading">Map Information</div>
+        <div class="metadata-grid">
+          <div class="metadata-label">Center</div>
+          <div class="metadata-value">${escapeHtml(metadata.centerText || "-")}</div>
+
+          <div class="metadata-label">Zoom</div>
+          <div class="metadata-value">${escapeHtml(metadata.zoomText || "-")}</div>
+
+          <div class="metadata-label">Bearing</div>
+          <div class="metadata-value">${escapeHtml(metadata.bearingText || "-")}</div>
+
+          <div class="metadata-label">Pitch</div>
+          <div class="metadata-value">${escapeHtml(metadata.pitchText || "-")}</div>
+
+          <div class="metadata-label">Basemap</div>
+          <div class="metadata-value">${escapeHtml(metadata.basemap || "-")}</div>
+
+          <div class="metadata-label">Status</div>
+          <div class="metadata-value">${escapeHtml(metadata.boundaryStatus || "-")}</div>
+
+          <div class="metadata-label">Layers</div>
+          <div class="metadata-value">${escapeHtml(metadata.visibleLayerCount ?? legendRows.length)}</div>
+
+          <div class="metadata-label">Printed</div>
+          <div class="metadata-value">${escapeHtml(metadata.printedAt || "-")}</div>
+        </div>
+      </section>
+
+      <section class="panel glass scale-panel">
+        <div class="scale-title">
+          Approximate Scale: ${escapeHtml(metadata.scaleText || "-")}
+        </div>
+        <div class="scale-bar"></div>
+        <div class="scale-ticks">
+          <span>0</span>
+          <span>25%</span>
+          <span>50%</span>
+          <span>75%</span>
+          <span>100%</span>
+        </div>
+      </section>
+
+      <section class="panel glass legend-panel">
+        <div class="panel-heading">
+          Legend (${legendRows.length})
+        </div>
+        <div class="legend-grid">${legendHtml}</div>
+      </section>
+    </div>
   </div>
+
   <script>
-    const waitForImages = () => Promise.all(Array.from(document.images).map((image) => {
-      if (image.complete) return Promise.resolve();
-      return new Promise((resolve) => {
-        image.addEventListener("load", resolve, { once: true });
-        image.addEventListener("error", resolve, { once: true });
-      });
-    }));
+    const waitForImages = () =>
+      Promise.all(
+        Array.from(document.images).map((image) => {
+          if (image.complete) return Promise.resolve();
+
+          return new Promise((resolve) => {
+            image.addEventListener("load", resolve, { once: true });
+            image.addEventListener("error", resolve, { once: true });
+          });
+        }),
+      );
+
     const returnToApplication = () => {
-      try { if (window.opener && !window.opener.closed) window.opener.focus(); } catch (error) {}
-      setTimeout(() => { try { window.close(); } catch (error) {} }, 100);
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.focus();
+        }
+      } catch (error) {}
+
+      setTimeout(() => {
+        try {
+          window.close();
+        } catch (error) {}
+      }, 100);
     };
-    window.addEventListener("afterprint", returnToApplication, { once: true });
+
+    window.addEventListener("afterprint", returnToApplication, {
+      once: true,
+    });
+
     window.addEventListener("load", async () => {
       await waitForImages();
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        window.focus();
-        window.print();
-        setTimeout(returnToApplication, 1500);
-      }));
+
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          window.focus();
+          window.print();
+          setTimeout(returnToApplication, 1800);
+        }),
+      );
     });
   </script>
 </body>

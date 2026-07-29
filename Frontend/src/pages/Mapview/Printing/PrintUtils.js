@@ -8,7 +8,7 @@ export const escapeHtml = (value = "") =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-export const waitForMapRender = (map, timeoutMs = 5000) =>
+export const waitForMapRender = (map, timeoutMs = 6000) =>
   new Promise((resolve) => {
     if (!map) {
       resolve();
@@ -22,29 +22,41 @@ export const waitForMapRender = (map, timeoutMs = 5000) =>
       if (finished) return;
       finished = true;
       clearTimeout(timeoutId);
-      map.off("idle", finish);
-      map.off("render", onRender);
+
+      try {
+        map.off("idle", finish);
+        map.off("render", onRender);
+      } catch {
+        // Map may already have been disposed.
+      }
+
       resolve();
     };
 
     const onRender = () => {
-      requestAnimationFrame(() => requestAnimationFrame(finish));
+      requestAnimationFrame(() =>
+        requestAnimationFrame(finish),
+      );
     };
 
-    timeoutId = setTimeout(finish, timeoutMs);
+    timeoutId = window.setTimeout(finish, timeoutMs);
 
-    if (!map.isStyleLoaded?.()) {
-      map.once("load", () => {
-        map.once("idle", finish);
-        map.once("render", onRender);
-        map.triggerRepaint?.();
-      });
-      return;
+    try {
+      if (!map.isStyleLoaded?.()) {
+        map.once("load", () => {
+          map.once("idle", finish);
+          map.once("render", onRender);
+          map.triggerRepaint?.();
+        });
+        return;
+      }
+
+      map.once("idle", finish);
+      map.once("render", onRender);
+      map.triggerRepaint?.();
+    } catch {
+      finish();
     }
-
-    map.once("idle", finish);
-    map.once("render", onRender);
-    map.triggerRepaint?.();
   });
 
 export const openPreparingPrintWindow = () => {
@@ -54,17 +66,34 @@ export const openPreparingPrintWindow = () => {
   printWindow.document.open();
   printWindow.document.write(`<!doctype html>
     <html>
-      <head><title>Preparing map…</title></head>
-      <body style="font-family:Arial,sans-serif;padding:24px">
-        Preparing printable map…
+      <head>
+        <meta charset="utf-8" />
+        <title>Preparing map…</title>
+      </head>
+      <body style="margin:0;font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a">
+        <div style="min-height:100vh;display:grid;place-items:center">
+          <div style="padding:24px 30px;border:1px solid #cbd5e1;background:#fff;border-radius:12px">
+            <strong>Preparing printable GIS map…</strong>
+          </div>
+        </div>
       </body>
     </html>`);
   printWindow.document.close();
+
   return printWindow;
 };
 
 export const captureMapCanvas = async (map) => {
   await waitForMapRender(map);
+
+  map?.triggerRepaint?.();
+
+  await new Promise((resolve) =>
+    requestAnimationFrame(() =>
+      requestAnimationFrame(resolve),
+    ),
+  );
+
   const image = map?.getCanvas?.().toDataURL("image/png", 1);
 
   if (!image || image === "data:," || image.length < 1000) {
@@ -82,23 +111,33 @@ const niceDistance = (meters) => {
   const fraction = safeMeters / 10 ** exponent;
   const niceFraction =
     fraction >= 5 ? 5 : fraction >= 2 ? 2 : fraction >= 1 ? 1 : 0.5;
+
   return niceFraction * 10 ** exponent;
 };
 
 export const getScaleInfo = (map, targetPixels = 210) => {
-  if (!map) return { label: "Scale unavailable", segmentCount: 4 };
+  if (!map) {
+    return { label: "Scale unavailable", segmentCount: 4 };
+  }
 
   const latitude = map.getCenter().lat;
   const zoom = map.getZoom();
+
   const metersPerPixel =
-    (Math.cos((latitude * Math.PI) / 180) * 2 * Math.PI * EARTH_RADIUS_METERS) /
+    (Math.cos((latitude * Math.PI) / 180) *
+      2 *
+      Math.PI *
+      EARTH_RADIUS_METERS) /
     (512 * 2 ** zoom);
+
   const distance = niceDistance(metersPerPixel * targetPixels);
 
   return {
     label:
       distance >= 1000
-        ? `${Number((distance / 1000).toFixed(distance >= 10000 ? 0 : 1))} km`
+        ? `${Number(
+            (distance / 1000).toFixed(distance >= 10000 ? 0 : 1),
+          )} km`
         : `${Math.round(distance)} m`,
     segmentCount: 4,
   };
@@ -127,5 +166,6 @@ export const getSelectedProjectTitle = (filters = {}) => {
 
   if (directName) return String(directName);
   if (filters.projectId) return `Project ${filters.projectId}`;
+
   return "RUDA GIS Metaverse Map";
 };
