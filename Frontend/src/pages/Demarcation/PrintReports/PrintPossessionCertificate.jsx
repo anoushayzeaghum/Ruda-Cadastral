@@ -129,7 +129,7 @@ const drawInlineRuns = (
     doc.text(word.text, cursorX, cursorY);
 
     if (word.underline) {
-      drawUnderline(doc, cursorX, cursorX + wordWidth, cursorY + 0.75, 0.18);
+      drawUnderline(doc, cursorX, cursorX + wordWidth, cursorY + 0.5, 0.18);
     }
 
     cursorX += wordWidth + spaceWidth;
@@ -165,16 +165,10 @@ const drawFieldLine = (
     doc.setFont("helvetica", boldValue ? "bold" : "normal");
     const fittedValue = doc.splitTextToSize(safeValue, availableWidth)[0] || "";
     doc.text(fittedValue, valueX, y);
+  }
 
-    if (underlineValue) {
-      const renderedWidth = Math.min(
-        doc.getTextWidth(fittedValue),
-        availableWidth,
-      );
-      drawUnderline(doc, valueX, valueX + renderedWidth, y + 0.8, 0.18);
-    }
-  } else {
-    drawUnderline(doc, valueX, valueX + availableWidth, y + 0.8, 0.18);
+  if (underlineValue) {
+    drawUnderline(doc, valueX, valueX + availableWidth, y + 0.5, 0.18);
   }
 
   doc.setFont("helvetica", "normal");
@@ -205,7 +199,7 @@ const getProjectedSketchPoints = (ring, x, y, width, height) => {
   const maxY = Math.max(...ys);
   const dataWidth = Math.max(maxX - minX, 1e-9);
   const dataHeight = Math.max(maxY - minY, 1e-9);
-  const scale = Math.min(width / dataWidth, height / dataHeight) * 0.68;
+  const scale = Math.min(width / dataWidth, height / dataHeight) * 0.80;
   const scaledWidth = dataWidth * scale;
   const scaledHeight = dataHeight * scale;
   const offsetX = x + (width - scaledWidth) / 2;
@@ -231,7 +225,7 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
   doc.text("PLOT SKETCH", x + width / 2, y + 3.4, { align: "center" });
   doc.setTextColor(30, 30, 30);
 
-  const pad = 9;
+  const pad = 6;
   const innerX = x + pad;
   const innerY = y + 7;
   const innerWidth = width - pad * 2;
@@ -267,21 +261,21 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
 
   doc.setTextColor(30, 30, 30);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
+  doc.setFontSize(10.5);
   doc.text(valueOrDash(details.plotNo), centerX, centerY - 0.5, {
     align: "center",
   });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(5.6);
+  doc.setFontSize(6.8);
   doc.text(
     normalizeText(details.plotSize || normalizeAreaText(details), ""),
     centerX,
-    centerY + 3,
+    centerY + 3.6,
     { align: "center" },
   );
 
-  const labelOffset = 3.4;
-  const cornerDotRadius = 0.8;
+  const maxLabelOffset = 2.8;
+  const cornerDotRadius = 0.9;
 
   const sideLabels = sides.slice(0, Math.min(sides.length, points.length));
 
@@ -289,8 +283,8 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
     const vx = point[0] - centerX;
     const vy = point[1] - centerY;
     const vLength = Math.max(Math.hypot(vx, vy), 1e-6);
-    const labelX = point[0] + (vx / vLength) * 3.2;
-    const labelY = point[1] + (vy / vLength) * 3.2;
+    const labelX = point[0] + (vx / vLength) * 4.2;
+    const labelY = point[1] + (vy / vLength) * 4.2;
 
     doc.setFillColor(34, 197, 94);
     doc.setDrawColor(6, 95, 45);
@@ -298,7 +292,7 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
     doc.circle(point[0], point[1], cornerDotRadius, "FD");
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(5.4);
+    doc.setFontSize(7.2);
     doc.setTextColor(140, 45, 20);
     doc.text(String.fromCharCode(65 + index), labelX, labelY, {
       align: "center",
@@ -317,16 +311,29 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
     const dy = end[1] - start[1];
     const edgeLength = Math.max(Math.hypot(dx, dy), 1e-6);
 
-    let normalX = -dy / edgeLength;
+        let normalX = -dy / edgeLength;
     let normalY = dx / edgeLength;
-    const towardCenter = (centerX - middleX) * normalX + (centerY - middleY) * normalY;
-    if (towardCenter > 0) {
+
+    // ✅ ROBUST OUTWARD DIRECTION: pick the side farther from polygon center
+    const testDist = 3;
+    const distPos = Math.hypot(
+      middleX + normalX * testDist - centerX,
+      middleY + normalY * testDist - centerY
+    );
+    const distNeg = Math.hypot(
+      middleX - normalX * testDist - centerX,
+      middleY - normalY * testDist - centerY
+    );
+
+    if (distNeg > distPos) {
       normalX = -normalX;
       normalY = -normalY;
     }
 
-    const labelX = middleX + normalX * labelOffset;
-    const labelY = middleY + normalY * labelOffset;
+    // ✅ FIXED 3 mm offset for every edge — consistent and clean
+    const labelOffset = 3.0;
+    let labelX = middleX + normalX * labelOffset;
+    let labelY = middleY + normalY * labelOffset;
 
     let angle = (Math.atan2(dy, dx) * 180) / Math.PI;
     if (angle > 90 || angle < -90) angle += 180;
@@ -335,8 +342,13 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
 
     if (label) {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(5.3);
-      doc.text(label, labelX, labelY, {
+      doc.setFontSize(7.4);
+
+      // ✅ ACTUALLY USE THE CLAMPED VALUES (bug in your current code)
+      const clampedX = Math.max(innerX + 3, Math.min(labelX, innerX + innerWidth - 3));
+      const clampedY = Math.max(innerY + 3, Math.min(labelY, innerY + innerHeight - 3));
+
+      doc.text(label, clampedX, clampedY, {
         align: "center",
         angle: -angle,
       });
@@ -571,34 +583,37 @@ export const printPossessionCertificate = async ({
         lineWidth: 49,
         fontSize: 9.6,
         boldValue: false,
-        underlineValue: false,
+        underlineValue: true,
       },
     );
 
-    drawInlineRuns(
-      doc,
-      [
-        { text: "Owner Name:" },
-        { text: owner, bold: true },
-        ...(cnic ? [{ text: `(${cnic})`, bold: true }] : []),
-      ],
-      margin,
-      infoTop + 10,
-      contentWidth,
-      { fontSize: 9.7, lineHeightFactor: 1.18 },
-    );
+      const ownerLabelWidth = 26;
+    const ownerLineWidth = cnic
+      ? contentWidth - ownerLabelWidth - 45
+      : contentWidth - ownerLabelWidth;
 
-    drawInlineRuns(
-      doc,
-      [
-        { text: "Postal Address:" },
-        { text: postalAddress },
-      ],
-      margin,
-      infoTop + 20,
-      contentWidth,
-      { fontSize: 9.4, lineHeightFactor: 1.2 },
-    );
+    drawFieldLine(doc, "Owner Name:", owner, margin, infoTop + 10, {
+      labelWidth: ownerLabelWidth,
+      lineWidth: ownerLineWidth,
+      fontSize: 9.7,
+      boldValue: true,
+      underlineValue: true,
+    });
+
+    if (cnic) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.7);
+      doc.text(`(${cnic})`, margin + ownerLabelWidth + ownerLineWidth + 4, infoTop + 10);
+      doc.setFont("helvetica", "normal");
+    }
+
+    drawFieldLine(doc, "Postal Address:", postalAddress, margin, infoTop + 20, {
+      labelWidth: 32,
+      lineWidth: contentWidth - 32,
+      fontSize: 9.4,
+      boldValue: false,
+      underlineValue: true,
+    });
 
     // ------------------------------------------------------------------
     // CERTIFICATION PARAGRAPH
@@ -653,8 +668,8 @@ export const printPossessionCertificate = async ({
     );
 
     const sidesTop = sectionBottom + 7;
-    const sketchWidth = 50;
-    const sketchHeight = 46;
+    const sketchWidth = 72;
+    const sketchHeight = 68;
     const sketchX = pageWidth - margin - sketchWidth;
     const sketchY = sidesTop - 5;
 
@@ -696,7 +711,7 @@ export const printPossessionCertificate = async ({
     // ------------------------------------------------------------------
     // TOTAL AREA / EXTRA LAND / OFFICIAL SIGNATURES
     // ------------------------------------------------------------------
-        const totalsY = sidesTop + 48;
+    const totalsY = sketchY + sketchHeight + 7;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.8);
