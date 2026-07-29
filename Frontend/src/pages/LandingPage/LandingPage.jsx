@@ -736,69 +736,59 @@ function CapabilityNode({ item }) {
 function TeamMemberCard({ member, index }) {
   return (
     <article
-      className="group relative mx-auto w-full max-w-[340px] overflow-hidden rounded-[22px] border border-white/15 bg-white/[0.07] shadow-[0_22px_48px_-26px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#7FE45B]/70 hover:bg-white/[0.11] hover:shadow-[0_28px_64px_-28px_rgba(73,184,74,0.68)]"
+      className="
+        group relative mx-auto w-full max-w-[345px]
+        overflow-hidden rounded-[22px]
+        border border-white/20
+        bg-white/[0.12] backdrop-blur-xl
+        shadow-[0_20px_55px_-28px_rgba(0,0,0,.9)]
+        transition-all duration-500
+        hover:-translate-y-1.5
+        hover:border-[#8FEA67]
+        hover:bg-white/[0.16]
+      "
       style={{
         animation: `teamCardReveal 700ms ease-out ${index * 110}ms both`,
       }}
     >
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent opacity-75" />
+      {/* Top Accent */}
+      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent" />
 
-      <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#49B84A]/15 blur-3xl transition-transform duration-700 group-hover:scale-150" />
-
-      <div className="relative p-3">
-        <div className="relative mx-auto aspect-square w-[68%] max-w-[210px] overflow-hidden rounded-[18px] border border-white/10 bg-[#061b17] shadow-[0_16px_34px_-20px_rgba(0,0,0,0.9)]">
+      <div className="relative p-[10px]">
+        {/* IMAGE */}
+        <div className="relative mx-auto aspect-square w-[88%] max-w-[265px] overflow-hidden rounded-[20px] border border-white/10 bg-[#061b17]">
           {member.image ? (
-            <>
-              <img
-                src={member.image}
-                alt={member.name}
-                className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.045]"
-                loading="lazy"
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-
-                  const fallback =
-                    event.currentTarget.nextElementSibling;
-
-                  if (fallback) {
-                    fallback.style.display = "flex";
-                  }
-                }}
-              />
-
-              <div className="hidden h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)]">
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
-                  <span className="absolute inset-2 rounded-full border border-white/10" />
-                  <Users size={30} strokeWidth={1.5} />
-                </div>
-              </div>
-            </>
+            <img
+              src={member.image}
+              alt={member.name}
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]"
+            />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)]">
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
-                <span className="absolute inset-2 rounded-full border border-white/10" />
-                <Users size={30} strokeWidth={1.5} />
-              </div>
+            <div className="flex h-full w-full items-center justify-center bg-[#03130f]">
+              <Users size={28} className="text-[#8FEA67]" />
             </div>
           )}
 
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#03130f]/90 via-transparent to-transparent opacity-75" />
-
-          <div className="absolute left-2.5 top-2.5 flex h-7 min-w-7 items-center justify-center rounded-full border border-white/15 bg-black/35 px-2 text-[8px] font-black tracking-[0.16em] text-white/80 backdrop-blur-md">
+          {/* Number */}
+          <div className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-[11px] font-bold text-white backdrop-blur">
             {String(index + 1).padStart(2, "0")}
           </div>
         </div>
 
-        <div className="px-2 pb-2 pt-4 text-center">
-          <h3 className="text-sm font-black tracking-wide text-white sm:text-base">
+        {/* TEXT */}
+        <div className="px-3 pb-3 pt-3 text-center">
+          {/* NAME (FIXED SIZE) */}
+          <h3 className="text-[18px] font-extrabold text-white leading-tight">
             {member.name}
           </h3>
 
-          <p className="mx-auto mt-1.5 max-w-[260px] text-[9px] font-bold uppercase leading-relaxed tracking-[0.11em] text-[#8FEA67] sm:text-[10px]">
+          {/* DESIGNATION (FIXED SIZE) */}
+          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8FEA67]">
             {member.designation}
           </p>
 
-          <div className="mx-auto mt-3 h-px w-12 bg-gradient-to-r from-transparent via-[#8FEA67]/70 to-transparent transition-all duration-500 group-hover:w-24" />
+          {/* LINE */}
+          <div className="mx-auto mt-4 h-[2px] w-16 bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent" />
         </div>
       </div>
     </article>
@@ -1271,13 +1261,13 @@ export default function LandingPage() {
 
           <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center gap-1.5 px-3 py-2 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-3">
             <div className="shrink-0 text-center sm:border-r sm:border-white/15 sm:pr-5 sm:text-left">
-              <div className="text-[10px] font-black uppercase leading-tight tracking-[0.18em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] xs:text-[11px] sm:text-sm md:text-base">
+              <div className="text-[12px] font-black uppercase leading-tight tracking-[0.18em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:text-[14px]">
                 {STAT_GROUPS[statGroupIndex].title}
               </div>
             </div>
 
             <div
-              className={`grid flex-1 gap-2 text-center transition-all duration-300 ease-out sm:gap-3 ${STAT_GROUPS[statGroupIndex].stats.length === 3
+              className={`grid flex-1 gap-3 text-center transition-all duration-300 ease-out sm:gap-3 ${STAT_GROUPS[statGroupIndex].stats.length === 3
                 ? "grid-cols-3"
                 : "grid-cols-2 sm:grid-cols-4"
                 } ${statFade
@@ -1286,12 +1276,23 @@ export default function LandingPage() {
                 }`}
             >
               {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
-                <div key={label} className="relative py-0.5">
-                  <div className="text-lg font-black leading-none text-[#F7FFF9] drop-shadow-[0_3px_10px_rgba(0,0,0,0.82)] xs:text-xl sm:text-[30px]">
+                <div
+                  key={label}
+                  className="
+                    rounded-xl
+                    border border-white/10
+                    bg-white/[0.05]
+                    px-3 py-2
+                    backdrop-blur-md
+                    transition-all duration-300
+                    hover:bg-white/[0.08]
+                  "
+                >
+                  <div className="text-[22px] sm:text-[30px] font-black text-white leading-none">
                     {value}
                   </div>
 
-                  <div className="mt-1 text-[7px] font-semibold uppercase leading-tight tracking-[0.13em] text-white/70 xs:text-[8px] sm:text-[10px]">
+                  <div className="mt-1 text-[8px] sm:text-[10px] uppercase tracking-[0.15em] text-white/70">
                     {label}
                   </div>
                 </div>
