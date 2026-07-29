@@ -275,28 +275,30 @@ export const buildVisibleLegendRows = ({
 };
 
 export const buildCadastralLegendRows = ({
-  map,
   layers = {},
   boundaryStatus = "verified",
-}) => {
-  const rows = buildRowsFromDefinitions({
-    map,
-    definitions: CADASTRAL_LAYER_DEFINITIONS,
-    stateResolver: (definition) =>
-      getLayerState(layers, definition.key),
-  });
+}) =>
+  CADASTRAL_LAYER_DEFINITIONS
+    .filter(({ key }) =>
+      isLayerStateVisible(getLayerState(layers, key)),
+    )
+    .map((definition) => {
+      const state = getLayerState(layers, definition.key);
+      const stateColor =
+        typeof state === "object" && state?.color
+          ? state.color
+          : undefined;
 
-  return rows.map((row) => {
-    const statusColor =
-      ["mauzaBoundary", "khasraLayer"].includes(row.key)
-        ? boundaryStatus === "unverified"
-          ? "#dc5a5a"
-          : "#16a34a"
-        : undefined;
+      const statusColor =
+        ["mauzaBoundary", "khasraLayer"].includes(definition.key)
+          ? boundaryStatus === "unverified"
+            ? "#dc5a5a"
+            : "#16a34a"
+          : undefined;
 
-    return {
-      ...row,
-      color: statusColor || row.color,
-    };
-  });
-};
+      return {
+        ...definition,
+        id: definition.key,
+        color: statusColor || stateColor || definition.color,
+      };
+    });

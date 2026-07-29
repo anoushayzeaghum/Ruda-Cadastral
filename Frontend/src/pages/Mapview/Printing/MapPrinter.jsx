@@ -65,9 +65,7 @@ export default function MapPrinter({
   // This fallback prevents a missing/incorrect mode prop from making the
   // Cadastral page print as "GIS Metaverse". Cadastral MapPage passes a
   // populated `layers` object, while GIS Metaverse uses layerVisibility.
-  const isCadastralMode =
-    mode === "cadastral" ||
-    (hasOwnKeys(layers) && !hasOwnKeys(layerVisibility));
+  const isCadastralMode = mode === "cadastral";
 
   const publishState = useCallback(() => {
     dispatchPrintEvent(PRINT_EVENTS.PRINT_STATE, {
@@ -106,14 +104,9 @@ export default function MapPrinter({
     try {
       const mapImage = await captureMapCanvas(map);
 
-      const cadastralLayers = hasOwnKeys(layers)
-        ? layers
-        : layerVisibility;
-
       const legendRows = isCadastralMode
         ? buildCadastralLegendRows({
-            map,
-            layers: cadastralLayers,
+            layers,
             boundaryStatus,
           })
         : buildVisibleLegendRows({
@@ -141,7 +134,7 @@ export default function MapPrinter({
         isCadastralMode,
         title,
         legendRows,
-        cadastralLayers,
+        layers,
         layerVisibility,
         adminBoundaryVisibility,
         visibleMapLayers: map
@@ -158,7 +151,7 @@ export default function MapPrinter({
         makePrintableHtml({
           title,
           subtitle: isCadastralMode
-            ? "Cadastral Map • Current Visible Layers"
+            ? "Cadastral Map — Current Visible Layers"
             : "GIS Metaverse • Current Visible Layers",
           mapImage,
           insetImage: mapImage,

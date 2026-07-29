@@ -736,59 +736,65 @@ function CapabilityNode({ item }) {
 function TeamMemberCard({ member, index }) {
   return (
     <article
-      className="group relative mx-auto w-full max-w-[390px] overflow-hidden rounded-[22px] border border-white/15 bg-white/[0.07] shadow-[0_22px_48px_-26px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#7FE45B]/70 hover:bg-white/[0.11] hover:shadow-[0_28px_64px_-28px_rgba(73,184,74,0.68)]"
+      className="group relative mx-auto w-full max-w-[340px] overflow-hidden rounded-[22px] border border-white/15 bg-white/[0.07] shadow-[0_22px_48px_-26px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#7FE45B]/70 hover:bg-white/[0.11] hover:shadow-[0_28px_64px_-28px_rgba(73,184,74,0.68)]"
       style={{
         animation: `teamCardReveal 700ms ease-out ${index * 110}ms both`,
       }}
     >
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent opacity-75" />
+
       <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#49B84A]/15 blur-3xl transition-transform duration-700 group-hover:scale-150" />
 
       <div className="relative p-3">
-        <div className="relative mx-auto w-[94%] overflow-hidden rounded-[20px] border border-white/10 bg-[#061b17]">
+        <div className="relative mx-auto aspect-square w-[68%] max-w-[210px] overflow-hidden rounded-[18px] border border-white/10 bg-[#061b17] shadow-[0_16px_34px_-20px_rgba(0,0,0,0.9)]">
           {member.image ? (
             <>
               <img
                 src={member.image}
                 alt={member.name}
-                className="h-52 w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.045] sm:h-56 lg:h-60"
+                className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.045]"
                 loading="lazy"
                 onError={(event) => {
                   event.currentTarget.style.display = "none";
-                  const fallback = event.currentTarget.nextElementSibling;
+
+                  const fallback =
+                    event.currentTarget.nextElementSibling;
+
                   if (fallback) {
                     fallback.style.display = "flex";
                   }
                 }}
               />
-              <div className="hidden h-52 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-56 lg:h-60">
-                <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
+
+              <div className="hidden h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)]">
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
                   <span className="absolute inset-2 rounded-full border border-white/10" />
-                  <Users size={36} strokeWidth={1.5} />
+                  <Users size={30} strokeWidth={1.5} />
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex h-52 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-56 lg:h-60">
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
+            <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)]">
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
                 <span className="absolute inset-2 rounded-full border border-white/10" />
-                <Users size={36} strokeWidth={1.5} />
+                <Users size={30} strokeWidth={1.5} />
               </div>
             </div>
           )}
 
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#03130f] via-transparent to-transparent opacity-90" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#03130f]/90 via-transparent to-transparent opacity-75" />
 
-          <div className="absolute left-3 top-3 flex h-8 min-w-8 items-center justify-center rounded-full border border-white/15 bg-black/35 px-2 text-[9px] font-black tracking-[0.18em] text-white/80 backdrop-blur-md">
+          <div className="absolute left-2.5 top-2.5 flex h-7 min-w-7 items-center justify-center rounded-full border border-white/15 bg-black/35 px-2 text-[8px] font-black tracking-[0.16em] text-white/80 backdrop-blur-md">
             {String(index + 1).padStart(2, "0")}
           </div>
         </div>
 
-        <div className="px-1 pb-1 pt-3 text-center">
+        <div className="px-2 pb-2 pt-4 text-center">
           <h3 className="text-sm font-black tracking-wide text-white sm:text-base">
             {member.name}
           </h3>
-          <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#8FEA67] sm:text-[11px]">
+
+          <p className="mx-auto mt-1.5 max-w-[260px] text-[9px] font-bold uppercase leading-relaxed tracking-[0.11em] text-[#8FEA67] sm:text-[10px]">
             {member.designation}
           </p>
 

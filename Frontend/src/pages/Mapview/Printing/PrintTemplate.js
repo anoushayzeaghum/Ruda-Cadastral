@@ -69,7 +69,7 @@ export const makePrintableHtml = ({
         .join("")
     : `
       <div class="legend-empty">
-        The map contains no visible operational layer.
+        No operational layer is currently enabled.
       </div>`;
 
   return `<!doctype html>
@@ -461,7 +461,7 @@ export const makePrintableHtml = ({
 
       <section class="panel glass legend-panel">
         <div class="panel-heading">
-          Legend (${legendRows.length})
+          Dynamic Legend (${legendRows.length})
         </div>
         <div class="legend-grid">${legendHtml}</div>
       </section>
