@@ -63,7 +63,9 @@ export default function Header() {
 
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <h1 className="text-xs sm:text-sm md:text-base lg:text-xl font-normal tracking-wide truncate">
-              <span className="hidden sm:inline">RUDA CADASTRAL MANAGEMENT SYSTEM</span>
+              <span className="hidden sm:inline">
+                RUDA LAND INFORMATION SYSTEM
+              </span>
               <span className="sm:hidden">RUDA CADASTRAL</span>
             </h1>
           </div>
