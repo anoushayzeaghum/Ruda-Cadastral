@@ -188,11 +188,6 @@ router.register(r"city-level-service/create", CreateCityLevelServiceView, basena
 router.register(r"city-level-service/update", UpdateCityLevelServiceView, basename="update-city-level-service")
 router.register(r"city-level-service/delete", DeleteCityLevelServiceView, basename="delete-city-level-service")
 
-router.register(r"forest-boundary", ListForestBoundaryView, basename="forest-boundary")
-router.register(r"forest-boundary/create", CreateForestBoundaryView, basename="create-forest-boundary")
-router.register(r"forest-boundary/update", UpdateForestBoundaryView, basename="update-forest-boundary")
-router.register(r"forest-boundary/delete", DeleteForestBoundaryView, basename="delete-forest-boundary")
-
 router.register(r"precient-boundary", ListPrecientBoundaryView, basename="precient-boundary")
 router.register(r"precient-boundary/create", CreatePrecientBoundaryView, basename="create-precient-boundary")
 router.register(r"precient-boundary/update", UpdatePrecientBoundaryView, basename="update-precient-boundary")
@@ -242,6 +237,11 @@ router.register(r"phs-ppp-schemes", ListPHSPPPSchemeView, basename="phs-ppp-sche
 router.register(r"phs-ppp-schemes/create", CreatePHSPPPSchemeView, basename="create-phs-ppp-schemes",)
 router.register(r"phs-ppp-schemes/update", UpdatePHSPPPSchemeView, basename="update-phs-ppp-schemes",)
 router.register(r"phs-ppp-schemes/delete", DeletePHSPPPSchemeView, basename="delete-phs-ppp-schemes",)
+
+router.register(r"forest-boundary", ListForestBoundaryView, basename="forest-boundary",)
+router.register(r"forest-boundary/create", CreateForestBoundaryView, basename="create-forest-boundary",)
+router.register(r"forest-boundary/update", UpdateForestBoundaryView, basename="update-forest-boundary",)
+router.register(r"forest-boundary/delete", DeleteForestBoundaryView, basename="delete-forest-boundary",)
 
 # ------------------------------ Proposed Roads Views ------------------------------
 # DB table: public.ruda_proposed_road

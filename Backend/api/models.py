@@ -1680,38 +1680,6 @@ class CityLevelService(models.Model):
 
 
 # =========================
-# Forest Boundary
-# =========================
-class ForestBoundary(models.Model):
-    gid = models.AutoField(primary_key=True)
-    objectid_1 = models.FloatField(null=True, blank=True)
-    objectid = models.FloatField(null=True, blank=True)
-    f_zone = models.CharField(max_length=100, null=True, blank=True)
-    f_circle = models.CharField(max_length=100, null=True, blank=True)
-    f_div = models.CharField(max_length=100, null=True, blank=True)
-    f_name = models.CharField(max_length=100, null=True, blank=True)
-    gps_area = models.FloatField(null=True, blank=True)
-    gross_area = models.FloatField(null=True, blank=True)
-    f_type = models.CharField(max_length=100, null=True, blank=True)
-    legal_stat = models.CharField(max_length=50, null=True, blank=True)
-    shape_leng = models.FloatField(null=True, blank=True)
-    shape_area = models.FloatField(null=True, blank=True)
-
-    geom = gis_models.GeometryField(
-        srid=4326,
-        null=True,
-        blank=True,
-    )
-
-    def __str__(self):
-        return self.f_name or f"Forest Boundary {self.gid}"
-
-    class Meta:
-        managed = False
-        db_table = "forest_boundary"
-
-
-# =========================
 # Precient Boundary
 # =========================
 class PrecientBoundary(models.Model):
@@ -2550,6 +2518,7 @@ class PHSPPPScheme(models.Model):
     class Meta:
         managed = False
         db_table = "phs_ppp_schemes"
+
 
 
 class ForestBoundary(models.Model):
