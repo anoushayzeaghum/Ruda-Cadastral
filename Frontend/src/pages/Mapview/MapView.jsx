@@ -119,6 +119,26 @@ import useMapTools from "./MapView/useMapTools.js";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
+// Administrative boundary presentation.
+// Change these values when you want to adjust the fixed polygon fills.
+const ADMIN_BOUNDARY_STYLE = {
+  district: {
+    lineColor: "#D18B00", // dark mango yellow
+    fillColor: "#F6C453",
+    fillOpacity: 0.14,
+  },
+  tehsil: {
+    lineColor: "#0B3D91", // dark blue
+    fillColor: "#93C5FD",
+    fillOpacity: 0.08,
+  },
+  mauza: {
+    lineColor: "#000000",
+    fillColor: "#000000",
+    fillOpacity: 0,
+  },
+};
+
 export default function MapView({
   selectedDistrict,
   selectedTehsil,
@@ -256,10 +276,16 @@ export default function MapView({
   );
   const districtBoundaryColor = getLayerColorValue(
     "districtBoundary",
-    "#f59e0b",
+    ADMIN_BOUNDARY_STYLE.district.lineColor,
   );
-  const tehsilBoundaryColor = getLayerColorValue("tehsilBoundary", "#06b6d4");
-  const mauzaBoundaryColor = getLayerColorValue("mauzaBoundary", "#a3e635");
+  const tehsilBoundaryColor = getLayerColorValue(
+    "tehsilBoundary",
+    ADMIN_BOUNDARY_STYLE.tehsil.lineColor,
+  );
+  const mauzaBoundaryColor = getLayerColorValue(
+    "mauzaBoundary",
+    ADMIN_BOUNDARY_STYLE.mauza.lineColor,
+  );
   const squareLayerColor = getLayerColorValue("squareLayer", "#8b5cf6");
   const acreLayerColor = getLayerColorValue("acreLayer", "#14b8a6");
   // Khasra color is controlled only by verification status.
@@ -827,7 +853,12 @@ export default function MapView({
   };
 
   const getBoundaryThemeForOpacity = (level) => {
-    if (level === "mauza") return VECTOR_LAYER_THEME.mauza;
+    if (ADMIN_BOUNDARY_STYLE[level]) {
+      return {
+        ...VECTOR_LAYER_THEME.defaultBoundary,
+        fillOpacity: ADMIN_BOUNDARY_STYLE[level].fillOpacity,
+      };
+    }
     if (level === SQUARE_LEVEL) return VECTOR_LAYER_THEME.square;
     if (level === ACRE_LEVEL) return VECTOR_LAYER_THEME.acre;
     return VECTOR_LAYER_THEME.defaultBoundary;
@@ -898,16 +929,19 @@ export default function MapView({
     if (!map || !colorValue) return;
 
     const ids = getBoundaryIds(level);
+    const adminStyle = ADMIN_BOUNDARY_STYLE[level];
 
-    // Keep the thematic light fill supplied by the layer style. The colour
-    // picker controls the boundary/label colour only, so changing opacity
-    // never turns the entire polygon into the dark outline colour.
     try {
       if (map.getLayer(ids.fill)) {
+        // District and Tehsil use a separate light fill colour.
+        // Mauza keeps the fill layer transparent so it remains clickable.
+        if (adminStyle) {
+          map.setPaintProperty(ids.fill, "fill-color", adminStyle.fillColor);
+        }
         map.setPaintProperty(ids.fill, "fill-outline-color", colorValue);
       }
     } catch (e) {
-      console.warn(`Could not update fill outline for ${level}`, e);
+      console.warn(`Could not update fill style for ${level}`, e);
     }
 
     [ids.line, ids.dashLine, ids.label].forEach((layerId) =>

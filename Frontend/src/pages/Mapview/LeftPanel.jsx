@@ -86,9 +86,10 @@ export default function LeftPanel({
       rudaBoundary: "#22c55e",
       proposedRoads: "#ef4444",
       geodeticNetwork: "#d81d1d",
-      districtBoundary: "#f59e0b",
-      tehsilBoundary: "#06b6d4",
-      mauzaBoundary: "#a3e635",
+      // Administrative boundary outline colours.
+      districtBoundary: "#D18B00", // dark mango yellow
+      tehsilBoundary: "#0B3D91", // dark blue
+      mauzaBoundary: "#000000", // black outline, no fill in MapView
       khasraLayer: "#f97316",
       possessionLand: "#5F7F00",
       awardedLand: "#854F0B",

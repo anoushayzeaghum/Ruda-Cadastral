@@ -143,9 +143,9 @@ export default function MapPage() {
     rudaBoundary: { visible: false, opacity: 100, color: "#22c55e" },
     proposedRoads: { visible: false, opacity: 100, color: "#ef4444" },
     geodeticNetwork: { visible: false, opacity: 100, color: "#d81d1d" },
-    districtBoundary: { visible: true, opacity: 100, color: "#f59e0b" },
-    tehsilBoundary: { visible: true, opacity: 100, color: "#06b6d4" },
-    mauzaBoundary: { visible: true, opacity: 100, color: "#16a34a" },
+    districtBoundary: { visible: true, opacity: 100, color: "#D18B00" },
+    tehsilBoundary: { visible: true, opacity: 100, color: "#0B3D91" },
+    mauzaBoundary: { visible: true, opacity: 100, color: "#000000" },
     khasraLayer: { visible: false, opacity: 100, color: "#16a34a" },
     possessionLand: { visible: false, opacity: 100, color: "#5F7F00" },
     awardedLand: { visible: false, opacity: 100, color: "#854F0B" },
@@ -281,16 +281,10 @@ export default function MapPage() {
   useEffect(() => {
     const statusColor = boundaryStatus === "unverified" ? "#dc5a5a" : "#16a34a";
 
-    // Mauza, Khasra, and Square switch between verified and unverified tables.
-    // Preserve visibility/opacity and keep the status color on Mauza/Khasra.
+    // Only Khasra changes colour with verification status.
+    // Mauza remains a black outline for both verified and unverified data.
     setLayers((prev) => ({
       ...prev,
-      mauzaBoundary: {
-        ...(typeof prev.mauzaBoundary === "object"
-          ? prev.mauzaBoundary
-          : { visible: !!prev.mauzaBoundary, opacity: 100 }),
-        color: statusColor,
-      },
       khasraLayer: {
         ...(typeof prev.khasraLayer === "object"
           ? prev.khasraLayer
