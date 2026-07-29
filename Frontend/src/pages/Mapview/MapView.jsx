@@ -116,28 +116,29 @@ import {
   POPUP_TITLES,
 } from "./MapView/popupUtils.js";
 import useMapTools from "./MapView/useMapTools.js";
+import {
+  CADASTRAL_BOUNDARY_STYLES,
+  getKhasraStatusColorExpression,
+} from "./LayerManager/CadastralBoundaryStyles.js";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-// Administrative boundary presentation.
-// Change these values when you want to adjust the fixed polygon fills.
-const ADMIN_BOUNDARY_STYLE = {
-  district: {
-    lineColor: "#D18B00", // dark mango yellow
-    fillColor: "#F6C453",
-    fillOpacity: 0.14,
-  },
-  tehsil: {
-    lineColor: "#0B3D91", // dark blue
-    fillColor: "#93C5FD",
-    fillOpacity: 0.08,
-  },
-  mauza: {
-    lineColor: "#000000",
-    fillColor: "#000000",
-    fillOpacity: 0,
-  },
-};
+const markVerificationStatus = (geojson, status) => ({
+  type: "FeatureCollection",
+  features: (geojson?.features || []).map((feature) => ({
+    ...feature,
+    properties: {
+      ...(feature?.properties || {}),
+      _verification_status: status,
+    },
+  })),
+});
+
+const mergeStatusGeoJSON = (verified, unverified) =>
+  mergeFeatureCollections([
+    markVerificationStatus(verified, "verified"),
+    markVerificationStatus(unverified, "unverified"),
+  ]);
 
 export default function MapView({
   selectedDistrict,
@@ -276,22 +277,21 @@ export default function MapView({
   );
   const districtBoundaryColor = getLayerColorValue(
     "districtBoundary",
-    ADMIN_BOUNDARY_STYLE.district.lineColor,
+    CADASTRAL_BOUNDARY_STYLES.district.lineColor,
   );
   const tehsilBoundaryColor = getLayerColorValue(
     "tehsilBoundary",
-    ADMIN_BOUNDARY_STYLE.tehsil.lineColor,
+    CADASTRAL_BOUNDARY_STYLES.tehsil.lineColor,
   );
   const mauzaBoundaryColor = getLayerColorValue(
     "mauzaBoundary",
-    ADMIN_BOUNDARY_STYLE.mauza.lineColor,
+    CADASTRAL_BOUNDARY_STYLES.mauza.lineColor,
   );
   const squareLayerColor = getLayerColorValue("squareLayer", "#8b5cf6");
   const acreLayerColor = getLayerColorValue("acreLayer", "#14b8a6");
-  // Khasra color is controlled only by verification status.
-  // Verified parcels are always green and unverified parcels are always red.
-  const khasraLayerColor =
-    boundaryStatus === "verified" ? "#16a34a" : "#dc5a5a";
+  // A Mapbox expression keeps verified and unverified parcels styled
+  // independently when both datasets are displayed together.
+  const khasraLayerColor = getKhasraStatusColorExpression();
   const murabbaLayerColor = getLayerColorValue("murabbaLayer", "#facc15");
   const triJunctionPointsColor = getLayerColorValue(
     "triJunctionPoints",
@@ -309,22 +309,114 @@ export default function MapView({
       : !!massaviLayerState;
   const massaviLayerOpacity =
     typeof massaviLayerState === "object" &&
-      Number.isFinite(Number(massaviLayerState.opacity))
+    Number.isFinite(Number(massaviLayerState.opacity))
       ? Number(massaviLayerState.opacity) / 100
       : 1.0;
-  const selectedMauzaName = getMauzaName(selectedMauza);
-  const orthoTileUrl = getOrthoTileUrlFromMauza(selectedMauza);
+  const selectedMauzaList = Array.isArray(selectedMauza)
+    ? selectedMauza.filter(Boolean)
+    : selectedMauza
+      ? [selectedMauza]
+      : [];
+  const primarySelectedMauza = selectedMauzaList[0] || null;
+  const selectedMauzaName = getMauzaName(primarySelectedMauza);
+  const orthoTileUrl = getOrthoTileUrlFromMauza(primarySelectedMauza);
   const districtSelectionKey = buildSelectionKey(selectedDistrict);
   const tehsilSelectionKey = buildSelectionKey(selectedTehsil);
   const rudaPhaseSelectionKey = buildSelectionKey(selectedRudaPhaseIds);
   const proposedRoadSelectionKey = buildSelectionKey(selectedProposedRoadIds);
-  const selectedMauzaId = getSelectedMauzaId(selectedMauza);
-  const mauzaSelectionKey = selectedMauzaId
-    ? `${boundaryStatus}:${String(selectedMauzaId)}`
+  const selectedMauzaId = getSelectedMauzaId(primarySelectedMauza);
+  const selectedMauzaEntries = selectedMauzaList.map((mauza) => {
+    const fallbackId = getSelectedMauzaId(mauza);
+    return {
+      mauza,
+      selectionKey:
+        mauza?._selectionKey ??
+        String(mauza?.mauza ?? mauza?.name ?? fallbackId ?? "").toLowerCase(),
+      verifiedId: mauza?._verifiedMauzaId ?? fallbackId,
+      unverifiedId: mauza?._unverifiedMauzaId ?? fallbackId,
+    };
+  });
+  const verifiedMauzaId =
+    selectedMauzaEntries[0]?.verifiedId ?? selectedMauzaId;
+  const unverifiedMauzaId =
+    selectedMauzaEntries[0]?.unverifiedId ?? selectedMauzaId;
+  const mauzaSelectionKey = selectedMauzaEntries.length
+    ? `${boundaryStatus}:${selectedMauzaEntries
+        .map(
+          ({ selectionKey, verifiedId, unverifiedId }) =>
+            `${selectionKey}:${String(verifiedId ?? "")}:${String(unverifiedId ?? "")}`,
+        )
+        .sort()
+        .join("|")}`
     : "";
 
   const getCachedGeoJSON = (cacheKey, loader) =>
     apiDataCacheRef.current.getOrLoad(cacheKey, loader);
+
+  const tagMauzaFeatures = (geojson, entry) => ({
+    type: "FeatureCollection",
+    features: (geojson?.features || []).map((feature) => ({
+      ...feature,
+      properties: {
+        ...(feature?.properties || {}),
+        _mauza_selection_key: entry.selectionKey,
+      },
+    })),
+  });
+
+  const loadSelectedMauzaGeoJSON = async ({
+    verifiedLoader,
+    unverifiedLoader,
+  }) => {
+    const results = await Promise.all(
+      selectedMauzaEntries.map(async (entry) => {
+        if (boundaryStatus === "both") {
+          const [verified, unverified] = await Promise.all([
+            entry.verifiedId
+              ? verifiedLoader(entry.verifiedId)
+              : emptyFeatureCollection(),
+            entry.unverifiedId
+              ? unverifiedLoader(entry.unverifiedId)
+              : emptyFeatureCollection(),
+          ]);
+          return tagMauzaFeatures(
+            mergeStatusGeoJSON(verified, unverified),
+            entry,
+          );
+        }
+
+        if (boundaryStatus === "verified") {
+          const data = entry.verifiedId
+            ? await verifiedLoader(entry.verifiedId)
+            : emptyFeatureCollection();
+          return tagMauzaFeatures(
+            markVerificationStatus(data, "verified"),
+            entry,
+          );
+        }
+
+        const data = entry.unverifiedId
+          ? await unverifiedLoader(entry.unverifiedId)
+          : emptyFeatureCollection();
+        return tagMauzaFeatures(
+          markVerificationStatus(data, "unverified"),
+          entry,
+        );
+      }),
+    );
+    return mergeFeatureCollections(results);
+  };
+
+  const loadVerifiedForSelectedMauzas = async (loader) => {
+    const results = await Promise.all(
+      selectedMauzaEntries.map(async (entry) => {
+        const id = entry.verifiedId ?? entry.unverifiedId;
+        if (!id) return emptyFeatureCollection();
+        return tagMauzaFeatures(await loader(id), entry);
+      }),
+    );
+    return mergeFeatureCollections(results);
+  };
 
   const unbindLayerEvents = (layerId) => {
     const map = mapInstance.current;
@@ -466,7 +558,7 @@ export default function MapView({
         if (map.getLayer(layerId)) {
           map.moveLayer(layerId);
         }
-      } catch (e) { }
+      } catch (e) {}
     });
   };
 
@@ -490,15 +582,16 @@ export default function MapView({
     const currentArea = getOpenAreaGeoJSON();
     if (currentArea?.features?.length) return currentArea;
 
-    if (!selectedMauza) return null;
+    if (!selectedMauzaList.length) return null;
 
     try {
       const mauzaGeojson = await getCachedGeoJSON(
         `mauza:${mauzaSelectionKey}`,
         () =>
-          boundaryStatus === "verified"
-            ? getMauzaBoundary(selectedMauzaId)
-            : getRudaMauzas(selectedMauzaId),
+          loadSelectedMauzaGeoJSON({
+            verifiedLoader: getMauzaBoundary,
+            unverifiedLoader: getRudaMauzas,
+          }),
       );
 
       if (mauzaGeojson?.features?.length) {
@@ -777,6 +870,20 @@ export default function MapView({
       currentGeojson.current[level] = sourceGeojson;
       const thematicColor = boundaryLevelColor(level);
       if (thematicColor) applyColorToBoundaryLevel(level, thematicColor);
+
+      const centralizedStyle = CADASTRAL_BOUNDARY_STYLES[level];
+      if (centralizedStyle && map.getLayer(ids.line)) {
+        map.setPaintProperty(
+          ids.line,
+          "line-width",
+          centralizedStyle.lineWidth,
+        );
+        map.setPaintProperty(
+          ids.line,
+          "line-opacity",
+          centralizedStyle.lineOpacity * layerOpacity,
+        );
+      }
       movePointLayersToTop();
 
       // ── Click popup for polygon / line boundary layers ─────────────────
@@ -853,10 +960,10 @@ export default function MapView({
   };
 
   const getBoundaryThemeForOpacity = (level) => {
-    if (ADMIN_BOUNDARY_STYLE[level]) {
+    if (CADASTRAL_BOUNDARY_STYLES[level]) {
       return {
         ...VECTOR_LAYER_THEME.defaultBoundary,
-        fillOpacity: ADMIN_BOUNDARY_STYLE[level].fillOpacity,
+        fillOpacity: CADASTRAL_BOUNDARY_STYLES[level].fillOpacity,
       };
     }
     if (level === SQUARE_LEVEL) return VECTOR_LAYER_THEME.square;
@@ -929,7 +1036,7 @@ export default function MapView({
     if (!map || !colorValue) return;
 
     const ids = getBoundaryIds(level);
-    const adminStyle = ADMIN_BOUNDARY_STYLE[level];
+    const adminStyle = CADASTRAL_BOUNDARY_STYLES[level];
 
     try {
       if (map.getLayer(ids.fill)) {
@@ -1034,7 +1141,7 @@ export default function MapView({
 
     try {
       if (map?.getLayer(KHASRA_LABEL)) map.removeLayer(KHASRA_LABEL);
-    } catch (e) { }
+    } catch (e) {}
     clearLayerAndSource(KHASRA_FILL, KHASRA_LINE, KHASRA_SOURCE);
   };
 
@@ -1043,7 +1150,7 @@ export default function MapView({
     unbindLayerEvents(MURABBA_FILL);
     try {
       if (map?.getLayer(MURABBA_LABEL)) map.removeLayer(MURABBA_LABEL);
-    } catch (e) { }
+    } catch (e) {}
     clearLayerAndSource(MURABBA_FILL, MURABBA_LINE, MURABBA_SOURCE);
   };
 
@@ -1315,7 +1422,7 @@ export default function MapView({
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) { }
+      } catch (err) {}
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -1340,7 +1447,7 @@ export default function MapView({
       applyOpacityToMapLayer(KHASRA_LABEL, khasraLayerOpacity);
 
       // Reapply the current status color after every redraw/style reload.
-      [KHASRA_FILL, KHASRA_LINE, KHASRA_LABEL].forEach((layerId) =>
+      [KHASRA_FILL, KHASRA_LINE].forEach((layerId) =>
         applyColorToMapLayer(layerId, khasraLayerColor),
       );
 
@@ -1437,7 +1544,7 @@ export default function MapView({
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) { }
+      } catch (err) {}
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -1819,7 +1926,7 @@ export default function MapView({
 
   useEffect(() => {
     if (!isMapReady) return;
-    [KHASRA_FILL, KHASRA_LINE, KHASRA_LABEL].forEach((layerId) =>
+    [KHASRA_FILL, KHASRA_LINE].forEach((layerId) =>
       applyColorToMapLayer(layerId, khasraLayerColor),
     );
   }, [isMapReady, khasraLayerColor]);
@@ -1996,9 +2103,10 @@ export default function MapView({
         const geojson = await getCachedGeoJSON(
           `mauza:${mauzaSelectionKey}`,
           () =>
-            boundaryStatus === "verified"
-              ? getMauzaBoundary(selectedMauzaId)
-              : getRudaMauzas(selectedMauzaId),
+            loadSelectedMauzaGeoJSON({
+              verifiedLoader: getMauzaBoundary,
+              unverifiedLoader: getRudaMauzas,
+            }),
         );
         if (cancelled) return;
 
@@ -2023,7 +2131,13 @@ export default function MapView({
     return () => {
       cancelled = true;
     };
-  }, [mauzaSelectionKey, isMapReady]);
+  }, [
+    mauzaSelectionKey,
+    isMapReady,
+    boundaryStatus,
+    verifiedMauzaId,
+    unverifiedMauzaId,
+  ]);
 
   useEffect(() => {
     if (!isMapReady) return;
@@ -2237,15 +2351,49 @@ export default function MapView({
             : viewBy === "acre"
               ? currentGeojson.current[ACRE_LEVEL]
               : currentGeojson.current.khasra ||
-              currentGeojson.current.murabba ||
-              currentGeojson.current[SQUARE_LEVEL] ||
-              currentGeojson.current[ACRE_LEVEL] ||
-              {};
+                currentGeojson.current.murabba ||
+                currentGeojson.current[SQUARE_LEVEL] ||
+                currentGeojson.current[ACRE_LEVEL] ||
+                {};
 
     const features = Array.isArray(current?.features) ? current.features : [];
 
     const matched = features.find((feat) => {
       const p = feat?.properties || {};
+
+      if (
+        typeof selectedFeatureNumber === "object" &&
+        selectedFeatureNumber !== null &&
+        selectedFeatureNumber.mauzaKey
+      ) {
+        if (
+          String(p._mauza_selection_key ?? "") !==
+          String(selectedFeatureNumber.mauzaKey)
+        ) {
+          return false;
+        }
+        if (
+          viewBy === "khasra" &&
+          selectedFeatureNumber.murabbaNo !== undefined
+        ) {
+          return (
+            String(getMurabbaNumber(p)) ===
+              String(selectedFeatureNumber.murabbaNo) &&
+            String(getKhasraNumber(p)) ===
+              String(selectedFeatureNumber.khasraNo)
+          );
+        }
+
+        const candidate =
+          viewBy === "khasra"
+            ? getKhasraNumber(p)
+            : viewBy === "square"
+              ? getSquareNumberFromProps(p, feat)
+              : viewBy === "acre"
+                ? getAcreNumberFromProps(p, feat)
+                : feat?.id;
+        return String(candidate) === String(selectedFeatureNumber.parcelNo);
+      }
 
       if (
         viewBy === "khasra" &&
@@ -2310,7 +2458,7 @@ export default function MapView({
               clearBoundaryLevel(level);
               delete currentGeojson.current[level];
             });
-        } catch (e) { }
+        } catch (e) {}
       };
 
       if (!rudaBoundaryVisible) {
@@ -2442,7 +2590,7 @@ export default function MapView({
   }, [isMapReady, geodeticNetworkVisible]);
 
   useEffect(() => {
-    if (!selectedMauza || !isMapReady || !squareLayerVisible) {
+    if (!selectedMauzaList.length || !isMapReady || !squareLayerVisible) {
       clearBoundaryLevel(SQUARE_LEVEL);
       delete currentGeojson.current[SQUARE_LEVEL];
       return;
@@ -2462,9 +2610,10 @@ export default function MapView({
         const geojson = await getCachedGeoJSON(
           `squares:${mauzaSelectionKey}`,
           () =>
-            boundaryStatus === "verified"
-              ? getSquares(selectedMauzaId)
-              : getRudaSquares(selectedMauzaId),
+            loadSelectedMauzaGeoJSON({
+              verifiedLoader: getSquares,
+              unverifiedLoader: getRudaSquares,
+            }),
         );
 
         if (cancelled) return;
@@ -2497,10 +2646,17 @@ export default function MapView({
     return () => {
       cancelled = true;
     };
-  }, [mauzaSelectionKey, isMapReady, squareLayerVisible]);
+  }, [
+    mauzaSelectionKey,
+    isMapReady,
+    squareLayerVisible,
+    boundaryStatus,
+    verifiedMauzaId,
+    unverifiedMauzaId,
+  ]);
 
   useEffect(() => {
-    if (!selectedMauza || !isMapReady || !acreLayerVisible) {
+    if (!selectedMauzaList.length || !isMapReady || !acreLayerVisible) {
       clearBoundaryLevel(ACRE_LEVEL);
       delete currentGeojson.current[ACRE_LEVEL];
       return undefined;
@@ -2512,8 +2668,8 @@ export default function MapView({
       try {
         setIsLoading(true);
         const geojson = await getCachedGeoJSON(
-          `acres:${String(selectedMauzaId)}`,
-          () => getAcres(selectedMauzaId),
+          `acres:${mauzaSelectionKey}`,
+          () => loadVerifiedForSelectedMauzas(getAcres),
         );
 
         if (cancelled) return;
@@ -2544,7 +2700,7 @@ export default function MapView({
     return () => {
       cancelled = true;
     };
-  }, [selectedMauzaId, isMapReady, acreLayerVisible]);
+  }, [mauzaSelectionKey, isMapReady, acreLayerVisible]);
 
   useEffect(() => {
     if (!isMapReady) return;
@@ -2572,11 +2728,17 @@ export default function MapView({
             areaGeojson,
           );
 
-          if (!filteredTriJunctionGeojson.features.length && selectedMauza) {
+          if (
+            !filteredTriJunctionGeojson.features.length &&
+            selectedMauzaList.length
+          ) {
             filteredTriJunctionGeojson = {
               type: "FeatureCollection",
               features: explodePointGeoJSON(trijunctionGeojson).features.filter(
-                (feature) => pointBelongsToMauza(feature, selectedMauza),
+                (feature) =>
+                  selectedMauzaList.some((mauza) =>
+                    pointBelongsToMauza(feature, mauza),
+                  ),
               ),
             };
           }
@@ -2635,11 +2797,16 @@ export default function MapView({
             areaGeojson,
           );
 
-          if (!filteredFieldPointsGeojson.features.length && selectedMauza) {
+          if (
+            !filteredFieldPointsGeojson.features.length &&
+            selectedMauzaList.length
+          ) {
             filteredFieldPointsGeojson = {
               type: "FeatureCollection",
               features: validFieldPointsGeojson.features.filter((feature) =>
-                featureMatchesSelectedMauza(feature, selectedMauza),
+                selectedMauzaList.some((mauza) =>
+                  featureMatchesSelectedMauza(feature, mauza),
+                ),
               ),
             };
           }
@@ -2702,7 +2869,7 @@ export default function MapView({
 
   useEffect(() => {
     const shouldShowKhasra =
-      !!selectedMauza &&
+      selectedMauzaList.length > 0 &&
       isMapReady &&
       khasraLayerVisible &&
       (viewBy === "khasra" || khasraLayerForceLoad);
@@ -2729,9 +2896,10 @@ export default function MapView({
         const geojson = await getCachedGeoJSON(
           `khasras:${mauzaSelectionKey}`,
           () =>
-            boundaryStatus === "verified"
-              ? getKhasras(selectedMauzaId)
-              : getRudaKhasras(selectedMauzaId),
+            loadSelectedMauzaGeoJSON({
+              verifiedLoader: getKhasras,
+              unverifiedLoader: getRudaKhasras,
+            }),
         );
 
         if (cancelled) return;
@@ -2766,11 +2934,14 @@ export default function MapView({
     viewBy,
     khasraLayerVisible,
     khasraLayerForceLoad,
+    boundaryStatus,
+    verifiedMauzaId,
+    unverifiedMauzaId,
   ]);
 
   useEffect(() => {
     const shouldShowMurabba =
-      !!selectedMauza &&
+      selectedMauzaList.length > 0 &&
       isMapReady &&
       murabbaLayerVisible &&
       (viewBy === "murabba" || murabbaLayerForceLoad);
@@ -2789,8 +2960,8 @@ export default function MapView({
         setError("");
 
         const geojson = await getCachedGeoJSON(
-          `murabbas:${String(selectedMauzaId)}`,
-          () => getMurabbas(selectedMauzaId),
+          `murabbas:${mauzaSelectionKey}`,
+          () => loadVerifiedForSelectedMauzas(getMurabbas),
         );
 
         if (cancelled) return;
@@ -2817,7 +2988,7 @@ export default function MapView({
       cancelled = true;
     };
   }, [
-    selectedMauzaId,
+    mauzaSelectionKey,
     isMapReady,
     viewBy,
     murabbaLayerVisible,
@@ -2830,8 +3001,8 @@ export default function MapView({
     let cancelled = false;
 
     const mauzaName =
-      typeof selectedMauza === "object"
-        ? selectedMauza?.mauza?.trim?.() || ""
+      typeof primarySelectedMauza === "object"
+        ? primarySelectedMauza?.mauza?.trim?.() || ""
         : "";
 
     const loadPoints = async () => {
