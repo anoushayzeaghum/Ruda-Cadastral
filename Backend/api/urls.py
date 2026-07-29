@@ -188,11 +188,6 @@ router.register(r"city-level-service/create", CreateCityLevelServiceView, basena
 router.register(r"city-level-service/update", UpdateCityLevelServiceView, basename="update-city-level-service")
 router.register(r"city-level-service/delete", DeleteCityLevelServiceView, basename="delete-city-level-service")
 
-router.register(r"forest-boundary", ListForestBoundaryView, basename="forest-boundary")
-router.register(r"forest-boundary/create", CreateForestBoundaryView, basename="create-forest-boundary")
-router.register(r"forest-boundary/update", UpdateForestBoundaryView, basename="update-forest-boundary")
-router.register(r"forest-boundary/delete", DeleteForestBoundaryView, basename="delete-forest-boundary")
-
 router.register(r"precient-boundary", ListPrecientBoundaryView, basename="precient-boundary")
 router.register(r"precient-boundary/create", CreatePrecientBoundaryView, basename="create-precient-boundary")
 router.register(r"precient-boundary/update", UpdatePrecientBoundaryView, basename="update-precient-boundary")
@@ -238,6 +233,20 @@ router.register(r"proposed-road-network/create", CreateProposedRoadNetworkView, 
 router.register(r"proposed-road-network/update", UpdateProposedRoadNetworkView, basename="update-proposed-road-network")
 router.register(r"proposed-road-network/delete", DeleteProposedRoadNetworkView, basename="delete-proposed-road-network")
 
+router.register(r"phs-ppp-schemes", ListPHSPPPSchemeView, basename="phs-ppp-schemes",)
+router.register(r"phs-ppp-schemes/create", CreatePHSPPPSchemeView, basename="create-phs-ppp-schemes",)
+router.register(r"phs-ppp-schemes/update", UpdatePHSPPPSchemeView, basename="update-phs-ppp-schemes",)
+router.register(r"phs-ppp-schemes/delete", DeletePHSPPPSchemeView, basename="delete-phs-ppp-schemes",)
+
+router.register(r"forest-boundary", ListForestBoundaryView, basename="forest-boundary",)
+router.register(r"forest-boundary/create", CreateForestBoundaryView, basename="create-forest-boundary",)
+router.register(r"forest-boundary/update", UpdateForestBoundaryView, basename="update-forest-boundary",)
+router.register(r"forest-boundary/delete", DeleteForestBoundaryView, basename="delete-forest-boundary",)
+
+router.register(r"existing-drains", ListExistingDrainView, basename="existing-drains",)
+router.register(r"existing-drains/create",CreateExistingDrainView, basename="create-existing-drains",)
+router.register(r"existing-drains/update", UpdateExistingDrainView, basename="update-existing-drains",)
+router.register(r"existing-drains/delete", DeleteExistingDrainView, basename="delete-existing-drains",)
 
 # ------------------------------ Proposed Roads Views ------------------------------
 # DB table: public.ruda_proposed_road
@@ -283,26 +292,10 @@ router.register(r"wwtp-sites/update", UpdateWWTPSitesView, basename="update-wwtp
 router.register(r"wwtp-sites/delete", DeleteWWTPSitesView, basename="delete-wwtp-sites",)
 
 # ------------------------------ RUDA Notified Phases Boundary Views ------------------------------
-router.register(
-    r"ruda-notified-phases-boundary",
-    ListRudaNotifiedPhasesBoundaryView,
-    basename="ruda-notified-phases-boundary",
-)
-router.register(
-    r"ruda-notified-phases-boundary/create",
-    CreateRudaNotifiedPhasesBoundaryView,
-    basename="create-ruda-notified-phases-boundary",
-)
-router.register(
-    r"ruda-notified-phases-boundary/update",
-    UpdateRudaNotifiedPhasesBoundaryView,
-    basename="update-ruda-notified-phases-boundary",
-)
-router.register(
-    r"ruda-notified-phases-boundary/delete",
-    DeleteRudaNotifiedPhasesBoundaryView,
-    basename="delete-ruda-notified-phases-boundary",
-)
+router.register(r"ruda-notified-phases-boundary", ListRudaNotifiedPhasesBoundaryView, basename="ruda-notified-phases-boundary",)
+router.register(r"ruda-notified-phases-boundary/create", CreateRudaNotifiedPhasesBoundaryView, basename="create-ruda-notified-phases-boundary",)
+router.register(r"ruda-notified-phases-boundary/update", UpdateRudaNotifiedPhasesBoundaryView,basename="update-ruda-notified-phases-boundary",)
+router.register(r"ruda-notified-phases-boundary/delete", DeleteRudaNotifiedPhasesBoundaryView, basename="delete-ruda-notified-phases-boundary",)
 
 router.register(r"lahore-transportation-roads", ListLahoreTransportationRoadView, basename="lahore-transportation-roads",)
 router.register(r"lahore-transportation-roads/create", CreateLahoreTransportationRoadView, basename="create-lahore-transportation-road",)

@@ -1680,38 +1680,6 @@ class CityLevelService(models.Model):
 
 
 # =========================
-# Forest Boundary
-# =========================
-class ForestBoundary(models.Model):
-    gid = models.AutoField(primary_key=True)
-    objectid_1 = models.FloatField(null=True, blank=True)
-    objectid = models.FloatField(null=True, blank=True)
-    f_zone = models.CharField(max_length=100, null=True, blank=True)
-    f_circle = models.CharField(max_length=100, null=True, blank=True)
-    f_div = models.CharField(max_length=100, null=True, blank=True)
-    f_name = models.CharField(max_length=100, null=True, blank=True)
-    gps_area = models.FloatField(null=True, blank=True)
-    gross_area = models.FloatField(null=True, blank=True)
-    f_type = models.CharField(max_length=100, null=True, blank=True)
-    legal_stat = models.CharField(max_length=50, null=True, blank=True)
-    shape_leng = models.FloatField(null=True, blank=True)
-    shape_area = models.FloatField(null=True, blank=True)
-
-    geom = gis_models.GeometryField(
-        srid=4326,
-        null=True,
-        blank=True,
-    )
-
-    def __str__(self):
-        return self.f_name or f"Forest Boundary {self.gid}"
-
-    class Meta:
-        managed = False
-        db_table = "forest_boundary"
-
-
-# =========================
 # Precient Boundary
 # =========================
 class PrecientBoundary(models.Model):
@@ -2505,3 +2473,176 @@ class LahoreTransportationRoad(models.Model):
         db_table = "lahore_transportation_roads"
 
 
+class PHSPPPScheme(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    scheme_nam = models.CharField(
+        db_column="scheme_nam",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    area_225a = models.FloatField(
+        db_column="area_225a",
+        null=True,
+        blank=True,
+    )
+
+    ruda_st = models.CharField(
+        db_column="ruda_st",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    area = models.FloatField(
+        db_column="area",
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.scheme_nam or f"Scheme {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "phs_ppp_schemes"
+
+
+
+class ForestBoundary(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    objectid_1 = models.IntegerField(
+        db_column="objectid_1",
+        null=True,
+        blank=True,
+    )
+
+    objectid = models.IntegerField(
+        db_column="objectid",
+        null=True,
+        blank=True,
+    )
+
+    f_zone = models.CharField(
+        db_column="f_zone",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    f_circle = models.CharField(
+        db_column="f_circle",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    f_div = models.CharField(
+        db_column="f_div",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    f_name = models.CharField(
+        db_column="f_name",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    gps_area = models.FloatField(
+        db_column="gps_area",
+        null=True,
+        blank=True,
+    )
+
+    gross_area = models.FloatField(
+        db_column="gross_area",
+        null=True,
+        blank=True,
+    )
+
+    f_type = models.CharField(
+        db_column="f_type",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    legal_stat = models.CharField(
+        db_column="legal_stat",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    shape_leng = models.FloatField(
+        db_column="shape_leng",
+        null=True,
+        blank=True,
+    )
+
+    shape_area = models.FloatField(
+        db_column="shape_area",
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.f_name or f"Forest Boundary {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "forest_boundary"
+
+
+class ExistingDrain(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    name = models.CharField(
+        db_column="name",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiLineStringField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Existing Drain {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "existing_drains"

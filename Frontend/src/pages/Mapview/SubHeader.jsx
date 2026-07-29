@@ -12,6 +12,8 @@ export default function SubHeader({
   selectedMurabbaNumber = "",
   onMurabbaNumberChange = () => {},
   khasraOptions = [],
+  parcelLookupMauzaKey = "",
+  onParcelLookupMauzaChange = () => {},
 }) {
   if (!filters) return null;
 
@@ -34,9 +36,13 @@ export default function SubHeader({
     mauzaBelongsToSelectedTehsil(mauza, selectedTehsilLookup),
   );
 
-  const selectedMauza = filters.selectedMauza ?? "";
+  const selectedMauza = Array.isArray(filters.selectedMauza)
+    ? filters.selectedMauza
+    : filters.selectedMauza
+      ? [String(filters.selectedMauza)]
+      : [];
   const getMauzaOptionId = (mauza = {}) =>
-    mauza?.mauza_id ?? mauza?.id ?? mauza?.gid ?? "";
+    mauza?._selectionKey ?? mauza?.mauza_id ?? mauza?.id ?? mauza?.gid ?? "";
   const getMauzaOptionLabel = (mauza = {}) =>
     mauza?.mauza ?? mauza?.name ?? mauza?.moza ?? mauza?.mouza ?? "";
   const viewBy = filters.viewBy ?? "";
@@ -44,12 +50,25 @@ export default function SubHeader({
   const mauzaCount = mauzas.length;
 
   const showStandardParcelDropdown =
-    selectedMauza && viewBy && !(viewBy === "khasra" && isMurabbaBasedKhasra);
+    selectedMauza.length &&
+    viewBy &&
+    !(viewBy === "khasra" && isMurabbaBasedKhasra);
 
   const showMurabbaKhasraDropdowns =
-    selectedMauza && viewBy === "khasra" && isMurabbaBasedKhasra;
+    selectedMauza.length && viewBy === "khasra" && isMurabbaBasedKhasra;
 
   const parcelDropdownMeta = getParcelDropdownMeta(viewBy);
+  const selectedMauzaOptions = mauzas
+    .filter((m) => selectedMauza.includes(String(getMauzaOptionId(m))))
+    .map((m) => ({
+      value: String(getMauzaOptionId(m)),
+      label: getMauzaOptionLabel(m),
+    }));
+
+  const selectedLookupMauzaLabel =
+    selectedMauzaOptions.find(
+      (option) => String(option.value) === String(parcelLookupMauzaKey),
+    )?.label || "";
 
   return (
     <div
@@ -99,29 +118,24 @@ export default function SubHeader({
 
         <FilterCard
           label="Mauza — موضع"
-          value={
-            getMauzaOptionLabel(
-              mauzas.find(
-                (m) => String(getMauzaOptionId(m)) === String(selectedMauza),
-              ),
-            ) || "Select"
-          }
+          value={getMultiValueDisplay({
+            options: mauzas,
+            selected: selectedMauza,
+            idKey: "_selectionKey",
+            labelKey: "mauza",
+            fallbackId: getMauzaOptionId,
+            fallbackLabel: getMauzaOptionLabel,
+          })}
         >
-          <NativeSelectOverlay
-            value={selectedMauza}
-            onChange={filters.handleMauzaChange}
+          <MultiSelectDropdown
+            options={mauzas.map((m) => ({
+              value: String(getMauzaOptionId(m)),
+              label: getMauzaOptionLabel(m),
+            }))}
+            selectedValues={selectedMauza}
+            onToggle={filters.handleMauzaChange}
             disabled={!selectedTehsil.length || filters.loading?.mauzas}
-          >
-            <option value="">-- Mauza --</option>
-            {mauzas.map((m) => {
-              const optionId = getMauzaOptionId(m);
-              return (
-                <option key={optionId} value={optionId}>
-                  {getMauzaOptionLabel(m)}
-                </option>
-              );
-            })}
-          </NativeSelectOverlay>
+          />
         </FilterCard>
 
         <FilterCard
@@ -131,7 +145,7 @@ export default function SubHeader({
           <NativeSelectOverlay
             value={viewBy}
             onChange={filters.handleViewByChange}
-            disabled={!selectedMauza}
+            disabled={!selectedMauza.length}
           >
             <option value="">-- Select View --</option>
             <option value="khasra">Khasra</option>
@@ -143,46 +157,46 @@ export default function SubHeader({
         {showStandardParcelDropdown && (
           <FilterCard
             label={parcelDropdownMeta.label}
-            value={selectedParcelNumber || "Select"}
+            value={selectedParcelNumber || selectedLookupMauzaLabel || "Select"}
           >
-            <SearchableSingleSelect
-              options={parcelOptions}
-              selectedValue={selectedParcelNumber}
-              onChange={onParcelNumberChange}
-              disabled={!parcelOptions?.length}
-              placeholder={parcelDropdownMeta.placeholder}
+            <CascadingParcelSelect
+              mauzaOptions={selectedMauzaOptions}
+              selectedMauzaValue={parcelLookupMauzaKey}
+              onMauzaChange={onParcelLookupMauzaChange}
+              parcelOptions={parcelOptions}
+              selectedParcelValue={selectedParcelNumber}
+              onParcelChange={onParcelNumberChange}
+              parcelPlaceholder={parcelDropdownMeta.placeholder}
+              requireMauzaSelection={selectedMauza.length > 1}
             />
           </FilterCard>
         )}
 
         {showMurabbaKhasraDropdowns && (
-          <>
-            <FilterCard
-              label="Murabba No"
-              value={selectedMurabbaNumber || "Select"}
-            >
-              <SearchableSingleSelect
-                options={murabbaOptions}
-                selectedValue={selectedMurabbaNumber}
-                onChange={onMurabbaNumberChange}
-                disabled={!murabbaOptions?.length}
-                placeholder="Search Murabba No..."
-              />
-            </FilterCard>
-
-            <FilterCard
-              label="Khasra No"
-              value={selectedParcelNumber || "Select"}
-            >
-              <SearchableSingleSelect
-                options={khasraOptions}
-                selectedValue={selectedParcelNumber}
-                onChange={onParcelNumberChange}
-                disabled={!selectedMurabbaNumber || !khasraOptions?.length}
-                placeholder="Search Khasra No..."
-              />
-            </FilterCard>
-          </>
+          <FilterCard
+            label="Khasra No"
+            value={
+              selectedParcelNumber ||
+              selectedMurabbaNumber ||
+              selectedLookupMauzaLabel ||
+              "Select"
+            }
+          >
+            <CascadingParcelSelect
+              mauzaOptions={selectedMauzaOptions}
+              selectedMauzaValue={parcelLookupMauzaKey}
+              onMauzaChange={onParcelLookupMauzaChange}
+              murabbaOptions={murabbaOptions}
+              selectedMurabbaValue={selectedMurabbaNumber}
+              onMurabbaChange={onMurabbaNumberChange}
+              parcelOptions={khasraOptions}
+              selectedParcelValue={selectedParcelNumber}
+              onParcelChange={onParcelNumberChange}
+              parcelPlaceholder="Search Khasra No..."
+              requireMauzaSelection={selectedMauza.length > 1}
+              requireMurabbaSelection
+            />
+          </FilterCard>
         )}
       </div>
     </div>
@@ -293,11 +307,20 @@ function mauzaBelongsToSelectedTehsil(mauza = {}, selectedTehsilLookup) {
   ].some((value) => selectedTehsilLookup.has(normalizeFilterValue(value)));
 }
 
-function getMultiValueDisplay({ options, selected, idKey, labelKey }) {
+function getMultiValueDisplay({
+  options,
+  selected,
+  idKey,
+  labelKey,
+  fallbackId,
+  fallbackLabel,
+}) {
   if (!selected?.length) return "Select";
   const labels = options
-    .filter((item) => selected.includes(String(item[idKey])))
-    .map((item) => item[labelKey])
+    .filter((item) =>
+      selected.includes(String(item[idKey] ?? fallbackId?.(item) ?? "")),
+    )
+    .map((item) => item[labelKey] ?? fallbackLabel?.(item))
     .filter(Boolean);
   return labels.join(", ") || "Select";
 }
@@ -399,6 +422,269 @@ function MultiSelectDropdown({ options, selectedValues, onToggle, disabled }) {
               ) : (
                 <div className="px-2 py-1.5 text-[11px] text-gray-500">
                   No options
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
+function CascadingParcelSelect({
+  mauzaOptions = [],
+  selectedMauzaValue = "",
+  onMauzaChange = () => {},
+  murabbaOptions = [],
+  selectedMurabbaValue = "",
+  onMurabbaChange = () => {},
+  parcelOptions = [],
+  selectedParcelValue = "",
+  onParcelChange = () => {},
+  parcelPlaceholder = "Search Parcel No...",
+  requireMauzaSelection = false,
+  requireMurabbaSelection = false,
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [dropPos, setDropPos] = useState(null);
+
+  const needsMauza =
+    requireMauzaSelection && !String(selectedMauzaValue || "").trim();
+  const needsMurabba =
+    requireMurabbaSelection &&
+    !needsMauza &&
+    !String(selectedMurabbaValue || "").trim();
+
+  const stage = needsMauza ? "mauza" : needsMurabba ? "murabba" : "parcel";
+
+  const activeOptions =
+    stage === "mauza"
+      ? mauzaOptions
+      : stage === "murabba"
+        ? murabbaOptions
+        : parcelOptions;
+
+  const selectedValue =
+    stage === "mauza"
+      ? selectedMauzaValue
+      : stage === "murabba"
+        ? selectedMurabbaValue
+        : selectedParcelValue;
+
+  const placeholder =
+    stage === "mauza"
+      ? "Select Mauza first..."
+      : stage === "murabba"
+        ? "Search Murabba No..."
+        : parcelPlaceholder;
+
+  const selectedMauzaLabel =
+    mauzaOptions.find(
+      (option) => String(option.value) === String(selectedMauzaValue),
+    )?.label || "";
+
+  const calcPos = () => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const dropH = 300;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceBelow < dropH + 8;
+
+    setDropPos({
+      left: Math.min(rect.left, window.innerWidth - 230),
+      top: openUp ? rect.top - dropH - 4 : rect.bottom + 4,
+      width: Math.max(rect.width, 220),
+    });
+  };
+
+  useEffect(() => {
+    if (!open) return;
+
+    calcPos();
+
+    const handleOutside = (event) => {
+      if (
+        containerRef.current?.contains(event.target) ||
+        dropdownRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+
+      setOpen(false);
+      setQuery("");
+    };
+
+    window.addEventListener("resize", calcPos);
+    document.addEventListener("mousedown", handleOutside);
+
+    return () => {
+      window.removeEventListener("resize", calcPos);
+      document.removeEventListener("mousedown", handleOutside);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    setQuery("");
+  }, [stage]);
+
+  const filteredOptions = activeOptions.filter((option) =>
+    String(option.label ?? "")
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
+
+  const handleOptionSelect = (value) => {
+    const normalizedValue = String(value);
+
+    if (stage === "mauza") {
+      onMauzaChange(normalizedValue);
+      onMurabbaChange("");
+      onParcelChange("");
+      setQuery("");
+      return;
+    }
+
+    if (stage === "murabba") {
+      onMurabbaChange(normalizedValue);
+      onParcelChange("");
+      setQuery("");
+      return;
+    }
+
+    onParcelChange(normalizedValue);
+    setOpen(false);
+    setQuery("");
+  };
+
+  const goBackToMauza = () => {
+    onMauzaChange("");
+    onMurabbaChange("");
+    onParcelChange("");
+    setQuery("");
+  };
+
+  const goBackToMurabba = () => {
+    onMurabbaChange("");
+    onParcelChange("");
+    setQuery("");
+  };
+
+  return (
+    <div ref={containerRef} className="absolute inset-0">
+      <button
+        type="button"
+        onClick={() => setOpen((previous) => !previous)}
+        className="absolute inset-0 cursor-pointer bg-transparent"
+        aria-label="Open parcel selector"
+      />
+
+      {open &&
+        dropPos &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={{
+              position: "fixed",
+              left: dropPos.left,
+              top: dropPos.top,
+              width: dropPos.width,
+              zIndex: 9999,
+            }}
+            className="overflow-hidden rounded-md border border-gray-200 bg-white shadow-xl"
+          >
+            <div className="border-b border-gray-100 bg-gray-50 px-2 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+                {stage === "mauza"
+                  ? "Select Mauza"
+                  : stage === "murabba"
+                    ? "Step 2: Select Murabba"
+                    : requireMurabbaSelection
+                      ? "Step 3: Select Khasra"
+                      : "Step 2: Select Parcel"}
+              </p>
+
+              {selectedMauzaLabel && stage !== "mauza" && (
+                <div className="mt-1 flex items-center justify-between gap-2">
+                  <p className="truncate text-[11px] text-gray-700">
+                    Mauza:{" "}
+                    <strong className="text-green-700">
+                      {selectedMauzaLabel}
+                    </strong>
+                  </p>
+                  {requireMauzaSelection && (
+                    <button
+                      type="button"
+                      onClick={goBackToMauza}
+                      className="shrink-0 text-[10px] font-semibold text-green-700 hover:underline"
+                    >
+                      Change
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {requireMurabbaSelection &&
+                selectedMurabbaValue &&
+                stage === "parcel" && (
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="truncate text-[11px] text-gray-700">
+                      Murabba:{" "}
+                      <strong className="text-green-700">
+                        {selectedMurabbaValue}
+                      </strong>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={goBackToMurabba}
+                      className="shrink-0 text-[10px] font-semibold text-green-700 hover:underline"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+            </div>
+
+            <div className="border-b border-gray-100 p-1.5">
+              <input
+                type="text"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={placeholder}
+                className="w-full rounded border border-gray-300 px-2 py-1 text-[11px] outline-none focus:border-green-600 sm:text-xs"
+                autoFocus
+              />
+            </div>
+
+            <div className="max-h-[220px] overflow-auto">
+              {filteredOptions.length ? (
+                filteredOptions.map((option) => {
+                  const isSelected =
+                    String(option.value) === String(selectedValue);
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleOptionSelect(option.value)}
+                      className={`block w-full px-2 py-1.5 text-left text-[11px] hover:bg-gray-50 sm:text-xs ${
+                        isSelected
+                          ? "bg-green-50 font-medium text-green-700"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="px-2 py-2 text-[11px] text-gray-500">
+                  No matching options
                 </div>
               )}
             </div>

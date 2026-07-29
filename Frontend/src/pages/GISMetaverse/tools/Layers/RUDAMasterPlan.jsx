@@ -206,11 +206,11 @@ const RUDA_MASTER_PLAN_GROUPS = [
     key: "wwtp",
     label: "WWTP",
     children: [
-      {
-        key: "proposedWWTP",
-        label: "Proposed WWTP",
-        color: PROPOSED_WWTP_COLOR,
-      },
+      // {
+      //   key: "proposedWWTP",
+      //   label: "Proposed WWTP",
+      //   color: PROPOSED_WWTP_COLOR,
+      // },
       { key: "wwtpSite", label: "Proposed WWTP Sites", color: WWTP_SITES_COLOR },
       { key: "swtpSite", label: "SWTP Sites", color: SWTP_SITES_COLOR },
     ],

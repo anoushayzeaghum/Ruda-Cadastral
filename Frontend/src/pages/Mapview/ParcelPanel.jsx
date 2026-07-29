@@ -50,6 +50,10 @@ export default function ParcelPanel({
   const areaSqFt = areaAcres !== null ? (areaAcres * 43560).toFixed(2) : null;
 
   const rawLandType = parcel?.properties?.type ?? "N/A";
+  const verificationStatus =
+    parcel?.properties?._verification_status ??
+    (boundaryStatus === "unverified" ? "unverified" : "verified");
+  const isFieldVerified = verificationStatus === "verified";
 
   const formatLandType = (type) => {
     if (type === "MU") return "Murabba Bandi";
@@ -103,7 +107,7 @@ export default function ParcelPanel({
               type="button"
               onClick={() =>
                 exportSelectedParcelKMZ(parcel, {
-                  verified: boundaryStatus === "verified",
+                  verified: isFieldVerified,
                 })
               }
               disabled={!parcel?.geometry}
@@ -213,10 +217,14 @@ export default function ParcelPanel({
 
                 <div>
                   <p className="text-[12px] font-medium leading-tight text-slate-500">
-                    Land Type
+                    Field Verified
                   </p>
-                  <span className="bg-green-700 text-white text-[12px] px-3 py-1 rounded-md inline-flex items-center">
-                    {parcelData.landType}
+                  <span
+                    className={`text-white text-[12px] px-3 py-1 rounded-md inline-flex items-center ${
+                      isFieldVerified ? "bg-green-700" : "bg-red-600"
+                    }`}
+                  >
+                    {isFieldVerified ? "Yes" : "No"}
                   </span>
                 </div>
 
@@ -243,10 +251,6 @@ export default function ParcelPanel({
                         ? (parcel?.properties?.sheets ?? parcelData.parcelId)
                         : parcelData.parcelId
                     }
-                  />
-                  <InfoBlock
-                    label="Verified Status"
-                    value={boundaryStatus === "verified" ? "Yes" : "No"}
                   />
                 </div>
                 <InfoBlock

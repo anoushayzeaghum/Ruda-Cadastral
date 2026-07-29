@@ -82,6 +82,19 @@ export default function LayerManager({
   boundaryStatus,
   setBoundaryStatus,
 }) {
+  const isBoundaryStatusActive = (status) =>
+    boundaryStatus === status || boundaryStatus === "both";
+
+  const toggleBoundaryStatus = (status) => {
+    setBoundaryStatus((current) => {
+      if (current === "both") {
+        return status === "verified" ? "unverified" : "verified";
+      }
+      if (current === status) return current;
+      return "both";
+    });
+  };
+
   const [administrativeOpen, setAdministrativeOpen] = useState(true);
   const [rudaOpen, setRudaOpen] = useState(true);
   const [baseDataOpen, setBaseDataOpen] = useState(true);
@@ -173,10 +186,10 @@ export default function LayerManager({
           <div className="flex justify-center gap-2">
             <button
               type="button"
-              onClick={() => setBoundaryStatus("verified")}
+              onClick={() => toggleBoundaryStatus("verified")}
               className={`h-7 w-24 px-2 py-0 text-[11px] font-semibold rounded-md transition
                   ${
-                    boundaryStatus === "verified"
+                    isBoundaryStatusActive("verified")
                       ? "bg-green-600 text-white"
                       : "border border-[#13593f] bg-[#031a14] text-white/70 hover:bg-[#0a3327]"
                   }`}
@@ -186,10 +199,10 @@ export default function LayerManager({
 
             <button
               type="button"
-              onClick={() => setBoundaryStatus("unverified")}
+              onClick={() => toggleBoundaryStatus("unverified")}
               className={`h-7 w-24 px-2 py-0 text-[11px] font-semibold rounded-md transition
                   ${
-                    boundaryStatus === "unverified"
+                    isBoundaryStatusActive("unverified")
                       ? "bg-red-600 text-white"
                       : "border border-[#13593f] bg-[#031a14] text-white/70 hover:bg-[#0a3327]"
                   }`}
