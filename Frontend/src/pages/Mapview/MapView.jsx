@@ -116,28 +116,29 @@ import {
   POPUP_TITLES,
 } from "./MapView/popupUtils.js";
 import useMapTools from "./MapView/useMapTools.js";
+import {
+  CADASTRAL_BOUNDARY_STYLES,
+  getKhasraStatusColorExpression,
+} from "./LayerManager/CadastralBoundaryStyles.js";
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-// Administrative boundary presentation.
-// Change these values when you want to adjust the fixed polygon fills.
-const ADMIN_BOUNDARY_STYLE = {
-  district: {
-    lineColor: "#D18B00", // dark mango yellow
-    fillColor: "#F6C453",
-    fillOpacity: 0.14,
-  },
-  tehsil: {
-    lineColor: "#0B3D91", // dark blue
-    fillColor: "#93C5FD",
-    fillOpacity: 0.08,
-  },
-  mauza: {
-    lineColor: "#000000",
-    fillColor: "#000000",
-    fillOpacity: 0,
-  },
-};
+const markVerificationStatus = (geojson, status) => ({
+  type: "FeatureCollection",
+  features: (geojson?.features || []).map((feature) => ({
+    ...feature,
+    properties: {
+      ...(feature?.properties || {}),
+      _verification_status: status,
+    },
+  })),
+});
+
+const mergeStatusGeoJSON = (verified, unverified) =>
+  mergeFeatureCollections([
+    markVerificationStatus(verified, "verified"),
+    markVerificationStatus(unverified, "unverified"),
+  ]);
 
 export default function MapView({
   selectedDistrict,
@@ -276,22 +277,21 @@ export default function MapView({
   );
   const districtBoundaryColor = getLayerColorValue(
     "districtBoundary",
-    ADMIN_BOUNDARY_STYLE.district.lineColor,
+    CADASTRAL_BOUNDARY_STYLES.district.lineColor,
   );
   const tehsilBoundaryColor = getLayerColorValue(
     "tehsilBoundary",
-    ADMIN_BOUNDARY_STYLE.tehsil.lineColor,
+    CADASTRAL_BOUNDARY_STYLES.tehsil.lineColor,
   );
   const mauzaBoundaryColor = getLayerColorValue(
     "mauzaBoundary",
-    ADMIN_BOUNDARY_STYLE.mauza.lineColor,
+    CADASTRAL_BOUNDARY_STYLES.mauza.lineColor,
   );
   const squareLayerColor = getLayerColorValue("squareLayer", "#8b5cf6");
   const acreLayerColor = getLayerColorValue("acreLayer", "#14b8a6");
-  // Khasra color is controlled only by verification status.
-  // Verified parcels are always green and unverified parcels are always red.
-  const khasraLayerColor =
-    boundaryStatus === "verified" ? "#16a34a" : "#dc5a5a";
+  // A Mapbox expression keeps verified and unverified parcels styled
+  // independently when both datasets are displayed together.
+  const khasraLayerColor = getKhasraStatusColorExpression();
   const murabbaLayerColor = getLayerColorValue("murabbaLayer", "#facc15");
   const triJunctionPointsColor = getLayerColorValue(
     "triJunctionPoints",
@@ -309,7 +309,7 @@ export default function MapView({
       : !!massaviLayerState;
   const massaviLayerOpacity =
     typeof massaviLayerState === "object" &&
-      Number.isFinite(Number(massaviLayerState.opacity))
+    Number.isFinite(Number(massaviLayerState.opacity))
       ? Number(massaviLayerState.opacity) / 100
       : 1.0;
   const selectedMauzaName = getMauzaName(selectedMauza);
@@ -319,8 +319,13 @@ export default function MapView({
   const rudaPhaseSelectionKey = buildSelectionKey(selectedRudaPhaseIds);
   const proposedRoadSelectionKey = buildSelectionKey(selectedProposedRoadIds);
   const selectedMauzaId = getSelectedMauzaId(selectedMauza);
+  const verifiedMauzaId = selectedMauza?._verifiedMauzaId ?? selectedMauzaId;
+  const unverifiedMauzaId =
+    selectedMauza?._unverifiedMauzaId ?? selectedMauzaId;
   const mauzaSelectionKey = selectedMauzaId
-    ? `${boundaryStatus}:${String(selectedMauzaId)}`
+    ? `${boundaryStatus}:${String(verifiedMauzaId ?? "")}:${String(
+        unverifiedMauzaId ?? "",
+      )}`
     : "";
 
   const getCachedGeoJSON = (cacheKey, loader) =>
@@ -466,7 +471,7 @@ export default function MapView({
         if (map.getLayer(layerId)) {
           map.moveLayer(layerId);
         }
-      } catch (e) { }
+      } catch (e) {}
     });
   };
 
@@ -496,9 +501,16 @@ export default function MapView({
       const mauzaGeojson = await getCachedGeoJSON(
         `mauza:${mauzaSelectionKey}`,
         () =>
-          boundaryStatus === "verified"
-            ? getMauzaBoundary(selectedMauzaId)
-            : getRudaMauzas(selectedMauzaId),
+          boundaryStatus === "both"
+            ? Promise.all([
+                getMauzaBoundary(verifiedMauzaId),
+                getRudaMauzas(unverifiedMauzaId),
+              ]).then(([verified, unverified]) =>
+                mergeStatusGeoJSON(verified, unverified),
+              )
+            : boundaryStatus === "verified"
+              ? getMauzaBoundary(verifiedMauzaId)
+              : getRudaMauzas(unverifiedMauzaId),
       );
 
       if (mauzaGeojson?.features?.length) {
@@ -777,6 +789,20 @@ export default function MapView({
       currentGeojson.current[level] = sourceGeojson;
       const thematicColor = boundaryLevelColor(level);
       if (thematicColor) applyColorToBoundaryLevel(level, thematicColor);
+
+      const centralizedStyle = CADASTRAL_BOUNDARY_STYLES[level];
+      if (centralizedStyle && map.getLayer(ids.line)) {
+        map.setPaintProperty(
+          ids.line,
+          "line-width",
+          centralizedStyle.lineWidth,
+        );
+        map.setPaintProperty(
+          ids.line,
+          "line-opacity",
+          centralizedStyle.lineOpacity * layerOpacity,
+        );
+      }
       movePointLayersToTop();
 
       // ── Click popup for polygon / line boundary layers ─────────────────
@@ -853,10 +879,10 @@ export default function MapView({
   };
 
   const getBoundaryThemeForOpacity = (level) => {
-    if (ADMIN_BOUNDARY_STYLE[level]) {
+    if (CADASTRAL_BOUNDARY_STYLES[level]) {
       return {
         ...VECTOR_LAYER_THEME.defaultBoundary,
-        fillOpacity: ADMIN_BOUNDARY_STYLE[level].fillOpacity,
+        fillOpacity: CADASTRAL_BOUNDARY_STYLES[level].fillOpacity,
       };
     }
     if (level === SQUARE_LEVEL) return VECTOR_LAYER_THEME.square;
@@ -929,7 +955,7 @@ export default function MapView({
     if (!map || !colorValue) return;
 
     const ids = getBoundaryIds(level);
-    const adminStyle = ADMIN_BOUNDARY_STYLE[level];
+    const adminStyle = CADASTRAL_BOUNDARY_STYLES[level];
 
     try {
       if (map.getLayer(ids.fill)) {
@@ -1034,7 +1060,7 @@ export default function MapView({
 
     try {
       if (map?.getLayer(KHASRA_LABEL)) map.removeLayer(KHASRA_LABEL);
-    } catch (e) { }
+    } catch (e) {}
     clearLayerAndSource(KHASRA_FILL, KHASRA_LINE, KHASRA_SOURCE);
   };
 
@@ -1043,7 +1069,7 @@ export default function MapView({
     unbindLayerEvents(MURABBA_FILL);
     try {
       if (map?.getLayer(MURABBA_LABEL)) map.removeLayer(MURABBA_LABEL);
-    } catch (e) { }
+    } catch (e) {}
     clearLayerAndSource(MURABBA_FILL, MURABBA_LINE, MURABBA_SOURCE);
   };
 
@@ -1315,7 +1341,7 @@ export default function MapView({
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) { }
+      } catch (err) {}
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -1340,7 +1366,7 @@ export default function MapView({
       applyOpacityToMapLayer(KHASRA_LABEL, khasraLayerOpacity);
 
       // Reapply the current status color after every redraw/style reload.
-      [KHASRA_FILL, KHASRA_LINE, KHASRA_LABEL].forEach((layerId) =>
+      [KHASRA_FILL, KHASRA_LINE].forEach((layerId) =>
         applyColorToMapLayer(layerId, khasraLayerColor),
       );
 
@@ -1437,7 +1463,7 @@ export default function MapView({
       try {
         const sel = map.getSource(SELECTED_SOURCE);
         if (sel) sel.setData(emptyFeatureCollection());
-      } catch (err) { }
+      } catch (err) {}
 
       if (!geojson?.features || !Array.isArray(geojson.features)) {
         setFeatureCount(0);
@@ -1819,7 +1845,7 @@ export default function MapView({
 
   useEffect(() => {
     if (!isMapReady) return;
-    [KHASRA_FILL, KHASRA_LINE, KHASRA_LABEL].forEach((layerId) =>
+    [KHASRA_FILL, KHASRA_LINE].forEach((layerId) =>
       applyColorToMapLayer(layerId, khasraLayerColor),
     );
   }, [isMapReady, khasraLayerColor]);
@@ -1996,9 +2022,20 @@ export default function MapView({
         const geojson = await getCachedGeoJSON(
           `mauza:${mauzaSelectionKey}`,
           () =>
-            boundaryStatus === "verified"
-              ? getMauzaBoundary(selectedMauzaId)
-              : getRudaMauzas(selectedMauzaId),
+            boundaryStatus === "both"
+              ? Promise.all([
+                  getMauzaBoundary(verifiedMauzaId),
+                  getRudaMauzas(unverifiedMauzaId),
+                ]).then(([verified, unverified]) =>
+                  mergeStatusGeoJSON(verified, unverified),
+                )
+              : boundaryStatus === "verified"
+                ? getMauzaBoundary(verifiedMauzaId).then((data) =>
+                    markVerificationStatus(data, "verified"),
+                  )
+                : getRudaMauzas(unverifiedMauzaId).then((data) =>
+                    markVerificationStatus(data, "unverified"),
+                  ),
         );
         if (cancelled) return;
 
@@ -2023,7 +2060,13 @@ export default function MapView({
     return () => {
       cancelled = true;
     };
-  }, [mauzaSelectionKey, isMapReady]);
+  }, [
+    mauzaSelectionKey,
+    isMapReady,
+    boundaryStatus,
+    verifiedMauzaId,
+    unverifiedMauzaId,
+  ]);
 
   useEffect(() => {
     if (!isMapReady) return;
@@ -2237,10 +2280,10 @@ export default function MapView({
             : viewBy === "acre"
               ? currentGeojson.current[ACRE_LEVEL]
               : currentGeojson.current.khasra ||
-              currentGeojson.current.murabba ||
-              currentGeojson.current[SQUARE_LEVEL] ||
-              currentGeojson.current[ACRE_LEVEL] ||
-              {};
+                currentGeojson.current.murabba ||
+                currentGeojson.current[SQUARE_LEVEL] ||
+                currentGeojson.current[ACRE_LEVEL] ||
+                {};
 
     const features = Array.isArray(current?.features) ? current.features : [];
 
@@ -2310,7 +2353,7 @@ export default function MapView({
               clearBoundaryLevel(level);
               delete currentGeojson.current[level];
             });
-        } catch (e) { }
+        } catch (e) {}
       };
 
       if (!rudaBoundaryVisible) {
@@ -2462,9 +2505,20 @@ export default function MapView({
         const geojson = await getCachedGeoJSON(
           `squares:${mauzaSelectionKey}`,
           () =>
-            boundaryStatus === "verified"
-              ? getSquares(selectedMauzaId)
-              : getRudaSquares(selectedMauzaId),
+            boundaryStatus === "both"
+              ? Promise.all([
+                  getSquares(verifiedMauzaId),
+                  getRudaSquares(unverifiedMauzaId),
+                ]).then(([verified, unverified]) =>
+                  mergeStatusGeoJSON(verified, unverified),
+                )
+              : boundaryStatus === "verified"
+                ? getSquares(verifiedMauzaId).then((data) =>
+                    markVerificationStatus(data, "verified"),
+                  )
+                : getRudaSquares(unverifiedMauzaId).then((data) =>
+                    markVerificationStatus(data, "unverified"),
+                  ),
         );
 
         if (cancelled) return;
@@ -2497,7 +2551,14 @@ export default function MapView({
     return () => {
       cancelled = true;
     };
-  }, [mauzaSelectionKey, isMapReady, squareLayerVisible]);
+  }, [
+    mauzaSelectionKey,
+    isMapReady,
+    squareLayerVisible,
+    boundaryStatus,
+    verifiedMauzaId,
+    unverifiedMauzaId,
+  ]);
 
   useEffect(() => {
     if (!selectedMauza || !isMapReady || !acreLayerVisible) {
@@ -2729,9 +2790,20 @@ export default function MapView({
         const geojson = await getCachedGeoJSON(
           `khasras:${mauzaSelectionKey}`,
           () =>
-            boundaryStatus === "verified"
-              ? getKhasras(selectedMauzaId)
-              : getRudaKhasras(selectedMauzaId),
+            boundaryStatus === "both"
+              ? Promise.all([
+                  getKhasras(verifiedMauzaId),
+                  getRudaKhasras(unverifiedMauzaId),
+                ]).then(([verified, unverified]) =>
+                  mergeStatusGeoJSON(verified, unverified),
+                )
+              : boundaryStatus === "verified"
+                ? getKhasras(verifiedMauzaId).then((data) =>
+                    markVerificationStatus(data, "verified"),
+                  )
+                : getRudaKhasras(unverifiedMauzaId).then((data) =>
+                    markVerificationStatus(data, "unverified"),
+                  ),
         );
 
         if (cancelled) return;
@@ -2766,6 +2838,9 @@ export default function MapView({
     viewBy,
     khasraLayerVisible,
     khasraLayerForceLoad,
+    boundaryStatus,
+    verifiedMauzaId,
+    unverifiedMauzaId,
   ]);
 
   useEffect(() => {

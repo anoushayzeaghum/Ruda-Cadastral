@@ -119,6 +119,42 @@ export default function LeftPanel({
 
   const selectedMauzaId =
     selectedMauza?.mauza_id ?? selectedMauza?.id ?? selectedMauza?.gid;
+  const verifiedMauzaId = selectedMauza?._verifiedMauzaId ?? selectedMauzaId;
+  const unverifiedMauzaId =
+    selectedMauza?._unverifiedMauzaId ?? selectedMauzaId;
+
+  const markStatus = (geojson, status) => ({
+    type: "FeatureCollection",
+    features: (geojson?.features || []).map((feature) => ({
+      ...feature,
+      properties: {
+        ...(feature?.properties || {}),
+        _verification_status: status,
+      },
+    })),
+  });
+
+  const loadStatusSensitiveGeoJSON = async (
+    verifiedLoader,
+    unverifiedLoader,
+  ) => {
+    if (boundaryStatus === "both") {
+      const [verified, unverified] = await Promise.all([
+        verifiedLoader(),
+        unverifiedLoader(),
+      ]);
+      return {
+        type: "FeatureCollection",
+        features: [
+          ...markStatus(verified, "verified").features,
+          ...markStatus(unverified, "unverified").features,
+        ],
+      };
+    }
+    return boundaryStatus === "verified"
+      ? markStatus(await verifiedLoader(), "verified")
+      : markStatus(await unverifiedLoader(), "unverified");
+  };
 
   const loadLayerRecords = async (key, boundaryStatus = "verified") => {
     const statusSensitive = [
@@ -205,35 +241,26 @@ export default function LeftPanel({
         }
         geojson = { type: "FeatureCollection", features };
       } else if (key === "mauzaBoundary") {
-        if (boundaryStatus === "verified") {
-          geojson = selectedMauzaId
-            ? await api.getMauzaBoundary(selectedMauzaId)
-            : null;
-        } else {
-          geojson = selectedMauzaId
-            ? await api.getRudaMauzas(selectedMauzaId)
-            : null;
-        }
+        geojson = selectedMauzaId
+          ? await loadStatusSensitiveGeoJSON(
+              () => api.getMauzaBoundary(verifiedMauzaId),
+              () => api.getRudaMauzas(unverifiedMauzaId),
+            )
+          : null;
       } else if (key === "khasraLayer") {
-        if (boundaryStatus === "verified") {
-          geojson = selectedMauzaId
-            ? await api.getKhasras(selectedMauzaId)
-            : loadedParcelsGeojson;
-        } else {
-          geojson = selectedMauzaId
-            ? await api.getRudaKhasras(selectedMauzaId)
-            : null;
-        }
+        geojson = selectedMauzaId
+          ? await loadStatusSensitiveGeoJSON(
+              () => api.getKhasras(verifiedMauzaId),
+              () => api.getRudaKhasras(unverifiedMauzaId),
+            )
+          : loadedParcelsGeojson;
       } else if (key === "squareLayer") {
-        if (boundaryStatus === "verified") {
-          geojson = selectedMauzaId
-            ? await api.getSquares(selectedMauzaId)
-            : loadedParcelsGeojson;
-        } else {
-          geojson = selectedMauzaId
-            ? await api.getRudaSquares(selectedMauzaId)
-            : null;
-        }
+        geojson = selectedMauzaId
+          ? await loadStatusSensitiveGeoJSON(
+              () => api.getSquares(verifiedMauzaId),
+              () => api.getRudaSquares(unverifiedMauzaId),
+            )
+          : loadedParcelsGeojson;
       } else if (key === "acreLayer") {
         geojson = selectedMauzaId
           ? await api.getAcres(selectedMauzaId)

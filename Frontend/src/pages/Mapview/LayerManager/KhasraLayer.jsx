@@ -6,10 +6,17 @@ import {
   VECTOR_LAYER_THEME,
   VECTOR_LABEL_FIELDS,
 } from "./layerConfig";
+import {
+  CADASTRAL_BOUNDARY_STYLES,
+  getKhasraStatusColorExpression,
+} from "./CadastralBoundaryStyles.js";
 
 export const addKhasraLayerStyles = ({ map, geojson, opacity, color }) => {
-  const khasraTheme = VECTOR_LAYER_THEME.khasra;
-  const statusColor = color || khasraTheme.line;
+  const khasraTheme = {
+    ...VECTOR_LAYER_THEME.khasra,
+    ...CADASTRAL_BOUNDARY_STYLES.khasra,
+  };
+  const statusColor = color || getKhasraStatusColorExpression();
 
   map.addSource(KHASRA_SOURCE, {
     type: "geojson",
@@ -34,7 +41,7 @@ export const addKhasraLayerStyles = ({ map, geojson, opacity, color }) => {
     paint: {
       "line-color": statusColor,
       "line-width": khasraTheme.lineWidth,
-      "line-opacity": 0.95,
+      "line-opacity": khasraTheme.lineOpacity,
     },
   });
 
@@ -52,10 +59,10 @@ export const addKhasraLayerStyles = ({ map, geojson, opacity, color }) => {
       "text-optional": true,
     },
     paint: {
-      "text-color": "#000000",
-      "text-halo-color": "#ffffff",
-      "text-halo-width": 1.2,
-      "text-halo-blur": 0.15,
+      "text-color": khasraTheme.labelColor,
+      "text-halo-color": khasraTheme.labelHaloColor,
+      "text-halo-width": khasraTheme.labelHaloWidth,
+      "text-halo-blur": khasraTheme.labelHaloBlur,
     },
   });
 };

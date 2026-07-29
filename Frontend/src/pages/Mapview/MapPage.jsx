@@ -106,9 +106,9 @@ const getFeatureSelectionKey = (feature = {}) => {
   const props = feature?.properties || {};
   return String(
     props.gid ??
-    props.id ??
-    props.khasra_id ??
-    `${props.mauza_id ?? ""}:${getKhasraNumber(props) ?? ""}:${feature?.id ?? ""}`,
+      props.id ??
+      props.khasra_id ??
+      `${props.mauza_id ?? ""}:${getKhasraNumber(props) ?? ""}:${feature?.id ?? ""}`,
   );
 };
 
@@ -172,7 +172,7 @@ export default function MapPage() {
   const [unverifiedMauzasLoading, setUnverifiedMauzasLoading] = useState(false);
 
   useEffect(() => {
-    if (boundaryStatus !== "unverified" || unverifiedMauzas.length) return;
+    if (boundaryStatus === "verified" || unverifiedMauzas.length) return;
 
     let cancelled = false;
 
@@ -201,23 +201,45 @@ export default function MapPage() {
   }, [boundaryStatus, unverifiedMauzas.length]);
 
   const activeSelectedMauzaDetails = useMemo(() => {
-    if (boundaryStatus === "verified") {
-      return filters?.selectedMauzaDetails ?? null;
-    }
+    const verifiedSelection = filters?.selectedMauzaDetails ?? null;
+    if (boundaryStatus === "verified") return verifiedSelection;
 
-    const verifiedSelection = filters?.selectedMauzaDetails;
     const selectedMauzaKey =
       getMauzaId(verifiedSelection) || filters?.selectedMauza || "";
+    const selectedMauzaName = String(
+      verifiedSelection?.mauza ??
+        verifiedSelection?.name ??
+        verifiedSelection?.moza ??
+        "",
+    )
+      .trim()
+      .toLowerCase();
 
-    if (!selectedMauzaKey) return null;
-
-    return (
+    const unverifiedSelection =
       unverifiedMauzas.find((mauza) =>
         [mauza?.mauza_id, mauza?.id, mauza?.gid].some(
           (value) => String(value ?? "") === String(selectedMauzaKey),
         ),
-      ) || null
-    );
+      ) ||
+      unverifiedMauzas.find((mauza) =>
+        [mauza?.mauza, mauza?.name, mauza?.moza, mauza?.mouza].some(
+          (value) =>
+            selectedMauzaName &&
+            String(value ?? "")
+              .trim()
+              .toLowerCase() === selectedMauzaName,
+        ),
+      ) ||
+      null;
+
+    if (boundaryStatus === "unverified") return unverifiedSelection;
+
+    if (!verifiedSelection && !unverifiedSelection) return null;
+    return {
+      ...(verifiedSelection || unverifiedSelection),
+      _verifiedMauzaId: getMauzaId(verifiedSelection),
+      _unverifiedMauzaId: getMauzaId(unverifiedSelection),
+    };
   }, [
     boundaryStatus,
     filters?.selectedMauza,
@@ -228,26 +250,26 @@ export default function MapPage() {
   const activeFilters = useMemo(() => {
     if (!filters) return filters;
 
-    const isUnverified = boundaryStatus === "unverified";
-    const selectedMauza = isUnverified
+    const isUnverifiedOnly = boundaryStatus === "unverified";
+    const selectedMauza = isUnverifiedOnly
       ? String(
-        getMauzaId(activeSelectedMauzaDetails) ||
-        getMauzaId(filters.selectedMauzaDetails) ||
-        filters.selectedMauza ||
-        "",
-      )
+          getMauzaId(activeSelectedMauzaDetails) ||
+            getMauzaId(filters.selectedMauzaDetails) ||
+            filters.selectedMauza ||
+            "",
+        )
       : filters.selectedMauza;
 
     return {
       ...filters,
-      mauzas: isUnverified ? unverifiedMauzas : filters.mauzas,
+      mauzas: isUnverifiedOnly ? unverifiedMauzas : filters.mauzas,
       selectedMauza,
-      selectedMauzaDetails: isUnverified
+      selectedMauzaDetails: isUnverifiedOnly
         ? activeSelectedMauzaDetails
         : filters.selectedMauzaDetails,
       loading: {
         ...(filters.loading || {}),
-        mauzas: isUnverified
+        mauzas: isUnverifiedOnly
           ? unverifiedMauzasLoading
           : filters.loading?.mauzas,
       },
@@ -523,9 +545,9 @@ export default function MapPage() {
           typeof next[key] === "object"
             ? next[key]
             : {
-              visible: !!next[key],
-              opacity: 100,
-            };
+                visible: !!next[key],
+                opacity: 100,
+              };
 
         const shouldBeVisible = key === activeViewByLayerKey;
 
