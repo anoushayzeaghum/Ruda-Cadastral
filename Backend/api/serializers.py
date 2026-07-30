@@ -1249,34 +1249,6 @@ class CityLevelServiceSerializer(GeoFeatureModelSerializer):
 
 
 # --------------------------------------------------------
-# Forest Boundary Serializer
-# --------------------------------------------------------
-class ForestBoundarySerializer(GeoFeatureModelSerializer):
-
-    class Meta:
-        model = ForestBoundary
-        geo_field = "geom"
-        id_field = "gid"
-
-        fields = (
-            "gid",
-            "objectid_1",
-            "objectid",
-            "f_zone",
-            "f_circle",
-            "f_div",
-            "f_name",
-            "gps_area",
-            "gross_area",
-            "f_type",
-            "legal_stat",
-            "shape_leng",
-            "shape_area",
-            "geom",
-        )
-
-
-# --------------------------------------------------------
 # Precient Boundary Serializer
 # --------------------------------------------------------
 class PrecientBoundarySerializer(GeoFeatureModelSerializer):
@@ -1428,16 +1400,15 @@ class ProposedRoadNetworkSerializer(GeoFeatureModelSerializer):
 # Proposed Roads Serializer
 # DB table: ruda_proposed_road
 # --------------------------------------------------------
-class ProposedRoadsSerializer(GeoFeatureModelSerializer):
+class ProposedRoadSerializer(GeoFeatureModelSerializer):
 
     class Meta:
-        model = ProposedRoads
+        model = ProposedRoad
         geo_field = "geom"
         id_field = "gid"
 
         fields = (
             "gid",
-            "id",
             "road_type",
             "row",
             "geom",
@@ -1446,7 +1417,6 @@ class ProposedRoadsSerializer(GeoFeatureModelSerializer):
         read_only_fields = (
             "gid",
         )
-
 
 # =================================================================================================
 # IMPORTED LAND TABLE SERIALIZERS
@@ -1669,6 +1639,70 @@ class LahoreTransportationRoadSerializer(GeoFeatureModelSerializer):
             "shape_leng",
             "type",
             "popupinfo",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+class PHSPPPSchemeSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = PHSPPPScheme
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "scheme_nam",
+            "area_225a",
+            "ruda_st",
+            "area",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+
+class ForestBoundarySerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ForestBoundary
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid_1",
+            "objectid",
+            "f_zone",
+            "f_circle",
+            "f_div",
+            "f_name",
+            "gps_area",
+            "gross_area",
+            "f_type",
+            "legal_stat",
+            "shape_leng",
+            "shape_area",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+
+class ExistingDrainSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = ExistingDrain
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
             "geom",
         )
 

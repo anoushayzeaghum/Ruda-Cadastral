@@ -553,10 +553,11 @@ export const getRudaNotifiedPhasesBoundaryGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
-export const getProposedRoadNetworkGeoJSON = async () => {
-  const res = await axios.get(`${API_BASE}/proposed-road-network/`);
+export const getProposedRoadsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/proposed-road/`);
   return unwrapGeoJSON(res.data);
 };
+
 
 export const getLahoreTransportationRoadsGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/lahore-transportation-roads/`);

@@ -9,7 +9,7 @@ from .MasterPlanView import *
 from .SpotLevelView import *
 from .ContourView import *
 from .RudaProposedRoadsView import *
-from .ProposedRoads import *
+from .ProposedRoad import *
 from .Trijunction import *
 from .RudaBoundary import *
 from .UserView import *
@@ -53,3 +53,8 @@ from .RudaMasterPlan.SWTPSites import *
 from .RudaMasterPlan.WWTPSites import *
 from .RudaMasterPlan.RudaNotifiedPhasesBoundary import *
 from .RudaMasterPlan.LahoreTransportationRoadView import *
+
+
+from .GISMetaverse.PHSPPPScheme import *
+from .GISMetaverse.ForestBoundary import *
+from .GISMetaverse.ExistingDrains import *

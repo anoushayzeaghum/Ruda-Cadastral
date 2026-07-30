@@ -2,12 +2,12 @@ from ..common_imports import *
 from django.core.cache import cache
 
 
-class DeleteProposedRoadsView(viewsets.ViewSet):
+class DeleteProposedRoadView(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     def destroy(self, request, pk=None):
         try:
-            obj = ProposedRoads.objects.get(gid=pk)
+            obj = ProposedRoad.objects.get(gid=pk)
             gid = obj.gid
             obj.delete()
 
@@ -19,7 +19,7 @@ class DeleteProposedRoadsView(viewsets.ViewSet):
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
-        except ProposedRoads.DoesNotExist:
+        except ProposedRoad.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
                 message="Proposed road not found",
