@@ -7,9 +7,11 @@ import {
   X,
   ListChecks,
   Upload,
+  Pentagon,
 } from "lucide-react";
 import LayerManager from "./Layers/LayerManager.jsx";
 import Toolbox from "./Layers/Toolbox.jsx";
+import DrawAOI from "./Layers/DrawAOI.jsx";
 import RasterData from "./Layers/RasterData.jsx";
 import BaseMap from "./Layers/BaseMap.jsx";
 import MapImport from "./Import/MapImport.jsx";
@@ -62,7 +64,12 @@ export default function LeftPanel({
   boundaryStatus,
   setBoundaryStatus,
   multiSelectionMode = false,
-  onMultiSelectionModeChange = () => { },
+  onMultiSelectionModeChange = () => {},
+  drawAOIEnabled = false,
+  onDrawAOIToggle = () => {},
+  onDrawAOIFinish = () => {},
+  onDrawAOIClear = () => {},
+  drawAOIStatus = {},
 }) {
   const [activePanel, setActivePanel] = useState("");
   const initializedOpacityKeysRef = useRef(new Set());
@@ -198,12 +205,12 @@ export default function LeftPanel({
         : key === "tehsilBoundary"
           ? tehsilSelectionKey
           : [
-            "mauzaBoundary",
-            "khasraLayer",
-            "squareLayer",
-            "acreLayer",
-            "fieldPoints",
-          ].includes(key)
+                "mauzaBoundary",
+                "khasraLayer",
+                "squareLayer",
+                "acreLayer",
+                "fieldPoints",
+              ].includes(key)
             ? String(selectedMauzaId ?? "")
             : "global";
 
@@ -351,10 +358,10 @@ export default function LeftPanel({
         ...(typeof prev?.[layerKey] === "object"
           ? prev[layerKey]
           : {
-            visible: !!prev?.[layerKey],
-            opacity: 100,
-            color: getDefaultColorForLayer(layerKey),
-          }),
+              visible: !!prev?.[layerKey],
+              opacity: 100,
+              color: getDefaultColorForLayer(layerKey),
+            }),
         color: getLayerColor(layerKey),
         ...patch,
       },
@@ -505,10 +512,11 @@ export default function LeftPanel({
     <>
       {/* Icon toolbar - positioned left on desktop, bottom on mobile */}
       <div
-        className={`pointer-events-none absolute z-50 ${isMobile
+        className={`pointer-events-none absolute z-50 ${
+          isMobile
             ? "bottom-3 left-1/2 -translate-x-1/2 flex-row"
             : "left-1.5 sm:left-3 top-3 sm:top-5 flex-col"
-          } flex items-start gap-1.5 sm:gap-2`}
+        } flex items-start gap-1.5 sm:gap-2`}
       >
         <div className="pointer-events-auto flex gap-1 sm:flex-col sm:gap-1">
           <PanelIcon
@@ -528,6 +536,15 @@ export default function LeftPanel({
             }
             icon={<Wrench size={15} className="sm:hidden" />}
             iconLg={<Wrench size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Draw AOI"
+            active={activePanel === "drawAOI"}
+            onClick={() =>
+              setActivePanel(activePanel === "drawAOI" ? "" : "drawAOI")
+            }
+            icon={<Pentagon size={15} className="sm:hidden" />}
+            iconLg={<Pentagon size={18} className="hidden sm:block" />}
           />
           <PanelIcon
             title="Raster Data"
@@ -571,10 +588,11 @@ export default function LeftPanel({
 
       {/* Prominent multiple Khasra selection control */}
       <div
-        className={`pointer-events-auto absolute z-50 ${isMobile
+        className={`pointer-events-auto absolute z-50 ${
+          isMobile
             ? "bottom-14 left-1/2 -translate-x-1/2"
             : "bottom-4 left-1.5 sm:left-3"
-          }`}
+        }`}
       >
         <div className="flex items-center gap-2 rounded-md border border-[#13593f] bg-[#031a14]/95 px-2.5 py-2 text-white shadow-xl backdrop-blur-sm">
           <div className="flex shrink-0 items-center gap-1.5 text-[11px] font-semibold sm:text-xs">
@@ -588,10 +606,11 @@ export default function LeftPanel({
               onMultiSelectionModeChange(event.target.value === "enabled")
             }
             aria-label="Multiple Khasra selection status"
-            className={`h-8 min-w-[104px] cursor-pointer rounded border px-2 text-[11px] font-semibold outline-none transition focus:ring-2 focus:ring-[#9be37b]/60 ${multiSelectionMode
+            className={`h-8 min-w-[104px] cursor-pointer rounded border px-2 text-[11px] font-semibold outline-none transition focus:ring-2 focus:ring-[#9be37b]/60 ${
+              multiSelectionMode
                 ? "border-[#9be37b] bg-[#0f5132] text-white"
                 : "border-white/25 bg-white text-slate-800"
-              }`}
+            }`}
           >
             <option value="disabled">Disabled</option>
             <option value="enabled">Enabled</option>
@@ -702,17 +721,18 @@ export default function LeftPanel({
             />
           )}
           <div
-            className={`pointer-events-auto z-40 overflow-hidden border border-[#13593f] bg-[#06291f] text-white shadow-2xl ${isMobile
+            className={`pointer-events-auto z-40 overflow-hidden border border-[#13593f] bg-[#06291f] text-white shadow-2xl ${
+              isMobile
                 ? "fixed bottom-0 left-0 right-0 rounded-t-xl"
                 : "absolute left-1.5 sm:left-3 top-3 sm:top-5 ml-[calc(28px+6px)] sm:ml-[calc(36px+8px)] rounded-md"
-              }`}
+            }`}
             style={
               isMobile
                 ? { maxHeight: "70vh" }
                 : {
-                  width: "min(280px, calc(100vw - 60px))",
-                  maxHeight: "calc(100vh - 120px)",
-                }
+                    width: "min(280px, calc(100vw - 60px))",
+                    maxHeight: "calc(100vh - 120px)",
+                  }
             }
           >
             {/* Mobile drag handle */}
@@ -763,6 +783,18 @@ export default function LeftPanel({
               />
             )}
 
+            {activePanel === "drawAOI" && (
+              <DrawAOI
+                isMobile={isMobile}
+                onClose={() => setActivePanel("")}
+                enabled={drawAOIEnabled}
+                onToggle={onDrawAOIToggle}
+                onFinish={onDrawAOIFinish}
+                onClear={onDrawAOIClear}
+                status={drawAOIStatus}
+              />
+            )}
+
             {activePanel === "basemap" && (
               <Panel title="Basemap" onClose={() => setActivePanel("")}>
                 <BaseMap basemap={basemap} setBasemap={setBasemap} />
@@ -782,10 +814,7 @@ export default function LeftPanel({
             )}
 
             {activePanel === "importData" && (
-              <MapImport
-                map={map}
-                onClose={() => setActivePanel("")}
-              />
+              <MapImport map={map} onClose={() => setActivePanel("")} />
             )}
           </div>
         </>
@@ -801,10 +830,11 @@ function PanelIcon({ title, icon, iconLg, active, onClick }) {
       title={title}
       aria-label={title}
       onClick={onClick}
-      className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border shadow-md transition ${active
+      className={`flex h-7 w-7 sm:h-9 sm:w-9 items-center justify-center rounded-md border shadow-md transition ${
+        active
           ? "border-[#9be37b] bg-[#083526] text-white"
           : "border-[#104c39] bg-[#031a14] text-white hover:bg-[#0a3327]"
-        }`}
+      }`}
     >
       {icon}
       {iconLg}

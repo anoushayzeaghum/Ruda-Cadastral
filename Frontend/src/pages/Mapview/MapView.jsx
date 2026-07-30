@@ -116,6 +116,7 @@ import {
   POPUP_TITLES,
 } from "./MapView/popupUtils.js";
 import useMapTools from "./MapView/useMapTools.js";
+import useDrawAOI from "./MapView/useDrawAOI.js";
 import {
   CADASTRAL_BOUNDARY_STYLES,
   getKhasraStatusColorExpression,
@@ -157,6 +158,11 @@ export default function MapView({
   onFeaturesLoaded,
   onMapReady,
   boundaryStatus = "verified",
+  drawAOIEnabled = false,
+  onAOIComplete,
+  onAOIDraftChange,
+  drawAOIClearSignal = 0,
+  drawAOIFinishSignal = 0,
 }) {
   const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
@@ -174,6 +180,7 @@ export default function MapView({
   const previousBoundaryStatusRef = useRef(boundaryStatus);
   const suppressAutoZoomUntilRef = useRef(0);
   const multiSelectionModeRef = useRef(multiSelectionMode);
+  const drawAOIEnabledRef = useRef(drawAOIEnabled);
   const onMultiParcelToggleRef = useRef(onMultiParcelToggle);
   const khasraEventHandlersRef = useRef({
     click: null,
@@ -191,6 +198,11 @@ export default function MapView({
   useEffect(() => {
     multiSelectionModeRef.current = multiSelectionMode;
   }, [multiSelectionMode]);
+
+  useEffect(() => {
+    drawAOIEnabledRef.current = drawAOIEnabled;
+    if (drawAOIEnabled) closeActivePopup();
+  }, [drawAOIEnabled]);
 
   useEffect(() => {
     onMultiParcelToggleRef.current = onMultiParcelToggle;
@@ -1460,6 +1472,9 @@ export default function MapView({
       detachKhasraEventHandlers(map);
 
       const handleKhasraClick = (e) => {
+        // AOI drawing owns map clicks while active. Do not select a parcel,
+        // open its popup, or update Parcel Information during drawing.
+        if (drawAOIEnabledRef.current) return;
         if (!e.features?.length) return;
 
         const feature = e.features[0];
@@ -1507,11 +1522,15 @@ export default function MapView({
       };
 
       const handleKhasraMouseEnter = () => {
-        map.getCanvas().style.cursor = "pointer";
+        if (drawAOIEnabledRef.current) return;
+        const canvas = map.getCanvas?.();
+        if (canvas) canvas.style.cursor = "pointer";
       };
 
       const handleKhasraMouseLeave = () => {
-        map.getCanvas().style.cursor = "";
+        if (drawAOIEnabledRef.current) return;
+        const canvas = map.getCanvas?.();
+        if (canvas) canvas.style.cursor = "";
       };
 
       khasraEventHandlersRef.current = {
@@ -3115,6 +3134,17 @@ export default function MapView({
     isMapReady,
     layers,
     buildPopupHtml: buildUnifiedPopupHtml,
+  });
+
+  useDrawAOI({
+    mapRef: mapInstance,
+    isMapReady,
+    enabled: drawAOIEnabled,
+    currentGeojsonRef: currentGeojson,
+    onComplete: onAOIComplete,
+    onDraftChange: onAOIDraftChange,
+    clearSignal: drawAOIClearSignal,
+    finishSignal: drawAOIFinishSignal,
   });
 
   return (

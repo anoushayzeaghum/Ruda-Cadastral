@@ -12,6 +12,7 @@ import SubHeader from "./SubHeader.jsx";
 import LeftPanel from "./LeftPanel.jsx";
 import ParcelPanel from "./ParcelPanel.jsx";
 import MultipleParcelPanel from "./Layers/MultipleParcelPanel.jsx";
+import AOIAnalysisPanel from "./Layers/AOIAnalysisPanel.jsx";
 import MapView from "./MapView.jsx";
 import MapPrinter from "../Mapview/Printing/MapPrinter.jsx";
 import { getRudaMauzas } from "../../services/api";
@@ -153,6 +154,11 @@ export default function MapPage() {
   const [multiSelectionMode, setMultiSelectionMode] = useState(false);
   const [selectedParcels, setSelectedParcels] = useState([]);
   const [boundaryStatus, setBoundaryStatus] = useState("verified");
+  const [drawAOIEnabled, setDrawAOIEnabled] = useState(false);
+  const [drawAOIResult, setDrawAOIResult] = useState(null);
+  const [drawAOIStatus, setDrawAOIStatus] = useState({ vertexCount: 0, canFinish: false });
+  const [drawAOIClearSignal, setDrawAOIClearSignal] = useState(0);
+  const [drawAOIFinishSignal, setDrawAOIFinishSignal] = useState(0);
   const [layers, setLayers] = useState({
     rudaBoundary: { visible: false, opacity: 100, color: "#22c55e" },
     proposedRoads: { visible: false, opacity: 100, color: "#ef4444" },
@@ -287,31 +293,32 @@ export default function MapPage() {
 
   const handleMauzaToggle = useCallback(
     (selectionKey) => {
-      setSelectedMauzaKeys((previous) => {
-        const exists = previous.includes(String(selectionKey));
-        const next = exists
-          ? previous.filter((key) => key !== String(selectionKey))
-          : [...previous, String(selectionKey)];
+      const normalizedKey = String(selectionKey);
+      const exists = selectedMauzaKeys.includes(normalizedKey);
+      const next = exists
+        ? selectedMauzaKeys.filter((key) => key !== normalizedKey)
+        : [...selectedMauzaKeys, normalizedKey];
 
-        const firstSelected = activeMauzaOptions.find(
-          (mauza) => mauza._selectionKey === next[0],
-        );
-        const firstSelectedMauzaId = getMauzaId(firstSelected) || "";
+      // Update MapPage state first. Do not call MainLayout's filter setter from
+      // inside a functional state updater, because React treats that as an
+      // update to a different component during MapPage's render cycle.
+      setSelectedMauzaKeys(next);
 
-        // useCadastralFilters.handleMauzaChange expects a normal select event
-        // and reads event.target.value. Pass a compatible event-shaped object
-        // instead of sending the Mauza ID as a plain string.
-        filters?.handleMauzaChange?.({
-          target: { value: firstSelectedMauzaId },
-          currentTarget: { value: firstSelectedMauzaId },
-        });
-        return next;
+      const firstSelected = activeMauzaOptions.find(
+        (mauza) => mauza._selectionKey === next[0],
+      );
+      const firstSelectedMauzaId = getMauzaId(firstSelected) || "";
+
+      filters?.handleMauzaChange?.({
+        target: { value: firstSelectedMauzaId },
+        currentTarget: { value: firstSelectedMauzaId },
       });
+
       setParcelLookupMauzaKey("");
       setSelectedParcelNumber("");
       setSelectedMurabbaNumber("");
     },
-    [activeMauzaOptions, filters],
+    [activeMauzaOptions, filters, selectedMauzaKeys],
   );
 
   const activeFilters = useMemo(() => {
@@ -833,6 +840,11 @@ export default function MapPage() {
           onMultiParcelToggle={handleMultiParcelToggle}
           onMapReady={handleMapReady}
           boundaryStatus={boundaryStatus}
+          drawAOIEnabled={drawAOIEnabled}
+          onAOIComplete={(result) => { setDrawAOIResult(result); setDrawAOIEnabled(false); }}
+          onAOIDraftChange={setDrawAOIStatus}
+          drawAOIClearSignal={drawAOIClearSignal}
+          drawAOIFinishSignal={drawAOIFinishSignal}
         />
 
         {/* <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} /> */}
@@ -880,6 +892,22 @@ export default function MapPage() {
           setBoundaryStatus={setBoundaryStatus}
           multiSelectionMode={multiSelectionMode}
           onMultiSelectionModeChange={handleMultiSelectionModeChange}
+          drawAOIEnabled={drawAOIEnabled}
+          onDrawAOIToggle={(enabled) => {
+            setDrawAOIEnabled(enabled);
+            if (enabled) {
+              setMultiSelectionMode(false);
+              setSelectedParcels([]);
+              setParcelPanelOpen(false);
+            }
+          }}
+          onDrawAOIFinish={() => setDrawAOIFinishSignal((value) => value + 1)}
+          onDrawAOIClear={() => {
+            setDrawAOIResult(null);
+            setDrawAOIStatus({ vertexCount: 0, canFinish: false });
+            setDrawAOIClearSignal((value) => value + 1);
+          }}
+          drawAOIStatus={drawAOIStatus}
         />
 
         {!multiSelectionMode && (
@@ -890,6 +918,17 @@ export default function MapPage() {
             boundaryStatus={boundaryStatus}
           />
         )}
+
+
+        <AOIAnalysisPanel
+          result={drawAOIResult}
+          onClose={() => setDrawAOIResult(null)}
+          onClear={() => {
+            setDrawAOIResult(null);
+            setDrawAOIStatus({ vertexCount: 0, canFinish: false });
+            setDrawAOIClearSignal((value) => value + 1);
+          }}
+        />
 
         <MultipleParcelPanel
           parcels={selectedParcels}
