@@ -508,6 +508,16 @@ export const getForestBoundaryGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getHousingSchemesGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/phs-ppp-schemes/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getExistingDrainsGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/existing-drains/`);
+  return unwrapGeoJSON(res.data);
+};
+
 export const getPrecientBoundaryGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/precient-boundary/`);
   return unwrapGeoJSON(res.data);

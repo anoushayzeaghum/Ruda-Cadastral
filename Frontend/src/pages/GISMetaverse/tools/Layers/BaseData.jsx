@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import {
-  getExistingForestGeoJSON,
+  getExistingDrainsGeoJSON,
+  getForestBoundaryGeoJSON,
+  getHousingSchemesGeoJSON,
   getLahoreTransportationRoadsGeoJSON,
 } from "../../../../services/metaverseApi";
+import ExistingDrainsStyle from "./LayerManager/BaseData/ExistingDrainsStyle";
+import ForestBoundaryStyle from "./LayerManager/BaseData/ForestBoundaryStyle";
+import HousingSchemesStyle from "./LayerManager/BaseData/HousingSchemesStyle";
 import RoadNetworkLegend, {
   addOrUpdateRoadNetworkLayer,
   removeRoadNetworkLayer,
@@ -54,16 +59,25 @@ const LAYER_DEFS = [
     customRoadStyle: true,
   },
   {
-    key: "forest",
-    label: "Forest",
-    color: "#22c55e",
-    fetchGeoJSON: getExistingForestGeoJSON,
+    key: "housingSchemes",
+    label: "Housing Schemes",
+    color: HousingSchemesStyle.color,
+    style: HousingSchemesStyle,
+    fetchGeoJSON: getHousingSchemesGeoJSON,
   },
   {
-    key: "irrigationNetwork",
-    label: "Irrigation Network",
-    color: "#38bdf8",
-    fetchGeoJSON: null,
+    key: "forest",
+    label: "Forest Boundary",
+    color: ForestBoundaryStyle.color,
+    style: ForestBoundaryStyle,
+    fetchGeoJSON: getForestBoundaryGeoJSON,
+  },
+  {
+    key: "existingDrains",
+    label: "Existing Drains",
+    color: ExistingDrainsStyle.color,
+    style: ExistingDrainsStyle,
+    fetchGeoJSON: getExistingDrainsGeoJSON,
   },
   {
     key: "floodInundation",
@@ -125,7 +139,7 @@ function setLayerVisibility(map, key, visible) {
   });
 }
 
-function applyLayerStyle(map, key, color, opacity) {
+function applyLayerStyle(map, key, color, opacity, style = {}) {
   if (!map) return;
 
   const ids = getIds(key);
@@ -133,22 +147,53 @@ function applyLayerStyle(map, key, color, opacity) {
 
   if (map.getLayer(ids.fill)) {
     map.setPaintProperty(ids.fill, "fill-color", color);
-    map.setPaintProperty(ids.fill, "fill-opacity", 0.35 * ratio);
+    map.setPaintProperty(
+      ids.fill,
+      "fill-opacity",
+      (style.fillOpacity ?? 0.35) * ratio,
+    );
   }
 
   if (map.getLayer(ids.line)) {
     map.setPaintProperty(ids.line, "line-color", color);
-    map.setPaintProperty(ids.line, "line-opacity", ratio);
+    map.setPaintProperty(
+      ids.line,
+      "line-opacity",
+      (style.lineOpacity ?? 1) * ratio,
+    );
+    if (style.lineWidth) {
+      map.setPaintProperty(ids.line, "line-width", style.lineWidth);
+    }
+    if (style.lineDasharray) {
+      map.setPaintProperty(ids.line, "line-dasharray", style.lineDasharray);
+    }
   }
 
   if (map.getLayer(ids.point)) {
     map.setPaintProperty(ids.point, "circle-color", color);
     map.setPaintProperty(ids.point, "circle-opacity", ratio);
     map.setPaintProperty(ids.point, "circle-stroke-opacity", ratio);
+    if (style.pointRadius) {
+      map.setPaintProperty(ids.point, "circle-radius", style.pointRadius);
+    }
+    if (style.pointStrokeColor) {
+      map.setPaintProperty(
+        ids.point,
+        "circle-stroke-color",
+        style.pointStrokeColor,
+      );
+    }
+    if (style.pointStrokeWidth !== undefined) {
+      map.setPaintProperty(
+        ids.point,
+        "circle-stroke-width",
+        style.pointStrokeWidth,
+      );
+    }
   }
 }
 
-function addOrUpdateMapLayer(map, key, geojson, color, opacity) {
+function addOrUpdateMapLayer(map, key, geojson, color, opacity, style = {}) {
   if (!map) return;
 
   const ids = getIds(key);
@@ -173,7 +218,7 @@ function addOrUpdateMapLayer(map, key, geojson, color, opacity) {
       layout: { visibility: "visible" },
       paint: {
         "fill-color": color,
-        "fill-opacity": 0.35 * ratio,
+        "fill-opacity": (style.fillOpacity ?? 0.35) * ratio,
       },
     });
   }
@@ -187,8 +232,19 @@ function addOrUpdateMapLayer(map, key, geojson, color, opacity) {
       layout: { visibility: "visible" },
       paint: {
         "line-color": color,
-        "line-width": ["interpolate", ["linear"], ["zoom"], 7, 1.2, 14, 3],
-        "line-opacity": ratio,
+        "line-width": style.lineWidth || [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          7,
+          1.2,
+          14,
+          3,
+        ],
+        ...(style.lineDasharray
+          ? { "line-dasharray": style.lineDasharray }
+          : {}),
+        "line-opacity": (style.lineOpacity ?? 1) * ratio,
       },
     });
   }
@@ -201,17 +257,25 @@ function addOrUpdateMapLayer(map, key, geojson, color, opacity) {
       filter: POINT_FILTER,
       layout: { visibility: "visible" },
       paint: {
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 7, 3, 15, 6],
+        "circle-radius": style.pointRadius || [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          7,
+          3,
+          15,
+          6,
+        ],
         "circle-color": color,
         "circle-opacity": ratio,
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1,
+        "circle-stroke-color": style.pointStrokeColor || "#ffffff",
+        "circle-stroke-width": style.pointStrokeWidth ?? 1,
         "circle-stroke-opacity": ratio,
       },
     });
   }
 
-  applyLayerStyle(map, key, color, opacity);
+  applyLayerStyle(map, key, color, opacity, style);
   setLayerVisibility(map, key, true);
 }
 
@@ -252,30 +316,31 @@ export default function BaseData({ map }) {
   };
 
   const showLoadedLayer = (definition) => {
-  const geojson = loadedGeoJSONRef.current[definition.key];
+    const geojson = loadedGeoJSONRef.current[definition.key];
 
-  if (!geojson) return;
+    if (!geojson) return;
 
-  runWhenMapReady(() => {
-    // Style may have changed before this callback runs
-    if (!map || !map.isStyleLoaded?.()) return;
+    runWhenMapReady(() => {
+      // Style may have changed before this callback runs
+      if (!map || !map.isStyleLoaded?.()) return;
 
-    const currentState = layersRef.current[definition.key];
-    if (!currentState?.visible) return;
+      const currentState = layersRef.current[definition.key];
+      if (!currentState?.visible) return;
 
-    if (definition.customRoadStyle) {
-      addOrUpdateRoadNetworkLayer(map, geojson, currentState.opacity);
-    } else {
-      addOrUpdateMapLayer(
-        map,
-        definition.key,
-        geojson,
-        currentState.color,
-        currentState.opacity,
-      );
-    }
-  });
-};
+      if (definition.customRoadStyle) {
+        addOrUpdateRoadNetworkLayer(map, geojson, currentState.opacity);
+      } else {
+        addOrUpdateMapLayer(
+          map,
+          definition.key,
+          geojson,
+          currentState.color,
+          currentState.opacity,
+          definition.style,
+        );
+      }
+    });
+  };
   const loadLayer = async (definition) => {
     if (!map || !definition.fetchGeoJSON) return null;
 
@@ -423,7 +488,13 @@ export default function BaseData({ map }) {
     if (definition?.customRoadStyle) {
       setRoadNetworkOpacity(map, opacity);
     } else {
-      applyLayerStyle(map, key, state?.color || "#ffffff", opacity);
+      applyLayerStyle(
+        map,
+        key,
+        state?.color || definition?.style?.color || "#ffffff",
+        opacity,
+        definition?.style,
+      );
     }
   };
 
@@ -434,7 +505,8 @@ export default function BaseData({ map }) {
     }));
 
     const state = layersRef.current[key];
-    applyLayerStyle(map, key, color, state?.opacity ?? 100);
+    const definition = LAYER_DEFS.find((item) => item.key === key);
+    applyLayerStyle(map, key, color, state?.opacity ?? 100, definition?.style);
   };
 
   return (

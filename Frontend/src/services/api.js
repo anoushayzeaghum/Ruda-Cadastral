@@ -867,3 +867,23 @@ export const getStateLandGeoJSON = async () => {
   const res = await API.get("/stateland/");
   return normalizeGeoJson(res);
 };
+
+
+///////////////////////////////////////////////////////
+//////////////// BASE DATA APIs ///////////////////////
+///////////////////////////////////////////////////////
+
+export const getHousingSchemesGeoJSON = async () => {
+  const res = await API.get("/phs-ppp-schemes/");
+  return normalizeGeoJson(res);
+};
+
+export const getForestBoundaryGeoJSON = async () => {
+  const res = await API.get("/forest-boundary/");
+  return normalizeGeoJson(res);
+};
+
+export const getExistingDrainsGeoJSON = async () => {
+  const res = await API.get("/existing-drains/");
+  return normalizeGeoJson(res);
+};
