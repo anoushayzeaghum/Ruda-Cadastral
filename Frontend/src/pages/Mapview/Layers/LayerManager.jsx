@@ -5,6 +5,16 @@ import {
   POSSESSION_LAND_TYPES,
   normalizePossessionLandTypes,
 } from "../LayerManager/PossessionLandLayer.js";
+import {
+  PolygonLegend,
+  LineLegend,
+  PointLegend,
+  LegendSection,
+  LayerLegend,
+  roadLegendItems,
+  getRudaPhaseColor,
+  getRudaPhaseLabel,
+} from "../Legend.jsx";
 
 const ADMINISTRATIVE_LAYERS = [
   { key: "districtBoundary", label: "District Boundary" },
@@ -24,34 +34,6 @@ const BASE_DATA_LAYERS = [
   { key: "triJunctionPoints", label: "Tri Junction Points" },
   { key: "fieldPoints", label: "Field Points" },
 ];
-
-const RUDA_PHASE_COLORS = [
-  "#6bb7e8",
-  "#f8d56b",
-  "#6bd69a",
-  "#f59e72",
-  "#b99cf3",
-  "#78d6d0",
-  "#f3a6c8",
-  "#a7d77b",
-  "#f4b860",
-  "#86a8e7",
-  "#d7b377",
-  "#8dd3c7",
-];
-
-const hashString = (value = "") => {
-  let hash = 0;
-  for (const char of String(value || "")) {
-    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  }
-  return hash;
-};
-
-const getRudaPhaseColor = (phaseId) => {
-  const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
-  return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
-};
 
 export default function LayerManager({
   isMobile,
@@ -156,7 +138,12 @@ export default function LayerManager({
               }
             />
           ) : (
-            <LayerDropdownPanel geojson={getGeojsonForKey(item.key)} />
+            <LayerDropdownPanel
+              layerKey={item.key}
+              geojson={getGeojsonForKey(item.key)}
+              getLayerColor={getLayerColor}
+              boundaryStatus={boundaryStatus}
+            />
           ))}
       </div>
     );
@@ -305,8 +292,19 @@ export default function LayerManager({
         />
 
         {geodeticDropdownOpen && (
-          <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2 text-[12px] text-white/80">
-            Open the attribute table to view all geodetic points.
+          <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
+            <div className="rounded-md border border-[#0c3d2d] bg-[#06291f] px-2.5 py-2 shadow-sm">
+              <LegendSection title="Legend">
+                <PointLegend
+                  color={getLayerColor("geodeticNetwork")}
+                  label="Geodetic Network Point"
+                />
+              </LegendSection>
+              <div className="my-2 border-t border-[#0c3d2d]" />
+              <div className="text-[12px] text-white/80">
+                Open the attribute table to view all geodetic points.
+              </div>
+            </div>
           </div>
         )}
       </LayerSection>
@@ -457,7 +455,23 @@ function PossessionLandTypeDropdown({ selectedTypes, setSelectedTypes }) {
 
   return (
     <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
-      <div className="overflow-hidden rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1 shadow-sm">
+      <div className="max-h-60 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2.5 py-2 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {/* Legend Section */}
+        <LegendSection title="Legend">
+          {POSSESSION_LAND_TYPES.map((item) => (
+            <PolygonLegend
+              key={`legend-possession-${item.value}`}
+              label={item.label}
+              fillColor={item.fillColor}
+              lineColor={item.lineColor}
+            />
+          ))}
+        </LegendSection>
+
+        {/* Divider */}
+        <div className="my-2 border-t border-[#0c3d2d]" />
+
+        {/* Checkboxes */}
         {POSSESSION_LAND_TYPES.map((item) => (
           <label
             key={item.value}
@@ -469,13 +483,6 @@ function PossessionLandTypeDropdown({ selectedTypes, setSelectedTypes }) {
               onChange={() => toggleType(item.value)}
               className="h-3.5 w-3.5 shrink-0 accent-[#9be37b]"
             />
-            <span
-              className="h-3.5 w-3.5 shrink-0 rounded-sm"
-              style={{
-                backgroundColor: item.fillColor,
-                border: `1.5px solid ${item.lineColor}`,
-              }}
-            />
             <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
               {item.label}
             </span>
@@ -486,11 +493,20 @@ function PossessionLandTypeDropdown({ selectedTypes, setSelectedTypes }) {
   );
 }
 
-function LayerDropdownPanel({ geojson }) {
+function LayerDropdownPanel({ layerKey, geojson, getLayerColor, boundaryStatus }) {
   const features = geojson?.features || [];
+  const color = getLayerColor ? getLayerColor(layerKey) : "#9be37b";
+
   return (
     <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
-      <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="max-h-60 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2.5 py-2 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {/* Layer Legend Renderer */}
+        <LayerLegend layerKey={layerKey} color={color} boundaryStatus={boundaryStatus} />
+
+        {/* Divider */}
+        <div className="my-2 border-t border-[#0c3d2d]" />
+
+        {/* Records */}
         {!geojson ? (
           <p className="px-1 py-1 text-[11px] text-white/50">
             Loading records...
@@ -545,18 +561,39 @@ function RudaPhaseDropdown({ phases, selectedIds, setSelectedIds }) {
 
   return (
     <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
-      <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="max-h-60 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2.5 py-2 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {(phases || []).length === 0 ? (
           <p className="px-1 py-1 text-[11px] font-medium text-white/50">
             No phases found
           </p>
         ) : (
           <>
+            {/* Legend Section */}
+            <LegendSection title="Legend">
+              {(phases || []).map((phase) => {
+                const id = phase.gid ?? phase.id ?? phase.oid;
+                return (
+                  <PolygonLegend
+                    key={`legend-ruda-${id}`}
+                    label={getRudaPhaseLabel(phase)}
+                    fillColor={getRudaPhaseColor(id)}
+                    lineColor={getRudaPhaseColor(id)}
+                  />
+                );
+              })}
+            </LegendSection>
+
+            {/* Divider */}
+            <div className="my-2 border-t border-[#0c3d2d]" />
+
+            {/* Select All */}
             <SelectAllRow
               checked={allChecked}
               onChange={(checked) => setSelectedIds(checked ? allIds : [])}
               onReset={() => setSelectedIds([])}
             />
+
+            {/* Checkboxes */}
             {(phases || []).map((phase) => {
               const id = phase.gid ?? phase.id ?? phase.oid;
               const checked = selectedSet.has(String(id));
@@ -584,7 +621,7 @@ function RudaPhaseDropdown({ phases, selectedIds, setSelectedIds }) {
                     style={{ backgroundColor: getRudaPhaseColor(id) }}
                   />
                   <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
-                    {phase.name ?? phase.folderpath ?? `Phase ${id}`}
+                    {getRudaPhaseLabel(phase)}
                   </span>
                 </label>
               );
@@ -611,18 +648,36 @@ function ProposedRoadDropdown({
 
   return (
     <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
-      <div className="max-h-44 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2 py-1.5 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="max-h-60 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2.5 py-2 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {(roads || []).length === 0 ? (
           <p className="px-1 py-1 text-[11px] text-white/50">
             No proposed roads found
           </p>
         ) : (
           <>
+            {/* Legend Section */}
+            <LegendSection title="Legend">
+              {roadLegendItems.map((item) => (
+                <LineLegend
+                  key={item.label}
+                  label={item.label}
+                  color={item.color}
+                  width={item.width}
+                />
+              ))}
+            </LegendSection>
+
+            {/* Divider */}
+            <div className="my-2 border-t border-[#0c3d2d]" />
+
+            {/* Select All */}
             <SelectAllRow
               checked={allChecked}
               onChange={(checked) => setSelectedIds(checked ? allIds : [])}
               onReset={() => setSelectedIds([])}
             />
+
+            {/* Checkboxes */}
             {(roads || []).map((road) => {
               const id = road.gid ?? road.id ?? road.oid;
               const checked = selectedSet.has(String(id));

@@ -12,7 +12,6 @@ import SubHeader from "./SubHeader.jsx";
 import LeftPanel from "./LeftPanel.jsx";
 import ParcelPanel from "./ParcelPanel.jsx";
 import MultipleParcelPanel from "./Layers/MultipleParcelPanel.jsx";
-import Legend from "./Legend.jsx";
 import MapView from "./MapView.jsx";
 import MapPrinter from "../Mapview/Printing/MapPrinter.jsx";
 import { getRudaMauzas } from "../../services/api";
@@ -881,13 +880,6 @@ export default function MapPage() {
           setBoundaryStatus={setBoundaryStatus}
           multiSelectionMode={multiSelectionMode}
           onMultiSelectionModeChange={handleMultiSelectionModeChange}
-        />
-
-        <Legend
-          layers={layers}
-          rudaPhases={rudaPhases}
-          selectedRudaPhaseIds={selectedRudaPhaseIds}
-          selectedProposedRoadIds={selectedProposedRoadIds}
         />
 
         {!multiSelectionMode && (
