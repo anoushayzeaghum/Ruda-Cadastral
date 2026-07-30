@@ -1253,15 +1253,15 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 z-30 overflow-hidden border-t border-white/15">
-          {/* Theme-matched dark evergreen background with high text contrast. */}
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(2,13,10,0.96),rgba(7,28,20,0.94)_48%,rgba(2,13,10,0.96))] backdrop-blur-[3px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(73,184,74,0.13),transparent_58%)]" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#70D84F]/45 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 z-30 overflow-hidden border-t border-[#70D84F]/30">
+          {/* Light sage-green background for high contrast stat bar */}
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(236,250,240,0.97),rgba(220,245,230,0.97)_48%,rgba(236,250,240,0.97))] backdrop-blur-[3px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(112,216,79,0.10),transparent_60%)]" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#70D84F]/60 to-transparent" />
 
           <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center gap-1.5 px-3 py-2 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-3">
-            <div className="shrink-0 text-center sm:border-r sm:border-white/15 sm:pr-5 sm:text-left">
-              <div className="text-[12px] font-black uppercase leading-tight tracking-[0.18em] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] sm:text-[14px]">
+            <div className="shrink-0 text-center sm:border-r sm:border-[#0a2e1a]/15 sm:pr-5 sm:text-left">
+              <div className="text-[12px] font-black uppercase leading-tight tracking-[0.18em] text-[#0a2e1a] sm:text-[14px]">
                 {STAT_GROUPS[statGroupIndex].title}
               </div>
             </div>
@@ -1277,22 +1277,23 @@ export default function LandingPage() {
             >
               {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
                 <div
-                  key={label}
-                  className="
+                   key={label}
+                   className="
                     rounded-xl
-                    border border-white/10
-                    bg-white/[0.05]
+                    border border-[#70D84F]/30
+                    bg-white/90
                     px-3 py-2
+                    shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]
                     backdrop-blur-md
                     transition-all duration-300
-                    hover:bg-white/[0.08]
+                    hover:bg-white hover:border-[#70D84F]/60 hover:shadow-[0_6px_20px_-4px_rgba(112,216,79,0.35)]
                   "
                 >
-                  <div className="text-[22px] sm:text-[30px] font-black text-white leading-none">
+                  <div className="text-[22px] sm:text-[30px] font-black text-[#0a2e1a] leading-none">
                     {value}
                   </div>
 
-                  <div className="mt-1 text-[8px] sm:text-[10px] uppercase tracking-[0.15em] text-white/70">
+                  <div className="mt-1 text-[8px] sm:text-[10px] uppercase tracking-[0.15em] text-[#1a4a2e]/80">
                     {label}
                   </div>
                 </div>
