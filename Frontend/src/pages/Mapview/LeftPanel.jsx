@@ -70,6 +70,7 @@ export default function LeftPanel({
   onDrawAOIFinish = () => {},
   onDrawAOIClear = () => {},
   drawAOIStatus = {},
+  onImportedAOI = () => {},
 }) {
   const [activePanel, setActivePanel] = useState("");
   const initializedOpacityKeysRef = useRef(new Set());
@@ -814,7 +815,12 @@ export default function LeftPanel({
             )}
 
             {activePanel === "importData" && (
-              <MapImport map={map} onClose={() => setActivePanel("")} />
+              <MapImport
+                map={map}
+                onClose={() => setActivePanel("")}
+                onPolygonImported={onImportedAOI}
+                onImportComplete={onImportedAOI}
+              />
             )}
           </div>
         </>

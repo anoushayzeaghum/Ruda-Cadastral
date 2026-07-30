@@ -159,6 +159,7 @@ export default function MapPage() {
   const [drawAOIStatus, setDrawAOIStatus] = useState({ vertexCount: 0, canFinish: false });
   const [drawAOIClearSignal, setDrawAOIClearSignal] = useState(0);
   const [drawAOIFinishSignal, setDrawAOIFinishSignal] = useState(0);
+  const [importedAOIFeature, setImportedAOIFeature] = useState(null);
   const [layers, setLayers] = useState({
     rudaBoundary: { visible: false, opacity: 100, color: "#22c55e" },
     proposedRoads: { visible: false, opacity: 100, color: "#ef4444" },
@@ -778,6 +779,38 @@ export default function MapPage() {
     setMapboxMap(map || null);
   }, []);
 
+  const handleImportedAOI = useCallback((payload) => {
+    const candidate =
+      payload?.feature ||
+      payload?.geojson ||
+      payload?.data ||
+      payload;
+
+    const features =
+      candidate?.type === "FeatureCollection"
+        ? candidate.features || []
+        : candidate?.type === "Feature"
+          ? [candidate]
+          : candidate?.type === "Polygon" || candidate?.type === "MultiPolygon"
+            ? [{ type: "Feature", properties: {}, geometry: candidate }]
+            : [];
+
+    const polygonFeature = features.find((feature) =>
+      ["Polygon", "MultiPolygon"].includes(feature?.geometry?.type),
+    );
+
+    if (!polygonFeature) return;
+
+    setImportedAOIFeature({
+      ...polygonFeature,
+      properties: {
+        ...(polygonFeature.properties || {}),
+        name: polygonFeature.properties?.name || "Imported AOI",
+        analysis_source: "import",
+      },
+    });
+  }, []);
+
   // Reset the printMap flag immediately after it fires so it can be triggered again
   useEffect(() => {
     const isPrint =
@@ -845,6 +878,8 @@ export default function MapPage() {
           onAOIDraftChange={setDrawAOIStatus}
           drawAOIClearSignal={drawAOIClearSignal}
           drawAOIFinishSignal={drawAOIFinishSignal}
+          importedAOIFeature={importedAOIFeature}
+          onImportedAOIAnalysed={setDrawAOIResult}
         />
 
         {/* <MapControls map={mapboxMap} fullscreenTargetRef={mapShellRef} /> */}
@@ -908,6 +943,7 @@ export default function MapPage() {
             setDrawAOIClearSignal((value) => value + 1);
           }}
           drawAOIStatus={drawAOIStatus}
+          onImportedAOI={handleImportedAOI}
         />
 
         {!multiSelectionMode && (
