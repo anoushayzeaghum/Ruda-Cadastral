@@ -1400,16 +1400,15 @@ class ProposedRoadNetworkSerializer(GeoFeatureModelSerializer):
 # Proposed Roads Serializer
 # DB table: ruda_proposed_road
 # --------------------------------------------------------
-class ProposedRoadsSerializer(GeoFeatureModelSerializer):
+class ProposedRoadSerializer(GeoFeatureModelSerializer):
 
     class Meta:
-        model = ProposedRoads
+        model = ProposedRoad
         geo_field = "geom"
         id_field = "gid"
 
         fields = (
             "gid",
-            "id",
             "road_type",
             "row",
             "geom",
@@ -1418,7 +1417,6 @@ class ProposedRoadsSerializer(GeoFeatureModelSerializer):
         read_only_fields = (
             "gid",
         )
-
 
 # =================================================================================================
 # IMPORTED LAND TABLE SERIALIZERS

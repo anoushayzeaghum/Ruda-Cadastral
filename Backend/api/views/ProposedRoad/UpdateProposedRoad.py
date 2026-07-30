@@ -2,14 +2,14 @@ from ..common_imports import *
 from django.core.cache import cache
 
 
-class UpdateProposedRoadsView(viewsets.ViewSet):
+class UpdateProposedRoadView(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     def update(self, request, pk=None, partial=False):
         try:
-            instance = ProposedRoads.objects.get(gid=pk)
+            instance = ProposedRoad.objects.get(gid=pk)
 
-            serializer = ProposedRoadsSerializer(
+            serializer = ProposedRoadSerializer(
                 instance,
                 data=request.data,
                 partial=partial,
@@ -26,7 +26,7 @@ class UpdateProposedRoadsView(viewsets.ViewSet):
                 http_status=status.HTTP_200_OK,
             ).create_response()
 
-        except ProposedRoads.DoesNotExist:
+        except ProposedRoad.DoesNotExist:
             return ApiResponse(
                 status=status.HTTP_404_NOT_FOUND,
                 message="Proposed road not found",

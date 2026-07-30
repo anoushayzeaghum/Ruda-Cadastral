@@ -1859,25 +1859,17 @@ class ProposedRoadNetwork(models.Model):
 # Proposed Roads
 # DB table: ruda_proposed_road
 # =========================
-class ProposedRoads(models.Model):
+class ProposedRoad(models.Model):
     gid = models.AutoField(
         primary_key=True,
         db_column="gid",
     )
 
-    id = models.IntegerField(
-        db_column="id",
-        null=True,
-        blank=True,
-        db_index=True,
-    )
-
     road_type = models.CharField(
         db_column="road_type",
-        max_length=50,
+        max_length=255,
         null=True,
         blank=True,
-        db_index=True,
     )
 
     row = models.FloatField(
@@ -1886,7 +1878,6 @@ class ProposedRoads(models.Model):
         blank=True,
     )
 
-    # The imported geometry is EWKB MultiPolygon with SRID 4326.
     geom = gis_models.MultiPolygonField(
         db_column="geom",
         srid=4326,

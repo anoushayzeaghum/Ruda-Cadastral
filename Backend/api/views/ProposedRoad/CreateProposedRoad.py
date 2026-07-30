@@ -2,12 +2,12 @@ from ..common_imports import *
 from django.core.cache import cache
 
 
-class CreateProposedRoadsView(viewsets.ViewSet):
+class CreateProposedRoadView(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     def create(self, request):
         try:
-            serializer = ProposedRoadsSerializer(data=request.data)
+            serializer = ProposedRoadSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             obj = serializer.save()
 
@@ -16,7 +16,7 @@ class CreateProposedRoadsView(viewsets.ViewSet):
             return ApiResponse(
                 status=status.HTTP_201_CREATED,
                 message="Proposed road created successfully",
-                data=ProposedRoadsSerializer(obj).data,
+                data=ProposedRoadSerializer(obj).data,
                 http_status=status.HTTP_201_CREATED,
             ).create_response()
 

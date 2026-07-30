@@ -526,7 +526,7 @@ const normalizeProposedRoadProperties = (properties = {}) => {
 };
 
 export const getProposedRoadsList = async () => {
-  const res = await API.get(`/proposed-roads/`);
+  const res = await API.get(`/proposed-road/`);
   const geojson = normalizeGeoJson(res);
 
   // GeoFeatureModelSerializer puts `gid` in the Feature's top-level `id`,
@@ -546,8 +546,9 @@ export const getProposedRoadsList = async () => {
   });
 };
 
+
 export const getProposedRoadsGeoJSON = async (gid = null) => {
-  const res = await API.get(`/proposed-roads/`);
+  const res = await API.get(`/proposed-road/`);
   const normalized = normalizeGeoJson(res);
   const geojson = {
     ...normalized,
