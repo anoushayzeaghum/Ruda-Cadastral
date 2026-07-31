@@ -499,9 +499,20 @@ function updateColor(map, key, color) {
 }
 
 async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) {
-  if (!map || !mauzaName) return;
+  if (!map || !mauzaName) return false;
 
   const config = getMasawiConfigForMauza(mauzaName);
+
+  let tileJson = null;
+  try {
+    const res = await fetch(config.tileJsonUrl);
+    if (!res.ok) return false; // no ortho for this mauza — let caller try the next one
+    tileJson = await res.json();
+  } catch (e) {
+    return false;
+  }
+
+  if (!tileJson?.tiles?.length) return false;
 
   const previous = activeMasawiRef.current;
   if (previous && previous.layerId !== config.layerId) {
@@ -509,25 +520,6 @@ async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) 
       if (map.getLayer(previous.layerId)) map.removeLayer(previous.layerId);
       if (map.getSource(previous.sourceId)) map.removeSource(previous.sourceId);
     } catch (_) {}
-  }
-
-  let tileJson = null;
-  try {
-    const res = await fetch(config.tileJsonUrl);
-    if (res.ok) {
-      tileJson = await res.json();
-    } else {
-      console.warn(`No ortho registered on tileserver for "${mauzaName}" (${config.tileId})`);
-      return;
-    }
-  } catch (e) {
-    console.warn("Could not fetch ortho TileJSON", e);
-    return;
-  }
-
-  if (!tileJson?.tiles?.length) {
-    console.warn(`Ortho TileJSON for "${mauzaName}" has no tiles array`, tileJson);
-    return;
   }
 
   if (!map.getSource(config.sourceId)) {
@@ -558,6 +550,8 @@ async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) 
   if (tileJson.bounds) {
     map.fitBounds(tileJson.bounds, { padding: 50, duration: 1500 });
   }
+
+  return true;
 }
 export default function LandRevenueRecord({ map, selectedProjectId }) {
   const activeMasawiRef = useRef(null);
@@ -812,8 +806,19 @@ const loadMauzas = async ({ zoom = false } = {}) => {
 
   if (key === "masawi") {
     const { features } = await ensureProjectMauzas();
-    const mauzaName = getMauzaName(features[0]);
-    await addOrUpdateMasawiLayer(map, layers[key].opacity, mauzaName, activeMasawiRef);
+
+    let loaded = false;
+    for (const feature of features) {
+      const mauzaName = getMauzaName(feature);
+      // eslint-disable-next-line no-await-in-loop
+      loaded = await addOrUpdateMasawiLayer(map, layers[key].opacity, mauzaName, activeMasawiRef);
+      if (loaded) break;
+    }
+
+    if (!loaded) {
+      console.warn("No ortho registered for any currently selected mauza.");
+    }
+
     setVisible(key, true);
     return;
   }
