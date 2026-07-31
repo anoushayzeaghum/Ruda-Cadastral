@@ -17,17 +17,20 @@ import BaseMap from "./Layers/BaseMap.jsx";
 import MapImport from "./Import/MapImport.jsx";
 import { normalizePossessionLandTypes } from "./LayerManager/PossessionLandLayer.js";
 
-import RudaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaBoundaryAttribute";
-import ProposedRoadAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProposedRoadAttribute";
-import GeodeticNetworkAttribute from "../GISMetaverse/tools/Layers/AttributeTable/GeodeticNetworkAttribute";
-import MauzaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProjectMasterplan/LandInformationSystem/MauzaBoundaryAttribute";
-import KhasraBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProjectMasterplan/LandInformationSystem/KhasraBoundaryAttribute";
-import SquareBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProjectMasterplan/LandInformationSystem/SquareBoundaryAttribute";
-import DistrictBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/DistrictBoundaryAttribute";
-import TehsilBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TehsilBoundaryAttribute";
-import AcreBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/AcreBoundaryAttribute";
-import TriJunctionPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TriJunctionPointsAttribute";
-import FieldPointsAttribute from "../GISMetaverse/tools/Layers/AttributeTable/FieldPointsAttribute";
+import RudaBoundaryAttribute from "./AttributeTable/RudaBoundaries/RudaBoundaryAttribute";
+import ProposedRoadAttribute from "./AttributeTable/RudaBoundaries/ProposedRoadAttribute";
+import GeodeticNetworkAttribute from "./AttributeTable/RudaBoundaries/GeodeticNetworkAttribute";
+import MauzaBoundaryAttribute from "./AttributeTable/Administrative/MauzaBoundaryAttribute";
+import KhasraBoundaryAttribute from "./AttributeTable/Administrative/KhasraBoundaryAttribute";
+import SquareBoundaryAttribute from "./AttributeTable/Administrative/SquareBoundaryAttribute";
+import DistrictBoundaryAttribute from "./AttributeTable/Administrative/DistrictBoundaryAttribute";
+import TehsilBoundaryAttribute from "./AttributeTable/Administrative/TehsilBoundaryAttribute";
+import AcreBoundaryAttribute from "./AttributeTable/Administrative/AcreBoundaryAttribute";
+import PossessionLandAttribute from "./AttributeTable/Administrative/PossessionLandAttribute";
+import AwardedLandAttribute from "./AttributeTable/Administrative/AwardedLandAttribute";
+import StateLandAttribute from "./AttributeTable/Administrative/StateLandAttribute";
+import TriJunctionPointsAttribute from "./AttributeTable/BaseData/TriJunctionPointsAttribute";
+import FieldPointsAttribute from "./AttributeTable/BaseData/FieldPointsAttribute";
 
 // Hook — true when viewport width is below the sm breakpoint (640 px)
 function useIsMobile() {
@@ -74,7 +77,13 @@ export default function LeftPanel({
 }) {
   const [activePanel, setActivePanel] = useState("");
   const initializedOpacityKeysRef = useRef(new Set());
-  const [openAttributeTable, setOpenAttributeTable] = useState(null);
+  const [openAttributeTables, setOpenAttributeTables] = useState({});
+
+  const openAttributeTable = (key) =>
+    setOpenAttributeTables((previous) => ({ ...previous, [key]: true }));
+
+  const closeAttributeTable = (key) =>
+    setOpenAttributeTables((previous) => ({ ...previous, [key]: false }));
   const [dropdownOpenByKey, setDropdownOpenByKey] = useState({});
   const [layerRecordCache, setLayerRecordCache] = useState({});
   const isMobile = useIsMobile();
@@ -619,97 +628,113 @@ export default function LeftPanel({
         </div>
       </div>
 
-      {openAttributeTable && (
-        <div className="pointer-events-auto">
-          {openAttributeTable === "rudaBoundary" && (
-            <RudaBoundaryAttribute
-              map={map}
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "proposedRoads" && (
-            <ProposedRoadAttribute
-              map={map}
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "geodeticNetwork" && (
-            <GeodeticNetworkAttribute
-              map={map}
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "mauzaBoundary" && (
-            <MauzaBoundaryAttribute
-              map={map}
-              geojson={
-                layerRecordCache[`${boundaryStatus}_mauzaBoundary`]
-                  ?.geojson || { type: "FeatureCollection", features: [] }
-              }
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "khasraLayer" && (
-            <KhasraBoundaryAttribute
-              map={map}
-              geojson={
-                layerRecordCache[`${boundaryStatus}_khasraLayer`]?.geojson || {
-                  type: "FeatureCollection",
-                  features: [],
-                }
-              }
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "squareLayer" && (
-            <SquareBoundaryAttribute
-              map={map}
-              geojson={
-                layerRecordCache[`${boundaryStatus}_squareLayer`]?.geojson ||
-                loadedParcelsGeojson
-              }
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "districtBoundary" && (
-            <DistrictBoundaryAttribute
-              map={map}
-              geojson={layerRecordCache.districtBoundary?.geojson}
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "tehsilBoundary" && (
-            <TehsilBoundaryAttribute
-              map={map}
-              geojson={layerRecordCache.tehsilBoundary?.geojson}
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "acreLayer" && (
-            <AcreBoundaryAttribute
-              map={map}
-              geojson={
-                layerRecordCache.acreLayer?.geojson || loadedParcelsGeojson
-              }
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "triJunctionPoints" && (
-            <TriJunctionPointsAttribute
-              map={map}
-              geojson={layerRecordCache.triJunctionPoints?.geojson}
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-          {openAttributeTable === "fieldPoints" && (
-            <FieldPointsAttribute
-              map={map}
-              geojson={layerRecordCache.fieldPoints?.geojson}
-              onClose={() => setOpenAttributeTable(null)}
-            />
-          )}
-        </div>
-      )}
+      <div className="pointer-events-auto">
+        {openAttributeTables.rudaBoundary && (
+          <RudaBoundaryAttribute
+            map={map}
+            geojson={layerRecordCache.rudaBoundary?.geojson}
+            onClose={() => closeAttributeTable("rudaBoundary")}
+          />
+        )}
+        {openAttributeTables.proposedRoads && (
+          <ProposedRoadAttribute
+            map={map}
+            geojson={layerRecordCache.proposedRoads?.geojson}
+            onClose={() => closeAttributeTable("proposedRoads")}
+          />
+        )}
+        {openAttributeTables.geodeticNetwork && (
+          <GeodeticNetworkAttribute
+            map={map}
+            geojson={layerRecordCache.geodeticNetwork?.geojson}
+            onClose={() => closeAttributeTable("geodeticNetwork")}
+          />
+        )}
+        {openAttributeTables.mauzaBoundary && (
+          <MauzaBoundaryAttribute
+            map={map}
+            geojson={
+              layerRecordCache[`${boundaryStatus}_mauzaBoundary`]?.geojson
+            }
+            onClose={() => closeAttributeTable("mauzaBoundary")}
+          />
+        )}
+        {openAttributeTables.khasraLayer && (
+          <KhasraBoundaryAttribute
+            map={map}
+            geojson={layerRecordCache[`${boundaryStatus}_khasraLayer`]?.geojson}
+            onClose={() => closeAttributeTable("khasraLayer")}
+          />
+        )}
+        {openAttributeTables.squareLayer && (
+          <SquareBoundaryAttribute
+            map={map}
+            geojson={
+              layerRecordCache[`${boundaryStatus}_squareLayer`]?.geojson ||
+              loadedParcelsGeojson
+            }
+            onClose={() => closeAttributeTable("squareLayer")}
+          />
+        )}
+        {openAttributeTables.districtBoundary && (
+          <DistrictBoundaryAttribute
+            map={map}
+            geojson={layerRecordCache.districtBoundary?.geojson}
+            onClose={() => closeAttributeTable("districtBoundary")}
+          />
+        )}
+        {openAttributeTables.tehsilBoundary && (
+          <TehsilBoundaryAttribute
+            map={map}
+            geojson={layerRecordCache.tehsilBoundary?.geojson}
+            onClose={() => closeAttributeTable("tehsilBoundary")}
+          />
+        )}
+        {openAttributeTables.acreLayer && (
+          <AcreBoundaryAttribute
+            map={map}
+            geojson={
+              layerRecordCache.acreLayer?.geojson || loadedParcelsGeojson
+            }
+            onClose={() => closeAttributeTable("acreLayer")}
+          />
+        )}
+        {openAttributeTables.possessionLand && (
+          <PossessionLandAttribute
+            map={map}
+            geojson={layerRecordCache.possessionLand?.geojson}
+            onClose={() => closeAttributeTable("possessionLand")}
+          />
+        )}
+        {openAttributeTables.awardedLand && (
+          <AwardedLandAttribute
+            map={map}
+            geojson={layerRecordCache.awardedLand?.geojson}
+            onClose={() => closeAttributeTable("awardedLand")}
+          />
+        )}
+        {openAttributeTables.stateLand && (
+          <StateLandAttribute
+            map={map}
+            geojson={layerRecordCache.stateLand?.geojson}
+            onClose={() => closeAttributeTable("stateLand")}
+          />
+        )}
+        {openAttributeTables.triJunctionPoints && (
+          <TriJunctionPointsAttribute
+            map={map}
+            geojson={layerRecordCache.triJunctionPoints?.geojson}
+            onClose={() => closeAttributeTable("triJunctionPoints")}
+          />
+        )}
+        {openAttributeTables.fieldPoints && (
+          <FieldPointsAttribute
+            map={map}
+            geojson={layerRecordCache.fieldPoints?.geojson}
+            onClose={() => closeAttributeTable("fieldPoints")}
+          />
+        )}
+      </div>
 
       {/* Panel content - bottom sheet on mobile, left-side panel on desktop */}
       {activePanel && (
@@ -766,7 +791,7 @@ export default function LeftPanel({
                   setLayerColor={setLayerColor}
                   dropdownOpenByKey={dropdownOpenByKey}
                   toggleDropdownForKey={toggleDropdownForKey}
-                  openAttributeTable={setOpenAttributeTable}
+                  openAttributeTable={openAttributeTable}
                   layerRecordCache={layerRecordCache}
                   loadLayerRecords={loadLayerRecords}
                   loadedParcelsGeojson={loadedParcelsGeojson}
