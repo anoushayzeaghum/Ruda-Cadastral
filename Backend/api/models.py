@@ -1261,39 +1261,24 @@ class Plot(models.Model):
 # =========================
 class SpotLevel(models.Model):
     gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.IntegerField(null=True, blank=True)
+    objectid = models.IntegerField(null=True, blank=True)
+    id = models.IntegerField(null=True, blank=True)
+
+    x = models.FloatField(null=True, blank=True)
+    y = models.FloatField(null=True, blank=True)
+    z = models.FloatField(null=True, blank=True)
+
+    elevation = models.FloatField(null=True, blank=True)
+    elevatin_i = models.IntegerField(null=True, blank=True)
+
     geom = gis_models.GeometryField(srid=4326)
 
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
         db_column="project_id",
-        related_name="spot_levels",
-        null=True,
-        blank=True,
-    )
-
-    district = models.ForeignKey(
-        District,
-        on_delete=models.CASCADE,
-        db_column="dist_id",
-        related_name="spot_levels",
-        null=True,
-        blank=True,
-    )
-
-    tehsil = models.ForeignKey(
-        Tehsil,
-        on_delete=models.CASCADE,
-        db_column="tehsil_id",
-        related_name="spot_levels",
-        null=True,
-        blank=True,
-    )
-
-    mauza = models.ForeignKey(
-        Mauza,
-        on_delete=models.CASCADE,
-        db_column="mauza_id",
         related_name="spot_levels",
         null=True,
         blank=True,

@@ -578,20 +578,25 @@ class ProjectMauzaSerializer(serializers.ModelSerializer):
 # District → Tehsil → Mauza → Society → SpotLevel
 # -------------------------------------------------------
 
-class SpotLevelSerializer(GeoFeatureModelSerializer):
+class SpotLevelSerializer(serializers.ModelSerializer):
+    project_name = serializers.CharField(source="project.project_name", read_only=True)
 
     class Meta:
         model = SpotLevel
-        geo_field = "geom"
-        id_field = "gid"
-        fields = (
+        fields = [
             "gid",
-            "mauza",
-            "district",
-            "tehsil",
-            "project",
+            "objectid_1",
+            "objectid",
+            "id",
+            "x",
+            "y",
+            "z",
+            "elevation",
+            "elevatin_i",
             "geom",
-        )
+            "project",
+            "project_name",
+        ]
 
 
 # --------------------------------------------------------
