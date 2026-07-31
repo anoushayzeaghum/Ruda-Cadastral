@@ -36,7 +36,7 @@ import {
   Radio,
   Users,
   Leaf,
-} from "lucide-react"; 
+} from "lucide-react";
 
 const HERO_SLIDES = [
   // "/s11.png",
@@ -225,10 +225,16 @@ const TEAM_MEMBERS = [
       "/Ruda_Official/ED BAKHTIAR (ED Land Acquisition & Estate).jpeg",
   },
   {
-    id: 4,
-    name: "Team Member Name",
-    designation: "Director",
-    image: "",
+    id: 5,
+    name: "Nizam ud Din",
+    designation: "Director GIS",
+    image: "/Ruda_Official/Nizam-ud-Din.PNG",
+  },
+  {
+    id: 6,
+    name: "Umar Javaid",
+    designation: "Assistant Director GIS",
+    image: "/Ruda_Official/Umar_Javaid.PNG",
   },
 ];
 
@@ -594,8 +600,8 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
 
       <div
         className={`${compact
-            ? "right-3 top-3 h-9 w-9"
-            : "right-4 top-3.5 h-10 w-10"
+          ? "right-3 top-3 h-9 w-9"
+          : "right-4 top-3.5 h-10 w-10"
           } absolute z-20 flex items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-300 group-hover:scale-105`}
         style={{
           borderColor: `${area.accent}80`,
@@ -611,8 +617,8 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
         <div className="flex items-center justify-center">
           <div
             className={`${compact
-                ? "h-9 w-9 text-sm"
-                : "h-11 w-11 text-base 2xl:h-12 2xl:w-12"
+              ? "h-9 w-9 text-sm"
+              : "h-11 w-11 text-base 2xl:h-12 2xl:w-12"
               } flex shrink-0 items-center justify-center rounded-full border-2 font-black`}
             style={{
               borderColor: area.accent,
@@ -628,8 +634,8 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
         <div className="grid min-w-0 content-center">
           <h3
             className={`${compact
-                ? "min-h-[25px] text-[11px]"
-                : "min-h-[30px] text-[12px] 2xl:min-h-[32px] 2xl:text-[13px]"
+              ? "min-h-[25px] text-[11px]"
+              : "min-h-[30px] text-[12px] 2xl:min-h-[32px] 2xl:text-[13px]"
               } flex items-center font-black uppercase leading-[1.12] tracking-[0.025em]`}
           >
             {compact ? area.shortTitle : area.title}
@@ -640,8 +646,8 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
               <li
                 key={bullet}
                 className={`${compact
-                    ? "text-[10px]"
-                    : "text-[10.5px] 2xl:text-[11px]"
+                  ? "text-[10px]"
+                  : "text-[10.5px] 2xl:text-[11px]"
                   } flex items-start gap-2 leading-[1.32] text-white/90`}
               >
                 <span
@@ -1277,8 +1283,8 @@ export default function LandingPage() {
             >
               {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
                 <div
-                   key={label}
-                   className="
+                  key={label}
+                  className="
                     rounded-xl
                     border border-[#70D84F]/30
                     bg-white/90
