@@ -40,8 +40,7 @@ function getMasawiConfigForMauza(mauzaName) {
     tileId,
     sourceId: `gis-${tileId.toLowerCase()}-source`,
     layerId: `gis-${tileId.toLowerCase()}-layer`,
-    tileUrl: `${TILESERVER_BASE}/tiles/data/${tileId}/{z}/{x}/{y}.png`,
-    tileJsonUrl: `${TILESERVER_BASE}/data/${tileId}.json`,
+    tileJsonUrl: `${TILESERVER_BASE}/tiles/data/${tileId}.json`,
   };
 }
 
@@ -504,7 +503,6 @@ async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) 
 
   const config = getMasawiConfigForMauza(mauzaName);
 
-  // Remove whichever mauza's ortho was previously loaded, if different
   const previous = activeMasawiRef.current;
   if (previous && previous.layerId !== config.layerId) {
     try {
@@ -513,26 +511,32 @@ async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) 
     } catch (_) {}
   }
 
-  let bounds = null;
+  let tileJson = null;
   try {
     const res = await fetch(config.tileJsonUrl);
     if (res.ok) {
-      const tileJson = await res.json();
-      bounds = tileJson.bounds || null;
+      tileJson = await res.json();
     } else {
       console.warn(`No ortho registered on tileserver for "${mauzaName}" (${config.tileId})`);
-      return; // nothing to show for this mauza
+      return;
     }
   } catch (e) {
     console.warn("Could not fetch ortho TileJSON", e);
     return;
   }
 
+  if (!tileJson?.tiles?.length) {
+    console.warn(`Ortho TileJSON for "${mauzaName}" has no tiles array`, tileJson);
+    return;
+  }
+
   if (!map.getSource(config.sourceId)) {
     map.addSource(config.sourceId, {
       type: "raster",
-      tiles: [config.tileUrl],
+      tiles: tileJson.tiles,
       tileSize: 256,
+      minzoom: tileJson.minzoom,
+      maxzoom: tileJson.maxzoom,
     });
   }
 
@@ -551,11 +555,10 @@ async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) 
 
   activeMasawiRef.current = config;
 
-  if (bounds) {
-    map.fitBounds(bounds, { padding: 50, duration: 1500 });
+  if (tileJson.bounds) {
+    map.fitBounds(tileJson.bounds, { padding: 50, duration: 1500 });
   }
 }
-
 export default function LandRevenueRecord({ map, selectedProjectId }) {
   const activeMasawiRef = useRef(null);
   const [mauzas, setMauzas] = useState([]);
