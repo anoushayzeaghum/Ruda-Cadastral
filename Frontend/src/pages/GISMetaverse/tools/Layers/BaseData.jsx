@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import TransportationRoadNetworkAttribute from "./AttributeTable/BaseData/TransportationRoadNetworkAttribute";
+import HousingSchemesAttribute from "./AttributeTable/BaseData/HousingSchemesAttribute";
+import ForestBoundaryAttribute from "./AttributeTable/BaseData/ForestBoundaryAttribute";
+import ExistingDrainsAttribute from "./AttributeTable/BaseData/ExistingDrainsAttribute";
 import {
   getExistingDrainsGeoJSON,
   getForestBoundaryGeoJSON,
@@ -295,6 +299,7 @@ export default function BaseData({ map }) {
   const [open, setOpen] = useState(false);
   const [layers, setLayers] = useState(createInitialLayers);
   const [statuses, setStatuses] = useState({});
+  const [activeTables, setActiveTables] = useState({});
 
   const layersRef = useRef(layers);
   const loadedGeoJSONRef = useRef({});
@@ -509,6 +514,56 @@ export default function BaseData({ map }) {
     applyLayerStyle(map, key, color, state?.opacity ?? 100, definition?.style);
   };
 
+  const openAttributeTable = (key) => {
+    setActiveTables((previous) => ({
+      ...previous,
+      [key]: true,
+    }));
+  };
+
+  const closeAttributeTable = (key) => {
+    setActiveTables((previous) => ({
+      ...previous,
+      [key]: false,
+    }));
+  };
+
+  const renderAttributeTables = () => (
+    <>
+      {activeTables.transportationRoadNetwork && (
+        <TransportationRoadNetworkAttribute
+          map={map}
+          geojson={loadedGeoJSONRef.current.transportationRoadNetwork || null}
+          onClose={() => closeAttributeTable("transportationRoadNetwork")}
+        />
+      )}
+
+      {activeTables.housingSchemes && (
+        <HousingSchemesAttribute
+          map={map}
+          geojson={loadedGeoJSONRef.current.housingSchemes || null}
+          onClose={() => closeAttributeTable("housingSchemes")}
+        />
+      )}
+
+      {activeTables.forest && (
+        <ForestBoundaryAttribute
+          map={map}
+          geojson={loadedGeoJSONRef.current.forest || null}
+          onClose={() => closeAttributeTable("forest")}
+        />
+      )}
+
+      {activeTables.existingDrains && (
+        <ExistingDrainsAttribute
+          map={map}
+          geojson={loadedGeoJSONRef.current.existingDrains || null}
+          onClose={() => closeAttributeTable("existingDrains")}
+        />
+      )}
+    </>
+  );
+
   return (
     <div className="border-b border-[#343c4c]">
       <div className="flex w-full items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]">
@@ -569,6 +624,7 @@ export default function BaseData({ map }) {
                   onColorChange={(color) => setColor(definition.key, color)}
                   showColorPicker={!definition.customRoadStyle}
                   previewColors={definition.previewColors}
+                  onTableOpen={() => openAttributeTable(definition.key)}
                 />
 
                 {definition.customRoadStyle && state.visible && (
@@ -585,6 +641,8 @@ export default function BaseData({ map }) {
           })}
         </div>
       )}
+
+      {renderAttributeTables()}
     </div>
   );
 }
@@ -639,6 +697,7 @@ function LayerItem({
   onChange,
   onOpacityChange,
   onColorChange,
+  onTableOpen,
   showColorPicker = true,
   previewColors = [],
 }) {
@@ -677,7 +736,19 @@ function LayerItem({
           </span>
         </label>
 
-        <Grid3X3 size={14} className="shrink-0 text-white/60" />
+        {onTableOpen && (
+          <button
+            type="button"
+            className="shrink-0 rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
+            onClick={(event) => {
+              event.stopPropagation();
+              onTableOpen();
+            }}
+            title={`Open ${label} attribute table`}
+          >
+            <Grid3X3 size={14} />
+          </button>
+        )}
       </div>
 
       <div className="mt-2 flex items-center gap-2 pl-6">

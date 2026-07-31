@@ -1,55 +1,41 @@
-/*
- * Housing Schemes symbology.
- *
- * Colors are assigned from the `ruda_st` property. Add or rename status
- * values in RUDA_STATUS_COLORS when the database contains additional values.
- */
-
-export const RUDA_STATUS_COLORS = Object.freeze({
-  approved: "#16a34a",
-  "ruda approved": "#16a34a",
-  "final approved": "#15803d",
-  "technically approved": "#22c55e",
-
-  "under process": "#f59e0b",
-  "under-process": "#f59e0b",
-  pending: "#f59e0b",
-  applied: "#eab308",
-
-  illegal: "#dc2626",
-  unapproved: "#dc2626",
-  "not approved": "#ef4444",
-  rejected: "#991b1b",
-
-  "private housing scheme": "#7c3aed",
-  private: "#7c3aed",
-  ppp: "#0891b2",
-  "public private partnership": "#0891b2",
+export const RUDA_SCHEME_COLORS = Object.freeze({
+  "approved by other authorities": "#32E34B",
+  "del-up": "#3D63D8",
+  "fs granted": "#3E9BE8",
+  "indigenous project": "#20C4C6",
+  "jv-c": "#D9F45B",
+  "ppp granted": "#F020C8",
+  "reserved area": "#D95B05",
+  "ta granted": "#F39A5B",
+  "under process": "#E8430B",
+  underprocess: "#B51E0B",
 });
 
-export const HOUSING_SCHEME_FALLBACK_COLOR = "#64748b";
+export const RUDA_STATUS_COLORS = RUDA_SCHEME_COLORS;
 
-const normalizedRudaStatus = [
+export const HOUSING_SCHEME_FALLBACK_COLOR = "#8B0A05";
+
+const normalizedRudaScheme = [
   "downcase",
-  ["to-string", ["coalesce", ["get", "ruda_st"], ""]],
+  ["to-string", ["coalesce", ["get", "ruda_scheme"], ""]],
 ];
 
-const statusMatchPairs = Object.entries(RUDA_STATUS_COLORS).flatMap(
-  ([status, color]) => [status, color],
+const schemeMatchPairs = Object.entries(RUDA_SCHEME_COLORS).flatMap(
+  ([scheme, color]) => [scheme, color],
 );
 
 export const HousingSchemesColorExpression = [
   "match",
-  normalizedRudaStatus,
-  ...statusMatchPairs,
+  normalizedRudaScheme,
+  ...schemeMatchPairs,
   HOUSING_SCHEME_FALLBACK_COLOR,
 ];
 
 const HousingSchemesStyle = Object.freeze({
-  // Used by the Layer Manager preview/color control.
-  color: "#d97706",
+  // Default color used by the Layer Manager preview.
+  color: "#32E34B",
 
-  // Used by MapLibre/Mapbox for feature-level status symbology.
+  // MapLibre/Mapbox feature-level color expression.
   dataDrivenColor: HousingSchemesColorExpression,
 
   fillOpacity: 0.42,

@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import mapboxgl from "mapbox-gl";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
+import PlanningBoundaryAttribute from "./AttributeTable/RudaMasterPlan/PlanningBoundaryAttribute";
+import MasterPlanPhasesAttribute from "./AttributeTable/RudaMasterPlan/MasterPlanPhasesAttribute";
+import PrecinctBoundaryAttribute from "./AttributeTable/RudaMasterPlan/PrecinctBoundaryAttribute";
+import CityLevelServicesAttribute from "./AttributeTable/RudaMasterPlan/CityLevelServicesAttribute";
+import ProposedRoadsAttribute from "./AttributeTable/RudaMasterPlan/ProposedRoadsAttribute";
+import PrincipalZoningAttribute from "./AttributeTable/RudaMasterPlan/PrincipalZoningAttribute";
+import RTWAttribute from "./AttributeTable/RudaMasterPlan/RTWAttribute";
+import ProposedRiverAttribute from "./AttributeTable/RudaMasterPlan/ProposedRiverAttribute";
+import River2025Attribute from "./AttributeTable/RudaMasterPlan/River2025Attribute";
+import ProposedWWTPSitesAttribute from "./AttributeTable/RudaMasterPlan/ProposedWWTPSitesAttribute";
+import ProposedSWTPSitesAttribute from "./AttributeTable/RudaMasterPlan/ProposedSWTPSitesAttribute";
 
 import {
   MASTER_PLANNING_BOUNDARY_COLOR,
@@ -211,7 +222,11 @@ const RUDA_MASTER_PLAN_GROUPS = [
       //   label: "Proposed WWTP",
       //   color: PROPOSED_WWTP_COLOR,
       // },
-      { key: "wwtpSite", label: "Proposed WWTP Sites", color: WWTP_SITES_COLOR },
+      {
+        key: "wwtpSite",
+        label: "Proposed WWTP Sites",
+        color: WWTP_SITES_COLOR,
+      },
       { key: "swtpSite", label: "SWTP Sites", color: SWTP_SITES_COLOR },
     ],
   },
@@ -856,6 +871,7 @@ const getFeatureCount = (geojson) => normalizeGeoJSON(geojson).features.length;
 
 export default function RUDAMasterPlan({ map }) {
   const [open, setOpen] = useState(false);
+  const [activeAttributeTable, setActiveAttributeTable] = useState(null);
   const [groupDropdowns, setGroupDropdowns] = useState(
     createInitialDropdownState,
   );
@@ -1275,6 +1291,37 @@ export default function RUDAMasterPlan({ map }) {
     }));
   };
 
+  const renderAttributeTable = () => {
+    const commonProps = { map, onClose: () => setActiveAttributeTable(null) };
+
+    switch (activeAttributeTable) {
+      case "rudaPlanningBoundary":
+        return <PlanningBoundaryAttribute {...commonProps} />;
+      case "masterPlanPhases":
+        return <MasterPlanPhasesAttribute {...commonProps} />;
+      case "precinctBoundaryLayer":
+        return <PrecinctBoundaryAttribute {...commonProps} />;
+      case "cityLevelServicesLayer":
+        return <CityLevelServicesAttribute {...commonProps} />;
+      case "rudaProposedRoads":
+        return <ProposedRoadsAttribute {...commonProps} />;
+      case "principleLandUseZoning":
+        return <PrincipalZoningAttribute {...commonProps} />;
+      case "rtwAlignment":
+        return <RTWAttribute {...commonProps} />;
+      case "riverBoundaryLayer":
+        return <ProposedRiverAttribute {...commonProps} />;
+      case "riverRavi":
+        return <River2025Attribute {...commonProps} />;
+      case "wwtpSite":
+        return <ProposedWWTPSitesAttribute {...commonProps} />;
+      case "swtpSite":
+        return <ProposedSWTPSitesAttribute {...commonProps} />;
+      default:
+        return null;
+    }
+  };
+
   const renderLayer = (layer) => {
     const currentLayerState = layerState[layer.key] || {};
     const currentLayerMeta = layerMeta[layer.key] || {};
@@ -1296,6 +1343,7 @@ export default function RUDAMasterPlan({ map }) {
           onColorChange={(value) => updateLayerColor(layer.key, value)}
           onOpacityChange={(value) => updateLayerOpacity(layer.key, value)}
           onDropdownToggle={() => toggleLayerDropdown(layer.key)}
+          onTableOpen={() => setActiveAttributeTable(layer.key)}
         />
 
         {currentLayerState.dropdownOpen && (
@@ -1430,6 +1478,8 @@ export default function RUDAMasterPlan({ map }) {
           })}
         </div>
       )}
+
+      {renderAttributeTable()}
     </div>
   );
 }
@@ -1469,6 +1519,7 @@ function GroupItem({
   dropdownOpen,
   onChange,
   onDropdownToggle,
+  onTableOpen,
 }) {
   return (
     <div className="flex items-center justify-between rounded-sm px-1 py-1 hover:bg-[#0f3d2e]/40">
@@ -1537,6 +1588,7 @@ function LayerItem({
   onColorChange,
   onOpacityChange,
   onDropdownToggle,
+  onTableOpen,
 }) {
   const stopColorEvent = (event) => {
     event.stopPropagation();
@@ -1615,21 +1667,37 @@ function LayerItem({
           <span className="truncate text-[11px]">{label}</span>
         </label>
 
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onDropdownToggle?.();
-          }}
-          className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white"
-          title={`Show ${label} details`}
-        >
-          {dropdownOpen ? (
-            <ChevronDown size={14} />
-          ) : (
-            <ChevronRight size={14} />
-          )}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onTableOpen?.();
+            }}
+            className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white"
+            title={`Open ${label} attribute table`}
+            aria-label={`Open ${label} attribute table`}
+          >
+            <Grid3X3 size={14} />
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDropdownToggle?.();
+            }}
+            className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white"
+            title={`Show ${label} details`}
+          >
+            {dropdownOpen ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronRight size={14} />
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="mt-2 flex items-center gap-2 pl-6">
