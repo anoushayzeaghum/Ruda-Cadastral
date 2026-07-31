@@ -498,7 +498,7 @@ function updateColor(map, key, color) {
   } catch (_) {}
 }
 
-async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) {
+async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiLayersRef) {
   if (!map || !mauzaName) return false;
 
   const config = getMasawiConfigForMauza(mauzaName);
@@ -506,21 +506,13 @@ async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) 
   let tileJson = null;
   try {
     const res = await fetch(config.tileJsonUrl);
-    if (!res.ok) return false; // no ortho for this mauza — let caller try the next one
+    if (!res.ok) return false;
     tileJson = await res.json();
   } catch (e) {
     return false;
   }
 
   if (!tileJson?.tiles?.length) return false;
-
-  const previous = activeMasawiRef.current;
-  if (previous && previous.layerId !== config.layerId) {
-    try {
-      if (map.getLayer(previous.layerId)) map.removeLayer(previous.layerId);
-      if (map.getSource(previous.sourceId)) map.removeSource(previous.sourceId);
-    } catch (_) {}
-  }
 
   if (!map.getSource(config.sourceId)) {
     map.addSource(config.sourceId, {
@@ -545,16 +537,22 @@ async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) 
     map.setPaintProperty(config.layerId, "raster-opacity", opacity / 100);
   }
 
-  activeMasawiRef.current = config;
-
-  if (tileJson.bounds) {
-    map.fitBounds(tileJson.bounds, { padding: 50, duration: 1500 });
-  }
+  activeMasawiLayersRef.current.set(config.layerId, {
+    ...config,
+    bounds: tileJson.bounds,
+  });
 
   return true;
 }
+
+function removeMasawiLayer(map, config) {
+  try {
+    if (map.getLayer(config.layerId)) map.removeLayer(config.layerId);
+    if (map.getSource(config.sourceId)) map.removeSource(config.sourceId);
+  } catch (_) {}
+}
 export default function LandRevenueRecord({ map, selectedProjectId }) {
-  const activeMasawiRef = useRef(null);
+  const activeMasawiLayersRef = useRef(new Map()); // layerId -> config
   const [mauzas, setMauzas] = useState([]);
   const [selectedMauzas, setSelectedMauzas] = useState([]);
   const [mauzaPanelOpen, setMauzaPanelOpen] = useState(false);
@@ -581,17 +579,18 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], visible } }));
   };
 
-  const setOpacity = (key, opacity) => {
-    setLayers((prev) => ({ ...prev, [key]: { ...prev[key], opacity } }));
-    if (key === "masawi") {
-      const current = activeMasawiRef.current;
-      if (current && map?.getLayer(current.layerId)) {
-        map.setPaintProperty(current.layerId, "raster-opacity", opacity / 100);
+const setOpacity = (key, opacity) => {
+  setLayers((prev) => ({ ...prev, [key]: { ...prev[key], opacity } }));
+  if (key === "masawi") {
+    for (const config of activeMasawiLayersRef.current.values()) {
+      if (map?.getLayer(config.layerId)) {
+        map.setPaintProperty(config.layerId, "raster-opacity", opacity / 100);
       }
-    } else {
-      updateOpacity(map, key, opacity);
     }
-  };
+  } else {
+    updateOpacity(map, key, opacity);
+  }
+};
 
   const setColor = (key, color) => {
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], color } }));
@@ -784,9 +783,10 @@ const loadMauzas = async ({ zoom = false } = {}) => {
     setVisible(key, false);
 
     if (key === "masawi") {
-      const current = activeMasawiRef.current;
-      if (current && map.getLayer(current.layerId)) {
-        map.setLayoutProperty(current.layerId, "visibility", "none");
+      for (const config of activeMasawiLayersRef.current.values()) {
+        if (map.getLayer(config.layerId)) {
+          map.setLayoutProperty(config.layerId, "visibility", "none");
+        }
       }
     } else {
       hideLayer(map, key);
@@ -807,19 +807,43 @@ const loadMauzas = async ({ zoom = false } = {}) => {
   if (key === "masawi") {
     const { features } = await ensureProjectMauzas();
 
-    let loaded = false;
+    const wantedConfigs = features.map((f) => getMasawiConfigForMauza(getMauzaName(f)));
+    const wantedLayerIds = new Set(wantedConfigs.map((c) => c.layerId));
+
+    // Remove any previously-added masawi layers that are no longer selected
+    for (const [layerId, config] of activeMasawiLayersRef.current.entries()) {
+      if (!wantedLayerIds.has(layerId)) {
+        removeMasawiLayer(map, config);
+        activeMasawiLayersRef.current.delete(layerId);
+      }
+    }
+
+    let anyLoaded = false;
+    const allBounds = [];
+
     for (const feature of features) {
       const mauzaName = getMauzaName(feature);
       // eslint-disable-next-line no-await-in-loop
-      loaded = await addOrUpdateMasawiLayer(map, layers[key].opacity, mauzaName, activeMasawiRef);
-      if (loaded) break;
+      const loaded = await addOrUpdateMasawiLayer(map, layers[key].opacity, mauzaName, activeMasawiLayersRef);
+      if (loaded) {
+        anyLoaded = true;
+        const config = activeMasawiLayersRef.current.get(getMasawiConfigForMauza(mauzaName).layerId);
+        if (config?.bounds) allBounds.push(config.bounds);
+      } else {
+        console.warn(`No ortho registered for mauza "${mauzaName}".`);
+      }
     }
 
-    if (!loaded) {
-      console.warn("No ortho registered for any currently selected mauza.");
+    if (allBounds.length) {
+      // Fit to the combined extent of every loaded ortho
+      const combined = allBounds.reduce((acc, b) => [
+        Math.min(acc[0], b[0]), Math.min(acc[1], b[1]),
+        Math.max(acc[2], b[2]), Math.max(acc[3], b[3]),
+      ]);
+      map.fitBounds(combined, { padding: 50, duration: 1500 });
     }
 
-    setVisible(key, true);
+    setVisible(key, anyLoaded);
     return;
   }
 
@@ -901,13 +925,14 @@ const loadMauzas = async ({ zoom = false } = {}) => {
     setOpen(false);
     setActiveTable(null);
 
-    ["moza", "square", "khasra", "masawi"].forEach((key) =>
+    ["moza", "square", "khasra"].forEach((key) =>
       hideLayer(map, key),
     );
 
-    if (activeMasawiRef.current && map.getLayer(activeMasawiRef.current.layerId)) {
-      map.setLayoutProperty(activeMasawiRef.current.layerId, "visibility", "none");
+    for (const config of activeMasawiLayersRef.current.values()) {
+      removeMasawiLayer(map, config);
     }
+    activeMasawiLayersRef.current.clear();
 
     setLayers((prev) => ({
       ...prev,
