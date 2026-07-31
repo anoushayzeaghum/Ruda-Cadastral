@@ -108,7 +108,7 @@ import {
   PROPOSED_ROADS_LINE,
   buildSelectionKey,
   createGeoJSONRequestCache,
-} from "./MapView/mapViewConfig.js";
+} from "./Mapview/mapViewConfig.js";
 import {
   getFeatureLatLng,
   buildUnifiedPopupHtml,
