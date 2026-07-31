@@ -6,7 +6,7 @@ import BlockBoundaryAttribute from "../AttributeTable/ProjectMasterplan/Administ
 import MasterPlanBoundaryAttribute from "../AttributeTable/ProjectMasterplan/AdministrativeBoundary/MasterPlanBoundaryAttribute";
 import SpotLevelAttribute from "../AttributeTable/ProjectMasterPlan/TopographicPlan/SpotLevelAttribute";
 import ContoursAttribute from "../AttributeTable/ProjectMasterplan/TopographicPlan/ContoursAttribute";
-import RoadsAttribute from "../AttributeTable/RoadsAttribute";
+import RoadsAttribute from "../AttributeTable/ProjectMasterplan/AdministrativeBoundary/RoadsAttribute";
 import {
   API_BASE,
   formatNumber,
