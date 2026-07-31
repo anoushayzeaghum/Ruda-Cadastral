@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import NotifiedBoundaryAttribute from "./AttributeTable/AdministrativeBoundary/NotifiedBoundaryAttribute";
+import PhasesBoundaryAttribute from "./AttributeTable/AdministrativeBoundary/PhasesBoundaryAttribute";
+import DistrictBoundaryAttribute from "./AttributeTable/AdministrativeBoundary/DistrictBoundaryAttribute";
+import TehsilBoundaryAttribute from "./AttributeTable/AdministrativeBoundary/TehsilBoundaryAttribute";
 import mapboxgl from "mapbox-gl";
 import {
   API_BASE,
@@ -96,6 +100,7 @@ export default function AdministrativeBoundaries({
   setAdminBoundaryVisibility,
 }) {
   const [open, setOpen] = useState(false);
+  const [activeAttributeTable, setActiveAttributeTable] = useState(null);
   const [phaseOpen, setPhaseOpen] = useState(false);
   const [phaseOptions, setPhaseOptions] = useState({
     notifiedPhases: false,
@@ -342,6 +347,26 @@ export default function AdministrativeBoundaries({
     }
   };
 
+  const renderAttributeTable = () => {
+    const commonProps = {
+      map,
+      onClose: () => setActiveAttributeTable(null),
+    };
+
+    switch (activeAttributeTable) {
+      case "rudaNotifiedBoundary":
+        return <NotifiedBoundaryAttribute {...commonProps} />;
+      case "rudaPhasesBoundary":
+        return <PhasesBoundaryAttribute {...commonProps} />;
+      case "districtBoundary":
+        return <DistrictBoundaryAttribute {...commonProps} />;
+      case "tehsilBoundary":
+        return <TehsilBoundaryAttribute {...commonProps} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="border-b border-[#343c4c]">
       <div className="flex w-full items-center justify-between px-4 py-3 text-white hover:bg-[#0f3d2e]">
@@ -356,7 +381,11 @@ export default function AdministrativeBoundaries({
         {/* Toggle-all switch */}
         <button
           type="button"
-          title={allOn ? "Hide all administrative layers" : "Show all administrative layers"}
+          title={
+            allOn
+              ? "Hide all administrative layers"
+              : "Show all administrative layers"
+          }
           onClick={toggleAll}
           className={`relative ml-2 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus:outline-none ${
             allOn ? "bg-[#65c96b]" : "bg-white/20"
@@ -390,6 +419,7 @@ export default function AdministrativeBoundaries({
               }))
             }
             count={featureCounts.rudaNotifiedBoundary}
+            onTableOpen={() => setActiveAttributeTable("rudaNotifiedBoundary")}
           />
 
           <LayerItem
@@ -403,6 +433,7 @@ export default function AdministrativeBoundaries({
             detailsOpen={phaseOpen}
             onDetails={() => setPhaseOpen((prev) => !prev)}
             count={featureCounts.rudaPhasesBoundary}
+            onTableOpen={() => setActiveAttributeTable("rudaPhasesBoundary")}
           >
             {phaseOpen && (
               <PhaseOptions
@@ -433,6 +464,7 @@ export default function AdministrativeBoundaries({
               }))
             }
             count={featureCounts.districtBoundary}
+            onTableOpen={() => setActiveAttributeTable("districtBoundary")}
           />
 
           <LayerItem
@@ -451,9 +483,12 @@ export default function AdministrativeBoundaries({
               }))
             }
             count={featureCounts.tehsilBoundary}
+            onTableOpen={() => setActiveAttributeTable("tehsilBoundary")}
           />
         </div>
       )}
+
+      {renderAttributeTable()}
     </div>
   );
 }
@@ -504,6 +539,7 @@ function LayerItem({
   children,
   previewColors,
   symbolType,
+  onTableOpen,
 }) {
   const previewBackground = previewColors?.length
     ? `linear-gradient(90deg, ${previewColors.join(", ")})`
@@ -570,8 +606,12 @@ function LayerItem({
         <div className="flex items-center gap-1">
           <button
             type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onTableOpen?.();
+            }}
             className="rounded p-0.5 text-white/60 hover:bg-[#0f3d2e]"
-            title={`${label} attribute table`}
+            title={`Open ${label} attribute table`}
           >
             <Grid3X3 size={14} />
           </button>
