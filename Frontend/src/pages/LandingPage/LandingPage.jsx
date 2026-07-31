@@ -147,8 +147,9 @@ const DECISION_AREAS = [
     accent: "#FFAA22",
     image: "/LandingCard4.png",
     bullets: [
-      "Infrastructure, roads, bridges & interchange design",
-      "Water, sewerage, drainage & asset maintenance",
+      "Ravi River Flood Protection & Resilience",
+      "Integrated Infrastructure Development",
+      "Sustainable & Resilient Urban Infrastructure",
     ],
   },
   {
@@ -167,14 +168,15 @@ const DECISION_AREAS = [
   {
     key: "sustainability",
     number: "06",
-    title: "Corporate Social Responsibility (CSR)",
-    shortTitle: "CSR & Sustainability",
+    title: "Special Initiatives, CSR and Diversity",
+    shortTitle: "Special Initiatives & CSR",
     icon: Leaf,
     accent: "#9BE84F",
     image: "/LandingCard6.png",
     bullets: [
-      "Community engagement, social impact & well-being",
-      "Environmental sustainability & green-blue infrastructure",
+      "Socially Responsible, Inclusive, and Sustainable Urban Development",
+      "Transforming Communities through Impactful CSR Initiatives",
+      "Creating a Supportive Environment and Promoting Community Welfare & Development"
     ],
   },
 ];
@@ -572,8 +574,8 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       className={`group relative w-full overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
         hover:-translate-y-1 hover:scale-[1.012]
         ${compact
-          ? "min-h-[118px] rounded-xl px-3 py-3"
-          : "h-full min-h-0 rounded-[18px] px-4 py-3"
+          ? "min-h-[165px] rounded-xl px-3 py-3"
+          : "h-full min-h-0 rounded-[18px] px-4 py-4"
         }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
@@ -642,7 +644,7 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
           </h3>
 
           <ul className={`${compact ? "mt-1.5 space-y-1" : "mt-1.5 space-y-1.5"}`}>
-            {area.bullets.slice(0, 2).map((bullet) => (
+            {area.bullets.map((bullet) => (
               <li
                 key={bullet}
                 className={`${compact
@@ -1137,7 +1139,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-1 grid flex-1 items-center gap-5 xl:items-start xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
-            <div className="hidden h-[394px] grid-rows-3 gap-3 xl:grid 2xl:h-[406px]">
+            <div className="hidden h-[510px] grid-rows-3 gap-4 xl:grid 2xl:h-[540px]">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
@@ -1222,7 +1224,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="hidden h-[394px] grid-rows-3 gap-3 xl:grid 2xl:h-[406px]">
+            <div className="hidden h-[510px] grid-rows-3 gap-4 xl:grid 2xl:h-[540px]">
               {DECISION_AREAS.slice(3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
@@ -1542,11 +1544,7 @@ export default function LandingPage() {
               </span>
             </h2>
 
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
-              Add each team member’s photograph, name and designation in the
-              cards below. The layout is responsive and ready for your final
-              leadership and project-team information.
-            </p>
+
           </div>
 
           <div className="relative mt-8">
