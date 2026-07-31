@@ -148,12 +148,62 @@ const getPopupSizeTokens = (zoom = 16) => {
   };
 };
 
+
+const HUMAN_LABEL_OVERRIDES = {
+  gid: "Feature ID",
+  id: "ID",
+  objectid: "Object ID",
+  shape_leng: "Length",
+  shape_area: "Area",
+};
+
+const humanizePropertyKey = (key = "") => {
+  const normalized = String(key).trim();
+  const override = HUMAN_LABEL_OVERRIDES[normalized.toLowerCase()];
+  if (override) return override;
+
+  return normalized
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const isDisplayableProperty = (key, value) => {
+  if (!key || key.startsWith("_")) return false;
+  if (value === null || value === undefined || value === "") return false;
+  if (typeof value === "object") return false;
+  return true;
+};
+
+const getPopupFields = (props = {}, group = {}) => {
+  const configuredFields = Array.isArray(group.fields) ? group.fields : [];
+  const configuredKeys = new Set(
+    configuredFields.flatMap((field) =>
+      field.key ? [field.key] : Array.isArray(field.keys) ? field.keys : [],
+    ),
+  );
+
+  const fallbackFields = Object.entries(props)
+    .filter(([key, value]) =>
+      !configuredKeys.has(key) && isDisplayableProperty(key, value),
+    )
+    .slice(0, group.maxFallbackFields ?? 20)
+    .map(([key]) => ({ key, label: humanizePropertyKey(key) }));
+
+  // Configured fields are shown first. Remaining real feature properties are
+  // appended automatically, so newly added vector datasets still get useful
+  // popup information without requiring another popup-code change.
+  return [...configuredFields, ...fallbackFields];
+};
+
 const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
   const title = escapeHTML(resolveTitle(props, group));
   const s = getPopupSizeTokens(zoom);
   const showKhasraButton = group?.id === "masterPlan";
 
-  const rows = (group.fields || [])
+  const rows = getPopupFields(props, group)
     .map((field) => {
       const rawValue = getFieldValue(props, field);
       if (rawValue === null || rawValue === undefined || rawValue === "") {
@@ -185,9 +235,8 @@ const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
           ${title}
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-          ${
-            showKhasraButton
-              ? `
+          ${showKhasraButton
+      ? `
                 <button
                   type="button"
                   data-khasra-details-open="true"
@@ -197,8 +246,8 @@ const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
                   📎
                 </button>
               `
-              : ""
-          }
+      : ""
+    }
 
           <button
             type="button"
@@ -212,12 +261,11 @@ const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
       </div>
 
       <div style="max-height:${s.maxBodyHeight};overflow-y:auto;padding:${s.bodyPy} ${s.bodyPx};scrollbar-width:none;">
-        ${
-          rows ||
-          `<div style="padding:12px 0;text-align:center;font-size:${s.labelFontSize};font-weight:500;color:#9ca3af;">
+        ${rows ||
+    `<div style="padding:12px 0;text-align:center;font-size:${s.labelFontSize};font-weight:500;color:#9ca3af;">
             No additional details available.
           </div>`
-        }
+    }
       </div>
     </div>
   `;
@@ -286,10 +334,10 @@ export function setupVectorClickPopups({
   groups = VECTOR_POPUP_GROUPS,
   autoCloseMs = 10000,
   clickTolerance = 6,
-  minZoom = 16,
-  maxZoom = 18,
+  minZoom = 0,
+  maxZoom = 24,
 }) {
-  if (!isUsableMap(map)) return () => {};
+  if (!isUsableMap(map)) return () => { };
 
   const layerIdToGroup = buildLayerPopupLookup(groups);
   const allLayerIds = getAllPopupLayerIds(groups);
