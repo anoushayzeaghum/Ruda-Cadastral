@@ -1,7 +1,5 @@
-import AdminAttributeTableShell, {
-  formatNumber,
-} from "./AdminAttributeTableShell";
-import { readAreaSqft } from "./areaUtils";
+import AdminAttributeTableShell, { formatNumber } from "../../AdminAttributeTableShell";
+import { readAreaSqft } from "../../areaUtils";
 
 const getProps = (feature = {}) => feature.properties || feature || {};
 
@@ -35,14 +33,36 @@ const rowsFromGeojson = (geojson, mapper) =>
     ...mapper(feature, index),
   }));
 
-export default function SquareBoundaryAttribute({ map, geojson, onClose }) {
+const normalizeType = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return "-";
+
+  const upper = text.toUpperCase();
+  if (upper === "QB" || upper.includes("QILA") || upper.includes("KILA")) {
+    return "Kilabandi";
+  }
+
+  if (
+    upper.includes("MURABBA") ||
+    upper.includes("MURABA") ||
+    upper.includes("SQUARE")
+  ) {
+    return "Square";
+  }
+
+  return text;
+};
+
+export default function KhasraBoundaryAttribute({ map, geojson, onClose }) {
   const rows = rowsFromGeojson(geojson, (feature) => {
     const props = getProps(feature);
     return {
-      square_layer: cell(
-        props.layer,
-        props.sq,
-        props.square_id,
+      khasra_name: cell(
+        props.join_shp,
+        props.kh,
+        props.KH,
+        props.khasra_no,
+        props.khasra_id,
         props.name,
         props.Name,
       ),
@@ -56,6 +76,15 @@ export default function SquareBoundaryAttribute({ map, geojson, onClose }) {
       ),
       district: nameCell(props.district_name, props.District, props.district),
       tehsil: nameCell(props.tehsil_name, props.Tehsil, props.tehsil),
+      assessment_circle: cell(
+        props.asse_cir,
+        props.assessment_circle,
+        props.Assessment_Circle,
+      ),
+      type: normalizeType(props.type),
+      karam: cell(props.karam),
+      khasra_no: cell(props.kh, props.KH, props.khasra_no, props.khasra_id),
+      dc_rate: cell(props.dc_rate, props.DC_RATE),
       area_sqft: formatNumber(readAreaSqft(feature)),
     };
   });
@@ -63,15 +92,20 @@ export default function SquareBoundaryAttribute({ map, geojson, onClose }) {
   return (
     <AdminAttributeTableShell
       map={map}
-      title="Square Boundary"
-      placeholder="Search square boundary..."
+      title="Khasra Boundary"
+      placeholder="Search khasra boundary..."
       onClose={onClose}
       rows={rows}
       columns={[
         { key: "sr", label: "Sr No." },
-        { key: "square_layer", label: "Square Layer" },
+        { key: "khasra_name", label: "Khasra Name" },
         { key: "mauza", label: "Mauza" },
         { key: "tehsil", label: "Tehsil" },
+        { key: "assessment_circle", label: "Assessment Circle" },
+        { key: "type", label: "Type" },
+        { key: "karam", label: "Karam" },
+        { key: "khasra_no", label: "Khasra No." },
+        { key: "dc_rate", label: "DC Rate" },
         { key: "area_sqft", label: "Area (sq ft)" },
       ]}
     />

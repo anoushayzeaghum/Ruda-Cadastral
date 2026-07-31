@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import AdminAttributeTableShell, { API_BASE, formatNumber, getMapSourceGeoJSON, unwrapGeoJSON } from "./AdminAttributeTableShell";
+import AdminAttributeTableShell, {
+  API_BASE,
+  formatNumber,
+  getMapSourceGeoJSON,
+  unwrapGeoJSON,
+} from "../../AdminAttributeTableShell";
 
 const SOURCE_ID = "metaverse-water-supply-lines-source";
-
 
 const coordinateText = (geometry) => {
   let coords = geometry?.coordinates;
@@ -32,13 +36,21 @@ const rowsFromGeoJSON = (geojson, projectName, mapper) =>
     const props = feature.properties || {};
     return {
       sr: index + 1,
-      project: props.project_name || props.project || projectName || props.project_id || "-",
+      project:
+        props.project_name ||
+        props.project ||
+        projectName ||
+        props.project_id ||
+        "-",
       ...mapper(props, feature, index),
     };
   });
 
-
-export default function WaterSupplyLevelAttribute({ map, selectedProjectId, onClose }) {
+export default function WaterSupplyLevelAttribute({
+  map,
+  selectedProjectId,
+  onClose,
+}) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -63,16 +75,22 @@ export default function WaterSupplyLevelAttribute({ map, selectedProjectId, onCl
           geojson = unwrapGeoJSON(res.data);
         }
 
-        const formatted = rowsFromGeoJSON(geojson, projectName, (props, feature, index) => ({
-          dia: props.dia || "-",
-          type: props.type || "-",
-          name: props.name || props.layer || "-",
-          shape_leng: formatNumber(props.shape_leng ?? props.shape_length ?? props.Shape_Leng),
-        }));
+        const formatted = rowsFromGeoJSON(
+          geojson,
+          projectName,
+          (props, feature, index) => ({
+            dia: props.dia || "-",
+            type: props.type || "-",
+            name: props.name || props.layer || "-",
+            shape_leng: formatNumber(
+              props.shape_leng ?? props.shape_length ?? props.Shape_Leng,
+            ),
+          }),
+        );
 
         if (active) setRows(formatted);
       } catch (error) {
-        console.error("Water Supply Levels attribute load error:", error);
+        console.error("Water Supply Lines attribute load error:", error);
         if (active) setRows([]);
       } finally {
         if (active) setLoading(false);
@@ -89,8 +107,8 @@ export default function WaterSupplyLevelAttribute({ map, selectedProjectId, onCl
   return (
     <AdminAttributeTableShell
       map={map}
-      title="Water Supply Levels"
-      placeholder="Search water supply levels..."
+      title="Water Supply Lines"
+      placeholder="Search Water Supply Lines..."
       columns={[
         { key: "sr", label: "Sr No", width: "80px" },
         { key: "dia", label: "Diameter", width: "120px" },

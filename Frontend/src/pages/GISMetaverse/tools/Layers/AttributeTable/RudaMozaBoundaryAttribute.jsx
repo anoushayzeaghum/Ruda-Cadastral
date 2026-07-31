@@ -13,7 +13,6 @@ const cell = (...values) => {
   }
   return "-";
 };
-
 export default function RudaMozaBoundaryAttribute({ map, onClose }) {
   const [rows, setRows] = useState([]);
 

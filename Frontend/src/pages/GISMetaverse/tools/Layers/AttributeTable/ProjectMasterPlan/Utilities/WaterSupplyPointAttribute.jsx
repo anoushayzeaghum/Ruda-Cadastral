@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import AdminAttributeTableShell, { API_BASE, formatNumber, getMapSourceGeoJSON, unwrapGeoJSON } from "./AdminAttributeTableShell";
+import AdminAttributeTableShell, { API_BASE, formatNumber, getMapSourceGeoJSON, unwrapGeoJSON } from "../../AdminAttributeTableShell";
 
-const SOURCE_ID = "metaverse-sewage-points-source";
+const SOURCE_ID = "metaverse-water-supply-points-source";
 
 
 const coordinateText = (geometry) => {
@@ -38,7 +38,7 @@ const rowsFromGeoJSON = (geojson, projectName, mapper) =>
   });
 
 
-export default function SewagePointAttribute({ map, selectedProjectId, onClose }) {
+export default function WaterSupplyPointAttribute({ map, selectedProjectId, onClose }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -57,20 +57,20 @@ export default function SewagePointAttribute({ map, selectedProjectId, onClose }
         let geojson = getMapSourceGeoJSON(map, SOURCE_ID);
 
         if (!geojson.features?.length) {
-          const res = await axios.get(`${API_BASE}/swpoint-cb1/`, {
+          const res = await axios.get(`${API_BASE}/wspoint-features-cb1/`, {
             params: { project_id: selectedProjectId },
           });
           geojson = unwrapGeoJSON(res.data);
         }
 
         const formatted = rowsFromGeoJSON(geojson, projectName, (props, feature, index) => ({
-          name: props.name || "-",
           type: props.type || "-",
+          name: props.name || "-",
         }));
 
         if (active) setRows(formatted);
       } catch (error) {
-        console.error("Sewage Points attribute load error:", error);
+        console.error("Water Supply Points attribute load error:", error);
         if (active) setRows([]);
       } finally {
         if (active) setLoading(false);
@@ -87,12 +87,12 @@ export default function SewagePointAttribute({ map, selectedProjectId, onClose }
   return (
     <AdminAttributeTableShell
       map={map}
-      title="Sewage Points"
-      placeholder="Search sewage points..."
+      title="Water Supply Points"
+      placeholder="Search water supply points..."
       columns={[
         { key: "sr", label: "Sr No", width: "80px" },
-        { key: "name", label: "Name", width: "180px" },
         { key: "type", label: "Type", width: "140px" },
+        { key: "name", label: "Name", width: "180px" },
         { key: "project", label: "Project", width: "180px" },
       ]}
       rows={rows}

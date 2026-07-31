@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import AdminAttributeTableShell, { API_BASE, formatNumber, getMapSourceGeoJSON, unwrapGeoJSON } from "./AdminAttributeTableShell";
+import AdminAttributeTableShell, { API_BASE, formatNumber, getMapSourceGeoJSON, unwrapGeoJSON } from "../../AdminAttributeTableShell";
 
-const SOURCE_ID = "metaverse-water-supply-points-source";
+const SOURCE_ID = "metaverse-camera-locations-source";
 
 
 const coordinateText = (geometry) => {
@@ -38,7 +38,7 @@ const rowsFromGeoJSON = (geojson, projectName, mapper) =>
   });
 
 
-export default function WaterSupplyPointAttribute({ map, selectedProjectId, onClose }) {
+export default function CameraLocationsAttribute({ map, selectedProjectId, onClose }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -57,20 +57,22 @@ export default function WaterSupplyPointAttribute({ map, selectedProjectId, onCl
         let geojson = getMapSourceGeoJSON(map, SOURCE_ID);
 
         if (!geojson.features?.length) {
-          const res = await axios.get(`${API_BASE}/wspoint-features-cb1/`, {
+          const res = await axios.get(`${API_BASE}/camera-location/`, {
             params: { project_id: selectedProjectId },
           });
           geojson = unwrapGeoJSON(res.data);
         }
 
         const formatted = rowsFromGeoJSON(geojson, projectName, (props, feature, index) => ({
-          type: props.type || "-",
-          name: props.name || "-",
+          projectName: props.project || projectName || "-",
+          camera: props.camera || props.name || "-",
+          x: props.x ?? props.longitude ?? coordinateText(feature.geometry).split(", ")[1] ?? "-",
+          y: props.y ?? props.latitude ?? coordinateText(feature.geometry).split(", ")[0] ?? "-",
         }));
 
         if (active) setRows(formatted);
       } catch (error) {
-        console.error("Water Supply Points attribute load error:", error);
+        console.error("Camera Locations attribute load error:", error);
         if (active) setRows([]);
       } finally {
         if (active) setLoading(false);
@@ -87,13 +89,14 @@ export default function WaterSupplyPointAttribute({ map, selectedProjectId, onCl
   return (
     <AdminAttributeTableShell
       map={map}
-      title="Water Supply Points"
-      placeholder="Search water supply points..."
+      title="Camera Locations"
+      placeholder="Search camera locations..."
       columns={[
         { key: "sr", label: "Sr No", width: "80px" },
-        { key: "type", label: "Type", width: "140px" },
-        { key: "name", label: "Name", width: "180px" },
-        { key: "project", label: "Project", width: "180px" },
+        { key: "projectName", label: "Project Name", width: "180px" },
+        { key: "camera", label: "Camera", width: "180px" },
+        { key: "x", label: "X", width: "120px" },
+        { key: "y", label: "Y", width: "120px" },
       ]}
       rows={rows}
       loading={loading}
