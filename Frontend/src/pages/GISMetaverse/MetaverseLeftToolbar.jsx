@@ -34,7 +34,7 @@ const tools = [
   // { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
   // { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
   { id: "measurement", label: "Measurement", icon: Ruler },
-  { id: "threeD", label: "3D View", icon: Box },
+  // { id: "threeD", label: "3D View", icon: Box },
   { id: "flyTo", label: "Fly To", icon: Send },
   { id: "import", label: "Import", icon: FileInput },
   { id: "basemaps", label: "Basemaps", icon: Globe2 },

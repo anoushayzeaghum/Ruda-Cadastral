@@ -175,7 +175,7 @@ export default function AdminAttributeTableShell({
 
   return (
     <div
-      className={`fixed bottom-3 right-[55px] z-[999] overflow-hidden rounded-xl border border-[#13593f]/40 bg-[#041d15]/85 backdrop-blur-md text-white shadow-2xl transition-all duration-300 ease-in-out max-w-[calc(100vw-90px)] ${isMinimized ? "w-[280px]" : "w-[460px]"}`}
+      className={`fixed bottom-3 right-[10px] z-[999] overflow-hidden rounded-xl border border-[#13593f]/40 bg-[#041d15]/85 backdrop-blur-md text-white shadow-2xl transition-all duration-300 ease-in-out max-w-[calc(100vw-90px)] ${isMinimized ? "w-[280px]" : "w-[460px]"}`}
     >
       {/* HEADER TABS BAR */}
       <div className="flex items-center justify-between border-b border-[#13593f]/20 bg-[#02110a]/90 shrink-0">
