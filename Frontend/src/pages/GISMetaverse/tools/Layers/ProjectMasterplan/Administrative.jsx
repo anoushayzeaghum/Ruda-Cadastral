@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import ProjectBoundaryAttribute from "../AttributeTable/ProjectBoundaryAttribute";
-import BlockBoundaryAttribute from "../AttributeTable/BlockBoundaryAttribute";
-import MasterPlanBoundaryAttribute from "../AttributeTable/MasterPlanBoundaryAttribute";
-import SpotLevelAttribute from "../AttributeTable/SpotLevelAttribute";
-import ContoursAttribute from "../AttributeTable/ContoursAttribute";
+import ProjectBoundaryAttribute from "../AttributeTable/ProjectMasterplan/AdministrativeBoundary/ProjectBoundaryAttribute";
+import BlockBoundaryAttribute from "../AttributeTable/ProjectMasterplan/AdministrativeBoundary/BlockBoundaryAttribute";
+import MasterPlanBoundaryAttribute from "../AttributeTable/ProjectMasterplan/AdministrativeBoundary/MasterPlanBoundaryAttribute";
+import SpotLevelAttribute from "../AttributeTable/ProjectMasterPlan/TopographicPlan/SpotLevelAttribute";
+import ContoursAttribute from "../AttributeTable/ProjectMasterplan/TopographicPlan/ContoursAttribute";
 import RoadsAttribute from "../AttributeTable/RoadsAttribute";
-import { API_BASE, formatNumber, getMapSourceGeoJSON, unwrapGeoJSON } from "../AttributeTable/AdminAttributeTableShell";
+import {
+  API_BASE,
+  formatNumber,
+  getMapSourceGeoJSON,
+  unwrapGeoJSON,
+} from "../AttributeTable/AdminAttributeTableShell";
 import { readAreaSqft, sqftToAcres } from "../AttributeTable/areaUtils";
 
 const MASTER_PLAN_LAYER_COLORS = {
@@ -28,11 +33,16 @@ const MASTER_PLAN_SOURCE_IDS = {
   roads: "metaverse-roads-source",
 };
 
-
 const getFeatureKey = (feature = {}) => {
   const props = feature.properties || {};
   return String(
-    props.gid ?? props.id ?? props.block_id ?? props.block ?? props.name ?? feature.id ?? "",
+    props.gid ??
+      props.id ??
+      props.block_id ??
+      props.block ??
+      props.name ??
+      feature.id ??
+      "",
   );
 };
 
@@ -60,7 +70,6 @@ const getBlockDropdownLabel = (feature = {}) =>
   `${getFeatureLabel(feature)} (${getBlockAreaValue(feature)})`;
 
 const featureCollectionFromRows = (data) => unwrapGeoJSON(data);
-
 
 const clampOpacity = (value = 100) => {
   const numeric = Number(value);
@@ -279,17 +288,25 @@ export default function MasterPlan({
 
     try {
       if (key === "boundary") {
-        const data = await readSourceOrFetch("boundary", "/project/", { gid: selectedProjectId });
+        const data = await readSourceOrFetch("boundary", "/project/", {
+          gid: selectedProjectId,
+        });
         setDropdownData((prev) => ({ ...prev, boundary: data.features || [] }));
       }
 
       if (key === "blockBoundary") {
-        const data = await readSourceOrFetch("blockBoundary", "/block/", { project_id: selectedProjectId });
+        const data = await readSourceOrFetch("blockBoundary", "/block/", {
+          project_id: selectedProjectId,
+        });
         const features = [...(data.features || [])].sort((a, b) =>
-          String(getFeatureLabel(a)).localeCompare(String(getFeatureLabel(b)), undefined, {
-            numeric: true,
-            sensitivity: "base",
-          }),
+          String(getFeatureLabel(a)).localeCompare(
+            String(getFeatureLabel(b)),
+            undefined,
+            {
+              numeric: true,
+              sensitivity: "base",
+            },
+          ),
         );
         setDropdownData((prev) => ({ ...prev, blockBoundary: features }));
         setSelectedBlockKeys((prev) =>
@@ -298,22 +315,36 @@ export default function MasterPlan({
       }
 
       if (key === "masterPlan") {
-        const data = await readSourceOrFetch("masterPlan", "/plot/", { project_id: selectedProjectId });
-        setDropdownData((prev) => ({ ...prev, masterPlan: data.features || [] }));
+        const data = await readSourceOrFetch("masterPlan", "/plot/", {
+          project_id: selectedProjectId,
+        });
+        setDropdownData((prev) => ({
+          ...prev,
+          masterPlan: data.features || [],
+        }));
       }
 
       if (key === "spotLevel") {
-        const data = await readSourceOrFetch("spotLevel", "/spot-level/", { project_id: selectedProjectId });
-        setDropdownData((prev) => ({ ...prev, spotLevel: data.features || [] }));
+        const data = await readSourceOrFetch("spotLevel", "/spot-level/", {
+          project_id: selectedProjectId,
+        });
+        setDropdownData((prev) => ({
+          ...prev,
+          spotLevel: data.features || [],
+        }));
       }
 
       if (key === "contours") {
-        const data = await readSourceOrFetch("contours", "/contour/", { project_id: selectedProjectId });
+        const data = await readSourceOrFetch("contours", "/contour/", {
+          project_id: selectedProjectId,
+        });
         setDropdownData((prev) => ({ ...prev, contours: data.features || [] }));
       }
 
       if (key === "roads") {
-        const data = await readSourceOrFetch("roads", "/road/", { project_id: selectedProjectId });
+        const data = await readSourceOrFetch("roads", "/road/", {
+          project_id: selectedProjectId,
+        });
         setDropdownData((prev) => ({ ...prev, roads: data.features || [] }));
       }
     } catch (error) {
@@ -350,7 +381,11 @@ export default function MasterPlan({
         ]
       : ["==", ["get", "__nothing__"], "__selected__"];
 
-    ["metaverse-block-fill", "metaverse-block-line", "metaverse-block-label"].forEach((layerId) => {
+    [
+      "metaverse-block-fill",
+      "metaverse-block-line",
+      "metaverse-block-label",
+    ].forEach((layerId) => {
       try {
         if (map.getLayer(layerId)) map.setFilter(layerId, filter);
       } catch (error) {
@@ -374,7 +409,9 @@ export default function MasterPlan({
   };
 
   const selectAllBlocks = () => {
-    const keys = (dropdownData.blockBoundary || []).map(getFeatureKey).filter(Boolean);
+    const keys = (dropdownData.blockBoundary || [])
+      .map(getFeatureKey)
+      .filter(Boolean);
     setSelectedBlockKeys(keys);
     setBlockLayerFilter(keys);
   };
@@ -504,14 +541,20 @@ export default function MasterPlan({
       const type = props.type || props.land_use || "Other";
       counts.set(type, (counts.get(type) || 0) + 1);
     });
-    return [...counts.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+    return [...counts.entries()].sort((a, b) =>
+      String(a[0]).localeCompare(String(b[0])),
+    );
   }, [dropdownData.masterPlan]);
 
   const contoursSummary = useMemo(() => {
     const elevations = new Set();
     (dropdownData.contours || []).forEach((feature) => {
       const props = feature.properties || {};
-      if (props.elevation !== undefined && props.elevation !== null && props.elevation !== "") {
+      if (
+        props.elevation !== undefined &&
+        props.elevation !== null &&
+        props.elevation !== ""
+      ) {
         elevations.add(String(props.elevation));
       }
     });
@@ -531,7 +574,9 @@ export default function MasterPlan({
       current.sqft += readAreaSqft(feature);
       rows.set(type, current);
     });
-    return [...rows.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+    return [...rows.entries()].sort((a, b) =>
+      String(a[0]).localeCompare(String(b[0])),
+    );
   }, [dropdownData.roads]);
 
   const renderAttributeTable = () => {
@@ -594,7 +639,10 @@ export default function MasterPlan({
                 <p className="py-1 text-white/60">No project boundary found</p>
               ) : (
                 projectBoundarySummary.map((name, index) => (
-                  <div key={`${name}-${index}`} className="flex justify-between border-b border-[#343c4c]/70 py-1 last:border-b-0">
+                  <div
+                    key={`${name}-${index}`}
+                    className="flex justify-between border-b border-[#343c4c]/70 py-1 last:border-b-0"
+                  >
                     <span>Project Boundary</span>
                     <span className="max-w-[150px] truncate">{name}</span>
                   </div>
@@ -620,8 +668,20 @@ export default function MasterPlan({
           {dropdownOpen.blockBoundary && (
             <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-2 py-2 text-[11px] text-white/80">
               <div className="mb-1.5 flex items-center justify-between border-b border-[#343c4c] pb-1.5">
-                <button type="button" onClick={selectAllBlocks} className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]">Select All</button>
-                <button type="button" onClick={unselectAllBlocks} className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]">Unselect All</button>
+                <button
+                  type="button"
+                  onClick={selectAllBlocks}
+                  className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  onClick={unselectAllBlocks}
+                  className="rounded px-1.5 py-0.5 font-semibold text-[#8fd36f] hover:bg-[#0f3d2e]"
+                >
+                  Unselect All
+                </button>
               </div>
               {(dropdownData.blockBoundary || []).length === 0 ? (
                 <p className="px-1 py-1 text-white/60">No blocks found</p>
@@ -630,14 +690,19 @@ export default function MasterPlan({
                   {dropdownData.blockBoundary.map((feature, index) => {
                     const key = getFeatureKey(feature) || String(index);
                     return (
-                      <label key={key} className="flex cursor-pointer items-center gap-2 border-b border-[#343c4c]/60 py-1.5 last:border-b-0">
+                      <label
+                        key={key}
+                        className="flex cursor-pointer items-center gap-2 border-b border-[#343c4c]/60 py-1.5 last:border-b-0"
+                      >
                         <input
                           type="checkbox"
                           checked={blockSelectionSet.has(String(key))}
                           onChange={() => toggleBlockSelection(feature)}
                           className="accent-[#65c96b]"
                         />
-                        <span className="min-w-0 flex-1 truncate">{getBlockDropdownLabel(feature)}</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {getBlockDropdownLabel(feature)}
+                        </span>
                       </label>
                     );
                   })}
@@ -670,7 +735,10 @@ export default function MasterPlan({
                 <p className="py-1 text-white/60">No plot types found</p>
               ) : (
                 plotSummary.map(([type, count]) => (
-                  <div key={type} className="flex justify-between border-b border-[#343c4c]/70 py-1 last:border-b-0">
+                  <div
+                    key={type}
+                    className="flex justify-between border-b border-[#343c4c]/70 py-1 last:border-b-0"
+                  >
                     <span className="max-w-[150px] truncate">{type}</span>
                     <span>{count}</span>
                   </div>
@@ -678,8 +746,6 @@ export default function MasterPlan({
               )}
             </div>
           )}
-
-
         </div>
       )}
 
@@ -783,7 +849,11 @@ function LayerItem({
               className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
               title={`Show ${label} details`}
             >
-              {dropdownOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              {dropdownOpen ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
             </button>
           )}
         </div>

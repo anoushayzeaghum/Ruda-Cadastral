@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import GeodeticNetworkAttribute from "./AttributeTable/GeodeticNetworkAttribute";
+import GeodeticNetworkAttribute from "./AttributeTable/Topographic/GeodeticNetworkAttribute";
 import {
   addGeodeticPointsLayer,
   GEODETIC_POINTS_IDS,
@@ -305,6 +305,7 @@ export default function Topographic({ map }) {
       {activeTable && (
         <GeodeticNetworkAttribute
           map={map}
+          geojson={cachedGeoJSON.current}
           onClose={() => setActiveTable(false)}
         />
       )}

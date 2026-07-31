@@ -1,5 +1,5 @@
-import AdminAttributeTableShell, { formatNumber } from "./AdminAttributeTableShell";
-import { readAreaSqft } from "./areaUtils";
+import AdminAttributeTableShell, { formatNumber } from "../../AdminAttributeTableShell";
+import { readAreaSqft } from "../../areaUtils";
 
 const getProps = (feature = {}) => feature.properties || feature || {};
 

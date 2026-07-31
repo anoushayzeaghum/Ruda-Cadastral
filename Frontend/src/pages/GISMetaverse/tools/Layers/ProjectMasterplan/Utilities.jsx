@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import WaterSupplyPointAttribute from "../AttributeTable/WaterSupplyPointAttribute";
-import WaterSupplyLevelAttribute from "../AttributeTable/WaterSupplyLevelAttribute";
-import SewagePointAttribute from "../AttributeTable/SewagePointAttribute";
+import WaterSupplyPointAttribute from "../AttributeTable/ProjectMasterplan/Utilities/WaterSupplyPointAttribute";  
+import WaterSupplyLevelAttribute from "../AttributeTable/ProjectMasterplan/Utilities/WaterSupplyLevelAttribute";
+import SewagePointAttribute from "../AttributeTable/ProjectMasterplan/Utilities/SewagePointAttribute";
 import {
   API_BASE,
   getMapSourceGeoJSON,
@@ -308,7 +308,7 @@ export default function Utilities({
             disabled={!selectedProjectId}
             checked={!!layerVisibility.waterSupplyLines}
             color={styles.waterSupplyLines.color}
-            label="Water Supply Levels"
+            label="Water Supply Lines"
             opacity={styles.waterSupplyLines.opacity}
             onChange={() => toggleLayer("waterSupplyLines")}
             onOpacityChange={(value) =>
@@ -324,7 +324,7 @@ export default function Utilities({
           {dropdownOpen.waterSupplyLines && (
             <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
-                <span>Total Water Supply Levels</span>
+                <span>Total Water Supply Lines</span>
                 <span>{waterSupplyLevelSummary.count}</span>
               </div>
               {waterSupplyLevelSummary.levels.length > 0 && (

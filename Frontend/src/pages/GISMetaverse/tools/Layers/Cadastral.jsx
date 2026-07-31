@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import MauzaBoundaryAttribute from "./AttributeTable/MauzaBoundaryAttribute";
-import KhasraBoundaryAttribute from "./AttributeTable/KhasraBoundaryAttribute";
-import SquareBoundaryAttribute from "./AttributeTable/SquareBoundaryAttribute";
-import AwardedLandAttribute from "./AttributeTable/AwardedLandAttribute";
-import StateLandAttribute from "./AttributeTable/StateLandAttribute";
-import PossessionLandAttribute from "./AttributeTable/PossessionLandAttribute";
+import MauzaBoundaryAttribute from "./AttributeTable/Cadastral/MauzaBoundaryAttribute";
+import KhasraBoundaryAttribute from "./AttributeTable/Cadastral/KhasraBoundaryAttribute";
+import SquareBoundaryAttribute from "./AttributeTable/Cadastral/SquareBoundaryAttribute";
+import AwardedLandAttribute from "./AttributeTable/Cadastral/AwardedLandAttribute";
+import StateLandAttribute from "./AttributeTable/Cadastral/StateLandAttribute";
+import PossessionLandAttribute from "./AttributeTable/Cadastral/PossessionLandAttribute";
 import { addAwardedLandLayer } from "./LayerManager/Cadastral/AwardedLandLayer";
 import { addStateLandLayer } from "./LayerManager/Cadastral/StateLandLayer";
 import {
@@ -1706,7 +1706,6 @@ export default function Cadastral({ map, selectedProjectId }) {
           onClose={() => setActiveTable(null)}
         />
       )}
-
     </div>
   );
 }
