@@ -6,9 +6,9 @@ import {
   getKhasrasGeoJSON,
 } from "../../../../../services/api";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import MauzaBoundaryAttribute from "../AttributeTable/MauzaBoundaryAttribute";
-import KhasraBoundaryAttribute from "../AttributeTable/KhasraBoundaryAttribute";
-import SquareBoundaryAttribute from "../AttributeTable/SquareBoundaryAttribute";
+import MauzaBoundaryAttribute from "../AttributeTable/ProjectMasterplan/LandInformationSystem/MauzaBoundaryAttribute";
+import KhasraBoundaryAttribute from "../AttributeTable/ProjectMasterplan/LandInformationSystem/KhasraBoundaryAttribute";
+import SquareBoundaryAttribute from "../AttributeTable/ProjectMasterplan/LandInformationSystem/SquareBoundaryAttribute";
 import { formatNumber } from "../AttributeTable/AdminAttributeTableShell";
 import { readAreaSqft } from "../AttributeTable/areaUtils";
 

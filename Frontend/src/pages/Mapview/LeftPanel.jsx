@@ -20,9 +20,9 @@ import { normalizePossessionLandTypes } from "./LayerManager/PossessionLandLayer
 import RudaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaBoundaryAttribute";
 import ProposedRoadAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProposedRoadAttribute";
 import GeodeticNetworkAttribute from "../GISMetaverse/tools/Layers/AttributeTable/GeodeticNetworkAttribute";
-import MauzaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/MauzaBoundaryAttribute";
-import KhasraBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/KhasraBoundaryAttribute";
-import SquareBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/SquareBoundaryAttribute";
+import MauzaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProjectMasterplan/LandInformationSystem/MauzaBoundaryAttribute";
+import KhasraBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProjectMasterplan/LandInformationSystem/KhasraBoundaryAttribute";
+import SquareBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/ProjectMasterplan/LandInformationSystem/SquareBoundaryAttribute";
 import DistrictBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/DistrictBoundaryAttribute";
 import TehsilBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/TehsilBoundaryAttribute";
 import AcreBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/AcreBoundaryAttribute";

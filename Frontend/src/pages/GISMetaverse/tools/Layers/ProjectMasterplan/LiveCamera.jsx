@@ -10,7 +10,7 @@ import {
   Eye,
 } from "lucide-react";
 import axios from "axios";
-import CameraLocationsAttribute from "../AttributeTable/CameraLocationsAttribute";
+import CameraLocationsAttribute from "../AttributeTable/ProjectMasterplan/LiveCamera/CameraLocationsAttribute";
 import {
   API_BASE,
   getMapSourceGeoJSON,
