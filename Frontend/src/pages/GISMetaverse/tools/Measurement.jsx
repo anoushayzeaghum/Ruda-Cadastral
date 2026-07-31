@@ -10,6 +10,7 @@ import {
   Info,
   X,
 } from "lucide-react";
+import MeasurementFinishDialog from "./MeasurementFinishDialog";
 
 // ── Mapbox layer / source IDs ─────────────────────────────────────────────────
 const M_DISTANCE_SOURCE = "gism-dist-src";
@@ -111,22 +112,28 @@ const TOOLS = [
     label: "Distance",
     icon: Ruler,
     color: "#ef4444",
-    hint: "",
+    hint: "Click to start drawing. Double click to finish segment selection.",
   },
-  { id: "area", label: "Area", icon: Pentagon, color: "#3b82f6", hint: "" },
+  {
+    id: "area",
+    label: "Area",
+    icon: Pentagon,
+    color: "#3b82f6",
+    hint: "Click to start drawing. Double click to finish polygon selection.",
+  },
   {
     id: "bearing",
     label: "Bearing",
     icon: Compass,
     color: "#f97316",
-    hint: "",
+    hint: "Click two points to calculate bearing.",
   },
   {
     id: "coordinate",
     label: "Coordinate",
     icon: MapPin,
     color: "#8b5cf6",
-    hint: "",
+    hint: "Click anywhere to copy coordinates.",
   },
 ];
 
@@ -225,7 +232,10 @@ function EmptyHint({ children }) {
 export default function Measurement({ map, onClose }) {
   // activeTool: set immediately when user clicks a tool icon → starts map drawing
   const [activeTool, setActiveTool] = useState(null);
-  // resultReady: true after user clicks Apply → shows the result panel
+  
+  // drawingState: 'drawing' | 'paused' | 'completed'
+  const [drawingState, setDrawingState] = useState("completed");
+  const [showDialog, setShowDialog] = useState(false);
   const [resultReady, setResultReady] = useState(false);
 
   // Per-tool unit state
@@ -242,12 +252,13 @@ export default function Measurement({ map, onClose }) {
   const [coordRaw, setCoordRaw] = useState(null); // { lat, lng } (numbers)
   const [coordCopied, setCoordCopied] = useState(false);
 
+  // Live mouse position for live preview
+  const [mousePos, setMousePos] = useState(null);
+
   // Click-coordinate refs (avoid re-renders on every click)
   const distCoordsRef = useRef([]);
   const areaCoordsRef = useRef([]);
   const bearingCoordsRef = useRef([]);
-  // Ref to the area updateSource fn so Calculate can close the polygon
-  const areaUpdateSourceRef = useRef(null);
 
   // ── Derived display values ─────────────────────────────────────────────────
   const distUnitDef = DISTANCE_UNITS.find((u) => u.id === distUnit);
@@ -266,50 +277,15 @@ export default function Measurement({ map, onClose }) {
       : { lat: coordRaw.lat.toFixed(6), lng: coordRaw.lng.toFixed(6) }
     : null;
 
-  // ── Refresh map labels when unit changes (no re-click needed) ─────────────
+  // Disable / Enable double-click zoom in MapLibre during drawing
   useEffect(() => {
-    if (!map || distKm == null || activeTool !== "distance") return;
-    const coords = distCoordsRef.current;
-    if (coords.length < 2) return;
-    const features = coords.map((c) => turf.point(c));
-    features.push(turf.lineString(coords));
-    features.push(
-      turf.point(coords[coords.length - 1], {
-        distLabel: formatDist(distKm, distUnitDef),
-      }),
-    );
-    setSourceData(map, M_DISTANCE_SOURCE, turf.featureCollection(features));
-  }, [distUnit]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!map || areaM2 == null || activeTool !== "area") return;
-    const coords = areaCoordsRef.current;
-    if (coords.length < 3) return;
-    const poly = turf.polygon([[...coords, coords[0]]]);
-    const features = [
-      ...coords.map((c) => turf.point(c)),
-      turf.lineString([...coords, coords[0]]),
-      poly,
-    ];
-    const centroid = turf.centroid(poly);
-    centroid.properties = { areaLabel: formatArea(areaM2, areaUnitDef) };
-    features.push(centroid);
-    setSourceData(map, M_AREA_SOURCE, turf.featureCollection(features));
-  }, [areaUnit]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!map || bearingDistM == null || activeTool !== "bearing") return;
-    const coords = bearingCoordsRef.current;
-    if (coords.length !== 2) return;
-    const features = coords.map((c) => turf.point(c));
-    features.push(turf.lineString(coords));
-    const mid = turf.midpoint(turf.point(coords[0]), turf.point(coords[1]));
-    mid.properties = {
-      bearingLabel: `${Number(bearingDeg).toFixed(2)}°  ·  ${bearingUnitDef.fmt(bearingUnitDef.convert(bearingDistM))} ${bearingUnitDef.label}`,
-    };
-    features.push(mid);
-    setSourceData(map, M_BEARING_SOURCE, turf.featureCollection(features));
-  }, [bearingUnit]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!map) return;
+    if (activeTool && activeTool !== "coordinate" && drawingState === "drawing") {
+      map.doubleClickZoom.disable();
+    } else {
+      map.doubleClickZoom.enable();
+    }
+  }, [map, activeTool, drawingState]);
 
   // ── clearAll helper ────────────────────────────────────────────────────────
   const clearAll = useCallback(() => {
@@ -341,10 +317,45 @@ export default function Measurement({ map, onClose }) {
     setBearingDistM(null);
     setCoordRaw(null);
     setCoordCopied(false);
+    setMousePos(null);
+    setDrawingState("completed");
+    setShowDialog(false);
+    setResultReady(false);
     if (map.getCanvas()) map.getCanvas().style.cursor = "";
   }, [map]);
 
   useEffect(() => () => clearAll(), [clearAll]);
+
+  // Helper to trigger calculations
+  const calculateFinalMeasurement = useCallback(() => {
+    if (activeTool === "distance") {
+      const coords = distCoordsRef.current;
+      if (coords.length > 1) {
+        const line = turf.lineString(coords);
+        const km = turf.length(line, { units: "kilometers" });
+        setDistKm(km);
+      }
+    } else if (activeTool === "area") {
+      const coords = areaCoordsRef.current;
+      if (coords.length >= 3) {
+        const poly = turf.polygon([[...coords, coords[0]]]);
+        const m2 = turf.area(poly);
+        setAreaM2(m2);
+      }
+    } else if (activeTool === "bearing") {
+      const coords = bearingCoordsRef.current;
+      if (coords.length === 2) {
+        const deg = turf.bearing(turf.point(coords[0]), turf.point(coords[1]));
+        const distM = turf.distance(
+          turf.point(coords[0]),
+          turf.point(coords[1]),
+          { units: "meters" },
+        );
+        setBearingDeg(deg);
+        setBearingDistM(distM);
+      }
+    }
+  }, [activeTool]);
 
   // ── DISTANCE TOOL ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -390,7 +401,7 @@ export default function Measurement({ map, onClose }) {
         layout: {
           "text-field": ["get", "distLabel"],
           "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-          "text-size": 13,
+          "text-size": 11,
           "text-anchor": "bottom",
           "text-offset": [0, -1],
         },
@@ -401,17 +412,45 @@ export default function Measurement({ map, onClose }) {
         },
       });
 
-    const updateSource = (unitDef) => {
-      const coords = distCoordsRef.current;
+    const updateSource = () => {
+      const baseCoords = distCoordsRef.current;
+      if (baseCoords.length === 0) {
+        setSourceData(map, M_DISTANCE_SOURCE, turf.featureCollection([]));
+        return;
+      }
+
+      // If currently drawing and we have a mouse position, append it for live preview
+      const coords =
+        drawingState === "drawing" && mousePos
+          ? [...baseCoords, mousePos]
+          : baseCoords;
+
       const features = coords.map((c) => turf.point(c));
+      
       if (coords.length > 1) {
         const line = turf.lineString(coords);
         features.push(line);
         const km = turf.length(line, { units: "kilometers" });
+        
+        // Update live preview distKm
         setDistKm(km);
+
+        // Segment lengths labels at midpoints
+        for (let i = 0; i < coords.length - 1; i++) {
+          const p1 = turf.point(coords[i]);
+          const p2 = turf.point(coords[i + 1]);
+          const segLen = turf.distance(p1, p2, { units: "kilometers" });
+          const mid = turf.midpoint(p1, p2);
+          mid.properties = {
+            distLabel: formatDist(segLen, distUnitDef),
+          };
+          features.push(mid);
+        }
+
+        // Total length label at last point
         features.push(
           turf.point(coords[coords.length - 1], {
-            distLabel: formatDist(km, unitDef),
+            distLabel: `Total: ${formatDist(km, distUnitDef)}`,
           }),
         );
       } else {
@@ -420,35 +459,51 @@ export default function Measurement({ map, onClose }) {
       setSourceData(map, M_DISTANCE_SOURCE, turf.featureCollection(features));
     };
 
-    // Capture current unit inside closure via ref trick
-    const unitRef = { current: distUnitDef };
     const onClick = (e) => {
+      if (drawingState !== "drawing") return;
       distCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
-      updateSource(unitRef.current);
+      updateSource();
     };
-    const onRightClick = (e) => {
+
+    const onMouseMove = (e) => {
+      if (drawingState !== "drawing") return;
+      setMousePos([e.lngLat.lng, e.lngLat.lat]);
+    };
+
+    const onDblClick = (e) => {
       e.preventDefault();
-      distCoordsRef.current = [];
-      setDistKm(null);
-      setSourceData(map, M_DISTANCE_SOURCE, turf.featureCollection([]));
+      if (drawingState !== "drawing") return;
+      e.originalEvent?.stopPropagation();
+
+      // Clean up final point added by double-click zoom or click triggers
+      if (distCoordsRef.current.length > 1) {
+        const last = distCoordsRef.current[distCoordsRef.current.length - 1];
+        const prev = distCoordsRef.current[distCoordsRef.current.length - 2];
+        if (
+          Math.abs(last[0] - prev[0]) < 0.0001 &&
+          Math.abs(last[1] - prev[1]) < 0.0001
+        ) {
+          distCoordsRef.current.pop();
+        }
+      }
+
+      setDrawingState("paused");
+      setShowDialog(true);
+      setMousePos(null);
     };
 
     map.on("click", onClick);
-    map.on("contextmenu", onRightClick);
+    map.on("mousemove", onMouseMove);
+    map.on("dblclick", onDblClick);
+
+    updateSource();
 
     return () => {
       map.off("click", onClick);
-      map.off("contextmenu", onRightClick);
-      if (map.getCanvas()) map.getCanvas().style.cursor = "";
-      cleanupLayers(
-        map,
-        [M_DISTANCE_LINE, M_DISTANCE_POINTS, M_DISTANCE_LABELS],
-        [M_DISTANCE_SOURCE],
-      );
-      distCoordsRef.current = [];
-      setDistKm(null);
+      map.off("mousemove", onMouseMove);
+      map.off("dblclick", onDblClick);
     };
-  }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, activeTool, drawingState, mousePos, distUnit]);
 
   // ── AREA TOOL ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -506,7 +561,7 @@ export default function Measurement({ map, onClose }) {
         layout: {
           "text-field": ["get", "areaLabel"],
           "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-          "text-size": 12,
+          "text-size": 11,
           "text-anchor": "center",
         },
         paint: {
@@ -516,64 +571,95 @@ export default function Measurement({ map, onClose }) {
         },
       });
 
-    const unitRef = { current: areaUnitDef };
+    const updateSource = () => {
+      const baseCoords = areaCoordsRef.current;
+      if (baseCoords.length === 0) {
+        setSourceData(map, M_AREA_SOURCE, turf.featureCollection([]));
+        return;
+      }
 
-    const updateSource = (closed, unitDef) => {
-      const coords = areaCoordsRef.current;
+      // If active drawing, append mouse position. If completed or paused, close polygon.
+      const isClosed = drawingState !== "drawing";
+      const coords =
+        drawingState === "drawing" && mousePos
+          ? [...baseCoords, mousePos]
+          : baseCoords;
+
       const features = coords.map((c) => turf.point(c));
-      if (coords.length >= 2)
+      
+      if (coords.length >= 2) {
         features.push(
-          turf.lineString(closed ? [...coords, coords[0]] : coords),
+          turf.lineString(isClosed ? [...coords, coords[0]] : coords)
         );
-      if (closed && coords.length >= 3) {
+      }
+
+      if (coords.length >= 3) {
         const poly = turf.polygon([[...coords, coords[0]]]);
         features.push(poly);
         const m2 = turf.area(poly);
+        
+        // Update live area
         setAreaM2(m2);
+
+        const boundary = turf.polygonToLine(poly);
+        const perimeterKm = turf.length(boundary, { units: "kilometers" });
+
         const centroid = turf.centroid(poly);
-        centroid.properties = { areaLabel: formatArea(m2, unitDef) };
+        centroid.properties = {
+          areaLabel: `Area: ${formatArea(m2, areaUnitDef)}\nPerimeter: ${formatDist(perimeterKm, distUnitDef)}`,
+        };
         features.push(centroid);
-      } else if (!closed) {
+      } else {
         setAreaM2(null);
       }
       setSourceData(map, M_AREA_SOURCE, turf.featureCollection(features));
     };
 
-    // Expose updateSource so the Calculate button can close the polygon
-    areaUpdateSourceRef.current = (unitDef) => updateSource(true, unitDef);
-
     const onClick = (e) => {
+      if (drawingState !== "drawing") return;
       areaCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
-      updateSource(false, unitRef.current);
+      updateSource();
     };
-    const onRightClick = (e) => {
+
+    const onMouseMove = (e) => {
+      if (drawingState !== "drawing") return;
+      setMousePos([e.lngLat.lng, e.lngLat.lat]);
+    };
+
+    const onDblClick = (e) => {
       e.preventDefault();
-      if (areaCoordsRef.current.length >= 3) {
-        updateSource(true, unitRef.current);
-      } else {
-        areaCoordsRef.current = [];
-        setAreaM2(null);
-        setSourceData(map, M_AREA_SOURCE, turf.featureCollection([]));
+      if (drawingState !== "drawing") return;
+      e.originalEvent?.stopPropagation();
+
+      // Clean up double-click duplicate points
+      if (areaCoordsRef.current.length > 2) {
+        const last = areaCoordsRef.current[areaCoordsRef.current.length - 1];
+        const prev = areaCoordsRef.current[areaCoordsRef.current.length - 2];
+        if (
+          Math.abs(last[0] - prev[0]) < 0.0001 &&
+          Math.abs(last[1] - prev[1]) < 0.0001
+        ) {
+          areaCoordsRef.current.pop();
+        }
       }
+
+      setDrawingState("paused");
+      setShowDialog(true);
+      setMousePos(null);
     };
 
     map.on("click", onClick);
-    map.on("contextmenu", onRightClick);
+    map.on("mousemove", onMouseMove);
+    map.on("dblclick", onDblClick);
+
+    updateSource();
 
     return () => {
       map.off("click", onClick);
-      map.off("contextmenu", onRightClick);
-      if (map.getCanvas()) map.getCanvas().style.cursor = "";
-      cleanupLayers(
-        map,
-        [M_AREA_FILL, M_AREA_LINE, M_AREA_POINTS, M_AREA_LABEL],
-        [M_AREA_SOURCE],
-      );
-      areaCoordsRef.current = [];
-      areaUpdateSourceRef.current = null;
-      setAreaM2(null);
+      map.off("mousemove", onMouseMove);
+      map.off("dblclick", onDblClick);
     };
-  }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, activeTool, drawingState, mousePos, areaUnit, distUnit]);
 
   // ── BEARING TOOL ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -615,7 +701,7 @@ export default function Measurement({ map, onClose }) {
         layout: {
           "text-field": ["get", "bearingLabel"],
           "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-          "text-size": 13,
+          "text-size": 11,
           "text-anchor": "bottom",
           "text-offset": [0, -1],
         },
@@ -626,11 +712,20 @@ export default function Measurement({ map, onClose }) {
         },
       });
 
-    const unitRef = { current: bearingUnitDef };
+    const updateSource = () => {
+      const baseCoords = bearingCoordsRef.current;
+      if (baseCoords.length === 0) {
+        setSourceData(map, M_BEARING_SOURCE, turf.featureCollection([]));
+        return;
+      }
 
-    const updateSource = (unitDef) => {
-      const coords = bearingCoordsRef.current;
+      const coords =
+        drawingState === "drawing" && baseCoords.length === 1 && mousePos
+          ? [...baseCoords, mousePos]
+          : baseCoords;
+
       const features = coords.map((c) => turf.point(c));
+      
       if (coords.length === 2) {
         features.push(turf.lineString(coords));
         const deg = turf.bearing(turf.point(coords[0]), turf.point(coords[1]));
@@ -639,11 +734,14 @@ export default function Measurement({ map, onClose }) {
           turf.point(coords[1]),
           { units: "meters" },
         );
+        
+        // Update live preview bearing values
         setBearingDeg(deg);
         setBearingDistM(distM);
+
         const mid = turf.midpoint(turf.point(coords[0]), turf.point(coords[1]));
         mid.properties = {
-          bearingLabel: `${deg.toFixed(2)}°  ·  ${unitDef.fmt(unitDef.convert(distM))} ${unitDef.label}`,
+          bearingLabel: `${deg.toFixed(2)}°  ·  ${bearingUnitDef.fmt(bearingUnitDef.convert(distM))} ${bearingUnitDef.label}`,
         };
         features.push(mid);
       } else {
@@ -654,36 +752,41 @@ export default function Measurement({ map, onClose }) {
     };
 
     const onClick = (e) => {
-      if (bearingCoordsRef.current.length >= 2)
+      if (drawingState !== "drawing") return;
+      
+      if (bearingCoordsRef.current.length >= 2) {
         bearingCoordsRef.current = [[e.lngLat.lng, e.lngLat.lat]];
-      else bearingCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
-      updateSource(unitRef.current);
+      } else {
+        bearingCoordsRef.current.push([e.lngLat.lng, e.lngLat.lat]);
+      }
+
+      updateSource();
+
+      // After second click, show Finish Dialog
+      if (bearingCoordsRef.current.length === 2) {
+        setDrawingState("paused");
+        setShowDialog(true);
+        setMousePos(null);
+      }
     };
-    const onRightClick = (e) => {
-      e.preventDefault();
-      bearingCoordsRef.current = [];
-      setBearingDeg(null);
-      setBearingDistM(null);
-      setSourceData(map, M_BEARING_SOURCE, turf.featureCollection([]));
+
+    const onMouseMove = (e) => {
+      if (drawingState !== "drawing") return;
+      if (bearingCoordsRef.current.length === 1) {
+        setMousePos([e.lngLat.lng, e.lngLat.lat]);
+      }
     };
 
     map.on("click", onClick);
-    map.on("contextmenu", onRightClick);
+    map.on("mousemove", onMouseMove);
+
+    updateSource();
 
     return () => {
       map.off("click", onClick);
-      map.off("contextmenu", onRightClick);
-      if (map.getCanvas()) map.getCanvas().style.cursor = "";
-      cleanupLayers(
-        map,
-        [M_BEARING_LINE, M_BEARING_POINTS, M_BEARING_LABEL],
-        [M_BEARING_SOURCE],
-      );
-      bearingCoordsRef.current = [];
-      setBearingDeg(null);
-      setBearingDistM(null);
+      map.off("mousemove", onMouseMove);
     };
-  }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, activeTool, drawingState, mousePos, bearingUnit]);
 
   // ── COORDINATE PICKER TOOL ─────────────────────────────────────────────────
   useEffect(() => {
@@ -732,59 +835,65 @@ export default function Measurement({ map, onClose }) {
       const { lng, lat } = e.lngLat;
       setCoordRaw({ lat, lng });
       setCoordCopied(false);
-      // Label always shows DD on the map; panel format is controlled by coordFormat state
+      
       const pt = turf.point([lng, lat], {
         coordLabel: `${lat.toFixed(6)}\n${lng.toFixed(6)}`,
       });
       setSourceData(map, M_COORD_SOURCE, turf.featureCollection([pt]));
+      
+      // Auto copy to clipboard
       navigator.clipboard
         ?.writeText(`${lat.toFixed(6)}, ${lng.toFixed(6)}`)
         .then(() => setCoordCopied(true))
         .catch(() => {});
-    };
-    const onRightClick = (e) => {
-      e.preventDefault();
-      setSourceData(map, M_COORD_SOURCE, turf.featureCollection([]));
-      setCoordRaw(null);
-      setCoordCopied(false);
+        
+      setResultReady(true);
     };
 
     map.on("click", onClick);
-    map.on("contextmenu", onRightClick);
 
     return () => {
       map.off("click", onClick);
-      map.off("contextmenu", onRightClick);
-      if (map.getCanvas()) map.getCanvas().style.cursor = "";
-      cleanupLayers(map, [M_COORD_POINT, M_COORD_LABEL], [M_COORD_SOURCE]);
-      setCoordRaw(null);
-      setCoordCopied(false);
     };
-  }, [map, activeTool]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, activeTool]);
 
-  // ── Apply: freeze current drawn data and show result ─────────────────────
-  const handleApply = () => {
-    // For Area tool: close the polygon first (same as right-click)
-    if (activeTool === "area" && areaUpdateSourceRef.current) {
-      const unitDef = AREA_UNITS.find((u) => u.id === areaUnit);
-      areaUpdateSourceRef.current(unitDef);
-    }
+  // ── Apply / Calculate from Dialog ──────────────────────────────────────────
+  const handleCalculate = () => {
+    calculateFinalMeasurement();
+    setDrawingState("completed");
+    setShowDialog(false);
     setResultReady(true);
+  };
+
+  // ── Continue drawing from Dialog ───────────────────────────────────────────
+  const handleContinue = () => {
+    if (activeTool === "bearing") {
+      // Continue for bearing restarts the bearing selection
+      bearingCoordsRef.current = [];
+      setBearingDeg(null);
+      setBearingDistM(null);
+      setSourceData(map, M_BEARING_SOURCE, turf.featureCollection([]));
+    }
+    setDrawingState("drawing");
+    setShowDialog(false);
   };
 
   // ── Cancel: stop the tool, clear map, hide everything ─────────────────────
   const handleCancel = () => {
     clearAll();
     setActiveTool(null);
-    setResultReady(false);
   };
 
   // ── Clear measurement (reset drawn data, keep tool active) ────────────────
   const handleClear = () => {
+    clearAll();
+    // Re-trigger drawing state for the currently active tool
     const current = activeTool;
-    setResultReady(false);
     setActiveTool(null);
-    setTimeout(() => setActiveTool(current), 0);
+    setTimeout(() => {
+      setActiveTool(current);
+      setDrawingState("drawing");
+    }, 0);
   };
 
   const activeToolDef = TOOLS.find((t) => t.id === activeTool);
@@ -823,10 +932,10 @@ export default function Measurement({ map, onClose }) {
                 key={tool.id}
                 type="button"
                 onClick={() => {
-                  if (activeTool === tool.id) return; // already running this tool
+                  if (activeTool === tool.id) return;
                   clearAll();
-                  setResultReady(false);
                   setActiveTool(tool.id);
+                  setDrawingState("drawing");
                 }}
                 className={`relative flex min-w-0 flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 transition ${
                   isActive
@@ -858,32 +967,20 @@ export default function Measurement({ map, onClose }) {
           })}
         </div>
 
-        {/* Apply / Cancel — shown as soon as a tool is active */}
+        {/* Cancel — shown as soon as a tool is active */}
         {activeTool && (
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={handleApply}
-              className="flex-1 rounded-md py-1.5 text-[11px] font-semibold transition"
-              style={{
-                backgroundColor: activeToolDef.color + "22",
-                color: activeToolDef.color,
-                border: `1px solid ${activeToolDef.color}`,
-              }}
-            >
-              Calculate
-            </button>
-            <button
-              type="button"
               onClick={handleCancel}
-              className="flex-1 rounded-md border border-[#0f3d2e] bg-[#1f2937] py-1.5 text-[11px] font-semibold text-white/50 transition hover:border-red-500/40 hover:text-red-400"
+              className="w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] py-1.5 text-[11px] font-semibold text-white/50 transition hover:border-red-500/40 hover:text-red-400"
             >
               Cancel
             </button>
           </div>
         )}
 
-        {/* Result panel — only shown after Apply is clicked */}
+        {/* Result panel — only shown after Calculate or Coordinate clicked */}
         {activeTool && resultReady && (
           <div className="mt-1 rounded-md border border-[#13593f] bg-[#06291f] overflow-hidden">
             {/* Hint bar */}
@@ -944,7 +1041,7 @@ export default function Measurement({ map, onClose }) {
                   />
                 ) : (
                   <EmptyHint>
-                    Click to place vertices. Right-click to close polygon.
+                    Click to place vertices. Double-click to close polygon.
                   </EmptyHint>
                 )}
               </div>
@@ -1037,6 +1134,13 @@ export default function Measurement({ map, onClose }) {
           </div>
         )}
       </div>
+
+      {/* Finish Dialog */}
+      <MeasurementFinishDialog
+        isOpen={showDialog}
+        onContinue={handleContinue}
+        onCalculate={handleCalculate}
+      />
     </div>
   );
 }

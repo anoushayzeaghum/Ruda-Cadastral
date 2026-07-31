@@ -250,10 +250,10 @@ router.register(r"existing-drains/delete", DeleteExistingDrainView, basename="de
 
 # ------------------------------ Proposed Roads Views ------------------------------
 # DB table: public.ruda_proposed_road
-router.register(r"proposed-roads", ListProposedRoadsView, basename="proposed-roads")
-router.register(r"proposed-roads/create", CreateProposedRoadsView, basename="create-proposed-roads")
-router.register(r"proposed-roads/update", UpdateProposedRoadsView, basename="update-proposed-roads")
-router.register(r"proposed-roads/delete", DeleteProposedRoadsView, basename="delete-proposed-roads")
+router.register(r"proposed-road", ListProposedRoadView, basename="proposed-road")
+router.register(r"proposed-road/create", CreateProposedRoadView, basename="create-proposed-road")
+router.register(r"proposed-road/update", UpdateProposedRoadView, basename="update-proposed-road")
+router.register(r"proposed-road/delete", DeleteProposedRoadView, basename="delete-proposed-road")
 
 # ------------------------------ Imported Land Table Views ------------------------------
 router.register(r"stateland", ListStateLandView, basename="stateland")

@@ -6,11 +6,15 @@ import {
   Image as ImageIcon,
   X,
   ListChecks,
+  Upload,
+  Pentagon,
 } from "lucide-react";
 import LayerManager from "./Layers/LayerManager.jsx";
 import Toolbox from "./Layers/Toolbox.jsx";
+import DrawAOI from "./Layers/DrawAOI.jsx";
 import RasterData from "./Layers/RasterData.jsx";
 import BaseMap from "./Layers/BaseMap.jsx";
+import MapImport from "./Import/MapImport.jsx";
 import { normalizePossessionLandTypes } from "./LayerManager/PossessionLandLayer.js";
 
 import RudaBoundaryAttribute from "../GISMetaverse/tools/Layers/AttributeTable/RudaBoundaryAttribute";
@@ -61,6 +65,12 @@ export default function LeftPanel({
   setBoundaryStatus,
   multiSelectionMode = false,
   onMultiSelectionModeChange = () => {},
+  drawAOIEnabled = false,
+  onDrawAOIToggle = () => {},
+  onDrawAOIFinish = () => {},
+  onDrawAOIClear = () => {},
+  drawAOIStatus = {},
+  onImportedAOI = () => {},
 }) {
   const [activePanel, setActivePanel] = useState("");
   const initializedOpacityKeysRef = useRef(new Set());
@@ -529,6 +539,15 @@ export default function LeftPanel({
             iconLg={<Wrench size={18} className="hidden sm:block" />}
           />
           <PanelIcon
+            title="Draw AOI"
+            active={activePanel === "drawAOI"}
+            onClick={() =>
+              setActivePanel(activePanel === "drawAOI" ? "" : "drawAOI")
+            }
+            icon={<Pentagon size={15} className="sm:hidden" />}
+            iconLg={<Pentagon size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
             title="Raster Data"
             active={activePanel === "rasterData"}
             onClick={() =>
@@ -545,6 +564,15 @@ export default function LeftPanel({
             }
             icon={<Satellite size={15} className="sm:hidden" />}
             iconLg={<Satellite size={18} className="hidden sm:block" />}
+          />
+          <PanelIcon
+            title="Import Data"
+            active={activePanel === "importData"}
+            onClick={() =>
+              setActivePanel(activePanel === "importData" ? "" : "importData")
+            }
+            icon={<Upload size={15} className="sm:hidden" />}
+            iconLg={<Upload size={18} className="hidden sm:block" />}
           />
           {/* Close button for mobile - only shown when a panel is active */}
           {isMobile && activePanel && (
@@ -756,6 +784,18 @@ export default function LeftPanel({
               />
             )}
 
+            {activePanel === "drawAOI" && (
+              <DrawAOI
+                isMobile={isMobile}
+                onClose={() => setActivePanel("")}
+                enabled={drawAOIEnabled}
+                onToggle={onDrawAOIToggle}
+                onFinish={onDrawAOIFinish}
+                onClear={onDrawAOIClear}
+                status={drawAOIStatus}
+              />
+            )}
+
             {activePanel === "basemap" && (
               <Panel title="Basemap" onClose={() => setActivePanel("")}>
                 <BaseMap basemap={basemap} setBasemap={setBasemap} />
@@ -772,6 +812,15 @@ export default function LeftPanel({
                   updateLayer={updateLayer}
                 />
               </Panel>
+            )}
+
+            {activePanel === "importData" && (
+              <MapImport
+                map={map}
+                onClose={() => setActivePanel("")}
+                onPolygonImported={onImportedAOI}
+                onImportComplete={onImportedAOI}
+              />
             )}
           </div>
         </>

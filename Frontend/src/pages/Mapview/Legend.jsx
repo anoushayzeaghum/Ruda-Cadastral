@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Map as MapIcon, Route } from "lucide-react";
+import React from "react";
+import { CADASTRAL_BOUNDARY_STYLES } from "./LayerManager/CadastralBoundaryStyles.js";
 
 const RUDA_PHASE_COLORS = [
   "#6bb7e8",
@@ -16,7 +16,7 @@ const RUDA_PHASE_COLORS = [
   "#8dd3c7",
 ];
 
-const roadLegendItems = [
+export const roadLegendItems = [
   { label: "Primary Roads (300'-Wide)", color: "#c92020", width: 2 },
   { label: "Secondary Road (200'-Wide)", color: "#4caf50", width: 3 },
   { label: "Tertiary Roads", color: "#ff9800", width: 3 },
@@ -27,7 +27,7 @@ const roadLegendItems = [
   { label: "300' ROW", color: "#00bcd4", width: 2.5 },
 ];
 
-const hashString = (value = "") => {
+export const hashString = (value = "") => {
   const text = String(value || "");
   let hash = 0;
   for (let i = 0; i < text.length; i += 1) {
@@ -36,26 +36,19 @@ const hashString = (value = "") => {
   return hash;
 };
 
-const stripHtml = (value = "") =>
+export const stripHtml = (value = "") =>
   String(value || "")
     .replace(/<[^>]*>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 
-const getLayerVisible = (layers = {}, key, fallback = false) => {
-  const value = layers?.[key];
-  if (typeof value === "object") return value.visible !== false;
-  if (typeof value === "boolean") return value;
-  return fallback;
-};
-
-const getRudaPhaseColor = (phaseId) => {
+export const getRudaPhaseColor = (phaseId) => {
   const index = Math.abs(Number(phaseId) || hashString(phaseId || "ruda"));
   return RUDA_PHASE_COLORS[index % RUDA_PHASE_COLORS.length];
 };
 
-const getRudaPhaseLabel = (phase = {}) => {
+export const getRudaPhaseLabel = (phase = {}) => {
   const phaseId = phase?.gid ?? phase?.id ?? phase?.oid ?? "";
   const candidates = [
     phase?.phase,
@@ -80,204 +73,214 @@ const getRudaPhaseLabel = (phase = {}) => {
   return phaseId ? `Phase ${phaseId}` : "RUDA Phase";
 };
 
-export default function Legend({
-  layers = {},
-  rudaPhases = [],
-  selectedRudaPhaseIds = [],
-  selectedProposedRoadIds = [],
-}) {
-  const [collapsed, setCollapsed] = useState(false);
-
-  const showRudaLegend = getLayerVisible(layers, "rudaBoundary", false);
-  const showRoadLegend = getLayerVisible(layers, "proposedRoads", false);
-  const showPossessionLand = getLayerVisible(layers, "possessionLand", false);
-  const showAwardedLand = getLayerVisible(layers, "awardedLand", false);
-  const showStateLand = getLayerVisible(layers, "stateLand", false);
-  const showLandLegend = showPossessionLand || showAwardedLand || showStateLand;
-  const shouldShow = showRudaLegend || showRoadLegend || showLandLegend;
-
-  useEffect(() => {
-    if (shouldShow) setCollapsed(false);
-  }, [shouldShow]);
-
-  const rudaLegendItems = useMemo(() => {
-    const selected = new Set(
-      (selectedRudaPhaseIds || []).map((id) => String(id)),
-    );
-
-    return (rudaPhases || [])
-      .filter((phase) => {
-        const id = phase?.gid ?? phase?.id ?? phase?.oid;
-        if (!selected.size) return true;
-        return selected.has(String(id));
-      })
-      .map((phase) => {
-        const id = phase?.gid ?? phase?.id ?? phase?.oid;
-        return {
-          id,
-          label: getRudaPhaseLabel(phase),
-          color: getRudaPhaseColor(id),
-        };
-      });
-  }, [rudaPhases, selectedRudaPhaseIds]);
-
-  if (!shouldShow) return null;
-
+export function PolygonLegend({ label, fillColor, lineColor, fillOpacity = 0.4 }) {
   return (
-    <aside className="pointer-events-auto absolute bottom-5 right-2 sm:right-5 z-30 w-[240px] sm:w-[310px] overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-md">
-      <button
-        type="button"
-        onClick={() => setCollapsed((value) => !value)}
-        className="flex w-full items-center justify-between bg-[#0f5f2d] px-3.5 py-2.5 text-left text-white"
-      >
-        <span className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wide">
-          <MapIcon size={16} />
-          Legend
-        </span>
-
-        <ChevronDown
-          size={17}
-          strokeWidth={2.5}
-          className={`transition-transform ${collapsed ? "" : "rotate-180"}`}
-        />
-      </button>
-
-      {!collapsed && (
-        <div className="max-h-[380px] overflow-y-auto px-3.5 py-3">
-          {showRudaLegend && (
-            <div className="mb-4">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[12px] font-semibold text-slate-800">
-                  RUDA Boundary Phases
-                </p>
-
-                <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">
-                  {(selectedRudaPhaseIds || []).length} selected
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                {rudaLegendItems.length ? (
-                  rudaLegendItems.map((item) => (
-                    <div
-                      key={`ruda-${item.id}`}
-                      className="flex items-center gap-2.5"
-                    >
-                      <span
-                        className="h-4 w-7 shrink-0 rounded border border-slate-600"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="min-w-0 flex-1 truncate text-[11.5px] leading-tight text-slate-700">
-                        {item.label}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-[11px] text-slate-400">
-                    No selected RUDA phases.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {showLandLegend && (
-            <div
-              className={`${showRudaLegend ? "border-t border-slate-200 pt-3" : ""} mb-4`}
-            >
-              <p className="mb-2 text-[12px] font-semibold text-slate-800">
-                Khasra Thematic Layers
-              </p>
-              <div className="space-y-2">
-                {showPossessionLand && (
-                  <>
-                    <LegendSwatch
-                      label="Mutated Land"
-                      fill="#AFCB4F"
-                      line="#5F7F00"
-                    />
-                    <LegendSwatch
-                      label="Demarcated Land"
-                      fill="#ca3c3c"
-                      line="#7A0C0C"
-                    />
-                    <LegendSwatch
-                      label="Possession Land"
-                      fill="#F48FB1"
-                      line="#D81B60"
-                    />
-                  </>
-                )}
-                {showAwardedLand && (
-                  <LegendSwatch
-                    label="Awarded Land"
-                    fill="#FAEEDA"
-                    line="#854F0B"
-                  />
-                )}
-                {showStateLand && (
-                  <LegendSwatch
-                    label="State Land"
-                    fill="#F1EFE8"
-                    line="#5F5E5A"
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
-          {showRoadLegend && (
-            <div
-              className={showRudaLegend ? "border-t border-slate-200 pt-3" : ""}
-            >
-              <div className="mb-2 flex items-center justify-between">
-                <p className="flex items-center gap-1.5 text-[12px] font-semibold text-slate-800">
-                  <Route size={14} />
-                  RUDA Proposed Roads
-                </p>
-
-                <span className="rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">
-                  {(selectedProposedRoadIds || []).length} selected
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                {roadLegendItems.map((item) => (
-                  <div key={item.label} className="flex items-center gap-2.5">
-                    <span className="flex h-5 w-10 shrink-0 items-center">
-                      <span
-                        className="block w-full rounded-full"
-                        style={{
-                          height: `${item.width}px`,
-                          backgroundColor: item.color,
-                        }}
-                      />
-                    </span>
-
-                    <span className="min-w-0 flex-1 truncate text-[11.5px] leading-tight text-slate-700">
-                      {item.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </aside>
-  );
-}
-
-function LegendSwatch({ label, fill, line }) {
-  return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-2">
       <span
-        className="h-4 w-7 shrink-0 rounded"
-        style={{ backgroundColor: fill, border: `1.3px solid ${line}` }}
-      />
-      <span className="min-w-0 flex-1 truncate text-[11.5px] leading-tight text-slate-700">
+        className="relative h-3 w-3 shrink-0 rounded-sm overflow-hidden"
+        style={{
+          border: lineColor ? `1px solid ${lineColor}` : "none",
+        }}
+      >
+        <span
+          className="absolute inset-0"
+          style={{
+            backgroundColor: fillColor || "transparent",
+            opacity: fillColor === "transparent" ? 1 : fillOpacity,
+          }}
+        />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
         {label}
       </span>
     </div>
   );
+}
+
+export function LineLegend({ label, color, width = 2 }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex h-3 w-6 shrink-0 items-center justify-center">
+        <span
+          className="block w-full rounded-full"
+          style={{
+            height: `${width}px`,
+            backgroundColor: color,
+          }}
+        />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+export function PointLegend({ label, color }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex h-3 w-3 shrink-0 items-center justify-center">
+        <span
+          className="block h-2 w-2 rounded-full"
+          style={{ backgroundColor: color || "#e11d48" }}
+        />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-tight text-white/85">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+export function LegendSection({ title = "Legend", children }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
+        {title}
+      </div>
+      <div className="flex flex-col gap-2">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function LayerLegend({ layerKey, color, boundaryStatus }) {
+  if (layerKey === "districtBoundary") {
+    return (
+      <LegendSection title="Legend">
+        <PolygonLegend
+          label="District Boundary"
+          fillColor={color}
+          lineColor={color}
+          fillOpacity={0.14}
+        />
+      </LegendSection>
+    );
+  }
+
+  if (layerKey === "tehsilBoundary") {
+    return (
+      <LegendSection title="Legend">
+        <PolygonLegend
+          label="Tehsil Boundary"
+          fillColor={color}
+          lineColor={color}
+          fillOpacity={0.08}
+        />
+      </LegendSection>
+    );
+  }
+
+  if (layerKey === "mauzaBoundary") {
+    return (
+      <LegendSection title="Legend">
+        <PolygonLegend
+          label="Mauza Boundary"
+          fillColor="transparent"
+          lineColor={color}
+        />
+      </LegendSection>
+    );
+  }
+
+  if (layerKey === "khasraLayer") {
+    const vColor = CADASTRAL_BOUNDARY_STYLES.khasra.verifiedColor;
+    const uColor = CADASTRAL_BOUNDARY_STYLES.khasra.unverifiedColor;
+    const fillOpacity = CADASTRAL_BOUNDARY_STYLES.khasra.fillOpacity;
+
+    const showVerified = boundaryStatus === "verified" || boundaryStatus === "both";
+    const showUnverified = boundaryStatus === "unverified" || boundaryStatus === "both";
+
+    return (
+      <LegendSection title="Legend">
+        {showVerified && (
+          <PolygonLegend
+            label="Verified Khasra"
+            fillColor={vColor}
+            lineColor={vColor}
+            fillOpacity={fillOpacity}
+          />
+        )}
+        {showUnverified && (
+          <PolygonLegend
+            label="Unverified Khasra"
+            fillColor={uColor}
+            lineColor={uColor}
+            fillOpacity={fillOpacity}
+          />
+        )}
+      </LegendSection>
+    );
+  }
+
+  if (layerKey === "squareLayer") {
+    return (
+      <LegendSection title="Legend">
+        <PolygonLegend
+          label="Square Boundary"
+          fillColor={color}
+          lineColor={color}
+          fillOpacity={0.04}
+        />
+      </LegendSection>
+    );
+  }
+
+  if (layerKey === "acreLayer") {
+    return (
+      <LegendSection title="Legend">
+        <PolygonLegend
+          label="Acre Boundary"
+          fillColor={color}
+          lineColor={color}
+          fillOpacity={0.04}
+        />
+      </LegendSection>
+    );
+  }
+
+  if (layerKey === "awardedLand") {
+    return (
+      <LegendSection title="Legend">
+        <PolygonLegend
+          label="Awarded Land"
+          fillColor="#FAEEDA"
+          lineColor={color}
+          fillOpacity={0.45}
+        />
+      </LegendSection>
+    );
+  }
+
+  if (layerKey === "stateLand") {
+    return (
+      <LegendSection title="Legend">
+        <PolygonLegend
+          label="State Land"
+          fillColor="#F1EFE8"
+          lineColor={color}
+          fillOpacity={0.45}
+        />
+      </LegendSection>
+    );
+  }
+
+  if (layerKey === "triJunctionPoints") {
+    return (
+      <LegendSection title="Legend">
+        <PointLegend label="Tri Junction Point" color={color} />
+      </LegendSection>
+    );
+  }
+
+  if (layerKey === "fieldPoints") {
+    return (
+      <LegendSection title="Legend">
+        <PointLegend label="Field Point" color={color} />
+      </LegendSection>
+    );
+  }
+
+  return null;
 }

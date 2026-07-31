@@ -578,20 +578,25 @@ class ProjectMauzaSerializer(serializers.ModelSerializer):
 # District → Tehsil → Mauza → Society → SpotLevel
 # -------------------------------------------------------
 
-class SpotLevelSerializer(GeoFeatureModelSerializer):
+class SpotLevelSerializer(serializers.ModelSerializer):
+    project_name = serializers.CharField(source="project.project_name", read_only=True)
 
     class Meta:
         model = SpotLevel
-        geo_field = "geom"
-        id_field = "gid"
-        fields = (
+        fields = [
             "gid",
-            "mauza",
-            "district",
-            "tehsil",
-            "project",
+            "objectid_1",
+            "objectid",
+            "id",
+            "x",
+            "y",
+            "z",
+            "elevation",
+            "elevatin_i",
             "geom",
-        )
+            "project",
+            "project_name",
+        ]
 
 
 # --------------------------------------------------------
@@ -1400,16 +1405,15 @@ class ProposedRoadNetworkSerializer(GeoFeatureModelSerializer):
 # Proposed Roads Serializer
 # DB table: ruda_proposed_road
 # --------------------------------------------------------
-class ProposedRoadsSerializer(GeoFeatureModelSerializer):
+class ProposedRoadSerializer(GeoFeatureModelSerializer):
 
     class Meta:
-        model = ProposedRoads
+        model = ProposedRoad
         geo_field = "geom"
         id_field = "gid"
 
         fields = (
             "gid",
-            "id",
             "road_type",
             "row",
             "geom",
@@ -1418,7 +1422,6 @@ class ProposedRoadsSerializer(GeoFeatureModelSerializer):
         read_only_fields = (
             "gid",
         )
-
 
 # =================================================================================================
 # IMPORTED LAND TABLE SERIALIZERS

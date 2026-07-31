@@ -108,7 +108,7 @@ import {
   PROPOSED_ROADS_LINE,
   buildSelectionKey,
   createGeoJSONRequestCache,
-} from "./Mapview/mapViewConfig.js";
+} from "./MapView/mapViewConfig.js";
 import {
   getFeatureLatLng,
   buildUnifiedPopupHtml,
@@ -116,6 +116,8 @@ import {
   POPUP_TITLES,
 } from "./Mapview/popupUtils.js";
 import useMapTools from "./Mapview/useMapTools.js";
+import useDrawAOI from "./Mapview/useDrawAOI.js";
+import { analyseAOI } from "./Mapview/aoiAnalysis.js";
 import {
   CADASTRAL_BOUNDARY_STYLES,
   getKhasraStatusColorExpression,
@@ -157,6 +159,13 @@ export default function MapView({
   onFeaturesLoaded,
   onMapReady,
   boundaryStatus = "verified",
+  drawAOIEnabled = false,
+  onAOIComplete,
+  onAOIDraftChange,
+  drawAOIClearSignal = 0,
+  drawAOIFinishSignal = 0,
+  importedAOIFeature = null,
+  onImportedAOIAnalysed,
 }) {
   const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
@@ -174,6 +183,7 @@ export default function MapView({
   const previousBoundaryStatusRef = useRef(boundaryStatus);
   const suppressAutoZoomUntilRef = useRef(0);
   const multiSelectionModeRef = useRef(multiSelectionMode);
+  const drawAOIEnabledRef = useRef(drawAOIEnabled);
   const onMultiParcelToggleRef = useRef(onMultiParcelToggle);
   const khasraEventHandlersRef = useRef({
     click: null,
@@ -191,6 +201,11 @@ export default function MapView({
   useEffect(() => {
     multiSelectionModeRef.current = multiSelectionMode;
   }, [multiSelectionMode]);
+
+  useEffect(() => {
+    drawAOIEnabledRef.current = drawAOIEnabled;
+    if (drawAOIEnabled) closeActivePopup();
+  }, [drawAOIEnabled]);
 
   useEffect(() => {
     onMultiParcelToggleRef.current = onMultiParcelToggle;
@@ -456,6 +471,7 @@ export default function MapView({
   };
 
   const handleProposedRoadClick = (event) => {
+    if (drawAOIEnabledRef.current) return;
     const feature = event.features?.[0];
     if (!feature) return;
 
@@ -916,6 +932,7 @@ export default function MapView({
             map.getCanvas().style.cursor = "";
           },
           click: (event) => {
+            if (drawAOIEnabledRef.current) return;
             const feature = event.features?.[0];
             if (!feature) return;
             showPolygonPopup(popupType, feature.properties || {}, event.lngLat);
@@ -1156,6 +1173,7 @@ export default function MapView({
 
   // Single show-popup helper used by all layers
   const showMapviewPopup = (layerType, props, lngLat, coordinates = null) => {
+    if (drawAOIEnabledRef.current) return;
     const map = mapInstance.current;
     if (!map) return;
 
@@ -1231,6 +1249,7 @@ export default function MapView({
   }
 
   function handlePointClick(e) {
+    if (drawAOIEnabledRef.current) return;
     const map = mapInstance.current;
     if (!map) return;
 
@@ -1460,6 +1479,9 @@ export default function MapView({
       detachKhasraEventHandlers(map);
 
       const handleKhasraClick = (e) => {
+        // AOI drawing owns map clicks while active. Do not select a parcel,
+        // open its popup, or update Parcel Information during drawing.
+        if (drawAOIEnabledRef.current) return;
         if (!e.features?.length) return;
 
         const feature = e.features[0];
@@ -1507,11 +1529,15 @@ export default function MapView({
       };
 
       const handleKhasraMouseEnter = () => {
-        map.getCanvas().style.cursor = "pointer";
+        if (drawAOIEnabledRef.current) return;
+        const canvas = map.getCanvas?.();
+        if (canvas) canvas.style.cursor = "pointer";
       };
 
       const handleKhasraMouseLeave = () => {
-        map.getCanvas().style.cursor = "";
+        if (drawAOIEnabledRef.current) return;
+        const canvas = map.getCanvas?.();
+        if (canvas) canvas.style.cursor = "";
       };
 
       khasraEventHandlersRef.current = {
@@ -1573,6 +1599,7 @@ export default function MapView({
 
       bindLayerEvents(MURABBA_FILL, {
         click: (event) => {
+          if (drawAOIEnabledRef.current) return;
           const feature = event.features?.[0];
           if (!feature) return;
 
@@ -3115,7 +3142,49 @@ export default function MapView({
     isMapReady,
     layers,
     buildPopupHtml: buildUnifiedPopupHtml,
+    interactionLocked: drawAOIEnabled,
   });
+
+  useDrawAOI({
+    mapRef: mapInstance,
+    isMapReady,
+    enabled: drawAOIEnabled,
+    currentGeojsonRef: currentGeojson,
+    onComplete: onAOIComplete,
+    onDraftChange: onAOIDraftChange,
+    clearSignal: drawAOIClearSignal,
+    finishSignal: drawAOIFinishSignal,
+  });
+
+  useEffect(() => {
+    if (!isMapReady || !importedAOIFeature?.geometry) return;
+
+    const current = currentGeojson.current || {};
+    const analysis = analyseAOI({
+      aoi: importedAOIFeature,
+      khasras: current.khasra || current.khasras || emptyFeatureCollection(),
+      thematicLayers: {
+        possessionLand:
+          current.possessionLand ||
+          current["possession-land"] ||
+          emptyFeatureCollection(),
+        awardedLand:
+          current.awardedLand ||
+          current["awarded-land"] ||
+          emptyFeatureCollection(),
+        stateLand:
+          current.stateLand ||
+          current["state-land"] ||
+          emptyFeatureCollection(),
+      },
+    });
+
+    onImportedAOIAnalysed?.({
+      feature: importedAOIFeature,
+      analysis,
+      source: "import",
+    });
+  }, [importedAOIFeature, isMapReady, dataRevision, featureCount]);
 
   return (
     <div

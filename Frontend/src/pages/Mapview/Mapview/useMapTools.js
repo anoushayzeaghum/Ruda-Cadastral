@@ -40,6 +40,7 @@ export default function useMapTools({
   isMapReady,
   layers,
   buildPopupHtml,
+  interactionLocked = false,
 }) {
   const measureCoordsRef = useRef([]);
   const measureAreaCoordsRef = useRef([]);
@@ -50,7 +51,7 @@ export default function useMapTools({
     const map = mapRef.current;
     if (!map || !isMapReady) return undefined;
 
-    const measureVisible = isToolVisible(layers, "measure");
+    const measureVisible = !interactionLocked && isToolVisible(layers, "measure");
 
     const updateMeasureSource = () => {
       const coordinates = measureCoordsRef.current;
@@ -100,13 +101,13 @@ export default function useMapTools({
       map.off("contextmenu", handleRightClick);
       setMapCursor(map);
     };
-  }, [layers?.measure, isMapReady, mapRef]);
+  }, [layers?.measure, isMapReady, mapRef, interactionLocked]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isMapReady) return undefined;
 
-    const areaVisible = isToolVisible(layers, "measureArea");
+    const areaVisible = !interactionLocked && isToolVisible(layers, "measureArea");
 
     const clearAreaLayers = () => {
       try {
@@ -189,13 +190,13 @@ export default function useMapTools({
       map.off("contextmenu", handleRightClick);
       setMapCursor(map);
     };
-  }, [layers?.measureArea, isMapReady, mapRef]);
+  }, [layers?.measureArea, isMapReady, mapRef, interactionLocked]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isMapReady) return undefined;
 
-    const bearingVisible = isToolVisible(layers, "measureBearing");
+    const bearingVisible = !interactionLocked && isToolVisible(layers, "measureBearing");
 
     const clearBearingLayers = () => {
       try {
@@ -265,13 +266,13 @@ export default function useMapTools({
       map.off("contextmenu", handleRightClick);
       setMapCursor(map);
     };
-  }, [layers?.measureBearing, isMapReady, mapRef]);
+  }, [layers?.measureBearing, isMapReady, mapRef, interactionLocked]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isMapReady) return undefined;
 
-    const coordinatePickerVisible = isToolVisible(layers, "coordPicker");
+    const coordinatePickerVisible = !interactionLocked && isToolVisible(layers, "coordPicker");
 
     const closeCoordinatePopup = () => {
       coordinatePopupRef.current?.remove();
@@ -337,13 +338,13 @@ export default function useMapTools({
       closeCoordinatePopup();
       setMapCursor(map);
     };
-  }, [layers?.coordPicker, isMapReady, mapRef, buildPopupHtml]);
+  }, [layers?.coordPicker, isMapReady, mapRef, buildPopupHtml, interactionLocked]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isMapReady) return undefined;
 
-    const bufferVisible = isToolVisible(layers, "measureBuffer");
+    const bufferVisible = !interactionLocked && isToolVisible(layers, "measureBuffer");
 
     const clearBufferLayers = () => {
       try {
@@ -388,7 +389,7 @@ export default function useMapTools({
       map.off("contextmenu", handleRightClick);
       setMapCursor(map);
     };
-  }, [layers?.measureBuffer, isMapReady, mapRef]);
+  }, [layers?.measureBuffer, isMapReady, mapRef, interactionLocked]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -405,5 +406,5 @@ export default function useMapTools({
         error,
       );
     }
-  }, [layers?.printMap, isMapReady, mapRef]);
+  }, [layers?.printMap, isMapReady, mapRef, interactionLocked]);
 }

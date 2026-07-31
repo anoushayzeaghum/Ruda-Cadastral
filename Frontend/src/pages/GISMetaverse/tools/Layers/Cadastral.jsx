@@ -8,17 +8,12 @@ import SquareBoundaryAttribute from "./AttributeTable/SquareBoundaryAttribute";
 import AwardedLandAttribute from "./AttributeTable/AwardedLandAttribute";
 import StateLandAttribute from "./AttributeTable/StateLandAttribute";
 import PossessionLandAttribute from "./AttributeTable/PossessionLandAttribute";
-import GeodeticNetworkAttribute from "./AttributeTable/GeodeticNetworkAttribute";
 import { addAwardedLandLayer } from "./LayerManager/Cadastral/AwardedLandLayer";
 import { addStateLandLayer } from "./LayerManager/Cadastral/StateLandLayer";
 import {
   addPossessionLandLayer,
   POSSESSION_LAND_TYPES,
 } from "./LayerManager/Cadastral/PossessionLandLayer";
-import {
-  addGeodeticPointsLayer,
-  GEODETIC_POINTS_IDS,
-} from "./LayerManager/Cadastral/GeodeticPointsLayer";
 import {
   addMauzaBoundaryLayer,
   MAUZA_BOUNDARY_IDS,
@@ -106,7 +101,6 @@ const EXTRA_LAYER_DEFS = [
   },
   { key: "awardedLand", label: "Awarded Land", color: "#854F0B" },
   { key: "stateLand", label: "State Land", color: "#5F5E5A" },
-  { key: "geodeticNetwork", label: "Geodetic Network", color: "#D92D20" },
 ];
 
 const EXTRA_LAYER_CONFIG = {
@@ -139,12 +133,6 @@ const EXTRA_LAYER_CONFIG = {
       "metaverse-possession-land-label",
     ],
     addLayer: addPossessionLandLayer,
-  },
-  geodeticNetwork: {
-    endpoint: "/geodeticnetwork/",
-    sourceId: GEODETIC_POINTS_IDS.source,
-    layerIds: [GEODETIC_POINTS_IDS.circle, GEODETIC_POINTS_IDS.label],
-    addLayer: addGeodeticPointsLayer,
   },
 };
 
@@ -1351,11 +1339,6 @@ export default function Cadastral({ map, selectedProjectId }) {
         visible: false,
         loading: false,
       },
-      geodeticNetwork: {
-        ...prev.geodeticNetwork,
-        visible: false,
-        loading: false,
-      },
     }));
   }, [map]);
 
@@ -1724,12 +1707,6 @@ export default function Cadastral({ map, selectedProjectId }) {
         />
       )}
 
-      {activeTable === "geodeticNetwork" && (
-        <GeodeticNetworkAttribute
-          map={map}
-          onClose={() => setActiveTable(null)}
-        />
-      )}
     </div>
   );
 }

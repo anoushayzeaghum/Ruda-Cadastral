@@ -370,7 +370,10 @@ const triggerDownload = (bytes, filename) => {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
-export const exportSelectedParcelKMZ = (parcel, { verified = false } = {}) => {
+export const exportSelectedParcelKMZ = (
+  parcel,
+  { verified = false, filenamePrefix = "parcel", displayName = null } = {},
+) => {
   const feature = normalizeFeature(parcel);
 
   if (!feature?.geometry) {
@@ -381,7 +384,10 @@ export const exportSelectedParcelKMZ = (parcel, { verified = false } = {}) => {
   }
 
   try {
-    const kml = buildKml(feature, { verified });
+    const exportFeature = displayName
+      ? { ...feature, properties: { ...(feature.properties || {}), name: displayName } }
+      : feature;
+    const kml = buildKml(exportFeature, { verified });
     const properties = feature.properties || {};
     const identifier = meaningfulValue(
       properties.kh,
@@ -394,7 +400,10 @@ export const exportSelectedParcelKMZ = (parcel, { verified = false } = {}) => {
     );
     const kmzBytes = createStoredZip("doc.kml", kml);
 
-    triggerDownload(kmzBytes, `${safeFilePart(`parcel_${identifier}`)}.kmz`);
+    triggerDownload(
+      kmzBytes,
+      `${safeFilePart(`${filenamePrefix}_${identifier}`)}.kmz`,
+    );
   } catch (error) {
     console.error("KMZ export failed:", error);
   }

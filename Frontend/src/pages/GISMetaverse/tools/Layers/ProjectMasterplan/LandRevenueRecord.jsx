@@ -12,15 +12,38 @@ import SquareBoundaryAttribute from "../AttributeTable/SquareBoundaryAttribute";
 import { formatNumber } from "../AttributeTable/AdminAttributeTableShell";
 import { readAreaSqft } from "../AttributeTable/areaUtils";
 
-const MASAWI_SOURCE = "gis-handu-gujran-ortho-source";
-const MASAWI_LAYER = "gis-handu-gujran-ortho-layer";
-const MASAWI_TILE_URL =
-  "https://rudametaverse.nespakprogresscenter.com/tiles/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
+// const MASAWI_SOURCE = "gis-handu-gujran-ortho-source";
+// const MASAWI_LAYER = "gis-handu-gujran-ortho-layer";
+// const MASAWI_TILE_URL =
+//   "https://rudametaverse.nespakprogresscenter.com/tiles/data/Handu_Gujran_Ortho/{z}/{x}/{y}.png";
 
-const MASAWI_BOUNDS = [
-  [74.42562653088396, 31.60509230706726],
-  [74.43545280361002, 31.6112165411359],
-];
+// const MASAWI_BOUNDS = [
+//   [74.42562653088396, 31.60509230706726],
+//   [74.43545280361002, 31.6112165411359],
+// ];
+
+const TILESERVER_BASE = "https://rudametaverse.nespakprogresscenter.com";
+
+function mauzaNameToTileId(mauzaName) {
+  return (
+    String(mauzaName || "")
+      .trim()
+      .split(/\s+/)
+      .map((w) => w[0]?.toUpperCase() + w.slice(1).toLowerCase())
+      .join("_") + "_Ortho"
+  );
+}
+
+function getMasawiConfigForMauza(mauzaName) {
+  const tileId = mauzaNameToTileId(mauzaName);
+  return {
+    tileId,
+    sourceId: `gis-${tileId.toLowerCase()}-source`,
+    layerId: `gis-${tileId.toLowerCase()}-layer`,
+    tileUrl: `${TILESERVER_BASE}/tiles/data/${tileId}/{z}/{x}/{y}.png`,
+    tileJsonUrl: `${TILESERVER_BASE}/data/${tileId}.json`,
+  };
+}
 
 const IDS = {
   moza: {
@@ -422,14 +445,6 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
 function hideLayer(map, key) {
   if (!map) return;
 
-  if (key === "masawi") {
-    try {
-      if (map.getLayer(MASAWI_LAYER))
-        map.setLayoutProperty(MASAWI_LAYER, "visibility", "none");
-    } catch (_) {}
-    return;
-  }
-
   const ids = IDS[key];
   if (!ids) return;
 
@@ -447,14 +462,6 @@ function updateOpacity(map, key, opacity) {
   if (!map) return;
 
   const o = opacity / 100;
-
-  if (key === "masawi") {
-    try {
-      if (map.getLayer(MASAWI_LAYER))
-        map.setPaintProperty(MASAWI_LAYER, "raster-opacity", o);
-    } catch (_) {}
-    return;
-  }
 
   const ids = IDS[key];
   if (!ids) return;
@@ -492,34 +499,65 @@ function updateColor(map, key, color) {
   } catch (_) {}
 }
 
-function addOrUpdateMasawiLayer(map, opacity) {
-  if (!map) return;
+async function addOrUpdateMasawiLayer(map, opacity, mauzaName, activeMasawiRef) {
+  if (!map || !mauzaName) return;
 
-  if (!map.getSource(MASAWI_SOURCE)) {
-    map.addSource(MASAWI_SOURCE, {
+  const config = getMasawiConfigForMauza(mauzaName);
+
+  // Remove whichever mauza's ortho was previously loaded, if different
+  const previous = activeMasawiRef.current;
+  if (previous && previous.layerId !== config.layerId) {
+    try {
+      if (map.getLayer(previous.layerId)) map.removeLayer(previous.layerId);
+      if (map.getSource(previous.sourceId)) map.removeSource(previous.sourceId);
+    } catch (_) {}
+  }
+
+  let bounds = null;
+  try {
+    const res = await fetch(config.tileJsonUrl);
+    if (res.ok) {
+      const tileJson = await res.json();
+      bounds = tileJson.bounds || null;
+    } else {
+      console.warn(`No ortho registered on tileserver for "${mauzaName}" (${config.tileId})`);
+      return; // nothing to show for this mauza
+    }
+  } catch (e) {
+    console.warn("Could not fetch ortho TileJSON", e);
+    return;
+  }
+
+  if (!map.getSource(config.sourceId)) {
+    map.addSource(config.sourceId, {
       type: "raster",
-      tiles: [MASAWI_TILE_URL],
+      tiles: [config.tileUrl],
       tileSize: 256,
     });
   }
 
-  if (!map.getLayer(MASAWI_LAYER)) {
+  if (!map.getLayer(config.layerId)) {
     map.addLayer({
-      id: MASAWI_LAYER,
+      id: config.layerId,
       type: "raster",
-      source: MASAWI_SOURCE,
+      source: config.sourceId,
       paint: { "raster-opacity": opacity / 100 },
       layout: { visibility: "visible" },
     });
   } else {
-    map.setLayoutProperty(MASAWI_LAYER, "visibility", "visible");
-    map.setPaintProperty(MASAWI_LAYER, "raster-opacity", opacity / 100);
+    map.setLayoutProperty(config.layerId, "visibility", "visible");
+    map.setPaintProperty(config.layerId, "raster-opacity", opacity / 100);
   }
 
-  map.fitBounds(MASAWI_BOUNDS, { padding: 50, duration: 1500 });
+  activeMasawiRef.current = config;
+
+  if (bounds) {
+    map.fitBounds(bounds, { padding: 50, duration: 1500 });
+  }
 }
 
 export default function LandRevenueRecord({ map, selectedProjectId }) {
+  const activeMasawiRef = useRef(null);
   const [mauzas, setMauzas] = useState([]);
   const [selectedMauzas, setSelectedMauzas] = useState([]);
   const [mauzaPanelOpen, setMauzaPanelOpen] = useState(false);
@@ -548,7 +586,14 @@ export default function LandRevenueRecord({ map, selectedProjectId }) {
 
   const setOpacity = (key, opacity) => {
     setLayers((prev) => ({ ...prev, [key]: { ...prev[key], opacity } }));
-    updateOpacity(map, key, opacity);
+    if (key === "masawi") {
+      const current = activeMasawiRef.current;
+      if (current && map?.getLayer(current.layerId)) {
+        map.setPaintProperty(current.layerId, "raster-opacity", opacity / 100);
+      }
+    } else {
+      updateOpacity(map, key, opacity);
+    }
   };
 
   const setColor = (key, color) => {
@@ -731,48 +776,58 @@ const loadMauzas = async ({ zoom = false } = {}) => {
   };
 
   const handleVisible = async (key, visible) => {
-    if (!hasSelectedProject) return;
+  if (!hasSelectedProject) return;
 
-    if (!map) {
-      setVisible(key, visible);
-      return;
-    }
+  if (!map) {
+    setVisible(key, visible);
+    return;
+  }
 
-    if (!visible) {
-      setVisible(key, false);
-      hideLayer(map, key);
-
-      if (key === "moza") {
-        setMauzaPanelOpen(false);
-      }
-
-      if (key === "khasra") {
-        setKhasraPanelOpen(false);
-        setKhasraMauzas([]);
-      }
-
-      return;
-    }
+  if (!visible) {
+    setVisible(key, false);
 
     if (key === "masawi") {
-      addOrUpdateMasawiLayer(map, layers[key].opacity);
-      setVisible(key, true);
-      return;
+      const current = activeMasawiRef.current;
+      if (current && map.getLayer(current.layerId)) {
+        map.setLayoutProperty(current.layerId, "visibility", "none");
+      }
+    } else {
+      hideLayer(map, key);
     }
 
     if (key === "moza") {
-      await loadMauzas();
-      return;
+      setMauzaPanelOpen(false);
     }
 
-    if (key === "square" || key === "khasra") {
-      const { ids, features } = await ensureProjectMauzas();
-      await loadBoundaryByMauzas(key, ids, {
-        zoom: false,
-        mauzaFeatures: features,
-      });
+    if (key === "khasra") {
+      setKhasraPanelOpen(false);
+      setKhasraMauzas([]);
     }
-  };
+
+    return;
+  }
+
+  if (key === "masawi") {
+    const { features } = await ensureProjectMauzas();
+    const mauzaName = getMauzaName(features[0]);
+    await addOrUpdateMasawiLayer(map, layers[key].opacity, mauzaName, activeMasawiRef);
+    setVisible(key, true);
+    return;
+  }
+
+  if (key === "moza") {
+    await loadMauzas();
+    return;
+  }
+
+  if (key === "square" || key === "khasra") {
+    const { ids, features } = await ensureProjectMauzas();
+    await loadBoundaryByMauzas(key, ids, {
+      zoom: false,
+      mauzaFeatures: features,
+    });
+  }
+};
 
   useEffect(() => {
     if (!map || !layers.moza.visible) return;
@@ -841,6 +896,10 @@ const loadMauzas = async ({ zoom = false } = {}) => {
     ["moza", "square", "khasra", "masawi"].forEach((key) =>
       hideLayer(map, key),
     );
+
+    if (activeMasawiRef.current && map.getLayer(activeMasawiRef.current.layerId)) {
+      map.setLayoutProperty(activeMasawiRef.current.layerId, "visibility", "none");
+    }
 
     setLayers((prev) => ({
       ...prev,

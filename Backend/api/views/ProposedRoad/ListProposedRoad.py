@@ -6,12 +6,12 @@ from django.db import connection
 from rest_framework.decorators import action
 
 
-class ListProposedRoadsView(viewsets.ViewSet):
+class ListProposedRoadView(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     def list(self, request):
         try:
-            queryset = ProposedRoads.objects.all().order_by("gid")
+            queryset = ProposedRoad.objects.all().order_by("gid")
 
             gid = request.query_params.get("gid")
             road_id = request.query_params.get("id")
@@ -26,7 +26,7 @@ class ListProposedRoadsView(viewsets.ViewSet):
             if road_type:
                 queryset = queryset.filter(road_type__icontains=road_type)
 
-            serializer = ProposedRoadsSerializer(queryset, many=True)
+            serializer = ProposedRoadSerializer(queryset, many=True)
 
             return ApiResponse(
                 status=status.HTTP_200_OK,

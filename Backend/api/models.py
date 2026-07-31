@@ -1261,39 +1261,24 @@ class Plot(models.Model):
 # =========================
 class SpotLevel(models.Model):
     gid = models.AutoField(primary_key=True)
+
+    objectid_1 = models.IntegerField(null=True, blank=True)
+    objectid = models.IntegerField(null=True, blank=True)
+    id = models.IntegerField(null=True, blank=True)
+
+    x = models.FloatField(null=True, blank=True)
+    y = models.FloatField(null=True, blank=True)
+    z = models.FloatField(null=True, blank=True)
+
+    elevation = models.FloatField(null=True, blank=True)
+    elevatin_i = models.IntegerField(null=True, blank=True)
+
     geom = gis_models.GeometryField(srid=4326)
 
     project = models.ForeignKey(
         Project,
         on_delete=models.CASCADE,
         db_column="project_id",
-        related_name="spot_levels",
-        null=True,
-        blank=True,
-    )
-
-    district = models.ForeignKey(
-        District,
-        on_delete=models.CASCADE,
-        db_column="dist_id",
-        related_name="spot_levels",
-        null=True,
-        blank=True,
-    )
-
-    tehsil = models.ForeignKey(
-        Tehsil,
-        on_delete=models.CASCADE,
-        db_column="tehsil_id",
-        related_name="spot_levels",
-        null=True,
-        blank=True,
-    )
-
-    mauza = models.ForeignKey(
-        Mauza,
-        on_delete=models.CASCADE,
-        db_column="mauza_id",
         related_name="spot_levels",
         null=True,
         blank=True,
@@ -1859,25 +1844,17 @@ class ProposedRoadNetwork(models.Model):
 # Proposed Roads
 # DB table: ruda_proposed_road
 # =========================
-class ProposedRoads(models.Model):
+class ProposedRoad(models.Model):
     gid = models.AutoField(
         primary_key=True,
         db_column="gid",
     )
 
-    id = models.IntegerField(
-        db_column="id",
-        null=True,
-        blank=True,
-        db_index=True,
-    )
-
     road_type = models.CharField(
         db_column="road_type",
-        max_length=50,
+        max_length=255,
         null=True,
         blank=True,
-        db_index=True,
     )
 
     row = models.FloatField(
@@ -1886,7 +1863,6 @@ class ProposedRoads(models.Model):
         blank=True,
     )
 
-    # The imported geometry is EWKB MultiPolygon with SRID 4326.
     geom = gis_models.MultiPolygonField(
         db_column="geom",
         srid=4326,
