@@ -349,16 +349,8 @@ export default function Login() {
 
               <div className="mt-6 border-t border-white/10 pt-5 text-center">
                 <p className="text-[11px] leading-relaxed text-slate-300/55">
-                  Protected system. Unauthorized access is strictly prohibited.
-                  <br />
-                  Contact{" "}
-                  <a
-                    href="mailto:support@ruda.com"
-                    className="font-semibold text-slate-300/75 transition hover:text-white"
-                  >
-                    support@ruda.com
-                  </a>{" "}
-                  for access issues.
+                  LA&EM Department, D&BC, A&UP, Transfer and Record, Engineering
+                  
                 </p>
               </div>
             </form>

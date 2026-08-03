@@ -577,8 +577,8 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       className={`group relative w-full overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
         hover:-translate-y-1 hover:scale-[1.012]
         ${compact
-          ? "min-h-[165px] rounded-xl px-3 py-3"
-          : "h-full min-h-0 rounded-[18px] px-4 py-4"
+          ? "rounded-xl px-3 py-3"
+          : "h-full rounded-[18px] px-4 py-4"
         }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
@@ -603,6 +603,7 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
         style={{ backgroundColor: `${area.accent}30` }}
       />
 
+      {/* Icon badge — top-right */}
       <div
         className={`${compact
           ? "right-3 top-3 h-9 w-9"
@@ -618,8 +619,11 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
         <Icon size={compact ? 17 : 19} strokeWidth={2} />
       </div>
 
-      <div className="relative z-10 grid h-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 pr-12">
-        <div className="flex items-center justify-center">
+      {/* Content row: number badge + text */}
+      <div className="relative z-10 flex h-full flex-col justify-center gap-0 pr-12">
+        {/* Number + Title row */}
+        <div className="flex items-start gap-3">
+          {/* Number badge */}
           <div
             className={`${compact
               ? "h-9 w-9 text-sm"
@@ -634,39 +638,36 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
           >
             {Number(area.number)}
           </div>
-        </div>
 
-        <div className="grid min-w-0 content-center">
+          {/* Title */}
           <h3
             className={`${compact
-              ? "min-h-[25px] text-[11px]"
-              : "min-h-[30px] text-[12px] 2xl:min-h-[32px] 2xl:text-[13px]"
-              } flex items-center font-black uppercase leading-[1.12] tracking-[0.025em]`}
+              ? "text-[11px]"
+              : "text-[11.5px] 2xl:text-[12.5px]"
+              } flex min-h-[2.6em] items-center font-black uppercase leading-[1.18] tracking-[0.025em]`}
           >
             {compact ? area.shortTitle : area.title}
           </h3>
-
-          <ul className={`${compact ? "mt-1.5 space-y-1" : "mt-1.5 space-y-1.5"}`}>
-            {area.bullets.map((bullet) => (
-              <li
-                key={bullet}
-                className={`${compact
-                  ? "text-[10px]"
-                  : "text-[10.5px] 2xl:text-[11px]"
-                  } flex items-start gap-2 leading-[1.32] text-white/90`}
-              >
-                <span
-                  className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{
-                    backgroundColor: area.accent,
-                    boxShadow: `0 0 7px ${area.accent}80`,
-                  }}
-                />
-                <span>{bullet}</span>
-              </li>
-            ))}
-          </ul>
         </div>
+
+        {/* Bullets */}
+        <ul className={`${compact ? "mt-2 space-y-[5px] pl-[3.25rem]" : "mt-2 space-y-[5px] pl-[3.5rem]"}`}>
+          {area.bullets.map((bullet) => (
+            <li
+              key={bullet}
+              className="flex items-start gap-2 text-[10px] leading-[1.35] text-white/88 2xl:text-[10.5px]"
+            >
+              <span
+                className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{
+                  backgroundColor: area.accent,
+                  boxShadow: `0 0 7px ${area.accent}80`,
+                }}
+              />
+              <span>{bullet}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
