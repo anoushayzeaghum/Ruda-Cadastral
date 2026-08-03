@@ -1,5 +1,33 @@
-import { LAYERS } from "./tools/Layers/LayerManager/MetaverseLayerConfig";
+﻿import { LAYERS } from "./tools/Layers/LayerManager/MetaverseLayerConfig";
 
+// ─── Admin boundary layer IDs (defined in AdministrativeLayers/*) ─────────────
+export const DISTRICT_BOUNDARY_IDS = {
+  fill: "metaverse-admin-district-fill",
+  line: "metaverse-admin-district-line",
+};
+
+export const TEHSIL_BOUNDARY_IDS = {
+  fill: "metaverse-admin-tehsil-fill",
+  line: "metaverse-admin-tehsil-line",
+};
+
+export const NOTIFIED_PHASES_IDS = {
+  fill: "metaverse-admin-notified-phases-fill",
+  line: "metaverse-admin-notified-phases-line",
+};
+
+export const RUDA_NOTIFIED_IDS = {
+  fill: "metaverse-admin-ruda-notified-fill",
+  casing: "metaverse-admin-ruda-notified-casing",
+  line: "metaverse-admin-ruda-notified-line",
+};
+
+export const RUDA_PLANNING_IDS = {
+  fill: "metaverse-admin-ruda-phases-fill",
+  line: "metaverse-admin-ruda-phases-line",
+};
+
+// ─── Existing re-exported constants (unchanged) ──────────────────────────────
 const ADMIN_LOCATION_FIELDS = [
   { keys: ["district", "District"], label: "District" },
   { keys: ["tehsil", "Tehsil"], label: "Tehsil" },
@@ -48,8 +76,31 @@ export const MISCELLANEOUS_LAYER_IDS = {
   fieldPoints: "gism-misc-fp-cir",
 };
 
+// ─── Enhanced title fallback key order ───────────────────────────────────────
+// PlotPopup resolveTitle will use group.titleKeys first, then these as a
+// universal fallback so any layer has a meaningful title without extra config.
+export const UNIVERSAL_TITLE_FALLBACK_KEYS = [
+  "name",
+  "Name",
+  "plot_no",
+  "plot_number",
+  "block",
+  "phase",
+  "brief_name",
+  "project",
+  "road_name",
+  "road",
+  "camera",
+  "code",
+  "mauza",
+  "district",
+  "tehsil",
+  "type",
+];
+
 /** Popup field/group definitions consumed by PlotPopup.jsx */
 export const VECTOR_POPUP_GROUPS = [
+  // ── Master Plan ─────────────────────────────────────────────────────────────
   {
     id: "masterPlan",
     label: "Master Plan",
@@ -60,6 +111,7 @@ export const VECTOR_POPUP_GROUPS = [
     highlightLayerId: LAYERS.masterPlanHover,
     highlightFilterKey: "gid",
   },
+  // ── Project Boundary ────────────────────────────────────────────────────────
   {
     id: "projectBoundary",
     label: "Project Boundary",
@@ -71,6 +123,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["type"], label: "Type" },
     ],
   },
+  // ── Block ────────────────────────────────────────────────────────────────────
   {
     id: "block",
     label: "Block",
@@ -83,6 +136,7 @@ export const VECTOR_POPUP_GROUPS = [
       { key: "area", label: "Area (Acres)" },
     ],
   },
+  // ── Spot Level ───────────────────────────────────────────────────────────────
   {
     id: "spotLevel",
     label: "Spot Level",
@@ -94,6 +148,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["elevation", "level"], label: "Elevation (m)" },
     ],
   },
+  // ── Contours ─────────────────────────────────────────────────────────────────
   {
     id: "contours",
     label: "Contour",
@@ -104,6 +159,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["elevation", "ELEVATION", "Elevation"], label: "Elevation (m)" },
     ],
   },
+  // ── Roads ────────────────────────────────────────────────────────────────────
   {
     id: "roads",
     label: "Road",
@@ -117,6 +173,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["row", "ROW"], label: "ROW" },
     ],
   },
+  // ── Water Supply Points ──────────────────────────────────────────────────────
   {
     id: "waterSupplyPoints",
     label: "Water Supply Point",
@@ -127,6 +184,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["type", "Type"], label: "Type" },
     ],
   },
+  // ── Water Supply Lines ───────────────────────────────────────────────────────
   {
     id: "waterSupplyLines",
     label: "Water Supply Line",
@@ -139,6 +197,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["shape_leng"], label: "Length (ft)" },
     ],
   },
+  // ── Sewage Points ────────────────────────────────────────────────────────────
   {
     id: "sewagePoints",
     label: "Sewage Point",
@@ -149,6 +208,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["type", "Type"], label: "Type" },
     ],
   },
+  // ── Camera Locations ─────────────────────────────────────────────────────────
   {
     id: "cameraLocations",
     label: "Camera Location",
@@ -163,16 +223,22 @@ export const VECTOR_POPUP_GROUPS = [
       { key: "sr_no", label: "Serial No" },
     ],
   },
+  // ── RUDA Boundary (incl. dash-line variant) ──────────────────────────────────
   {
     id: "rudaBoundary",
     label: "RUDA Boundary",
-    layerIds: [LAYERS.rudaBoundaryFill, LAYERS.rudaBoundaryLine],
+    layerIds: [
+      LAYERS.rudaBoundaryFill,
+      LAYERS.rudaBoundaryLine,
+      LAYERS.rudaBoundaryDashLine,
+    ],
     titleKeys: ["_ruda_phase_label", "name", "phase"],
     fields: [
       { keys: ["_ruda_phase_label", "phase", "phase_name"], label: "Phase" },
       { keys: ["name"], label: "Name" },
     ],
   },
+  // ── RUDA Mauza Boundary ──────────────────────────────────────────────────────
   {
     id: "rudaMauzaBoundary",
     label: "RUDA Mauza",
@@ -183,6 +249,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["Mouza", "mouza", "Mauza", "mauza"], label: "Mauza Name" },
     ],
   },
+  // ── Geodetic Network ─────────────────────────────────────────────────────────
   {
     id: "geodeticNetwork",
     label: "Geodetic Point",
@@ -196,6 +263,7 @@ export const VECTOR_POPUP_GROUPS = [
       { key: "elevation", label: "Elevation (m)" },
     ],
   },
+  // ── Proposed Roads ───────────────────────────────────────────────────────────
   {
     id: "proposedRoads",
     label: "Proposed Road",
@@ -212,6 +280,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["kml_desc"], label: "Description", stripHtml: true },
     ],
   },
+  // ── Notified Boundary ────────────────────────────────────────────────────────
   {
     id: "notifiedBoundary",
     label: "Notified Boundary",
@@ -223,6 +292,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["type"], label: "Type" },
     ],
   },
+  // ── Topo Boundary ────────────────────────────────────────────────────────────
   {
     id: "topoBoundary",
     label: "Topo Boundary",
@@ -234,6 +304,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["description", "Description"], label: "Description" },
     ],
   },
+  // ── Land Revenue – Mauza ─────────────────────────────────────────────────────
   {
     id: "lrrMauza",
     label: "Mauza Boundary",
@@ -248,6 +319,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["pc"], label: "Patwar Circle" },
     ],
   },
+  // ── Land Revenue – Square ────────────────────────────────────────────────────
   {
     id: "lrrSquare",
     label: "Square",
@@ -263,6 +335,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["layer", "Layer"], label: "Layer" },
     ],
   },
+  // ── Land Revenue – Khasra ────────────────────────────────────────────────────
   {
     id: "lrrKhasra",
     label: "Khasra",
@@ -282,6 +355,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["remarks"], label: "Remarks" },
     ],
   },
+  // ── Trijunction ──────────────────────────────────────────────────────────────
   {
     id: "trijunction",
     label: "Trijunction Point",
@@ -297,6 +371,7 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["layer"], label: "Layer" },
     ],
   },
+  // ── Field Points ─────────────────────────────────────────────────────────────
   {
     id: "fieldPoints",
     label: "Field Point",
@@ -310,8 +385,164 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["layer"], label: "Layer" },
     ],
   },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // NEW GROUPS – layers that previously had no popup support
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── RTW Package ──────────────────────────────────────────────────────────────
+  {
+    id: "rtwPackage",
+    label: "RTW Package",
+    layerIds: [LAYERS.rtwPackageFill, LAYERS.rtwPackageLine],
+    titleKeys: ["__rtwPackageCategory", "package", "name", "ruda_phase", "phase"],
+    fields: [
+      { keys: ["__rtwPackageCategory", "package", "package_name"], label: "Package" },
+      { keys: ["name"], label: "Name" },
+      { keys: ["ruda_phase", "phase"], label: "Phase" },
+      { keys: ["type", "Type"], label: "Type" },
+      { keys: ["remarks", "description"], label: "Remarks" },
+    ],
+  },
+  // ── RTW Alignment ────────────────────────────────────────────────────────────
+  {
+    id: "rtwAlignment",
+    label: "RTW Alignment",
+    layerIds: [LAYERS.rtwAlignmentFill, LAYERS.rtwAlignmentLine],
+    titleKeys: ["name", "package", "ruda_phase", "phase", "type"],
+    fields: [
+      { keys: ["name"], label: "Name" },
+      { keys: ["package", "package_name"], label: "Package" },
+      { keys: ["ruda_phase", "phase"], label: "Phase" },
+      { keys: ["type", "Type"], label: "Type" },
+      { keys: ["remarks", "description"], label: "Remarks" },
+    ],
+  },
+  // ── State Land ───────────────────────────────────────────────────────────────
+  {
+    id: "stateLand",
+    label: "State Land",
+    layerIds: [LAYERS.stateLandFill, LAYERS.stateLandLine],
+    titleKeys: ["name", "Name", "type", "category", "land_type"],
+    fields: [
+      { keys: ["name", "Name"], label: "Name" },
+      { keys: ["type", "Type", "land_type", "category"], label: "Type" },
+      { keys: ["area", "area_acres"], label: "Area (Acres)" },
+      { keys: ["district", "District"], label: "District" },
+      { keys: ["tehsil", "Tehsil"], label: "Tehsil" },
+      { keys: ["remarks", "description"], label: "Remarks" },
+    ],
+  },
+  // ── Awarded Land ─────────────────────────────────────────────────────────────
+  {
+    id: "awardedLand",
+    label: "Awarded Land",
+    layerIds: [LAYERS.awardedLandFill, LAYERS.awardedLandLine],
+    titleKeys: ["name", "Name", "award_no", "type", "category"],
+    fields: [
+      { keys: ["name", "Name"], label: "Name" },
+      { keys: ["award_no", "award_number"], label: "Award No" },
+      { keys: ["type", "Type", "category"], label: "Type" },
+      { keys: ["area", "area_acres"], label: "Area (Acres)" },
+      { keys: ["owner", "owner_name"], label: "Owner" },
+      { keys: ["district", "District"], label: "District" },
+      { keys: ["tehsil", "Tehsil"], label: "Tehsil" },
+      { keys: ["remarks", "description"], label: "Remarks" },
+    ],
+  },
+  // ── Possession Land ──────────────────────────────────────────────────────────
+  {
+    id: "possessionLand",
+    label: "Possession Land",
+    layerIds: [LAYERS.possessionLandFill, LAYERS.possessionLandLine],
+    titleKeys: ["name", "Name", "possession_no", "type", "category"],
+    fields: [
+      { keys: ["name", "Name"], label: "Name" },
+      { keys: ["possession_no", "poss_no"], label: "Possession No" },
+      { keys: ["type", "Type", "category"], label: "Type" },
+      { keys: ["area", "area_acres"], label: "Area (Acres)" },
+      { keys: ["owner", "owner_name"], label: "Owner" },
+      { keys: ["district", "District"], label: "District" },
+      { keys: ["tehsil", "Tehsil"], label: "Tehsil" },
+      { keys: ["remarks", "description"], label: "Remarks" },
+    ],
+  },
+  // ── District Boundary ────────────────────────────────────────────────────────
+  {
+    id: "districtBoundary",
+    label: "District Boundary",
+    layerIds: [DISTRICT_BOUNDARY_IDS.fill, DISTRICT_BOUNDARY_IDS.line],
+    titleKeys: ["district_name", "district", "dist_name", "name", "Name"],
+    fields: [
+      { keys: ["district_name", "district", "dist_name", "name", "Name"], label: "District" },
+    ],
+  },
+  // ── Tehsil Boundary ──────────────────────────────────────────────────────────
+  {
+    id: "tehsilBoundary",
+    label: "Tehsil Boundary",
+    layerIds: [TEHSIL_BOUNDARY_IDS.fill, TEHSIL_BOUNDARY_IDS.line],
+    titleKeys: ["tehsil_name", "tehsil", "teh_name", "name", "Name"],
+    fields: [
+      { keys: ["tehsil_name", "tehsil", "teh_name", "name", "Name"], label: "Tehsil" },
+      { keys: ["district_name", "district"], label: "District" },
+    ],
+  },
+  // ── Notified Phases Boundary ─────────────────────────────────────────────────
+  {
+    id: "notifiedPhasesBoundary",
+    label: "Notified Phases Boundary",
+    layerIds: [NOTIFIED_PHASES_IDS.fill, NOTIFIED_PHASES_IDS.line],
+    titleKeys: ["phases_new", "phases", "phase_name", "phase", "name"],
+    fields: [
+      { keys: ["phases_new", "phases", "phase_name", "phase"], label: "Phase" },
+      { keys: ["name"], label: "Name" },
+      { keys: ["area", "shape_area"], label: "Area" },
+      { keys: ["remarks", "description"], label: "Remarks" },
+    ],
+  },
+  // ── RUDA Notified Boundary ────────────────────────────────────────────────────
+  {
+    id: "rudaNotifiedBoundary",
+    label: "RUDA Notified Boundary",
+    layerIds: [
+      RUDA_NOTIFIED_IDS.fill,
+      RUDA_NOTIFIED_IDS.casing,
+      RUDA_NOTIFIED_IDS.line,
+    ],
+    titleKeys: ["name", "Name", "jurisdiction", "boundary_name", "title"],
+    fields: [
+      { keys: ["name", "Name", "jurisdiction", "boundary_name", "title"], label: "Name" },
+      { keys: ["type", "Type"], label: "Type" },
+      { keys: ["area", "shape_area"], label: "Area" },
+      { keys: ["remarks", "description"], label: "Remarks" },
+    ],
+  },
+  // ── RUDA Planning / Phases Boundary ──────────────────────────────────────────
+  {
+    id: "rudaPlanningBoundary",
+    label: "RUDA Phases Boundary",
+    layerIds: [RUDA_PLANNING_IDS.fill, RUDA_PLANNING_IDS.line],
+    titleKeys: [
+      "phase_name", "phase", "phase_no", "phase_no_",
+      "name", "Name", "project_name", "project",
+    ],
+    fields: [
+      {
+        keys: [
+          "phase_name", "phase", "phase_no", "phase_no_",
+          "name", "Name", "project_name", "project", "title", "label",
+        ],
+        label: "Phase / Name",
+      },
+      { keys: ["type", "Type"], label: "Type" },
+      { keys: ["area", "shape_area"], label: "Area" },
+      { keys: ["remarks"], label: "Remarks" },
+    ],
+  },
 ];
 
+// ─── Utilities (unchanged) ───────────────────────────────────────────────────
 export function buildLayerPopupLookup(groups = VECTOR_POPUP_GROUPS) {
   const layerIdToGroup = new Map();
 
