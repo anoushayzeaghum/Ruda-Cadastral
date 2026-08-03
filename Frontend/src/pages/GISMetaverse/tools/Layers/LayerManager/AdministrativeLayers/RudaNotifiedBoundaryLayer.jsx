@@ -83,21 +83,13 @@ export function addOrUpdateRudaNotifiedBoundary(
       layout: { visibility: "visible" },
     });
   } else {
-    map.setPaintProperty(
-      RUDA_NOTIFIED_BOUNDARY.fill,
-      "fill-color",
-      fillColor,
-    );
+    map.setPaintProperty(RUDA_NOTIFIED_BOUNDARY.fill, "fill-color", fillColor);
     map.setPaintProperty(
       RUDA_NOTIFIED_BOUNDARY.fill,
       "fill-opacity",
       0.055 * opacity,
     );
-    map.setLayoutProperty(
-      RUDA_NOTIFIED_BOUNDARY.fill,
-      "visibility",
-      "visible",
-    );
+    map.setLayoutProperty(RUDA_NOTIFIED_BOUNDARY.fill, "visibility", "visible");
   }
 
   if (!map.getLayer(RUDA_NOTIFIED_BOUNDARY.casing)) {
@@ -107,7 +99,7 @@ export function addOrUpdateRudaNotifiedBoundary(
       source: RUDA_NOTIFIED_BOUNDARY.source,
       paint: {
         "line-color": "#1A1A1A",
-        "line-width": 4,
+        "line-width": 3,
         "line-opacity": 0.72 * opacity,
       },
       layout: {
@@ -136,7 +128,7 @@ export function addOrUpdateRudaNotifiedBoundary(
       source: RUDA_NOTIFIED_BOUNDARY.source,
       paint: {
         "line-color": lineColor,
-        "line-width": 2.4,
+        "line-width": 1.5,
         "line-opacity": opacity,
         "line-dasharray": [5, 2, 1, 2],
       },
@@ -147,26 +139,14 @@ export function addOrUpdateRudaNotifiedBoundary(
       },
     });
   } else {
-    map.setPaintProperty(
-      RUDA_NOTIFIED_BOUNDARY.line,
-      "line-color",
-      lineColor,
-    );
-    map.setPaintProperty(
-      RUDA_NOTIFIED_BOUNDARY.line,
-      "line-opacity",
-      opacity,
-    );
+    map.setPaintProperty(RUDA_NOTIFIED_BOUNDARY.line, "line-color", lineColor);
+    map.setPaintProperty(RUDA_NOTIFIED_BOUNDARY.line, "line-opacity", opacity);
     map.setPaintProperty(
       RUDA_NOTIFIED_BOUNDARY.line,
       "line-dasharray",
       [5, 2, 1, 2],
     );
-    map.setLayoutProperty(
-      RUDA_NOTIFIED_BOUNDARY.line,
-      "visibility",
-      "visible",
-    );
+    map.setLayoutProperty(RUDA_NOTIFIED_BOUNDARY.line, "visibility", "visible");
   }
 
   if (!map.getLayer(RUDA_NOTIFIED_BOUNDARY.labelLayer)) {

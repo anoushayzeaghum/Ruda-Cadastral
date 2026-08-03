@@ -14,6 +14,8 @@ import {
   unwrapGeoJSON,
 } from "../AttributeTable/AdminAttributeTableShell";
 import { readAreaSqft, sqftToAcres } from "../AttributeTable/areaUtils";
+import InlineLayerLegend from "../_InlineLayerLegend";
+import { polygonLegend, lineLegend } from "../_legendUtils";
 
 const MASTER_PLAN_LAYER_COLORS = {
   boundary: "#0f3d2e",

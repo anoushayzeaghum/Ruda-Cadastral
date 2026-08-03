@@ -10,6 +10,8 @@ import {
   API_BASE,
   unwrapGeoJSON,
 } from "./AttributeTable/AdminAttributeTableShell";
+import InlineLayerLegend from "./_InlineLayerLegend";
+import { pointLegend } from "./_legendUtils";
 
 const GEODETIC_LAYER = {
   key: "geodeticNetwork",
@@ -286,6 +288,15 @@ export default function Topographic({ map }) {
                 {layer.opacity}%
               </span>
             </div>
+
+            {layer.visible && (
+              <InlineLayerLegend
+                items={[
+                  pointLegend("Geodetic Point", layer.color),
+                ]}
+                opacity={layer.opacity}
+              />
+            )}
 
             {detailsOpen && (
               <div

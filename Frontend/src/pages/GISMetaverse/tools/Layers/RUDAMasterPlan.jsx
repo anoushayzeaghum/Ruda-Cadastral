@@ -115,6 +115,8 @@ import {
   getSWTPSiteGeoJSON,
   getWWTPSitesGeoJSON,
 } from "../../../../services/metaverseApi";
+import InlineLayerLegend from "./_InlineLayerLegend";
+import { lineLegend, polygonLegend } from "./_legendUtils";
 
 const RUDA_MASTER_PLAN_GROUPS = [
   {
@@ -1322,15 +1324,68 @@ export default function RUDAMasterPlan({ map }) {
     }
   };
 
+  const getInlineLegendForLayer = (layerKey, currentLayerState, currentLayerConfig) => {
+    // Priority 1: Specialized LegendComponent - rendered inside LayerDetails, not here
+    // Priority 2: Categorized legend arrays → convert to inline items
+    if (currentLayerConfig.categorized && currentLayerConfig.categoryLegend) {
+      const colors = categorizedColors[layerKey] || {};
+      return currentLayerConfig.categoryLegend.map((item) => ({
+        id: item.label || item.value || item.id,
+        label: item.label || item.value,
+        type: "polygon",
+        color: colors[item.label] || item.color,
+        fillColor: colors[item.label] || item.color,
+        borderColor: colors[item.label] || item.color,
+      }));
+    }
+
+    // Priority 3: Simple single-style layers
+    const color = currentLayerState.color;
+
+    if (layerKey === "rudaPlanningBoundary") {
+      return [lineLegend("Planning Boundary", color || MASTER_PLANNING_BOUNDARY_COLOR, { dashed: false, width: 2 })];
+    }
+    if (layerKey === "masterPlanPhases") {
+      return [polygonLegend("Master Plan Phases", color || MASTER_PLAN_PHASES_COLOR)];
+    }
+    if (layerKey === "precinctBoundaryLayer") {
+      return [lineLegend("Precinct Boundary", color || PRECINCT_BOUNDARY_COLOR, { width: 1.5 })];
+    }
+    if (layerKey === "rtwAlignment") {
+      return [polygonLegend("RTW Alignment", color || RTW_ALIGNMENT_COLOR)];
+    }
+    if (layerKey === "riverBoundaryLayer") {
+      return [polygonLegend("Proposed River", color || RIVER_BOUNDARY_COLOR)];
+    }
+    if (layerKey === "riverRavi") {
+      return [polygonLegend("River 2025", color || RIVER_RAVI_COLOR)];
+    }
+    if (layerKey === "wwtpSite") {
+      return [polygonLegend("Proposed WWTP Sites", color || WWTP_SITES_COLOR)];
+    }
+    if (layerKey === "swtpSite") {
+      return [polygonLegend("SWTP Sites", color || SWTP_SITES_COLOR)];
+    }
+
+    return [];
+  };
+
   const renderLayer = (layer) => {
     const currentLayerState = layerState[layer.key] || {};
     const currentLayerMeta = layerMeta[layer.key] || {};
     const currentLayerConfig = RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key] || {};
+    const isVisible = Boolean(currentLayerState.checked);
+
+    // Determine which legend to show
+    const LegendComponent = currentLayerConfig.LegendComponent;
+    const legendItems = isVisible
+      ? getInlineLegendForLayer(layer.key, currentLayerState, currentLayerConfig)
+      : [];
 
     return (
       <div key={layer.key}>
         <LayerItem
-          checked={Boolean(currentLayerState.checked)}
+          checked={isVisible}
           color={currentLayerState.color || layer.color}
           label={layer.label}
           opacity={currentLayerState.opacity ?? 100}
@@ -1345,6 +1400,41 @@ export default function RUDAMasterPlan({ map }) {
           onDropdownToggle={() => toggleLayerDropdown(layer.key)}
           onTableOpen={() => setActiveAttributeTable(layer.key)}
         />
+
+        {/* Inline legend — shown when layer is visible, not using dropdown */}
+        {isVisible && !currentLayerConfig.customLandUseStyle && !currentLayerConfig.categorized && legendItems.length > 0 && (
+          <InlineLayerLegend
+            items={legendItems}
+            opacity={currentLayerState.opacity ?? 100}
+          />
+        )}
+
+        {/* Categorized layers: show legend items inline (not in dropdown) */}
+        {isVisible && currentLayerConfig.categorized && !LegendComponent && legendItems.length > 0 && (
+          <InlineLayerLegend
+            items={legendItems}
+            opacity={currentLayerState.opacity ?? 100}
+          />
+        )}
+
+        {/* Land Use Zoning: uses specialized LegendComponent */}
+        {isVisible && currentLayerConfig.customLandUseStyle && LegendComponent && (
+          <div className="mt-2 pl-8">
+            <LandUseLegend />
+          </div>
+        )}
+
+        {/* Categorized with LegendComponent: render inline */}
+        {isVisible && currentLayerConfig.categorized && LegendComponent && (
+          <div className="mt-2 pl-4 pr-2">
+            <LegendComponent
+              colors={categorizedColors[layer.key] || {}}
+              onColorChange={(categoryLabel, color) =>
+                updateCategorizedColor(layer.key, categoryLabel, color)
+              }
+            />
+          </div>
+        )}
 
         {currentLayerState.dropdownOpen && (
           <LayerDetails

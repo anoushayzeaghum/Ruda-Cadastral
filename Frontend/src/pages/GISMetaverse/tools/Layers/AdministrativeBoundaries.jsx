@@ -36,6 +36,8 @@ import {
   setTehsilBoundaryVisibility,
 } from "./LayerManager/AdministrativeLayers/TehsilBoundaryLayer";
 import { getRudaNotifiedPhasesBoundaryGeoJSON } from "../../../../services/metaverseApi";
+import InlineLayerLegend from "./_InlineLayerLegend";
+import { lineLegend, polygonLegend } from "./_legendUtils";
 
 const EMPTY_FC = { type: "FeatureCollection", features: [] };
 
@@ -422,6 +424,19 @@ export default function AdministrativeBoundaries({
             onTableOpen={() => setActiveAttributeTable("rudaNotifiedBoundary")}
           />
 
+          {isVisible("rudaNotifiedBoundary") && (
+            <InlineLayerLegend
+              items={[
+                lineLegend(
+                  "Notified Boundary",
+                  styles.rudaNotifiedBoundary.color || DEFAULT_RUDA_NOTIFIED_STYLE.color,
+                  { dashed: true, width: 2 },
+                ),
+              ]}
+              opacity={styles.rudaNotifiedBoundary.opacity ?? 100}
+            />
+          )}
+
           <LayerItem
             checked={isVisible("rudaPhasesBoundary")}
             loading={loading.rudaPhasesBoundary}
@@ -448,6 +463,20 @@ export default function AdministrativeBoundaries({
             )}
           </LayerItem>
 
+          {isVisible("rudaPhasesBoundary") && (
+            <InlineLayerLegend
+              items={NOTIFIED_PHASES_LEGEND.map((item) => ({
+                id: item.label,
+                label: item.label,
+                type: "polygon",
+                color: item.color,
+                fillColor: item.color,
+                borderColor: item.color,
+              }))}
+              opacity={styles.rudaPhasesBoundary.opacity ?? 100}
+            />
+          )}
+
           <LayerItem
             checked={isVisible("districtBoundary")}
             loading={loading.districtBoundary}
@@ -467,6 +496,19 @@ export default function AdministrativeBoundaries({
             onTableOpen={() => setActiveAttributeTable("districtBoundary")}
           />
 
+          {isVisible("districtBoundary") && (
+            <InlineLayerLegend
+              items={[
+                lineLegend(
+                  "District Boundary",
+                  styles.districtBoundary.color || DEFAULT_DISTRICT_STYLE.color,
+                  { width: 2 },
+                ),
+              ]}
+              opacity={styles.districtBoundary.opacity ?? 100}
+            />
+          )}
+
           <LayerItem
             checked={isVisible("tehsilBoundary")}
             loading={loading.tehsilBoundary}
@@ -485,6 +527,19 @@ export default function AdministrativeBoundaries({
             count={featureCounts.tehsilBoundary}
             onTableOpen={() => setActiveAttributeTable("tehsilBoundary")}
           />
+
+          {isVisible("tehsilBoundary") && (
+            <InlineLayerLegend
+              items={[
+                lineLegend(
+                  "Tehsil Boundary",
+                  styles.tehsilBoundary.color || DEFAULT_TEHSIL_STYLE.color,
+                  { dashed: true, width: 1 },
+                ),
+              ]}
+              opacity={styles.tehsilBoundary.opacity ?? 100}
+            />
+          )}
         </div>
       )}
 

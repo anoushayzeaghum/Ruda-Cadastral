@@ -19,6 +19,8 @@ import RoadNetworkLegend, {
   setRoadNetworkOpacity,
   setRoadNetworkVisibility,
 } from "./LayerManager/BaseData/RoadNetworkLayer";
+import InlineLayerLegend from "./_InlineLayerLegend";
+import { polygonLegend, lineLegend } from "./_legendUtils";
 
 const SOURCE_PREFIX = "gism-base-data";
 
@@ -609,6 +611,27 @@ export default function BaseData({ map }) {
           {LAYER_DEFS.map((definition) => {
             const state = layers[definition.key];
 
+            // Build inline legend items for non-road, non-flood layers
+            let legendItems = [];
+            if (!definition.customRoadStyle && definition.fetchGeoJSON) {
+              if (definition.key === "housingSchemes") {
+                legendItems = [
+                  polygonLegend("Housing Schemes", state.color || HousingSchemesStyle.color),
+                ];
+              } else if (definition.key === "forest") {
+                legendItems = [
+                  polygonLegend("Forest Boundary", state.color || ForestBoundaryStyle.color),
+                ];
+              } else if (definition.key === "existingDrains") {
+                legendItems = [
+                  lineLegend("Existing Drain", state.color || ExistingDrainsStyle.color, {
+                    dashed: Array.isArray(ExistingDrainsStyle.lineDasharray),
+                    width: 2,
+                  }),
+                ];
+              }
+            }
+
             return (
               <div key={definition.key}>
                 <LayerItem
@@ -629,6 +652,10 @@ export default function BaseData({ map }) {
 
                 {definition.customRoadStyle && state.visible && (
                   <RoadNetworkLegend />
+                )}
+
+                {!definition.customRoadStyle && state.visible && legendItems.length > 0 && (
+                  <InlineLayerLegend items={legendItems} opacity={state.opacity} />
                 )}
 
                 {statuses[definition.key] && state.visible && (
