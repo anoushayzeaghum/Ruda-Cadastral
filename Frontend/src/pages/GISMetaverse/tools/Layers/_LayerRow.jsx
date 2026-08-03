@@ -1,9 +1,15 @@
 import { Grid3X3 } from "lucide-react";
+import InlineLayerLegend from "./_InlineLayerLegend";
 
 /**
  * Shared layer row used by every Layers sub-panel.
  * Shows a checkbox, colour swatch, label, and a live opacity slider.
- * Opacity slider is always rendered and functional — it applies instantly.
+ * Optionally renders an inline legend below the slider when the layer is on.
+ *
+ * New optional props:
+ *   legendItems      – Array of legend item objects from _legendUtils
+ *   showLegend       – Override: force show/hide the legend (defaults to `checked`)
+ *   legendComponent  – A React element/node to render instead of InlineLayerLegend
  */
 export default function LayerRow({
   label,
@@ -14,11 +20,19 @@ export default function LayerRow({
   onChange,
   onOpacityChange,
   disabled = false,
+  legendItems = [],
+  showLegend,
+  legendComponent = null,
 }) {
   const handleCheckedChange = (nextValue) => {
     onCheckedChange?.(nextValue);
     onChange?.(nextValue);
   };
+
+  const shouldShowLegend =
+    !disabled &&
+    (showLegend ?? checked) &&
+    (legendComponent !== null || legendItems.length > 0);
 
   return (
     <div className={`mt-3 first:mt-1 ${disabled ? "opacity-50" : ""}`}>
@@ -62,6 +76,14 @@ export default function LayerRow({
           {opacity ?? 100}%
         </span>
       </div>
+
+      {/* Inline legend — only when layer is visible */}
+      {shouldShowLegend &&
+        (legendComponent !== null ? (
+          legendComponent
+        ) : (
+          <InlineLayerLegend items={legendItems} opacity={opacity ?? 100} />
+        ))}
     </div>
   );
 }

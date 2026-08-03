@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import LayerRow from "../_LayerRow";
+import { pointLegend, lineLegend, polygonLegend } from "../_legendUtils";
 
 const DSM_SOURCE = "gis-dsm-source";
 const DSM_LAYER = "gis-dsm-layer";
@@ -365,6 +366,7 @@ export default function TopographicPlan({
             loading={topoLoading && spotLevelVisible}
             onCheckedChange={setSpotLevelVisible}
             onOpacityChange={setSpotLevelOpacity}
+            legendItems={[pointLegend("Spot Level", "#a855f7")]}
           />
 
           {/* <LayerRow
@@ -385,6 +387,14 @@ export default function TopographicPlan({
             loading={topoLoading && topoVisible}
             onCheckedChange={setTopoVisible}
             onOpacityChange={setTopoOpacity}
+            legendItems={[
+              polygonLegend("Builtup Areas", "#f97316"),
+              polygonLegend("Parks", "#22c55e"),
+              polygonLegend("Green Belts", "#10b981"),
+              lineLegend("Road Tracks", "#64748b", { width: 2 }),
+              pointLegend("Manholes", "#ef4444"),
+              pointLegend("Light Poles", "#eab308"),
+            ]}
           />
 
           <LayerRow

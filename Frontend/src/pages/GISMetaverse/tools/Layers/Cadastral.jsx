@@ -32,6 +32,8 @@ import {
   unwrapGeoJSON,
 } from "./AttributeTable/AdminAttributeTableShell";
 import { readAreaSqft } from "./AttributeTable/areaUtils";
+import InlineLayerLegend from "./_InlineLayerLegend";
+import { lineLegend, polygonLegend, pointLegend } from "./_legendUtils";
 
 const MASAWI_SOURCE = "gis-handu-gujran-ortho-source";
 const MASAWI_LAYER = "gis-handu-gujran-ortho-layer";
@@ -1354,95 +1356,105 @@ export default function Cadastral({ map, selectedProjectId }) {
           : [];
 
     return (
-      <LayerItem
-        key={key}
-        checked={layers[key].visible}
-        color={layers[key].color || color}
-        label={label}
-        loading={layers[key].loading}
-        opacity={layers[key].opacity}
-        hasDropdown={dropdown || isSquare || isMasawi}
-        hasTable={isKhasra || isSquare}
-        dropdownOpen={
-          (isKhasra || isSquare || isMasawi) && khasraPanelOpen === key
-        }
-        dropdownTitle={`Show ${label} details`}
-        onChange={(checked) => handleVisible(key, checked)}
-        onOpacityChange={(opacity) => setOpacity(key, opacity)}
-        onColorChange={(value) => setColor(key, value)}
-        colorEditable={key !== "masawi"}
-        onDropdownToggle={() =>
-          setKhasraPanelOpen((prev) => (prev === key ? false : key))
-        }
-        onTableOpen={() => setActiveTable(key)}
-      >
-        {(isKhasra || isSquare || isMasawi) && khasraPanelOpen === key && (
-          <div
-            className={`max-h-32 border-t border-white/10 px-3 py-1.5 ${LAYER_PANEL_SCROLL}`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            {isMasawi ? (
-              <div className="flex items-center gap-2 py-1 text-[11px] text-white/85">
-                <span
-                  className="h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: layers.masawi.color }}
-                />
-                <span className="truncate">
-                  Handu Gujran Masawi / Ortho Image
-                </span>
-              </div>
-            ) : !layers[key].visible ? (
-              <div className="py-1 text-[11px] text-white/45">
-                Turn on {label} to view opened records.
-              </div>
-            ) : !boundaryFeatures.length && !layers[key].loading ? (
-              <div className="py-1 text-[11px] text-white/45">
-                No {label.toLowerCase()} records were returned by the model.
-              </div>
-            ) : (
-              <>
-                {isKhasra && (
-                  <div className="mb-1 border-b border-white/10 pb-1 text-[10px] text-white/45">
-                    Showing{" "}
-                    {Math.min(
-                      boundaryFeatures.length,
-                      KHASRA_VISIBLE_LIST_LIMIT,
-                    )}{" "}
-                    of {boundaryFeatures.length} Khasras currently loaded in the
-                    map view.
-                  </div>
-                )}
-                {boundaryFeatures
-                  .slice(0, isKhasra ? KHASRA_VISIBLE_LIST_LIMIT : undefined)
-                  .map((feature, index) => {
-                    const props = feature?.properties || {};
-                    const displayName = isKhasra
-                      ? getKhasraName(feature)
-                      : `${getSquareName(feature)}${props.mauza ? ` - ${props.mauza}` : ""}`;
+      <div key={key}>
+        <LayerItem
+          key={key}
+          checked={layers[key].visible}
+          color={layers[key].color || color}
+          label={label}
+          loading={layers[key].loading}
+          opacity={layers[key].opacity}
+          hasDropdown={dropdown || isSquare || isMasawi}
+          hasTable={isKhasra || isSquare}
+          dropdownOpen={
+            (isKhasra || isSquare || isMasawi) && khasraPanelOpen === key
+          }
+          dropdownTitle={`Show ${label} details`}
+          onChange={(checked) => handleVisible(key, checked)}
+          onOpacityChange={(opacity) => setOpacity(key, opacity)}
+          onColorChange={(value) => setColor(key, value)}
+          colorEditable={key !== "masawi"}
+          onDropdownToggle={() =>
+            setKhasraPanelOpen((prev) => (prev === key ? false : key))
+          }
+          onTableOpen={() => setActiveTable(key)}
+        >
+          {(isKhasra || isSquare || isMasawi) && khasraPanelOpen === key && (
+            <div
+              className={`max-h-32 border-t border-white/10 px-3 py-1.5 ${LAYER_PANEL_SCROLL}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              {isMasawi ? (
+                <div className="flex items-center gap-2 py-1 text-[11px] text-white/85">
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: layers.masawi.color }}
+                  />
+                  <span className="truncate">
+                    Handu Gujran Masawi / Ortho Image
+                  </span>
+                </div>
+              ) : !layers[key].visible ? (
+                <div className="py-1 text-[11px] text-white/45">
+                  Turn on {label} to view opened records.
+                </div>
+              ) : !boundaryFeatures.length && !layers[key].loading ? (
+                <div className="py-1 text-[11px] text-white/45">
+                  No {label.toLowerCase()} records were returned by the model.
+                </div>
+              ) : (
+                <>
+                  {isKhasra && (
+                    <div className="mb-1 border-b border-white/10 pb-1 text-[10px] text-white/45">
+                      Showing{" "}
+                      {Math.min(
+                        boundaryFeatures.length,
+                        KHASRA_VISIBLE_LIST_LIMIT,
+                      )}{" "}
+                      of {boundaryFeatures.length} Khasras currently loaded in the
+                      map view.
+                    </div>
+                  )}
+                  {boundaryFeatures
+                    .slice(0, isKhasra ? KHASRA_VISIBLE_LIST_LIMIT : undefined)
+                    .map((feature, index) => {
+                      const props = feature?.properties || {};
+                      const displayName = isKhasra
+                        ? getKhasraName(feature)
+                        : `${getSquareName(feature)}${props.mauza ? ` - ${props.mauza}` : ""}`;
 
-                    return (
-                      <div
-                        key={`${key}-${props.gid || feature.id || index}`}
-                        className="flex items-center gap-2 py-1 text-[11px] text-white/85"
-                      >
-                        <span
-                          className="h-1.5 w-1.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: layers[key].color }}
-                        />
-                        <span className="min-w-0 flex-1 truncate">
-                          {displayName}
-                        </span>
-                        <span className="shrink-0 text-white/50">
-                          {getFeatureAreaLabel(feature)}
-                        </span>
-                      </div>
-                    );
-                  })}
-              </>
-            )}
-          </div>
+                      return (
+                        <div
+                          key={`${key}-${props.gid || feature.id || index}`}
+                          className="flex items-center gap-2 py-1 text-[11px] text-white/85"
+                        >
+                          <span
+                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: layers[key].color }}
+                          />
+                          <span className="min-w-0 flex-1 truncate">
+                            {displayName}
+                          </span>
+                          <span className="shrink-0 text-white/50">
+                            {getFeatureAreaLabel(feature)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                </>
+              )}
+            </div>
+          )}
+        </LayerItem>
+
+        {/* Inline legend for boundary layers (not raster Masawi) */}
+        {layers[key].visible && !isMasawi && (
+          <InlineLayerLegend
+            items={[lineLegend(label, layers[key].color || color, { width: 1.5 })]}
+            opacity={layers[key].opacity}
+          />
         )}
-      </LayerItem>
+      </div>
     );
   };
 
@@ -1453,89 +1465,115 @@ export default function Cadastral({ map, selectedProjectId }) {
     const isPossessionLayer = key === "possessionLand";
 
     return (
-      <LayerItem
-        key={key}
-        checked={layers[key].visible}
-        color={layers[key].color || color}
-        label={label}
-        loading={layers[key].loading}
-        opacity={layers[key].opacity}
-        hasDropdown
-        hasTable
-        dropdownOpen={detailsOpen}
-        dropdownTitle={
-          isPossessionLayer
-            ? "Show possession land types"
-            : `Show ${label} details`
-        }
-        onChange={(checked) => handleVisible(key, checked)}
-        onOpacityChange={(opacity) => setOpacity(key, opacity)}
-        onColorChange={(value) => setColor(key, value)}
-        colorEditable={!isPossessionLayer}
-        onDropdownToggle={() =>
-          setExtraDetailsOpen((prev) => ({
-            ...prev,
-            [key]: !prev[key],
-          }))
-        }
-        onTableOpen={() => setActiveTable(key)}
-      >
-        {detailsOpen && isPossessionLayer && (
-          <div
-            className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2"
-            onClick={(event) => event.stopPropagation()}
-          >
-            {POSSESSION_LAND_TYPES.map((type) => {
-              const typeCount = countPossessionLandTypeFeatures(
-                cachedData.current.possessionLand,
-                type.value,
-              );
+      <div key={key}>
+        <LayerItem
+          key={key}
+          checked={layers[key].visible}
+          color={layers[key].color || color}
+          label={label}
+          loading={layers[key].loading}
+          opacity={layers[key].opacity}
+          hasDropdown
+          hasTable
+          dropdownOpen={detailsOpen}
+          dropdownTitle={
+            isPossessionLayer
+              ? "Show possession land types"
+              : `Show ${label} details`
+          }
+          onChange={(checked) => handleVisible(key, checked)}
+          onOpacityChange={(opacity) => setOpacity(key, opacity)}
+          onColorChange={(value) => setColor(key, value)}
+          colorEditable={!isPossessionLayer}
+          onDropdownToggle={() =>
+            setExtraDetailsOpen((prev) => ({
+              ...prev,
+              [key]: !prev[key],
+            }))
+          }
+          onTableOpen={() => setActiveTable(key)}
+        >
+          {detailsOpen && isPossessionLayer && (
+            <div
+              className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2"
+              onClick={(event) => event.stopPropagation()}
+            >
+              {POSSESSION_LAND_TYPES.map((type) => {
+                const typeCount = countPossessionLandTypeFeatures(
+                  cachedData.current.possessionLand,
+                  type.value,
+                );
 
-              return (
-                <label
-                  key={type.key}
-                  className={`flex items-center gap-2 py-1 text-[11px] ${
-                    layers.possessionLand.visible
-                      ? "cursor-pointer text-white/85 hover:text-white"
-                      : "cursor-not-allowed text-white/40"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={Boolean(possessionTypeVisibility[type.key])}
-                    disabled={!layers.possessionLand.visible}
-                    onChange={(event) =>
-                      handlePossessionTypeVisible(
-                        type.key,
-                        event.target.checked,
-                      )
-                    }
-                    className="accent-[#65c96b] disabled:cursor-not-allowed"
-                  />
-                  <span
-                    className="h-3.5 w-3.5 shrink-0 rounded-sm border border-white/35"
-                    style={{ backgroundColor: type.lineColor }}
-                  />
-                  <span className="min-w-0 flex-1 truncate">{type.value}</span>
-                  <span className="shrink-0 text-white/45">{typeCount}</span>
-                </label>
-              );
-            })}
-          </div>
-        )}
-
-        {detailsOpen && !isPossessionLayer && (
-          <div
-            className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex justify-between">
-              <span>Total Features</span>
-              <span>{featureCount}</span>
+                return (
+                  <label
+                    key={type.key}
+                    className={`flex items-center gap-2 py-1 text-[11px] ${
+                      layers.possessionLand.visible
+                        ? "cursor-pointer text-white/85 hover:text-white"
+                        : "cursor-not-allowed text-white/40"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={Boolean(possessionTypeVisibility[type.key])}
+                      disabled={!layers.possessionLand.visible}
+                      onChange={(event) =>
+                        handlePossessionTypeVisible(
+                          type.key,
+                          event.target.checked,
+                        )
+                      }
+                      className="accent-[#65c96b] disabled:cursor-not-allowed"
+                    />
+                    <span
+                      className="h-3.5 w-3.5 shrink-0 rounded-sm border border-white/35"
+                      style={{ backgroundColor: type.lineColor }}
+                    />
+                    <span className="min-w-0 flex-1 truncate">{type.value}</span>
+                    <span className="shrink-0 text-white/45">{typeCount}</span>
+                  </label>
+                );
+              })}
             </div>
-          </div>
+          )}
+
+          {detailsOpen && !isPossessionLayer && (
+            <div
+              className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex justify-between">
+                <span>Total Features</span>
+                <span>{featureCount}</span>
+              </div>
+            </div>
+          )}
+        </LayerItem>
+
+        {/* Inline legend for land polygon layers */}
+        {layers[key].visible && (
+          isPossessionLayer ? (
+            <InlineLayerLegend
+              items={POSSESSION_LAND_TYPES
+                .filter((type) => possessionTypeVisibility[type.key])
+                .map((type) => ({
+                  id: type.key,
+                  label: type.value,
+                  type: "polygon",
+                  color: type.lineColor,
+                  fillColor: type.lineColor,
+                  borderColor: type.lineColor,
+                }))}
+              opacity={layers[key].opacity}
+            />
+          ) : (
+            <InlineLayerLegend
+              items={[polygonLegend(label, layers[key].color || color)]}
+              opacity={layers[key].opacity}
+            />
+          )
         )}
-      </LayerItem>
+      </div>
     );
   };
 
@@ -1662,6 +1700,13 @@ export default function Cadastral({ map, selectedProjectId }) {
               </div>
             )}
           </LayerItem>
+
+          {layers.moza.visible && (
+            <InlineLayerLegend
+              items={[lineLegend("Mauza Boundary", layers.moza.color || MAUZA_DEF.color, { width: 1.5 })]}
+              opacity={layers.moza.opacity}
+            />
+          )}
 
           {LAYER_DEFS.map((definition) => renderBoundaryRow(definition))}
           {EXTRA_LAYER_DEFS.map(renderExtraLayerRow)}
