@@ -31,28 +31,60 @@ export const getMauzaName = (selectedMauza) => {
   ).trim();
 };
 
-const ORTHO_TILE_NAME_BY_MAUZA = {
-  "handu gujran": "Handu_Gujran_Ortho",
-  "lakho dair": "Lakho_Dair_Ortho",
+// const ORTHO_TILE_NAME_BY_MAUZA = {
+//   "handu gujran": "Handu_Gujran_Ortho",
+//   "lakho dair": "Lakho_Dair_Ortho",
+// };
+
+// export const getOrthoTileUrlFromMauza = (selectedMauza) => {
+//   const normalizedName = getMauzaName(selectedMauza).toLowerCase();
+//   const tileName = ORTHO_TILE_NAME_BY_MAUZA[normalizedName] || "";
+//   return tileName
+//     ? `https://rudametaverse.nespakprogresscenter.com/tiles/data/${tileName}/{z}/{x}/{y}.png`
+//     : "";
+// };
+
+// export const getOrthoBoundsFromMauzaName = (
+//   mauzaName = "",
+//   handuGujranBounds,
+// ) => {
+//   const normalized = String(mauzaName || "")
+//     .trim()
+//     .toLowerCase();
+//   return normalized === "handu gujran" ? handuGujranBounds : null;
+// };
+
+const TILESERVER_BASE = "https://rudametaverse.nespakprogresscenter.com";
+
+// Only add an entry here when a mauza's stored name doesn't title-case
+// cleanly into its registered .mbtiles id.
+const MAUZA_TILE_ID_OVERRIDES = {
+  "lakhu dair": "Lakhu_Dair_Ortho",
 };
 
-export const getOrthoTileUrlFromMauza = (selectedMauza) => {
-  const normalizedName = getMauzaName(selectedMauza).toLowerCase();
-  const tileName = ORTHO_TILE_NAME_BY_MAUZA[normalizedName] || "";
-  return tileName
-    ? `https://rudametaverse.nespakprogresscenter.com/tiles/data/${tileName}/{z}/{x}/{y}.png`
-    : "";
-};
+function mauzaNameToTileId(mauzaName) {
+  const normalized = String(mauzaName || "").trim().toLowerCase();
+  if (MAUZA_TILE_ID_OVERRIDES[normalized]) {
+    return MAUZA_TILE_ID_OVERRIDES[normalized];
+  }
+  return (
+    String(mauzaName || "")
+      .trim()
+      .split(/\s+/)
+      .map((w) => w[0]?.toUpperCase() + w.slice(1).toLowerCase())
+      .join("_") + "_Ortho"
+  );
+}
 
-export const getOrthoBoundsFromMauzaName = (
-  mauzaName = "",
-  handuGujranBounds,
-) => {
-  const normalized = String(mauzaName || "")
-    .trim()
-    .toLowerCase();
-  return normalized === "handu gujran" ? handuGujranBounds : null;
-};
+export function getMasawiConfigForMauza(mauzaName) {
+  const tileId = mauzaNameToTileId(mauzaName);
+  return {
+    tileId,
+    sourceId: `gis-${tileId.toLowerCase()}-source`,
+    layerId: `gis-${tileId.toLowerCase()}-layer`,
+    tileJsonUrl: `${TILESERVER_BASE}/tiles/data/${tileId}.json`,
+  };
+}
 
 export const THEMATIC_LAND_LAYERS = {
   possessionLand: {
