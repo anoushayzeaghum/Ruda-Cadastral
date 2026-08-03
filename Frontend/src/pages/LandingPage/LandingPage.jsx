@@ -108,8 +108,9 @@ const DECISION_AREAS = [
     accent: "#9BE35C",
     image: "/LandingCard1.png",
     bullets: [
-      "Parcel, Khasra, ownership & compensation management",
-      "Estate inventory, mutation & revenue integration",
+      "Land Evaluation, Acquisition, Demarcation & Mutation",
+"GIS & Geospatial Intelligence",
+"Estate Inventory, Monitoring & Management",
     ],
   },
   {
@@ -134,8 +135,9 @@ const DECISION_AREAS = [
     accent: "#B781FF",
     image: "/LandingCard3.png",
     bullets: [
-      "Building approvals, inspections & development monitoring",
-      "Regulatory compliance, e-Permits & digital records",
+      "Transaction Advisory — Investment, JVs & PPPs",
+"Business Growth & Sales — Partnerships, Sales & Customer Services",
+"Marketing & Branding — Lead Generation & Brand Visibility"
     ],
   },
   {
@@ -161,8 +163,9 @@ const DECISION_AREAS = [
     accent: "#27E1EA",
     image: "/LandingCard5.png",
     bullets: [
-      "Investment mapping, market analysis & feasibility",
-      "Commercial zones, investor portal & revenue analytics",
+      "Development & Land Use Control — Enforce regulations and master plan",
+"Regulatory Enforcement — Control illegal development and protect public interest",
+"Revenue & Environment — Ensure fee collection and environmental protection"
     ],
   },
   {
