@@ -87,7 +87,7 @@ export default function MasterPlanDashboard() {
   const mapRef = useRef(null);
 
   const [isMapReady, setIsMapReady] = useState(false);
-  const [activeTool, setActiveTool] = useState("layers");
+  const [activeTool, setActiveTool] = useState(null);
   const [showMetaverseLegend, setShowMetaverseLegend] = useState(false);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);

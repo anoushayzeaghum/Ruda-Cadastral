@@ -1,20 +1,16 @@
-import { Layers3, X } from "lucide-react";
+import { Layers, X } from "lucide-react";
 
-// Reuse the shared RUDA Master Plan layer component unchanged.
-// This is a direct import — no copy, no recreation, no palette override.
-// All symbology, legends, opacity, color editing, attribute tables, toggle-all,
-// group toggles, caching, and style-reload resilience come from this component.
+// Reuse the shared RUDA Master Plan layer component — no copy, no override.
 import RUDAMasterPlan from "../GISMetaverse/tools/Layers/RUDAMasterPlan";
 
-const TOOL_BUTTON_SIZE = 40;
-const TOOL_GAP = 8;
+const TOOL_BUTTON_SIZE = 36;
+const TOOL_GAP = 4;
 
-// "Select Project" toolbar button removed — project selection lives in the SubHeader.
 const TOOL_ITEMS = [
   {
     id: "layers",
     label: "RUDA Master Plan Layers",
-    icon: Layers3,
+    icon: Layers,
   },
 ];
 
@@ -22,13 +18,13 @@ export default function MasterPlanLeftToolbar({
   activeTool,
   setActiveTool,
   map,
-  // filters / setFilters / layerVisibility / setLayerVisibility are kept in the
-  // signature so MasterPlanDashboard does not need to change, even though
-  // RUDAMasterPlan manages its own internal layer state independently.
-  filters,
-  setFilters,
-  layerVisibility,
-  setLayerVisibility,
+  // The following props are received from MasterPlanDashboard for
+  // compatibility but are not forwarded to RUDAMasterPlan, which manages
+  // its own internal layer state independently.
+  filters,       // eslint-disable-line no-unused-vars
+  setFilters,    // eslint-disable-line no-unused-vars
+  layerVisibility,  // eslint-disable-line no-unused-vars
+  setLayerVisibility, // eslint-disable-line no-unused-vars
 }) {
   const activeToolIndex = TOOL_ITEMS.findIndex(
     (tool) => tool.id === activeTool,
@@ -39,19 +35,18 @@ export default function MasterPlanLeftToolbar({
       ? 12 + activeToolIndex * (TOOL_BUTTON_SIZE + TOOL_GAP)
       : 12;
 
-  const toggleTool = (toolId) => {
-    setActiveTool((currentTool) =>
-      currentTool === toolId ? null : toolId,
+  const isLayersOpen = activeTool === "layers";
+
+  const handleToolClick = (toolId) => {
+    setActiveTool((previous) =>
+      previous === toolId ? null : toolId,
     );
   };
 
   return (
     <>
-      {/* ── Toolbar button strip ─────────────────────────────────────────── */}
-      <aside
-        className="absolute left-2 top-3 z-40 flex flex-col gap-2 sm:left-3"
-        aria-label="Master Plan tools"
-      >
+      {/* ── Toolbar button strip ─────────────────────────────────────── */}
+      <div className="absolute left-2 top-3 z-30 flex flex-col gap-1">
         {TOOL_ITEMS.map((tool) => {
           const Icon = tool.icon;
           const isActive = activeTool === tool.id;
@@ -63,78 +58,69 @@ export default function MasterPlanLeftToolbar({
               title={tool.label}
               aria-label={tool.label}
               aria-pressed={isActive}
-              onClick={() => toggleTool(tool.id)}
-              className={`flex h-10 w-10 items-center justify-center rounded-xl border shadow-xl backdrop-blur-md transition focus:outline-none focus:ring-2 focus:ring-[#8fd36f]/70 ${
+              onClick={() => handleToolClick(tool.id)}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-md shadow-md transition-all duration-150 ${
                 isActive
-                  ? "border-[#8fd36f] bg-white text-[#0f3d2e]"
-                  : "border-white/15 bg-[#10261f]/95 text-white hover:border-[#8fd36f]/70 hover:bg-[#0f3d2e]"
+                  ? "border-2 border-[#1B3A6B] bg-white text-[#1B3A6B]"
+                  : "border-[#0f3d2e] bg-[#1f2937] text-white hover:bg-[#0f3d2e]"
               }`}
             >
               <Icon size={20} />
             </button>
           );
         })}
-      </aside>
+      </div>
 
-      {/* ── Layers panel ────────────────────────────────────────────────── */}
-      {activeTool === "layers" && (
-        <ToolbarPanel
+      {/*
+        ── Layers panel ─────────────────────────────────────────────────
+        The panel is ALWAYS mounted (never conditionally rendered) so that
+        RUDAMasterPlan retains its internal state — checked layers, opacity
+        values, changed colors, categorized colors, cached GeoJSON, expanded
+        groups, attribute-table state — across open/close cycles.
+        Visibility is controlled with display:flex / display:none only.
+      */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-30 flex-col rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 sm:w-[300px]"
+        style={{
+          top:
+            typeof window !== "undefined" && window.innerWidth >= 640
+              ? `${panelTop}px`
+              : undefined,
+          display: isLayersOpen ? "flex" : "none",
+          maxHeight:
+            typeof window !== "undefined" && window.innerWidth >= 640
+              ? `calc(100vh - ${panelTop + 16}px)`
+              : "70vh",
+        }}
+      >
+        <PanelHeader
           title="RUDA Master Plan Layers"
-          panelTop={panelTop}
-          widthClass="sm:w-[370px] lg:w-[400px]"
           onClose={() => setActiveTool(null)}
-        >
-          {/*
-            RUDAMasterPlan manages all of its own state internally.
-            The only prop it requires is the live Mapbox map instance.
-            Passing null when the map is not yet ready is safe — the
-            component guards every map call with an early return.
-          */}
+        />
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <RUDAMasterPlan map={map} />
-        </ToolbarPanel>
-      )}
+        </div>
+      </div>
     </>
   );
 }
 
-// ── ToolbarPanel ──────────────────────────────────────────────────────────────
-
-function ToolbarPanel({
-  title,
-  panelTop,
-  widthClass,
-  onClose,
-  children,
-}) {
+function PanelHeader({ title, onClose }) {
   return (
-    <section
-      className={`fixed inset-x-2 bottom-2 z-50 flex max-h-[78vh] flex-col overflow-hidden rounded-2xl border border-[#245f4a] bg-[#06291f]/98 text-white shadow-2xl backdrop-blur-md sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-[60px] sm:max-h-[calc(100vh-82px)] ${widthClass}`}
-      style={{
-        top:
-          typeof window !== "undefined" && window.innerWidth >= 640
-            ? `${panelTop}px`
-            : undefined,
-      }}
-    >
-      {/* Panel header */}
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#0c3d2d] bg-[#0a3327] px-4 py-2.5">
-        <h2 className="truncate text-[12px] font-bold uppercase tracking-[0.12em]">
-          {title}
-        </h2>
+    <div className="flex shrink-0 items-center justify-between border-b border-[#0c3d2d] px-4 py-2.5">
+      <span className="text-[12px] font-bold uppercase tracking-wide">
+        {title}
+      </span>
 
-        <button
-          type="button"
-          title="Close"
-          aria-label={`Close ${title}`}
-          onClick={onClose}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-white/50 transition hover:bg-[#0a3327] hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
-        >
-          <X size={14} />
-        </button>
-      </div>
-
-      {/* Scrollable panel body — RUDAMasterPlan handles its own inner scroll */}
-      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
-    </section>
+      <button
+        type="button"
+        onClick={onClose}
+        className="flex h-6 w-6 items-center justify-center rounded text-white/50 transition hover:bg-[#0a3327] hover:text-white"
+        title="Close"
+      >
+        <X size={14} />
+      </button>
+    </div>
   );
 }
