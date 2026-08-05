@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
 import RudaFooterLogo from "../../assets/Ruda.png";
-import GopHeaderLogo from "../../assets/govtpunjab.png";
+import GopLogo from "../../assets/govtpunjab.png";
 import {
   Map,
   BarChart3,
@@ -36,16 +36,17 @@ import {
   Radio,
   Users,
   Leaf,
+  Workflow,
 } from "lucide-react";
 
 const HERO_SLIDES = [
-  // "/s11.png",
+  "/s11.png",
   "/s22.png",
   "/s33.png",
   "/s44.png",
   "/s55.png",
   "/s6.png",
-  // "/s7.png",
+  "/s7.png",
 ];
 
 const NAV_LINKS = [
@@ -109,8 +110,8 @@ const DECISION_AREAS = [
     image: "/LandingCard1.png",
     bullets: [
       "Land Evaluation, Acquisition, Demarcation & Mutation",
-"GIS & Geospatial Intelligence",
-"Estate Inventory, Monitoring & Management",
+      "GIS & Geospatial Intelligence",
+      "Estate Inventory, Monitoring & Management",
     ],
   },
   {
@@ -122,8 +123,11 @@ const DECISION_AREAS = [
     accent: "#3FC6FF",
     image: "/LandingCard2.png",
     bullets: [
-      "Master planning, zoning & land-use analysis",
-      "3D city modeling, urban design & scenario simulation",
+      "Master planning & zoning",
+      "3D city modeling & visualization",
+      "Land-use & density analysis",
+      "Urban design & streetscapes",
+      "Scenario planning & simulations",
     ],
   },
   {
@@ -135,9 +139,9 @@ const DECISION_AREAS = [
     accent: "#B781FF",
     image: "/LandingCard3.png",
     bullets: [
-      "Transaction Advisory — Investment, JVs & PPPs",
-"Business Growth & Sales — Partnerships, Sales & Customer Services",
-"Marketing & Branding — Lead Generation & Brand Visibility"
+      "Development & Land Use Control — Enforce regulations and master plan.",
+      "Regulatory Enforcement — Control illegal development and protect public interest.",
+      "Revenue & Environment — Ensure fee collection and environmental protection.",
     ],
   },
   {
@@ -163,32 +167,32 @@ const DECISION_AREAS = [
     accent: "#27E1EA",
     image: "/LandingCard5.png",
     bullets: [
-      "Development & Land Use Control — Enforce regulations and master plan",
-"Regulatory Enforcement — Control illegal development and protect public interest",
-"Revenue & Environment — Ensure fee collection and environmental protection"
+      "Transaction Advisory — Investment, JVs & PPPs",
+      "Business Growth & Sales — Partnerships, Sales & Customer Services",
+      "Marketing & Branding — Lead Generation & Brand Visibility",
     ],
   },
   {
     key: "sustainability",
     number: "06",
     title: "Special Initiatives, CSR and Diversity",
-    shortTitle: "Special Initiatives & CSR",
+    shortTitle: "CSR & Sustainability",
     icon: Leaf,
     accent: "#9BE84F",
     image: "/LandingCard6.png",
     bullets: [
       "Socially Responsible, Inclusive, and Sustainable Urban Development",
       "Transforming Communities through Impactful CSR Initiatives",
-      "Creating a Supportive Environment and Promoting Community Welfare & Development"
+      "Creating a Supportive Environment and Promoting Community Welfare & Development",
     ],
   },
 ];
 
 const TOP_PILLARS = [
-  { label: "Transparent ", icon: Shield },
-  { label: "Data-driven ", icon: BarChart3 },
-  { label: "Livability", icon: Users },
-  { label: "Sustainable ", icon: Leaf },
+  { label: "Integrated Data", icon: Database },
+  { label: "Real-time Monitoring", icon: Radio },
+  { label: "Collaborative Decisions", icon: Users },
+  { label: "Sustainable Future", icon: Leaf },
 ];
 
 const RAVI_CITY_PILLARS = [
@@ -200,13 +204,6 @@ const RAVI_CITY_PILLARS = [
   // { label: "Data-driven Decisions", icon: BarChart3 },
   // { label: "Better Livability", icon: Users },
   // { label: "Sustainable Future", icon: Leaf },
-];
-
-const CORE_CAPABILITIES = [
-  { label: "Integrated Data", icon: Database },
-  { label: "Real-time Monitoring", icon: Radio },
-  { label: "Collaborative Decisions", icon: Users },
-  { label: "Sustainable Future", icon: Leaf },
 ];
 
 const TEAM_MEMBERS = [
@@ -224,7 +221,7 @@ const TEAM_MEMBERS = [
   },
   {
     id: 3,
-    name: "Brig Bakhtiar Akram SI(M) (Retd)",
+    name: "Brig. Bakhtiar",
     designation: "Executive Director — Land Acquisition & Estate",
     image:
       "/Ruda_Official/ED BAKHTIAR (ED Land Acquisition & Estate).jpeg",
@@ -241,6 +238,12 @@ const TEAM_MEMBERS = [
     designation: "Assistant Director GIS",
     image: "/Ruda_Official/Umar_Javaid.PNG",
   },
+  {
+    id: 7,
+    name: "Muhammad Arshad",
+    designation: "Officer GIS",
+    image: "/Ruda_Official/Muhammad Arshad.PNG",
+  },
 ];
 
 const GIS_APPS = [
@@ -248,17 +251,18 @@ const GIS_APPS = [
     icon: <Search size={22} />,
     title: "RUDA GIS Metaverse",
     desc: "Explore society-based raster and Vector datasets including Master plans and boundaries and other Raster data layers.",
-    images: ["/2.1.png", "/2.2.png", "/2.3.png"],
+    img: "/s2.png",
     route: "/gis-metaverse",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
     tags: ["GIS", "Vector & Raster"],
   },
+
   {
     icon: <Layers size={22} />,
     title: "Land Information System ",
     desc: "Manage and visualize cadastral records, Khasra layers, mauza limits and administrative boundaries in one interactive GIS platform.",
-    images: ["/s1.png", "/S1.2.png", "/S1.3.png"],
+    img: "/s1.png",
     route: "/Mapview",
     gradientFrom: "#49B84A",
     gradientTo: "#004225",
@@ -268,8 +272,8 @@ const GIS_APPS = [
     icon: <Smartphone size={22} />,
     title: "RUDA Masterplan",
     desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
-    images: ["/s6.png", "/s6.1.png", "/s6.2.png", "/s6.3.png"],
-    route: "/masterplan",
+    img: "/s6.png",
+    route: "/flyto-dashboard",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
     tags: ["Location", "Analytics"],
@@ -278,7 +282,7 @@ const GIS_APPS = [
     icon: <Eye size={22} />,
     title: "Metaverse KPIs",
     desc: "Control and manage the complete cadastral system, including users, records, spatial datasets, dashboards, permissions and administrative workflows.",
-    images: ["/s5.png"],
+    img: "/s5.png",
     route: "/dashboard",
     gradientFrom: "#49B84A",
     gradientTo: "#004225",
@@ -288,17 +292,18 @@ const GIS_APPS = [
     icon: <FileText size={22} />,
     title: "Plot Information System",
     desc: "Search plots, view demarcation details, verify and generate printable plot reports for cadastral documentation.",
-    images: ["/s4.png", "/s4.1.png", "/s4.2.png"],
+    img: "/s4.png",
     route: "/demarcation",
     gradientFrom: "#49B84A",
     gradientTo: "#0B7A3B",
     tags: ["Plots", "Reports"],
   },
+
   {
     icon: <ClipboardList size={22} />,
     title: "3D GeoVerse",
     desc: "Experience cadastral and society data in an immersive 3D environment with land-use visualization.",
-    images: ["/s3.png", "/s3.1.png", "/s3.2.png"],
+    img: "/s3.png",
     route: "/society-3d",
     gradientFrom: "#49B84A",
     gradientTo: "#0B7A3B",
@@ -308,7 +313,7 @@ const GIS_APPS = [
     icon: <UploadCloud size={22} />,
     title: "3D BIM Model Viewer",
     desc: "Upload and position GLB or glTF models on the Cesium globe, manage BIM visibility, and explore project boundaries in an interactive 3D environment.",
-    images: ["/s7.png"],
+    img: "/s7.png",
     route: "/society-3d-upload",
     gradientFrom: "#0B7A3B",
     gradientTo: "#00351F",
@@ -318,7 +323,7 @@ const GIS_APPS = [
     icon: <Smartphone size={22} />,
     title: "Location Intelligence",
     desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
-    images: ["/s6.png", "/s6.1.png", "/s6.2.png", "/s6.3.png"],
+    img: "/s6.png",
     route: "/flyto-dashboard",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
@@ -400,7 +405,7 @@ function AppCard({
   icon,
   title,
   desc,
-  images = [],
+  img,
   route,
   gradientFrom,
   gradientTo,
@@ -410,34 +415,6 @@ function AppCard({
 }) {
   const [ref, visible] = useInView();
   const [hovered, setHovered] = useState(false);
-  const [slideIdx, setSlideIdx] = useState(0);
-  const [prevIdx, setPrevIdx] = useState(null);
-  const [fading, setFading] = useState(false);
-  const intervalRef = useRef(null);
-
-  /* start / stop slideshow on hover */
-  useEffect(() => {
-    if (hovered && images.length > 1) {
-      intervalRef.current = setInterval(() => {
-        setSlideIdx((cur) => {
-          const next = (cur + 1) % images.length;
-          setPrevIdx(cur);
-          setFading(true);
-          setTimeout(() => {
-            setPrevIdx(null);
-            setFading(false);
-          }, 650);
-          return next;
-        });
-      }, 1600);
-    } else {
-      clearInterval(intervalRef.current);
-      setSlideIdx(0);
-      setPrevIdx(null);
-      setFading(false);
-    }
-    return () => clearInterval(intervalRef.current);
-  }, [hovered, images.length]);
 
   return (
     <article
@@ -455,55 +432,14 @@ function AppCard({
       style={{ transitionDelay: `${(index % 4) * 80}ms` }}
     >
       <div className="flex w-full flex-col">
-        {/* ── image area ── */}
         <div className="relative h-40 overflow-hidden sm:h-44">
-          {/* outgoing slide */}
-          {prevIdx !== null && (
-            <img
-              key={`prev-${prevIdx}`}
-              src={images[prevIdx]}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 h-full w-full object-cover"
-              style={{
-                opacity: fading ? 0 : 1,
-                transition: "opacity 650ms ease-in-out",
-              }}
-            />
-          )}
-
-          {/* current slide */}
           <img
-            key={`cur-${slideIdx}`}
-            src={images[slideIdx]}
+            src={img}
             alt={title}
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{
-              opacity: 1,
-              transform: hovered ? "scale(1.06)" : "scale(1)",
-              transition: "transform 700ms ease-in-out",
-            }}
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-[#031812] via-[#031812]/10 to-black/20" />
-
-          {/* slide indicator dots — only when >1 image */}
-          {images.length > 1 && (
-            <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
-              {images.map((_, i) => (
-                <span
-                  key={i}
-                  className="block rounded-full transition-all duration-400"
-                  style={{
-                    width: i === slideIdx ? "14px" : "5px",
-                    height: "5px",
-                    background: i === slideIdx ? "#70D84F" : "rgba(255,255,255,0.3)",
-                    boxShadow: i === slideIdx ? "0 0 6px #70D84F" : "none",
-                  }}
-                />
-              ))}
-            </div>
-          )}
 
           <div className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/35 text-white/85 backdrop-blur-md">
             {icon}
@@ -524,6 +460,7 @@ function AppCard({
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#55d985]/35 bg-gradient-to-br from-[#3cc96f] to-[#0b7a3b] text-white shadow-[0_8px_18px_-9px_rgba(60,201,111,0.9)]">
               {icon}
             </div>
+
             <h3 className="min-w-0 text-[14px] font-black leading-tight text-white sm:text-sm">
               {title}
             </h3>
@@ -574,20 +511,21 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`group relative w-full overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
-        hover:-translate-y-1 hover:scale-[1.012]
-        ${compact
-          ? "rounded-xl px-3 py-3"
-          : "h-full rounded-[18px] px-4 py-4"
+      className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
+hover:-translate-y-2
+hover:scale-[1.025]
+hover:rotate-[0.2deg] ${compact
+          ? "min-h-[128px] rounded-xl p-3"
+          : "min-h-[154px] rounded-[18px] p-4"
         }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
-        backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.92) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.34) 100%), url('${area.image}')`,
+        backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.91) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.36) 100%), url('${area.image}')`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         boxShadow: hovered
-          ? `0 0 26px ${area.accent}55, 0 18px 44px -20px ${area.accent}AA, inset 0 0 30px ${area.accent}14`
-          : `0 16px 38px -24px ${area.accent}70, inset 0 0 28px rgba(255,255,255,.02)`,
+          ? `0 0 30px ${area.accent}70, 0 22px 55px -20px ${area.accent}CC, inset 0 0 36px ${area.accent}18`
+          : `0 18px 45px -24px ${area.accent}88, inset 0 0 32px rgba(255,255,255,.025)`,
         animation: `decisionCardIn 700ms ease-out ${delay}ms both`,
       }}
     >
@@ -597,77 +535,56 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
           background: `linear-gradient(90deg, transparent, ${area.accent}, transparent)`,
         }}
       />
-
       <div
-        className="absolute -right-10 -top-10 h-24 w-24 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
-        style={{ backgroundColor: `${area.accent}30` }}
+        className="absolute -right-12 -top-12 h-28 w-28 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100"
+        style={{ backgroundColor: `${area.accent}35` }}
       />
 
-      {/* Icon badge — top-right */}
-      <div
-        className={`${compact
-          ? "right-3 top-3 h-9 w-9"
-          : "right-4 top-3.5 h-10 w-10"
-          } absolute z-20 flex items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-300 group-hover:scale-105`}
-        style={{
-          borderColor: `${area.accent}80`,
-          backgroundColor: `${area.accent}18`,
-          color: area.accent,
-          boxShadow: `0 0 18px ${area.accent}28`,
-        }}
-      >
-        <Icon size={compact ? 17 : 19} strokeWidth={2} />
-      </div>
-
-      {/* Content row: number badge + text */}
-      <div className="relative z-10 flex h-full flex-col justify-center gap-0 pr-12">
-        {/* Number + Title row */}
-        <div className="flex items-start gap-3">
-          {/* Number badge */}
+      <div className="relative z-10 flex items-start gap-3">
+        <div className="flex shrink-0 flex-col items-center gap-2">
           <div
-            className={`${compact
-              ? "h-9 w-9 text-sm"
-              : "h-11 w-11 text-base 2xl:h-12 2xl:w-12"
-              } flex shrink-0 items-center justify-center rounded-full border-2 font-black`}
+            className={`${compact ? "h-9 w-9 text-sm" : "h-11 w-11 text-base"} flex items-center justify-center rounded-full border-2 font-black`}
             style={{
               borderColor: area.accent,
               color: "white",
-              backgroundColor: `${area.accent}20`,
-              boxShadow: `0 0 18px ${area.accent}30`,
+              backgroundColor: `${area.accent}25`,
+              boxShadow: `0 0 20px ${area.accent}38`,
             }}
           >
             {Number(area.number)}
           </div>
+          <div
+            className={`${compact ? "h-8 w-8" : "h-10 w-10"} flex items-center justify-center rounded-full border bg-black/25`}
+            style={{ borderColor: `${area.accent}90`, color: area.accent }}
+          >
+            <Icon size={compact ? 16 : 19} strokeWidth={2} />
+          </div>
+        </div>
 
-          {/* Title */}
+        <div className="min-w-0 flex-1">
           <h3
-            className={`${compact
-              ? "text-[11px]"
-              : "text-[11.5px] 2xl:text-[12.5px]"
-              } flex min-h-[2.6em] items-center font-black uppercase leading-[1.18] tracking-[0.025em]`}
+            className={`${compact ? "text-[10px]" : "text-[12px] 2xl:text-[13px]"} font-black uppercase leading-tight tracking-[0.035em]`}
           >
             {compact ? area.shortTitle : area.title}
           </h3>
-        </div>
 
-        {/* Bullets */}
-        <ul className={`${compact ? "mt-2 space-y-[5px] pl-[3.25rem]" : "mt-2 space-y-[5px] pl-[3.5rem]"}`}>
-          {area.bullets.map((bullet) => (
-            <li
-              key={bullet}
-              className="flex items-start gap-2 text-[10px] leading-[1.35] text-white/88 2xl:text-[10.5px]"
-            >
-              <span
-                className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{
-                  backgroundColor: area.accent,
-                  boxShadow: `0 0 7px ${area.accent}80`,
-                }}
-              />
-              <span>{bullet}</span>
-            </li>
-          ))}
-        </ul>
+          <ul className={`${compact ? "mt-2 space-y-1" : "mt-2.5 space-y-1"}`}>
+            {area.bullets
+              .slice(0, compact ? 3 : area.bullets.length)
+              .map((bullet) => (
+                <li
+                  key={bullet}
+                  className={`${compact ? "text-[10px]" : "text-[10px] 2xl:text-[11px]"} flex items-start gap-1.5 leading-snug text-white/[0.82]`}
+                >
+                  <span
+                    className="mt-[5px] h-1 w-1 shrink-0 rounded-full"
+                    style={{ backgroundColor: area.accent }}
+                  />
+                  {bullet}
+                </li>
+              ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
@@ -675,40 +592,47 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
 
 function RaviCityVisionPanel() {
   return (
-    <div className="w-[350px] text-left text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
-      <div className="text-[14px] font-black uppercase leading-[1.08] tracking-[0.06em] text-white/[0.92] 2xl:text-[15px]">
-        <span className="block whitespace-nowrap">Building a Smart,</span>
-        <span className="block whitespace-nowrap">
-          Sustainable &amp; Inclusive
-        </span>
+    <div className="flex w-full items-start justify-between">
+      {/* LEFT TEXT */}
+      <div className="text-left text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
+        <div className="text-[16px] font-black uppercase leading-[1.08] tracking-[0.06em] text-white/[0.94] 2xl:text-[18px]">
+          <span className="block whitespace-nowrap">
+            Building a Smart,
+          </span>
+
+          <span className="block whitespace-nowrap">
+            Sustainable &amp; Inclusive
+          </span>
+        </div>
+
+        <div className="mt-1 text-[25px] font-black uppercase leading-none tracking-[0.04em] text-[#70D84F] 2xl:text-[28px]">
+          Ravi City
+        </div>
       </div>
 
-      <div className="mt-1 text-[26px] font-black uppercase leading-none tracking-[0.04em] text-[#70D84F] 2xl:text-[28px]">
-        Ravi City
-      </div>
-
-      {/* <div className="mt-3 grid grid-cols-5 gap-1.5">
+      {/* RIGHT ICONS */}
+      <div className="flex items-start gap-6 pt-2">
         {RAVI_CITY_PILLARS.map((item) => {
           const Icon = item.icon;
 
           return (
             <div
               key={item.label}
-              className="flex min-w-0 flex-col items-center text-center"
+              className="flex min-w-[72px] flex-col items-center text-center"
             >
               <Icon
-                size={24}
+                size={28}
                 strokeWidth={1.9}
                 className="text-[#8FEA67] drop-shadow-[0_0_10px_rgba(143,234,103,0.55)]"
               />
 
-              <span className="mt-1 max-w-[76px] text-[7px] font-bold uppercase leading-tight tracking-[0.06em] text-white/[0.82] sm:text-[8px]">
+              <span className="mt-1.5 text-[8px] font-bold uppercase leading-tight tracking-[0.06em] text-white/[0.86]">
                 {item.label}
               </span>
             </div>
           );
         })}
-      </div> */}
+      </div>
     </div>
   );
 }
@@ -733,12 +657,12 @@ function CapabilityNode({ item }) {
   const Icon = item.icon;
 
   return (
-    <div className="group flex w-[82px] min-w-0 flex-col items-center text-center text-white sm:w-[104px]">
-      <div className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[#49B84A]/70 bg-[#061b17]/[0.78] text-[#8FEA67] shadow-[0_0_26px_rgba(73,184,74,.2)] backdrop-blur-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:border-[#8FEA67] sm:h-12 sm:w-12">
-        <span className="absolute inset-[4px] rounded-full border border-white/10" />
-        <Icon size={19} strokeWidth={1.8} />
+    <div className="group flex w-[70px] flex-col items-center text-center sm:w-[84px]">
+      <div className="relative flex h-12 w-12 items-center justify-center rounded-full border border-[#72DFFF]/75 bg-[#041c20]/[0.82] text-[#91E7FF] shadow-[0_0_26px_rgba(61,198,255,.18)] backdrop-blur-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-105 sm:h-14 sm:w-14">
+        <span className="absolute inset-[5px] rounded-full border border-white/10" />
+        <Icon size={20} strokeWidth={1.8} />
       </div>
-      <span className="mt-1.5 max-w-[100px] text-[7px] font-bold uppercase leading-tight tracking-[0.08em] text-white/[0.76] sm:text-[8px]">
+      <span className="mt-2 text-[7px] font-bold uppercase leading-tight tracking-[0.07em] text-white/[0.72] sm:text-[8px]">
         {item.label}
       </span>
     </div>
@@ -748,59 +672,47 @@ function CapabilityNode({ item }) {
 function TeamMemberCard({ member, index }) {
   return (
     <article
-      className="
-        group relative mx-auto w-full max-w-[345px]
-        overflow-hidden rounded-[22px]
-        border border-white/20
-        bg-white/[0.12] backdrop-blur-xl
-        shadow-[0_20px_55px_-28px_rgba(0,0,0,.9)]
-        transition-all duration-500
-        hover:-translate-y-1.5
-        hover:border-[#8FEA67]
-        hover:bg-white/[0.16]
-      "
+      className="group relative w-full overflow-hidden rounded-[22px] border border-white/15 bg-white/[0.07] shadow-[0_22px_48px_-26px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-[#7FE45B]/70 hover:bg-white/[0.11] hover:shadow-[0_28px_64px_-28px_rgba(73,184,74,0.68)]"
       style={{
         animation: `teamCardReveal 700ms ease-out ${index * 110}ms both`,
       }}
     >
-      {/* Top Accent */}
-      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent opacity-75" />
+      <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#49B84A]/15 blur-3xl transition-transform duration-700 group-hover:scale-150" />
 
-      <div className="relative p-[10px]">
-        {/* IMAGE */}
-        <div className="relative mx-auto aspect-square w-[88%] max-w-[265px] overflow-hidden rounded-[20px] border border-white/10 bg-[#061b17]">
+      <div className="relative p-3">
+        <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-[#061b17]">
           {member.image ? (
             <img
               src={member.image}
               alt={member.name}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]"
+              className="h-64 w-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.06] sm:h-72 lg:h-80"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-[#03130f]">
-              <Users size={28} className="text-[#8FEA67]" />
+            <div className="flex h-64 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-72 lg:h-80">
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
+                <span className="absolute inset-2 rounded-full border border-white/10" />
+                <Users size={36} strokeWidth={1.5} />
+              </div>
             </div>
           )}
 
-          {/* Number */}
-          <div className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-[11px] font-bold text-white backdrop-blur">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#03130f] via-transparent to-transparent opacity-90" />
+
+          <div className="absolute left-3 top-3 flex h-8 min-w-8 items-center justify-center rounded-full border border-white/15 bg-black/35 px-2 text-[9px] font-black tracking-[0.18em] text-white/80 backdrop-blur-md">
             {String(index + 1).padStart(2, "0")}
           </div>
         </div>
 
-        {/* TEXT */}
-        <div className="px-3 pb-3 pt-3 text-center">
-          {/* NAME (FIXED SIZE) */}
-          <h3 className="text-[18px] font-extrabold text-white leading-tight">
+        <div className="px-1 pb-1 pt-3 text-center">
+          <h3 className="text-sm font-black tracking-wide text-white sm:text-base">
             {member.name}
           </h3>
-
-          {/* DESIGNATION (FIXED SIZE) */}
-          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8FEA67]">
+          <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#8FEA67] sm:text-[11px]">
             {member.designation}
           </p>
 
-          {/* LINE */}
-          <div className="mx-auto mt-4 h-[2px] w-16 bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent" />
+          <div className="mx-auto mt-3 h-px w-12 bg-gradient-to-r from-transparent via-[#8FEA67]/70 to-transparent transition-all duration-500 group-hover:w-24" />
         </div>
       </div>
     </article>
@@ -879,17 +791,23 @@ export default function LandingPage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setStatFade(false);
-      setTimeout(() => {
-        setStatGroupIndex((i) => (i + 1) % STAT_GROUPS.length);
+
+      const transitionTimer = setTimeout(() => {
+        setStatGroupIndex((current) => (current + 1) % STAT_GROUPS.length);
         setStatFade(true);
       }, 350);
+
+      return () => clearTimeout(transitionTimer);
     }, 4000);
 
     return () => clearInterval(timer);
   }, []);
 
   const goToStatGroup = (index) => {
+    if (index === statGroupIndex) return;
+
     setStatFade(false);
+
     setTimeout(() => {
       setStatGroupIndex(index);
       setStatFade(true);
@@ -912,29 +830,37 @@ export default function LandingPage() {
           : "bg-white/95 backdrop-blur-sm shadow-sm"
           }`}
       >
-        <div className="mx-auto grid h-14 max-w-[1500px] grid-cols-[auto_1fr_auto] items-center gap-3 px-3 sm:h-16 sm:px-5 md:grid-cols-[230px_minmax(0,1fr)_230px] lg:grid-cols-[270px_minmax(0,1fr)_270px] lg:px-7">
-          <div className="flex items-center justify-start">
-            <a
-              href="#home"
-              aria-label="Government of Punjab home"
-              className="flex shrink-0 items-center"
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white p-1 shadow-[0_7px_18px_-10px_rgba(0,0,0,0.5)] ring-1 ring-[#0B7A3B]/15 sm:h-[52px] sm:w-[52px]">
-                <img
-                  src={GopHeaderLogo}
-                  alt="Government of Punjab"
-                  className="h-full w-full rounded-full object-contain"
-                />
-              </div>
-            </a>
-          </div>
+        <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-3 sm:h-14 sm:px-5 md:h-14">
+          <a
+            href="#home"
+            aria-label="RUDA home"
+            className="flex shrink-0 items-center gap-1.5 sm:gap-2"
+          >
+            <img
+              src={RudaLogo}
+              alt="RUDA GIS Directorate"
+              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+            />
 
-          <nav className="hidden items-center justify-center gap-0.5 md:flex lg:gap-1">
+            <img
+              src={GopLogo}
+              alt="Government of Punjab"
+              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+            />
+
+            <img
+              src={RudaFooterLogo}
+              alt="Ravi Urban Development Authority"
+              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+            />
+          </a>
+
+          <nav className="hidden md:flex items-center gap-0.5 lg:gap-1">
             {NAV_LINKS.map(({ href, label }) => (
               <a
                 key={href}
                 href={href}
-                className={`rounded-lg px-3 py-2 text-xs font-semibold transition-all lg:px-4 lg:text-sm ${activeSection === href.slice(1)
+                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
                   ? "bg-[#0B7A3B] text-white"
                   : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
                   }`}
@@ -944,31 +870,17 @@ export default function LandingPage() {
             ))}
           </nav>
 
-          <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => navigate("/Mapview")}
-              className="hidden items-center gap-1.5 rounded-full bg-[#0B7A3B] px-3 py-2 text-xs font-bold text-white transition-all hover:-translate-y-px hover:bg-[#004225] hover:shadow-lg sm:flex sm:gap-2 sm:px-5 sm:py-2.5 sm:text-sm"
+              className="hidden sm:flex items-center gap-1.5 sm:gap-2 bg-[#0B7A3B] hover:bg-[#004225] text-white text-xs sm:text-sm font-bold px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:shadow-lg hover:-translate-y-px"
             >
               Open Map <ArrowRight size={13} />
             </button>
 
-            <a
-              href="#home"
-              aria-label="Ravi Urban Development Authority home"
-              className="flex shrink-0 items-center"
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white p-1 shadow-[0_7px_18px_-10px_rgba(0,0,0,0.5)] ring-1 ring-[#0B7A3B]/15 sm:h-[52px] sm:w-[52px]">
-                <img
-                  src={RudaFooterLogo}
-                  alt="Ravi Urban Development Authority"
-                  className="h-full w-full rounded-full object-contain"
-                />
-              </div>
-            </a>
-
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="rounded-lg bg-[#0B7A3B] p-1.5 text-white md:hidden sm:p-2"
+              className="md:hidden p-1.5 sm:p-2 rounded-lg bg-[#0B7A3B] text-white"
               aria-label="Toggle menu"
             >
               {menuOpen ? <X size={18} /> : <Menu size={18} />}
@@ -1053,7 +965,6 @@ export default function LandingPage() {
             100% { opacity: .2; transform: scaleX(.84); }
           }
 
-
           @keyframes teamCardReveal {
             from {
               opacity: 0;
@@ -1095,55 +1006,31 @@ export default function LandingPage() {
           }
         `}</style>
 
-        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(20,144,93,0.07),transparent_40%),linear-gradient(to_bottom,rgba(0,8,12,0.34),rgba(0,20,20,0.30)_42%,rgba(1,12,10,0.62))]" />
-        <div className="absolute inset-0 z-10 opacity-15 [background-image:linear-gradient(rgba(104,223,255,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(104,223,255,.035)_1px,transparent_1px)] [background-size:44px_44px]" />
-        <div className="absolute left-1/2 top-[185px] z-10 h-[390px] w-[58%] -translate-x-1/2 rounded-full bg-[#0B7A3B]/[0.045] blur-[100px]" />
+        <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,rgba(20,144,93,0.13),transparent_34%),linear-gradient(to_bottom,rgba(0,8,12,0.74),rgba(0,20,20,0.66)_42%,rgba(1,12,10,0.96))]" />
+        <div className="absolute inset-0 z-10 opacity-25 [background-image:linear-gradient(rgba(104,223,255,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(104,223,255,.04)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="absolute left-1/2 top-[185px] z-10 h-[390px] w-[58%] -translate-x-1/2 rounded-full bg-[#0B7A3B]/[0.08] blur-[100px]" />
 
-        <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-1 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
+        <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-5 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
           <div className="relative mx-auto w-full max-w-[1600px]">
             <div className="mx-auto max-w-[1450px] text-center">
-              {/* <div className="text-[11px] font-bold uppercase leading-relaxed tracking-[0.12em] text-white/[0.84] sm:text-[13px] lg:text-[14px] xl:whitespace-nowrap">
-                An Integrated, Immersive &amp; Intelligent Platform for
-                Planning, Monitoring, Collaboration &amp; Sustainable
-                Development
-              </div> */}
 
-              <div className="mt-0 flex items-center justify-center gap-3">
-                <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
-                <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#8FEA67] sm:text-[14px]">
-                  One City. One Data. One Platform.
-                </span>
-                <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#8FEA67]/75 sm:w-20" />
+
+
+              <div className="mx-auto mt-0.1 mb-8 w-full max-w-[1450px] whitespace-nowrap px-1 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white/90 sm:text-[14px] lg:text-[15px] xl:text-[16px]">
+                An Integrated, Immersive &amp; Intelligent Platform for Planning,
+                Monitoring, Collaboration &amp; Sustainable Development
               </div>
             </div>
 
-            <div className="relative mt-2 min-h-[76px] xl:min-h-[108px]">
-              <div className="absolute left-0 top-0 hidden items-start gap-4 xl:flex">
-                <a href="#home" className="shrink-0" aria-label="RUDA home">
-                  <img
-                    src={RudaLogo}
-                    alt="RUDA"
-                    className="h-20 w-auto object-contain drop-shadow-[0_8px_22px_rgba(0,0,0,0.45)] 2xl:h-24"
-                  />
-                </a>
-
-                <div className="pt-1">
-                  <RaviCityVisionPanel />
-                </div>
-              </div>
-
-              <div className="flex justify-center lg:justify-end lg:pr-2">
-                <div className="grid grid-cols-4 gap-3 sm:gap-4 xl:gap-5">
-                  {TOP_PILLARS.map((item) => (
-                    <HeroPillar key={item.label} item={item} />
-                  ))}
-                </div>
+            <div className="relative mt-1 min-h-[48px] xl:min-h-[60px]">
+              <div className="absolute inset-x-0 top-0 hidden xl:block">
+                <RaviCityVisionPanel />
               </div>
             </div>
           </div>
 
-          <div className="mt-1 grid flex-1 items-center gap-5 xl:items-start xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
-            <div className="hidden h-[510px] grid-rows-3 gap-4 xl:grid 2xl:h-[540px]">
+          <div className="mt-1 grid flex-1 items-center gap-5 xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
+            <div className="hidden flex-col gap-3 xl:flex">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
@@ -1180,25 +1067,29 @@ export default function LandingPage() {
                   <span className="mt-1 block text-[#70D84F] sm:mt-2">
                     METAVERSE
                   </span>
+                  <div className="mt-2 flex items-center justify-center gap-3">
+                    <span className="h-px w-14 bg-gradient-to-r from-transparent to-[#8FEA67]/75 sm:w-20" />
+                    <span className="text-[12px] font-black uppercase tracking-[0.22em] text-[#8FEA67] sm:text-[14px]">
+                      One City. One Data. One Platform.
+                    </span>
+                    <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#8FEA67]/75 sm:w-20" />
+                  </div>
                 </h1>
 
-                <p className="mx-auto mt-4 max-w-2xl px-2 text-xs leading-relaxed text-white/[0.78] sm:mt-5 sm:text-sm md:text-[15px]">
-                  An Integrated, Immersive &amp; Intelligent Platform for
-                  Planning, Monitoring, Collaboration &amp; Sustainable
-                  Development
-                </p>
+
+
               </div>
 
               {/* Move capability icons and both buttons downward */}
               <div className="transition-transform duration-300 xl:translate-y-[30px] 2xl:translate-y-[36px]">
                 <div className="relative mx-auto mt-5 max-w-[610px] sm:mt-6">
                   <div
-                    className="absolute left-[8%] right-[8%] top-6 hidden h-px origin-center bg-gradient-to-r from-transparent via-[#8FEA67]/[0.55] to-transparent sm:block"
+                    className="absolute left-[8%] right-[8%] top-7 hidden h-px origin-center bg-gradient-to-r from-transparent via-[#4CCBFF]/[0.55] to-transparent sm:block"
                     style={{ animation: "dataLine 3.8s ease-in-out infinite" }}
                   />
 
                   <div className="relative flex flex-wrap items-start justify-center gap-x-1 gap-y-3 sm:flex-nowrap sm:justify-between">
-                    {CORE_CAPABILITIES.map((item) => (
+                    {TOP_PILLARS.map((item) => (
                       <CapabilityNode key={item.label} item={item} />
                     ))}
                   </div>
@@ -1228,7 +1119,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="hidden h-[510px] grid-rows-3 gap-4 xl:grid 2xl:h-[540px]">
+            <div className="hidden flex-col gap-3 xl:flex">
               {DECISION_AREAS.slice(3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
@@ -1239,7 +1130,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mx-auto mt-3 grid w-full max-w-5xl grid-cols-1 gap-2 xs:grid-cols-2 lg:grid-cols-3 xl:hidden">
+          <div className="mx-auto mt-4 grid w-full max-w-5xl grid-cols-1 gap-3 xs:grid-cols-2 lg:grid-cols-3 xl:hidden">
             {DECISION_AREAS.map((area, index) => (
               <DecisionSupportCard
                 key={area.key}
@@ -1265,47 +1156,30 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 z-30 overflow-hidden border-t border-[#70D84F]/30">
-          {/* Light sage-green background for high contrast stat bar */}
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(236,250,240,0.97),rgba(220,245,230,0.97)_48%,rgba(236,250,240,0.97))] backdrop-blur-[3px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(112,216,79,0.10),transparent_60%)]" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#70D84F]/60 to-transparent" />
-
-          <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center gap-1.5 px-3 py-2 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-3">
-            <div className="shrink-0 text-center sm:border-r sm:border-[#0a2e1a]/15 sm:pr-5 sm:text-left">
-              <div className="text-[12px] font-black uppercase leading-tight tracking-[0.18em] text-[#0a2e1a] sm:text-[14px]">
+        <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/88 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-6 sm:px-5 sm:py-5">
+            <div className="shrink-0 text-center sm:border-r sm:border-white/15 sm:pr-6 sm:text-left">
+              <div className="animate-pulse text-[11px] font-black uppercase leading-tight tracking-[0.18em] text-[#70D84F] xs:text-xs sm:text-base md:text-lg">
                 {STAT_GROUPS[statGroupIndex].title}
               </div>
             </div>
 
             <div
-              className={`grid flex-1 gap-3 text-center transition-all duration-300 ease-out sm:gap-3 ${STAT_GROUPS[statGroupIndex].stats.length === 3
+              className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${STAT_GROUPS[statGroupIndex].stats.length === 3
                 ? "grid-cols-3"
                 : "grid-cols-2 sm:grid-cols-4"
                 } ${statFade
                   ? "translate-y-0 opacity-100"
-                  : "translate-y-1 opacity-0"
+                  : "translate-y-2 opacity-0"
                 }`}
             >
               {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
-                <div
-                  key={label}
-                  className="
-                    rounded-xl
-                    border border-[#70D84F]/30
-                    bg-white/90
-                    px-3 py-2
-                    shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]
-                    backdrop-blur-md
-                    transition-all duration-300
-                    hover:bg-white hover:border-[#70D84F]/60 hover:shadow-[0_6px_20px_-4px_rgba(112,216,79,0.35)]
-                  "
-                >
-                  <div className="text-[22px] sm:text-[30px] font-black text-[#0a2e1a] leading-none">
+                <div key={label} className="relative py-1">
+                  <div className="text-xl font-black text-[#70D84F] xs:text-2xl sm:text-4xl">
                     {value}
                   </div>
 
-                  <div className="mt-1 text-[8px] sm:text-[10px] uppercase tracking-[0.15em] text-[#1a4a2e]/80">
+                  <div className="mt-0.5 text-[8px] font-semibold uppercase tracking-[0.13em] text-white/60 xs:text-[9px] sm:mt-1 sm:text-xs">
                     {label}
                   </div>
                 </div>
@@ -1313,16 +1187,16 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative z-10 flex justify-center gap-2 pb-1.5 sm:pb-2">
-            {STAT_GROUPS.map((group, i) => (
+          <div className="flex justify-center gap-2 pb-2.5 sm:pb-3.5">
+            {STAT_GROUPS.map((group, index) => (
               <button
                 key={group.key}
                 type="button"
-                onClick={() => goToStatGroup(i)}
-                aria-label={`Show ${group.title} stats`}
-                className={`rounded-full transition-all duration-300 ${i === statGroupIndex
-                  ? "h-1.5 w-6 bg-[#70D84F] shadow-[0_0_10px_rgba(112,216,79,0.72)]"
-                  : "h-1.5 w-1.5 bg-white/30 hover:bg-white/65"
+                onClick={() => goToStatGroup(index)}
+                aria-label={`Show ${group.title} highlights`}
+                className={`rounded-full transition-all duration-300 ${index === statGroupIndex
+                  ? "h-1.5 w-6 bg-[#70D84F]"
+                  : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
                   }`}
               />
             ))}
@@ -1492,7 +1366,7 @@ export default function LandingPage() {
                   icon,
                   title,
                   desc,
-                  images,
+                  img,
                   route,
                   gradientFrom,
                   gradientTo,
@@ -1509,7 +1383,7 @@ export default function LandingPage() {
                     icon={icon}
                     title={title}
                     desc={desc}
-                    images={images}
+                    img={img}
                     route={route}
                     gradientFrom={gradientFrom}
                     gradientTo={gradientTo}
@@ -1548,14 +1422,18 @@ export default function LandingPage() {
               </span>
             </h2>
 
-
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
+              Add each team member’s photograph, name and designation in the
+              cards below. The layout is responsive and ready for your final
+              leadership and project-team information.
+            </p>
           </div>
 
           <div className="relative mt-8">
             <div className="overflow-hidden px-1 sm:px-12">
               <div
                 key={teamStartIndex}
-                className="grid grid-cols-1 justify-items-center gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6"
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5"
                 style={{ animation: "teamCarouselMove 620ms ease-out both" }}
               >
                 {Array.from({ length: 3 }, (_, offset) => {
@@ -1607,7 +1485,8 @@ export default function LandingPage() {
                 onClick={() =>
                   setTeamStartIndex(
                     (current) =>
-                      (current - 1 + TEAM_MEMBERS.length) % TEAM_MEMBERS.length,
+                      (current - 1 + TEAM_MEMBERS.length) %
+                      TEAM_MEMBERS.length,
                   )
                 }
                 aria-label="Show previous team members"
@@ -1700,6 +1579,7 @@ export default function LandingPage() {
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0B7A3B] to-[#004225] text-white shadow-[0_12px_24px_-12px_rgba(0,66,37,.85)] transition-transform duration-500 group-hover:rotate-3 group-hover:scale-110">
                           {icon}
                         </div>
+
                         <span className="text-sm font-black tracking-[0.15em] text-[#0B7A3B]/25">
                           {String(featureIndex + 1).padStart(2, "0")}
                         </span>
@@ -1708,6 +1588,7 @@ export default function LandingPage() {
                       <h3 className="relative mt-5 text-lg font-black text-slate-900">
                         {title}
                       </h3>
+
                       <p className="relative mt-2 text-sm leading-relaxed text-slate-500">
                         {desc}
                       </p>
@@ -1807,44 +1688,32 @@ export default function LandingPage() {
                 {
                   src: RudaFooterLogo,
                   alt: "Ravi Urban Development Authority",
+                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
                 },
                 {
-                  src: GopHeaderLogo,
+                  src: GopLogo,
                   alt: "Government of Punjab",
+                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
                 },
                 {
                   src: NespakLogo,
                   alt: "NESPAK",
+                  imageClass: "h-[48px] w-[48px] sm:h-[54px] sm:w-[54px]",
                 },
                 {
                   src: RudaLogo,
                   alt: "RUDA GIS Directorate",
+                  imageClass: "h-[52px] w-[52px] sm:h-[60px] sm:w-[60px]",
                 },
               ].map((logo) => (
                 <div
                   key={logo.alt}
-                  className="
-      flex
-      h-[64px] w-[64px]
-      sm:h-[70px] sm:w-[70px]
-      shrink-0
-      items-center
-      justify-center
-      rounded-full
-      bg-white
-      p-[2px]
-      shadow-md
-      ring-1
-      ring-white/20
-      transition-all
-      duration-300
-      hover:scale-105
-    "
+                  className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-white p-1 shadow-[0_8px_20px_-10px_rgba(0,0,0,0.55)] ring-1 ring-white/40 sm:h-[78px] sm:w-[78px]"
                 >
                   <img
                     src={logo.src}
                     alt={logo.alt}
-                    className="h-[92%] w-[92%] rounded-full object-contain"
+                    className={`${logo.imageClass} rounded-full object-contain`}
                   />
                 </div>
               ))}
@@ -1862,9 +1731,9 @@ export default function LandingPage() {
                 { icon: <Twitter size={14} />, href: "#" },
                 { icon: <Linkedin size={14} />, href: "#" },
                 { icon: <Instagram size={14} />, href: "#" },
-              ].map(({ icon, href }, i) => (
+              ].map(({ icon, href }, index) => (
                 <a
-                  key={i}
+                  key={index}
                   href={href}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-all hover:bg-[#49B84A] hover:text-white sm:h-9 sm:w-9"
                 >
@@ -1920,20 +1789,15 @@ export default function LandingPage() {
 
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
-              <div>
-                <h3 className="text-sm font-black sm:text-base">
-                  Office Location
-                </h3>
-                <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-white/45 sm:text-[10px]">
-                  Land Acquisition &amp; Estate Management
-                </p>
-              </div>
+              <h3 className="text-sm font-black sm:text-base">
+                Office Location
+              </h3>
 
               <a
-                href="https://www.google.com/maps/search/?api=1&query=RUDA+LA%26EM+Office%2C+152-A+Ali+Block%2C+Garden+Town%2C+Lahore%2C+Pakistan"
+                href="https://www.google.com/maps/search/?api=1&query=152-A+Ali+Block+Garden+Town+Lahore+Pakistan"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#8FEA67]/25 bg-[#8FEA67]/10 px-3 py-1.5 text-[10px] font-bold text-[#8FEA67] transition-all hover:-translate-y-0.5 hover:border-[#8FEA67]/55 hover:bg-[#8FEA67]/20 hover:text-white sm:text-xs"
+                className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#8FEA67] transition-colors hover:text-white sm:text-xs"
               >
                 Open in Maps
                 <ExternalLink size={12} />
@@ -1941,35 +1805,18 @@ export default function LandingPage() {
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/5 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)]">
-              <div className="relative overflow-hidden">
-                <iframe
-                  title="RUDA LA&EM Office location"
-                  src="https://www.google.com/maps?q=RUDA+LA%26EM+Office%2C+152-A+Ali+Block%2C+Garden+Town%2C+Lahore%2C+Pakistan&z=17&output=embed"
-                  className="h-[270px] w-full border-0 sm:h-[300px] lg:h-[285px] xl:h-[310px]"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  allowFullScreen
-                />
+              <iframe
+                title="RUDA office location"
+                src="https://www.google.com/maps?q=152-A+Ali+Block+Garden+Town+Lahore+Pakistan&output=embed"
+                className="h-[270px] w-full border-0 sm:h-[300px] lg:h-[285px] xl:h-[310px]"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
 
-                {/* Custom location label so the office name is always visible,
-                    even when Google does not render a place-name label. */}
-                {/* Custom location label so the office name is always visible,
-    even when Google does not render a place-name label. */}
-
-              </div>
-
-              <div className="border-t border-white/10 bg-black/10 px-3 py-3">
-                <div className="flex items-start gap-2">
-
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-[0.08em] text-white sm:text-xs">
-                      RUDA LA&amp;EM Office
-                    </p>
-                    <p className="mt-1 text-[10px] leading-relaxed text-white/65 sm:text-xs">
-                      152-A, Ali Block, Garden Town, Lahore, Pakistan
-                    </p>
-                  </div>
-                </div>
+              <div className="flex items-start gap-2 border-t border-white/10 bg-black/10 px-3 py-3 text-[10px] leading-relaxed text-white/70 sm:text-xs">
+                <MapPin size={14} className="mt-0.5 shrink-0 text-[#49B84A]" />
+                <span>152-A, Ali Block, Garden Town, Lahore, Pakistan</span>
               </div>
             </div>
           </div>
