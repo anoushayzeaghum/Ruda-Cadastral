@@ -109,10 +109,9 @@ const DECISION_AREAS = [
     accent: "#9BE35C",
     image: "/LandingCard1.png",
     bullets: [
-      "Parcel mapping & Khasra management",
-      "Ownership & compensation management",
-      "Estate inventory & asset management",
-      "Mutation & revenue integration",
+      "Land Evaluation, Acquisition, Demarcation & Mutation",
+      "GIS & Geospatial Intelligence",
+      "Estate Inventory, Monitoring & Management",
     ],
   },
   {
@@ -140,11 +139,9 @@ const DECISION_AREAS = [
     accent: "#B781FF",
     image: "/LandingCard3.png",
     bullets: [
-      "Building plan approval system",
-      "Development monitoring",
-      "Building inspections",
-      "Regulatory compliance",
-      "e-Permits & digital records",
+      "Development & Land Use Control — Enforce regulations and master plan.",
+      "Regulatory Enforcement — Control illegal development and protect public interest.",
+      "Revenue & Environment — Ensure fee collection and environmental protection.",
     ],
   },
   {
@@ -156,11 +153,9 @@ const DECISION_AREAS = [
     accent: "#FFAA22",
     image: "/LandingCard4.png",
     bullets: [
-      "Infrastructure design & modeling",
-      "Roads, bridges & interchanges",
-      "Water supply & sewerage networks",
-      "Storm-water drainage",
-      "Asset management & maintenance",
+      "Ravi River Flood Protection & Resilience",
+      "Integrated Infrastructure Development",
+      "Sustainable & Resilient Urban Infrastructure",
     ],
   },
   {
@@ -172,27 +167,23 @@ const DECISION_AREAS = [
     accent: "#27E1EA",
     image: "/LandingCard5.png",
     bullets: [
-      "Investment & opportunity mapping",
-      "Commercial zone management",
-      "Market & feasibility analysis",
-      "Stakeholder & investor portal",
-      "Revenue & financial analytics",
+      "Transaction Advisory — Investment, JVs & PPPs",
+      "Business Growth & Sales — Partnerships, Sales & Customer Services",
+      "Marketing & Branding — Lead Generation & Brand Visibility",
     ],
   },
   {
     key: "sustainability",
     number: "06",
-    title: "Corporate Social Responsibility (CSR)",
+    title: "Special Initiatives, CSR and Diversity",
     shortTitle: "CSR & Sustainability",
     icon: Leaf,
     accent: "#9BE84F",
     image: "/LandingCard6.png",
     bullets: [
-      "Community engagement",
-      "Social-impact assessment",
-      "Environmental sustainability",
-      "Green & blue infrastructure",
-      "Education, health & well-being",
+      "Socially Responsible, Inclusive, and Sustainable Urban Development",
+      "Transforming Communities through Impactful CSR Initiatives",
+      "Creating a Supportive Environment and Promoting Community Welfare & Development",
     ],
   },
 ];
@@ -249,9 +240,9 @@ const TEAM_MEMBERS = [
   },
   {
     id: 7,
-    name: "Muhammad Hamza",
-    designation: "GIS Assistant",
-    image: "/Ruda_Official/Muhammad_Hamza.PNG",
+    name: "Muhammad Arshad",
+    designation: "Officer GIS",
+    image: "/Ruda_Official/Muhammad Arshad.PNG",
   },
 ];
 
@@ -695,10 +686,10 @@ function TeamMemberCard({ member, index }) {
             <img
               src={member.image}
               alt={member.name}
-              className="h-44 w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.06] sm:h-48 lg:h-52"
+              className="h-64 w-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.06] sm:h-72 lg:h-80"
             />
           ) : (
-            <div className="flex h-44 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-48 lg:h-52">
+            <div className="flex h-64 w-full items-center justify-center bg-[radial-gradient(circle_at_top,rgba(112,216,79,0.22),transparent_42%),linear-gradient(145deg,#0a2f24,#03130f)] sm:h-72 lg:h-80">
               <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-[#8FEA67]/35 bg-white/[0.06] text-[#8FEA67] shadow-[0_0_42px_rgba(112,216,79,0.18)]">
                 <span className="absolute inset-2 rounded-full border border-white/10" />
                 <Users size={36} strokeWidth={1.5} />
@@ -1175,8 +1166,8 @@ export default function LandingPage() {
 
             <div
               className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${STAT_GROUPS[statGroupIndex].stats.length === 3
-                  ? "grid-cols-3"
-                  : "grid-cols-2 sm:grid-cols-4"
+                ? "grid-cols-3"
+                : "grid-cols-2 sm:grid-cols-4"
                 } ${statFade
                   ? "translate-y-0 opacity-100"
                   : "translate-y-2 opacity-0"
@@ -1204,8 +1195,8 @@ export default function LandingPage() {
                 onClick={() => goToStatGroup(index)}
                 aria-label={`Show ${group.title} highlights`}
                 className={`rounded-full transition-all duration-300 ${index === statGroupIndex
-                    ? "h-1.5 w-6 bg-[#70D84F]"
-                    : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
+                  ? "h-1.5 w-6 bg-[#70D84F]"
+                  : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
                   }`}
               />
             ))}
@@ -1679,8 +1670,8 @@ export default function LandingPage() {
                   onClick={() => setFeatureStartIndex(index)}
                   aria-label={`Show capability group starting from ${index + 1}`}
                   className={`h-2 rounded-full transition-all duration-300 ${index === featureStartIndex
-                      ? "w-7 bg-[#0B7A3B]"
-                      : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
+                    ? "w-7 bg-[#0B7A3B]"
+                    : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
                     }`}
                 />
               ))}
