@@ -183,43 +183,42 @@ const RAVI_CITY_PILLARS = [
 const TEAM_MEMBERS = [
   {
     id: 1,
-    name: "Team Member Name",
+    name: "Imran Amin",
     designation: "Chief Executive Officer",
-    image: "",
+    image: "/Ruda_Official/Imran-Amin (CEO).webp",
   },
   {
     id: 2,
-    name: "Team Member Name",
+    name: "Brig. Mansoor",
     designation: "Chief Operating Officer",
-    image: "",
+    image: "/Ruda_Official/Brig-Mansoor (COO).webp",
   },
   {
     id: 3,
-    name: "Team Member Name",
-    designation: "Executive Director",
-    image: "",
-  },
-  {
-    id: 4,
-    name: "Team Member Name",
-    designation: "Director",
-    image: "",
+    name: "Brig. Bakhtiar",
+    designation: "Executive Director — Land Acquisition & Estate",
+    image:
+      "/Ruda_Official/ED BAKHTIAR (ED Land Acquisition & Estate).jpeg",
   },
   {
     id: 5,
-    name: "Team Member Name",
-    designation: "Project Lead",
-    image: "",
+    name: "Nizam ud Din",
+    designation: "Director GIS",
+    image: "/Ruda_Official/Nizam-ud-Din.PNG",
   },
   {
     id: 6,
-    name: "Team Member Name",
-    designation: "GIS & Digital Twin Lead",
-    image: "",
+    name: "Umar Javaid",
+    designation: "Assistant Director GIS",
+    image: "/Ruda_Official/Umar_Javaid.PNG",
+  },
+  {
+    id: 7,
+    name: "Muhammad Hamza",
+    designation: "GIS Assistant",
+    image: "/Ruda_Official/Muhammad_Hamza.PNG",
   },
 ];
-
-
 
 const GIS_APPS = [
   {
