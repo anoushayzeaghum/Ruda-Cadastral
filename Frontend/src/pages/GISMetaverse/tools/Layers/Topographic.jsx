@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import GeodeticNetworkAttribute from "./AttributeTable/GeodeticNetworkAttribute";
+import GeodeticNetworkAttribute from "./AttributeTable/Topographic/GeodeticNetworkAttribute";
 import {
   addGeodeticPointsLayer,
   GEODETIC_POINTS_IDS,
@@ -10,6 +10,8 @@ import {
   API_BASE,
   unwrapGeoJSON,
 } from "./AttributeTable/AdminAttributeTableShell";
+import InlineLayerLegend from "./_InlineLayerLegend";
+import { pointLegend } from "./_legendUtils";
 
 const GEODETIC_LAYER = {
   key: "geodeticNetwork",
@@ -287,6 +289,15 @@ export default function Topographic({ map }) {
               </span>
             </div>
 
+            {layer.visible && (
+              <InlineLayerLegend
+                items={[
+                  pointLegend("Geodetic Point", layer.color),
+                ]}
+                opacity={layer.opacity}
+              />
+            )}
+
             {detailsOpen && (
               <div
                 className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80"
@@ -305,6 +316,7 @@ export default function Topographic({ map }) {
       {activeTable && (
         <GeodeticNetworkAttribute
           map={map}
+          geojson={cachedGeoJSON.current}
           onClose={() => setActiveTable(false)}
         />
       )}

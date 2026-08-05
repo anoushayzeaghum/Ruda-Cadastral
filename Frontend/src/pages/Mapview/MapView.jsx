@@ -91,16 +91,17 @@ import {
   addPointLayerStyles,
   addTriJunctionLayerStyles,
   ensureSelectedLayerStyles,
-  HANDU_GUJRAN_BOUNDS,
-  restoreOrthoLayer,
+  // HANDU_GUJRAN_BOUNDS,
+  // restoreOrthoLayer,
 } from "./LayerManager/index.js";
 
 import {
   getSquareNumberFromProps,
   getAcreNumberFromProps,
   getMauzaName,
-  getOrthoTileUrlFromMauza,
-  getOrthoBoundsFromMauzaName,
+  // getOrthoTileUrlFromMauza,
+  // getOrthoBoundsFromMauzaName,
+  getMasawiConfigForMauza,
   THEMATIC_LAND_LAYERS,
   KHASRA_ONLY_LABEL,
   PROPOSED_ROADS_SOURCE,
@@ -136,6 +137,51 @@ const markVerificationStatus = (geojson, status) => ({
   })),
 });
 
+const removeMasawiMapLayer = (map, config) => {
+  try {
+    if (map.getLayer(config.layerId)) map.removeLayer(config.layerId);
+    if (map.getSource(config.sourceId)) map.removeSource(config.sourceId);
+  } catch (_) {}
+};
+
+const addOrUpdateMasawiMapLayer = async (map, opacityFraction, mauzaName) => {
+  if (!map || !mauzaName) return null;
+  const config = getMasawiConfigForMauza(mauzaName);
+
+  let tileJson = null;
+  try {
+    const res = await fetch(config.tileJsonUrl);
+    if (!res.ok) return null;
+    tileJson = await res.json();
+  } catch (e) {
+    return null;
+  }
+  if (!tileJson?.tiles?.length) return null;
+
+  if (!map.getSource(config.sourceId)) {
+    map.addSource(config.sourceId, {
+      type: "raster",
+      tiles: tileJson.tiles,
+      tileSize: 256,
+      minzoom: tileJson.minzoom,
+      maxzoom: tileJson.maxzoom,
+    });
+  }
+  if (!map.getLayer(config.layerId)) {
+    map.addLayer({
+      id: config.layerId,
+      type: "raster",
+      source: config.sourceId,
+      paint: { "raster-opacity": opacityFraction },
+      layout: { visibility: "visible" },
+    });
+  } else {
+    map.setLayoutProperty(config.layerId, "visibility", "visible");
+    map.setPaintProperty(config.layerId, "raster-opacity", opacityFraction);
+  }
+
+  return { ...config, bounds: tileJson.bounds };
+};
 const mergeStatusGeoJSON = (verified, unverified) =>
   mergeFeatureCollections([
     markVerificationStatus(verified, "verified"),
@@ -167,6 +213,7 @@ export default function MapView({
   importedAOIFeature = null,
   onImportedAOIAnalysed,
 }) {
+  const activeMasawiLayersRef = useRef(new Map());
   const mapWrapperRef = useRef(null);
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -334,7 +381,8 @@ export default function MapView({
       : [];
   const primarySelectedMauza = selectedMauzaList[0] || null;
   const selectedMauzaName = getMauzaName(primarySelectedMauza);
-  const orthoTileUrl = getOrthoTileUrlFromMauza(primarySelectedMauza);
+  // const orthoTileUrl = getOrthoTileUrlFromMauza(primarySelectedMauza);
+
   const districtSelectionKey = buildSelectionKey(selectedDistrict);
   const tehsilSelectionKey = buildSelectionKey(selectedTehsil);
   const rudaPhaseSelectionKey = buildSelectionKey(selectedRudaPhaseIds);
@@ -3094,48 +3142,117 @@ export default function MapView({
     };
   }, [isMapReady, selectedMauzaName, controlPointsVisible]);
 
-  useEffect(() => {
-    const map = mapInstance.current;
-    if (!map || !isMapReady) return;
+  // useEffect(() => {
+  //   const map = mapInstance.current;
+  //   if (!map || !isMapReady) return;
 
-    const restoreOrtho = () => {
-      restoreOrthoLayer({
-        map,
-        visible: massaviLayerVisible && !!orthoTileUrl,
-        opacity: massaviLayerOpacity,
-        tileUrl: orthoTileUrl,
-      });
+  //   const restoreOrtho = () => {
+  //     restoreOrthoLayer({
+  //       map,
+  //       visible: massaviLayerVisible && !!orthoTileUrl,
+  //       opacity: massaviLayerOpacity,
+  //       tileUrl: orthoTileUrl,
+  //     });
 
-      if (massaviLayerVisible && !prevMussaviLayerVisible.current) {
-        const bounds = getOrthoBoundsFromMauzaName(
-          selectedMauzaName,
-          HANDU_GUJRAN_BOUNDS,
-        );
-        if (bounds) {
-          map.fitBounds(bounds, {
-            padding: 50,
-            duration: 1500,
-          });
-        }
+  //     if (massaviLayerVisible && !prevMussaviLayerVisible.current) {
+  //       const bounds = getOrthoBoundsFromMauzaName(
+  //         selectedMauzaName,
+  //         HANDU_GUJRAN_BOUNDS,
+  //       );
+  //       if (bounds) {
+  //         map.fitBounds(bounds, {
+  //           padding: 50,
+  //           duration: 1500,
+  //         });
+  //       }
+  //     }
+
+  //     prevMussaviLayerVisible.current = massaviLayerVisible;
+  //   };
+
+  //   restoreOrtho();
+
+  //   map.on("style.load", restoreOrtho);
+
+  //   return () => {
+  //     map.off("style.load", restoreOrtho);
+  //   };
+  // }, [
+  //   massaviLayerVisible,
+  //   massaviLayerOpacity,
+  //   orthoTileUrl,
+  //   isMapReady,
+  //   selectedMauzaName,
+  // ]);
+  const selectedMauzaNamesKey = selectedMauzaList
+  .map((m) => getMauzaName(m))
+  .join("|");
+
+useEffect(() => {
+  const map = mapInstance.current;
+  if (!map || !isMapReady) return;
+
+  let cancelled = false;
+  const opacityFraction = massaviLayerOpacity; // already 0-1 from massaviLayerOpacity calc above
+
+  const syncMasawiLayers = async () => {
+    if (!massaviLayerVisible || !selectedMauzaList.length) {
+      for (const config of activeMasawiLayersRef.current.values()) {
+        removeMasawiMapLayer(map, config);
       }
-
+      activeMasawiLayersRef.current.clear();
       prevMussaviLayerVisible.current = massaviLayerVisible;
-    };
+      return;
+    }
 
-    restoreOrtho();
+    const wantedConfigs = selectedMauzaList.map((m) =>
+      getMasawiConfigForMauza(getMauzaName(m)),
+    );
+    const wantedLayerIds = new Set(wantedConfigs.map((c) => c.layerId));
 
-    map.on("style.load", restoreOrtho);
+    for (const [layerId, config] of activeMasawiLayersRef.current.entries()) {
+      if (!wantedLayerIds.has(layerId)) {
+        removeMasawiMapLayer(map, config);
+        activeMasawiLayersRef.current.delete(layerId);
+      }
+    }
 
-    return () => {
-      map.off("style.load", restoreOrtho);
-    };
-  }, [
-    massaviLayerVisible,
-    massaviLayerOpacity,
-    orthoTileUrl,
-    isMapReady,
-    selectedMauzaName,
-  ]);
+    const wasVisibleBefore = prevMussaviLayerVisible.current;
+    const allBounds = [];
+
+    for (const mauza of selectedMauzaList) {
+      const mauzaName = getMauzaName(mauza);
+      // eslint-disable-next-line no-await-in-loop
+      const result = await addOrUpdateMasawiMapLayer(map, opacityFraction, mauzaName);
+      if (cancelled) return;
+
+      if (result) {
+        activeMasawiLayersRef.current.set(result.layerId, result);
+        if (result.bounds) allBounds.push(result.bounds);
+      } else {
+        console.warn(`No ortho registered for mauza "${mauzaName}".`);
+      }
+    }
+
+    if (allBounds.length && !wasVisibleBefore) {
+      const combined = allBounds.reduce((acc, b) => [
+        Math.min(acc[0], b[0]), Math.min(acc[1], b[1]),
+        Math.max(acc[2], b[2]), Math.max(acc[3], b[3]),
+      ]);
+      map.fitBounds(combined, { padding: 50, duration: 1500 });
+    }
+
+    prevMussaviLayerVisible.current = massaviLayerVisible;
+  };
+
+  syncMasawiLayers();
+
+  map.on("style.load", syncMasawiLayers);
+  return () => {
+    cancelled = true;
+    map.off("style.load", syncMasawiLayers);
+  };
+}, [massaviLayerVisible, massaviLayerOpacity, isMapReady, selectedMauzaNamesKey]);
 
   useMapTools({
     mapRef: mapInstance,

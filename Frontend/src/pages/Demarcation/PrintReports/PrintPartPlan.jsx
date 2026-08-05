@@ -772,6 +772,7 @@ const drawOverviewPlotLabel = (
   feature,
   projectCoordinate,
   screenTransform,
+  { emphasize = false } = {},
 ) => {
   const ring = getLargestOuterRing(feature, projectCoordinate);
   if (ring.length < 3) return;
@@ -788,16 +789,17 @@ const drawOverviewPlotLabel = (
   const availableSize = Math.min(screenBounds.width, screenBounds.height);
 
   if (plotNo) {
-    const fontSize = clamp(availableSize * 0.42, 15, 31);
+    const fontSize = emphasize
+      ? clamp(availableSize * 0.55, 20, 42)
+      : clamp(availableSize * 0.42, 15, 31);
     drawTextWithHalo(ctx, plotNo, centroid.x, centroid.y, {
       font: `700 ${fontSize}px Arial`,
-      fill: "#003DFF",
-      haloWidth: Math.max(3, fontSize * 0.14),
+      fill: "#0037FF",
+      haloWidth: Math.max(3, fontSize * (emphasize ? 0.18 : 0.14)),
       angle,
     });
     return;
   }
-
   const landUseLabel = LAND_USE_LABELS[landUseClass] || "";
   if (!landUseLabel || landUseClass === "fallback") return;
 
@@ -855,7 +857,11 @@ const createOverviewCanvas = ({
     });
   });
 
-  plots.forEach((feature) => {
+  const otherPlots = plots.filter(
+    (feature) => !isSameFeature(feature, selectedFeature),
+  );
+
+  otherPlots.forEach((feature) => {
     const bounds = getBounds(projectFeaturePoints(feature, projectCoordinate));
     if (!boundsIntersect(bounds, view)) return;
 
@@ -867,12 +873,40 @@ const createOverviewCanvas = ({
     });
   });
 
-  plots.forEach((feature) => {
+  const selectedOverviewBounds = getBounds(
+    projectFeaturePoints(selectedFeature, projectCoordinate),
+  );
+  const selectedIsVisible = boundsIntersect(selectedOverviewBounds, view);
+
+  if (selectedIsVisible) {
+    drawPolygonFeature(
+      ctx,
+      selectedFeature,
+      projectCoordinate,
+      screenTransform.point,
+      {
+        fill: "#9ED8F1",
+        stroke: "#0037FF",
+        lineWidth: 6,
+      },
+    );
+  }
+
+  otherPlots.forEach((feature) => {
     const bounds = getBounds(projectFeaturePoints(feature, projectCoordinate));
     if (!boundsIntersect(bounds, view)) return;
     drawOverviewPlotLabel(ctx, feature, projectCoordinate, screenTransform);
   });
 
+  if (selectedIsVisible) {
+    drawOverviewPlotLabel(
+      ctx,
+      selectedFeature,
+      projectCoordinate,
+      screenTransform,
+      { emphasize: true },
+    );
+  }
   roads.forEach((feature) => {
     const bounds = getBounds(projectFeaturePoints(feature, projectCoordinate));
     if (!boundsIntersect(bounds, view)) return;

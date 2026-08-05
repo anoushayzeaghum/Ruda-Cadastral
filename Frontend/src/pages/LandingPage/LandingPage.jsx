@@ -36,7 +36,7 @@ import {
   Radio,
   Users,
   Leaf,
-} from "lucide-react"; 
+} from "lucide-react";
 
 const HERO_SLIDES = [
   // "/s11.png",
@@ -108,8 +108,9 @@ const DECISION_AREAS = [
     accent: "#9BE35C",
     image: "/LandingCard1.png",
     bullets: [
-      "Parcel, Khasra, ownership & compensation management",
-      "Estate inventory, mutation & revenue integration",
+      "Land Evaluation, Acquisition, Demarcation & Mutation",
+"GIS & Geospatial Intelligence",
+"Estate Inventory, Monitoring & Management",
     ],
   },
   {
@@ -134,8 +135,9 @@ const DECISION_AREAS = [
     accent: "#B781FF",
     image: "/LandingCard3.png",
     bullets: [
-      "Building approvals, inspections & development monitoring",
-      "Regulatory compliance, e-Permits & digital records",
+      "Transaction Advisory — Investment, JVs & PPPs",
+"Business Growth & Sales — Partnerships, Sales & Customer Services",
+"Marketing & Branding — Lead Generation & Brand Visibility"
     ],
   },
   {
@@ -147,8 +149,9 @@ const DECISION_AREAS = [
     accent: "#FFAA22",
     image: "/LandingCard4.png",
     bullets: [
-      "Infrastructure, roads, bridges & interchange design",
-      "Water, sewerage, drainage & asset maintenance",
+      "Ravi River Flood Protection & Resilience",
+      "Integrated Infrastructure Development",
+      "Sustainable & Resilient Urban Infrastructure",
     ],
   },
   {
@@ -160,21 +163,23 @@ const DECISION_AREAS = [
     accent: "#27E1EA",
     image: "/LandingCard5.png",
     bullets: [
-      "Investment mapping, market analysis & feasibility",
-      "Commercial zones, investor portal & revenue analytics",
+      "Development & Land Use Control — Enforce regulations and master plan",
+"Regulatory Enforcement — Control illegal development and protect public interest",
+"Revenue & Environment — Ensure fee collection and environmental protection"
     ],
   },
   {
     key: "sustainability",
     number: "06",
-    title: "Corporate Social Responsibility (CSR)",
-    shortTitle: "CSR & Sustainability",
+    title: "Special Initiatives, CSR and Diversity",
+    shortTitle: "Special Initiatives & CSR",
     icon: Leaf,
     accent: "#9BE84F",
     image: "/LandingCard6.png",
     bullets: [
-      "Community engagement, social impact & well-being",
-      "Environmental sustainability & green-blue infrastructure",
+      "Socially Responsible, Inclusive, and Sustainable Urban Development",
+      "Transforming Communities through Impactful CSR Initiatives",
+      "Creating a Supportive Environment and Promoting Community Welfare & Development"
     ],
   },
 ];
@@ -219,16 +224,22 @@ const TEAM_MEMBERS = [
   },
   {
     id: 3,
-    name: "Bakhtiar",
+    name: "Brig Bakhtiar Akram SI(M) (Retd)",
     designation: "Executive Director — Land Acquisition & Estate",
     image:
       "/Ruda_Official/ED BAKHTIAR (ED Land Acquisition & Estate).jpeg",
   },
   {
-    id: 4,
-    name: "Team Member Name",
-    designation: "Director",
-    image: "",
+    id: 5,
+    name: "Nizam ud Din",
+    designation: "Director GIS",
+    image: "/Ruda_Official/Nizam-ud-Din.PNG",
+  },
+  {
+    id: 6,
+    name: "Umar Javaid",
+    designation: "Assistant Director GIS",
+    image: "/Ruda_Official/Umar_Javaid.PNG",
   },
 ];
 
@@ -566,8 +577,8 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       className={`group relative w-full overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
         hover:-translate-y-1 hover:scale-[1.012]
         ${compact
-          ? "min-h-[118px] rounded-xl px-3 py-3"
-          : "h-full min-h-0 rounded-[18px] px-4 py-3"
+          ? "rounded-xl px-3 py-3"
+          : "h-full rounded-[18px] px-4 py-4"
         }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
@@ -592,10 +603,11 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
         style={{ backgroundColor: `${area.accent}30` }}
       />
 
+      {/* Icon badge — top-right */}
       <div
         className={`${compact
-            ? "right-3 top-3 h-9 w-9"
-            : "right-4 top-3.5 h-10 w-10"
+          ? "right-3 top-3 h-9 w-9"
+          : "right-4 top-3.5 h-10 w-10"
           } absolute z-20 flex items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-300 group-hover:scale-105`}
         style={{
           borderColor: `${area.accent}80`,
@@ -607,12 +619,15 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
         <Icon size={compact ? 17 : 19} strokeWidth={2} />
       </div>
 
-      <div className="relative z-10 grid h-full grid-cols-[auto_minmax(0,1fr)] items-center gap-3 pr-12">
-        <div className="flex items-center justify-center">
+      {/* Content row: number badge + text */}
+      <div className="relative z-10 flex h-full flex-col justify-center gap-0 pr-12">
+        {/* Number + Title row */}
+        <div className="flex items-start gap-3">
+          {/* Number badge */}
           <div
             className={`${compact
-                ? "h-9 w-9 text-sm"
-                : "h-11 w-11 text-base 2xl:h-12 2xl:w-12"
+              ? "h-9 w-9 text-sm"
+              : "h-11 w-11 text-base 2xl:h-12 2xl:w-12"
               } flex shrink-0 items-center justify-center rounded-full border-2 font-black`}
             style={{
               borderColor: area.accent,
@@ -623,39 +638,36 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
           >
             {Number(area.number)}
           </div>
-        </div>
 
-        <div className="grid min-w-0 content-center">
+          {/* Title */}
           <h3
             className={`${compact
-                ? "min-h-[25px] text-[11px]"
-                : "min-h-[30px] text-[12px] 2xl:min-h-[32px] 2xl:text-[13px]"
-              } flex items-center font-black uppercase leading-[1.12] tracking-[0.025em]`}
+              ? "text-[11px]"
+              : "text-[11.5px] 2xl:text-[12.5px]"
+              } flex min-h-[2.6em] items-center font-black uppercase leading-[1.18] tracking-[0.025em]`}
           >
             {compact ? area.shortTitle : area.title}
           </h3>
-
-          <ul className={`${compact ? "mt-1.5 space-y-1" : "mt-1.5 space-y-1.5"}`}>
-            {area.bullets.slice(0, 2).map((bullet) => (
-              <li
-                key={bullet}
-                className={`${compact
-                    ? "text-[10px]"
-                    : "text-[10.5px] 2xl:text-[11px]"
-                  } flex items-start gap-2 leading-[1.32] text-white/90`}
-              >
-                <span
-                  className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{
-                    backgroundColor: area.accent,
-                    boxShadow: `0 0 7px ${area.accent}80`,
-                  }}
-                />
-                <span>{bullet}</span>
-              </li>
-            ))}
-          </ul>
         </div>
+
+        {/* Bullets */}
+        <ul className={`${compact ? "mt-2 space-y-[5px] pl-[3.25rem]" : "mt-2 space-y-[5px] pl-[3.5rem]"}`}>
+          {area.bullets.map((bullet) => (
+            <li
+              key={bullet}
+              className="flex items-start gap-2 text-[10px] leading-[1.35] text-white/88 2xl:text-[10.5px]"
+            >
+              <span
+                className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{
+                  backgroundColor: area.accent,
+                  boxShadow: `0 0 7px ${area.accent}80`,
+                }}
+              />
+              <span>{bullet}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -1131,7 +1143,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-1 grid flex-1 items-center gap-5 xl:items-start xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
-            <div className="hidden h-[394px] grid-rows-3 gap-3 xl:grid 2xl:h-[406px]">
+            <div className="hidden h-[510px] grid-rows-3 gap-4 xl:grid 2xl:h-[540px]">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
@@ -1216,7 +1228,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="hidden h-[394px] grid-rows-3 gap-3 xl:grid 2xl:h-[406px]">
+            <div className="hidden h-[510px] grid-rows-3 gap-4 xl:grid 2xl:h-[540px]">
               {DECISION_AREAS.slice(3).map((area, index) => (
                 <DecisionSupportCard
                   key={area.key}
@@ -1277,8 +1289,8 @@ export default function LandingPage() {
             >
               {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
                 <div
-                   key={label}
-                   className="
+                  key={label}
+                  className="
                     rounded-xl
                     border border-[#70D84F]/30
                     bg-white/90
@@ -1536,11 +1548,7 @@ export default function LandingPage() {
               </span>
             </h2>
 
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
-              Add each team member’s photograph, name and designation in the
-              cards below. The layout is responsive and ready for your final
-              leadership and project-team information.
-            </p>
+
           </div>
 
           <div className="relative mt-8">

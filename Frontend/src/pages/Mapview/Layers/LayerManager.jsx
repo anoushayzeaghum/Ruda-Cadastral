@@ -493,7 +493,12 @@ function PossessionLandTypeDropdown({ selectedTypes, setSelectedTypes }) {
   );
 }
 
-function LayerDropdownPanel({ layerKey, geojson, getLayerColor, boundaryStatus }) {
+function LayerDropdownPanel({
+  layerKey,
+  geojson,
+  getLayerColor,
+  boundaryStatus,
+}) {
   const features = geojson?.features || [];
   const color = getLayerColor ? getLayerColor(layerKey) : "#9be37b";
 
@@ -501,7 +506,11 @@ function LayerDropdownPanel({ layerKey, geojson, getLayerColor, boundaryStatus }
     <div className="border-b border-[#0c3d2d] bg-[#031a14] px-3 py-2">
       <div className="max-h-60 overflow-y-auto rounded-md border border-[#0c3d2d] bg-[#06291f] px-2.5 py-2 shadow-sm [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* Layer Legend Renderer */}
-        <LayerLegend layerKey={layerKey} color={color} boundaryStatus={boundaryStatus} />
+        <LayerLegend
+          layerKey={layerKey}
+          color={color}
+          boundaryStatus={boundaryStatus}
+        />
 
         {/* Divider */}
         <div className="my-2 border-t border-[#0c3d2d]" />
