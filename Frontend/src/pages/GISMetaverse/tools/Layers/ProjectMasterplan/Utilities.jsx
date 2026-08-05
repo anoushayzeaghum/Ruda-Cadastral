@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import WaterSupplyPointAttribute from "../AttributeTable/ProjectMasterplan/Utilities/WaterSupplyPointAttribute";  
-import WaterSupplyLevelAttribute from "../AttributeTable/ProjectMasterplan/Utilities/WaterSupplyLevelAttribute";
-import SewagePointAttribute from "../AttributeTable/ProjectMasterplan/Utilities/SewagePointAttribute";
+import WaterSupplyPointAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/WaterSupplyPointAttribute";  
+import WaterSupplyLevelAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/WaterSupplyLevelAttribute";
+import SewagePointAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/SewagePointAttribute";
 import {
   API_BASE,
   getMapSourceGeoJSON,
