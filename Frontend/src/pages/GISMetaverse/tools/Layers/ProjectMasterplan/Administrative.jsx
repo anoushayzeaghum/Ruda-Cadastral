@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import ProjectBoundaryAttribute from "../AttributeTable/ProjectMasterplan/AdministrativeBoundary/ProjectBoundaryAttribute";
-import BlockBoundaryAttribute from "../AttributeTable/ProjectMasterplan/AdministrativeBoundary/BlockBoundaryAttribute";
-import MasterPlanBoundaryAttribute from "../AttributeTable/ProjectMasterplan/AdministrativeBoundary/MasterPlanBoundaryAttribute";
+import ProjectBoundaryAttribute from "../AttributeTable/ProjectMasterPlan/AdministrativeBoundary/ProjectBoundaryAttribute";
+import BlockBoundaryAttribute from "../AttributeTable/ProjectMasterPlan/AdministrativeBoundary/BlockBoundaryAttribute";
+import MasterPlanBoundaryAttribute from "../AttributeTable/ProjectMasterPlan/AdministrativeBoundary/MasterPlanBoundaryAttribute";
 import SpotLevelAttribute from "../AttributeTable/ProjectMasterPlan/TopographicPlan/SpotLevelAttribute";
-import ContoursAttribute from "../AttributeTable/ProjectMasterplan/TopographicPlan/ContoursAttribute";
-import RoadsAttribute from "../AttributeTable/ProjectMasterplan/AdministrativeBoundary/RoadsAttribute";
+import ContoursAttribute from "../AttributeTable/ProjectMasterPlan/TopographicPlan/ContoursAttribute";
+import RoadsAttribute from "../AttributeTable/ProjectMasterPlan/AdministrativeBoundary/RoadsAttribute";
 import {
   API_BASE,
   formatNumber,
