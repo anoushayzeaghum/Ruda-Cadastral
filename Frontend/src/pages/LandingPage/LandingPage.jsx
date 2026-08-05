@@ -224,7 +224,7 @@ const TEAM_MEMBERS = [
   },
   {
     id: 3,
-    name: "Bakhtiar",
+    name: "Brig Bakhtiar Akram SI(M) (Retd)",
     designation: "Executive Director — Land Acquisition & Estate",
     image:
       "/Ruda_Official/ED BAKHTIAR (ED Land Acquisition & Estate).jpeg",
