@@ -1,20 +1,19 @@
 import { Layers3, X } from "lucide-react";
 
-import Administrative from "../GISMetaverse/tools/Layers/ProjectMasterplan/Administrative";
-import LandRevenueRecord from "../GISMetaverse/tools/Layers/ProjectMasterplan/LandRevenueRecord";
-import TopographicPlan from "../GISMetaverse/tools/Layers/ProjectMasterplan/TopographicPlan";
-import Utilities from "../GISMetaverse/tools/Layers/ProjectMasterplan/Utilities";
-import LiveCamera from "../GISMetaverse/tools/Layers/ProjectMasterplan/LiveCamera";
-import NotifiedBoundaries from "../GISMetaverse/tools/Layers/ProjectMasterplan/NotifiedBoundaries";
+// Reuse the shared RUDA Master Plan layer component unchanged.
+// This is a direct import — no copy, no recreation, no palette override.
+// All symbology, legends, opacity, color editing, attribute tables, toggle-all,
+// group toggles, caching, and style-reload resilience come from this component.
+import RUDAMasterPlan from "../GISMetaverse/tools/Layers/RUDAMasterPlan";
 
 const TOOL_BUTTON_SIZE = 40;
 const TOOL_GAP = 8;
 
-// "Select Project" tool removed — project selection is now in MasterPlanSubHeader.
+// "Select Project" toolbar button removed — project selection lives in the SubHeader.
 const TOOL_ITEMS = [
   {
     id: "layers",
-    label: "Master Plan Layers",
+    label: "RUDA Master Plan Layers",
     icon: Layers3,
   },
 ];
@@ -23,18 +22,14 @@ export default function MasterPlanLeftToolbar({
   activeTool,
   setActiveTool,
   map,
+  // filters / setFilters / layerVisibility / setLayerVisibility are kept in the
+  // signature so MasterPlanDashboard does not need to change, even though
+  // RUDAMasterPlan manages its own internal layer state independently.
   filters,
   setFilters,
   layerVisibility,
   setLayerVisibility,
 }) {
-  const selectedProjectId = filters?.projectId || "";
-
-  // Subtitle shown in the panel header
-  const selectedProjectLabel = selectedProjectId
-    ? `Project ID: ${selectedProjectId}`
-    : "No project selected";
-
   const activeToolIndex = TOOL_ITEMS.findIndex(
     (tool) => tool.id === activeTool,
   );
@@ -52,6 +47,7 @@ export default function MasterPlanLeftToolbar({
 
   return (
     <>
+      {/* ── Toolbar button strip ─────────────────────────────────────────── */}
       <aside
         className="absolute left-2 top-3 z-40 flex flex-col gap-2 sm:left-3"
         aria-label="Master Plan tools"
@@ -80,67 +76,21 @@ export default function MasterPlanLeftToolbar({
         })}
       </aside>
 
+      {/* ── Layers panel ────────────────────────────────────────────────── */}
       {activeTool === "layers" && (
         <ToolbarPanel
-          title="Master Plan Layers"
-          subtitle={selectedProjectLabel}
+          title="RUDA Master Plan Layers"
           panelTop={panelTop}
           widthClass="sm:w-[370px] lg:w-[400px]"
           onClose={() => setActiveTool(null)}
         >
-          <div className="h-full overflow-y-auto overscroll-contain [scrollbar-color:#3f6f5e_#06291f] [scrollbar-width:thin]">
-            {/* No-project notice — visible before a project is selected */}
-            {!selectedProjectId && (
-              <div className="m-3 rounded-md border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
-                Select a project from the SubHeader above to enable
-                Master Plan layers.
-              </div>
-            )}
-
-            {/* Shared layer components — always rendered; each handles empty projectId */}
-            <Administrative
-              map={map}
-              title="ADMINISTRATIVE"
-              selectedProjectId={selectedProjectId}
-              layerVisibility={layerVisibility}
-              setLayerVisibility={setLayerVisibility}
-            />
-
-            <LandRevenueRecord
-              map={map}
-              selectedProjectId={selectedProjectId}
-              layerVisibility={layerVisibility}
-              setLayerVisibility={setLayerVisibility}
-            />
-
-            <TopographicPlan
-              map={map}
-              selectedProjectId={selectedProjectId}
-              layerVisibility={layerVisibility}
-              setLayerVisibility={setLayerVisibility}
-            />
-
-            <Utilities
-              map={map}
-              selectedProjectId={selectedProjectId}
-              layerVisibility={layerVisibility}
-              setLayerVisibility={setLayerVisibility}
-            />
-
-            <LiveCamera
-              map={map}
-              selectedProjectId={selectedProjectId}
-              layerVisibility={layerVisibility}
-              setLayerVisibility={setLayerVisibility}
-            />
-
-            <NotifiedBoundaries
-              map={map}
-              selectedProjectId={selectedProjectId}
-              layerVisibility={layerVisibility}
-              setLayerVisibility={setLayerVisibility}
-            />
-          </div>
+          {/*
+            RUDAMasterPlan manages all of its own state internally.
+            The only prop it requires is the live Mapbox map instance.
+            Passing null when the map is not yet ready is safe — the
+            component guards every map call with an early return.
+          */}
+          <RUDAMasterPlan map={map} />
         </ToolbarPanel>
       )}
     </>
@@ -151,7 +101,6 @@ export default function MasterPlanLeftToolbar({
 
 function ToolbarPanel({
   title,
-  subtitle,
   panelTop,
   widthClass,
   onClose,
@@ -167,31 +116,25 @@ function ToolbarPanel({
             : undefined,
       }}
     >
-      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-[#0a3327] px-4 py-3">
-        <div className="min-w-0">
-          <h2 className="truncate text-xs font-bold uppercase tracking-[0.12em]">
-            {title}
-          </h2>
-
-          {subtitle && (
-            <p className="mt-1 truncate text-[10px] text-white/55">
-              {subtitle}
-            </p>
-          )}
-        </div>
+      {/* Panel header */}
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#0c3d2d] bg-[#0a3327] px-4 py-2.5">
+        <h2 className="truncate text-[12px] font-bold uppercase tracking-[0.12em]">
+          {title}
+        </h2>
 
         <button
           type="button"
           title="Close"
           aria-label={`Close ${title}`}
           onClick={onClose}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-white/60 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-white/50 transition hover:bg-[#0a3327] hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
         >
-          <X size={15} />
+          <X size={14} />
         </button>
       </div>
 
-      <div className="min-h-0 flex-1">{children}</div>
+      {/* Scrollable panel body — RUDAMasterPlan handles its own inner scroll */}
+      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
     </section>
   );
 }
