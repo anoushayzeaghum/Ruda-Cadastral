@@ -1,7 +1,4 @@
-import { useMemo } from "react";
-import { Layers3, MapPinned, X } from "lucide-react";
-
-import FlyTo from "../FlyToDedicated/tools/FlyTo";
+import { Layers3, X } from "lucide-react";
 
 import Administrative from "../GISMetaverse/tools/Layers/ProjectMasterplan/Administrative";
 import LandRevenueRecord from "../GISMetaverse/tools/Layers/ProjectMasterplan/LandRevenueRecord";
@@ -13,16 +10,12 @@ import NotifiedBoundaries from "../GISMetaverse/tools/Layers/ProjectMasterplan/N
 const TOOL_BUTTON_SIZE = 40;
 const TOOL_GAP = 8;
 
+// "Select Project" tool removed — project selection is now in MasterPlanSubHeader.
 const TOOL_ITEMS = [
   {
     id: "layers",
     label: "Master Plan Layers",
     icon: Layers3,
-  },
-  {
-    id: "project",
-    label: "Select Project",
-    icon: MapPinned,
   },
 ];
 
@@ -37,10 +30,10 @@ export default function MasterPlanLeftToolbar({
 }) {
   const selectedProjectId = filters?.projectId || "";
 
-  const selectedProjectLabel = useMemo(() => {
-    if (!selectedProjectId) return "No project selected";
-    return `Selected project: ${selectedProjectId}`;
-  }, [selectedProjectId]);
+  // Subtitle shown in the panel header
+  const selectedProjectLabel = selectedProjectId
+    ? `Project ID: ${selectedProjectId}`
+    : "No project selected";
 
   const activeToolIndex = TOOL_ITEMS.findIndex(
     (tool) => tool.id === activeTool,
@@ -75,10 +68,11 @@ export default function MasterPlanLeftToolbar({
               aria-label={tool.label}
               aria-pressed={isActive}
               onClick={() => toggleTool(tool.id)}
-              className={`flex h-10 w-10 items-center justify-center rounded-xl border shadow-xl backdrop-blur-md transition focus:outline-none focus:ring-2 focus:ring-[#8fd36f]/70 ${isActive
+              className={`flex h-10 w-10 items-center justify-center rounded-xl border shadow-xl backdrop-blur-md transition focus:outline-none focus:ring-2 focus:ring-[#8fd36f]/70 ${
+                isActive
                   ? "border-[#8fd36f] bg-white text-[#0f3d2e]"
                   : "border-white/15 bg-[#10261f]/95 text-white hover:border-[#8fd36f]/70 hover:bg-[#0f3d2e]"
-                }`}
+              }`}
             >
               <Icon size={20} />
             </button>
@@ -95,6 +89,15 @@ export default function MasterPlanLeftToolbar({
           onClose={() => setActiveTool(null)}
         >
           <div className="h-full overflow-y-auto overscroll-contain [scrollbar-color:#3f6f5e_#06291f] [scrollbar-width:thin]">
+            {/* No-project notice — visible before a project is selected */}
+            {!selectedProjectId && (
+              <div className="m-3 rounded-md border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
+                Select a project from the SubHeader above to enable
+                Master Plan layers.
+              </div>
+            )}
+
+            {/* Shared layer components — always rendered; each handles empty projectId */}
             <Administrative
               map={map}
               title="ADMINISTRATIVE"
@@ -140,27 +143,11 @@ export default function MasterPlanLeftToolbar({
           </div>
         </ToolbarPanel>
       )}
-
-      {activeTool === "project" && (
-        <ToolbarPanel
-          title="Select Project"
-          subtitle="Choose a project to load its Master Plan layers"
-          panelTop={panelTop}
-          widthClass="sm:w-[340px]"
-          onClose={() => setActiveTool(null)}
-        >
-          <div className="h-full overflow-y-auto p-3">
-            <FlyTo
-              filters={filters}
-              setFilters={setFilters}
-              setLayerVisibility={setLayerVisibility}
-            />
-          </div>
-        </ToolbarPanel>
-      )}
     </>
   );
 }
+
+// ── ToolbarPanel ──────────────────────────────────────────────────────────────
 
 function ToolbarPanel({
   title,
