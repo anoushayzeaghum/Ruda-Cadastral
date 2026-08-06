@@ -1128,7 +1128,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-1 grid flex-1 items-center gap-5 xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
+          <div className="mt-1 grid flex-1 items-center gap-2 xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
             <div className="hidden flex-col gap-3 xl:flex">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
@@ -1184,8 +1184,7 @@ export default function LandingPage() {
                     style={{ animation: "dataLine 3.8s ease-in-out infinite" }}
                   />
 
-                  <div className="relative flex flex-wrap items-start justify-center gap-x-1 gap-y-3 sm:flex-nowrap sm:justify-between">
-                    {TOP_PILLARS.map((item) => (
+<div className="relative flex flex-wrap items-start justify-center gap-x-4 gap-y-3 sm:flex-nowrap sm:justify-center sm:gap-x-10">                    {TOP_PILLARS.map((item) => (
                       <CapabilityNode key={item.label} item={item} />
                     ))}
                   </div>
@@ -1237,7 +1236,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="mt-3 flex justify-center gap-2">
+          {/* <div className="mt-3 flex justify-center gap-2">
             {HERO_SLIDES.map((_, i) => (
               <button
                 key={i}
@@ -1250,17 +1249,17 @@ export default function LandingPage() {
                 }`}
               />
             ))}
-          </div>
+          </div> */}
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/88 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-6 sm:px-5 sm:py-5">
+        <div className="absolute bottom-0 left-0 right-0 z-30 border-t-2 border-white/30 bg-[#0f372a]/80 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-5xl flex-col items-center gap-1.5 px-3 py-2 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-3">
+            {" "}
             <div className="shrink-0 text-center sm:border-r sm:border-white/15 sm:pr-6 sm:text-left">
-              <div className="animate-pulse text-[11px] font-black uppercase leading-tight tracking-[0.18em] text-[#70D84F] xs:text-xs sm:text-base md:text-lg">
+              <div className="animate-pulse text-[11px] font-black uppercase leading-tight tracking-[0.18em] text-[#8ddf74] xs:text-xs sm:text-base md:text-lg">
                 {STAT_GROUPS[statGroupIndex].title}
               </div>
             </div>
-
             <div
               className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${
                 STAT_GROUPS[statGroupIndex].stats.length === 3
@@ -1274,7 +1273,7 @@ export default function LandingPage() {
             >
               {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
                 <div key={label} className="relative py-1">
-                  <div className="text-xl font-black text-[#70D84F] xs:text-2xl sm:text-4xl">
+                  <div className="text-xl font-black text-[#e5f8e0] xs:text-2xl sm:text-3xl">
                     {value}
                   </div>
 
@@ -1286,7 +1285,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="flex justify-center gap-2 pb-2.5 sm:pb-3.5">
+          <div className="flex justify-center gap-2 pb-1.5 sm:pb-2">
+            {" "}
             {STAT_GROUPS.map((group, index) => (
               <button
                 key={group.key}
