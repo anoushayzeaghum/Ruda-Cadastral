@@ -224,37 +224,37 @@ const TEAM_MEMBERS = [
     id: 1,
     name: "Imran Amin",
     designation: "Chief Executive Officer",
-    image: "/Ruda_Official/Imran-Amin (CEO).webp",
+    image: "/Ruda_Official/Imran_Amin.png",
   },
   {
     id: 2,
     name: "Brig. Mansoor",
     designation: "Chief Operating Officer",
-    image: "/Ruda_Official/Brig-Mansoor (COO).webp",
+    image: "/Ruda_Official/Brig_Mansoor.png",
   },
   {
     id: 3,
     name: "Brig. Bakhtiar",
     designation: "Executive Director — Land Acquisition & Estate",
-    image: "/Ruda_Official/ED BAKHTIAR (ED Land Acquisition & Estate).jpeg",
+    image: "/Ruda_Official/Brig_Bakhtiar.png",
   },
   {
     id: 5,
     name: "Nizam ud Din",
     designation: "Director GIS",
-    image: "/Ruda_Official/Nizam-ud-Din.jpg",
+    image: "/Ruda_Official/Nizam.png",
   },
   {
     id: 6,
     name: "Umar Javaid",
     designation: "Assistant Director GIS",
-    image: "/Ruda_Official/Umar_Javaid.PNG",
+    image: "/Ruda_Official/Umar.png",
   },
   {
     id: 7,
     name: "Muhammad Arshad",
     designation: "Officer GIS",
-    image: "/Ruda_Official/Muhammad Arshad.PNG",
+    image: "/Ruda_Official/Muhamamd_Arshad.png",
   },
 ];
 
@@ -1184,7 +1184,9 @@ export default function LandingPage() {
                     style={{ animation: "dataLine 3.8s ease-in-out infinite" }}
                   />
 
-<div className="relative flex flex-wrap items-start justify-center gap-x-4 gap-y-3 sm:flex-nowrap sm:justify-center sm:gap-x-10">                    {TOP_PILLARS.map((item) => (
+                  <div className="relative flex flex-wrap items-start justify-center gap-x-4 gap-y-3 sm:flex-nowrap sm:justify-center sm:gap-x-10">
+                    {" "}
+                    {TOP_PILLARS.map((item) => (
                       <CapabilityNode key={item.label} item={item} />
                     ))}
                   </div>
