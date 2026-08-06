@@ -214,22 +214,20 @@ export default function MetaverseSubHeader({
   // });
 
   useEffect(() => {
-  getProjects()
-    .then((data) => {
-      console.log("PROJECTS:", data); // <-- ADD THIS LINE
-
-      setProjects(
-        naturalSort(
-          data,
-          (project) =>
-            project.brief_name || project.name || project.gid || project.id,
-        ),
-      );
-    })
-    .catch((err) => {
-      console.error("PROJECTS ERROR:", err);
-    });
-}, []);
+    getProjects()
+      .then((data) => {
+        setProjects(
+          naturalSort(
+            data,
+            (project) =>
+              project.brief_name || project.name || project.gid || project.id,
+          ),
+        );
+      })
+      .catch((err) => {
+        console.error("PROJECTS ERROR:", err);
+      });
+  }, []);
   
 // Fetch and surface the boundary GeoJSON for whichever filter stage is
   // currently the most specific: Project > Type+Phase > Phase alone.

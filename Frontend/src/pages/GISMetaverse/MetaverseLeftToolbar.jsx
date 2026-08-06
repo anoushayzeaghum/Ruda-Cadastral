@@ -4,10 +4,7 @@ import {
   Drone,
   Video,
   Filter as FilterIcon,
-  MousePointerClick,
-  Hourglass,
   Ruler,
-  Box,
   Globe2,
   FileInput,
   Send,
@@ -25,16 +22,17 @@ import ChangeDetection from "./tools/ChangeDetection";
 import Import from "./tools/Import";
 import Measurement from "./tools/Measurement";
 import FlyTo from "./tools/FlyTo";
+import {
+  getProjectDroneConfig,
+  hasProjectDroneImagery,
+} from "./tools/droneProjectConfig";
 
 const tools = [
   { id: "layers", label: "Layers", icon: Layers },
   { id: "filter", label: "Filter", icon: FilterIcon },
-  { id: "droneImagery", label: "Drone Imagery", icon: Drone },
+  { id: "droneImagery", label: "Drone Analysis", icon: Drone },
   { id: "droneVideos", label: "Drone Videos", icon: Video },
-  // { id: "changeDetection", label: "Change Detection", icon: MousePointerClick },
-  // { id: "timeLapse", label: "Time Lapse", icon: Hourglass },
   { id: "measurement", label: "Measurement", icon: Ruler },
-  // { id: "threeD", label: "3D View", icon: Box },
   { id: "flyTo", label: "Fly To", icon: Send },
   { id: "import", label: "Import", icon: FileInput },
   { id: "basemaps", label: "Basemaps", icon: Globe2 },
@@ -59,16 +57,49 @@ export default function MetaverseLeftToolbar({
   const [followEnabled] = useState(false);
   const [expandedTool, setExpandedTool] = useState(null);
 
+  // ── Project-aware drone state ────────────────────────────────────────────
+  const selectedProjectId = filters?.projectId || "";
+  const selectedDroneConfig = getProjectDroneConfig(selectedProjectId);
+  const droneImageryAvailable = hasProjectDroneImagery(selectedProjectId);
+
+  // ── Disabled-state resolver ──────────────────────────────────────────────
+  const getToolDisabledState = (toolId) => {
+    if (toolId !== "droneImagery") {
+      return { disabled: false, reason: "" };
+    }
+
+    if (!selectedProjectId) {
+      return { disabled: true, reason: "Select a project first." };
+    }
+
+    if (!droneImageryAvailable) {
+      return {
+        disabled: true,
+        reason: "Drone imagery is not available for the selected project.",
+      };
+    }
+
+    return { disabled: false, reason: "" };
+  };
+
+  // ── Auto-close drone panel when project becomes invalid ──────────────────
+  useEffect(() => {
+    if (
+      activeTool === "droneImagery" &&
+      (!selectedProjectId || !droneImageryAvailable)
+    ) {
+      setActiveTool(null);
+    }
+  }, [activeTool, selectedProjectId, droneImageryAvailable, setActiveTool]);
+
+  // ── Geolocation follow ───────────────────────────────────────────────────
   useEffect(() => {
     if (!followEnabled || !map || !navigator.geolocation) return undefined;
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         map.flyTo({
-          center: [
-            position.coords.longitude,
-            position.coords.latitude,
-          ],
+          center: [position.coords.longitude, position.coords.latitude],
           zoom: 16,
           duration: 900,
         });
@@ -80,9 +111,7 @@ export default function MetaverseLeftToolbar({
     return () => navigator.geolocation.clearWatch(watchId);
   }, [followEnabled, map]);
 
-  const activeToolIndex = tools.findIndex(
-    (tool) => tool.id === activeTool,
-  );
+  const activeToolIndex = tools.findIndex((tool) => tool.id === activeTool);
 
   const handleToolExpandedChange = useCallback((toolId, isExpanded) => {
     setExpandedTool((current) => {
@@ -92,26 +121,22 @@ export default function MetaverseLeftToolbar({
   }, []);
 
   const handleDroneImageryExpandedChange = useCallback(
-    (isExpanded) =>
-      handleToolExpandedChange("droneImagery", isExpanded),
+    (isExpanded) => handleToolExpandedChange("droneImagery", isExpanded),
     [handleToolExpandedChange],
   );
 
   const handleDroneVideoExpandedChange = useCallback(
-    (isExpanded) =>
-      handleToolExpandedChange("droneVideos", isExpanded),
+    (isExpanded) => handleToolExpandedChange("droneVideos", isExpanded),
     [handleToolExpandedChange],
   );
 
   const handleTimeLapseExpandedChange = useCallback(
-    (isExpanded) =>
-      handleToolExpandedChange("timeLapse", isExpanded),
+    (isExpanded) => handleToolExpandedChange("timeLapse", isExpanded),
     [handleToolExpandedChange],
   );
 
   const handleChangeDetectionExpandedChange = useCallback(
-    (isExpanded) =>
-      handleToolExpandedChange("changeDetection", isExpanded),
+    (isExpanded) => handleToolExpandedChange("changeDetection", isExpanded),
     [handleToolExpandedChange],
   );
 
@@ -129,14 +154,16 @@ export default function MetaverseLeftToolbar({
   const isLayersOpen = activeTool === "layers";
 
   const handleToolClick = (toolId) => {
+    // Guard disabled tools
+    const toolState = getToolDisabledState(toolId);
+    if (toolState.disabled) return;
+
     if (toolId === "threeD") {
       navigate("/society-3d");
       return;
     }
 
-    setActiveTool((previous) =>
-      previous === toolId ? null : toolId,
-    );
+    setActiveTool((previous) => (previous === toolId ? null : toolId));
   };
 
   return (
@@ -145,17 +172,22 @@ export default function MetaverseLeftToolbar({
         {tools.map((tool) => {
           const Icon = tool.icon;
           const isActive = activeTool === tool.id;
+          const toolState = getToolDisabledState(tool.id);
 
           return (
             <button
               key={tool.id}
               type="button"
-              title={tool.label}
+              title={toolState.disabled ? toolState.reason : tool.label}
+              disabled={toolState.disabled}
               onClick={() => handleToolClick(tool.id)}
-              className={`relative flex h-9 w-9 items-center justify-center rounded-md shadow-md transition-all duration-150 ${isActive
-                ? "border-2 border-[#1B3A6B] bg-white text-[#1B3A6B]"
-                : "border-[#0f3d2e] bg-[#1f2937] text-white hover:bg-[#0f3d2e]"
-                }`}
+              className={`relative flex h-9 w-9 items-center justify-center rounded-md shadow-md transition-all duration-150 ${
+                toolState.disabled
+                  ? "cursor-not-allowed border border-[#334155] bg-[#111827] text-white/25 opacity-60"
+                  : isActive
+                    ? "border-2 border-[#1B3A6B] bg-white text-[#1B3A6B]"
+                    : "border-[#0f3d2e] bg-[#1f2937] text-white hover:bg-[#0f3d2e]"
+              }`}
             >
               <Icon size={20} />
             </button>
@@ -166,17 +198,11 @@ export default function MetaverseLeftToolbar({
       <div
         className="absolute bottom-0 left-0 right-0 z-30 flex-col rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 sm:w-[300px]"
         style={{
-          top:
-            window.innerWidth >= 640
-              ? `${panelTop}px`
-              : undefined,
+          top: window.innerWidth >= 640 ? `${panelTop}px` : undefined,
           display: isLayersOpen ? "flex" : "none",
         }}
       >
-        <PanelHeader
-          title="Layers"
-          onClose={() => setActiveTool(null)}
-        />
+        <PanelHeader title="Layers" onClose={() => setActiveTool(null)} />
 
         <LayersPanel
           map={map}
@@ -190,13 +216,11 @@ export default function MetaverseLeftToolbar({
 
       {activeTool && activeTool !== "layers" && (
         <div
-          className={`absolute bottom-0 left-0 right-0 rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 sm:w-[320px] ${isActiveToolExpanded ? "z-[10000]" : "z-30"
-            }`}
+          className={`absolute bottom-0 left-0 right-0 rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 sm:w-[320px] ${
+            isActiveToolExpanded ? "z-[10000]" : "z-30"
+          }`}
           style={{
-            top:
-              window.innerWidth >= 640
-                ? `${panelTop}px`
-                : undefined,
+            top: window.innerWidth >= 640 ? `${panelTop}px` : undefined,
           }}
         >
           {activeTool === "filter" && (
@@ -204,10 +228,7 @@ export default function MetaverseLeftToolbar({
               filters={filters}
               setLayerVisibility={setLayerVisibility}
               onApply={(nextFilters) => {
-                setFilters((previous) => ({
-                  ...previous,
-                  ...nextFilters,
-                }));
+                setFilters((previous) => ({ ...previous, ...nextFilters }));
                 setActiveTool("layers");
               }}
               onClose={() => setActiveTool(null)}
@@ -220,10 +241,7 @@ export default function MetaverseLeftToolbar({
                 title="Basemaps"
                 onClose={() => setActiveTool(null)}
               />
-              <Basemaps
-                map={map}
-                rebuildAllLayers={rebuildAllLayers}
-              />
+              <Basemaps map={map} rebuildAllLayers={rebuildAllLayers} />
             </>
           )}
 
@@ -235,9 +253,9 @@ export default function MetaverseLeftToolbar({
               />
               <DroneImagery
                 map={map}
-                onExpandedChange={
-                  handleDroneImageryExpandedChange
-                }
+                filters={filters}
+                projectConfig={selectedDroneConfig}
+                onExpandedChange={handleDroneImageryExpandedChange}
               />
             </>
           )}
@@ -245,9 +263,7 @@ export default function MetaverseLeftToolbar({
           {activeTool === "droneVideos" && (
             <DroneVideo
               onClose={() => setActiveTool(null)}
-              onExpandedChange={
-                handleDroneVideoExpandedChange
-              }
+              onExpandedChange={handleDroneVideoExpandedChange}
             />
           )}
 
@@ -255,9 +271,7 @@ export default function MetaverseLeftToolbar({
             <TimeLapse
               map={map}
               onClose={() => setActiveTool(null)}
-              onExpandedChange={
-                handleTimeLapseExpandedChange
-              }
+              onExpandedChange={handleTimeLapseExpandedChange}
             />
           )}
 
@@ -265,32 +279,21 @@ export default function MetaverseLeftToolbar({
             <ChangeDetection
               map={map}
               onClose={() => setActiveTool(null)}
-              onExpandedChange={
-                handleChangeDetectionExpandedChange
-              }
+              onExpandedChange={handleChangeDetectionExpandedChange}
             />
           )}
 
           {activeTool === "import" && (
-            <Import
-              map={map}
-              onClose={() => setActiveTool(null)}
-            />
+            <Import map={map} onClose={() => setActiveTool(null)} />
           )}
 
           {activeTool === "measurement" && (
-            <Measurement
-              map={map}
-              onClose={() => setActiveTool(null)}
-            />
+            <Measurement map={map} onClose={() => setActiveTool(null)} />
           )}
 
           {activeTool === "flyTo" && (
             <>
-              <PanelHeader
-                title="Fly To"
-                onClose={() => setActiveTool(null)}
-              />
+              <PanelHeader title="Fly To" onClose={() => setActiveTool(null)} />
               <FlyTo
                 filters={filters}
                 setFilters={setFilters}
