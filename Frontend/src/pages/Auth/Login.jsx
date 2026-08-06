@@ -2,6 +2,9 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import RudaLogo from "../../assets/RUDA L&M.png";
+import NespakLogo from "../../assets/Nespak.png";
+import GovtPunjabLogo from "../../assets/govtpunjab.png";
+import RudaFirmLogo from "../../assets/Rudafirm.png";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -219,9 +222,25 @@ export default function Login() {
         />
       </div>
 
+      {/* Page corner logos on video background */}
+      <div className="absolute left-6 top-6 z-20 flex items-center gap-3">
+        <img
+          src={GovtPunjabLogo}
+          alt="Govt of Punjab"
+          className="h-14 w-14 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+        />
+      </div>
+      <div className="absolute right-6 top-6 z-20 flex items-center gap-3">
+        <img
+          src={NespakLogo}
+          alt="NESPAK"
+          className="h-14 w-14 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+        />
+      </div>
+
       <main className="relative z-10 flex min-h-screen w-full items-center justify-center p-4 sm:p-6 lg:p-8">
         <div
-          className={`relative w-full max-w-[460px] overflow-hidden rounded-[2.5rem] border border-[#8fd36f]/20 bg-[#0b2a1d]/95 p-7 shadow-[0_34px_90px_-22px_rgba(0,0,0,0.92)] backdrop-blur-2xl transition-all duration-1000 sm:p-10 ${
+          className={`relative w-full max-w-[420px] overflow-hidden rounded-[2rem] border border-[#8fd36f]/20 bg-[#0b2a1d]/95 px-6 py-5 shadow-[0_34px_90px_-22px_rgba(0,0,0,0.92)] backdrop-blur-2xl transition-all duration-1000 sm:px-8 sm:py-6 ${
             mounted ? "opacity-100" : "opacity-0"
           }`}
           style={{
@@ -238,16 +257,16 @@ export default function Login() {
           <div className="relative z-10">
             {/* Logo and header */}
             <div className="flex flex-col items-center text-center">
-              <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.07] shadow-2xl backdrop-blur-md">
-                <div className="absolute inset-0 rounded-2xl bg-white/[0.025]" />
+              {/* RUDA Logo — large, no background */}
+              <div className="mb-2">
                 <img
                   src={RudaLogo}
                   alt="RUDA"
-                  className="relative z-10 h-10 w-10 object-contain drop-shadow-xl"
+                  className="h-16 w-16 object-contain drop-shadow-xl"
                 />
               </div>
 
-              <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#8fd36f]/25 bg-[#49B84A]/10 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.15em] text-[#8fd36f]">
+              <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-[#8fd36f]/25 bg-[#49B84A]/10 px-3 py-0.5 text-[9px] font-bold uppercase tracking-[0.15em] text-[#8fd36f]">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#49B84A] opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#6fdb5a]" />
@@ -255,16 +274,16 @@ export default function Login() {
                 Secure Portal
               </div>
 
-              <h1 className="text-3xl font-black tracking-tight text-white sm:text-[34px]">
+              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
                 Welcome Back
               </h1>
 
-              <p className="mt-2.5 text-[13px] text-slate-300/75">
+              <p className="mt-1.5 text-[12px] text-slate-300/75">
                 Sign in to RUDA Cadastral Management System
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
               {errorMessage && (
                 <div
                   role="alert"
@@ -280,7 +299,7 @@ export default function Login() {
               <div>
                 <label
                   htmlFor="email"
-                  className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-300/75"
+                  className="mb-1 block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-300/75"
                 >
                   Email Address
                 </label>
@@ -296,7 +315,7 @@ export default function Login() {
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-[#082116]/85 py-3.5 pl-11 pr-4 text-[13px] text-white outline-none transition-all placeholder:text-slate-500 hover:border-white/20 focus:border-[#8fd36f]/55 focus:bg-[#09291b] focus:ring-4 focus:ring-[#49B84A]/10"
+                    className="w-full rounded-xl border border-white/10 bg-[#082116]/85 py-2.5 pl-11 pr-4 text-[13px] text-white outline-none transition-all placeholder:text-slate-500 hover:border-white/20 focus:border-[#8fd36f]/55 focus:bg-[#09291b] focus:ring-4 focus:ring-[#49B84A]/10"
                     placeholder="superadmin@ruda.com"
                     required
                     autoComplete="email"
@@ -332,7 +351,7 @@ export default function Login() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-[#082116]/85 py-3.5 pl-11 pr-11 text-[13px] text-white outline-none transition-all placeholder:text-slate-500 hover:border-white/20 focus:border-[#8fd36f]/55 focus:bg-[#09291b] focus:ring-4 focus:ring-[#49B84A]/10"
+                    className="w-full rounded-xl border border-white/10 bg-[#082116]/85 py-2.5 pl-11 pr-11 text-[13px] text-white outline-none transition-all placeholder:text-slate-500 hover:border-white/20 focus:border-[#8fd36f]/55 focus:bg-[#09291b] focus:ring-4 focus:ring-[#49B84A]/10"
                     placeholder="Enter your password"
                     required
                     autoComplete="current-password"
@@ -351,7 +370,7 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className="relative flex items-center gap-2.5 pt-1">
+              <div className="relative flex items-center gap-2.5">
                 <input
                   id="rememberMe"
                   type="checkbox"
@@ -383,7 +402,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="group relative mt-2 flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-[#0B7A3B] px-5 py-3.5 text-[11px] font-black uppercase tracking-[0.15em] text-white shadow-[0_12px_30px_-12px_rgba(11,122,59,0.75)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#11924a] hover:shadow-[0_18px_40px_-12px_rgba(11,122,59,0.9)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+                className="group relative mt-1 flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-[#0B7A3B] px-5 py-2.5 text-[11px] font-black uppercase tracking-[0.15em] text-white shadow-[0_12px_30px_-12px_rgba(11,122,59,0.75)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#11924a] hover:shadow-[0_18px_40px_-12px_rgba(11,122,59,0.9)] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
               >
                 <span
                   className="absolute inset-y-0 left-[-45%] w-[38%] skew-x-[-18deg] bg-white/15 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -402,7 +421,7 @@ export default function Login() {
                 )}
               </button>
 
-              <div className="mt-6 border-t border-white/10 pt-5 text-center">
+              <div className="mt-4 border-t border-white/10 pt-3 text-center">
                 <p className="text-[11px] leading-relaxed text-slate-300/55">
                   LA&EM Department, D&BC, A&UP, Transfer and Record, Engineering
                   
