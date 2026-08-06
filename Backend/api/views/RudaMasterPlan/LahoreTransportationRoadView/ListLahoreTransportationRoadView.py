@@ -50,10 +50,11 @@ class ListLahoreTransportationRoadView(viewsets.ViewSet):
                         """
                         SELECT
                             gid,
-                            "__oid",
+                            oid_1,
                             name,
                             shape_leng,
                             type,
+                            popupinfo,
                             ST_AsGeoJSON(geom)::json
                         FROM lahore_transportation_roads
                         WHERE gid=%s
@@ -78,21 +79,16 @@ class ListLahoreTransportationRoadView(viewsets.ViewSet):
 
 
                 feature = {
-
                     "type": "Feature",
-
                     "id": row[0],
-
-                    "geometry": row[5],
-
+                    "geometry": row[6],
                     "properties": {
-
                         "gid": row[0],
-                        "oid": row[1],
+                        "oid_1": row[1],
                         "name": row[2],
                         "shape_leng": row[3],
                         "type": row[4],
-
+                        "popupinfo": row[5],
                     }
                 }
 
@@ -153,10 +149,11 @@ class ListLahoreTransportationRoadView(viewsets.ViewSet):
                 SELECT
 
                     gid,
-                    "__oid",
+                    oid_1,
                     name,
                     shape_leng,
                     type,
+                    popupinfo,
                     ST_AsGeoJSON(
                         ST_SimplifyPreserveTopology(
                             geom,
@@ -206,23 +203,17 @@ class ListLahoreTransportationRoadView(viewsets.ViewSet):
 
 
                 features.append({
-
                     "type": "Feature",
-
                     "id": row[0],
-
-                    "geometry": row[5],
-
+                    "geometry": row[6],
                     "properties": {
-
                         "gid": row[0],
-                        "oid": row[1],
+                        "oid_1": row[1],
                         "name": row[2],
                         "shape_leng": row[3],
                         "type": row[4],
-
+                        "popupinfo": row[5],
                     }
-
                 })
 
 

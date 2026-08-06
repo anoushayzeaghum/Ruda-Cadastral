@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import mapboxgl from "mapbox-gl";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
@@ -1376,8 +1377,7 @@ export default function RUDAMasterPlan({ map }) {
     const currentLayerConfig = RUDA_MASTER_PLAN_LAYER_CONFIG[layer.key] || {};
     const isVisible = Boolean(currentLayerState.checked);
 
-    // Determine which legend to show
-    const LegendComponent = currentLayerConfig.LegendComponent;
+    // Determine which legend items to pass into LayerDetails
     const legendItems = isVisible
       ? getInlineLegendForLayer(layer.key, currentLayerState, currentLayerConfig)
       : [];
@@ -1401,47 +1401,16 @@ export default function RUDAMasterPlan({ map }) {
           onTableOpen={() => setActiveAttributeTable(layer.key)}
         />
 
-        {/* Inline legend — shown when layer is visible, not using dropdown */}
-        {isVisible && !currentLayerConfig.customLandUseStyle && !currentLayerConfig.categorized && legendItems.length > 0 && (
-          <InlineLayerLegend
-            items={legendItems}
-            opacity={currentLayerState.opacity ?? 100}
-          />
-        )}
-
-        {/* Categorized layers: show legend items inline (not in dropdown) */}
-        {isVisible && currentLayerConfig.categorized && !LegendComponent && legendItems.length > 0 && (
-          <InlineLayerLegend
-            items={legendItems}
-            opacity={currentLayerState.opacity ?? 100}
-          />
-        )}
-
-        {/* Land Use Zoning: uses specialized LegendComponent */}
-        {isVisible && currentLayerConfig.customLandUseStyle && LegendComponent && (
-          <div className="mt-2 pl-8">
-            <LandUseLegend />
-          </div>
-        )}
-
-        {/* Categorized with LegendComponent: render inline */}
-        {isVisible && currentLayerConfig.categorized && LegendComponent && (
-          <div className="mt-2 pl-4 pr-2">
-            <LegendComponent
-              colors={categorizedColors[layer.key] || {}}
-              onColorChange={(categoryLabel, color) =>
-                updateCategorizedColor(layer.key, categoryLabel, color)
-              }
-            />
-          </div>
-        )}
-
+        {/* Legend + details — only shown when the dropdown chevron is clicked */}
         {currentLayerState.dropdownOpen && (
           <LayerDetails
             layerKey={layer.key}
             config={currentLayerConfig}
             meta={currentLayerMeta}
+            isVisible={isVisible}
+            legendItems={legendItems}
             categorizedColors={categorizedColors[layer.key] || {}}
+            layerOpacity={currentLayerState.opacity ?? 100}
             onCategorizedColorChange={(categoryLabel, color) =>
               updateCategorizedColor(layer.key, categoryLabel, color)
             }
@@ -1569,7 +1538,10 @@ export default function RUDAMasterPlan({ map }) {
         </div>
       )}
 
-      {renderAttributeTable()}
+      {(() => {
+        const table = renderAttributeTable();
+        return table ? createPortal(table, document.body) : null;
+      })()}
     </div>
   );
 }
@@ -1578,7 +1550,10 @@ function LayerDetails({
   layerKey,
   config,
   meta,
+  isVisible,
+  legendItems = [],
   categorizedColors,
+  layerOpacity = 100,
   onCategorizedColorChange,
 }) {
   const LegendComponent = config.LegendComponent;
@@ -1587,14 +1562,38 @@ function LayerDetails({
     <div
       className={`ml-6 mt-2 max-h-64 rounded-sm border border-[#13593f]/30 bg-[#06291f] px-3 py-2 text-[11px] text-white/70 ${LAYER_PANEL_SCROLL}`}
     >
-      {LegendComponent && (
-        <LegendComponent
-          colors={categorizedColors}
-          onColorChange={onCategorizedColorChange}
-        />
+      {/* Simple inline legend items (non-categorized, non-custom) */}
+      {isVisible && !config.customLandUseStyle && !config.categorized && legendItems.length > 0 && (
+        <div className="mb-2">
+          <InlineLayerLegend items={legendItems} opacity={layerOpacity} />
+        </div>
       )}
 
-      <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+      {/* Categorized layers without a full LegendComponent */}
+      {isVisible && config.categorized && !LegendComponent && legendItems.length > 0 && (
+        <div className="mb-2">
+          <InlineLayerLegend items={legendItems} opacity={layerOpacity} />
+        </div>
+      )}
+
+      {/* Land Use Zoning — specialized LegendComponent, not duplicated in inline */}
+      {isVisible && config.customLandUseStyle && LegendComponent && (
+        <div className="mb-2">
+          <LandUseLegend />
+        </div>
+      )}
+
+      {/* Categorized with full LegendComponent (e.g. Proposed Roads, City Level Services) */}
+      {isVisible && config.categorized && LegendComponent && (
+        <div className="mb-2">
+          <LegendComponent
+            colors={categorizedColors}
+            onColorChange={onCategorizedColorChange}
+          />
+        </div>
+      )}
+
+      <div className="flex justify-between border-t border-[#343c4c]/70 pt-1">
         <span>Features</span>
         <span>{meta.featureCount ?? 0}</span>
       </div>
