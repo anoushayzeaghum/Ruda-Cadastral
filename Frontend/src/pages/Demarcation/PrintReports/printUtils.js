@@ -1591,9 +1591,7 @@ export const createPlanCanvas = async ({
     mode,
   );
 
-   if (showDimensions && ["site", "part"].includes(mode)) {
-  // Use the SAME anchor the interior label is drawn from, not the raw
-  // centroid — for skewed plots these can differ enough to cause overlap.
+  if (showDimensions && ["site", "part"].includes(mode)) {
   const labelPlacement = getInteriorLabelPosition(selectedRing, project);
   const labelAnchor = [labelPlacement.x, labelPlacement.y];
 
@@ -1632,12 +1630,10 @@ export const createPlanCanvas = async ({
         ? Math.max(24, Math.min(34, sidePixelLength * 0.19))
         : Math.max(15, Math.min(21, sidePixelLength * 0.16));
 
-    // Offset now also accounts for how big the interior label's footprint
-    // is (labelPlacement.radius), so text clears it even on tight plots.
     const offset =
-      mode === "part"
-        ? Math.max(52, dimensionFont * 2.1)
-        : Math.max(55, dimensionFont * 3.2, labelPlacement.radius * 0.9);
+    mode === "part"
+      ? Math.max(34, dimensionFont * 1.4)
+      : Math.max(22, dimensionFont * 1.5);
 
     ctx.save();
     ctx.translate(midX + nx * offset, midY + ny * offset);
