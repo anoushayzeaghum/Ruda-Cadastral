@@ -1,11 +1,21 @@
 import { useCallback, useRef, useState } from "react";
 import MasterPlanHeader from "./MasterPlanHeader";
+import MasterPlanSubHeader from "./MasterPlanSubHeader";
 import MasterPlanLeftToolbar from "./MasterPlanLeftToolbar";
 import FlyToMap from "../FlyToDedicated/FlyToMap";
 import FlyToMapControls from "../FlyToDedicated/FlyToMapControls";
 
+// ── Default state ────────────────────────────────────────────────────────────
+// Top-level project hierarchy (phase / projectType / projectId) is required by
+// MasterPlanSubHeader (which wraps MetaverseSubHeader).  All lower-level plot
+// filters are kept so FlyToMap and shared layer components continue to work.
 const DEFAULT_FILTERS = {
+  // SubHeader hierarchy
+  phase: "",
+  projectType: "",
   projectId: "",
+
+  // Plot / layer filters (used by FlyToMap and shared layer components)
   block: "",
   plotType: "",
   plotNo: "",
@@ -77,16 +87,21 @@ export default function MasterPlanDashboard() {
   const mapRef = useRef(null);
 
   const [isMapReady, setIsMapReady] = useState(false);
-  const [activeTool, setActiveTool] = useState("layers");
+  const [activeTool, setActiveTool] = useState(null);
   const [showMetaverseLegend, setShowMetaverseLegend] = useState(false);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [layerVisibility, setLayerVisibility] = useState(
     DEFAULT_LAYER_VISIBILITY,
   );
-  const [adminBoundaryVisibility] = useState(
-    DEFAULT_ADMIN_BOUNDARY_VISIBILITY,
-  );
+  const [adminBoundaryVisibility] = useState(DEFAULT_ADMIN_BOUNDARY_VISIBILITY);
+
+  // ── Reset handler — clears only Master Plan page state ───────────────────
+  const handleReset = useCallback(() => {
+    setFilters(DEFAULT_FILTERS);
+    setLayerVisibility(DEFAULT_LAYER_VISIBILITY);
+    setShowMetaverseLegend(false);
+  }, []);
 
   const handleIntroComplete = useCallback(() => {}, []);
 
@@ -95,6 +110,7 @@ export default function MasterPlanDashboard() {
       <MasterPlanHeader />
 
       <section className="relative h-[calc(100vh-56px)] w-full overflow-hidden">
+        {/* Map — renders first so it fills the full area behind everything */}
         <FlyToMap
           mapRef={mapRef}
           isMapReady={isMapReady}
@@ -106,6 +122,18 @@ export default function MasterPlanDashboard() {
           onIntroComplete={handleIntroComplete}
         />
 
+        {/* SubHeader — centred near the top of the map, matching GIS Metaverse */}
+        <MasterPlanSubHeader
+          filters={filters}
+          setFilters={setFilters}
+          setLayerVisibility={setLayerVisibility}
+          onReset={handleReset}
+          onCalendarClick={() => {
+            // Placeholder — no calendar feature on Master Plan yet.
+          }}
+        />
+
+        {/* Left toolbar */}
         <MasterPlanLeftToolbar
           activeTool={activeTool}
           setActiveTool={setActiveTool}
@@ -116,6 +144,7 @@ export default function MasterPlanDashboard() {
           setLayerVisibility={setLayerVisibility}
         />
 
+        {/* Map controls — top-right overlay */}
         <FlyToMapControls
           map={isMapReady ? mapRef.current : null}
           showMetaverseLegend={showMetaverseLegend}
