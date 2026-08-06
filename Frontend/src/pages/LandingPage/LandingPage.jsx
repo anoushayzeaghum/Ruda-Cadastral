@@ -1530,18 +1530,7 @@ export default function LandingPage() {
               Leadership &amp; Project Team
             </div>
 
-            <h2 className="mt-5 text-3xl font-black leading-tight tracking-[-0.03em] sm:text-4xl lg:text-5xl">
-              Meet the Team Behind
-              <span className="mt-1 block text-[#70D84F]">
-                RUDA GIS Metaverse
-              </span>
-            </h2>
-
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-white/70 sm:text-base">
-              Add each team member’s photograph, name and designation in the
-              cards below. The layout is responsive and ready for your final
-              leadership and project-team information.
-            </p>
+            
           </div>
 
           <div className="relative mt-8">

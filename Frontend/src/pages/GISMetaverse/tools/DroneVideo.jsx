@@ -29,7 +29,7 @@ const DRONE_VIDEOS = [
     subtitle: "Aerial construction survey",
     date: "2024",
     location: "Chahar Bagh",
-    src: "/Ruda Chahar Bagh Drone Video 1.mp4",
+    src: "/Ruda_Official/Ruda%20Chahar%20Bagh%20Drone%20Video%201.mp4",
     poster: "",
     color: "#65c96b",
   },
@@ -400,7 +400,7 @@ function VideoPlayerModal({
         className="absolute inset-0 bg-black/75 backdrop-blur-sm"
       />
 
-      <div className="relative z-10 flex max-h-[92vh] w-[min(980px,96vw)] flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#06291f] shadow-2xl">
+      <div className="relative z-10 flex max-h-[92vh] w-[min(680px,90vw)] flex-col overflow-hidden rounded-xl border border-[#13593f] bg-[#06291f] shadow-2xl">
         <div className="flex shrink-0 items-center justify-between border-b border-[#2a3548] px-4 py-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -435,7 +435,7 @@ function VideoPlayerModal({
             ref={videoRef}
             src={video.src}
             poster={video.poster || undefined}
-            className="h-full w-full object-contain"
+            className="h-full w-full object-cover"
             preload="metadata"
             playsInline
             onClick={() => setPlaying((current) => !current)}

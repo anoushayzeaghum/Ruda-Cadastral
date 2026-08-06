@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import RudaLogo from "../../assets/RUDA L&M.png";
@@ -9,6 +9,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   const [mounted, setMounted] = useState(false);
+  const [showOfficial, setShowOfficial] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -16,9 +17,34 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const earthVideoRef = useRef(null);
+  const officialVideoRef = useRef(null);
+
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 70);
-    return () => clearTimeout(timer);
+
+    // Fade into the official RUDA video after 1.5 seconds
+    const videoTimer = setTimeout(() => {
+      setShowOfficial(true);
+      if (officialVideoRef.current) {
+        officialVideoRef.current.play().catch((err) => {
+          console.warn("Auto-play for official video failed or was interrupted:", err);
+        });
+      }
+      
+      // Pause the earth video after the transition completes (1s transition) to save resources
+      const pauseTimer = setTimeout(() => {
+        if (earthVideoRef.current) {
+          earthVideoRef.current.pause();
+        }
+      }, 1000);
+      return () => clearTimeout(pauseTimer);
+    }, 1500);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(videoTimer);
+    };
   }, []);
 
   const handleSubmit = async (event) => {
@@ -128,30 +154,59 @@ export default function Login() {
         }
       `}</style>
 
-      {/* Cinematic Earth background */}
+      {/* Cinematic Earth background transitioning to RUDA official video */}
       <div className="absolute inset-0 z-0 bg-[#050807]">
+        {/* Previously added Earth video */}
         <video
+          ref={earthVideoRef}
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 h-full w-full object-cover opacity-100"
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+            showOfficial ? "opacity-0" : "opacity-100"
+          }`}
+          style={{
+            transform: "translate3d(0, 0, 0)",
+            backfaceVisibility: "hidden",
+            willChange: "opacity",
+          }}
         >
           <source
             src="https://videos.pexels.com/video-files/1851190/1851190-uhd_3840_2160_25fps.mp4"
             type="video/mp4"
           />
+        </video>
+
+        {/* RUDA Official HD Video */}
+        <video
+          ref={officialVideoRef}
+          loop
+          muted
+          playsInline
+          preload="auto"
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
+            showOfficial ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            transform: "translate3d(0, 0, 0)",
+            backfaceVisibility: "hidden",
+            willChange: "opacity",
+            filter: "contrast(1.02) brightness(0.95) saturate(1.05)",
+          }}
+        >
           <source
-            src="https://videos.pexels.com/video-files/3129957/3129957-hd_1920_1080_25fps.mp4"
+            src="/Ruda_Official/Ruda Rtw Hd.mp4"
             type="video/mp4"
           />
         </video>
 
-        <div className="absolute inset-0 bg-black/55" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,.18)_45%,rgba(0,0,0,.72)_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,.12),rgba(0,0,0,.42))]" />
+        {/* Optimized overlays to keep video crisp and clean */}
+        <div className="absolute inset-0 bg-black/40 transition-colors duration-1000" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,.1)_45%,rgba(0,0,0,.6)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,.08),rgba(0,0,0,.35))]" />
 
-        <div className="absolute inset-0 opacity-[0.025] [background-image:linear-gradient(rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px)] [background-size:64px_64px]" />
+        <div className="absolute inset-0 opacity-[0.015] [background-image:linear-gradient(rgba(255,255,255,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.08)_1px,transparent_1px)] [background-size:64px_64px]" />
 
         <div
           className="pointer-events-none absolute left-[18%] top-[20%] h-[420px] w-[420px] rounded-full bg-white/[0.035] blur-3xl"
