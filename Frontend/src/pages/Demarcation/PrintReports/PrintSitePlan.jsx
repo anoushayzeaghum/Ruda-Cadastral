@@ -109,7 +109,7 @@ const drawSignatureBox = (doc, title, subtitle, x, y, width, height) => {
   const lineX = x + 5;
   const lineEnd = x + width - 5;
   const baseY = y + 18;
-  const gap = 7.5;
+  const gap = 6.5;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
@@ -136,6 +136,9 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
   const totalHeight = titleHeight + headerHeight + rows.length * rowHeight;
   const columns = [11, 27, width - 38];
 
+  doc.setFillColor(255, 255, 255);
+  doc.rect(x, y, width, totalHeight, "F");
+  
   doc.setFillColor(30, 58, 95);
   doc.setDrawColor(30, 58, 95);
   doc.rect(x, y, width, titleHeight, "FD");
@@ -473,7 +476,7 @@ export const printSitePlan = async ({
 
     /* ===== SITE PLAN DRAWING ===== */
     const planTop = infoBottom + 1;
-    const planHeight = 122;
+    const planHeight = 116;
     sectionY = drawSectionHeader(doc, margin, planTop, contentWidth, "SITE PLAN DRAWING");
 
     doc.setDrawColor(160, 160, 160);
@@ -536,13 +539,14 @@ export const printSitePlan = async ({
 
     /* ===== CERTIFICATION ===== */
     const certTop = planBottom + 2;
-    const certHeight = 42;
+    const certHeight = 38;
     sectionY = drawSectionHeader(doc, margin, certTop, contentWidth, "OFFICIAL CERTIFICATION");
 
     const boxW = (contentWidth - 5) / 3;
-    drawSignatureBox(doc, "PREPARED BY", "Land Surveyor", margin + 1, sectionY + 1, boxW, 34);
-    drawSignatureBox(doc, "CHECKED BY", "DD Demarcation", margin + 2 + boxW, sectionY + 1, boxW, 34);
-    drawSignatureBox(doc, "APPROVED BY", "DD GIS / Director", margin + 3 + boxW * 2, sectionY + 1, boxW, 34);
+// Inside the three drawSignatureBox calls — was 34
+drawSignatureBox(doc, "PREPARED BY", "Land Surveyor", margin + 1, sectionY + 1, boxW, 32);
+drawSignatureBox(doc, "CHECKED BY", "DD Demarcation", margin + 2 + boxW, sectionY + 1, boxW, 32);
+drawSignatureBox(doc, "APPROVED BY", "DD GIS / Director", margin + 3 + boxW * 2, sectionY + 1, boxW, 32);
 
     const certBottom = certTop + certHeight;
 

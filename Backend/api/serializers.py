@@ -1631,7 +1631,6 @@ class RudaNotifiedPhasesBoundarySerializer(GeoFeatureModelSerializer):
 # --------------------------------------------------------
 
 class LahoreTransportationRoadSerializer(GeoFeatureModelSerializer):
-
     class Meta:
         model = LahoreTransportationRoad
         geo_field = "geom"
@@ -1639,7 +1638,7 @@ class LahoreTransportationRoadSerializer(GeoFeatureModelSerializer):
 
         fields = (
             "gid",
-            "oid",
+            "oid_1",
             "name",
             "shape_leng",
             "type",

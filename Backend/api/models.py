@@ -2401,8 +2401,8 @@ class LahoreTransportationRoad(models.Model):
         db_column="gid",
     )
 
-    oid = models.CharField(
-        db_column="__oid",
+    oid_1 = models.CharField(
+        db_column="oid_1",
         max_length=100,
         null=True,
         blank=True,

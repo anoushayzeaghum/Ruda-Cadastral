@@ -1057,8 +1057,8 @@ const drawSitePlotLabel = (
       text: details.plotNo,
       weight: 700,
       color: "#001a66",   // ← much darker navy
-      sizeFactor: 1.35,   // ← was 0.85 (uses way more of the polygon)
-      maxSize: 60,        // ← was 46
+      sizeFactor: 1.05,   // ← was 0.85 (uses way more of the polygon)
+      maxSize: 50,        // ← was 46
       minSize: 14,        // ← was 16
     },
     {
@@ -1181,28 +1181,26 @@ const drawNorthArrowCanvas = (ctx, x, y, size) => {
 
 const drawLocatorPin = (ctx, x, y, size) => {
   ctx.save();
-  // Wide soft halo so it reads clearly even against busy colored polygons.
+
+  // 1. Solid white disc behind everything (cuts through any busy background)
   ctx.beginPath();
-  ctx.arc(x, y, size * 2.2, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(255,0,60,0.30)";
-  ctx.lineWidth = size * 0.55;
+  ctx.arc(x, y, size * 1.1, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+
+  // 2. Bright red ring
+  ctx.beginPath();
+  ctx.arc(x, y, size * 0.9, 0, Math.PI * 2);
+  ctx.strokeStyle = "#ff003c";
+  ctx.lineWidth = size * 0.35;
   ctx.stroke();
 
-  // Mid ring.
+  // 3. Solid red centre dot
   ctx.beginPath();
-  ctx.arc(x, y, size * 1.5, 0, Math.PI * 2);
-  ctx.strokeStyle = "rgba(255,0,60,0.75)";
-  ctx.lineWidth = size * 0.3;
-  ctx.stroke();
-
-  // Solid center dot.
-  ctx.beginPath();
-  ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+  ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
   ctx.fillStyle = "#ff003c";
   ctx.fill();
-  ctx.lineWidth = size * 0.22;
-  ctx.strokeStyle = "#ffffff";
-  ctx.stroke();
+
   ctx.restore();
 };
 const drawSelectionRing = (ctx, ring, project, canvasWidth, canvasHeight) => {
@@ -1551,7 +1549,7 @@ export const createPlanCanvas = async ({
   const selectedProjectedBox = getProjectedRingBox(selectedRing, project);
 
   if (mode === "location" || mode === "partOverview") {
-    if (mode === "location") {
+        if (mode === "location") {
       drawSelectionRing(ctx, selectedRing, project, width, height);
     }
     drawUniformPlotNumber(
@@ -1559,14 +1557,18 @@ export const createPlanCanvas = async ({
       details.plotNo,
       selectedRing,
       project,
-      {
-        fontSize: mode === "partOverview" ? 32 : 22,
-        fillStyle: "#0637ff",
-        haloWidth: 4,
-      },
+      { fontSize: mode === "partOverview" ? 32 : 22, fillStyle: "#0637ff", haloWidth: 4 }
     );
     if (mode === "location") {
-      drawLocatorPin(ctx, selectedCenter[0], selectedCenter[1], 22);
+      // Use the average of the already-projected vertices so the pin is
+      // guaranteed to land on the visually drawn shape, avoiding any
+      // CRS-to-screen distortion that can shift a computed centroid.
+      const projectedRing = selectedRing.map(project);
+      const pinX = projectedRing.reduce((s, p) => s + p[0], 0) / projectedRing.length;
+      const pinY = projectedRing.reduce((s, p) => s + p[1], 0) / projectedRing.length;
+
+      // Draw the pin LAST so it sits on top of the plot fill and label.
+      drawLocatorPin(ctx, pinX, pinY, 16);
     }
   }  else if (mode === "part") {
     drawDetailedSelectedPlotLabel(
@@ -1589,54 +1591,71 @@ export const createPlanCanvas = async ({
     mode,
   );
 
-  if (showDimensions && ["site", "part"].includes(mode)) {
-    dimensionRing.forEach((point, index) => {
-      const next = dimensionRing[(index + 1) % dimensionRing.length];
-      const a = project(point);
-      const b = project(next);
-      const midX = (a[0] + b[0]) / 2;
-      const midY = (a[1] + b[1]) / 2;
-      const dx = b[0] - a[0];
-      const dy = b[1] - a[1];
-      let angle = Math.atan2(dy, dx);
-      if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
-      const dimension = formatFeet(distanceMeters(point, next));
+   if (showDimensions && ["site", "part"].includes(mode)) {
+  // Use the SAME anchor the interior label is drawn from, not the raw
+  // centroid — for skewed plots these can differ enough to cause overlap.
+  const labelPlacement = getInteriorLabelPosition(selectedRing, project);
+  const labelAnchor = [labelPlacement.x, labelPlacement.y];
 
-      const length = Math.max(Math.hypot(dx, dy), 1);
-      const nx = -dy / length;
-      const ny = dx / length;
-      const towardCenter =
-        (selectedCenter[0] - midX) * nx + (selectedCenter[1] - midY) * ny;
-      const outsideDirection = towardCenter > 0 ? -1 : 1;
+  dimensionRing.forEach((point, index) => {
+    const next = dimensionRing[(index + 1) % dimensionRing.length];
+    const a = project(point);
+    const b = project(next);
 
-      const sidePixelLength = Math.hypot(dx, dy);
-      const dimensionFont =
-        mode === "part"
-          ? Math.max(24, Math.min(34, sidePixelLength * 0.19))
-          : Math.max(15, Math.min(21, sidePixelLength * 0.16));
-      const offset =
-        mode === "part"
-          ? Math.max(46, dimensionFont * 1.85)
-          : Math.max(29, dimensionFont * 1.65);
+    const midX = (a[0] + b[0]) / 2;
+    const midY = (a[1] + b[1]) / 2;
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const edgeLen = Math.max(Math.hypot(dx, dy), 1);
 
-      ctx.save();
-      ctx.translate(
-        midX + nx * offset * outsideDirection,
-        midY + ny * offset * outsideDirection,
-      );
-      ctx.rotate(angle);
-      ctx.font = `700 ${dimensionFont}px Arial`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.lineJoin = "round";
-      ctx.lineWidth = Math.max(4.5, dimensionFont * 0.22);
-      ctx.strokeStyle = "rgba(255,255,255,0.99)";
-      ctx.strokeText(dimension, 0, 0);
-      ctx.fillStyle = "#161616";
-      ctx.fillText(dimension, 0, 0);
-      ctx.restore();
-    });
-  }
+    const nx1 = -dy / edgeLen;
+    const ny1 = dx / edgeLen;
+    const nx2 = dy / edgeLen;
+    const ny2 = -dx / edgeLen;
+
+    const toAnchorX = labelAnchor[0] - midX;
+    const toAnchorY = labelAnchor[1] - midY;
+
+    const dot1 = nx1 * toAnchorX + ny1 * toAnchorY;
+    const nx = dot1 < 0 ? nx1 : nx2;
+    const ny = dot1 < 0 ? ny1 : ny2;
+
+    let angle = Math.atan2(dy, dx);
+    while (angle > Math.PI / 2) angle -= Math.PI;
+    while (angle < -Math.PI / 2) angle += Math.PI;
+
+    const dimension = formatFeet(distanceMeters(point, next));
+
+    const sidePixelLength = edgeLen;
+    const dimensionFont =
+      mode === "part"
+        ? Math.max(24, Math.min(34, sidePixelLength * 0.19))
+        : Math.max(15, Math.min(21, sidePixelLength * 0.16));
+
+    // Offset now also accounts for how big the interior label's footprint
+    // is (labelPlacement.radius), so text clears it even on tight plots.
+    const offset =
+      mode === "part"
+        ? Math.max(52, dimensionFont * 2.1)
+        : Math.max(55, dimensionFont * 3.2, labelPlacement.radius * 0.9);
+
+    ctx.save();
+    ctx.translate(midX + nx * offset, midY + ny * offset);
+    ctx.rotate(angle);
+    ctx.font = `700 ${dimensionFont}px Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(4.5, dimensionFont * 0.22);
+    ctx.strokeStyle = "rgba(255,255,255,0.99)";
+    ctx.strokeText(dimension, 0, 0);
+    ctx.fillStyle = "#161616";
+    ctx.fillText(dimension, 0, 0);
+    ctx.restore();
+  });
+}
+
+    
 
   if (showVertexLabels && mode === "site") {
     const cornerCenter = project(polygonCentroid(dimensionRing));
