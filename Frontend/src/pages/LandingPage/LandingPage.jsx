@@ -1392,7 +1392,8 @@ export default function LandingPage() {
               </button>
             </div>
 
-            <div className="relative flex h-full flex-col pt-8 lg:pt-12">
+            <div className="relative flex flex-col justify-start pt-8 lg:translate-y-6 lg:pt-12">
+              {" "}
               {/* <div className="mb-1 grid grid-cols-5 gap-2 sm:gap-3">
                 {CORE_CAPABILITIES.map((item) => {
                   const Icon = item.icon;
@@ -1413,27 +1414,26 @@ export default function LandingPage() {
                   );
                 })}
               </div> */}
-
-              <div className="relative flex-1 overflow-hidden pt-1">
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[22px] border border-[#0B7A3B]/10 bg-[#031f17] shadow-[0_20px_48px_-28px_rgba(0,66,37,0.45)]">
                 <img
                   src="/RudaMasterplanMap.png"
                   alt="RUDA project map"
-                  className="h-[420px] w-full rounded-[22px] object-contain object-top xs:h-[50px] sm:h-[550px] lg:h-full lg:min-h-[550px]"
+                  className="block h-full w-full object-contain object-center"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                     e.currentTarget.nextSibling.style.display = "flex";
                   }}
                 />
 
-                <div className="hidden h-[460px] w-full items-center justify-center rounded-[22px] bg-gradient-to-br from-[#edf8ef] to-[#dff3e6] xs:h-[520px] sm:h-[600px] lg:h-full lg:min-h-[610px]">
+                <div className="hidden h-full w-full items-center justify-center bg-gradient-to-br from-[#edf8ef] to-[#dff3e6]">
                   <Map size={86} className="text-[#0B7A3B]/30" />
                 </div>
 
-                <MapStatCard
+                {/* <MapStatCard
                   value="340 Km²"
                   label="Coverage Area"
                   positionClass="bottom-6 right-6"
-                />
+                /> */}
               </div>
             </div>
           </div>
