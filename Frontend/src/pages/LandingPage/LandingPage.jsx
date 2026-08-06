@@ -57,6 +57,21 @@ const NAV_LINKS = [
   { href: "#contact", label: "Contact" },
 ];
 
+const ARC_SERVER_LINKS = [
+  {
+    label: "Land Information Portal",
+    href: "https://arcgis-server.ruda.gov.pk/portal/apps/experiencebuilder/experience/?id=a614bebb160743ca9360132ecba1b0bb",
+  },
+  {
+    label: "Master Plan Portal",
+    href: "https://arcgis-server.ruda.gov.pk/portal/apps/experiencebuilder/experience/?id=236a4524240946dab6b82e8819b4f41b&draft=true",
+  },
+  {
+    label: "Plot Information Portal",
+    href: "https://arcgis-server.ruda.gov.pk/portal/apps/experiencebuilder/experience/?id=1d2b9481f4db447799e9da7156dd7bf4&draft=true",
+  },
+];
+
 const STAT_GROUPS = [
   {
     key: "lis",
@@ -109,9 +124,9 @@ const DECISION_AREAS = [
     accent: "#9BE35C",
     image: "/LandingCard1.png",
     bullets: [
-      "Land Evaluation, Acquisition, Demarcation & Mutation",
-      "GIS & Geospatial Intelligence",
-      "Estate Inventory, Monitoring & Management",
+      "Land Evaluation, Acquisition, Demarcation & Property Mutation",
+      "Advanced GIS Mapping, Surveying & Geospatial Intelligence",
+      "Estate Inventory, Asset Monitoring & Land Management",
     ],
   },
   {
@@ -123,11 +138,9 @@ const DECISION_AREAS = [
     accent: "#3FC6FF",
     image: "/LandingCard2.png",
     bullets: [
-      "Master planning & zoning",
-      "3D city modeling & visualization",
-      "Land-use & density analysis",
-      "Urban design & streetscapes",
-      "Scenario planning & simulations",
+      "Strategic Urban Planning, Policies & Development Guidelines",
+      "Architecture, Landscape, Transportation & Housing Planning",
+      "3D Visualization, Digital Modelling & Urban Design",
     ],
   },
   {
@@ -139,9 +152,9 @@ const DECISION_AREAS = [
     accent: "#B781FF",
     image: "/LandingCard3.png",
     bullets: [
-      "Development & Land Use Control — Enforce regulations and master plan.",
-      "Regulatory Enforcement — Control illegal development and protect public interest.",
-      "Revenue & Environment — Ensure fee collection and environmental protection.",
+      "Development & Land Use Control Through Master Plan Compliance",
+      "Regulatory Enforcement to Protect Public Interest & Development",
+      "Revenue Collection, Environmental Compliance & Governance",
     ],
   },
   {
@@ -153,9 +166,9 @@ const DECISION_AREAS = [
     accent: "#FFAA22",
     image: "/LandingCard4.png",
     bullets: [
-      "Ravi River Flood Protection & Resilience",
-      "Integrated Infrastructure Development",
-      "Sustainable & Resilient Urban Infrastructure",
+      "Ravi River Flood Protection & Climate Resilience Infrastructure",
+      "Integrated Engineering Solutions for Urban Infrastructure",
+      "Sustainable, Resilient & Future-Ready Infrastructure Development",
     ],
   },
   {
@@ -167,9 +180,9 @@ const DECISION_AREAS = [
     accent: "#27E1EA",
     image: "/LandingCard5.png",
     bullets: [
-      "Transaction Advisory — Investment, JVs & PPPs",
-      "Business Growth & Sales — Partnerships, Sales & Customer Services",
-      "Marketing & Branding — Lead Generation & Brand Visibility",
+      "Investment Advisory, Joint Ventures & Public-Private Partnerships",
+      "Business Growth Through Sales, Partnerships & Customer Services",
+      "Marketing, Branding, Lead Generation & Business Development",
     ],
   },
   {
@@ -181,9 +194,9 @@ const DECISION_AREAS = [
     accent: "#9BE84F",
     image: "/LandingCard6.png",
     bullets: [
-      "Socially Responsible, Inclusive, and Sustainable Urban Development",
-      "Transforming Communities through Impactful CSR Initiatives",
-      "Creating a Supportive Environment and Promoting Community Welfare & Development",
+      "Socially Responsible, Inclusive & Sustainable Urban Development",
+      "Community Transformation Through Meaningful CSR Initiatives",
+      "Community Welfare, Diversity, Inclusion & Social Development",
     ],
   },
 ];
@@ -223,14 +236,13 @@ const TEAM_MEMBERS = [
     id: 3,
     name: "Brig. Bakhtiar",
     designation: "Executive Director — Land Acquisition & Estate",
-    image:
-      "/Ruda_Official/ED BAKHTIAR (ED Land Acquisition & Estate).jpeg",
+    image: "/Ruda_Official/ED BAKHTIAR (ED Land Acquisition & Estate).jpeg",
   },
   {
     id: 5,
     name: "Nizam ud Din",
     designation: "Director GIS",
-    image: "/Ruda_Official/Nizam-ud-Din.PNG",
+    image: "/Ruda_Official/Nizam-ud-Din.jpg",
   },
   {
     id: 6,
@@ -273,10 +285,20 @@ const GIS_APPS = [
     title: "RUDA Masterplan",
     desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
     img: "/s6.png",
-    route: "/flyto-dashboard",
+    route: "/masterplan",
     gradientFrom: "#0B7A3B",
     gradientTo: "#004225",
     tags: ["Location", "Analytics"],
+  },
+  {
+    icon: <Box size={22} />,
+    title: "Digital Twin",
+    desc: "Explore RUDA through an interactive digital twin environment for immersive visualization, spatial understanding and smart urban planning.",
+    img: "/s8.png",
+    externalUrl: "https://digitaltwin-map.ruda.gov.pk/",
+    gradientFrom: "#0B7A3B",
+    gradientTo: "#00351F",
+    tags: ["Digital Twin", "3D City"],
   },
   {
     icon: <Eye size={22} />,
@@ -407,6 +429,7 @@ function AppCard({
   desc,
   img,
   route,
+  externalUrl,
   gradientFrom,
   gradientTo,
   tags = [],
@@ -428,7 +451,7 @@ function AppCard({
         ${visible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"}
         hover:-translate-y-1.5 hover:border-[#48d37a]/90
         hover:shadow-[0_20px_48px_-18px_rgba(28,191,103,0.42)]
-        ${route ? "cursor-pointer" : "cursor-default"}`}
+        ${route || externalUrl ? "cursor-pointer" : "cursor-default"}`}
       style={{ transitionDelay: `${(index % 4) * 80}ms` }}
     >
       <div className="flex w-full flex-col">
@@ -445,7 +468,7 @@ function AppCard({
             {icon}
           </div>
 
-          {route && (
+          {(route || externalUrl) && (
             <div className="absolute right-3 top-3">
               <div className="flex items-center gap-1 rounded-full border border-white/20 bg-white/90 px-2.5 py-1 text-[9px] font-bold text-slate-800 shadow-md">
                 Open
@@ -482,7 +505,7 @@ function AppCard({
               ))}
             </div>
 
-            {route && (
+            {(route || externalUrl) && (
               <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[#28a863]/70 px-2.5 py-1.5 text-[9px] font-bold text-[#72e49b] transition-all duration-300 group-hover:border-[#5be68c] group-hover:bg-[#0b7a3b]/35 group-hover:text-white">
                 Open App
                 <ArrowRight size={10} />
@@ -514,10 +537,11 @@ function DecisionSupportCard({ area, delay = 0, compact = false }) {
       className={`group relative overflow-hidden text-white shadow-[0_20px_52px_-24px_rgba(0,0,0,0.95)] transition-all duration-500 ease-out
 hover:-translate-y-2
 hover:scale-[1.025]
-hover:rotate-[0.2deg] ${compact
+hover:rotate-[0.2deg] ${
+        compact
           ? "min-h-[128px] rounded-xl p-3"
           : "min-h-[154px] rounded-[18px] p-4"
-        }`}
+      }`}
       style={{
         border: `1px solid ${hovered ? area.accent : `${area.accent}B8`}`,
         backgroundImage: `linear-gradient(90deg, rgba(1,17,14,.91) 0%, rgba(2,25,20,.82) 58%, rgba(2,20,16,.36) 100%), url('${area.image}')`,
@@ -596,9 +620,7 @@ function RaviCityVisionPanel() {
       {/* LEFT TEXT */}
       <div className="text-left text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.9)]">
         <div className="text-[16px] font-black uppercase leading-[1.08] tracking-[0.06em] text-white/[0.94] 2xl:text-[18px]">
-          <span className="block whitespace-nowrap">
-            Building a Smart,
-          </span>
+          <span className="block whitespace-nowrap">Building a Smart,</span>
 
           <span className="block whitespace-nowrap">
             Sustainable &amp; Inclusive
@@ -751,6 +773,8 @@ export default function LandingPage() {
   const [featureStartIndex, setFeatureStartIndex] = useState(0);
   const [statGroupIndex, setStatGroupIndex] = useState(0);
   const [statFade, setStatFade] = useState(true);
+  const [arcServerOpen, setArcServerOpen] = useState(false);
+  const arcServerRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => {
@@ -803,6 +827,20 @@ export default function LandingPage() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (
+        arcServerRef.current &&
+        !arcServerRef.current.contains(event.target)
+      ) {
+        setArcServerOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   const goToStatGroup = (index) => {
     if (index === statGroupIndex) return;
 
@@ -825,10 +863,11 @@ export default function LandingPage() {
       </div>
 
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
-          ? "bg-white shadow-lg"
-          : "bg-white/95 backdrop-blur-sm shadow-sm"
-          }`}
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? "bg-white shadow-lg"
+            : "bg-white/95 backdrop-blur-sm shadow-sm"
+        }`}
       >
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-3 sm:h-14 sm:px-5 md:h-14">
           <a
@@ -860,14 +899,57 @@ export default function LandingPage() {
               <a
                 key={href}
                 href={href}
-                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${activeSection === href.slice(1)
-                  ? "bg-[#0B7A3B] text-white"
-                  : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
-                  }`}
+                className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
+                  activeSection === href.slice(1)
+                    ? "bg-[#0B7A3B] text-white"
+                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                }`}
               >
                 {label}
               </a>
             ))}
+
+            <div ref={arcServerRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setArcServerOpen((open) => !open)}
+                aria-haspopup="menu"
+                aria-expanded={arcServerOpen}
+                className={`flex items-center gap-1 px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-semibold transition-all ${
+                  arcServerOpen
+                    ? "bg-[#0B7A3B] text-white"
+                    : "text-slate-700 hover:bg-[#edf8ef] hover:text-[#004225]"
+                }`}
+              >
+                ArcServer
+                <ChevronUp
+                  size={13}
+                  className={`transition-transform duration-200 ${arcServerOpen ? "rotate-0" : "rotate-180"}`}
+                />
+              </button>
+
+              {arcServerOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white p-1.5 shadow-2xl"
+                >
+                  {ARC_SERVER_LINKS.map(({ label, href }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      role="menuitem"
+                      onClick={() => setArcServerOpen(false)}
+                      className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-[#edf8ef] hover:text-[#004225]"
+                    >
+                      {label}
+                      <ExternalLink size={14} className="shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -900,6 +982,25 @@ export default function LandingPage() {
                 {label}
               </a>
             ))}
+
+            <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
+              <div className="px-2 pb-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-[#0B7A3B]">
+                ArcServer
+              </div>
+              {ARC_SERVER_LINKS.map(({ label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-white hover:text-[#004225]"
+                >
+                  {label}
+                  <ExternalLink size={14} />
+                </a>
+              ))}
+            </div>
 
             <button
               onClick={() => navigate("/Mapview")}
@@ -1013,12 +1114,10 @@ export default function LandingPage() {
         <div className="relative z-20 mx-auto flex min-h-[908px] max-w-[1700px] flex-col px-4 pb-24 pt-5 sm:min-h-[988px] sm:px-6 sm:pb-28 sm:pt-7 xl:min-h-[874px] xl:px-7">
           <div className="relative mx-auto w-full max-w-[1600px]">
             <div className="mx-auto max-w-[1450px] text-center">
-
-
-
               <div className="mx-auto mt-0.1 mb-8 w-full max-w-[1450px] whitespace-nowrap px-1 text-center text-[12px] font-bold uppercase tracking-[0.06em] text-white/90 sm:text-[14px] lg:text-[15px] xl:text-[16px]">
-                An Integrated, Immersive &amp; Intelligent Platform for Planning,
-                Monitoring, Collaboration &amp; Sustainable Development
+                An Integrated, Immersive &amp; Intelligent Platform for
+                Planning, Monitoring, Collaboration &amp; Sustainable
+                Development
               </div>
             </div>
 
@@ -1029,7 +1128,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="mt-1 grid flex-1 items-center gap-5 xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
+          <div className="mt-1 grid flex-1 items-center gap-2 xl:grid-cols-[350px_minmax(0,1fr)_350px] 2xl:grid-cols-[380px_minmax(0,1fr)_380px] 2xl:gap-6">
             <div className="hidden flex-col gap-3 xl:flex">
               {DECISION_AREAS.slice(0, 3).map((area, index) => (
                 <DecisionSupportCard
@@ -1075,9 +1174,6 @@ export default function LandingPage() {
                     <span className="h-px w-14 bg-gradient-to-l from-transparent to-[#8FEA67]/75 sm:w-20" />
                   </div>
                 </h1>
-
-
-
               </div>
 
               {/* Move capability icons and both buttons downward */}
@@ -1088,8 +1184,7 @@ export default function LandingPage() {
                     style={{ animation: "dataLine 3.8s ease-in-out infinite" }}
                   />
 
-                  <div className="relative flex flex-wrap items-start justify-center gap-x-1 gap-y-3 sm:flex-nowrap sm:justify-between">
-                    {TOP_PILLARS.map((item) => (
+<div className="relative flex flex-wrap items-start justify-center gap-x-4 gap-y-3 sm:flex-nowrap sm:justify-center sm:gap-x-10">                    {TOP_PILLARS.map((item) => (
                       <CapabilityNode key={item.label} item={item} />
                     ))}
                   </div>
@@ -1141,41 +1236,44 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className="mt-3 flex justify-center gap-2">
+          {/* <div className="mt-3 flex justify-center gap-2">
             {HERO_SLIDES.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setSlideIndex(i)}
                 aria-label={`Show hero slide ${i + 1}`}
-                className={`rounded-full transition-all duration-300 ${i === slideIndex
-                  ? "h-2 w-7 bg-[#70D84F]"
-                  : "h-2 w-2 bg-white/35 hover:bg-white/70"
-                  }`}
+                className={`rounded-full transition-all duration-300 ${
+                  i === slideIndex
+                    ? "h-2 w-7 bg-[#70D84F]"
+                    : "h-2 w-2 bg-white/35 hover:bg-white/70"
+                }`}
               />
             ))}
-          </div>
+          </div> */}
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-[#020b08]/88 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-5xl flex-col items-center gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-6 sm:px-5 sm:py-5">
+        <div className="absolute bottom-0 left-0 right-0 z-30 border-t-2 border-white/30 bg-[#0f372a]/80 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-5xl flex-col items-center gap-1.5 px-3 py-2 sm:flex-row sm:items-center sm:gap-5 sm:px-5 sm:py-3">
+            {" "}
             <div className="shrink-0 text-center sm:border-r sm:border-white/15 sm:pr-6 sm:text-left">
-              <div className="animate-pulse text-[11px] font-black uppercase leading-tight tracking-[0.18em] text-[#70D84F] xs:text-xs sm:text-base md:text-lg">
+              <div className="animate-pulse text-[11px] font-black uppercase leading-tight tracking-[0.18em] text-[#8ddf74] xs:text-xs sm:text-base md:text-lg">
                 {STAT_GROUPS[statGroupIndex].title}
               </div>
             </div>
-
             <div
-              className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${STAT_GROUPS[statGroupIndex].stats.length === 3
-                ? "grid-cols-3"
-                : "grid-cols-2 sm:grid-cols-4"
-                } ${statFade
+              className={`grid flex-1 gap-2 text-center text-white transition-all duration-300 ease-out sm:gap-4 ${
+                STAT_GROUPS[statGroupIndex].stats.length === 3
+                  ? "grid-cols-3"
+                  : "grid-cols-2 sm:grid-cols-4"
+              } ${
+                statFade
                   ? "translate-y-0 opacity-100"
                   : "translate-y-2 opacity-0"
-                }`}
+              }`}
             >
               {STAT_GROUPS[statGroupIndex].stats.map(({ value, label }) => (
                 <div key={label} className="relative py-1">
-                  <div className="text-xl font-black text-[#70D84F] xs:text-2xl sm:text-4xl">
+                  <div className="text-xl font-black text-[#e5f8e0] xs:text-2xl sm:text-3xl">
                     {value}
                   </div>
 
@@ -1187,17 +1285,19 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="flex justify-center gap-2 pb-2.5 sm:pb-3.5">
+          <div className="flex justify-center gap-2 pb-1.5 sm:pb-2">
+            {" "}
             {STAT_GROUPS.map((group, index) => (
               <button
                 key={group.key}
                 type="button"
                 onClick={() => goToStatGroup(index)}
                 aria-label={`Show ${group.title} highlights`}
-                className={`rounded-full transition-all duration-300 ${index === statGroupIndex
-                  ? "h-1.5 w-6 bg-[#70D84F]"
-                  : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
-                  }`}
+                className={`rounded-full transition-all duration-300 ${
+                  index === statGroupIndex
+                    ? "h-1.5 w-6 bg-[#70D84F]"
+                    : "h-1.5 w-1.5 bg-white/30 hover:bg-white/60"
+                }`}
               />
             ))}
           </div>
@@ -1292,7 +1392,8 @@ export default function LandingPage() {
               </button>
             </div>
 
-            <div className="relative flex h-full flex-col pt-8 lg:pt-12">
+            <div className="relative flex flex-col justify-start pt-8 lg:translate-y-6 lg:pt-12">
+              {" "}
               {/* <div className="mb-1 grid grid-cols-5 gap-2 sm:gap-3">
                 {CORE_CAPABILITIES.map((item) => {
                   const Icon = item.icon;
@@ -1313,27 +1414,26 @@ export default function LandingPage() {
                   );
                 })}
               </div> */}
-
-              <div className="relative flex-1 overflow-hidden pt-1">
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[22px] border border-[#0B7A3B]/10 bg-[#031f17] shadow-[0_20px_48px_-28px_rgba(0,66,37,0.45)]">
                 <img
                   src="/RudaMasterplanMap.png"
                   alt="RUDA project map"
-                  className="h-[420px] w-full rounded-[22px] object-contain object-top xs:h-[50px] sm:h-[550px] lg:h-full lg:min-h-[550px]"
+                  className="block h-full w-full object-contain object-center"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                     e.currentTarget.nextSibling.style.display = "flex";
                   }}
                 />
 
-                <div className="hidden h-[460px] w-full items-center justify-center rounded-[22px] bg-gradient-to-br from-[#edf8ef] to-[#dff3e6] xs:h-[520px] sm:h-[600px] lg:h-full lg:min-h-[610px]">
+                <div className="hidden h-full w-full items-center justify-center bg-gradient-to-br from-[#edf8ef] to-[#dff3e6]">
                   <Map size={86} className="text-[#0B7A3B]/30" />
                 </div>
 
-                <MapStatCard
+                {/* <MapStatCard
                   value="340 Km²"
                   label="Coverage Area"
                   positionClass="bottom-6 right-6"
-                />
+                /> */}
               </div>
             </div>
           </div>
@@ -1368,6 +1468,7 @@ export default function LandingPage() {
                   desc,
                   img,
                   route,
+                  externalUrl,
                   gradientFrom,
                   gradientTo,
                   tags,
@@ -1385,10 +1486,22 @@ export default function LandingPage() {
                     desc={desc}
                     img={img}
                     route={route}
+                    externalUrl={externalUrl}
                     gradientFrom={gradientFrom}
                     gradientTo={gradientTo}
                     tags={tags}
-                    onClick={() => route && navigate(route)}
+                    onClick={() => {
+                      if (externalUrl) {
+                        window.open(
+                          externalUrl,
+                          "_blank",
+                          "noopener,noreferrer",
+                        );
+                        return;
+                      }
+
+                      if (route) navigate(route);
+                    }}
                   />
                 </div>
               ),
@@ -1485,8 +1598,7 @@ export default function LandingPage() {
                 onClick={() =>
                   setTeamStartIndex(
                     (current) =>
-                      (current - 1 + TEAM_MEMBERS.length) %
-                      TEAM_MEMBERS.length,
+                      (current - 1 + TEAM_MEMBERS.length) % TEAM_MEMBERS.length,
                   )
                 }
                 aria-label="Show previous team members"
@@ -1516,10 +1628,11 @@ export default function LandingPage() {
                   type="button"
                   onClick={() => setTeamStartIndex(index)}
                   aria-label={`Show team member group starting from ${index + 1}`}
-                  className={`h-2 rounded-full transition-all duration-300 ${index === teamStartIndex
-                    ? "w-7 bg-[#8FEA67]"
-                    : "w-2 bg-white/30 hover:bg-white/60"
-                    }`}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === teamStartIndex
+                      ? "w-7 bg-[#8FEA67]"
+                      : "w-2 bg-white/30 hover:bg-white/60"
+                  }`}
                 />
               ))}
             </div>
@@ -1669,10 +1782,11 @@ export default function LandingPage() {
                   type="button"
                   onClick={() => setFeatureStartIndex(index)}
                   aria-label={`Show capability group starting from ${index + 1}`}
-                  className={`h-2 rounded-full transition-all duration-300 ${index === featureStartIndex
-                    ? "w-7 bg-[#0B7A3B]"
-                    : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
-                    }`}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    index === featureStartIndex
+                      ? "w-7 bg-[#0B7A3B]"
+                      : "w-2 bg-[#0B7A3B]/20 hover:bg-[#0B7A3B]/45"
+                  }`}
                 />
               ))}
             </div>
