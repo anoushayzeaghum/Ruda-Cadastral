@@ -1526,10 +1526,10 @@ export default function LandingPage() {
         <div className="relative mx-auto max-w-7xl px-4 sm:px-5">
                     <div className="mx-auto max-w-3xl text-center text-white">
             {/* Small accent badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#8FEA67]/30 bg-[#8FEA67]/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#8FEA67] backdrop-blur-md sm:text-xs">
+            {/* <div className="inline-flex items-center gap-2 rounded-full border border-[#8FEA67]/30 bg-[#8FEA67]/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#8FEA67] backdrop-blur-md sm:text-xs">
               <Users size={14} />
               Our Team
-            </div>
+            </div> */}
 
             {/* Large heading */}
             <h2 className="mt-4 text-3xl font-black leading-[1.05] tracking-[-0.02em] text-white sm:text-4xl lg:text-[46px]">
