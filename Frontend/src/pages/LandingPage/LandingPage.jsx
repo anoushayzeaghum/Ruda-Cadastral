@@ -235,7 +235,7 @@ const TEAM_MEMBERS = [
   {
     id: 3,
     name: "Brig. Bakhtiar",
-    designation: "Executive Director — Land Acquisition & Estate",
+    designation: "EXECUTIVE DIRECTOR-LA&EM",
     image: "/Ruda_Official/Brig_Bakhtiar.png",
   },
   {
@@ -252,8 +252,8 @@ const TEAM_MEMBERS = [
   },
   {
     id: 7,
-    name: "Muhammad Arshad",
-    designation: "Officer GIS",
+    name: "Arshad Khan",
+    designation: "Officer II GIS",
     image: "/Ruda_Official/Muhamamd_Arshad.png",
   },
 ];
