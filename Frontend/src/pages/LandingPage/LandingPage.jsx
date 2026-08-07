@@ -235,13 +235,13 @@ const TEAM_MEMBERS = [
   {
     id: 3,
     name: "Brig. Bakhtiar",
-    designation: "Executive Director — Land Acquisition & Estate",
+    designation: "EXECUTIVE DIRECTOR-LA&EM",
     image: "/Ruda_Official/Brig_Bakhtiar.png",
   },
   {
     id: 5,
     name: "Nizam ud Din",
-    designation: "Director GIS",
+    designation: "Deputy Director GIS",
     image: "/Ruda_Official/Nizam.png",
   },
   {
@@ -252,8 +252,8 @@ const TEAM_MEMBERS = [
   },
   {
     id: 7,
-    name: "Muhammad Arshad",
-    designation: "Officer GIS",
+    name: "Arshad Khan",
+    designation: "Officer II GIS",
     image: "/Ruda_Official/Muhamamd_Arshad.png",
   },
 ];
@@ -1524,15 +1524,22 @@ export default function LandingPage() {
         <div className="absolute left-1/2 top-8 h-64 w-64 -translate-x-1/2 rounded-full bg-[#49B84A]/15 blur-[100px]" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-5">
-          <div className="mx-auto max-w-3xl text-center text-white">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.08] px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#A4F47F] backdrop-blur-xl sm:text-xs">
+                    <div className="mx-auto max-w-3xl text-center text-white">
+            {/* Small accent badge */}
+            {/* <div className="inline-flex items-center gap-2 rounded-full border border-[#8FEA67]/30 bg-[#8FEA67]/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#8FEA67] backdrop-blur-md sm:text-xs">
               <Users size={14} />
-              Leadership &amp; Project Team
-            </div>
+              Our Team
+            </div> */}
 
-            
+            {/* Large heading */}
+            <h2 className="mt-4 text-3xl font-black leading-[1.05] tracking-[-0.02em] text-white sm:text-4xl lg:text-[46px]">
+              RUDA GIS <span className="text-[#8FEA67]">Metaverse Team</span>
+            </h2>
+
+            {/* Decorative glow line */}
+            <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent sm:w-24" />
+
           </div>
-
           <div className="relative mt-8">
             <div className="overflow-hidden px-1 sm:px-12">
               <div
