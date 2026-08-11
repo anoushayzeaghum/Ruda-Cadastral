@@ -17,7 +17,7 @@ export const HOUSING_SCHEME_FALLBACK_COLOR = "#8B0A05";
 
 const normalizedRudaScheme = [
   "downcase",
-  ["to-string", ["coalesce", ["get", "ruda_scheme"], ""]],
+  ["to-string", ["coalesce", ["get", "ruda_scheme"], ["get", "ruda_st"], ""]],
 ];
 
 const schemeMatchPairs = Object.entries(RUDA_SCHEME_COLORS).flatMap(
