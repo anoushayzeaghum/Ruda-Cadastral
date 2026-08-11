@@ -4,6 +4,7 @@ import Cadastral from "./Layers/Cadastral";
 import Topographic from "./Layers/Topographic";
 import BaseData from "./Layers/BaseData";
 import ProjectMasterPlan from "./Layers/ProjectMasterPlan";
+import PrivateHousingSchemes from "./Layers/PrivateHousingSchemes";
 import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
 
 export default function LayersPanel({
@@ -33,6 +34,7 @@ export default function LayersPanel({
         layerVisibility={layerVisibility}
         setLayerVisibility={setLayerVisibility}
       />
+      <PrivateHousingSchemes map={map} />
       <BaseData map={map} />
     </div>
   );

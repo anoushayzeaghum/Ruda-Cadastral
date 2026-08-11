@@ -2,7 +2,7 @@ import { getHousingSchemesGeoJSON } from "../../../../../../services/metaverseAp
 import BaseDataAttributeTable, {
   numberValue,
   textValue,
-} from "./BaseDataAttributeTable";
+} from "../BaseData/BaseDataAttributeTable";
 
 const COLUMNS = [
   { key: "sr", label: "SR" },
@@ -27,7 +27,7 @@ export default function HousingSchemesAttribute({ map, geojson, onClose }) {
       onClose={onClose}
       title="Housing Schemes"
       placeholder="Search scheme name or RUDA status..."
-      sourceIds={["gism-base-data-housingSchemes-source"]}
+      sourceIds={["gism-private-housing-schemes-source"]}
       fetchGeoJSON={getHousingSchemesGeoJSON}
       columns={COLUMNS}
       formatFeature={formatFeature}
