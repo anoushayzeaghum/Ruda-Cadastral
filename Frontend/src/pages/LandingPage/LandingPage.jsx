@@ -1515,7 +1515,7 @@ export default function LandingPage() {
       <section
         className="relative overflow-hidden py-12 sm:py-16 md:py-20"
         style={{
-          backgroundImage: `linear-gradient(135deg, rgba(0,45,27,0.96), rgba(0,66,37,0.86)), url('/s3.png')`,
+          backgroundImage: `linear-gradient(135deg, rgba(0,45,27,0.82), rgba(0,66,37,0.78)), url('/ruda_bg.png')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

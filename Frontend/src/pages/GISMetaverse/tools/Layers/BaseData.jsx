@@ -1,18 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import TransportationRoadNetworkAttribute from "./AttributeTable/BaseData/TransportationRoadNetworkAttribute";
-import HousingSchemesAttribute from "./AttributeTable/BaseData/HousingSchemesAttribute";
 import ForestBoundaryAttribute from "./AttributeTable/BaseData/ForestBoundaryAttribute";
 import ExistingDrainsAttribute from "./AttributeTable/BaseData/ExistingDrainsAttribute";
 import {
   getExistingDrainsGeoJSON,
   getForestBoundaryGeoJSON,
-  getHousingSchemesGeoJSON,
   getLahoreTransportationRoadsGeoJSON,
 } from "../../../../services/metaverseApi";
 import ExistingDrainsStyle from "./LayerManager/BaseData/ExistingDrainsStyle";
 import ForestBoundaryStyle from "./LayerManager/BaseData/ForestBoundaryStyle";
-import HousingSchemesStyle from "./LayerManager/BaseData/HousingSchemesStyle";
 import RoadNetworkLegend, {
   addOrUpdateRoadNetworkLayer,
   removeRoadNetworkLayer,
@@ -64,13 +61,7 @@ const LAYER_DEFS = [
     fetchGeoJSON: getLahoreTransportationRoadsGeoJSON,
     customRoadStyle: true,
   },
-  {
-    key: "housingSchemes",
-    label: "Housing Schemes",
-    color: HousingSchemesStyle.color,
-    style: HousingSchemesStyle,
-    fetchGeoJSON: getHousingSchemesGeoJSON,
-  },
+
   {
     key: "forest",
     label: "Forest Boundary",
@@ -540,13 +531,7 @@ export default function BaseData({ map }) {
         />
       )}
 
-      {activeTables.housingSchemes && (
-        <HousingSchemesAttribute
-          map={map}
-          geojson={loadedGeoJSONRef.current.housingSchemes || null}
-          onClose={() => closeAttributeTable("housingSchemes")}
-        />
-      )}
+
 
       {activeTables.forest && (
         <ForestBoundaryAttribute
@@ -614,11 +599,7 @@ export default function BaseData({ map }) {
             // Build inline legend items for non-road, non-flood layers
             let legendItems = [];
             if (!definition.customRoadStyle && definition.fetchGeoJSON) {
-              if (definition.key === "housingSchemes") {
-                legendItems = [
-                  polygonLegend("Housing Schemes", state.color || HousingSchemesStyle.color),
-                ];
-              } else if (definition.key === "forest") {
+              if (definition.key === "forest") {
                 legendItems = [
                   polygonLegend("Forest Boundary", state.color || ForestBoundaryStyle.color),
                 ];

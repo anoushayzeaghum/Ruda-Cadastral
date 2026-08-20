@@ -1,4 +1,4 @@
-﻿import { LAYERS } from "./tools/Layers/LayerManager/MetaverseLayerConfig";
+import { LAYERS } from "./tools/Layers/LayerManager/MetaverseLayerConfig";
 
 // ─── Admin boundary layer IDs (defined in AdministrativeLayers/*) ─────────────
 export const DISTRICT_BOUNDARY_IDS = {
@@ -74,6 +74,12 @@ export const LAND_REVENUE_LAYER_IDS = {
 export const MISCELLANEOUS_LAYER_IDS = {
   trijunction: "gism-misc-tri-cir",
   fieldPoints: "gism-misc-fp-cir",
+};
+
+export const PRIVATE_HOUSING_SCHEMES_LAYER_IDS = {
+  fill: "gism-private-housing-schemes-fill",
+  line: "gism-private-housing-schemes-line",
+  point: "gism-private-housing-schemes-point",
 };
 
 // ─── Enhanced title fallback key order ───────────────────────────────────────
@@ -538,6 +544,42 @@ export const VECTOR_POPUP_GROUPS = [
       { keys: ["type", "Type"], label: "Type" },
       { keys: ["area", "shape_area"], label: "Area" },
       { keys: ["remarks"], label: "Remarks" },
+    ],
+  },
+  // ── Private Housing Schemes ──────────────────────────────────────────────────
+  {
+    id: "privateHousingSchemes",
+    label: "Private Housing Scheme",
+    layerIds: [
+      PRIVATE_HOUSING_SCHEMES_LAYER_IDS.fill,
+      PRIVATE_HOUSING_SCHEMES_LAYER_IDS.line,
+      PRIVATE_HOUSING_SCHEMES_LAYER_IDS.point,
+    ],
+    titleKeys: [
+      "scheme_nam",
+      "scheme_name",
+      "name",
+      "Name",
+      "ruda_scheme",
+      "ruda_st",
+    ],
+    fields: [
+      {
+        keys: ["scheme_nam", "scheme_name", "Scheme_Name", "name", "Name"],
+        label: "Scheme Name",
+      },
+      {
+        keys: ["ruda_st", "ruda_scheme", "RUDA_ST", "RUDA_SCHEME"],
+        label: "RUDA Status",
+      },
+      {
+        keys: ["area_225a", "AREA_225A"],
+        label: "Area (225 Acres)",
+      },
+      {
+        keys: ["area", "Area", "AREA", "shape_area", "Shape_Area"],
+        label: "Area",
+      },
     ],
   },
 ];
