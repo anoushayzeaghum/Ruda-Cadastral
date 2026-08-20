@@ -29,7 +29,9 @@ const DRONE_VIDEOS = [
     subtitle: "Aerial construction survey",
     date: "2024",
     location: "Chahar Bagh",
-    src: "/Ruda_Official/Ruda%20Chahar%20Bagh%20Drone%20Video%201.mp4",
+    src: encodeURI(
+      "/Ruda_Official/Ruda Chahar Bagh Drone Video 1.mp4"
+    ),
     poster: "",
     color: "#65c96b",
   },
@@ -95,21 +97,44 @@ export default function DroneVideo({ onClose, onExpandedChange }) {
     };
   }, [playerOpen, onExpandedChange]);
 
-  useEffect(() => {
-    const videoElement = videoRef.current;
-    if (!videoElement) return;
+useEffect(() => {
+  const videoElement = videoRef.current;
+  if (!videoElement) return;
 
-    if (playing) {
-      videoElement
-        .play()
-        .catch((error) => {
-          console.error("Unable to play drone video.", error);
-          setPlaying(false);
-        });
-    } else {
-      videoElement.pause();
+  if (!playing) {
+    videoElement.pause();
+    return;
+  }
+
+  const playVideo = async () => {
+    try {
+      await videoElement.play();
+    } catch (error) {
+      // Ignore normal play/pause race
+      if (error?.name !== "AbortError") {
+        console.error("Unable to play drone video:", error);
+        setPlaying(false);
+      }
     }
-  }, [playing, activeVideoId]);
+  };
+
+  if (videoElement.readyState >= 2) {
+    playVideo();
+  } else {
+    const handleCanPlay = () => {
+      playVideo();
+    };
+
+    videoElement.addEventListener("canplay", handleCanPlay, {
+      once: true,
+    });
+
+    return () => {
+      videoElement.removeEventListener("canplay", handleCanPlay);
+    };
+  }
+}, [playing, activeVideoId]);
+
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -431,46 +456,44 @@ function VideoPlayerModal({
 
         <div className="relative aspect-video min-h-0 bg-black">
           <video
-            key={video.id}
-            ref={videoRef}
-            src={video.src}
-            poster={video.poster || undefined}
-            className="h-full w-full object-cover"
-            preload="metadata"
-            playsInline
-            onClick={() => setPlaying((current) => !current)}
-            onLoadedMetadata={() => {
-              const videoElement = videoRef.current;
+  key={video.id}
+  ref={videoRef}
+  src={video.src}
+  poster={video.poster || undefined}
+  className="h-full w-full object-cover"
+  preload="auto"
+  playsInline
+  onClick={() => setPlaying((current) => !current)}
+  onLoadedMetadata={() => {
+    const videoElement = videoRef.current;
 
-              if (videoElement) {
-                setDuration(videoElement.duration);
-                videoElement.volume = muted ? 0 : volume;
-              }
-            }}
-            onTimeUpdate={() => {
-              const videoElement = videoRef.current;
+    if (videoElement) {
+      setDuration(videoElement.duration);
+      videoElement.volume = muted ? 0 : volume;
+    }
+  }}
+  onTimeUpdate={() => {
+    const videoElement = videoRef.current;
 
-              if (!videoElement || dragging) return;
+    if (!videoElement || dragging) return;
 
-              setCurrentTime(videoElement.currentTime);
+    setCurrentTime(videoElement.currentTime);
 
-              setProgress(
-                videoElement.duration > 0
-                  ? (videoElement.currentTime /
-                      videoElement.duration) *
-                      100
-                  : 0,
-              );
-            }}
-            onEnded={() => setPlaying(false)}
-            onError={(event) => {
-              console.error(
-                "Drone video failed to load:",
-                video.src,
-                event,
-              );
-            }}
-          />
+    setProgress(
+      videoElement.duration > 0
+        ? (videoElement.currentTime / videoElement.duration) * 100
+        : 0,
+    );
+  }}
+  onEnded={() => setPlaying(false)}
+  onError={(event) => {
+    console.error(
+      "Drone video failed to load:",
+      video.src,
+      event,
+    );
+  }}
+/>
 
           {!playing && (
             <button
