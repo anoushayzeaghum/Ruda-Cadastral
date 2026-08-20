@@ -75,7 +75,7 @@ export default function SubHeader({
 
             {/* video */}
             <video
-              src="/Ruda%20Chahar%20Bagh%20Drone%20Video%201.mp4"
+              src="/Ruda_Official/Ruda%20Chahar%20Bagh%20Drone%20Video%201.mp4"
               controls
               autoPlay
               className="w-full max-h-[70vh] bg-black"
