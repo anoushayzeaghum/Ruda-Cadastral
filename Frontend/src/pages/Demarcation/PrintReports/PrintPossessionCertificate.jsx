@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import {
   buildPlotDetails,
   createPdfPreviewWindow,
+  drawUnderlinedValue,
   getCircularLogoDataUrl,
   getGeometryRing,
   getPlotSides,
@@ -22,43 +23,6 @@ const normalizeText = (value, fallback = "") => {
 const drawUnderline = (doc, x1, x2, y, lineWidth = 0.2) => {
   doc.setLineWidth(lineWidth);
   doc.line(x1, y, x2, y);
-};
-
-const getTextWidthWithSpacing = (doc, text, charSpace = 0) =>
-  doc.getTextWidth(text) + charSpace * Math.max(text.length - 1, 0);
-
-const drawFittedCenteredHeading = (
-  doc,
-  text,
-  centerX,
-  y,
-  {
-    maxWidth,
-    startFontSize,
-    minFontSize = 8,
-    charSpace = 0,
-    bold = true,
-    color = null,
-  } = {},
-) => {
-  doc.setFont("helvetica", bold ? "bold" : "normal");
-  let fontSize = startFontSize;
-
-  doc.setFontSize(fontSize);
-  let renderedWidth = getTextWidthWithSpacing(doc, text, charSpace);
-
-  while (fontSize > minFontSize && renderedWidth > maxWidth) {
-    fontSize -= 0.3;
-    doc.setFontSize(fontSize);
-    renderedWidth = getTextWidthWithSpacing(doc, text, charSpace);
-  }
-
-  if (color) doc.setTextColor(...color);
-
-  const startX = centerX - renderedWidth / 2;
-  doc.text(text, startX, y, { charSpace });
-
-  return fontSize;
 };
 
 const drawCircularLogo = (doc, image, cx, cy, radius, logoSize) => {
@@ -139,39 +103,216 @@ const drawInlineRuns = (
   return cursorY;
 };
 
-const drawFieldLine = (
+// ----------------------------------------------------------------------
+// Justified paragraph helper — wraps text to words-per-line, then spreads
+// extra space evenly between words so both edges align (last line of a
+// paragraph is left-aligned, matching normal typographic convention).
+// ----------------------------------------------------------------------
+const wrapWordsToLines = (doc, text, maxWidth) => {
+  const words = normalizeText(text).split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = [];
+  let currentWidth = 0;
+  const spaceWidth = doc.getTextWidth(" ");
+
+  words.forEach((word) => {
+    const wordWidth = doc.getTextWidth(word);
+    const testWidth =
+      current.length === 0 ? wordWidth : currentWidth + spaceWidth + wordWidth;
+
+    if (testWidth > maxWidth && current.length > 0) {
+      lines.push(current);
+      current = [word];
+      currentWidth = wordWidth;
+    } else {
+      current.push(word);
+      currentWidth = testWidth;
+    }
+  });
+
+  if (current.length) lines.push(current);
+  return lines;
+};
+
+const drawJustifiedParagraph = (
   doc,
-  label,
-  value,
+  text,
   x,
   y,
+  maxWidth,
   {
-    labelWidth,
-    lineWidth,
-    fontSize = 8.5,
-    boldValue = true,
-    underlineValue = false,
-  },
+    fontSize = 7.6,
+    lineHeightFactor = 1.15,
+    font = "helvetica",
+    color = [20, 20, 20],
+  } = {},
 ) => {
-  doc.setFont("helvetica", "normal");
+  doc.setFont(font, "normal");
   doc.setFontSize(fontSize);
-  doc.text(label, x, y);
+  doc.setTextColor(...color);
 
-  const valueX = x + labelWidth;
-  const availableWidth = lineWidth;
-  const safeValue = normalizeText(value);
+  const lineHeight = fontSize * lineHeightFactor * MM_PER_POINT;
+  const lines = wrapWordsToLines(doc, text, maxWidth);
+  let cursorY = y;
 
-  if (safeValue) {
-    doc.setFont("helvetica", boldValue ? "bold" : "normal");
-    const fittedValue = doc.splitTextToSize(safeValue, availableWidth)[0] || "";
-    doc.text(fittedValue, valueX, y);
+  lines.forEach((words, index) => {
+    const isLastLine = index === lines.length - 1;
+
+    if (words.length === 1 || isLastLine) {
+      doc.text(words.join(" "), x, cursorY);
+    } else {
+      const wordsWidth = words.reduce(
+        (sum, word) => sum + doc.getTextWidth(word),
+        0,
+      );
+      const gapCount = words.length - 1;
+      const spaceWidth = (maxWidth - wordsWidth) / gapCount;
+      let cursorX = x;
+
+      words.forEach((word, wordIndex) => {
+        doc.text(word, cursorX, cursorY);
+        cursorX +=
+          doc.getTextWidth(word) +
+          (wordIndex < words.length - 1 ? spaceWidth : 0);
+      });
+    }
+
+    cursorY += lineHeight;
+  });
+
+  doc.setTextColor(15, 15, 15);
+  return { endY: cursorY - lineHeight, lineCount: lines.length, lineHeight };
+};
+
+const drawNumberedTerms = (doc, terms, x, y, maxWidth, fontSize = 7.8) => {
+  const numberWidth = 6.2;
+  const termGap = 0.45;
+  let cursorY = y;
+
+  terms.forEach((term, index) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(fontSize);
+    doc.setTextColor(15, 15, 15);
+    doc.text(`${index + 1}.`, x, cursorY);
+
+    const { endY, lineHeight } = drawJustifiedParagraph(
+      doc,
+      term,
+      x + numberWidth,
+      cursorY,
+      maxWidth - numberWidth,
+      { fontSize, lineHeightFactor: 1.1 },
+    );
+
+    cursorY = endY + lineHeight + termGap;
+  });
+
+  return cursorY - termGap;
+};
+
+// ----------------------------------------------------------------------
+// Boundary details table — structured columns instead of loose text runs.
+// ----------------------------------------------------------------------
+const drawBoundaryTable = (doc, sides, x, y, width) => {
+  const headerHeight = 6.6;
+  const rowHeight = 9.6;
+  const rows = sides.slice(0, 4);
+
+  const colWidths = {
+    idx: 8,
+    side: 27,
+    length: 21,
+  };
+  colWidths.bounded = width - colWidths.idx - colWidths.side - colWidths.length;
+
+  const colX = {
+    idx: x,
+    side: x + colWidths.idx,
+    length: x + colWidths.idx + colWidths.side,
+    bounded: x + colWidths.idx + colWidths.side + colWidths.length,
+  };
+
+  // Header row
+  doc.setFillColor(230, 235, 240);
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.25);
+  doc.rect(x, y, width, headerHeight, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.8);
+  doc.setTextColor(30, 58, 95);
+  doc.text("#", colX.idx + colWidths.idx / 2, y + 4.5, { align: "center" });
+  doc.text("Side", colX.side + colWidths.side / 2, y + 4.5, {
+    align: "center",
+  });
+  doc.text("Length", colX.length + colWidths.length / 2, y + 4.5, {
+    align: "center",
+  });
+  doc.text("Bounded By", colX.bounded + colWidths.bounded / 2, y + 4.5, {
+    align: "center",
+  });
+
+  // Data rows
+  let rowTop = y + headerHeight;
+  rows.forEach((side, index) => {
+    if (index % 2 === 1) {
+      doc.setFillColor(248, 248, 248);
+      doc.rect(x, rowTop, width, rowHeight, "F");
+    }
+
+    const textY = rowTop + rowHeight / 2 + 1.3;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.4);
+    doc.setTextColor(30, 58, 95);
+    doc.text(String(index + 1), colX.idx + colWidths.idx / 2, textY, {
+      align: "center",
+    });
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(20, 20, 20);
+    doc.text(valueOrDash(side.label), colX.side + 1.6, textY);
+
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      valueOrDash(side.length),
+      colX.length + colWidths.length / 2,
+      textY,
+      { align: "center" },
+    );
+
+    doc.setFont("helvetica", "normal");
+    const boundedFitted = doc.splitTextToSize(
+      valueOrDash(side.boundedBy),
+      colWidths.bounded - 3,
+    )[0];
+    doc.text(boundedFitted, colX.bounded + 1.6, textY);
+
+    rowTop += rowHeight;
+  });
+
+  const tableBottom = y + headerHeight + rows.length * rowHeight;
+
+  // Grid lines
+  doc.setDrawColor(185, 185, 185);
+  doc.setLineWidth(0.22);
+  for (let i = 0; i <= rows.length; i += 1) {
+    const lineY = y + headerHeight + i * rowHeight;
+    doc.line(x, lineY, x + width, lineY);
   }
+  [
+    colWidths.idx,
+    colWidths.idx + colWidths.side,
+    colWidths.idx + colWidths.side + colWidths.length,
+  ].forEach((offset) => {
+    doc.line(x + offset, y, x + offset, tableBottom);
+  });
 
-  if (underlineValue) {
-    drawUnderline(doc, valueX, valueX + availableWidth, y + 0.5, 0.18);
-  }
+  doc.setDrawColor(120, 120, 120);
+  doc.setLineWidth(0.32);
+  doc.rect(x, y, width, tableBottom - y);
+  doc.setTextColor(15, 15, 15);
 
-  doc.setFont("helvetica", "normal");
+  return tableBottom;
 };
 
 const getProjectedSketchPoints = (ring, x, y, width, height) => {
@@ -199,7 +340,7 @@ const getProjectedSketchPoints = (ring, x, y, width, height) => {
   const maxY = Math.max(...ys);
   const dataWidth = Math.max(maxX - minX, 1e-9);
   const dataHeight = Math.max(maxY - minY, 1e-9);
-  const scale = Math.min(width / dataWidth, height / dataHeight) * 0.80;
+  const scale = Math.min(width / dataWidth, height / dataHeight) * 0.8;
   const scaledWidth = dataWidth * scale;
   const scaledHeight = dataHeight * scale;
   const offsetX = x + (width - scaledWidth) / 2;
@@ -218,21 +359,27 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
   doc.rect(x, y, width, height, "FD");
 
   doc.setFillColor(...THEME);
-  doc.rect(x, y, width, 5, "F");
+  doc.rect(x, y, width, 6, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(6.6);
+  doc.setFontSize(7.6);
   doc.setTextColor(255, 255, 255);
-  doc.text("PLOT SKETCH", x + width / 2, y + 3.4, { align: "center" });
+  doc.text("PLOT SKETCH", x + width / 2, y + 4.1, { align: "center" });
   doc.setTextColor(30, 30, 30);
 
-  const pad = 6;
+  const pad = 7;
   const innerX = x + pad;
-  const innerY = y + 7;
+  const innerY = y + 8;
   const innerWidth = width - pad * 2;
-  const innerHeight = height - 7 - pad;
+  const innerHeight = height - 8 - pad;
 
   const ring = getGeometryRing(parcel?.geometry);
-  const points = getProjectedSketchPoints(ring, innerX, innerY, innerWidth, innerHeight);
+  const points = getProjectedSketchPoints(
+    ring,
+    innerX,
+    innerY,
+    innerWidth,
+    innerHeight,
+  );
 
   doc.setDrawColor(40, 40, 40);
   doc.setFillColor(214, 82, 155);
@@ -261,21 +408,20 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
 
   doc.setTextColor(30, 30, 30);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10.5);
-  doc.text(valueOrDash(details.plotNo), centerX, centerY - 0.5, {
+  doc.setFontSize(12.5);
+  doc.text(valueOrDash(details.plotNo), centerX, centerY - 0.2, {
     align: "center",
   });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(6.8);
+  doc.setFontSize(8.2);
   doc.text(
     normalizeText(details.plotSize || normalizeAreaText(details), ""),
     centerX,
-    centerY + 3.6,
+    centerY + 4.4,
     { align: "center" },
   );
 
-  const maxLabelOffset = 2.8;
-  const cornerDotRadius = 0.9;
+  const cornerDotRadius = 1.05;
 
   const sideLabels = sides.slice(0, Math.min(sides.length, points.length));
 
@@ -283,8 +429,8 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
     const vx = point[0] - centerX;
     const vy = point[1] - centerY;
     const vLength = Math.max(Math.hypot(vx, vy), 1e-6);
-    const labelX = point[0] + (vx / vLength) * 4.2;
-    const labelY = point[1] + (vy / vLength) * 4.2;
+    const labelX = point[0] + (vx / vLength) * 5;
+    const labelY = point[1] + (vy / vLength) * 5;
 
     doc.setFillColor(34, 197, 94);
     doc.setDrawColor(6, 95, 45);
@@ -292,7 +438,7 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
     doc.circle(point[0], point[1], cornerDotRadius, "FD");
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.2);
+    doc.setFontSize(8.4);
     doc.setTextColor(140, 45, 20);
     doc.text(String.fromCharCode(65 + index), labelX, labelY, {
       align: "center",
@@ -311,18 +457,18 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
     const dy = end[1] - start[1];
     const edgeLength = Math.max(Math.hypot(dx, dy), 1e-6);
 
-        let normalX = -dy / edgeLength;
+    let normalX = -dy / edgeLength;
     let normalY = dx / edgeLength;
 
-    // ✅ ROBUST OUTWARD DIRECTION: pick the side farther from polygon center
+    // Robust outward direction: pick the side farther from polygon center
     const testDist = 3;
     const distPos = Math.hypot(
       middleX + normalX * testDist - centerX,
-      middleY + normalY * testDist - centerY
+      middleY + normalY * testDist - centerY,
     );
     const distNeg = Math.hypot(
       middleX - normalX * testDist - centerX,
-      middleY - normalY * testDist - centerY
+      middleY - normalY * testDist - centerY,
     );
 
     if (distNeg > distPos) {
@@ -330,10 +476,9 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
       normalY = -normalY;
     }
 
-    // ✅ FIXED 3 mm offset for every edge — consistent and clean
-    const labelOffset = 3.0;
-    let labelX = middleX + normalX * labelOffset;
-    let labelY = middleY + normalY * labelOffset;
+    const labelOffset = 3.4;
+    let labelX = middleX + normalX * labelOffset + 2;
+    let labelY = middleY + normalY * labelOffset + 1;
 
     let angle = (Math.atan2(dy, dx) * 180) / Math.PI;
     if (angle > 90 || angle < -90) angle += 180;
@@ -342,11 +487,16 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
 
     if (label) {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7.4);
+      doc.setFontSize(8.6);
 
-      // ✅ ACTUALLY USE THE CLAMPED VALUES (bug in your current code)
-      const clampedX = Math.max(innerX + 3, Math.min(labelX, innerX + innerWidth - 3));
-      const clampedY = Math.max(innerY + 3, Math.min(labelY, innerY + innerHeight - 3));
+      const clampedX = Math.max(
+        innerX + 3,
+        Math.min(labelX, innerX + innerWidth - 3),
+      );
+      const clampedY = Math.max(
+        innerY + 3,
+        Math.min(labelY, innerY + innerHeight - 3),
+      );
 
       doc.text(label, clampedX, clampedY, {
         align: "center",
@@ -362,31 +512,13 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
 
   if (roadLabel) {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.2);
+    doc.setFontSize(6.2);
     doc.setTextColor(80, 80, 80);
-    doc.text(roadLabel, x + width - 2, y + height - 1.3, {
+    doc.text(roadLabel, x + width - 2, y + height - 1.5, {
       align: "right",
     });
     doc.setTextColor(20, 20, 20);
   }
-};
-
-const drawNumberedTerms = (doc, terms, x, y, maxWidth) => {
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.15);
-
-  let cursorY = y;
-  terms.forEach((term, index) => {
-    const numberText = `${index + 1}.`;
-    const numberWidth = 6;
-    const lines = doc.splitTextToSize(term, maxWidth - numberWidth);
-
-    doc.text(numberText, x, cursorY);
-    doc.text(lines, x + numberWidth, cursorY, { lineHeightFactor: 1.08 });
-    cursorY += lines.length * 2.75 + 0.7;
-  });
-
-  return cursorY;
 };
 
 export const printPossessionCertificate = async ({
@@ -415,18 +547,16 @@ export const printPossessionCertificate = async ({
     });
 
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
 
-    const margin = 14;
+    const margin = 10;
     const contentWidth = pageWidth - margin * 2;
+    const rightEdge = pageWidth - margin;
     const navy = THEME;
 
     const totalArea = normalizeAreaText(details);
     const areaText = normalizeText(totalArea, "-");
     const fileReference = normalizeText(
-      details.fileReference ||
-        details.registrationNo ||
-        details.applicationNo,
+      details.fileReference || details.registrationNo || details.applicationNo,
       "",
     );
     const possessionDate = normalizeText(
@@ -434,8 +564,8 @@ export const printPossessionCertificate = async ({
       "",
     );
     const cnic = normalizeText(details.cnic);
-    const owner = normalizeText(details.owner, "-");
-    const postalAddress = normalizeText(details.postalAddress, "-");
+    const owner = normalizeText(details.owner, "");
+    const postalAddress = normalizeText(details.postalAddress, "");
     const streetNo = normalizeText(details.streetRoadNo, "________");
     const roadWidth = normalizeText(details.roadFt, "________");
     const landUse = normalizeText(
@@ -444,7 +574,7 @@ export const printPossessionCertificate = async ({
     ).toUpperCase();
     const extraLand = normalizeText(
       details.excessArea || details.extraLand || details.additionalArea,
-      "-",
+      "",
     );
 
     // ------------------------------------------------------------------
@@ -458,167 +588,143 @@ export const printPossessionCertificate = async ({
     doc.setLineWidth(0.2);
 
     // ------------------------------------------------------------------
-    // HEADER — round logos (circular-clipped), navy accents
+    // HEADER — matches the official Site Plan layout: round logos,
+    // authority name, "Government of the Punjab", project name, and a
+    // navy document-type badge (now reading "POSSESSION CERTIFICATE").
     // ------------------------------------------------------------------
-    const logoSize = 22;
-    const frameRadius = 12;
-    const logoY = 6;
+    const gopLogoSize = 23;
+    const rudaLogoSize = 22;
 
     if (gopLogo) {
-      const cx = margin + 2 + frameRadius;
-      const cy = logoY + frameRadius;
-      doc.setFillColor(250, 250, 250);
-      doc.setDrawColor(...navy);
-      doc.setLineWidth(0.4);
-      doc.ellipse(cx, cy, frameRadius, frameRadius, "FD");
-      drawCircularLogo(doc, gopLogo, cx, cy, frameRadius - 0.4, logoSize);
+      const cx = margin + 6 + gopLogoSize / 2;
+      const cy = 5 + gopLogoSize / 2;
+      drawCircularLogo(doc, gopLogo, cx, cy, gopLogoSize / 2, gopLogoSize);
     }
-
     if (rudaLogo) {
-      const cx = pageWidth - margin - 2 - frameRadius;
-      const cy = logoY + frameRadius;
-      doc.setFillColor(250, 250, 250);
-      doc.setDrawColor(...navy);
-      doc.setLineWidth(0.4);
-      doc.ellipse(cx, cy, frameRadius, frameRadius, "FD");
-      drawCircularLogo(doc, rudaLogo, cx, cy, frameRadius - 0.4, logoSize);
+      const cx = rightEdge - rudaLogoSize / 2 - 6;
+      const cy = 6 + rudaLogoSize / 2;
+      drawCircularLogo(doc, rudaLogo, cx, cy, rudaLogoSize / 2, rudaLogoSize);
     }
 
-    const leftLogoEdge = margin + 2 + frameRadius * 2;
-    const rightLogoEdge = pageWidth - margin - 2 - frameRadius * 2;
-    const headingMaxWidth = rightLogoEdge - leftLogoEdge - 6;
-
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
     doc.setTextColor(...navy);
+    doc.text("RAVI URBAN DEVELOPMENT AUTHORITY", pageWidth / 2, 11, {
+      align: "center",
+    });
 
-    drawFittedCenteredHeading(
-      doc,
-      "RAVI URBAN DEVELOPMENT AUTHORITY",
-      pageWidth / 2,
-      16,
-      {
-        maxWidth: headingMaxWidth,
-        startFontSize: 15.1,
-        minFontSize: 9.5,
-        charSpace: 0.75,
-        color: navy,
-      },
-    );
-    doc.setDrawColor(...navy);
-    drawUnderline(
-      doc,
-      pageWidth / 2 - headingMaxWidth / 2 + 3,
-      pageWidth / 2 + headingMaxWidth / 2 - 3,
-      17,
-      0.45,
-    );
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Government of the Punjab", pageWidth / 2, 15.5, {
+      align: "center",
+    });
 
-    drawFittedCenteredHeading(
-      doc,
-      "POSSESSION CERTIFICATE",
-      pageWidth / 2,
-      24,
-      {
-        maxWidth: headingMaxWidth,
-        startFontSize: 14.1,
-        minFontSize: 9,
-        charSpace: 1.75,
-        color: navy,
-      },
-    );
-    drawUnderline(
-      doc,
-      pageWidth / 2 - headingMaxWidth / 2 + 8,
-      pageWidth / 2 + headingMaxWidth / 2 - 8,
-      25.5,
-      0.4,
-    );
-
-    drawFittedCenteredHeading(
-      doc,
-      valueOrDash(details.project, "CHAHAR BAGH (PHASE-1)").toUpperCase(),
-      pageWidth / 2,
-      33,
-      {
-        maxWidth: headingMaxWidth,
-        startFontSize: 11.6,
-        minFontSize: 8,
-        charSpace: 1.95,
-        bold: true,
-        color: [15, 15, 15],
-      },
-    );
-
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
     doc.setTextColor(15, 15, 15);
-    doc.setDrawColor(45, 45, 45);
-    doc.setLineWidth(0.2);
+    doc.text(
+      valueOrDash(details.project, "CHAHAR BAGH PHASE-1").toUpperCase(),
+      pageWidth / 2,
+      20.5,
+      { align: "center" },
+    );
+
+    const badgeW = 58;
+    const badgeH = 7.5;
+    const badgeX = (pageWidth - badgeW) / 2;
+    const badgeY = 23.5;
+    doc.setFillColor(...navy);
+    doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.2);
+    doc.setTextColor(255, 255, 255);
+    doc.text("POSSESSION CERTIFICATE", pageWidth / 2, badgeY + 5, {
+      align: "center",
+    });
+    doc.setTextColor(15, 15, 15);
 
     // ------------------------------------------------------------------
-    // PLOT & OWNER INFORMATION
+    // PLOT & OWNER INFORMATION — same field styling & placement as the
+    // Site Plan (drawUnderlinedValue), properly aligned to the margins.
     // ------------------------------------------------------------------
     let sectionBottom = drawSectionHeader(
       doc,
       margin,
-      37,
+      34,
       contentWidth,
       "PLOT & OWNER INFORMATION",
     );
 
-    const infoTop = sectionBottom + 6;
+    const infoLeft = margin + 2;
+    const infoRight = rightEdge - 2;
+    const rowWidth = infoRight - infoLeft;
+    const infoTop = sectionBottom + 1;
 
-    drawFieldLine(doc, "File Reference No:", fileReference, margin, infoTop, {
-      labelWidth: 39,
-      lineWidth: 68,
-      fontSize: 9.6,
-      underlineValue: true,
-    });
-
-    drawFieldLine(
+    // Row 1: File Reference No (left) + Dated (right, ends at infoRight)
+    const dateLabelX = infoLeft + rowWidth * 0.72;
+    drawUnderlinedValue(
+      doc,
+      "File Reference No:",
+      fileReference,
+      infoLeft,
+      infoTop + 5,
+      36,
+      dateLabelX - 4 - (infoLeft + 36),
+      { fontSize: 8.6 },
+    );
+    drawUnderlinedValue(
       doc,
       "Dated:",
       possessionDate,
-      pageWidth - margin - 63,
-      infoTop,
-      {
-        labelWidth: 14,
-        lineWidth: 49,
-        fontSize: 9.6,
-        boldValue: false,
-        underlineValue: true,
-      },
+      dateLabelX,
+      infoTop + 5,
+      13,
+      infoRight - (dateLabelX + 13),
+      { fontSize: 8.6 },
     );
 
-      const ownerLabelWidth = 26;
-    const ownerLineWidth = cnic
-      ? contentWidth - ownerLabelWidth - 45
-      : contentWidth - ownerLabelWidth;
-
-    drawFieldLine(doc, "Owner Name:", owner, margin, infoTop + 10, {
-      labelWidth: ownerLabelWidth,
-      lineWidth: ownerLineWidth,
-      fontSize: 9.7,
-      boldValue: true,
-      underlineValue: true,
-    });
-
+    // Row 2: Owner Name (left) + CNIC (right, when available)
+    const ownerRowEnd = cnic ? infoLeft + rowWidth * 0.66 : infoRight;
+    drawUnderlinedValue(
+      doc,
+      "Owner Name:",
+      owner,
+      infoLeft,
+      infoTop + 12.5,
+      27,
+      ownerRowEnd - 4 - (infoLeft + 27),
+      { fontSize: 8.6 },
+    );
     if (cnic) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.7);
-      doc.text(`(${cnic})`, margin + ownerLabelWidth + ownerLineWidth + 4, infoTop + 10);
-      doc.setFont("helvetica", "normal");
+      drawUnderlinedValue(
+        doc,
+        "CNIC:",
+        cnic,
+        infoLeft + rowWidth * 0.66,
+        infoTop + 12.5,
+        13,
+        infoRight - (infoLeft + rowWidth * 0.66 + 13),
+        { fontSize: 8.6 },
+      );
     }
 
-    drawFieldLine(doc, "Postal Address:", postalAddress, margin, infoTop + 20, {
-      labelWidth: 32,
-      lineWidth: contentWidth - 32,
-      fontSize: 9.4,
-      boldValue: false,
-      underlineValue: true,
-    });
+    // Row 3: Postal Address (full width)
+    drawUnderlinedValue(
+      doc,
+      "Postal Address:",
+      postalAddress,
+      infoLeft,
+      infoTop + 19.5,
+      32,
+      infoRight - (infoLeft + 32),
+      { fontSize: 8.6 },
+    );
 
     // ------------------------------------------------------------------
-    // CERTIFICATION PARAGRAPH
+    // CERTIFICATION PARAGRAPH — unchanged wording/logic, larger font.
     // ------------------------------------------------------------------
-    const certificationY = infoTop + 32;
+    const certificationY = infoTop + 27;
 
     const areaAlreadyHasUnit = /sq\s*ft|sqft|sft|kanal|marla/i.test(areaText);
     const certifiedRuns = [
@@ -652,13 +758,13 @@ export const printPossessionCertificate = async ({
       margin,
       certificationY,
       contentWidth,
-      { fontSize: 9.3, lineHeightFactor: 1.24 },
+      { fontSize: 9.6, lineHeightFactor: 1.28 },
     );
 
     // ------------------------------------------------------------------
-    // BOUNDARY DETAILS + PLOT SKETCH
+    // BOUNDARY DETAILS (table) + PLOT SKETCH (enlarged)
     // ------------------------------------------------------------------
-    const boundaryHeaderY = certificationEndY + 7;
+    const boundaryHeaderY = certificationEndY + 6;
     sectionBottom = drawSectionHeader(
       doc,
       margin,
@@ -667,35 +773,22 @@ export const printPossessionCertificate = async ({
       "BOUNDARY DETAILS & PLOT SKETCH",
     );
 
-    const sidesTop = sectionBottom + 7;
-    const sketchWidth = 72;
-    const sketchHeight = 68;
+    const sidesTop = sectionBottom + 6;
+    const sketchWidth = 84;
+    const sketchHeight = 80;
     const sketchX = pageWidth - margin - sketchWidth;
     const sketchY = sidesTop - 5;
 
-        const tableRight = sketchX - 6;
-    const sideNameX = margin + 8;
-    const lengthX = margin + 42;
-    const boundedLabelX = margin + 64;
-    const boundedValueX = margin + 86;
+    const tableX = margin;
+    const tableWidth = sketchX - 6 - margin;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.1);
-
-    sides.slice(0, 4).forEach((side, index) => {
-      const y = sidesTop + index * 7.2;
-      doc.text(`${index + 1}.`, margin, y);
-      doc.text(valueOrDash(side.label), sideNameX, y);
-      doc.text(valueOrDash(side.length), lengthX, y);
-      doc.text("Bounded by", boundedLabelX, y);
-
-      const boundedValue = doc.splitTextToSize(
-        valueOrDash(side.boundedBy),
-        Math.max(20, tableRight - boundedValueX),
-      )[0];
-
-      doc.text(boundedValue, boundedValueX, y);
-    });
+    const tableBottom = drawBoundaryTable(
+      doc,
+      sides,
+      tableX,
+      sketchY,
+      tableWidth,
+    );
 
     drawPlotSketch(
       doc,
@@ -708,33 +801,76 @@ export const printPossessionCertificate = async ({
       sketchHeight,
     );
 
-    // ------------------------------------------------------------------
-    // TOTAL AREA / EXTRA LAND / OFFICIAL SIGNATURES
-    // ------------------------------------------------------------------
-    const totalsY = sketchY + sketchHeight + 7;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.8);
-    doc.text("Total Area:", margin, totalsY);
-    doc.text(areaText, margin + 28, totalsY);
-    drawUnderline(doc, margin + 28, margin + 68, totalsY + 1, 0.25);
-
-    doc.text("Extra Land:", margin + 103, totalsY);
-    doc.text(extraLand, margin + 132, totalsY);
-    drawUnderline(doc, margin + 132, pageWidth - margin, totalsY + 1, 0.25);
-
-    const signaturesY = totalsY + 17;
-    doc.setFontSize(9.2);
-    doc.text("DD Demarcation:", margin, signaturesY);
-    drawUnderline(doc, margin + 40, margin + 86, signaturesY + 1, 0.28);
-
-    doc.text("Director Land:", margin + 105, signaturesY);
-    drawUnderline(doc, margin + 139, pageWidth - margin, signaturesY + 1, 0.28);
+    const sketchBottom = sketchY + sketchHeight;
 
     // ------------------------------------------------------------------
-    // TERMS AND CONDITIONS
+    // TOTAL AREA / EXTRA LAND — moved under the boundary table (left
+    // column), stacked for a clean, consistently-aligned pair of fields.
     // ------------------------------------------------------------------
-    const termsHeaderY = signaturesY + 10;
+    const totalsLabelWidth = 30;
+    const totalsLineWidth = tableWidth - totalsLabelWidth;
+
+    const totalAreaY = tableBottom + 8;
+    drawUnderlinedValue(
+      doc,
+      "Total Area:",
+      areaText,
+      tableX,
+      totalAreaY,
+      totalsLabelWidth,
+      totalsLineWidth,
+      { fontSize: 9.8 },
+    );
+
+    const extraLandY = totalAreaY + 8.5;
+    drawUnderlinedValue(
+      doc,
+      "Extra Land:",
+      extraLand,
+      tableX,
+      extraLandY,
+      totalsLabelWidth,
+      totalsLineWidth,
+      { fontSize: 9.8 },
+    );
+
+    // ------------------------------------------------------------------
+    // DD DEMARCATION / DIRECTOR LAND — stays below the sketch, two equal
+    // columns so both label+line pairs line up, with generous room for
+    // an actual signature.
+    // ------------------------------------------------------------------
+    const signaturesY = Math.max(sketchBottom, extraLandY + 8) + 12;
+
+    const sigColGap = 8;
+    const sigColWidth = (contentWidth - sigColGap) / 2;
+    const sigLabelWidth = 36;
+
+    drawUnderlinedValue(
+      doc,
+      "DD Demarcation:",
+      "",
+      margin,
+      signaturesY,
+      sigLabelWidth,
+      sigColWidth - sigLabelWidth,
+      { fontSize: 9.4 },
+    );
+    drawUnderlinedValue(
+      doc,
+      "Director Land:",
+      "",
+      margin + sigColWidth + sigColGap,
+      signaturesY,
+      sigLabelWidth,
+      sigColWidth - sigLabelWidth,
+      { fontSize: 9.4 },
+    );
+
+    // ------------------------------------------------------------------
+    // TERMS AND CONDITIONS — larger, justified text; all 8 points fit
+    // above the next section (no more overlap with the heading below).
+    // ------------------------------------------------------------------
+    const termsHeaderY = signaturesY + 8;
     sectionBottom = drawSectionHeader(
       doc,
       margin,
@@ -759,17 +895,16 @@ export const printPossessionCertificate = async ({
       doc,
       terms,
       margin,
-      sectionBottom + 6,
+      sectionBottom + 5,
       contentWidth,
+      8,
     );
 
     // ------------------------------------------------------------------
-    // POSSESSION TAKEN OVER
+    // POSSESSION TAKEN OVER — site-plan-style field styling (bold navy
+    // labels, clean underline), placed right after the terms end.
     // ------------------------------------------------------------------
-    const takeoverHeaderY = Math.min(
-      Math.max(termsEndY + 6, 258),
-      pageHeight - 45,
-    );
+    const takeoverHeaderY = termsEndY + 4;
 
     sectionBottom = drawSectionHeader(
       doc,
@@ -779,22 +914,32 @@ export const printPossessionCertificate = async ({
       "POSSESSION TAKEN OVER BY ALLOTTEE / ATTORNEY",
     );
 
-    const firstLineY = sectionBottom + 9;
-    const secondLineY = sectionBottom + 18;
+    const firstLineY = sectionBottom + 7;
+    const secondLineY = sectionBottom + 14;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.2);
-    doc.text("NAME:", margin, firstLineY);
-    drawUnderline(doc, margin + 14, margin + 72, firstLineY + 1, 0.28);
+    const takeoverField = (label, x, y, labelWidth, lineWidth) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.3);
+      doc.setTextColor(...navy);
+      doc.text(label, x, y);
+      const startX = x + doc.getTextWidth(label) + 2;
+      doc.setDrawColor(120, 120, 120);
+      doc.setLineWidth(0.28);
+      doc.line(startX, y + 1, startX + lineWidth - (startX - x), y + 1);
+      doc.setTextColor(15, 15, 15);
+    };
 
-    doc.text("THUMB & SIGNATURE:", margin + 92, firstLineY);
-    drawUnderline(doc, margin + 141, pageWidth - margin, firstLineY + 1, 0.28);
+    takeoverField("NAME:", margin, firstLineY, 14, 60);
+    takeoverField(
+      "THUMB & SIGNATURE:",
+      margin + 92,
+      firstLineY,
+      41,
+      contentWidth - 92,
+    );
 
-    doc.text("CNIC:", margin, secondLineY);
-    drawUnderline(doc, margin + 14, margin + 72, secondLineY + 1, 0.28);
-
-    doc.text("DATED:", margin + 95, secondLineY);
-    drawUnderline(doc, margin + 114, pageWidth - margin, secondLineY + 1, 0.28);
+    takeoverField("CNIC:", margin, secondLineY, 14, 60);
+    takeoverField("DATED:", margin + 92, secondLineY, 10, contentWidth - 92);
 
     // ------------------------------------------------------------------
     // FOOTER

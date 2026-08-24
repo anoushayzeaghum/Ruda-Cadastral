@@ -938,40 +938,87 @@ export default function RUDAMasterPlan({ map }) {
     map.once("style.load", onReady);
   };
 
+  // const zoomToGeoJSON = (geojson) => {
+  //   if (!map) return;
+
+  //   // try {
+  //   //   const data = normalizeGeoJSON(geojson);
+  //   //   if (!data.features.length) return;
+
+  //   //   const bounds = new mapboxgl.LngLatBounds();
+
+  //   //   data.features.forEach((feature) => {
+  //   //     const geometry = feature?.geometry;
+  //   //     if (!geometry) return;
+
+  //   //     if (geometry.type === "GeometryCollection") {
+  //   //       geometry.geometries?.forEach((geometryItem) => {
+  //   //         extendBounds(bounds, geometryItem.coordinates);
+  //   //       });
+  //   //       return;
+  //   //     }
+
+  //   //     extendBounds(bounds, geometry.coordinates);
+  //   //   });
+
+  //   //   if (bounds.isEmpty()) return;
+
+  //   //   map.fitBounds(bounds, {
+  //   //     padding: 70,
+  //   //     duration: 1000,
+  //   //     maxZoom: 14,
+  //   //   });
+  //   // } catch (error) {
+  //   //   console.error("RUDA Master Plan zoom error:", error);
+  //   // }
+  // };
   const zoomToGeoJSON = (geojson) => {
-    if (!map) return;
+  if (!map) return;
 
-    // try {
-    //   const data = normalizeGeoJSON(geojson);
-    //   if (!data.features.length) return;
+  try {
+    const data = normalizeGeoJSON(geojson);
 
-    //   const bounds = new mapboxgl.LngLatBounds();
+    if (!data.features.length) {
+      console.warn("RUDA Master Plan: No features available for zoom");
+      return;
+    }
 
-    //   data.features.forEach((feature) => {
-    //     const geometry = feature?.geometry;
-    //     if (!geometry) return;
+    const bounds = new mapboxgl.LngLatBounds();
 
-    //     if (geometry.type === "GeometryCollection") {
-    //       geometry.geometries?.forEach((geometryItem) => {
-    //         extendBounds(bounds, geometryItem.coordinates);
-    //       });
-    //       return;
-    //     }
+    data.features.forEach((feature) => {
+      const geometry = feature?.geometry;
 
-    //     extendBounds(bounds, geometry.coordinates);
-    //   });
+      if (!geometry) return;
 
-    //   if (bounds.isEmpty()) return;
+      if (geometry.type === "GeometryCollection") {
+        geometry.geometries?.forEach((geometryItem) => {
+          if (geometryItem?.coordinates) {
+            extendBounds(bounds, geometryItem.coordinates);
+          }
+        });
 
-    //   map.fitBounds(bounds, {
-    //     padding: 70,
-    //     duration: 1000,
-    //     maxZoom: 14,
-    //   });
-    // } catch (error) {
-    //   console.error("RUDA Master Plan zoom error:", error);
-    // }
-  };
+        return;
+      }
+
+      if (geometry.coordinates) {
+        extendBounds(bounds, geometry.coordinates);
+      }
+    });
+
+    if (bounds.isEmpty()) {
+      console.warn("RUDA Master Plan: Could not calculate layer bounds");
+      return;
+    }
+
+    map.fitBounds(bounds, {
+      padding: 70,
+      duration: 1000,
+      maxZoom: 14,
+    });
+  } catch (error) {
+    console.error("RUDA Master Plan zoom error:", error);
+  }
+};
 
   const applyVisibleLayer = (layerKey, state, shouldZoom = false) => {
     const config = RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey];
