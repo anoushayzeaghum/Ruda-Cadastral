@@ -669,36 +669,42 @@ export const printSitePlan = async ({
     const stampY = handY + 2;
     const rightFieldEnd = stampX - 4;
 
+    // Move the CNIC / Mobile column slightly left for better balance.
+    const rightLabelX = margin + halfW - 1;
+    const rightValueX = margin + halfW + 18;
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(30, 58, 95);
     doc.text("Handed To:", margin + 3, row1Y);
-    doc.text("CNIC No:", margin + halfW + 3, row1Y);
+    doc.text("CNIC No:", rightLabelX, row1Y);
     doc.setTextColor(15, 15, 15);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.text(valueOrDash(details.owner), margin + 22, row1Y);
-    doc.text(valueOrDash(details.cnic), margin + halfW + 22, row1Y);
+    doc.text(valueOrDash(details.cnic), rightValueX, row1Y);
     doc.setDrawColor(120, 120, 120);
     doc.setLineWidth(0.25);
     doc.line(margin + 22, row1Y + 0.8, margin + halfW - 5, row1Y + 0.8);
-    doc.line(margin + halfW + 22, row1Y + 0.8, rightFieldEnd, row1Y + 0.8);
+    doc.line(rightValueX, row1Y + 0.8, rightFieldEnd, row1Y + 0.8);
 
+    // Date is now on the second row (where Recipient Signature used to be).
     const row2Y = row1Y + 7;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 58, 95);
-    doc.text("Recipient Signature:", margin + 3, row2Y);
-    doc.text("Mobile No:", margin + halfW + 3, row2Y);
+    doc.text("Date:", margin + 3, row2Y);
+    doc.text("Mobile No:", rightLabelX, row2Y);
     doc.setTextColor(15, 15, 15);
-    doc.line(margin + 32, row2Y + 0.8, margin + halfW - 5, row2Y + 0.8);
-    doc.line(margin + halfW + 22, row2Y + 0.8, rightFieldEnd, row2Y + 0.8);
+    doc.line(margin + 14, row2Y + 0.8, margin + halfW - 5, row2Y + 0.8);
+    doc.line(rightValueX, row2Y + 0.8, rightFieldEnd, row2Y + 0.8);
 
+    // Recipient Signature is now on the third row (where Date used to be).
     const row3Y = row2Y + 7;
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 58, 95);
-    doc.text("Date:", margin + 3, row3Y);
+    doc.text("Recipient Signature:", margin + 3, row3Y);
     doc.setTextColor(15, 15, 15);
-    doc.line(margin + 14, row3Y + 0.8, margin + 50, row3Y + 0.8);
+    doc.line(margin + 32, row3Y + 0.8, margin + halfW - 5, row3Y + 0.8);
 
     // Keep the stamp in its own reserved area so it never overlaps CNIC/mobile.
     doc.setDrawColor(180, 180, 180);
