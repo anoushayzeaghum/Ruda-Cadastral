@@ -44,6 +44,42 @@ const printableValue = (value) => {
   return String(value).trim();
 };
 
+// Slightly zoom the generated plot snapshot while keeping the same output size.
+// This makes the selected plot and surrounding plot labels easier to read without
+// changing the report layout or any other report section.
+const zoomSnapshotCanvas = (sourceCanvas, zoom = 1.26) => {
+  if (!sourceCanvas || zoom <= 1) return sourceCanvas;
+
+  const zoomedCanvas = document.createElement("canvas");
+  zoomedCanvas.width = sourceCanvas.width;
+  zoomedCanvas.height = sourceCanvas.height;
+
+  const ctx = zoomedCanvas.getContext("2d");
+  if (!ctx) return sourceCanvas;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, zoomedCanvas.width, zoomedCanvas.height);
+
+  const cropWidth = sourceCanvas.width / zoom;
+  const cropHeight = sourceCanvas.height / zoom;
+  const cropX = (sourceCanvas.width - cropWidth) / 2;
+  const cropY = (sourceCanvas.height - cropHeight) / 2;
+
+  ctx.drawImage(
+    sourceCanvas,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    0,
+    0,
+    zoomedCanvas.width,
+    zoomedCanvas.height,
+  );
+
+  return zoomedCanvas;
+};
+
 export const printReport = async ({ parcel, filters = {}, contextGeojson }) => {
   if (!parcel) {
     alert("Please select a plot first.");
@@ -78,7 +114,11 @@ export const printReport = async ({ parcel, filters = {}, contextGeojson }) => {
         showContextLabels: true,
         northArrow: true,
       });
-      mapCapture = canvasAsPng(snapshotCanvas);
+
+      // Apply a small centered zoom so plot 183 and the neighbouring plot
+      // numbers are visibly larger in the final PDF snapshot.
+      const zoomedSnapshotCanvas = zoomSnapshotCanvas(snapshotCanvas);
+      mapCapture = canvasAsPng(zoomedSnapshotCanvas);
     } catch (snapshotError) {
       console.warn("Dedicated plot snapshot generation failed", snapshotError);
     }
