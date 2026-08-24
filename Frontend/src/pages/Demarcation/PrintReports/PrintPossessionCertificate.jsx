@@ -477,8 +477,8 @@ const drawPlotSketch = (doc, parcel, details, sides, x, y, width, height) => {
     }
 
     const labelOffset = 3.4;
-    let labelX = middleX + normalX * labelOffset;
-    let labelY = middleY + normalY * labelOffset;
+    let labelX = middleX + normalX * labelOffset + 2;
+    let labelY = middleY + normalY * labelOffset + 1;
 
     let angle = (Math.atan2(dy, dx) * 180) / Math.PI;
     if (angle > 90 || angle < -90) angle += 180;
