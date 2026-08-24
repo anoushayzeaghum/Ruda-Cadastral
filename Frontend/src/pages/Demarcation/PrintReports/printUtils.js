@@ -38,23 +38,36 @@ export const buildPlotDetails = (parcel = null, filters = {}) => {
   const p = parcel?.properties || {};
 
   return {
+    // PlotSerializer exposes both FK ids (project/block) and readable names
+    // (project_name/block_name). Prefer the readable values for printed reports
+    // and only fall back to the raw FK ids when a name is unavailable.
     project: firstValue(
       filters.projectName,
-      p.project,
       p.project_name,
-      p.scheme,
       p.scheme_name,
+      p.scheme,
+      p.project,
       p.project_id,
     ),
-    block: firstValue(p.block, p.block_name, filters.block),
+    block: firstValue(p.block_name, p.block_label, filters.block, p.block),
     phase: firstValue(p.phase, p.phase_name, p.project_phase, p.ph),
     plotNo: firstValue(p.plot_no, p.plotno, p.plot_number, p.pl_no, parcel?.id),
-    landUse: firstValue(p.land_use, p.landuse, p.plot_category, p.category, p.name, p.type),
-    plotCategory: firstValue(
-      p.plot_category,
-      p.category,
+    // Plot.type is the actual model field currently available for the plot
+    // category/land-use value, so prefer it before generic fallback aliases.
+    landUse: firstValue(
       p.type,
       p.land_use,
+      p.landuse,
+      p.plot_category,
+      p.category,
+      p.name,
+    ),
+    plotCategory: firstValue(
+      p.type,
+      p.plot_category,
+      p.category,
+      p.land_use,
+      p.landuse,
       p.name,
     ),
     plotArea: firstValue(
@@ -271,7 +284,9 @@ const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
     mode === "partOverview" ? 8.5 : mode === "part" ? 0.9 : 1.35,
   );
   const nearby = all
-    .filter((feature) => intersectsBounds(boundsOfFeature(feature), neighborhoodBounds))
+    .filter((feature) =>
+      intersectsBounds(boundsOfFeature(feature), neighborhoodBounds),
+    )
     .map((feature) => {
       const b = boundsOfFeature(feature);
       const cx = b ? (b.minX + b.maxX) / 2 : selectedCenter[0];
@@ -282,10 +297,7 @@ const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
       };
     })
     .sort((a, b) => a.distance - b.distance)
-    .slice(
-      0,
-      mode === "partOverview" ? 90 : mode === "part" ? 8 : 18,
-    )
+    .slice(0, mode === "partOverview" ? 90 : mode === "part" ? 8 : 18)
     .map(({ feature }) => feature);
 
   if (!nearby.some((feature) => feature === selectedFeature)) {
@@ -500,7 +512,6 @@ export const formatFeet = (meters) => {
   return `${wholeFeet}'-${inches}\"`;
 };
 
-
 const samePoint = (a, b, tolerance = 1e-10) =>
   a &&
   b &&
@@ -519,12 +530,14 @@ const pointLineDistance = (point, start, end) => {
     );
   }
 
-  return Math.abs(
-    dy * Number(point[0]) -
-      dx * Number(point[1]) +
-      Number(end[0]) * Number(start[1]) -
-      Number(end[1]) * Number(start[0]),
-  ) / length;
+  return (
+    Math.abs(
+      dy * Number(point[0]) -
+        dx * Number(point[1]) +
+        Number(end[0]) * Number(start[1]) -
+        Number(end[1]) * Number(start[0]),
+    ) / length
+  );
 };
 
 const simplifyPlotRing = (ring = []) => {
@@ -534,7 +547,10 @@ const simplifyPlotRing = (ring = []) => {
     (point, index) => index === 0 || !samePoint(point, ring[index - 1]),
   );
 
-  if (cleaned.length > 2 && samePoint(cleaned[0], cleaned[cleaned.length - 1])) {
+  if (
+    cleaned.length > 2 &&
+    samePoint(cleaned[0], cleaned[cleaned.length - 1])
+  ) {
     cleaned = cleaned.slice(0, -1);
   }
 
@@ -609,7 +625,6 @@ const getProjectedRingBox = (ring, project) => {
   };
 };
 
-
 const pointInProjectedPolygon = (point, ring) => {
   let inside = false;
   const [x, y] = point;
@@ -620,7 +635,7 @@ const pointInProjectedPolygon = (point, ring) => {
 
     const intersects =
       yi > y !== yj > y &&
-      x < ((xj - xi) * (y - yi)) / ((yj - yi) || Number.EPSILON) + xi;
+      x < ((xj - xi) * (y - yi)) / (yj - yi || Number.EPSILON) + xi;
 
     if (intersects) inside = !inside;
   }
@@ -713,6 +728,36 @@ const getInteriorLabelPosition = (ring, project) => {
     height,
     projectedRing,
   };
+};
+
+const getCenteredPlotLabelPosition = (ring, project) => {
+  const projectedRing = ring.map(project);
+  const xs = projectedRing.map(([x]) => x);
+  const ys = projectedRing.map(([, y]) => y);
+
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const width = Math.max(maxX - minX, 1);
+  const height = Math.max(maxY - minY, 1);
+
+  // Prefer the true polygon centroid so plot numbers line up naturally in the
+  // middle of their own plots. Fall back to the interior-point search only
+  // for unusual concave geometries where the centroid falls outside.
+  const centroid = project(polygonCentroid(ring));
+  if (pointInProjectedPolygon(centroid, projectedRing)) {
+    return {
+      x: centroid[0],
+      y: centroid[1],
+      radius: Math.max(projectedDistanceToPolygon(centroid, projectedRing), 0),
+      width,
+      height,
+      projectedRing,
+    };
+  }
+
+  return getInteriorLabelPosition(ring, project);
 };
 
 const drawPlotNumberInsidePolygon = (ctx, text, ring, project) => {
@@ -868,7 +913,6 @@ const getPlotLabel = (feature) => {
   return firstValue(p.plot_no, p.plotno, p.plot_number, p.name, feature?.id);
 };
 
-
 const getFeatureDetails = (feature) => {
   const p = feature?.properties || {};
 
@@ -895,11 +939,7 @@ const getFeatureDetails = (feature) => {
       p.landuse,
       p.name,
     ),
-    dimension: firstValue(
-      p.dimension,
-      p.dimensions,
-      p.plot_dimension,
-    ),
+    dimension: firstValue(p.dimension, p.dimensions, p.plot_dimension),
     roadFt: firstValue(
       p.rd_ft,
       p.road_ft,
@@ -928,12 +968,15 @@ const drawUniformPlotNumber = (
     fontSize = 20,
     fillStyle = "#0b35d5",
     haloWidth = 2.5,
+    centered = false,
   } = {},
 ) => {
   const value = String(text || "").trim();
   if (!value || ring.length < 3) return;
 
-  const placement = getInteriorLabelPosition(ring, project);
+  const placement = centered
+    ? getCenteredPlotLabelPosition(ring, project)
+    : getInteriorLabelPosition(ring, project);
   if (placement.radius < 3) return; // slightly raised so we only draw when it will fit
 
   // Adaptive cap: let big plots get big text, but never overflow the polygon
@@ -956,7 +999,10 @@ const drawUniformPlotNumber = (
     ctx.font = `700 ${finalFontSize}px Arial`;
   }
 
-  if (finalFontSize < minFontSize || ctx.measureText(value).width > maxTextWidth) {
+  if (
+    finalFontSize < minFontSize ||
+    ctx.measureText(value).width > maxTextWidth
+  ) {
     return;
   }
 
@@ -979,17 +1025,12 @@ const drawUniformPlotNumber = (
   ctx.restore();
 };
 
-const drawDetailedSelectedPlotLabel = (
-  ctx,
-  details,
-  ring,
-  project,
-) => {
+const drawDetailedSelectedPlotLabel = (ctx, details, ring, project) => {
   const placement = getInteriorLabelPosition(ring, project);
   if (placement.radius < 5) return;
 
   const lines = [
-    { text: details.plotNo, size: 44, weight: 700, color: "#001a66" },  // was 36 / #0b35d5
+    { text: details.plotNo, size: 44, weight: 700, color: "#001a66" }, // was 36 / #0b35d5
     {
       text: firstValue(details.plotArea, details.plotSize),
       size: 26,
@@ -1043,23 +1084,18 @@ const drawDetailedSelectedPlotLabel = (
 
   ctx.restore();
 };
-const drawSitePlotLabel = (
-  ctx,
-  details,
-  ring,
-  project,
-) => {
-  const placement = getInteriorLabelPosition(ring, project);
+const drawSitePlotLabel = (ctx, details, ring, project) => {
+  const placement = getCenteredPlotLabelPosition(ring, project);
   if (placement.radius < 4) return;
 
   const lines = [
     {
       text: details.plotNo,
       weight: 700,
-      color: "#001a66",   // ← much darker navy
-      sizeFactor: 1.05,   // ← was 0.85 (uses way more of the polygon)
-      maxSize: 50,        // ← was 46
-      minSize: 14,        // ← was 16
+      color: "#001a66", // ← much darker navy
+      sizeFactor: 1.05, // ← was 0.85 (uses way more of the polygon)
+      maxSize: 50, // ← was 46
+      minSize: 14, // ← was 16
     },
     {
       text: firstValue(details.plotSize, details.plotArea),
@@ -1078,7 +1114,10 @@ const drawSitePlotLabel = (
   const sized = lines.map((line) => {
     let fontSize = Math.min(line.maxSize, placement.radius * line.sizeFactor);
     ctx.font = `${line.weight} ${fontSize}px Arial`;
-    while (fontSize > line.minSize && ctx.measureText(String(line.text)).width > maxTextWidth) {
+    while (
+      fontSize > line.minSize &&
+      ctx.measureText(String(line.text)).width > maxTextWidth
+    ) {
       fontSize -= 0.5;
       ctx.font = `${line.weight} ${fontSize}px Arial`;
     }
@@ -1294,21 +1333,18 @@ const drawClientOverviewLabel = (ctx, feature, ring, project) => {
   if (isLandUse) {
     drawWrappedCanvasText(
       ctx,
-      [
-        /mosque|masjid/i.test(category) ? "Grand Mosque" : category,
-        area,
-      ],
+      [/mosque|masjid/i.test(category) ? "Grand Mosque" : category, area],
       placement.x,
       placement.y,
-      Math.max(14, Math.min(28, placement.radius * 0.55)),  // was 12 / 24 / 0.45
+      Math.max(14, Math.min(28, placement.radius * 0.55)), // was 12 / 24 / 0.45
       "#111111",
     );
     return;
   }
 
   drawUniformPlotNumber(ctx, plotNo, ring, project, {
-    fontSize: 22,          // was 17
-    fillStyle: "#001a66",  // was #0b35d5 — darker
+    fontSize: 22, // was 17
+    fillStyle: "#001a66", // was #0b35d5 — darker
     haloWidth: 2.5,
   });
 };
@@ -1330,7 +1366,7 @@ const drawAdjacentClientLabel = (ctx, feature, ring, project) => {
     [plotNo, "Adjacent", "Plot"],
     placement.x,
     placement.y,
-    Math.max(18, Math.min(32, placement.radius * 0.55)),  // was 15 / 24 / 0.48
+    Math.max(18, Math.min(32, placement.radius * 0.55)), // was 15 / 24 / 0.48
     "#111111",
   );
 };
@@ -1431,7 +1467,9 @@ export const createPlanCanvas = async ({
   const fullSchemeBounds = getBounds(
     contextGeojson?.features?.length ? contextGeojson.features : features,
   );
-  const contextBounds = getBounds(features.length ? features : [selectedFeature]);
+  const contextBounds = getBounds(
+    features.length ? features : [selectedFeature],
+  );
 
   // Guarantee the selected plot always has clearance from the canvas edge,
   // even when it sits at a corner/edge of the overall scheme — union the
@@ -1516,16 +1554,11 @@ export const createPlanCanvas = async ({
       } else if (mode === "part") {
         drawAdjacentClientLabel(ctx, feature, ring, project);
       } else if (["site", "location"].includes(mode)) {
-        drawUniformPlotNumber(
-          ctx,
-          getPlotLabel(feature),
-          ring,
-          project,
-          {
-            fontSize: mode === "location" ? 17 : 20,
-            fillStyle: "#0b35d5",
-          },
-        );
+        drawUniformPlotNumber(ctx, getPlotLabel(feature), ring, project, {
+          fontSize: mode === "location" ? 17 : 20,
+          fillStyle: "#0b35d5",
+          centered: mode === "site",
+        });
       }
     }
   });
@@ -1549,34 +1582,29 @@ export const createPlanCanvas = async ({
   const selectedProjectedBox = getProjectedRingBox(selectedRing, project);
 
   if (mode === "location" || mode === "partOverview") {
-        if (mode === "location") {
+    if (mode === "location") {
       drawSelectionRing(ctx, selectedRing, project, width, height);
     }
-    drawUniformPlotNumber(
-      ctx,
-      details.plotNo,
-      selectedRing,
-      project,
-      { fontSize: mode === "partOverview" ? 32 : 22, fillStyle: "#0637ff", haloWidth: 4 }
-    );
+    drawUniformPlotNumber(ctx, details.plotNo, selectedRing, project, {
+      fontSize: mode === "partOverview" ? 32 : 22,
+      fillStyle: "#0637ff",
+      haloWidth: 4,
+    });
     if (mode === "location") {
       // Use the average of the already-projected vertices so the pin is
       // guaranteed to land on the visually drawn shape, avoiding any
       // CRS-to-screen distortion that can shift a computed centroid.
       const projectedRing = selectedRing.map(project);
-      const pinX = projectedRing.reduce((s, p) => s + p[0], 0) / projectedRing.length;
-      const pinY = projectedRing.reduce((s, p) => s + p[1], 0) / projectedRing.length;
+      const pinX =
+        projectedRing.reduce((s, p) => s + p[0], 0) / projectedRing.length;
+      const pinY =
+        projectedRing.reduce((s, p) => s + p[1], 0) / projectedRing.length;
 
       // Draw the pin LAST so it sits on top of the plot fill and label.
       drawLocatorPin(ctx, pinX, pinY, 16);
     }
-  }  else if (mode === "part") {
-    drawDetailedSelectedPlotLabel(
-      ctx,
-      details,
-      selectedRing,
-      project,
-    );
+  } else if (mode === "part") {
+    drawDetailedSelectedPlotLabel(ctx, details, selectedRing, project);
   } else {
     drawSitePlotLabel(ctx, details, selectedRing, project);
   }
@@ -1592,66 +1620,64 @@ export const createPlanCanvas = async ({
   );
 
   if (showDimensions && ["site", "part"].includes(mode)) {
-  const labelPlacement = getInteriorLabelPosition(selectedRing, project);
-  const labelAnchor = [labelPlacement.x, labelPlacement.y];
+    const labelPlacement = getInteriorLabelPosition(selectedRing, project);
+    const labelAnchor = [labelPlacement.x, labelPlacement.y];
 
-  dimensionRing.forEach((point, index) => {
-    const next = dimensionRing[(index + 1) % dimensionRing.length];
-    const a = project(point);
-    const b = project(next);
+    dimensionRing.forEach((point, index) => {
+      const next = dimensionRing[(index + 1) % dimensionRing.length];
+      const a = project(point);
+      const b = project(next);
 
-    const midX = (a[0] + b[0]) / 2;
-    const midY = (a[1] + b[1]) / 2;
-    const dx = b[0] - a[0];
-    const dy = b[1] - a[1];
-    const edgeLen = Math.max(Math.hypot(dx, dy), 1);
+      const midX = (a[0] + b[0]) / 2;
+      const midY = (a[1] + b[1]) / 2;
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const edgeLen = Math.max(Math.hypot(dx, dy), 1);
 
-    const nx1 = -dy / edgeLen;
-    const ny1 = dx / edgeLen;
-    const nx2 = dy / edgeLen;
-    const ny2 = -dx / edgeLen;
+      const nx1 = -dy / edgeLen;
+      const ny1 = dx / edgeLen;
+      const nx2 = dy / edgeLen;
+      const ny2 = -dx / edgeLen;
 
-    const toAnchorX = labelAnchor[0] - midX;
-    const toAnchorY = labelAnchor[1] - midY;
+      const toAnchorX = labelAnchor[0] - midX;
+      const toAnchorY = labelAnchor[1] - midY;
 
-    const dot1 = nx1 * toAnchorX + ny1 * toAnchorY;
-    const nx = dot1 < 0 ? nx1 : nx2;
-    const ny = dot1 < 0 ? ny1 : ny2;
+      const dot1 = nx1 * toAnchorX + ny1 * toAnchorY;
+      const nx = dot1 < 0 ? nx1 : nx2;
+      const ny = dot1 < 0 ? ny1 : ny2;
 
-    let angle = Math.atan2(dy, dx);
-    while (angle > Math.PI / 2) angle -= Math.PI;
-    while (angle < -Math.PI / 2) angle += Math.PI;
+      let angle = Math.atan2(dy, dx);
+      while (angle > Math.PI / 2) angle -= Math.PI;
+      while (angle < -Math.PI / 2) angle += Math.PI;
 
-    const dimension = formatFeet(distanceMeters(point, next));
+      const dimension = formatFeet(distanceMeters(point, next));
 
-    const sidePixelLength = edgeLen;
-    const dimensionFont =
-      mode === "part"
-        ? Math.max(24, Math.min(34, sidePixelLength * 0.19))
-        : Math.max(15, Math.min(21, sidePixelLength * 0.16));
+      const sidePixelLength = edgeLen;
+      const dimensionFont =
+        mode === "part"
+          ? Math.max(24, Math.min(34, sidePixelLength * 0.19))
+          : Math.max(18, Math.min(26, sidePixelLength * 0.19));
 
-    const offset =
-    mode === "part"
-      ? Math.max(34, dimensionFont * 1.4)
-      : Math.max(22, dimensionFont * 1.5);
+      const offset =
+        mode === "part"
+          ? Math.max(34, dimensionFont * 1.4)
+          : Math.max(25, dimensionFont * 1.45);
 
-    ctx.save();
-    ctx.translate(midX + nx * offset, midY + ny * offset);
-    ctx.rotate(angle);
-    ctx.font = `700 ${dimensionFont}px Arial`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.lineJoin = "round";
-    ctx.lineWidth = Math.max(4.5, dimensionFont * 0.22);
-    ctx.strokeStyle = "rgba(255,255,255,0.99)";
-    ctx.strokeText(dimension, 0, 0);
-    ctx.fillStyle = "#161616";
-    ctx.fillText(dimension, 0, 0);
-    ctx.restore();
-  });
-}
-
-    
+      ctx.save();
+      ctx.translate(midX + nx * offset, midY + ny * offset);
+      ctx.rotate(angle);
+      ctx.font = `700 ${dimensionFont}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = Math.max(4.5, dimensionFont * 0.22);
+      ctx.strokeStyle = "rgba(255,255,255,0.99)";
+      ctx.strokeText(dimension, 0, 0);
+      ctx.fillStyle = "#161616";
+      ctx.fillText(dimension, 0, 0);
+      ctx.restore();
+    });
+  }
 
   if (showVertexLabels && mode === "site") {
     const cornerCenter = project(polygonCentroid(dimensionRing));
@@ -1686,7 +1712,10 @@ export const createPlanCanvas = async ({
     });
   }
 
-  if (mode === "site" && (details.roadFt || details.streetRoadNo || details.roadFacing)) {
+  if (
+    mode === "site" &&
+    (details.roadFt || details.streetRoadNo || details.roadFacing)
+  ) {
     const roadText = firstValue(
       details.streetRoadNo && details.roadFt
         ? `${details.streetRoadNo} - ${details.roadFt} Feet Wide Road`
@@ -1740,29 +1769,29 @@ const wgs84ToUtm = (lng, lat) => {
       ((3 * eccSquared) / 8 +
         (3 * eccSquared ** 2) / 32 +
         (45 * eccSquared ** 3) / 1024) *
-      Math.sin(2 * latRad) +
+        Math.sin(2 * latRad) +
       ((15 * eccSquared ** 2) / 256 + (45 * eccSquared ** 3) / 1024) *
-      Math.sin(4 * latRad) -
+        Math.sin(4 * latRad) -
       ((35 * eccSquared ** 3) / 3072) * Math.sin(6 * latRad));
 
   let easting =
     k0 *
-    n *
-    (A +
-      ((1 - t + c) * A ** 3) / 6 +
-      ((5 - 18 * t + t ** 2 + 72 * c - 58 * eccPrimeSquared) * A ** 5) /
-      120) +
+      n *
+      (A +
+        ((1 - t + c) * A ** 3) / 6 +
+        ((5 - 18 * t + t ** 2 + 72 * c - 58 * eccPrimeSquared) * A ** 5) /
+          120) +
     500000;
 
   let northing =
     k0 *
     (m +
       n *
-      Math.tan(latRad) *
-      (A ** 2 / 2 +
-        ((5 - t + 9 * c + 4 * c ** 2) * A ** 4) / 24 +
-        ((61 - 58 * t + t ** 2 + 600 * c - 330 * eccPrimeSquared) * A ** 6) /
-        720));
+        Math.tan(latRad) *
+        (A ** 2 / 2 +
+          ((5 - t + 9 * c + 4 * c ** 2) * A ** 4) / 24 +
+          ((61 - 58 * t + t ** 2 + 600 * c - 330 * eccPrimeSquared) * A ** 6) /
+            720));
 
   if (lat < 0) northing += 10000000;
   easting = Math.round(easting * 1000) / 1000;
@@ -1949,7 +1978,9 @@ export const drawUnderlinedValue = (
         : `${text.slice(0, Math.max(1, Math.floor(text.length * 0.8)))}...`;
 
     if (options.centerValue) {
-      doc.text(fitted, lineX + effectiveLineWidth / 2, y - 0.5, { align: "center" });
+      doc.text(fitted, lineX + effectiveLineWidth / 2, y - 0.5, {
+        align: "center",
+      });
     } else {
       doc.text(fitted, lineX + 1, y - 0.5);
     }
@@ -1993,10 +2024,10 @@ const drawFittedCenteredHeading = (
 export const canvasAsPng = (canvas) =>
   canvas
     ? {
-      dataUrl: canvas.toDataURL("image/png"),
-      width: canvas.width,
-      height: canvas.height,
-    }
+        dataUrl: canvas.toDataURL("image/png"),
+        width: canvas.width,
+        height: canvas.height,
+      }
     : null;
 
 export const normalizeAreaText = (details) => {
