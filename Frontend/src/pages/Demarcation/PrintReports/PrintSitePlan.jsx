@@ -17,10 +17,14 @@ import {
 const PRINT_LAYOUT = {
   gopLogoSize: 23,
   rudaLogoSize: 22,
-  mainMapZoom: 1.7,
-  mainMapPanX: 0,
-  mainMapPanY: 20,
-  insetMapZoom: 1.3,
+  // Slightly tighter framing for the site-plan drawing. The small left pan
+  // keeps the selected plot clear of the location/coordinate overlays.
+  mainMapZoom: 1.9,
+  mainMapPanX: -110,
+  mainMapPanY: 10,
+  // A little extra zoom makes the location map easier to read without
+  // changing its box size or the surrounding layout.
+  insetMapZoom: 3.2,
   insetMapPanX: 0,
   insetMapPanY: 0,
 };
@@ -109,23 +113,21 @@ const drawSignatureBox = (doc, title, subtitle, x, y, width, height) => {
   const lineX = x + 5;
   const lineEnd = x + width - 5;
   const baseY = y + 18;
-  const gap = 6.5;
+  const gap = 5.8;
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 80);
 
-  doc.text("Name:", lineX, baseY);
-  doc.line(lineX + 16, baseY + 0.6, lineEnd, baseY + 0.6);
+  const drawFieldLine = (label, fieldY) => {
+    doc.text(label, lineX, fieldY);
+    const startX = lineX + doc.getTextWidth(label) + 3;
+    doc.line(startX, fieldY + 0.6, lineEnd, fieldY + 0.6);
+  };
 
-  doc.text("Designation:", lineX, baseY + gap);
-  doc.line(lineX + 24, baseY + gap + 0.6, lineEnd, baseY + gap + 0.6);
-
-  doc.text("Signature:", lineX, baseY + gap * 2);
-  doc.line(lineX + 20, baseY + gap * 2 + 0.6, lineEnd, baseY + gap * 2 + 0.6);
-
-  doc.text("Date:", lineX, baseY + gap * 3);
-  doc.line(lineX + 14, baseY + gap * 3 + 0.6, lineEnd, baseY + gap * 3 + 0.6);
+  drawFieldLine("Name:", baseY);
+  drawFieldLine("Designation:", baseY + gap);
+  drawFieldLine("Signature:", baseY + gap * 2);
 };
 
 const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
@@ -138,7 +140,7 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
 
   doc.setFillColor(255, 255, 255);
   doc.rect(x, y, width, totalHeight, "F");
-  
+
   doc.setFillColor(30, 58, 95);
   doc.setDrawColor(30, 58, 95);
   doc.rect(x, y, width, titleHeight, "FD");
@@ -161,8 +163,15 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
   doc.setFontSize(7);
   doc.setTextColor(40, 40, 40);
   doc.text("Corner", x + columns[0] / 2, headerY + 3.8, { align: "center" });
-  doc.text("Easting (m)", x + columns[0] + columns[1] / 2, headerY + 3.8, { align: "center" });
-  doc.text("Northing (m)", x + columns[0] + columns[1] + columns[2] / 2, headerY + 3.8, { align: "center" });
+  doc.text("Easting (m)", x + columns[0] + columns[1] / 2, headerY + 3.8, {
+    align: "center",
+  });
+  doc.text(
+    "Northing (m)",
+    x + columns[0] + columns[1] + columns[2] / 2,
+    headerY + 3.8,
+    { align: "center" },
+  );
 
   let cursor = x;
   columns.slice(0, -1).forEach((columnWidth) => {
@@ -193,6 +202,21 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
       textY,
       { align: "center" },
     );
+  });
+
+  // Draw the complete table grid after the alternating row fills so every
+  // separator remains visible (including the B/D row boundaries).
+  doc.setDrawColor(175, 175, 175);
+  doc.setLineWidth(0.22);
+  for (let index = 0; index <= rows.length; index += 1) {
+    const lineY = y + titleHeight + headerHeight + index * rowHeight;
+    doc.line(x, lineY, x + width, lineY);
+  }
+
+  let gridX = x;
+  columns.slice(0, -1).forEach((columnWidth) => {
+    gridX += columnWidth;
+    doc.line(gridX, y + titleHeight, gridX, y + totalHeight);
   });
 
   doc.setDrawColor(120, 120, 120);
@@ -292,12 +316,26 @@ export const printSitePlan = async ({
     if (gopLogo) {
       const cx = margin + 6 + PRINT_LAYOUT.gopLogoSize / 2;
       const cy = 5 + PRINT_LAYOUT.gopLogoSize / 2;
-      drawCircularLogo(doc, gopLogo, cx, cy, PRINT_LAYOUT.gopLogoSize / 2, PRINT_LAYOUT.gopLogoSize);
+      drawCircularLogo(
+        doc,
+        gopLogo,
+        cx,
+        cy,
+        PRINT_LAYOUT.gopLogoSize / 2,
+        PRINT_LAYOUT.gopLogoSize,
+      );
     }
     if (rudaLogo) {
       const cx = rightEdge - PRINT_LAYOUT.rudaLogoSize / 2 - 6;
       const cy = 6 + PRINT_LAYOUT.rudaLogoSize / 2;
-      drawCircularLogo(doc, rudaLogo, cx, cy, PRINT_LAYOUT.rudaLogoSize / 2, PRINT_LAYOUT.rudaLogoSize);
+      drawCircularLogo(
+        doc,
+        rudaLogo,
+        cx,
+        cy,
+        PRINT_LAYOUT.rudaLogoSize / 2,
+        PRINT_LAYOUT.rudaLogoSize,
+      );
     }
 
     doc.setFont("helvetica", "bold");
@@ -309,7 +347,9 @@ export const printSitePlan = async ({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    doc.text("Government of the Punjab", pageWidth / 2, 15.5, { align: "center" });
+    doc.text("Government of the Punjab", pageWidth / 2, 15.5, {
+      align: "center",
+    });
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
@@ -330,12 +370,20 @@ export const printSitePlan = async ({
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(255, 255, 255);
-    doc.text("OFFICIAL SITE PLAN", pageWidth / 2, badgeY + 5, { align: "center" });
+    doc.text("OFFICIAL SITE PLAN", pageWidth / 2, badgeY + 5, {
+      align: "center",
+    });
     doc.setTextColor(15, 15, 15);
 
     /* ===== PLOT INFORMATION ===== */
     let sectionY = 33;
-    sectionY = drawSectionHeader(doc, margin, sectionY, contentWidth, "PLOT & OWNER INFORMATION");
+    sectionY = drawSectionHeader(
+      doc,
+      margin,
+      sectionY,
+      contentWidth,
+      "PLOT & OWNER INFORMATION",
+    );
 
     const infoTop = sectionY + 1;
     const infoLeft = margin + 2;
@@ -455,8 +503,8 @@ export const printSitePlan = async ({
       row4End[1] - (row4X[1] + 26),
       { fontSize: 8.5 },
     );
-       // Note box
-    const noteY = infoTop + 40;
+    // Note box
+    const noteY = infoTop + 38.5;
     doc.setFillColor(255, 245, 245);
     doc.setDrawColor(198, 40, 40);
     doc.setLineWidth(0.3);
@@ -477,7 +525,13 @@ export const printSitePlan = async ({
     /* ===== SITE PLAN DRAWING ===== */
     const planTop = infoBottom + 1;
     const planHeight = 116;
-    sectionY = drawSectionHeader(doc, margin, planTop, contentWidth, "SITE PLAN DRAWING");
+    sectionY = drawSectionHeader(
+      doc,
+      margin,
+      planTop,
+      contentWidth,
+      "SITE PLAN DRAWING",
+    );
 
     doc.setDrawColor(160, 160, 160);
     doc.setLineWidth(0.3);
@@ -511,7 +565,9 @@ export const printSitePlan = async ({
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
       doc.setTextColor(255, 255, 255);
-      doc.text("LOCATION MAP", insetX + insetW / 2, insetY + 3.5, { align: "center" });
+      doc.text("LOCATION MAP", insetX + insetW / 2, insetY + 3.5, {
+        align: "center",
+      });
       doc.setTextColor(15, 15, 15);
 
       addImageContained(
@@ -539,23 +595,61 @@ export const printSitePlan = async ({
 
     /* ===== CERTIFICATION ===== */
     const certTop = planBottom + 2;
-    const certHeight = 38;
-    sectionY = drawSectionHeader(doc, margin, certTop, contentWidth, "OFFICIAL CERTIFICATION");
+    sectionY = drawSectionHeader(
+      doc,
+      margin,
+      certTop,
+      contentWidth,
+      "OFFICIAL CERTIFICATION",
+    );
 
     const boxW = (contentWidth - 5) / 3;
-// Inside the three drawSignatureBox calls — was 34
-drawSignatureBox(doc, "PREPARED BY", "Land Surveyor", margin + 1, sectionY + 1, boxW, 32);
-drawSignatureBox(doc, "CHECKED BY", "DD Demarcation", margin + 2 + boxW, sectionY + 1, boxW, 32);
-drawSignatureBox(doc, "APPROVED BY", "DD GIS / Director", margin + 3 + boxW * 2, sectionY + 1, boxW, 32);
+    const signatureBoxY = sectionY + 1;
+    const signatureBoxHeight = 32;
 
-    const certBottom = certTop + certHeight;
+    drawSignatureBox(
+      doc,
+      "PREPARED BY",
+      "Land Surveyor",
+      margin + 1,
+      signatureBoxY,
+      boxW,
+      signatureBoxHeight,
+    );
+    drawSignatureBox(
+      doc,
+      "CHECKED BY",
+      "DD Demarcation",
+      margin + 2 + boxW,
+      signatureBoxY,
+      boxW,
+      signatureBoxHeight,
+    );
+    drawSignatureBox(
+      doc,
+      "APPROVED BY",
+      "DD GIS / Director",
+      margin + 3 + boxW * 2,
+      signatureBoxY,
+      boxW,
+      signatureBoxHeight,
+    );
+
+    const certBottom = signatureBoxY + signatureBoxHeight;
 
     /* ===== HANDOVER ===== */
-    const handTop = certBottom + 2;
+    // Keep a small visual gap below the certification boxes.
+    const handTop = certBottom + 3;
     const handHeight = 28;
-    sectionY = drawSectionHeader(doc, margin, handTop, contentWidth, "DOCUMENT HANDOVER ACKNOWLEDGEMENT");
+    sectionY = drawSectionHeader(
+      doc,
+      margin,
+      handTop,
+      contentWidth,
+      "DOCUMENT HANDOVER ACKNOWLEDGEMENT",
+    );
 
-    const handY = sectionY + 3;
+    const handY = sectionY + 4;
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8.5);
     doc.setTextColor(80, 80, 80);
@@ -569,6 +663,11 @@ drawSignatureBox(doc, "APPROVED BY", "DD GIS / Director", margin + 3 + boxW * 2,
 
     const row1Y = handY + 7;
     const halfW = contentWidth / 2;
+    const stampW = 28;
+    const stampH = 16;
+    const stampX = rightEdge - stampW - 4;
+    const stampY = handY + 2;
+    const rightFieldEnd = stampX - 4;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
@@ -583,7 +682,7 @@ drawSignatureBox(doc, "APPROVED BY", "DD GIS / Director", margin + 3 + boxW * 2,
     doc.setDrawColor(120, 120, 120);
     doc.setLineWidth(0.25);
     doc.line(margin + 22, row1Y + 0.8, margin + halfW - 5, row1Y + 0.8);
-    doc.line(margin + halfW + 22, row1Y + 0.8, rightEdge - 5, row1Y + 0.8);
+    doc.line(margin + halfW + 22, row1Y + 0.8, rightFieldEnd, row1Y + 0.8);
 
     const row2Y = row1Y + 7;
     doc.setFont("helvetica", "bold");
@@ -592,7 +691,7 @@ drawSignatureBox(doc, "APPROVED BY", "DD GIS / Director", margin + 3 + boxW * 2,
     doc.text("Mobile No:", margin + halfW + 3, row2Y);
     doc.setTextColor(15, 15, 15);
     doc.line(margin + 32, row2Y + 0.8, margin + halfW - 5, row2Y + 0.8);
-    doc.line(margin + halfW + 22, row2Y + 0.8, rightEdge - 5, row2Y + 0.8);
+    doc.line(margin + halfW + 22, row2Y + 0.8, rightFieldEnd, row2Y + 0.8);
 
     const row3Y = row2Y + 7;
     doc.setFont("helvetica", "bold");
@@ -601,15 +700,17 @@ drawSignatureBox(doc, "APPROVED BY", "DD GIS / Director", margin + 3 + boxW * 2,
     doc.setTextColor(15, 15, 15);
     doc.line(margin + 14, row3Y + 0.8, margin + 50, row3Y + 0.8);
 
-    // Stamp box — FIXED: changed setDashPattern to setLineDashPattern
+    // Keep the stamp in its own reserved area so it never overlaps CNIC/mobile.
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.3);
     doc.setLineDashPattern([2, 2], 0);
-    doc.rect(rightEdge - 32, handY + 2, 28, 16);
+    doc.rect(stampX, stampY, stampW, stampH);
     doc.setLineDashPattern([], 0);
     doc.setFontSize(7);
     doc.setTextColor(160, 160, 160);
-    doc.text("Official Stamp", rightEdge - 18, handY + 11, { align: "center" });
+    doc.text("Official Stamp", stampX + stampW / 2, stampY + 9, {
+      align: "center",
+    });
 
     /* ===== FOOTER ===== */
     doc.setDrawColor(30, 58, 95);
