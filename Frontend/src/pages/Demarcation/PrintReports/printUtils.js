@@ -38,30 +38,36 @@ export const buildPlotDetails = (parcel = null, filters = {}) => {
   const p = parcel?.properties || {};
 
   return {
+    // PlotSerializer exposes both FK ids (project/block) and readable names
+    // (project_name/block_name). Prefer the readable values for printed reports
+    // and only fall back to the raw FK ids when a name is unavailable.
     project: firstValue(
       filters.projectName,
-      p.project,
       p.project_name,
-      p.scheme,
       p.scheme_name,
+      p.scheme,
+      p.project,
       p.project_id,
     ),
-    block: firstValue(p.block, p.block_name, filters.block),
+    block: firstValue(p.block_name, p.block_label, filters.block, p.block),
     phase: firstValue(p.phase, p.phase_name, p.project_phase, p.ph),
     plotNo: firstValue(p.plot_no, p.plotno, p.plot_number, p.pl_no, parcel?.id),
+    // Plot.type is the actual model field currently available for the plot
+    // category/land-use value, so prefer it before generic fallback aliases.
     landUse: firstValue(
+      p.type,
       p.land_use,
       p.landuse,
       p.plot_category,
       p.category,
       p.name,
-      p.type,
     ),
     plotCategory: firstValue(
+      p.type,
       p.plot_category,
       p.category,
-      p.type,
       p.land_use,
+      p.landuse,
       p.name,
     ),
     plotArea: firstValue(
