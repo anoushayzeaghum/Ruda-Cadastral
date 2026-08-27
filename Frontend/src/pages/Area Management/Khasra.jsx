@@ -1,15 +1,61 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getKhasras, getMauzas } from "../../services/api";
+import { getKhasras } from "../../services/api";
 import ImportModal from "../../components/ImportModal";
+
+const asFeatureRows = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.features)) return data.features;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.data?.features)) return data.data.features;
+  return [];
+};
+
+const featureToProperties = (feature) => {
+  const properties = feature?.properties ?? feature ?? {};
+
+  return {
+    ...properties,
+    // KhasraSerializer uses gid as the GeoJSON feature id.
+    gid: properties?.gid ?? feature?.id ?? null,
+    // Do not replace khasra_id with feature.id; they are different DB fields.
+    khasra_id: properties?.khasra_id ?? null,
+  };
+};
+
+const firstDisplayValue = (...values) => {
+  const value = values.find(
+    (item) => item !== null && item !== undefined && String(item).trim() !== "",
+  );
+
+  return value ?? "-";
+};
+
+// Follow the actual Khasra model: join_shp is also the first value used by __str__.
+const getKhasraLabel = (item) =>
+  firstDisplayValue(item?.join_shp, item?.sk, item?.kh, item?.khasra_id);
+
+const getMauzaLabel = (item) =>
+  firstDisplayValue(item?.mauza_name, item?.mauza, item?.mauza_id);
+
+const getTehsilLabel = (item) =>
+  firstDisplayValue(item?.tehsil_name, item?.tehsil, item?.tehsil_id);
+
+const getDistrictLabel = (item) =>
+  firstDisplayValue(item?.district_name, item?.district, item?.dist_id);
+
+const formatKaram = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number.toFixed(2) : String(value);
+};
 
 export default function Khasra() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [mauzas, setMauzas] = useState([]);
   const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [revenueStateType, setRevenueStateType] = useState("");
 
   const itemsPerPage = 10;
 
@@ -18,16 +64,12 @@ export default function Khasra() {
       setLoading(true);
 
       const res = await getKhasras();
-      const features = res?.features ?? [];
+      const rows = asFeatureRows(res).map(featureToProperties);
 
-      const props = features.map((f) => ({
-        ...(f.properties || {}),
-        khasra_id: f.properties?.khasra_id ?? f.id ?? f.properties?.gid,
-      }));
-
-      setItems(props);
+      setItems(rows);
     } catch (err) {
       console.error("Failed to load khasras:", err);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -35,51 +77,29 @@ export default function Khasra() {
 
   useEffect(() => {
     fetchKhasras();
-
-    (async () => {
-      try {
-        const m = await getMauzas();
-        const features = m?.features ?? [];
-
-        setMauzas(
-          features.map((f) => ({
-            ...(f.properties || {}),
-            mauza_id: f.properties?.mauza_id ?? f.id,
-          }))
-        );
-      } catch (e) {
-        console.error(e);
-      }
-    })();
   }, []);
-  
+
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return items;
 
     return items.filter((item) => {
-      return (
-        String(item.type ?? "")
+      const searchableValues = [
+        item?.type,
+        getKhasraLabel(item),
+        item?.sk,
+        item?.karam,
+        getMauzaLabel(item),
+        getTehsilLabel(item),
+        getDistrictLabel(item),
+        item?.join_shp,
+        item?.khasra_id,
+      ];
+
+      return searchableValues.some((value) =>
+        String(value ?? "")
           .toLowerCase()
-          .includes(q) ||
-        String(item.m ?? "")
-          .toLowerCase()
-          .includes(q) ||
-        String(item.k ?? "")
-          .toLowerCase()
-          .includes(q) ||
-        String(item.sk ?? "")
-          .toLowerCase()
-          .includes(q) ||
-        String(item.karam ?? "")
-          .toLowerCase()
-          .includes(q) ||
-        String(item.tehsil ?? "")
-          .toLowerCase()
-          .includes(q) ||
-        String(item.district ?? "")
-          .toLowerCase()
-          .includes(q)
+          .includes(q),
       );
     });
   }, [items, search]);
@@ -112,68 +132,20 @@ export default function Khasra() {
           Import a new khasra or edit an existing one.
         </p>
 
-        <div className="mt-6 grid grid-cols-12 gap-4 items-end">
-          <div className="col-span-3">
-            <label className="block text-xs text-gray-500 mb-1">MOUZA</label>
-            <select className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]">
-              <option value="">Select mauza</option>
-              {mauzas.map((m) => (
-                <option key={m.mauza_id ?? m.gid} value={m.mauza_id ?? m.gid}>
-                  {m.mauza}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-span-3">
-            <label className="block text-xs text-gray-500 mb-1">
-              KHASRA LABEL
-            </label>
-            <input
-              className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
-              placeholder="Enter khasra label"
-            />
-          </div>
-
-          <div className="col-span-3">
-            <label className="block text-xs text-gray-500 mb-1">
-              REVENUE STATE TYPE
-            </label>
-            <select
-              value={revenueStateType}
-              onChange={(e) => setRevenueStateType(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
-            >
-              <option value="">Select revenue state type</option>
-              <option value="MU">MU</option>
-              <option value="QB">QB</option>
-            </select>
-          </div>
-
-          <div className="col-span-3 flex gap-3 justify-end">
-            <ImportModal
-              title="Import Khasra"
-              open={showImport}
-              onClose={() => setShowImport(false)}
-              type="khasra"
-              onSuccess={fetchKhasras}
-            />
-            <button
-              onClick={() => setShowImport(true)}
-              className="bg-red-600 text-white px-4 py-2 rounded-md"
-            >
-              Import Khasra
-            </button>
-            <button className="border px-4 py-2 rounded-md">Clear</button>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-12 gap-4">
-          <div className="col-span-4">
-            <p className="mt-2 text-sm text-gray-500 text-red-600 leading-relaxed ">
-              *MU stands for Murabba Bandi and QB stands for Qilla Bandi.
-            </p>
-          </div>
+        <div className="mt-6 flex justify-end">
+          <ImportModal
+            title="Import Khasra"
+            open={showImport}
+            onClose={() => setShowImport(false)}
+            type="khasra"
+            onSuccess={fetchKhasras}
+          />
+          <button
+            onClick={() => setShowImport(true)}
+            className="bg-red-600 text-white px-4 py-2 rounded-md"
+          >
+            Import Khasra
+          </button>
         </div>
       </div>
 
@@ -183,7 +155,7 @@ export default function Khasra() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by type, murabba, khasra, tehsil .."
+            placeholder="Search by type, khasra, mauza, tehsil .."
             className="border rounded-md px-3 py-2 text-sm w-72 bg-white dark:bg-[#0b1419]"
           />
         </div>
@@ -198,15 +170,13 @@ export default function Khasra() {
               No khasras found
             </div>
           ) : (
-            <div dir="ltr" className="min-w-[1100px]">
+            <div dir="ltr" className="min-w-[1000px]">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="text-sm text-gray-500">
                     <th className="py-2 px-2 whitespace-nowrap">Sr. No</th>
                     <th className="py-2 px-2 whitespace-nowrap">Type</th>
-                    <th className="py-2 px-2 whitespace-nowrap">Murabba</th>
                     <th className="py-2 px-2 whitespace-nowrap">Khasra</th>
-                    {/* <th className="py-2 px-2 whitespace-nowrap">Sub-Khasra</th> */}
                     <th className="py-2 px-2 whitespace-nowrap">Karam</th>
                     <th className="py-2 px-2 whitespace-nowrap">Mauza</th>
                     <th className="py-2 px-2 whitespace-nowrap">Tehsil</th>
@@ -218,35 +188,27 @@ export default function Khasra() {
                 </thead>
                 <tbody>
                   {paginatedItems.map((d, idx) => (
-                    <tr key={d.khasra_id ?? d.gid ?? idx} className="border-t">
+                    <tr key={d.gid ?? d.khasra_id ?? idx} className="border-t">
                       <td className="py-2 px-2 whitespace-nowrap">
                         {(currentPage - 1) * itemsPerPage + idx + 1}
                       </td>
                       <td className="py-2 px-2 whitespace-nowrap">
-                        {d.type ?? "-"}
+                        {firstDisplayValue(d.type)}
                       </td>
                       <td className="py-2 px-2 whitespace-nowrap">
-                        {d.m ?? "-"}
+                        {getKhasraLabel(d)}
                       </td>
                       <td className="py-2 px-2 whitespace-nowrap">
-                        {d.k ?? "-"}
-                      </td>
-                      {/* <td className="py-2 px-2 whitespace-nowrap">
-                        {d.sk ?? "-"}
-                      </td> */}
-                      <td>
-                        {d.karam !== null && d.karam !== undefined
-                          ? Number(d.karam).toFixed(2)
-                          : "-"}
+                        {formatKaram(d.karam)}
                       </td>
                       <td className="py-2 px-2 whitespace-nowrap">
-                        {d.mauza ?? "-"}
+                        {getMauzaLabel(d)}
                       </td>
                       <td className="py-2 px-2 whitespace-nowrap">
-                        {d.tehsil ?? "-"}
+                        {getTehsilLabel(d)}
                       </td>
                       <td className="py-2 px-2 whitespace-nowrap">
-                        {d.district ?? "-"}
+                        {getDistrictLabel(d)}
                       </td>
                       <td className="py-2 px-2 text-right whitespace-nowrap">
                         <button className="text-sm px-3 py-1 mr-2 border rounded">
