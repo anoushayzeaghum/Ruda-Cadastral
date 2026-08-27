@@ -964,7 +964,7 @@ class FieldPoints(models.Model):
     gid = models.IntegerField(primary_key=True)
 
     name = models.CharField(
-        max_length=6,
+        max_length=15,
         null=True,
         blank=True,
     )

@@ -166,7 +166,7 @@ def _read_fieldpoint_rows(shp_path):
         for feature in layer:
             rows.append({
                 # gid is intentionally not read from the shapefile.
-                "name": _as_text(_field_value(feature, lookup, "name"), 6, "name"),
+                "name": _as_text(_field_value(feature, lookup, "name"), 15, "name"),
                 "easting": _as_decimal(
                     _field_value(feature, lookup, "easting", "east", "x"),
                     "easting",
