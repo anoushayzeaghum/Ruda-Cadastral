@@ -1,7 +1,20 @@
 import React, { useState } from "react";
-import { importMauza, importDistrict, importTehsil, importMauzaShapefile, importKhasra, importMurabba, } from "../services/api";
+import {
+  importMauza,
+  importDistrict,
+  importTehsil,
+  importMauzaShapefile,
+  importKhasra,
+  importMurabba,
+} from "../services/api";
 
-export default function ImportModal({ title = "Import", open, onClose, type = "mauza", onSuccess, }) {
+export default function ImportModal({
+  title = "Import",
+  open,
+  onClose,
+  type = "mauza",
+  onSuccess,
+}) {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState(null);
   const [tehsil, setTehsil] = useState("");
@@ -15,6 +28,25 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
     const f = e.target.files?.[0] ?? null;
     setFile(f);
     setFileName(f?.name ?? null);
+    setMessage(null);
+  };
+
+  const getErrorMessage = (error) => {
+    const apiData = error?.response?.data;
+
+    if (typeof apiData === "string" && apiData.trim()) {
+      return apiData;
+    }
+
+    if (apiData?.message) return apiData.message;
+    if (apiData?.detail) return apiData.detail;
+    if (apiData?.error) return apiData.error;
+
+    if (typeof apiData?.data === "string" && apiData.data.trim()) {
+      return apiData.data;
+    }
+
+    return error?.message || String(error);
   };
 
   const handleImport = async () => {
@@ -31,29 +63,34 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
 
       if (type === "district") {
         res = await importDistrict({ file });
-      }
-      else if (type === "tehsil") {
+      } else if (type === "tehsil") {
         res = await importTehsil({ file });
-      }
-      else if (type === "mauza") {
+      } else if (type === "mauza") {
         res = await importMauzaShapefile({ file });
-      }
-
-      else if (type === "khasra") {
+      } else if (type === "khasra") {
         res = await importKhasra({ file });
-      }
-
-      else if (type === "murabba") {
+      } else if (type === "murabba") {
+        // Kept for any existing screen that still uses this shared modal.
+        // The Khasra screen itself no longer displays a Murabba/Square column.
         res = await importMurabba({ file });
+      } else {
+        throw new Error(`Unsupported import type: ${type}`);
       }
-      setMessage({ type: "success", text: res.message || "Imported." });
-      if (onSuccess) onSuccess();
-      onClose?.();
 
+      setMessage({
+        type: "success",
+        text: res?.message || "Imported.",
+      });
+
+      if (onSuccess) {
+        await Promise.resolve(onSuccess());
+      }
+
+      onClose?.();
     } catch (e) {
       setMessage({
         type: "error",
-        text: e?.response?.data?.message || String(e),
+        text: getErrorMessage(e),
       });
     } finally {
       setLoading(false);
@@ -106,9 +143,20 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
                 ZIP must contain a valid shapefile (.shp, .shx, .dbf) and
                 ideally .prj
               </li>
-              <li>
-                Required attribute field: <strong>mauza_id</strong>
-              </li>
+
+              {type === "khasra" ? (
+                <li>
+                  Khasra attributes are matched from the shapefile dynamically.
+                  Include <strong>KH</strong> / <strong>KHASRA_ID</strong> (or{" "}
+                  <strong>JOIN_SHP</strong>) as a Khasra identifier. Missing
+                  optional attributes are saved as NULL.
+                </li>
+              ) : (
+                <li>
+                  Required attribute field: <strong>mauza_id</strong>
+                </li>
+              )}
+
               <li>Projection must be WGS84 (EPSG:4326)</li>
             </ul>
           </div>
@@ -116,7 +164,11 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
 
         {message && (
           <div
-            className={`mt-4 p-3 rounded ${message.type === "error" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}
+            className={`mt-4 p-3 rounded ${
+              message.type === "error"
+                ? "bg-red-50 text-red-700"
+                : "bg-green-50 text-green-700"
+            }`}
           >
             {message.text}
           </div>

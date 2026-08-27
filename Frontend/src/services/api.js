@@ -241,13 +241,15 @@ export const getMauzas = async (tehsil_id) => {
 };
 
 export const getKhasras = async (mauza_id) => {
-  const res = await API.get("/khasra/", {
-    params: { mauza_id },
-  });
-  console.log(res);
+  const params = {};
+
+  if (mauza_id !== undefined && mauza_id !== null && mauza_id !== "") {
+    params.mauza_id = mauza_id;
+  }
+
+  const res = await API.get("/khasra/", { params });
   return normalizeGeoJson(res);
 };
-
 
 export const importKhasra = async ({ file }) => {
   const formData = new FormData();
@@ -319,17 +321,27 @@ export const importMurabba = async ({ file }) => {
 ///////////////////////////////////////////////////////
 
 export const getDistrictBoundary = async (id) => {
-  const start = performance.now();
-
-  const res = await API.get(`/district/${id}/geojson`);
-
-  const apiTime = performance.now() - start;
-
-  const normalizeStart = performance.now();
-
+  // The backend router exposes /district/ but no /district/<id>/geojson route.
+  // Reuse the existing district list endpoint and return only the requested
+  // district so MapPanel keeps receiving the same FeatureCollection shape.
+  const res = await API.get("/district/");
   const geojson = normalizeGeoJson(res);
+  const requestedId = String(id);
 
-  return geojson;
+  return {
+    ...geojson,
+    features: geojson.features.filter((feature) => {
+      const properties = feature?.properties || {};
+      const candidateIds = [feature?.id, properties?.gid, properties?.id];
+
+      return candidateIds.some(
+        (candidate) =>
+          candidate !== undefined &&
+          candidate !== null &&
+          String(candidate) === requestedId,
+      );
+    }),
+  };
 };
 
 export const getTehsilBoundary = async (id) => {
@@ -545,7 +557,6 @@ export const getProposedRoadsList = async () => {
     };
   });
 };
-
 
 export const getProposedRoadsGeoJSON = async (gid = null) => {
   const res = await API.get(`/proposed-road/`);
@@ -867,7 +878,6 @@ export const getStateLandGeoJSON = async () => {
   const res = await API.get("/stateland/");
   return normalizeGeoJson(res);
 };
-
 
 ///////////////////////////////////////////////////////
 //////////////// BASE DATA APIs ///////////////////////

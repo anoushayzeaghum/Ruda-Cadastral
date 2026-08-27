@@ -16,7 +16,7 @@ mauza_mapping = {
     "mauza_id": "Mauza_ID",
     "geom": "MULTIPOLYGON",
 }
-
+ 
 
 def run_mauza_import(shp_path):
 

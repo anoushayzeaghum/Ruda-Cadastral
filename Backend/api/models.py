@@ -219,7 +219,7 @@ class Mauza(models.Model):
     kc_id = models.FloatField(
         db_column="kc_id",
         null=True,
-        blank=True,
+        blank=True, 
     )
 
     mauza = models.CharField(
