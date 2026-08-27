@@ -1,12 +1,28 @@
 import React, { useState } from "react";
 import {
-  importMauza,
   importDistrict,
   importTehsil,
   importMauzaShapefile,
   importKhasra,
   importMurabba,
+  importSquare,
+  importAcre,
+  importTrijunction,
+  importFieldPoints,
 } from "../services/api";
+
+const importHandlers = {
+  district: importDistrict,
+  tehsil: importTehsil,
+  mauza: importMauzaShapefile,
+  khasra: importKhasra,
+  // Kept for backward compatibility even though Murabba is removed from the admin menu.
+  murabba: importMurabba,
+  square: importSquare,
+  acre: importAcre,
+  trijunction: importTrijunction,
+  fieldpoints: importFieldPoints,
+};
 
 export default function ImportModal({
   title = "Import",
@@ -17,36 +33,16 @@ export default function ImportModal({
 }) {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState(null);
-  const [tehsil, setTehsil] = useState("");
-  const [mauza, setMauza] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
   if (!open) return null;
 
   const handleFile = (e) => {
-    const f = e.target.files?.[0] ?? null;
-    setFile(f);
-    setFileName(f?.name ?? null);
+    const selected = e.target.files?.[0] ?? null;
+    setFile(selected);
+    setFileName(selected?.name ?? null);
     setMessage(null);
-  };
-
-  const getErrorMessage = (error) => {
-    const apiData = error?.response?.data;
-
-    if (typeof apiData === "string" && apiData.trim()) {
-      return apiData;
-    }
-
-    if (apiData?.message) return apiData.message;
-    if (apiData?.detail) return apiData.detail;
-    if (apiData?.error) return apiData.error;
-
-    if (typeof apiData?.data === "string" && apiData.data.trim()) {
-      return apiData.data;
-    }
-
-    return error?.message || String(error);
   };
 
   const handleImport = async () => {
@@ -55,42 +51,28 @@ export default function ImportModal({
       return;
     }
 
+    const handler = importHandlers[type];
+    if (!handler) {
+      setMessage({ type: "error", text: `Unsupported import type: ${type}` });
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
     try {
-      let res;
-
-      if (type === "district") {
-        res = await importDistrict({ file });
-      } else if (type === "tehsil") {
-        res = await importTehsil({ file });
-      } else if (type === "mauza") {
-        res = await importMauzaShapefile({ file });
-      } else if (type === "khasra") {
-        res = await importKhasra({ file });
-      } else if (type === "murabba") {
-        // Kept for any existing screen that still uses this shared modal.
-        // The Khasra screen itself no longer displays a Murabba/Square column.
-        res = await importMurabba({ file });
-      } else {
-        throw new Error(`Unsupported import type: ${type}`);
-      }
-
-      setMessage({
-        type: "success",
-        text: res?.message || "Imported.",
-      });
-
-      if (onSuccess) {
-        await Promise.resolve(onSuccess());
-      }
-
+      const res = await handler({ file });
+      setMessage({ type: "success", text: res?.message || "Imported." });
+      await onSuccess?.();
       onClose?.();
     } catch (e) {
       setMessage({
         type: "error",
-        text: getErrorMessage(e),
+        text:
+          e?.response?.data?.message ||
+          e?.response?.data?.detail ||
+          e?.message ||
+          String(e),
       });
     } finally {
       setLoading(false);
@@ -108,56 +90,24 @@ export default function ImportModal({
         </div>
 
         <p className="text-sm text-gray-500 mt-2">
-          Select a ZIP file containing shapefile components (.shp, .prj, .dbf).
-          The shapefile must use WGS84 (EPSG:4326).
+          Select one ZIP file containing a shapefile. The ZIP should contain
+          .shp, .shx and .dbf files; .prj is strongly recommended.
         </p>
 
         <div className="mt-4 grid grid-cols-1 gap-3">
-          {type === "mauza" && (
-            <>
-              <label className="text-sm">Tehsil (optional override)</label>
-              <input
-                value={tehsil}
-                onChange={(e) => setTehsil(e.target.value)}
-                className="border rounded px-3 py-2"
-              />
-
-              <label className="text-sm">Mauza (optional override)</label>
-              <input
-                value={mauza}
-                onChange={(e) => setMauza(e.target.value)}
-                className="border rounded px-3 py-2"
-              />
-            </>
-          )}
-
-          <input type="file" accept=".zip" onChange={handleFile} />
+          <input type="file" accept=".zip,application/zip" onChange={handleFile} />
         </div>
 
-        <div className="mt-4 text-sm text-gray-600">
+        <div className="mt-4 text-sm text-gray-600 dark:text-gray-300">
           <div>Selected file: {fileName ?? "None"}</div>
           <div className="mt-2 text-xs text-gray-500">
-            Requirements:
-            <ul className="list-disc ml-5">
+            <ul className="list-disc ml-5 space-y-1">
+              <li>ZIP must contain exactly one shapefile.</li>
+              <li>Geometry is stored as EPSG:4326.</li>
               <li>
-                ZIP must contain a valid shapefile (.shp, .shx, .dbf) and
-                ideally .prj
+                Attribute names are matched case-insensitively to the target model
+                fields (for example GID/gid, Mauza_ID/mauza_id).
               </li>
-
-              {type === "khasra" ? (
-                <li>
-                  Khasra attributes are matched from the shapefile dynamically.
-                  Include <strong>KH</strong> / <strong>KHASRA_ID</strong> (or{" "}
-                  <strong>JOIN_SHP</strong>) as a Khasra identifier. Missing
-                  optional attributes are saved as NULL.
-                </li>
-              ) : (
-                <li>
-                  Required attribute field: <strong>mauza_id</strong>
-                </li>
-              )}
-
-              <li>Projection must be WGS84 (EPSG:4326)</li>
             </ul>
           </div>
         </div>
@@ -181,7 +131,7 @@ export default function ImportModal({
           <button
             onClick={handleImport}
             disabled={loading}
-            className="bg-green-600 text-white px-4 py-2 rounded"
+            className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-60"
           >
             {loading ? "Importing..." : "Import"}
           </button>

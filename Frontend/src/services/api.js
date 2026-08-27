@@ -264,6 +264,31 @@ export const importKhasra = async ({ file }) => {
   return res.data;
 };
 
+const importSpatialShapefile = async (endpoint, { file }) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await API.post(endpoint, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return res.data;
+};
+
+export const importSquare = ({ file }) =>
+  importSpatialShapefile("/import/square/", { file });
+
+export const importAcre = ({ file }) =>
+  importSpatialShapefile("/import/acre/", { file });
+
+export const importTrijunction = ({ file }) =>
+  importSpatialShapefile("/import/trijunction/", { file });
+
+export const importFieldPoints = ({ file }) =>
+  importSpatialShapefile("/import/fieldpoints/", { file });
+
 export const getMurabbas = async (mauza_id) => {
   const res = await API.get("/murabba/", {
     params: { mauza_id },
@@ -592,11 +617,12 @@ export const getProposedRoadsGeoJSON = async (gid = null) => {
 ///////////////////////////////////////////////////////
 
 export const getTrijunctionPoints = async () => {
-  // Trijunction table has no mauza_id/type filter fields in the DB.
-  // Fetch all points and let Mapview spatially clip/filter them to the open Mauza/Khasra area.
   const res = await API.get("/trijunction/");
   return normalizeGeoJson(res);
 };
+
+// Admin-page alias. Keep getTrijunctionPoints above for existing map code.
+export const getTrijunctions = async () => getTrijunctionPoints();
 
 export const getGeodeticNetworkGeoJSON = async () => {
   const res = await API.get("/geodeticnetwork/");

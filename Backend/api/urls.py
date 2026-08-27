@@ -5,6 +5,11 @@ from api.views import *
 from api.views.RudaMasterPlan import *
 from api.views.GISMetaverse import *
 
+from api.views.SquareView.import_square_shapefile import import_square_shapefile
+from api.views.AcreView.import_acre_shapefile import import_acre_shapefile
+from api.views.Trijunction.import_trijunction_shapefile import import_trijunction_shapefile
+from api.views.FieldPointsView.import_fieldpoints_shapefile import import_fieldpoints_shapefile
+
 from api.views.RudaMasterPlan.RudaNotifiedPhasesBoundary import (
     CreateRudaNotifiedPhasesBoundaryView,
     DeleteRudaNotifiedPhasesBoundaryView,
@@ -327,8 +332,13 @@ urlpatterns = [
     path("import/district/", import_district_shapefile),
     path("import/tehsil/", import_tehsil_shapefile),
     path("import/mauza/", import_mauza_shapefile),
-    # path("import/square/", import_square_shapefile),
     path("import/khasra/", import_khasra_shapefile),
+
+    # Admin ZIP shapefile imports for existing GIS tables.
+    path("import/square/", import_square_shapefile),
+    path("import/acre/", import_acre_shapefile),
+    path("import/trijunction/", import_trijunction_shapefile),
+    path("import/fieldpoints/", import_fieldpoints_shapefile),
 
     path(
         "plot-options/",

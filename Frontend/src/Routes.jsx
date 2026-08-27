@@ -11,6 +11,10 @@ import Tehsil from "./pages/Area Management/Tehsil";
 import Mauza from "./pages/Area Management/Mauza";
 import Khasra from "./pages/Area Management/Khasra";
 import Murabba from "./pages/Area Management/Murabba";
+import Square from "./pages/Area Management/Square";
+import Acre from "./pages/Area Management/Acre";
+import Trijunction from "./pages/Area Management/Trijunction";
+import FieldPoints from "./pages/Area Management/FieldPoints";
 import AreaLayout from "./layouts/AreaLayout";
 import Demarcation from "./pages/Demarcation/Demarcation";
 import ProtectedRoute from "./pages/Auth/ProtectedRoute";
@@ -46,13 +50,20 @@ const AppRoutes = () => {
           <Route path="/gis-metaverse" element={<MetaverseDashboard />} />
           <Route path="/flyto-dashboard" element={<FlyToDashboard />} />
           <Route path="/masterplan" element={<MasterPlanDashboard />} />
-          <Route path="/society-3d-upload" element={<Society3DMapUploadPage />} />
+          <Route
+            path="/society-3d-upload"
+            element={<Society3DMapUploadPage />}
+          />
 
           <Route path="/area" element={<AreaLayout />}>
             <Route path="district" element={<District />} />
             <Route path="tehsil" element={<Tehsil />} />
             <Route path="mauza" element={<Mauza />} />
             <Route path="khasra" element={<Khasra />} />
+            <Route path="square" element={<Square />} />
+            <Route path="acre" element={<Acre />} />
+            <Route path="trijunction" element={<Trijunction />} />
+            <Route path="fieldpoints" element={<FieldPoints />} />
             <Route path="murabba" element={<Murabba />} />
             <Route
               path="society-3d-upload"

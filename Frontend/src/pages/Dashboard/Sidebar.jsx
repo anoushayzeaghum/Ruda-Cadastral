@@ -18,7 +18,10 @@ export default function Sidebar({ sidebarOpen }) {
   const isMauzaGroupPath =
     location.pathname === "/area/mauza" ||
     location.pathname === "/area/khasra" ||
-    location.pathname === "/area/murabba";
+    location.pathname === "/area/square" ||
+    location.pathname === "/area/acre" ||
+    location.pathname === "/area/trijunction" ||
+    location.pathname === "/area/fieldpoints";
 
   const menu = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -34,7 +37,10 @@ export default function Sidebar({ sidebarOpen }) {
 
   const mauzaItems = [
     { label: "Khasra", path: "/area/khasra" },
-    { label: "Murabba", path: "/area/murabba" },
+    { label: "Square", path: "/area/square" },
+    { label: "Acre", path: "/area/acre" },
+    { label: "Trijunction", path: "/area/trijunction" },
+    { label: "Field Points", path: "/area/fieldpoints" },
   ];
 
   const [areaOpen, setAreaOpen] = useState(false);
@@ -162,7 +168,7 @@ export default function Sidebar({ sidebarOpen }) {
                   {it.path === "/area/mauza" && (
                     <div
                       className={`mt-1 space-y-1 pl-5 overflow-hidden transition-all ${
-                        mauzaOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                        mauzaOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
                       }`}
                     >
                       {mauzaItems.map((sub) => (
