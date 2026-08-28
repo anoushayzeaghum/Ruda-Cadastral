@@ -152,7 +152,10 @@ function DashboardSidebar({ sidebarOpen }) {
   const isMauzaGroupPath =
     location.pathname === "/area/mauza" ||
     location.pathname === "/area/khasra" ||
-    location.pathname === "/area/murabba";
+    location.pathname === "/area/square" ||
+    location.pathname === "/area/acre" ||
+    location.pathname === "/area/trijunction" ||
+    location.pathname === "/area/fieldpoints";
 
   const menu = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -164,7 +167,10 @@ function DashboardSidebar({ sidebarOpen }) {
   ];
   const mauzaItems = [
     { label: "Khasra", path: "/area/khasra" },
-    { label: "Murabba", path: "/area/murabba" },
+    { label: "Square", path: "/area/square" },
+    { label: "Acre", path: "/area/acre" },
+    { label: "Trijunction", path: "/area/trijunction" },
+    { label: "Field Points", path: "/area/fieldpoints" },
   ];
 
   const [areaOpen, setAreaOpen] = useState(false);
@@ -272,7 +278,7 @@ function DashboardSidebar({ sidebarOpen }) {
                   {it.path === "/area/mauza" && (
                     <div
                       className={`mt-1 space-y-1 pl-5 overflow-hidden transition-all ${
-                        mauzaOpen ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+                        mauzaOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
                       }`}
                     >
                       {mauzaItems.map((sub) => (
@@ -397,23 +403,26 @@ function StatTicker() {
    at once (unlike the rotating ticker) so nothing is hidden.
    ============================================================ */
 const TONE_GRADIENTS = {
-  green:  "from-[#0B7A3B]/10 via-transparent to-transparent dark:from-[#0B7A3B]/20",
-  cyan:   "from-[#0B87C7]/10 via-transparent to-transparent dark:from-[#0B87C7]/20",
-  amber:  "from-[#c8811a]/10 via-transparent to-transparent dark:from-[#c8811a]/20",
-  violet: "from-[#6d28d9]/10 via-transparent to-transparent dark:from-[#6d28d9]/20",
+  green:
+    "from-[#0B7A3B]/10 via-transparent to-transparent dark:from-[#0B7A3B]/20",
+  cyan: "from-[#0B87C7]/10 via-transparent to-transparent dark:from-[#0B87C7]/20",
+  amber:
+    "from-[#c8811a]/10 via-transparent to-transparent dark:from-[#c8811a]/20",
+  violet:
+    "from-[#6d28d9]/10 via-transparent to-transparent dark:from-[#6d28d9]/20",
 };
 
 const TONE_BORDER = {
-  green:  "border-[#0B7A3B]/20 dark:border-[#0B7A3B]/30",
-  cyan:   "border-[#0B87C7]/20 dark:border-[#0B87C7]/30",
-  amber:  "border-[#c8811a]/20 dark:border-[#c8811a]/30",
+  green: "border-[#0B7A3B]/20 dark:border-[#0B7A3B]/30",
+  cyan: "border-[#0B87C7]/20 dark:border-[#0B87C7]/30",
+  amber: "border-[#c8811a]/20 dark:border-[#c8811a]/30",
   violet: "border-[#6d28d9]/20 dark:border-[#6d28d9]/30",
 };
 
 const TONE_DIVIDER = {
-  green:  "bg-[#0B7A3B]/15 dark:bg-[#70D84F]/20",
-  cyan:   "bg-[#0B87C7]/15 dark:bg-[#4CCBFF]/20",
-  amber:  "bg-[#c8811a]/15 dark:bg-[#f5b942]/20",
+  green: "bg-[#0B7A3B]/15 dark:bg-[#70D84F]/20",
+  cyan: "bg-[#0B87C7]/15 dark:bg-[#4CCBFF]/20",
+  amber: "bg-[#c8811a]/15 dark:bg-[#f5b942]/20",
   violet: "bg-[#6d28d9]/15 dark:bg-[#a78bfa]/20",
 };
 
@@ -431,7 +440,9 @@ function GroupCard({ group }) {
       overflow-hidden shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 group`}
     >
       {/* Top gradient wash */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${grad} pointer-events-none`} />
+      <div
+        className={`absolute inset-0 bg-gradient-to-br ${grad} pointer-events-none`}
+      />
 
       {/* Content */}
       <div className="relative px-4 pt-4 pb-4">
@@ -533,7 +544,6 @@ export default function Dashboard() {
           <main className="min-h-0 flex-1 overflow-hidden bg-slate-50/60 dark:bg-[#0b0f14]">
             <div className="h-full overflow-y-auto px-3 pt-4 pb-4 xl:px-5 xl:pt-4 xl:pb-5">
               <div className="space-y-4 max-w-[1600px] mx-auto">
-
                 {/* ── Page header ─────────────────────────────── */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
                   <div className="flex items-center gap-3">
@@ -543,7 +553,8 @@ export default function Dashboard() {
                         Dashboard Overview
                       </h2>
                       <p className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 mt-1">
-                        LIS · RUDA Metaverse · RTW Packages · Chahar Bagh — live snapshot
+                        LIS · RUDA Metaverse · RTW Packages · Chahar Bagh — live
+                        snapshot
                       </p>
                     </div>
                   </div>
@@ -564,8 +575,13 @@ export default function Dashboard() {
                   <div className="relative h-[300px] sm:h-[360px] xl:h-[390px] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm group">
                     {/* Map label overlay */}
                     <div className="absolute top-3 left-3 z-10 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm border border-slate-200/60 dark:border-slate-700/60">
-                      <MapIcon size={13} className="text-[#0B7A3B] dark:text-[#70D84F]" />
-                      <span className="text-[11px] font-bold text-slate-700 dark:text-white tracking-tight">District &amp; RUDA Phases</span>
+                      <MapIcon
+                        size={13}
+                        className="text-[#0B7A3B] dark:text-[#70D84F]"
+                      />
+                      <span className="text-[11px] font-bold text-slate-700 dark:text-white tracking-tight">
+                        District &amp; RUDA Phases
+                      </span>
                     </div>
                     <MapPanel />
                   </div>
@@ -578,7 +594,6 @@ export default function Dashboard() {
                 <div className="h-[300px] sm:h-[350px]">
                   <BarChart />
                 </div>
-
               </div>
             </div>
           </main>

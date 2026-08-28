@@ -1,20 +1,48 @@
 import React, { useState } from "react";
-import { importMauza, importDistrict, importTehsil, importMauzaShapefile, importKhasra, importMurabba, } from "../services/api";
+import {
+  importDistrict,
+  importTehsil,
+  importMauzaShapefile,
+  importKhasra,
+  importMurabba,
+  importSquare,
+  importAcre,
+  importTrijunction,
+  importFieldPoints,
+} from "../services/api";
 
-export default function ImportModal({ title = "Import", open, onClose, type = "mauza", onSuccess, }) {
+const importHandlers = {
+  district: importDistrict,
+  tehsil: importTehsil,
+  mauza: importMauzaShapefile,
+  khasra: importKhasra,
+  // Kept for backward compatibility even though Murabba is removed from the admin menu.
+  murabba: importMurabba,
+  square: importSquare,
+  acre: importAcre,
+  trijunction: importTrijunction,
+  fieldpoints: importFieldPoints,
+};
+
+export default function ImportModal({
+  title = "Import",
+  open,
+  onClose,
+  type = "mauza",
+  onSuccess,
+}) {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState(null);
-  const [tehsil, setTehsil] = useState("");
-  const [mauza, setMauza] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
   if (!open) return null;
 
   const handleFile = (e) => {
-    const f = e.target.files?.[0] ?? null;
-    setFile(f);
-    setFileName(f?.name ?? null);
+    const selected = e.target.files?.[0] ?? null;
+    setFile(selected);
+    setFileName(selected?.name ?? null);
+    setMessage(null);
   };
 
   const handleImport = async () => {
@@ -23,37 +51,28 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
       return;
     }
 
+    const handler = importHandlers[type];
+    if (!handler) {
+      setMessage({ type: "error", text: `Unsupported import type: ${type}` });
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
     try {
-      let res;
-
-      if (type === "district") {
-        res = await importDistrict({ file });
-      }
-      else if (type === "tehsil") {
-        res = await importTehsil({ file });
-      }
-      else if (type === "mauza") {
-        res = await importMauzaShapefile({ file });
-      }
-
-      else if (type === "khasra") {
-        res = await importKhasra({ file });
-      }
-
-      else if (type === "murabba") {
-        res = await importMurabba({ file });
-      }
-      setMessage({ type: "success", text: res.message || "Imported." });
-      if (onSuccess) onSuccess();
+      const res = await handler({ file });
+      setMessage({ type: "success", text: res?.message || "Imported." });
+      await onSuccess?.();
       onClose?.();
-
     } catch (e) {
       setMessage({
         type: "error",
-        text: e?.response?.data?.message || String(e),
+        text:
+          e?.response?.data?.message ||
+          e?.response?.data?.detail ||
+          e?.message ||
+          String(e),
       });
     } finally {
       setLoading(false);
@@ -71,52 +90,35 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
         </div>
 
         <p className="text-sm text-gray-500 mt-2">
-          Select a ZIP file containing shapefile components (.shp, .prj, .dbf).
-          The shapefile must use WGS84 (EPSG:4326).
+          Select one ZIP file containing a shapefile. The ZIP should contain
+          .shp, .shx and .dbf files; .prj is strongly recommended.
         </p>
 
         <div className="mt-4 grid grid-cols-1 gap-3">
-          {type === "mauza" && (
-            <>
-              <label className="text-sm">Tehsil (optional override)</label>
-              <input
-                value={tehsil}
-                onChange={(e) => setTehsil(e.target.value)}
-                className="border rounded px-3 py-2"
-              />
-
-              <label className="text-sm">Mauza (optional override)</label>
-              <input
-                value={mauza}
-                onChange={(e) => setMauza(e.target.value)}
-                className="border rounded px-3 py-2"
-              />
-            </>
-          )}
-
-          <input type="file" accept=".zip" onChange={handleFile} />
+          <input type="file" accept=".zip,application/zip" onChange={handleFile} />
         </div>
 
-        <div className="mt-4 text-sm text-gray-600">
+        <div className="mt-4 text-sm text-gray-600 dark:text-gray-300">
           <div>Selected file: {fileName ?? "None"}</div>
           <div className="mt-2 text-xs text-gray-500">
-            Requirements:
-            <ul className="list-disc ml-5">
+            <ul className="list-disc ml-5 space-y-1">
+              <li>ZIP must contain exactly one shapefile.</li>
+              <li>Geometry is stored as EPSG:4326.</li>
               <li>
-                ZIP must contain a valid shapefile (.shp, .shx, .dbf) and
-                ideally .prj
+                Attribute names are matched case-insensitively to the target model
+                fields (for example GID/gid, Mauza_ID/mauza_id).
               </li>
-              <li>
-                Required attribute field: <strong>mauza_id</strong>
-              </li>
-              <li>Projection must be WGS84 (EPSG:4326)</li>
             </ul>
           </div>
         </div>
 
         {message && (
           <div
-            className={`mt-4 p-3 rounded ${message.type === "error" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}
+            className={`mt-4 p-3 rounded ${
+              message.type === "error"
+                ? "bg-red-50 text-red-700"
+                : "bg-green-50 text-green-700"
+            }`}
           >
             {message.text}
           </div>
@@ -129,7 +131,7 @@ export default function ImportModal({ title = "Import", open, onClose, type = "m
           <button
             onClick={handleImport}
             disabled={loading}
-            className="bg-green-600 text-white px-4 py-2 rounded"
+            className="bg-green-600 text-white px-4 py-2 rounded disabled:opacity-60"
           >
             {loading ? "Importing..." : "Import"}
           </button>

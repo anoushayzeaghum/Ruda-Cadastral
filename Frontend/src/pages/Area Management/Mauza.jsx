@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { getMauzas, getTehsils } from "../../services/api";
+import { getMauzas } from "../../services/api";
 import ImportModal from "../../components/ImportModal";
 
 export default function Mauza() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [tehsils, setTehsils] = useState([]);
   const [showImport, setShowImport] = useState(false);
   const [showFields, setShowFields] = useState(false);
 
@@ -32,16 +31,7 @@ export default function Mauza() {
 
   useEffect(() => {
     fetchMauzas();
-
-    (async () => {
-      try {
-        const t = await getTehsils();
-        setTehsils(t || []);
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-}, []);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -51,45 +41,20 @@ export default function Mauza() {
           Import a new mauza or edit an existing one.
         </p>
 
-        <div className="mt-6 grid grid-cols-12 gap-4 items-center">
-          <div className="col-span-4">
-            <label className="block text-xs text-gray-500 mb-1">TEHSIL</label>
-            <select className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]">
-              <option value="">Select tehsil</option>
-              {tehsils.map((t) => (
-                <option key={t.id ?? t.gid} value={t.id ?? t.gid}>
-                  {t.name ?? t.tehsil}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* <div className="col-span-5">
-            <label className="block text-xs text-gray-500 mb-1">
-              MOUZA NAME
-            </label>
-            <input
-              className="w-full rounded-md border px-3 py-2 text-sm bg-white dark:bg-[#0b1419]"
-              placeholder="Enter mauza name"
-            />
-          </div> */}
-
-           <div className="col-span-8 flex gap-3 justify-end">
-            <ImportModal
-              title="Import Mauza"
-              open={showImport}
-              onClose={() => setShowImport(false)}
-              type="mauza"
-              onSuccess={fetchMauzas}
-            />
-            <button
-              onClick={() => setShowImport(true)}
-              className="bg-red-600 text-white px-4 py-2 rounded-md"
-            >
-              Import Mauza
-            </button>
-            <button className="border px-4 py-2 rounded-md">Clear</button>
-          </div>
+        <div className="mt-6 flex justify-end">
+          <ImportModal
+            title="Import Mauza"
+            open={showImport}
+            onClose={() => setShowImport(false)}
+            type="mauza"
+            onSuccess={fetchMauzas}
+          />
+          <button
+            onClick={() => setShowImport(true)}
+            className="bg-red-600 text-white px-4 py-2 rounded-md"
+          >
+            Import Mauza
+          </button>
         </div>
       </div>
 

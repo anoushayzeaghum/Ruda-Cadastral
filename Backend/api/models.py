@@ -219,7 +219,7 @@ class Mauza(models.Model):
     kc_id = models.FloatField(
         db_column="kc_id",
         null=True,
-        blank=True,
+        blank=True, 
     )
 
     mauza = models.CharField(
@@ -964,7 +964,7 @@ class FieldPoints(models.Model):
     gid = models.IntegerField(primary_key=True)
 
     name = models.CharField(
-        max_length=6,
+        max_length=15,
         null=True,
         blank=True,
     )

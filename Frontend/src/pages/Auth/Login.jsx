@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
@@ -10,6 +10,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectTo = location.state?.redirectTo || "/landing";
+  const redirectExternal = Boolean(location.state?.external);
 
   const [mounted, setMounted] = useState(false);
   const [showOfficial, setShowOfficial] = useState(false);
@@ -98,7 +102,12 @@ export default function Login() {
         localStorage.removeItem("user");
       }
 
-      navigate("/landing");
+      if (redirectExternal) {
+        window.location.assign(redirectTo);
+        return;
+      }
+
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error("Login error:", error);
       setErrorMessage("Unable to sign in right now. Please try again.");
