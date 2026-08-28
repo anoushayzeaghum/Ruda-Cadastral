@@ -56,11 +56,11 @@ export const PROJECT_DRONE_DATA = {
         id: "jan2023",
         label: "Jan 2023",
         shortLabel: "Jan 2023",
-        reportLabel: "AsBuilt Jan 2023",
+        reportLabel: "Ortho Jan 2023",
         captureDate: "2023-01-01",
         color: "#a855f7",
         tileUrl:
-          "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_AsBuilt_Jan2023/{z}/{x}/{y}.png",
+          "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Ortho_Nov2024/{z}/{x}/{y}.png",
       },
       {
         id: "june2023",
@@ -71,16 +71,6 @@ export const PROJECT_DRONE_DATA = {
         color: "#3b82f6",
         tileUrl:
           "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Ortho_June2023/{z}/{x}/{y}.png",
-      },
-      {
-        id: "nov2024",
-        label: "Nov 2024",
-        shortLabel: "Nov 2024",
-        reportLabel: "Ortho Nov 2024",
-        captureDate: "2024-11-01",
-        color: "#ef4444",
-        tileUrl:
-          "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chahar_Bagh_Ortho_Nov2024/{z}/{x}/{y}.png",
       },
       {
         id: "apr2026",
