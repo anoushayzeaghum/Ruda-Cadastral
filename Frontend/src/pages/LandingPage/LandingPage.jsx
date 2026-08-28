@@ -776,6 +776,20 @@ export default function LandingPage() {
   const [arcServerOpen, setArcServerOpen] = useState(false);
   const arcServerRef = useRef(null);
 
+  // The landing page is public. Every RUDA application is entered through
+  // the login page so authentication happens immediately before opening it.
+  const openProtectedApp = ({ route, externalUrl }) => {
+    const redirectTo = externalUrl || route;
+    if (!redirectTo) return;
+
+    navigate("/login", {
+      state: {
+        redirectTo,
+        external: Boolean(externalUrl),
+      },
+    });
+  };
+
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -954,7 +968,7 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <button
-              onClick={() => navigate("/Mapview")}
+              onClick={() => openProtectedApp({ route: "/Mapview" })}
               className="hidden sm:flex items-center gap-1.5 sm:gap-2 bg-[#0B7A3B] hover:bg-[#004225] text-white text-xs sm:text-sm font-bold px-3 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all hover:shadow-lg hover:-translate-y-px"
             >
               Open Map <ArrowRight size={13} />
@@ -1003,7 +1017,7 @@ export default function LandingPage() {
             </div>
 
             <button
-              onClick={() => navigate("/Mapview")}
+              onClick={() => openProtectedApp({ route: "/Mapview" })}
               className="mt-2 flex items-center justify-center gap-2 bg-[#0B7A3B] text-white text-sm font-bold px-5 py-3 rounded-full"
             >
               Open Map <ArrowRight size={15} />
@@ -1360,12 +1374,12 @@ export default function LandingPage() {
                   return (
                     <div
                       key={item.title}
-                      onClick={() => navigate(item.route)}
+                      onClick={() => openProtectedApp({ route: item.route })}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
-                          navigate(item.route);
+                          openProtectedApp({ route: item.route });
                         }
                       }}
                       className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_34px_-24px_rgba(0,66,37,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-[#49B84A]/60 hover:shadow-[0_18px_38px_-20px_rgba(11,122,59,0.35)]"
@@ -1387,7 +1401,7 @@ export default function LandingPage() {
               </div>
 
               <button
-                onClick={() => navigate("/Mapview")}
+                onClick={() => openProtectedApp({ route: "/Mapview" })}
                 className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#0B7A3B] px-5 py-3 text-sm font-black text-white shadow-[0_14px_28px_-14px_rgba(11,122,59,0.75)] transition-all hover:-translate-y-0.5 hover:bg-[#004225] sm:px-7 sm:py-3.5 sm:text-base"
               >
                 Explore the Platform <ArrowRight size={16} />
@@ -1492,18 +1506,9 @@ export default function LandingPage() {
                     gradientFrom={gradientFrom}
                     gradientTo={gradientTo}
                     tags={tags}
-                    onClick={() => {
-                      if (externalUrl) {
-                        window.open(
-                          externalUrl,
-                          "_blank",
-                          "noopener,noreferrer",
-                        );
-                        return;
-                      }
-
-                      if (route) navigate(route);
-                    }}
+                    onClick={() =>
+                      openProtectedApp({ route, externalUrl })
+                    }
                   />
                 </div>
               ),
