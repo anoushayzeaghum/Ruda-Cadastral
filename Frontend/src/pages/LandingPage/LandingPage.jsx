@@ -781,6 +781,30 @@ export default function LandingPage() {
     const redirectTo = externalUrl || route;
     if (!redirectTo) return;
 
+    const accessToken = localStorage.getItem("accessToken");
+    const expiresAt = Number(localStorage.getItem("sessionExpiresAt") || 0);
+
+    const hasActiveSession = Boolean(accessToken) && expiresAt > Date.now();
+
+    if (hasActiveSession) {
+      const targetUrl = externalUrl
+        ? redirectTo
+        : new URL(redirectTo, window.location.origin).toString();
+
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // Remove stale authentication before showing login.
+    if (accessToken || expiresAt) {
+      ["accessToken", "refreshToken", "user", "sessionExpiresAt"].forEach(
+        (key) => {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        },
+      );
+    }
+
     const loginUrl = new URL("/login", window.location.origin);
     loginUrl.searchParams.set("redirectTo", redirectTo);
 

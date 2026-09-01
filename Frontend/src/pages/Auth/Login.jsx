@@ -8,6 +8,54 @@ import RudaFirmLogo from "../../assets/Rudafirm.png";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const SESSION_DURATION_MS = 2 * 60 * 60 * 1000;
+
+const AUTH_KEYS = ["accessToken", "refreshToken", "user", "sessionExpiresAt"];
+
+const clearAuth = () => {
+  AUTH_KEYS.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+};
+
+const getJwtExpiry = (token) => {
+  if (!token) return 0;
+
+  try {
+    const payloadPart = token.split(".")[1];
+    if (!payloadPart) return 0;
+
+    const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+
+    const payload = JSON.parse(atob(padded));
+
+    return payload?.exp ? payload.exp * 1000 : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const hasValidStoredSession = () => {
+  const token = localStorage.getItem("accessToken");
+  const clientExpiry = Number(localStorage.getItem("sessionExpiresAt") || 0);
+  const jwtExpiry = getJwtExpiry(token);
+
+  const effectiveExpiry =
+    clientExpiry && jwtExpiry
+      ? Math.min(clientExpiry, jwtExpiry)
+      : clientExpiry || jwtExpiry;
+
+  if (!token || !effectiveExpiry || Date.now() >= effectiveExpiry) {
+    clearAuth();
+    return false;
+  }
+
+  return true;
+};
+
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,6 +79,17 @@ export default function Login() {
 
   const earthVideoRef = useRef(null);
   const officialVideoRef = useRef(null);
+
+  useEffect(() => {
+    if (!hasValidStoredSession()) return;
+
+    if (redirectExternal) {
+      window.location.replace(redirectTo);
+      return;
+    }
+
+    navigate(redirectTo, { replace: true });
+  }, [navigate, redirectTo, redirectExternal]);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 70);
@@ -86,13 +145,15 @@ export default function Login() {
         setErrorMessage(data?.message || "Email or password is incorrect.");
         return;
       }
-
       const auth = data?.data || {};
-      const storage = rememberMe ? localStorage : sessionStorage;
+      const accessToken = auth.access || auth.token || "";
+      const refreshToken = auth.refresh || "";
 
-      storage.setItem("accessToken", auth.access || auth.token || "");
-      storage.setItem("refreshToken", auth.refresh || "");
-      storage.setItem(
+      clearAuth();
+
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+      localStorage.setItem(
         "user",
         JSON.stringify({
           id: auth.id,
@@ -104,11 +165,11 @@ export default function Login() {
         }),
       );
 
-      if (!rememberMe) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-      }
+      // Shared browser session: valid for 2 hours in every same-origin tab.
+      localStorage.setItem(
+        "sessionExpiresAt",
+        String(Date.now() + SESSION_DURATION_MS),
+      );
 
       if (redirectExternal) {
         window.location.assign(redirectTo);
