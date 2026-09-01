@@ -282,7 +282,7 @@ const GIS_APPS = [
   {
     icon: <Smartphone size={22} />,
     title: "RUDA Masterplan",
-    desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
+    desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries.",
     img: "/s6.png",
     route: "/masterplan",
     gradientFrom: "#0B7A3B",
@@ -1484,10 +1484,6 @@ export default function LandingPage() {
       <section id="apps" className="py-10 sm:py-14 md:py-16 bg-slate-50">
         <div className="max-w-8xl mx-auto px-4 sm:px-5">
           <div className="text-center mb-7 sm:mb-10">
-            {/* <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
-              GIS Applications
-            </div> */}
-
             <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 mb-3 sm:mb-4">
               RUDA GIS METAVERSE COMPONENTS
             </h2>
@@ -1518,7 +1514,7 @@ export default function LandingPage() {
               ) => (
                 <div
                   key={title}
-                  className="w-full xs:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.95rem)]"
+                  className="w-full xs:w-[calc(50%-0.5rem)] lg:w-[calc(33.33%-4.95rem)]"
                 >
                   <AppCard
                     index={i}
