@@ -1,5 +1,5 @@
 import Society3DMapUploadPage from "./pages/Cesium3DModelUpload/Society3DMapPage";
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 import React from "react";
 import MainLayout from "./layouts/MainLayout";
 import MapPage from "./pages/Mapview/MapPage";
@@ -28,22 +28,20 @@ import MasterPlanDashboard from "./pages/MasterPlan/MasterPlanDashboard";
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Public entry points */}
+      <Route path="/" element={<Navigate to="/landing" replace />} />
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
+      {/* Everything below requires authentication. */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
-          {/* Main page after login */}
-          <Route path="/" element={<LandingPage />} />
-
-          {/* Optional direct landing route */}
-          <Route path="/landing" element={<LandingPage />} />
-
           {/* Admin dashboard */}
           <Route path="/dashboard" element={<Dashboard />} />
 
           <Route path="/demarcation" element={<Demarcation />} />
-          <Route path="/mapview" element={<MapPage />} />
+          <Route path="/Mapview" element={<MapPage />} />
           <Route path="/cadastral-map" element={<MapPage />} />
           <Route path="/society-map" element={<SocietyMapPage />} />
           <Route path="/society-3d" element={<Society3DMapPage />} />
