@@ -38,7 +38,8 @@ const uniqueSorted = (items = []) =>
 
 function SearchableSelect({
   value,
-  placeholder,
+  label,
+  placeholder = "Select",
   disabled,
   options = [],
   onChange,
@@ -129,10 +130,19 @@ function SearchableSelect({
         type="button"
         disabled={disabled}
         onClick={handleToggle}
-        className={`${className} flex items-center justify-between gap-1 disabled:cursor-not-allowed disabled:opacity-60`}
+        className={`${className} flex items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60`}
       >
-        <span className="truncate">{selectedOption?.label || placeholder}</span>
-        <span className="text-[10px] leading-none">▾</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[8px] sm:text-[9px] font-medium leading-none text-[#7b8794]">
+            {label}
+          </span>
+          <span className="mt-0.5 block truncate text-[10px] sm:text-xs font-semibold leading-none text-[#06291f]">
+            {selectedOption?.label || placeholder}
+          </span>
+        </span>
+        <span className="shrink-0 text-[10px] leading-none text-[#8b96a1]">
+          ▾
+        </span>
       </button>
 
       {open &&
@@ -153,21 +163,13 @@ function SearchableSelect({
                 autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={`Search ${placeholder}`}
+                placeholder={`Search ${label}`}
                 className="h-6 sm:h-7 w-full rounded border border-gray-300 px-1.5 sm:px-2 text-[10px] sm:text-xs font-semibold text-[#06291f] outline-none"
               />
             </div>
 
             <div className="max-h-48 sm:max-h-52 overflow-y-auto py-1">
-              <button
-                type="button"
-                onClick={() => handleSelect("")}
-                className={`block w-full px-1.5 sm:px-2 py-1 sm:py-1.5 text-left text-[10px] sm:text-xs font-semibold text-[#06291f] hover:bg-gray-100 ${
-                  value === "" ? "bg-gray-100" : ""
-                }`}
-              >
-                {placeholder}
-              </button>
+            
 
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option) => (
@@ -228,8 +230,8 @@ export default function MetaverseSubHeader({
         console.error("PROJECTS ERROR:", err);
       });
   }, []);
-  
-// Fetch and surface the boundary GeoJSON for whichever filter stage is
+
+  // Fetch and surface the boundary GeoJSON for whichever filter stage is
   // currently the most specific: Project > Type+Phase > Phase alone.
   useEffect(() => {
     let cancelled = false;
@@ -243,7 +245,10 @@ export default function MetaverseSubHeader({
         if (filters.projectId) {
           geojson = await getProjectGeoJSON(filters.projectId);
         } else if (filters.phase && filters.projectType) {
-          geojson = await getProjectsByPhaseAndType(filters.phase, filters.projectType);
+          geojson = await getProjectsByPhaseAndType(
+            filters.phase,
+            filters.projectType,
+          );
         } else if (filters.phase) {
           geojson = await getProjectsByPhase(filters.phase);
         } else {
@@ -253,7 +258,8 @@ export default function MetaverseSubHeader({
         if (!cancelled) onBoundaryChange(geojson);
       } catch (err) {
         console.error("BOUNDARY FETCH ERROR:", err);
-        if (!cancelled) onBoundaryChange({ type: "FeatureCollection", features: [] });
+        if (!cancelled)
+          onBoundaryChange({ type: "FeatureCollection", features: [] });
       }
     };
 
@@ -264,147 +270,150 @@ export default function MetaverseSubHeader({
     };
   }, [filters.phase, filters.projectType, filters.projectId, onBoundaryChange]);
 
-// const updateFilter = (key, value) => {
-//   setFilters(prev => {
-//     const next = {
-//       ...prev,
-//       [key]: value,
-//     };
+  // const updateFilter = (key, value) => {
+  //   setFilters(prev => {
+  //     const next = {
+  //       ...prev,
+  //       [key]: value,
+  //     };
 
-//     if (key === "projectId") {
-//       next.block = "";
-//       next.plotType = "";
-//       next.area = "";
-//       next.plotNo = "";
-//     }
+  //     if (key === "projectId") {
+  //       next.block = "";
+  //       next.plotType = "";
+  //       next.area = "";
+  //       next.plotNo = "";
+  //     }
 
-//     if (key === "block") {
-//       next.plotType = "";
-//       next.area = "";
-//       next.plotNo = "";
-//     }
+  //     if (key === "block") {
+  //       next.plotType = "";
+  //       next.area = "";
+  //       next.plotNo = "";
+  //     }
 
-//     if (key === "plotType") {
-//       next.area = "";
-//       next.plotNo = "";
-//     }
+  //     if (key === "plotType") {
+  //       next.area = "";
+  //       next.plotNo = "";
+  //     }
 
-//     if (key === "area") {
-//       next.plotNo = "";
-//     }
+  //     if (key === "area") {
+  //       next.plotNo = "";
+  //     }
 
-//     return next;
-//   });
-// };
-const updateFilter = (key, value) => {
-    setFilters(prev => {
-        const next = {
-            ...prev,
-            [key]: value,
-        };
+  //     return next;
+  //   });
+  // };
+  const updateFilter = (key, value) => {
+    setFilters((prev) => {
+      const next = {
+        ...prev,
+        [key]: value,
+      };
 
-        if (key === "phase") {
-            next.projectType = "";
-            next.projectId = "";
-        }
+      if (key === "phase") {
+        next.projectType = "";
+        next.projectId = "";
+      }
 
-        if (key === "projectType") {
-            next.projectId = "";
-        }
+      if (key === "projectType") {
+        next.projectId = "";
+      }
 
-        return next;
+      return next;
     });
-};
-
+  };
 
   const projectOptions = projects.map((p) => ({
     value: String(p.gid || p.id),
     label: p.brief_name || p.name,
   }));
 
-const phaseOptions = [
-  ...new Set(projects.map((p) => p.phase).filter(Boolean)),
-].map((phase) => ({
-  value: phase,
-  label: phase,
-}));
-
-const projectTypeOptions = [
-  ...new Set(
-    projects
-      .filter((p) => !filters.phase || p.phase === filters.phase)
-      .map((p) => p.type)
-      .filter(Boolean),
-  ),
-].map((type) => ({
-  value: type,
-  label: type,
-}));
-
-const filteredProjectOptions = projects
-  .filter((p) => {
-    if (filters.phase && p.phase !== filters.phase) return false;
-    if (
-        filters.projectType &&
-        p.type !== filters.projectType
-    )
-      return false;
-    return true;
-  })
-  .map((p) => ({
-    value: String(p.gid || p.id),
-    label: p.brief_name || p.name,
+  const phaseOptions = [
+    ...new Set(projects.map((p) => p.phase).filter(Boolean)),
+  ].map((phase) => ({
+    value: phase,
+    label: phase,
   }));
 
+  const projectTypeOptions = [
+    ...new Set(
+      projects
+        .filter((p) => !filters.phase || p.phase === filters.phase)
+        .map((p) => p.type)
+        .filter(Boolean),
+    ),
+  ].map((type) => ({
+    value: type,
+    label: type,
+  }));
+
+  const filteredProjectOptions = projects
+    .filter((p) => {
+      if (filters.phase && p.phase !== filters.phase) return false;
+      if (filters.projectType && p.type !== filters.projectType) return false;
+      return true;
+    })
+    .map((p) => ({
+      value: String(p.gid || p.id),
+      label: p.brief_name || p.name,
+    }));
+
   const filterClassName =
-    "h-7 sm:h-8 shrink-0 rounded-md border border-[#2f3a4d] bg-white px-1.5 sm:px-2 text-[10px] sm:text-xs font-semibold text-[#06291f] outline-none";
+    "h-10 sm:h-9 shrink-0 rounded-lg border border-[#d8dee5] bg-white px-2.5 sm:px-3 outline-none transition-colors hover:border-[#9aa5ad]";
 
   return (
-    <div className="absolute left-1/2 top-2 sm:top-3 z-40 -translate-x-1/2"
+    <div
+      className="absolute left-1/2 top-2 sm:top-3 z-40 -translate-x-1/2"
       style={{ maxWidth: "calc(100vw - 120px)" }}
     >
       <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto rounded-md sm:rounded-lg bg-[#06291f] px-1.5 sm:px-2 py-1 sm:py-1.5 shadow-xl [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <SearchableSelect
-  value={filters.phase}
-  placeholder="Phase"
-  options={phaseOptions}
-  onChange={(value) => updateFilter("phase", value)}
-  className={`${filterClassName} w-[110px]`}
-/>
+          value={filters.phase}
+          label="Phase"
+          placeholder="Select"
+          options={phaseOptions}
+          onChange={(value) => updateFilter("phase", value)}
+          className={`${filterClassName} w-[120px]`}
+        />
 
-<SearchableSelect
-  value={filters.projectType}
-  placeholder="Project Type"
-  options={projectTypeOptions}
-  disabled={!filters.phase}
-  onChange={(value) => updateFilter("projectType", value)}
-  className={`${filterClassName} w-[140px]`}
-/>
+        <SearchableSelect
+          value={filters.projectType}
+          label="Project Type"
+          placeholder="Select"
+          options={projectTypeOptions}
+          disabled={!filters.phase}
+          onChange={(value) => updateFilter("projectType", value)}
+          className={`${filterClassName} w-[150px]`}
+        />
 
-<SearchableSelect
-  value={filters.projectId}
-  placeholder="Project"
-  options={filteredProjectOptions}
-  disabled={!filters.projectType}
-  onChange={(value) => updateFilter("projectId", value)}
-  className={`${filterClassName} w-[170px]`}
-/>
+        <SearchableSelect
+          value={filters.projectId}
+          label="Project"
+          placeholder="Select"
+          options={filteredProjectOptions}
+          disabled={!filters.projectType}
+          onChange={(value) => updateFilter("projectId", value)}
+          className={`${filterClassName} w-[180px]`}
+        />
 
         <button
           type="button"
           onClick={onCalendarClick}
           title="Calendar"
-          className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
+          className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
         >
           <CalendarDays size={14} strokeWidth={2.4} className="sm:hidden" />
-          <CalendarDays size={16} strokeWidth={2.4} className="hidden sm:block" />
+          <CalendarDays
+            size={16}
+            strokeWidth={2.4}
+            className="hidden sm:block"
+          />
         </button>
 
         <button
           type="button"
           onClick={onReset}
           title="Reset"
-          className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
+          className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-white text-[#06291f] hover:bg-[#b6bdc8]"
         >
           <RotateCcw size={14} strokeWidth={2.4} className="sm:hidden" />
           <RotateCcw size={16} strokeWidth={2.4} className="hidden sm:block" />
