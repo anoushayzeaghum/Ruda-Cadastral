@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
 import RudaFooterLogo from "../../assets/Ruda.png";
@@ -763,7 +762,6 @@ function MapStatCard({ value, label, positionClass }) {
 }
 
 export default function LandingPage() {
-  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showTop, setShowTop] = useState(false);
@@ -778,16 +776,19 @@ export default function LandingPage() {
 
   // The landing page is public. Every RUDA application is entered through
   // the login page so authentication happens immediately before opening it.
+
   const openProtectedApp = ({ route, externalUrl }) => {
     const redirectTo = externalUrl || route;
     if (!redirectTo) return;
 
-    navigate("/login", {
-      state: {
-        redirectTo,
-        external: Boolean(externalUrl),
-      },
-    });
+    const loginUrl = new URL("/login", window.location.origin);
+    loginUrl.searchParams.set("redirectTo", redirectTo);
+
+    if (externalUrl) {
+      loginUrl.searchParams.set("external", "true");
+    }
+
+    window.open(loginUrl.toString(), "_blank", "noopener,noreferrer");
   };
 
   useEffect(() => {
@@ -1506,9 +1507,7 @@ export default function LandingPage() {
                     gradientFrom={gradientFrom}
                     gradientTo={gradientTo}
                     tags={tags}
-                    onClick={() =>
-                      openProtectedApp({ route, externalUrl })
-                    }
+                    onClick={() => openProtectedApp({ route, externalUrl })}
                   />
                 </div>
               ),
@@ -1529,7 +1528,7 @@ export default function LandingPage() {
         <div className="absolute left-1/2 top-8 h-64 w-64 -translate-x-1/2 rounded-full bg-[#49B84A]/15 blur-[100px]" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-5">
-                    <div className="mx-auto max-w-3xl text-center text-white">
+          <div className="mx-auto max-w-3xl text-center text-white">
             {/* Small accent badge */}
             {/* <div className="inline-flex items-center gap-2 rounded-full border border-[#8FEA67]/30 bg-[#8FEA67]/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#8FEA67] backdrop-blur-md sm:text-xs">
               <Users size={14} />
@@ -1543,7 +1542,6 @@ export default function LandingPage() {
 
             {/* Decorative glow line */}
             <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent sm:w-24" />
-
           </div>
           <div className="relative mt-8">
             <div className="overflow-hidden px-1 sm:px-12">

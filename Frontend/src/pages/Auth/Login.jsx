@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
@@ -11,10 +11,15 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
-  const redirectTo = location.state?.redirectTo || "/landing";
-  const redirectExternal = Boolean(location.state?.external);
+  const redirectTo =
+    location.state?.redirectTo || searchParams.get("redirectTo") || "/landing";
 
+  const redirectExternal =
+    location.state?.external !== undefined
+      ? Boolean(location.state.external)
+      : searchParams.get("external") === "true";
   const [mounted, setMounted] = useState(false);
   const [showOfficial, setShowOfficial] = useState(false);
   const [email, setEmail] = useState("");
@@ -35,10 +40,13 @@ export default function Login() {
       setShowOfficial(true);
       if (officialVideoRef.current) {
         officialVideoRef.current.play().catch((err) => {
-          console.warn("Auto-play for official video failed or was interrupted:", err);
+          console.warn(
+            "Auto-play for official video failed or was interrupted:",
+            err,
+          );
         });
       }
-      
+
       // Pause the earth video after the transition completes (1s transition) to save resources
       const pauseTimer = setTimeout(() => {
         if (earthVideoRef.current) {
@@ -207,10 +215,7 @@ export default function Login() {
             filter: "contrast(1.02) brightness(0.95) saturate(1.05)",
           }}
         >
-          <source
-            src="/Ruda_Official/Ruda Rtw Hd.mp4"
-            type="video/mp4"
-          />
+          <source src="/Ruda_Official/Ruda Rtw Hd.mp4" type="video/mp4" />
         </video>
 
         {/* Optimized overlays to keep video crisp and clean */}
@@ -433,7 +438,6 @@ export default function Login() {
               <div className="mt-4 border-t border-white/10 pt-3 text-center">
                 <p className="text-[11px] leading-relaxed text-slate-300/55">
                   LA&EM Department, D&BC, A&UP, Transfer and Record, Engineering
-                  
                 </p>
               </div>
             </form>

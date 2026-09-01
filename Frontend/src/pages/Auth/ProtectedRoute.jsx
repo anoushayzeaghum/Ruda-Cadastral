@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 export default function ProtectedRoute() {
   const location = useLocation();
+
   const token =
     localStorage.getItem("accessToken") ||
     sessionStorage.getItem("accessToken");
@@ -11,9 +12,8 @@ export default function ProtectedRoute() {
 
     return (
       <Navigate
-        to="/login"
+        to={`/login?redirectTo=${encodeURIComponent(redirectTo)}`}
         replace
-        state={{ redirectTo }}
       />
     );
   }
