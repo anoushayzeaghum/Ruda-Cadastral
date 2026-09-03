@@ -77,22 +77,26 @@ export default function ChangeDetection({
   const mapRightRef = useRef(null);
   const mapLeftLoadedRef = useRef(false);
   const mapRightLoadedRef = useRef(false);
+  const [mapsLoaded, setMapsLoaded] = useState(0); // increments to trigger visibility effects
 
   const swipeRef = useRef(null);
   const isDraggingRef = useRef(false);
   const operationSeqRef = useRef(0);
+  const leftIdxRef = useRef(0);
+  const rightIdxRef = useRef(0);
+  const comparisonImageryRef = useRef([]);
 
   const [leftIdx, setLeftIdx] = useState(0);
-  const [rightIdx, setRightIdx] = useState(0);
+  const [rightIdx, setRightIdx] = useState(() => Math.max(0, imagery.length - 1));
+
+  // Keep refs in sync so map load callbacks always read the latest indices
+  leftIdxRef.current = leftIdx;
+  rightIdxRef.current = rightIdx;
+  comparisonImageryRef.current = comparisonImagery;
   const [swipePos, setSwipePos] = useState(50);
   const [expanded, setExpanded] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [reportErr, setReportErr] = useState("");
-
-  // Initialise right index once imagery is available
-  useEffect(() => {
-    setRightIdx(Math.max(0, imagery.length - 1));
-  }, [imagery.length]);
 
   // Reset on project change
   useEffect(() => {
@@ -100,8 +104,20 @@ export default function ChangeDetection({
     setRightIdx(Math.max(0, imagery.length - 1));
     setSwipePos(50);
     setReportErr("");
+    setMapsLoaded(0);
     operationSeqRef.current += 1;
   }, [projectId, imagery.length]);
+
+  // If imagery arrives after mount (projectConfig loads async), fix rightIdx
+  useEffect(() => {
+    if (imagery.length > 1) {
+      setRightIdx((prev) => {
+        const last = imagery.length - 1;
+        // Only correct if it's still pointing at same item as leftIdx (stuck at 0)
+        return prev === 0 ? last : prev;
+      });
+    }
+  }, [imagery.length]);
 
   const leftItem = comparisonImagery[leftIdx] || comparisonImagery[0];
   const rightItem =
@@ -504,26 +520,32 @@ export default function ChangeDetection({
 
     mLeft.on("load", () => {
       mapLeftLoadedRef.current = true;
-      comparisonImagery.forEach((item) => {
+      const items = comparisonImageryRef.current;
+      items.forEach((item) => {
         mLeft.addSource(item.sourceId, { type: "raster", tiles: [item.url], tileSize: 256 });
         mLeft.addLayer({ id: item.layerId, type: "raster", source: item.sourceId, layout: { visibility: "none" } });
       });
-      if (comparisonImagery[leftIdx]) {
-        mLeft.setLayoutProperty(comparisonImagery[leftIdx].layerId, "visibility", "visible");
-      }
+      // Apply correct layer using ref (avoids stale closure on leftIdx)
+      items.forEach((item, i) => {
+        mLeft.setLayoutProperty(item.layerId, "visibility", i === leftIdxRef.current ? "visible" : "none");
+      });
       if (hasValidBounds) mLeft.fitBounds(bounds, STUDY_FIT);
+      setMapsLoaded((n) => n + 1);
     });
 
     mRight.on("load", () => {
       mapRightLoadedRef.current = true;
-      comparisonImagery.forEach((item) => {
+      const items = comparisonImageryRef.current;
+      items.forEach((item) => {
         mRight.addSource(item.sourceId, { type: "raster", tiles: [item.url], tileSize: 256 });
         mRight.addLayer({ id: item.layerId, type: "raster", source: item.sourceId, layout: { visibility: "none" } });
       });
-      if (comparisonImagery[rightIdx]) {
-        mRight.setLayoutProperty(comparisonImagery[rightIdx].layerId, "visibility", "visible");
-      }
+      // Apply correct layer using ref (avoids stale closure on rightIdx)
+      items.forEach((item, i) => {
+        mRight.setLayoutProperty(item.layerId, "visibility", i === rightIdxRef.current ? "visible" : "none");
+      });
       if (hasValidBounds) mRight.fitBounds(bounds, STUDY_FIT);
+      setMapsLoaded((n) => n + 1);
     });
 
     mapLeftRef.current = mLeft;
@@ -549,7 +571,7 @@ export default function ChangeDetection({
         ml.setLayoutProperty(item.layerId, "visibility", vis);
       } catch (_) {}
     });
-  }, [leftIdx, comparisonImagery]);
+  }, [leftIdx, comparisonImagery, mapsLoaded]);
 
   // ── Update right map layer visibility ────────────────────────────────────
   useEffect(() => {
@@ -561,7 +583,7 @@ export default function ChangeDetection({
         mr.setLayoutProperty(item.layerId, "visibility", vis);
       } catch (_) {}
     });
-  }, [rightIdx, comparisonImagery]);
+  }, [rightIdx, comparisonImagery, mapsLoaded]);
 
   // ── Swipe drag handlers ───────────────────────────────────────────────────
   const handleMouseDown = useCallback((e) => {
