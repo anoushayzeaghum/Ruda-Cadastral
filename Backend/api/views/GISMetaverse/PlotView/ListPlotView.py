@@ -23,7 +23,7 @@ class ListPlotView(viewsets.ViewSet):
             search = request.query_params.get("search")
 
             cache_key = (
-                f"plot_geojson_{gid}_{project_id}_{block_id}_"
+                f"plot_geojson_v2_{gid}_{project_id}_{block_id}_"
                 f"{plot_no}_{block}_{plot_area}_{plot_type}_{search}"
             )
 
@@ -46,6 +46,21 @@ class ListPlotView(viewsets.ViewSet):
                     p.plot_area,
                     p.shape_leng,
                     p.shape_area,
+                    p.remarks,
+                    p.dimension,
+                    p.parkfront,
+                    p.rd_ft,
+                    p.storey,
+                    p.rd_facing,
+                    p.possession,
+                    p.poss_st,
+                    p.canceled,
+                    p.site_plan,
+                    p.unique_id,
+                    p.tr_srno,
+                    p.tr_own,
+                    p.tr_p_no,
+                    p.tr_cate,
 
                     pr.gid,
                     pr.name,
@@ -146,7 +161,7 @@ class ListPlotView(viewsets.ViewSet):
 
                     "id": row[0],
 
-                    "geometry": row[12],
+                    "geometry": row[27],
 
                     "properties": {
 
@@ -156,14 +171,29 @@ class ListPlotView(viewsets.ViewSet):
                         "plot_no": row[3],
                         "plot_area": row[4],
                         "shape_leng": row[5],
-                        "shape_area": row[6],
+                            "shape_area": row[6],
+                            "remarks": row[7],
+                            "dimension": row[8],
+                            "parkfront": row[9],
+                            "rd_ft": row[10],
+                            "storey": row[11],
+                            "rd_facing": row[12],
+                            "possession": row[13],
+                            "poss_st": row[14],
+                            "canceled": row[15],
+                            "site_plan": row[16],
+                            "unique_id": row[17],
+                            "tr_srno": row[18],
+                            "tr_own": row[19],
+                            "tr_p_no": row[20],
+                            "tr_cate": row[21],
 
-                        "project": row[7],
-                        "project_name": row[8],
+                            "project": row[22],
+                            "project_name": row[23],
 
-                        "block": row[9],
-                        "block_name": row[10],
-                        "block_code": row[11],
+                            "block": row[24],
+                            "block_name": row[25],
+                            "block_code": row[26],
                     }
                 })
 
