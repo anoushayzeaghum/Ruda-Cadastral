@@ -145,14 +145,23 @@ const RUDA_MASTER_PLAN_GROUPS = [
     ],
   },
   {
-    key: "precinctBoundaryGroup",
-    label: "Precinct Boundary",
+    key: "principleLandUseZoningGroup",
+    label: "Principle Land Use Zoning",
     standalone: true,
     children: [
       {
-        key: "precinctBoundaryLayer",
-        label: "Precinct Boundary",
-        color: PRECINCT_BOUNDARY_COLOR,
+        key: "principleLandUseZoning",
+        label: "Principle Land Use Zoning",
+        color: "#d4a72c",
+        previewColors: [
+          "#facc15",
+          "#84cc16",
+          "#22c55e",
+          "#06b6d4",
+          "#3b82f6",
+          "#a855f7",
+          "#ef4444",
+        ],
       },
     ],
   },
@@ -177,23 +186,14 @@ const RUDA_MASTER_PLAN_GROUPS = [
     ],
   },
   {
-    key: "principleLandUseZoningGroup",
-    label: "Principle Land Use Zoning",
+    key: "precinctBoundaryGroup",
+    label: "Precinct Boundary",
     standalone: true,
     children: [
       {
-        key: "principleLandUseZoning",
-        label: "Principle Land Use Zoning",
-        color: "#d4a72c",
-        previewColors: [
-          "#facc15",
-          "#84cc16",
-          "#22c55e",
-          "#06b6d4",
-          "#3b82f6",
-          "#a855f7",
-          "#ef4444",
-        ],
+        key: "precinctBoundaryLayer",
+        label: "Precinct Boundary",
+        color: PRECINCT_BOUNDARY_COLOR,
       },
     ],
   },
@@ -973,52 +973,52 @@ export default function RUDAMasterPlan({ map }) {
   //   // }
   // };
   const zoomToGeoJSON = (geojson) => {
-  if (!map) return;
+    if (!map) return;
 
-  try {
-    const data = normalizeGeoJSON(geojson);
+    try {
+      const data = normalizeGeoJSON(geojson);
 
-    if (!data.features.length) {
-      console.warn("RUDA Master Plan: No features available for zoom");
-      return;
-    }
-
-    const bounds = new mapboxgl.LngLatBounds();
-
-    data.features.forEach((feature) => {
-      const geometry = feature?.geometry;
-
-      if (!geometry) return;
-
-      if (geometry.type === "GeometryCollection") {
-        geometry.geometries?.forEach((geometryItem) => {
-          if (geometryItem?.coordinates) {
-            extendBounds(bounds, geometryItem.coordinates);
-          }
-        });
-
+      if (!data.features.length) {
+        console.warn("RUDA Master Plan: No features available for zoom");
         return;
       }
 
-      if (geometry.coordinates) {
-        extendBounds(bounds, geometry.coordinates);
+      const bounds = new mapboxgl.LngLatBounds();
+
+      data.features.forEach((feature) => {
+        const geometry = feature?.geometry;
+
+        if (!geometry) return;
+
+        if (geometry.type === "GeometryCollection") {
+          geometry.geometries?.forEach((geometryItem) => {
+            if (geometryItem?.coordinates) {
+              extendBounds(bounds, geometryItem.coordinates);
+            }
+          });
+
+          return;
+        }
+
+        if (geometry.coordinates) {
+          extendBounds(bounds, geometry.coordinates);
+        }
+      });
+
+      if (bounds.isEmpty()) {
+        console.warn("RUDA Master Plan: Could not calculate layer bounds");
+        return;
       }
-    });
 
-    if (bounds.isEmpty()) {
-      console.warn("RUDA Master Plan: Could not calculate layer bounds");
-      return;
+      map.fitBounds(bounds, {
+        padding: 70,
+        duration: 1000,
+        maxZoom: 14,
+      });
+    } catch (error) {
+      console.error("RUDA Master Plan zoom error:", error);
     }
-
-    map.fitBounds(bounds, {
-      padding: 70,
-      duration: 1000,
-      maxZoom: 14,
-    });
-  } catch (error) {
-    console.error("RUDA Master Plan zoom error:", error);
-  }
-};
+  };
 
   const applyVisibleLayer = (layerKey, state, shouldZoom = false) => {
     const config = RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey];
@@ -1372,7 +1372,11 @@ export default function RUDAMasterPlan({ map }) {
     }
   };
 
-  const getInlineLegendForLayer = (layerKey, currentLayerState, currentLayerConfig) => {
+  const getInlineLegendForLayer = (
+    layerKey,
+    currentLayerState,
+    currentLayerConfig,
+  ) => {
     // Priority 1: Specialized LegendComponent - rendered inside LayerDetails, not here
     // Priority 2: Categorized legend arrays → convert to inline items
     if (currentLayerConfig.categorized && currentLayerConfig.categoryLegend) {
@@ -1391,13 +1395,25 @@ export default function RUDAMasterPlan({ map }) {
     const color = currentLayerState.color;
 
     if (layerKey === "rudaPlanningBoundary") {
-      return [lineLegend("Planning Boundary", color || MASTER_PLANNING_BOUNDARY_COLOR, { dashed: false, width: 2 })];
+      return [
+        lineLegend(
+          "Planning Boundary",
+          color || MASTER_PLANNING_BOUNDARY_COLOR,
+          { dashed: false, width: 2 },
+        ),
+      ];
     }
     if (layerKey === "masterPlanPhases") {
-      return [polygonLegend("Master Plan Phases", color || MASTER_PLAN_PHASES_COLOR)];
+      return [
+        polygonLegend("Master Plan Phases", color || MASTER_PLAN_PHASES_COLOR),
+      ];
     }
     if (layerKey === "precinctBoundaryLayer") {
-      return [lineLegend("Precinct Boundary", color || PRECINCT_BOUNDARY_COLOR, { width: 1.5 })];
+      return [
+        lineLegend("Precinct Boundary", color || PRECINCT_BOUNDARY_COLOR, {
+          width: 1.5,
+        }),
+      ];
     }
     if (layerKey === "rtwAlignment") {
       return [polygonLegend("RTW Alignment", color || RTW_ALIGNMENT_COLOR)];
@@ -1426,7 +1442,11 @@ export default function RUDAMasterPlan({ map }) {
 
     // Determine which legend items to pass into LayerDetails
     const legendItems = isVisible
-      ? getInlineLegendForLayer(layer.key, currentLayerState, currentLayerConfig)
+      ? getInlineLegendForLayer(
+          layer.key,
+          currentLayerState,
+          currentLayerConfig,
+        )
       : [];
 
     return (
@@ -1610,18 +1630,24 @@ function LayerDetails({
       className={`ml-6 mt-2 max-h-64 rounded-sm border border-[#13593f]/30 bg-[#06291f] px-3 py-2 text-[11px] text-white/70 ${LAYER_PANEL_SCROLL}`}
     >
       {/* Simple inline legend items (non-categorized, non-custom) */}
-      {isVisible && !config.customLandUseStyle && !config.categorized && legendItems.length > 0 && (
-        <div className="mb-2">
-          <InlineLayerLegend items={legendItems} opacity={layerOpacity} />
-        </div>
-      )}
+      {isVisible &&
+        !config.customLandUseStyle &&
+        !config.categorized &&
+        legendItems.length > 0 && (
+          <div className="mb-2">
+            <InlineLayerLegend items={legendItems} opacity={layerOpacity} />
+          </div>
+        )}
 
       {/* Categorized layers without a full LegendComponent */}
-      {isVisible && config.categorized && !LegendComponent && legendItems.length > 0 && (
-        <div className="mb-2">
-          <InlineLayerLegend items={legendItems} opacity={layerOpacity} />
-        </div>
-      )}
+      {isVisible &&
+        config.categorized &&
+        !LegendComponent &&
+        legendItems.length > 0 && (
+          <div className="mb-2">
+            <InlineLayerLegend items={legendItems} opacity={layerOpacity} />
+          </div>
+        )}
 
       {/* Land Use Zoning — specialized LegendComponent, not duplicated in inline */}
       {isVisible && config.customLandUseStyle && LegendComponent && (
