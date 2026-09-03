@@ -97,11 +97,10 @@ export const makePrintableHtml = ({
     .legend-polygon { width: 34px; height: 17px; border: 3px solid #111827; }
     .legend-gradient { width: 34px; height: 17px; border: 1px solid #334155; background: linear-gradient(90deg,#166534,#eab308,#dc2626); }
     .legend-empty { font-size: 11px; color: #64748b; }
-    .scale { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); min-width: 245px; background: rgba(255,255,255,.94); border: 1px solid #334155; padding: 7px 12px; text-align: center; font-size: 12px; font-weight: 700; }
-    .scale-bar { width: 210px; height: 10px; margin: 5px auto 0; border: 1px solid #111827; background: linear-gradient(90deg,#111827 0 25%,#fff 25% 50%,#111827 50% 75%,#fff 75% 100%); }
+    .scale { display: none; }
+    .scale-bar { display: none; }
+    .metadata { display: none; }
     .credit { position: absolute; left: 18px; bottom: 203px; padding: 5px 8px; background: rgba(255,255,255,.92); border: 1px solid #334155; font-size: 10px; font-weight: 700; }
-    .metadata { position: absolute; left: 334px; bottom: 18px; width: 270px; padding: 8px 10px; background: rgba(255,255,255,.94); border: 1px solid #334155; font-size: 10px; line-height: 1.5; }
-    .metadata strong { display: inline-block; min-width: 70px; }
     @media print { html, body, .sheet { width: 420mm; height: 297mm; } }
   </style>
 </head>
@@ -120,7 +119,7 @@ export const makePrintableHtml = ({
       <div><strong>Pitch:</strong> ${escapeHtml(metadata.pitchText || "-")}</div>
       <div><strong>Printed:</strong> ${escapeHtml(metadata.printedAt || "-")}</div>
     </div>
-    <div class="legend"><h3>Legend</h3><div class="legend-grid">${legendHtml}</div></div>
+    <div class="legend"><h3>LEGEND</h3><div class="legend-grid">${legendHtml}</div></div>
     <div class="scale">Approximate scale: ${escapeHtml(metadata.scaleText || "-")}<div class="scale-bar"></div></div>
   </div>
   <script>

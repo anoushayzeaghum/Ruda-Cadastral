@@ -410,7 +410,7 @@ export default function Filter({
       <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-3">
         <div className="flex items-center gap-2 text-[13px] font-bold">
           <FilterIcon size={15} />
-          <span>FILTER</span>
+          <span>PLOT FILTER</span>
         </div>
 
         <button

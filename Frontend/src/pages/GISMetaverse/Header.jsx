@@ -11,6 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import rudaFirmLogo from "../../assets/Rudafirm.png";
 import { PRINT_EVENTS, dispatchPrintEvent } from "./Printing/PrintEvents";
+import PrintTitleModal from "./Printing/PrintTitleModal";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -85,14 +86,33 @@ export default function Header() {
   const isAnyPrintLoading =
     mapPrintState.printLoading || importPrintState.printLoading;
 
-  const handleCurrentMapPrint = () => {
+  // ── Title modal state ──────────────────────────────────────────────────────
+  const [titleModal, setTitleModal] = useState({
+    open: false,
+    defaultTitle: "",
+    eventName: "",
+  });
+
+  const openTitleModal = (eventName, defaultTitle) => {
     setIsPrintMenuOpen(false);
-    dispatchPrintEvent(PRINT_EVENTS.PRINT_CURRENT_MAP);
+    setTitleModal({ open: true, defaultTitle, eventName });
+  };
+
+  const handleTitleConfirm = (title) => {
+    setTitleModal((prev) => ({ ...prev, open: false }));
+    dispatchPrintEvent(titleModal.eventName, { customTitle: title });
+  };
+
+  const handleTitleCancel = () => {
+    setTitleModal((prev) => ({ ...prev, open: false }));
+  };
+
+  const handleCurrentMapPrint = () => {
+    openTitleModal(PRINT_EVENTS.PRINT_CURRENT_MAP, "RUDA GIS Metaverse Map");
   };
 
   const handleImportedKmzPrint = () => {
-    setIsPrintMenuOpen(false);
-    dispatchPrintEvent(PRINT_EVENTS.PRINT_IMPORTED_KMZ);
+    openTitleModal(PRINT_EVENTS.PRINT_IMPORTED_KMZ, "RUDA Imported KMZ Map");
   };
 
   const handleHome = () => {
@@ -113,6 +133,12 @@ export default function Header() {
 
   return (
     <header className="relative z-40 w-full bg-[#0f3d2e] px-3 py-2 text-white shadow-md sm:px-5">
+      <PrintTitleModal
+        isOpen={titleModal.open}
+        defaultTitle={titleModal.defaultTitle}
+        onConfirm={handleTitleConfirm}
+        onCancel={handleTitleCancel}
+      />
       <div className="relative z-10 flex items-center justify-between">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="flex shrink-0 items-center justify-center rounded-full bg-white p-1">

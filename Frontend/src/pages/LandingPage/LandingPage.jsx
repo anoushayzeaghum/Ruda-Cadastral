@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
 import RudaFooterLogo from "../../assets/Ruda.png";
@@ -283,7 +282,7 @@ const GIS_APPS = [
   {
     icon: <Smartphone size={22} />,
     title: "RUDA Masterplan",
-    desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries to support smarter cadastral and planning decisions.",
+    desc: "Analyze spatial patterns, proximity relationships and location-based insights across parcels, infrastructure and project boundaries.",
     img: "/s6.png",
     route: "/masterplan",
     gradientFrom: "#0B7A3B",
@@ -763,7 +762,6 @@ function MapStatCard({ value, label, positionClass }) {
 }
 
 export default function LandingPage() {
-  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showTop, setShowTop] = useState(false);
@@ -778,16 +776,43 @@ export default function LandingPage() {
 
   // The landing page is public. Every RUDA application is entered through
   // the login page so authentication happens immediately before opening it.
+
   const openProtectedApp = ({ route, externalUrl }) => {
     const redirectTo = externalUrl || route;
     if (!redirectTo) return;
 
-    navigate("/login", {
-      state: {
-        redirectTo,
-        external: Boolean(externalUrl),
-      },
-    });
+    const accessToken = localStorage.getItem("accessToken");
+    const expiresAt = Number(localStorage.getItem("sessionExpiresAt") || 0);
+
+    const hasActiveSession = Boolean(accessToken) && expiresAt > Date.now();
+
+    if (hasActiveSession) {
+      const targetUrl = externalUrl
+        ? redirectTo
+        : new URL(redirectTo, window.location.origin).toString();
+
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // Remove stale authentication before showing login.
+    if (accessToken || expiresAt) {
+      ["accessToken", "refreshToken", "user", "sessionExpiresAt"].forEach(
+        (key) => {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        },
+      );
+    }
+
+    const loginUrl = new URL("/login", window.location.origin);
+    loginUrl.searchParams.set("redirectTo", redirectTo);
+
+    if (externalUrl) {
+      loginUrl.searchParams.set("external", "true");
+    }
+
+    window.open(loginUrl.toString(), "_blank", "noopener,noreferrer");
   };
 
   useEffect(() => {
@@ -1459,10 +1484,6 @@ export default function LandingPage() {
       <section id="apps" className="py-10 sm:py-14 md:py-16 bg-slate-50">
         <div className="max-w-8xl mx-auto px-4 sm:px-5">
           <div className="text-center mb-7 sm:mb-10">
-            {/* <div className="inline-flex items-center gap-2 bg-[#edf8ef] text-[#004225] text-[10px] sm:text-xs font-bold tracking-wider uppercase px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3 sm:mb-4">
-              GIS Applications
-            </div> */}
-
             <h2 className="text-2xl xs:text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 mb-3 sm:mb-4">
               RUDA GIS METAVERSE COMPONENTS
             </h2>
@@ -1493,7 +1514,7 @@ export default function LandingPage() {
               ) => (
                 <div
                   key={title}
-                  className="w-full xs:w-[calc(50%-0.5rem)] lg:w-[calc(25%-0.95rem)]"
+                  className="w-full xs:w-[calc(50%-0.5rem)] lg:w-[calc(33.33%-4.95rem)]"
                 >
                   <AppCard
                     index={i}
@@ -1506,9 +1527,7 @@ export default function LandingPage() {
                     gradientFrom={gradientFrom}
                     gradientTo={gradientTo}
                     tags={tags}
-                    onClick={() =>
-                      openProtectedApp({ route, externalUrl })
-                    }
+                    onClick={() => openProtectedApp({ route, externalUrl })}
                   />
                 </div>
               ),
@@ -1529,7 +1548,7 @@ export default function LandingPage() {
         <div className="absolute left-1/2 top-8 h-64 w-64 -translate-x-1/2 rounded-full bg-[#49B84A]/15 blur-[100px]" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-5">
-                    <div className="mx-auto max-w-3xl text-center text-white">
+          <div className="mx-auto max-w-3xl text-center text-white">
             {/* Small accent badge */}
             {/* <div className="inline-flex items-center gap-2 rounded-full border border-[#8FEA67]/30 bg-[#8FEA67]/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#8FEA67] backdrop-blur-md sm:text-xs">
               <Users size={14} />
@@ -1543,7 +1562,6 @@ export default function LandingPage() {
 
             {/* Decorative glow line */}
             <div className="mx-auto mt-5 h-1 w-20 rounded-full bg-gradient-to-r from-transparent via-[#8FEA67] to-transparent sm:w-24" />
-
           </div>
           <div className="relative mt-8">
             <div className="overflow-hidden px-1 sm:px-12">

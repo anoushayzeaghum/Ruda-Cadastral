@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import RudaLogo from "../../assets/RUDA L&M.png";
 import NespakLogo from "../../assets/Nespak.png";
@@ -8,13 +8,66 @@ import RudaFirmLogo from "../../assets/Rudafirm.png";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const SESSION_DURATION_MS = 2 * 60 * 60 * 1000;
+
+const AUTH_KEYS = ["accessToken", "refreshToken", "user", "sessionExpiresAt"];
+
+const clearAuth = () => {
+  AUTH_KEYS.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+};
+
+const getJwtExpiry = (token) => {
+  if (!token) return 0;
+
+  try {
+    const payloadPart = token.split(".")[1];
+    if (!payloadPart) return 0;
+
+    const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+
+    const payload = JSON.parse(atob(padded));
+
+    return payload?.exp ? payload.exp * 1000 : 0;
+  } catch {
+    return 0;
+  }
+};
+
+const hasValidStoredSession = () => {
+  const token = localStorage.getItem("accessToken");
+  const clientExpiry = Number(localStorage.getItem("sessionExpiresAt") || 0);
+  const jwtExpiry = getJwtExpiry(token);
+
+  const effectiveExpiry =
+    clientExpiry && jwtExpiry
+      ? Math.min(clientExpiry, jwtExpiry)
+      : clientExpiry || jwtExpiry;
+
+  if (!token || !effectiveExpiry || Date.now() >= effectiveExpiry) {
+    clearAuth();
+    return false;
+  }
+
+  return true;
+};
+
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
-  const redirectTo = location.state?.redirectTo || "/landing";
-  const redirectExternal = Boolean(location.state?.external);
+  const redirectTo =
+    location.state?.redirectTo || searchParams.get("redirectTo") || "/landing";
 
+  const redirectExternal =
+    location.state?.external !== undefined
+      ? Boolean(location.state.external)
+      : searchParams.get("external") === "true";
   const [mounted, setMounted] = useState(false);
   const [showOfficial, setShowOfficial] = useState(false);
   const [email, setEmail] = useState("");
@@ -28,6 +81,17 @@ export default function Login() {
   const officialVideoRef = useRef(null);
 
   useEffect(() => {
+    if (!hasValidStoredSession()) return;
+
+    if (redirectExternal) {
+      window.location.replace(redirectTo);
+      return;
+    }
+
+    navigate(redirectTo, { replace: true });
+  }, [navigate, redirectTo, redirectExternal]);
+
+  useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 70);
 
     // Fade into the official RUDA video after 1.5 seconds
@@ -35,10 +99,13 @@ export default function Login() {
       setShowOfficial(true);
       if (officialVideoRef.current) {
         officialVideoRef.current.play().catch((err) => {
-          console.warn("Auto-play for official video failed or was interrupted:", err);
+          console.warn(
+            "Auto-play for official video failed or was interrupted:",
+            err,
+          );
         });
       }
-      
+
       // Pause the earth video after the transition completes (1s transition) to save resources
       const pauseTimer = setTimeout(() => {
         if (earthVideoRef.current) {
@@ -78,13 +145,15 @@ export default function Login() {
         setErrorMessage(data?.message || "Email or password is incorrect.");
         return;
       }
-
       const auth = data?.data || {};
-      const storage = rememberMe ? localStorage : sessionStorage;
+      const accessToken = auth.access || auth.token || "";
+      const refreshToken = auth.refresh || "";
 
-      storage.setItem("accessToken", auth.access || auth.token || "");
-      storage.setItem("refreshToken", auth.refresh || "");
-      storage.setItem(
+      clearAuth();
+
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+      localStorage.setItem(
         "user",
         JSON.stringify({
           id: auth.id,
@@ -96,11 +165,11 @@ export default function Login() {
         }),
       );
 
-      if (!rememberMe) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-      }
+      // Shared browser session: valid for 2 hours in every same-origin tab.
+      localStorage.setItem(
+        "sessionExpiresAt",
+        String(Date.now() + SESSION_DURATION_MS),
+      );
 
       if (redirectExternal) {
         window.location.assign(redirectTo);
@@ -207,10 +276,7 @@ export default function Login() {
             filter: "contrast(1.02) brightness(0.95) saturate(1.05)",
           }}
         >
-          <source
-            src="/Ruda_Official/Ruda Rtw Hd.mp4"
-            type="video/mp4"
-          />
+          <source src="/Ruda_Official/Ruda Rtw Hd.mp4" type="video/mp4" />
         </video>
 
         {/* Optimized overlays to keep video crisp and clean */}
@@ -433,7 +499,6 @@ export default function Login() {
               <div className="mt-4 border-t border-white/10 pt-3 text-center">
                 <p className="text-[11px] leading-relaxed text-slate-300/55">
                   LA&EM Department, D&BC, A&UP, Transfer and Record, Engineering
-                  
                 </p>
               </div>
             </form>

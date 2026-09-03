@@ -44,7 +44,28 @@ const BASEMAPS = [
     name: "Outdoors",
     preview: "bg-[linear-gradient(135deg,#6f9f55,#d5c17b,#7ba98f)]",
   },
- ];
+  // ── ESRI basemaps ───────────────────────────────────────────────────────────
+  {
+    name: "ESRI Imagery",
+    preview: "bg-[linear-gradient(135deg,#2d3b2d,#4a6741,#3a5230)]",
+  },
+  {
+    name: "ESRI Streets",
+    preview: "bg-[linear-gradient(135deg,#c9d9b5,#a8be8a,#7da86f)]",
+  },
+  {
+    name: "ESRI Topo",
+    preview: "bg-[linear-gradient(135deg,#a8c896,#8fbc72,#6b8f5e)]",
+  },
+  {
+    name: "ESRI Light Gray",
+    preview: "bg-[linear-gradient(135deg,#e8e8e8,#d0d0d0,#b8b8b8)]",
+  },
+  {
+    name: "ESRI NatGeo",
+    preview: "bg-[linear-gradient(135deg,#d4e8c2,#b8d49a,#8faf6d)]",
+  },
+];
 
 const SOCIETY_VECTOR_LAYERS = [
   { key: "societyBoundary", label: "Society Boundary", icon: <Building2 size={15} /> },

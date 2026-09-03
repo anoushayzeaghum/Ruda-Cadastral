@@ -140,6 +140,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [],
 }
 
+# JWT authentication lifetime
+# Users stay authenticated for a maximum of 2 hours.
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+}
+
+
 # CORS (keep empty here, override in local/prod)
 CORS_ALLOWED_ORIGINS = []
 
