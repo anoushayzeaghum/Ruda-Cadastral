@@ -545,7 +545,7 @@ export const printReport = async ({ parcel, filters = {}, contextGeojson }) => {
         : "UTM",
       2,
     );
-    drawCrsRow("Units", "Metres", 3);
+    drawCrsRow("Units", "International Feet", 3);
 
     y += lowerBodyHeight + 4;
 
