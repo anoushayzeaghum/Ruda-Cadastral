@@ -23,6 +23,32 @@ const BASEMAPS = [
     name: "Outdoors",
     preview: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
   },
+  // ── ESRI basemaps ───────────────────────────────────────────────────────────
+  {
+    name: "ESRI Imagery",
+    preview:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/4640/3075",
+  },
+  {
+    name: "ESRI Streets",
+    preview:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/13/4640/3075",
+  },
+  {
+    name: "ESRI Topo",
+    preview:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/13/4640/3075",
+  },
+  {
+    name: "ESRI Light Gray",
+    preview:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/13/4640/3075",
+  },
+  {
+    name: "ESRI NatGeo",
+    preview:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/13/4640/3075",
+  },
 ];
 
 export default function BaseMap({ basemap, setBasemap }) {

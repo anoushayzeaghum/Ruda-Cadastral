@@ -334,22 +334,10 @@ const makePrintableHtml = ({
       box-shadow: inset 0 0 0 1px #ffffff;
     }
     .scale {
-      position: absolute;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,.94);
-      border: 1px solid #334155;
-      padding: 7px 12px;
-      font-size: 12px;
-      font-weight: 700;
+      display: none;
     }
     .scale-bar {
-      width: 210px;
-      height: 10px;
-      margin-top: 5px;
-      border: 1px solid #111827;
-      background: linear-gradient(90deg,#111827 0 25%,#fff 25% 50%,#111827 50% 75%,#fff 75% 100%);
+      display: none;
     }
     .credit {
       position: absolute;
@@ -791,7 +779,7 @@ export default function MapImport({ map, onClose }) {
     }
   };
 
-  const handlePrint = async () => {
+  const handlePrint = async (customTitle = null) => {
     if (!map || importedFileType !== "kmz" || !importedGeoJSON?.features?.length) {
       setError("Import a .KMZ file before using Print Imported .KMZ.");
       return;
@@ -874,7 +862,7 @@ export default function MapImport({ map, onClose }) {
         );
       }
 
-      const title = summary?.title || "Imported Boundary Map";
+      const title = customTitle || summary?.title || "Imported Boundary Map";
       const legendRows = buildLegendRows(title);
       const center = map.getCenter();
       const scaleText = `Map center: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)} · Zoom ${map.getZoom().toFixed(1)}`;
@@ -908,8 +896,8 @@ export default function MapImport({ map, onClose }) {
 
   // Allow the main Header print button to use this exact printing workflow.
   useEffect(() => {
-    const handleHeaderPrint = () => {
-      handlePrint();
+    const handleHeaderPrint = (event) => {
+      handlePrint(event?.detail?.customTitle || null);
     };
 
     window.addEventListener(PRINT_EVENTS.PRINT_IMPORTED_KMZ, handleHeaderPrint);

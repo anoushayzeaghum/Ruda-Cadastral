@@ -32,6 +32,92 @@ const basemaps = [
     style: "mapbox://styles/mapbox/outdoors-v12",
     preview: "linear-gradient(135deg, #b7d59a, #5f8f58)",
   },
+  // ── ESRI basemaps ───────────────────────────────────────────────────────────
+  {
+    id: "esri-imagery",
+    label: "ESRI Imagery",
+    preview: "linear-gradient(135deg, #2d3b2d, #4a6741)",
+    style: {
+      version: 8,
+      sources: {
+        "esri-basemap": {
+          type: "raster",
+          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+          tileSize: 256,
+          attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+        },
+      },
+      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+    },
+  },
+  {
+    id: "esri-streets",
+    label: "ESRI Streets",
+    preview: "linear-gradient(135deg, #c9d9b5, #7da86f)",
+    style: {
+      version: 8,
+      sources: {
+        "esri-basemap": {
+          type: "raster",
+          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"],
+          tileSize: 256,
+          attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, DeLorme, USGS, Intermap, iPC, NRCAN",
+        },
+      },
+      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+    },
+  },
+  {
+    id: "esri-topo",
+    label: "ESRI Topo",
+    preview: "linear-gradient(135deg, #a8c896, #6b8f5e)",
+    style: {
+      version: 8,
+      sources: {
+        "esri-basemap": {
+          type: "raster",
+          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"],
+          tileSize: 256,
+          attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, DeLorme, Intermap, USGS, NPS",
+        },
+      },
+      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+    },
+  },
+  {
+    id: "esri-light-gray",
+    label: "ESRI Light Gray",
+    preview: "linear-gradient(135deg, #e8e8e8, #c0c0c0)",
+    style: {
+      version: 8,
+      sources: {
+        "esri-basemap": {
+          type: "raster",
+          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"],
+          tileSize: 256,
+          attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
+        },
+      },
+      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+    },
+  },
+  {
+    id: "esri-natgeo",
+    label: "ESRI NatGeo",
+    preview: "linear-gradient(135deg, #d4e8c2, #8faf6d)",
+    style: {
+      version: 8,
+      sources: {
+        "esri-basemap": {
+          type: "raster",
+          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}"],
+          tileSize: 256,
+          attribution: "Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ",
+        },
+      },
+      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+    },
+  },
 ];
 
 export default function Basemaps({ map, rebuildAllLayers }) {
