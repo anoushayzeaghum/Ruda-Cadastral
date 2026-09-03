@@ -28,6 +28,67 @@ const BASEMAP_STYLES = {
   Light: "mapbox://styles/mapbox/light-v11",
   Dark: "mapbox://styles/mapbox/dark-v11",
   Outdoors: "mapbox://styles/mapbox/outdoors-v12",
+  // ── ESRI raster basemaps ──────────────────────────────────────────────────
+  "ESRI Imagery": {
+    version: 8,
+    sources: {
+      "esri-basemap": {
+        type: "raster",
+        tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+        tileSize: 256,
+        attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+      },
+    },
+    layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+  },
+  "ESRI Streets": {
+    version: 8,
+    sources: {
+      "esri-basemap": {
+        type: "raster",
+        tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"],
+        tileSize: 256,
+        attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, DeLorme, USGS, Intermap, iPC, NRCAN",
+      },
+    },
+    layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+  },
+  "ESRI Topo": {
+    version: 8,
+    sources: {
+      "esri-basemap": {
+        type: "raster",
+        tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"],
+        tileSize: 256,
+        attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, DeLorme, Intermap, USGS, NPS",
+      },
+    },
+    layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+  },
+  "ESRI Light Gray": {
+    version: 8,
+    sources: {
+      "esri-basemap": {
+        type: "raster",
+        tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"],
+        tileSize: 256,
+        attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
+      },
+    },
+    layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+  },
+  "ESRI NatGeo": {
+    version: 8,
+    sources: {
+      "esri-basemap": {
+        type: "raster",
+        tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}"],
+        tileSize: 256,
+        attribution: "Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ",
+      },
+    },
+    layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+  },
 };
 
 const SELECTED_SOURCE = "selected-source";
