@@ -38,9 +38,8 @@ export const buildPlotDetails = (parcel = null, filters = {}) => {
   const p = parcel?.properties || {};
 
   return {
-    // PlotSerializer exposes both FK ids (project/block) and readable names
-    // (project_name/block_name). Prefer the readable values for printed reports
-    // and only fall back to the raw FK ids when a name is unavailable.
+    // Use the block code for the block field; block_name is the parent project
+    // name in the plot GeoJSON returned by the API.
     project: firstValue(
       filters.projectName,
       p.project_name,
@@ -49,7 +48,13 @@ export const buildPlotDetails = (parcel = null, filters = {}) => {
       p.project,
       p.project_id,
     ),
-    block: firstValue(p.block_name, p.block_label, filters.block, p.block),
+    block: firstValue(
+      p.block_code,
+      p.block_label,
+      filters.block,
+      p.block,
+      p.block_name,
+    ),
     phase: firstValue(p.phase, p.phase_name, p.project_phase, p.ph),
     plotNo: firstValue(p.plot_no, p.plotno, p.plot_number, p.pl_no, parcel?.id),
     // Plot.type is the actual model field currently available for the plot
