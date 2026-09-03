@@ -34,8 +34,11 @@ export default function MapPrinter({
     };
   }, [publishState]);
 
-  const printCurrentMap = useCallback(async () => {
+  const printCurrentMap = useCallback(async (event) => {
     if (!map || !isMapReady || printLoading) return;
+
+    // Use custom title from the event if the header provided one
+    const customTitle = event?.detail?.customTitle || null;
 
     const printWindow = openPreparingPrintWindow();
     if (!printWindow) {
@@ -56,7 +59,7 @@ export default function MapPrinter({
         includeImportedLayer: true,
       });
       const metadata = getMapMetadata(map);
-      const title = getSelectedProjectTitle(filters);
+      const title = customTitle || getSelectedProjectTitle(filters);
 
       printWindow.document.open();
       printWindow.document.write(

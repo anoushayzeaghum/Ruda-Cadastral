@@ -87,8 +87,11 @@ export default function MapPrinter({
     };
   }, [publishState]);
 
-  const printCurrentMap = useCallback(async () => {
+  const printCurrentMap = useCallback(async (event) => {
     if (!map || !isMapReady || printLoading) return;
+
+    // Use custom title from the event if the header provided one
+    const customTitle = event?.detail?.customTitle || null;
 
     const printWindow = openPreparingPrintWindow();
 
@@ -125,9 +128,10 @@ export default function MapPrinter({
         visibleLayerCount: legendRows.length,
       };
 
-      const title = isCadastralMode
-        ? getCadastralTitle(filters)
-        : getSelectedProjectTitle(filters);
+      const title = customTitle ||
+        (isCadastralMode
+          ? getCadastralTitle(filters)
+          : getSelectedProjectTitle(filters));
 
       console.debug("[MapPrinter] resolved print context", {
         requestedMode: mode,

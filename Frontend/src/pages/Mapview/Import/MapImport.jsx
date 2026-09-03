@@ -779,7 +779,7 @@ export default function MapImport({ map, onClose }) {
     }
   };
 
-  const handlePrint = async () => {
+  const handlePrint = async (customTitle = null) => {
     if (!map || importedFileType !== "kmz" || !importedGeoJSON?.features?.length) {
       setError("Import a .KMZ file before using Print Imported .KMZ.");
       return;
@@ -862,7 +862,7 @@ export default function MapImport({ map, onClose }) {
         );
       }
 
-      const title = summary?.title || "Imported Boundary Map";
+      const title = customTitle || summary?.title || "Imported Boundary Map";
       const legendRows = buildLegendRows(title);
       const center = map.getCenter();
       const scaleText = `Map center: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)} · Zoom ${map.getZoom().toFixed(1)}`;
@@ -896,8 +896,8 @@ export default function MapImport({ map, onClose }) {
 
   // Allow the main Header print button to use this exact printing workflow.
   useEffect(() => {
-    const handleHeaderPrint = () => {
-      handlePrint();
+    const handleHeaderPrint = (event) => {
+      handlePrint(event?.detail?.customTitle || null);
     };
 
     window.addEventListener(PRINT_EVENTS.PRINT_IMPORTED_KMZ, handleHeaderPrint);

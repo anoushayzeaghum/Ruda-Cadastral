@@ -6,6 +6,7 @@ import {
   PRINT_EVENTS,
   dispatchPrintEvent,
 } from "../GISMetaverse/Printing/PrintEvents";
+import PrintTitleModal from "./Printing/PrintTitleModal";
 
 const headerBackgroundStyle = {
   backgroundColor: "#0f3d2e",
@@ -16,6 +17,11 @@ export default function Header() {
   const [printState, setPrintState] = useState({
     mapReady: false,
     printLoading: false,
+  });
+
+  const [titleModal, setTitleModal] = useState({
+    open: false,
+    defaultTitle: "RUDA Cadastral Management Map",
   });
 
   useEffect(() => {
@@ -36,7 +42,16 @@ export default function Header() {
   }, []);
 
   const handlePrint = () => {
-    dispatchPrintEvent(PRINT_EVENTS.PRINT_CURRENT_MAP);
+    setTitleModal({ open: true, defaultTitle: "RUDA Cadastral Management Map" });
+  };
+
+  const handleTitleConfirm = (title) => {
+    setTitleModal((prev) => ({ ...prev, open: false }));
+    dispatchPrintEvent(PRINT_EVENTS.PRINT_CURRENT_MAP, { customTitle: title });
+  };
+
+  const handleTitleCancel = () => {
+    setTitleModal((prev) => ({ ...prev, open: false }));
   };
 
   const handleLogout = () => {
@@ -51,6 +66,12 @@ export default function Header() {
       className="relative w-full text-white px-3 sm:px-5 py-1.5 sm:py-2 shadow-md z-40"
       style={headerBackgroundStyle}
     >
+      <PrintTitleModal
+        isOpen={titleModal.open}
+        defaultTitle={titleModal.defaultTitle}
+        onConfirm={handleTitleConfirm}
+        onCancel={handleTitleCancel}
+      />
       <div className="relative z-10 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="bg-white rounded-full p-0.5 sm:p-1 flex items-center justify-center shrink-0">
