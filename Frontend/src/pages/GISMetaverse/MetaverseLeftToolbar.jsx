@@ -214,7 +214,25 @@ export default function MetaverseLeftToolbar({
         />
       </div>
 
-      {activeTool && activeTool !== "layers" && (
+      {/* Keep Import mounted for the lifetime of the GIS Metaverse page.
+          The imported KMZ data and the global print-event listener live inside
+          Import.jsx, so unmounting it when the panel closes breaks
+          Header -> "Print Imported .KMZ". Hide the panel instead of
+          destroying the component. */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-30 rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 sm:w-[320px]"
+        style={{
+          top:
+            window.innerWidth >= 640
+              ? `${12 + tools.findIndex((tool) => tool.id === "import") * (TOOL_BUTTON_SIZE + TOOL_GAP)}px`
+              : undefined,
+          display: activeTool === "import" ? "block" : "none",
+        }}
+      >
+        <Import map={map} onClose={() => setActiveTool(null)} />
+      </div>
+
+      {activeTool && activeTool !== "layers" && activeTool !== "import" && (
         <div
           className={`absolute bottom-0 left-0 right-0 rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 sm:w-[320px] ${
             isActiveToolExpanded ? "z-[10000]" : "z-30"
@@ -281,10 +299,6 @@ export default function MetaverseLeftToolbar({
               onClose={() => setActiveTool(null)}
               onExpandedChange={handleChangeDetectionExpandedChange}
             />
-          )}
-
-          {activeTool === "import" && (
-            <Import map={map} onClose={() => setActiveTool(null)} />
           )}
 
           {activeTool === "measurement" && (
