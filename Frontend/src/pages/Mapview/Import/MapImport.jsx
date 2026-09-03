@@ -334,22 +334,10 @@ const makePrintableHtml = ({
       box-shadow: inset 0 0 0 1px #ffffff;
     }
     .scale {
-      position: absolute;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,.94);
-      border: 1px solid #334155;
-      padding: 7px 12px;
-      font-size: 12px;
-      font-weight: 700;
+      display: none;
     }
     .scale-bar {
-      width: 210px;
-      height: 10px;
-      margin-top: 5px;
-      border: 1px solid #111827;
-      background: linear-gradient(90deg,#111827 0 25%,#fff 25% 50%,#111827 50% 75%,#fff 75% 100%);
+      display: none;
     }
     .credit {
       position: absolute;

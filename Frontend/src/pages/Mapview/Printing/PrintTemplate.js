@@ -193,11 +193,21 @@ export const makePrintableHtml = ({
       left: 20px;
       right: 20px;
       bottom: 20px;
-      display: grid;
-      grid-template-columns: 300px 290px minmax(250px, 1fr) 310px;
-      gap: 10px;
-      align-items: end;
       pointer-events: none;
+    }
+
+    .overview-panel {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 300px;
+    }
+
+    .legend-panel-wrap {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 310px;
     }
 
     .panel {
@@ -406,65 +416,26 @@ export const makePrintableHtml = ({
     </div>
 
     <div class="bottom-strip">
-      <section class="panel glass">
-        <div class="panel-heading">${escapeHtml(insetTitle)}</div>
-        <div class="overview-content">
-          <img src="${insetImage || mapImage}" alt="Map overview" />
-          <div class="credit">
-            Prepared by GIS Section, LA&amp;EM Department — RUDA
+      <div class="overview-panel">
+        <section class="panel glass">
+          <div class="panel-heading">${escapeHtml(insetTitle)}</div>
+          <div class="overview-content">
+            <img src="${insetImage || mapImage}" alt="Map overview" />
+            <div class="credit">
+              Prepared by GIS Section, LA&amp;EM Department — RUDA
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <section class="panel glass">
-        <div class="panel-heading">Map Information</div>
-        <div class="metadata-grid">
-          <div class="metadata-label">Center</div>
-          <div class="metadata-value">${escapeHtml(metadata.centerText || "-")}</div>
-
-          <div class="metadata-label">Zoom</div>
-          <div class="metadata-value">${escapeHtml(metadata.zoomText || "-")}</div>
-
-          <div class="metadata-label">Bearing</div>
-          <div class="metadata-value">${escapeHtml(metadata.bearingText || "-")}</div>
-
-          <div class="metadata-label">Pitch</div>
-          <div class="metadata-value">${escapeHtml(metadata.pitchText || "-")}</div>
-
-          <div class="metadata-label">Basemap</div>
-          <div class="metadata-value">${escapeHtml(metadata.basemap || "-")}</div>
-
-          <div class="metadata-label">Status</div>
-          <div class="metadata-value">${escapeHtml(metadata.boundaryStatus || "-")}</div>
-
-          <div class="metadata-label">Layers</div>
-          <div class="metadata-value">${escapeHtml(metadata.visibleLayerCount ?? legendRows.length)}</div>
-
-          <div class="metadata-label">Printed</div>
-          <div class="metadata-value">${escapeHtml(metadata.printedAt || "-")}</div>
-        </div>
-      </section>
-
-      <section class="panel glass scale-panel">
-        <div class="scale-title">
-          Approximate Scale: ${escapeHtml(metadata.scaleText || "-")}
-        </div>
-        <div class="scale-bar"></div>
-        <div class="scale-ticks">
-          <span>0</span>
-          <span>25%</span>
-          <span>50%</span>
-          <span>75%</span>
-          <span>100%</span>
-        </div>
-      </section>
-
-      <section class="panel glass legend-panel">
-        <div class="panel-heading">
-          Dynamic Legend (${legendRows.length})
-        </div>
-        <div class="legend-grid">${legendHtml}</div>
-      </section>
+      <div class="legend-panel-wrap">
+        <section class="panel glass legend-panel">
+          <div class="panel-heading">
+            LEGEND
+          </div>
+          <div class="legend-grid">${legendHtml}</div>
+        </section>
+      </div>
     </div>
   </div>
 
