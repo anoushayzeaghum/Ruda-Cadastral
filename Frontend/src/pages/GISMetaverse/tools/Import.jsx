@@ -13,6 +13,10 @@ import JSZip from "jszip";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import RudaLogo from "../../../assets/Ruda.png";
 import { PRINT_EVENTS, dispatchPrintEvent } from "../Printing/PrintEvents";
+import { getMpPrincipleZoningGeoJSON } from "../../../services/metaverseApi";
+import {
+  normalizeLandUseGeoJSON,
+} from "./Layers/LayerManager/BaseData/LandUseLayer";
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -194,6 +198,434 @@ const escapeHtml = (value = "") =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
+
+// ── KMZ print inset: pure Canvas 2D cartographic renderer ─────────────────────
+//
+// No Mapbox map is created for the inset. All rendering is done with Canvas 2D
+// so the output is deterministic, basemap-free, and visually matches the
+// reference RUDA Principle Land Use Zoning layout.
+
+// Print-specific zoning colours — saturated to match the reference image.
+const PRINT_ZONING_STYLE = {
+  "brown zone":        { fill: "#f9c65b", outline: "#f218b8" },
+  "green zone":        { fill: "#7df15a", outline: "#f218b8" },
+  "infill development":{ fill: "#ff22c8", outline: "#f218b8" },
+  "industrial zone":   { fill: "#b62ce8", outline: "#f218b8" },
+  "public utility zone":{ fill: "#ffd15a", hatch: "#ff5a36", outline: "#f218b8" },
+  "pond area":         { fill: "#73c7f2", outline: "#3a91d8" },
+};
+
+// Legend definition for the canvas-drawn inset legend (order matches reference).
+const PRINT_ZONING_LEGEND = [
+  { label: "Brown Zone",         fill: "#f9c65b" },
+  { label: "Green Zone",         fill: "#7df15a" },
+  { label: "Infill Development", fill: "#ff22c8" },
+  { label: "Industrial Zone",    fill: "#b62ce8" },
+  { label: "Public Utility Zone",fill: "#ffd15a", hatch: "#ff5a36" },
+  { label: "Pond Area",          fill: "#73c7f2" },
+];
+
+/** Return the print style for a normalised zoning category string. */
+const getPrintZoningStyle = (category) =>
+  PRINT_ZONING_STYLE[category] ?? { fill: "#cccccc", outline: "#888888" };
+
+/**
+ * Build a geographic → canvas pixel transform that:
+ * - preserves the zoning aspect ratio (no stretch)
+ * - centres the geometry inside the canvas
+ * - leaves `padding` pixels of white space on all sides
+ */
+const createInsetTransform = ({ bounds, width, height, padding }) => {
+  const [minLng, minLat, maxLng, maxLat] = bounds;
+  const geoW = maxLng - minLng;
+  const geoH = maxLat - minLat;
+  if (geoW === 0 || geoH === 0) return null;
+
+  const usableW = width  - padding * 2;
+  const usableH = height - padding * 2;
+
+  // Single scale factor so circles remain circles and shapes aren't distorted.
+  const scale = Math.min(usableW / geoW, usableH / geoH);
+
+  // Rendered geometry size
+  const renderedW = geoW * scale;
+  const renderedH = geoH * scale;
+
+  // Offsets that centre the geometry in the usable area
+  const offsetX = padding + (usableW - renderedW) / 2;
+  const offsetY = padding + (usableH - renderedH) / 2;
+
+  return { minLng, minLat, scale, offsetX, offsetY, renderedH };
+};
+
+/** Convert a [lng, lat] pair to canvas [x, y] using the inset transform. */
+const projectLngLatToInset = ([lng, lat], transform) => {
+  const { minLng, minLat, scale, offsetX, offsetY, renderedH } = transform;
+  const x = offsetX + (lng - minLng) * scale;
+  // Y is flipped: north is up → higher lat = smaller canvas Y
+  const y = offsetY + renderedH - (lat - minLat) * scale;
+  return [x, y];
+};
+
+/**
+ * Create a repeating diagonal hatch canvas pattern for Public Utility Zone.
+ * Returns a CanvasPattern that can be set as ctx.fillStyle.
+ */
+const createPublicUtilityHatchPattern = (ctx, bgColor, hatchColor, size = 12) => {
+  const patCanvas = document.createElement("canvas");
+  patCanvas.width  = size;
+  patCanvas.height = size;
+  const pctx = patCanvas.getContext("2d");
+
+  pctx.fillStyle = bgColor;
+  pctx.fillRect(0, 0, size, size);
+
+  pctx.strokeStyle = hatchColor;
+  pctx.lineWidth = 2.2;
+  pctx.beginPath();
+  pctx.moveTo(-2, size);
+  pctx.lineTo(size, -2);
+  pctx.stroke();
+  pctx.beginPath();
+  pctx.moveTo(size - 2, size + 2);
+  pctx.lineTo(size + 2, size - 2);
+  pctx.stroke();
+
+  return ctx.createPattern(patCanvas, "repeat");
+};
+
+/**
+ * Draw all zoning polygon features onto the canvas.
+ * Handles Polygon and MultiPolygon geometry types.
+ * Uses even-odd fill so rings with holes render correctly.
+ */
+const drawZoningFeatures = ({ ctx, geojson, transform }) => {
+  const NORMALIZED_FIELD = "__zoning_cat";
+
+  // Pre-build hatch patterns keyed by category so we create each once.
+  const hatchPatterns = {};
+
+  const buildPath = (rings) => {
+    ctx.beginPath();
+    for (const ring of rings) {
+      if (!ring || ring.length < 3) continue;
+      const [sx, sy] = projectLngLatToInset(ring[0], transform);
+      ctx.moveTo(sx, sy);
+      for (let i = 1; i < ring.length; i++) {
+        const [cx, cy] = projectLngLatToInset(ring[i], transform);
+        ctx.lineTo(cx, cy);
+      }
+      ctx.closePath();
+    }
+  };
+
+  const drawFeature = (feature) => {
+    const cat  = feature?.properties?.[NORMALIZED_FIELD] ?? "";
+    const style = getPrintZoningStyle(cat);
+    const geom  = feature?.geometry;
+    if (!geom) return;
+
+    const polygons =
+      geom.type === "Polygon"      ? [geom.coordinates] :
+      geom.type === "MultiPolygon" ? geom.coordinates   : [];
+
+    for (const polygon of polygons) {
+      // polygon = array of rings (outer + holes)
+      buildPath(polygon);
+
+      // Base fill
+      ctx.fillStyle = style.fill;
+      ctx.fill("evenodd");
+
+      // Hatch overlay for public utility zone
+      if (style.hatch) {
+        if (!hatchPatterns[cat]) {
+          hatchPatterns[cat] = createPublicUtilityHatchPattern(
+            ctx, style.fill, style.hatch,
+          );
+        }
+        ctx.fillStyle = hatchPatterns[cat];
+        buildPath(polygon); // re-build path after fill consumed it
+        ctx.fill("evenodd");
+      }
+
+      // Polygon outline
+      ctx.strokeStyle = style.outline;
+      ctx.lineWidth   = 1.8;
+      buildPath(polygon);
+      ctx.stroke();
+    }
+  };
+
+  // Draw non-hatch zones first, then hatch, to keep the outline on top.
+  const features = geojson.features ?? [];
+  features.forEach((f) => {
+    const cat = f?.properties?.[NORMALIZED_FIELD] ?? "";
+    if (!PRINT_ZONING_STYLE[cat]?.hatch) drawFeature(f);
+  });
+  features.forEach((f) => {
+    const cat = f?.properties?.[NORMALIZED_FIELD] ?? "";
+    if (PRINT_ZONING_STYLE[cat]?.hatch) drawFeature(f);
+  });
+};
+
+/**
+ * Draw the compact Land Use Zoning legend directly onto the inset canvas.
+ * Placed in the bottom-right corner by default; shifts up if that area is
+ * likely to contain the KMZ callout.
+ */
+const drawInsetZoningLegend = ({ ctx, width, height, kmzPixelX, kmzPixelY }) => {
+  const swatchW   = 22;
+  const swatchH   = 13;
+  const padX      = 10;
+  const padY      = 8;
+  const rowH      = swatchH + 6;
+  const fontSize  = 18;
+  const titleSize = 20;
+  ctx.font = `600 ${fontSize}px Arial, sans-serif`;
+
+  // Measure widest label to size the box.
+  const maxLabelW = PRINT_ZONING_LEGEND.reduce((max, item) => {
+    const w = ctx.measureText(item.label).width;
+    return w > max ? w : max;
+  }, 0);
+
+  const boxW = swatchW + padX * 3 + maxLabelW;
+  const boxH = padY * 2 + titleSize + 4 + PRINT_ZONING_LEGEND.length * rowH;
+  const margin = 18;
+
+  // Default: bottom-right
+  let bx = width  - boxW - margin;
+  let by = height - boxH - margin;
+
+  // If KMZ callout is in the bottom-right quadrant, shift legend to top-right.
+  if (
+    typeof kmzPixelX === "number" && typeof kmzPixelY === "number" &&
+    kmzPixelX > width / 2 && kmzPixelY > height / 2
+  ) {
+    by = margin;
+  }
+
+  // Background
+  ctx.fillStyle = "rgba(255,255,255,0.95)";
+  ctx.fillRect(bx, by, boxW, boxH);
+  ctx.strokeStyle = "#475569";
+  ctx.lineWidth   = 1.2;
+  ctx.strokeRect(bx, by, boxW, boxH);
+
+  // Title
+  ctx.font      = `700 ${titleSize}px Arial, sans-serif`;
+  ctx.fillStyle = "#111827";
+  ctx.textBaseline = "top";
+  ctx.fillText("Land Use Zoning", bx + padX, by + padY);
+
+  let rowY = by + padY + titleSize + 4;
+
+  PRINT_ZONING_LEGEND.forEach((item) => {
+    const sx = bx + padX;
+    const sy = rowY + (rowH - swatchH) / 2;
+
+    // Swatch background
+    ctx.fillStyle = item.fill;
+    ctx.fillRect(sx, sy, swatchW, swatchH);
+
+    // Hatch overlay on the swatch
+    if (item.hatch) {
+      const swatchPat = createPublicUtilityHatchPattern(
+        ctx, item.fill, item.hatch, 8,
+      );
+      ctx.fillStyle = swatchPat;
+      ctx.fillRect(sx, sy, swatchW, swatchH);
+    }
+
+    // Swatch border
+    ctx.strokeStyle = "rgba(17,24,39,0.4)";
+    ctx.lineWidth   = 0.8;
+    ctx.strokeRect(sx, sy, swatchW, swatchH);
+
+    // Label
+    ctx.font      = `500 ${fontSize}px Arial, sans-serif`;
+    ctx.fillStyle = "#111827";
+    ctx.textBaseline = "middle";
+    ctx.fillText(item.label, sx + swatchW + padX, rowY + rowH / 2);
+
+    rowY += rowH;
+  });
+};
+
+/**
+ * Draw the KMZ location callout: red dot marker + leader line + label box.
+ * The label box is placed in the quadrant with the most open space.
+ */
+const drawKmzLocationCallout = ({ ctx, px, py, label, width, height }) => {
+  const safeLabel = String(label || "Imported KMZ");
+
+  // ── Marker ────────────────────────────────────────────────────────────────
+  // White halo
+  ctx.beginPath();
+  ctx.arc(px, py, 16, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.fill();
+  ctx.strokeStyle = "#7f1d1d";
+  ctx.lineWidth   = 2;
+  ctx.stroke();
+  // Red dot
+  ctx.beginPath();
+  ctx.arc(px, py, 9, 0, Math.PI * 2);
+  ctx.fillStyle   = "#dc2626";
+  ctx.fill();
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth   = 1.5;
+  ctx.stroke();
+
+  // ── Callout box ───────────────────────────────────────────────────────────
+  const fontSize   = 26;
+  const boxPadX    = 14;
+  const boxPadY    = 10;
+  const maxTextW   = 360;
+  const leaderGap  = 36;
+  const margin     = 22;
+
+  ctx.font = `700 ${fontSize}px Arial, sans-serif`;
+  const measured = Math.min(ctx.measureText(safeLabel).width, maxTextW);
+  const boxW = measured + boxPadX * 2;
+  const boxH = fontSize  + boxPadY * 2;
+
+  // Quadrant: push the box away from the canvas centre so it sits in open space.
+  const placeRight = px < width  / 2;
+  const placeBelow = py < height / 2;
+
+  let bx = placeRight ? px + leaderGap : px - leaderGap - boxW;
+  let by = placeBelow ? py + leaderGap : py - leaderGap - boxH;
+
+  bx = Math.max(margin, Math.min(bx, width  - boxW - margin));
+  by = Math.max(margin, Math.min(by, height - boxH - margin));
+
+  // Leader line: connect marker centre to nearest edge of the box
+  const anchorX =
+    px < bx         ? bx :
+    px > bx + boxW  ? bx + boxW :
+    bx + boxW / 2;
+  const anchorY =
+    py < by         ? by :
+    py > by + boxH  ? by + boxH :
+    by + boxH / 2;
+
+  ctx.strokeStyle = "#8b2d2d";
+  ctx.lineWidth   = 2.2;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(anchorX, anchorY);
+  ctx.stroke();
+
+  // Box shadow
+  ctx.shadowColor   = "rgba(0,0,0,0.18)";
+  ctx.shadowBlur    = 6;
+  ctx.shadowOffsetX = 1;
+  ctx.shadowOffsetY = 1;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(bx, by, boxW, boxH);
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur  = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  ctx.strokeStyle = "#8b2d2d";
+  ctx.lineWidth   = 1.5;
+  ctx.strokeRect(bx, by, boxW, boxH);
+
+  ctx.fillStyle    = "#111827";
+  ctx.textBaseline = "middle";
+  ctx.fillText(safeLabel, bx + boxPadX, by + boxH / 2, maxTextW);
+};
+
+/**
+ * Main inset image generator.
+ *
+ * Renders a print-quality RUDA Principle Land Use Zoning overview using
+ * pure Canvas 2D (no Mapbox map). The uploaded KMZ is represented only as
+ * a callout annotation at its geographic centre. Returns a PNG DataURL.
+ */
+const createPrincipleLandUseInsetImage = async ({ importedGeoJSON, label }) => {
+  const rawZoning    = await getMpPrincipleZoningGeoJSON();
+  const zoningGeoJSON = normalizeLandUseGeoJSON(rawZoning);
+
+  if (!zoningGeoJSON?.features?.length) {
+    throw new Error("Principle Land Use Zoning contains no features.");
+  }
+
+  const CANVAS_W = 1400;
+  const CANVAS_H =  900;
+  const PADDING  =   60;
+
+  const canvas = document.createElement("canvas");
+  canvas.width  = CANVAS_W;
+  canvas.height = CANVAS_H;
+  const ctx = canvas.getContext("2d");
+
+  // White background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  // Compute geographic bounds of the zoning dataset and build the transform.
+  const zoningBounds = bbox(zoningGeoJSON);
+  if (!zoningBounds.every((v) => Number.isFinite(v))) {
+    throw new Error("Could not compute zoning extent.");
+  }
+
+  const transform = createInsetTransform({
+    bounds:  zoningBounds,
+    width:   CANVAS_W,
+    height:  CANVAS_H,
+    padding: PADDING,
+  });
+
+  if (!transform) throw new Error("Degenerate zoning extent.");
+
+  // ── Draw zoning polygons ──────────────────────────────────────────────────
+  drawZoningFeatures({ ctx, geojson: zoningGeoJSON, transform });
+
+  // ── Compute KMZ canvas location ──────────────────────────────────────────
+  // Use the bounding-box centre of the uploaded KMZ as the representative
+  // point. Falls back gracefully if importedGeoJSON is undefined or empty.
+  let kmzPx = null;
+  let kmzPy = null;
+  try {
+    const kmzBounds = bbox(importedGeoJSON);
+    if (kmzBounds.every((v) => Number.isFinite(v))) {
+      const kmzLng = (kmzBounds[0] + kmzBounds[2]) / 2;
+      const kmzLat = (kmzBounds[1] + kmzBounds[3]) / 2;
+      [kmzPx, kmzPy] = projectLngLatToInset([kmzLng, kmzLat], transform);
+    }
+  } catch {
+    // KMZ location unavailable — omit callout, still render zoning.
+  }
+
+  // ── Draw legend ───────────────────────────────────────────────────────────
+  drawInsetZoningLegend({
+    ctx,
+    width:    CANVAS_W,
+    height:   CANVAS_H,
+    kmzPixelX: kmzPx,
+    kmzPixelY: kmzPy,
+  });
+
+  // ── Draw KMZ callout (only when a valid location exists) ──────────────────
+  if (kmzPx !== null && kmzPy !== null) {
+    drawKmzLocationCallout({
+      ctx,
+      px:     kmzPx,
+      py:     kmzPy,
+      label,
+      width:  CANVAS_W,
+      height: CANVAS_H,
+    });
+  }
+
+  return canvas.toDataURL("image/png", 1);
+};
+
 const buildLegendRows = (uploadedTitle) => [
   {
     id: "ruda-jurisdiction",
@@ -224,6 +656,8 @@ const makePrintableHtml = ({
         </div>`,
     )
     .join("");
+
+  const landUseLegendHtml = ""; // Legend is now rendered directly into the inset PNG.
 
   return `<!doctype html>
 <html>
@@ -295,17 +729,34 @@ const makePrintableHtml = ({
       padding: 5px;
     }
     .north svg { width: 96px; height: 96px; display: block; }
-    .inset {
+    /* ── Bottom-left block: inset map + credit, visually attached ── */
+    .bottom-left-block {
       position: absolute;
       left: 18px;
       bottom: 18px;
-      width: 300px;
-      background: rgba(255,255,255,.96);
-      border: 2px solid #334155;
-      padding: 8px;
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
     }
-    .inset-title { font-size: 12px; font-weight: 800; margin-bottom: 6px; }
-    .inset img { width: 100%; height: 165px; object-fit: contain; background: #eef2f7; border: 1px solid #64748b; }
+    .inset {
+      width: 100%;
+      background: #ffffff;
+      border: 2px solid #111827;
+      border-bottom: none;
+      padding: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,.16);
+    }
+    .inset-map-wrap { position: relative; width: 100%; }
+    .inset img {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      object-position: center;
+      background: #ffffff;
+      border: 1px solid #64748b;
+      display: block;
+    }
     .legend {
       position: absolute;
       right: 18px;
@@ -352,14 +803,15 @@ const makePrintableHtml = ({
       background: linear-gradient(90deg,#111827 0 25%,#fff 25% 50%,#111827 50% 75%,#fff 75% 100%);
     }
     .credit {
-      position: absolute;
-      left: 18px;
-      bottom: 203px;
-      padding: 5px 8px;
-      background: rgba(255,255,255,.92);
-      border: 1px solid #334155;
-      font-size: 10px;
+      width: 100%;
+      padding: 6px 8px;
+      background: rgba(255,255,255,.96);
+      border: 2px solid #111827;
+      border-top: 1px solid #334155;
+      font-size: 9.5px;
+      line-height: 1.3;
       font-weight: 700;
+      text-align: center;
     }
     @media print {
       html, body { width: 420mm; height: 297mm; }
@@ -392,12 +844,17 @@ const makePrintableHtml = ({
       </svg>
     </div>
 
-    <div class="inset">
-      <div class="inset-title">RUDA / LP Principle Boundary Overview</div>
-      <img src="${insetImage || mapImage}" alt="Overview map" />
+    <div class="bottom-left-block">
+      <div class="inset">
+        <div class="inset-map-wrap">
+          <img src="${insetImage || mapImage}" alt="RUDA Principle Land Use Zoning overview" />
+        </div>
+      </div>
+      <div class="credit">
+        Prepared By: GIS Section, LA&amp;EM Department<br/>
+        Ravi Urban Development Authority (RUDA)
+      </div>
     </div>
-
-    <div class="credit">Prepared by: GIS Section, LA&amp;EM Department — RUDA</div>
 
     <div class="legend">
       <h3>Legend</h3>
@@ -830,10 +1287,24 @@ export default function Import({ map, onClose }) {
     };
 
     try {
-      // Capture the user's current map view first. This becomes the lower-left
-      // overview and therefore includes every layer currently open on the map.
+      // Keep the current-view capture only as a safe fallback. The preferred
+      // lower-left inset is generated from the RUDA Principle Land Use Zoning
+      // dataset and the uploaded KMZ is highlighted at its true location.
       await waitForMapRender(map);
-      const overviewImage = map.getCanvas().toDataURL("image/png", 1);
+      const fallbackOverviewImage = map.getCanvas().toDataURL("image/png", 1);
+
+      let zoningInsetImage = fallbackOverviewImage;
+      try {
+        zoningInsetImage = await createPrincipleLandUseInsetImage({
+          importedGeoJSON,
+          label: summary?.title || "Imported KMZ",
+        });
+      } catch (insetError) {
+        console.warn(
+          "Principle Land Use Zoning inset could not be generated; using current map overview instead.",
+          insetError,
+        );
+      }
 
       // Force the imported polygon to use the official print symbology,
       // regardless of the styling contained in the uploaded file.
@@ -884,7 +1355,7 @@ export default function Import({ map, onClose }) {
         makePrintableHtml({
           title,
           mapImage,
-          insetImage: overviewImage || mapImage,
+          insetImage: zoningInsetImage || fallbackOverviewImage || mapImage,
           legendRows,
           logoUrl: RudaLogo,
           scaleText,
