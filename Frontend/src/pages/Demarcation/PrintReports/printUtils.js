@@ -1437,6 +1437,7 @@ export const createPlanCanvas = async ({
   watermark = true,
   showDimensions = true,
   showVertexLabels = true,
+  showCornerBoxes = false,
   showContextLabels = true,
   northArrow = true,
 }) => {
@@ -1680,6 +1681,28 @@ export const createPlanCanvas = async ({
       ctx.strokeText(dimension, 0, 0);
       ctx.fillStyle = "#161616";
       ctx.fillText(dimension, 0, 0);
+      ctx.restore();
+    });
+  }
+
+  if (showCornerBoxes && mode === "site") {
+    dimensionRing.slice(0, 8).forEach((point, index) => {
+      const [x, y] = project(point);
+      const vertexLabel = String.fromCharCode(65 + index);
+      const boxSize = 30;
+
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = "#7b1f63";
+      ctx.lineWidth = 3;
+      ctx.fillRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
+      ctx.strokeRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
+
+      ctx.font = "700 18px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#1e3a5f";
+      ctx.fillText(vertexLabel, x, y + 0.5);
       ctx.restore();
     });
   }
