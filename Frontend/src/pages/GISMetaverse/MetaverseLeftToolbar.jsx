@@ -62,28 +62,45 @@ export default function MetaverseLeftToolbar({
   const selectedDroneConfig = getProjectDroneConfig(selectedProjectId);
   const droneImageryAvailable = hasProjectDroneImagery(selectedProjectId);
 
-  // ── Disabled-state resolver ──────────────────────────────────────────────
+  // ── Project-aware disabled-state resolver ────────────────────────────────
+  // Both Plot Filter and Drone Analysis depend on the project selected in the
+  // top MetaverseSubHeader. They stay visible in the toolbar, but remain
+  // disabled until their project prerequisite is satisfied.
   const getToolDisabledState = (toolId) => {
-    if (toolId !== "droneImagery") {
+    if (toolId === "filter") {
+      if (!selectedProjectId) {
+        return {
+          disabled: true,
+          reason: "Select a project from the top filters first.",
+        };
+      }
+
       return { disabled: false, reason: "" };
     }
 
-    if (!selectedProjectId) {
-      return { disabled: true, reason: "Select a project first." };
-    }
+    if (toolId === "droneImagery") {
+      if (!selectedProjectId) {
+        return { disabled: true, reason: "Select a project first." };
+      }
 
-    if (!droneImageryAvailable) {
-      return {
-        disabled: true,
-        reason: "Drone imagery is not available for the selected project.",
-      };
+      if (!droneImageryAvailable) {
+        return {
+          disabled: true,
+          reason: "Drone imagery is not available for the selected project.",
+        };
+      }
     }
 
     return { disabled: false, reason: "" };
   };
 
-  // ── Auto-close drone panel when project becomes invalid ──────────────────
+  // ── Auto-close project-dependent panels when selection becomes invalid ───
   useEffect(() => {
+    if (activeTool === "filter" && !selectedProjectId) {
+      setActiveTool(null);
+      return;
+    }
+
     if (
       activeTool === "droneImagery" &&
       (!selectedProjectId || !droneImageryAvailable)
@@ -244,6 +261,7 @@ export default function MetaverseLeftToolbar({
           {activeTool === "filter" && (
             <Filter
               filters={filters}
+              projectId={selectedProjectId}
               setLayerVisibility={setLayerVisibility}
               onApply={(nextFilters) => {
                 setFilters((previous) => ({ ...previous, ...nextFilters }));
