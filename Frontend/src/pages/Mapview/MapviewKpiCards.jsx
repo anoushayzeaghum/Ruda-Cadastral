@@ -34,23 +34,22 @@ const metrics = [
 function KpiCard({ icon, label, value, accent }) {
   return (
     <div
-      className="min-w-0 rounded-lg border border-white/20 border-l-[#61d7a3] bg-[#06291f] px-2.5 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
+      className="min-w-0 rounded-lg border border-white/20 border-l-[#61d7a3] bg-[#06291f] px-2.5 py-4 shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
       style={{ opacity: 1 }}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[8px] font-bold uppercase tracking-[0.16em] text-white/65">
+          <p className="truncate text-[10px] font-normal uppercase tracking-[0.16em] text-white/65">
             {label}
           </p>
-          <p className="mt-1 text-base font-bold leading-none text-white">
+          <p className="mt-1 text-[12px] font-normal leading-none text-white">
             {value}
           </p>
         </div>
         <span className={`shrink-0 rounded-md p-1.5 ${accent}`}>
-          {createElement(icon, { size: 13, strokeWidth: 2.2 })}
+          {createElement(icon, { size: 15, strokeWidth: 2.2 })}
         </span>
       </div>
-      <p className="mt-1 text-[8px] text-white/50">Backend records</p>
     </div>
   );
 }
