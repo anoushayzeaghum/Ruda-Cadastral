@@ -13,10 +13,23 @@ import JSZip from "jszip";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import RudaLogo from "../../../assets/Ruda.png";
 import { PRINT_EVENTS, dispatchPrintEvent } from "../Printing/PrintEvents";
-import { getMpPrincipleZoningGeoJSON } from "../../../services/metaverseApi";
+import {
+  getMpPrincipleZoningGeoJSON,
+  getRiverGeoJSON,
+  getRiverRaviGeoJSON,
+  getRudaGeoJSON,
+} from "../../../services/metaverseApi";
 import {
   normalizeLandUseGeoJSON,
 } from "./Layers/LayerManager/BaseData/LandUseLayer";
+import {
+  RIVER_BOUNDARY_COLOR,
+} from "./Layers/LayerManager/RudaMasterPlanLayers/RTWLayers/RiverBoundaryLayer";
+import {
+  RIVER_RAVI_COLOR,
+  RIVER_RAVI_WATER_PLANE_COLOR,
+  RIVER_RAVI_RIVER_BED_COLOR,
+} from "./Layers/LayerManager/RudaMasterPlanLayers/RTWLayers/RiverRaviLayer";
 
 // ── constants ──────────────────────────────────────────────────────────────────
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
@@ -225,6 +238,52 @@ const PRINT_ZONING_LEGEND = [
   { label: "Pond Area",          fill: "#73c7f2" },
 ];
 
+/** Normalise common API response shapes to a GeoJSON FeatureCollection. */
+const toFeatureCollection = (value) => {
+  const raw = value?.data || value?.results || value;
+  if (raw?.type === "FeatureCollection") return raw;
+  if (raw?.type === "Feature") {
+    return { type: "FeatureCollection", features: [raw] };
+  }
+  if (Array.isArray(raw?.features)) {
+    return { type: "FeatureCollection", features: raw.features };
+  }
+  if (Array.isArray(raw)) {
+    return { type: "FeatureCollection", features: raw };
+  }
+  return { type: "FeatureCollection", features: [] };
+};
+
+/** Extract the phase/zone label used by the existing Master Plan Phases layer. */
+const getPhaseLabel = (properties = {}) =>
+  properties.phases_new ??
+  properties.phases ??
+  properties.phase_name ??
+  properties.phase ??
+  properties.phase_no ??
+  properties.phase_no_ ??
+  properties.name ??
+  properties.Name ??
+  properties.name_ ??
+  properties.project_name ??
+  properties.project ??
+  properties.title ??
+  properties.label ??
+  properties.remarks ??
+  "";
+
+const formatInsetPhaseLabel = (value = "") => {
+  const text = String(value).trim();
+  if (!text) return "";
+  const lower = text.toLowerCase();
+  if (lower.includes("2b")) return "PHASE-2B";
+  if (lower.includes("2a")) return "PHASE-2A";
+  if (lower.includes("phase 3") || lower.includes("phase-3") || lower.includes("phase - 3")) return "PHASE-3";
+  if (lower.includes("phase 1") || lower.includes("phase-1") || lower.includes("phase - 1")) return "PHASE-1";
+  if (lower.includes("jhok")) return "JHOK FOREST";
+  return text.toUpperCase();
+};
+
 /** Return the print style for a normalised zoning category string. */
 const getPrintZoningStyle = (category) =>
   PRINT_ZONING_STYLE[category] ?? { fill: "#cccccc", outline: "#888888" };
@@ -369,36 +428,177 @@ const drawZoningFeatures = ({ ctx, geojson, transform }) => {
   });
 };
 
+/** Draw Polygon/MultiPolygon/LineString/MultiLineString geometry on the inset. */
+const traceGeometryOnInset = ({ ctx, geometry, transform }) => {
+  if (!geometry) return;
+
+  const traceLine = (coords, close = false) => {
+    if (!coords?.length) return;
+    const [sx, sy] = projectLngLatToInset(coords[0], transform);
+    ctx.moveTo(sx, sy);
+    for (let i = 1; i < coords.length; i++) {
+      const [x, y] = projectLngLatToInset(coords[i], transform);
+      ctx.lineTo(x, y);
+    }
+    if (close) ctx.closePath();
+  };
+
+  if (geometry.type === "Polygon") {
+    geometry.coordinates.forEach((ring) => traceLine(ring, true));
+  } else if (geometry.type === "MultiPolygon") {
+    geometry.coordinates.forEach((polygon) =>
+      polygon.forEach((ring) => traceLine(ring, true)),
+    );
+  } else if (geometry.type === "LineString") {
+    traceLine(geometry.coordinates, false);
+  } else if (geometry.type === "MultiLineString") {
+    geometry.coordinates.forEach((line) => traceLine(line, false));
+  }
+};
+
+/**
+ * Draw Proposed River beneath River 2025 using the colours from the project's
+ * existing RUDA Master Plan river layer files.
+ */
+const drawInsetRiverLayers = ({
+  ctx,
+  proposedRiverGeoJSON,
+  riverRaviGeoJSON,
+  transform,
+}) => {
+  const drawCollection = ({ geojson, fillColor, fillOpacity, lineColor, lineWidth, riverRavi = false }) => {
+    (geojson?.features || []).forEach((feature) => {
+      const geometry = feature?.geometry;
+      if (!geometry) return;
+
+      let resolvedColor = fillColor;
+      if (riverRavi) {
+        const props = feature.properties || {};
+        const type = String(
+          props.type ?? props.river_type ?? props.category ?? props.landuse ?? "",
+        ).trim().toLowerCase();
+        resolvedColor = type.includes("bed")
+          ? RIVER_RAVI_RIVER_BED_COLOR
+          : RIVER_RAVI_WATER_PLANE_COLOR;
+      }
+
+      const isPolygon = geometry.type === "Polygon" || geometry.type === "MultiPolygon";
+      ctx.beginPath();
+      traceGeometryOnInset({ ctx, geometry, transform });
+      if (isPolygon) {
+        ctx.save();
+        ctx.globalAlpha = fillOpacity;
+        ctx.fillStyle = resolvedColor;
+        ctx.fill("evenodd");
+        ctx.restore();
+      }
+      ctx.strokeStyle = lineColor || resolvedColor;
+      ctx.lineWidth = lineWidth;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.stroke();
+    });
+  };
+
+  // Proposed River first so River 2025 remains visually dominant on top.
+  drawCollection({
+    geojson: proposedRiverGeoJSON,
+    fillColor: RIVER_BOUNDARY_COLOR,
+    fillOpacity: 0.22,
+    lineColor: RIVER_BOUNDARY_COLOR,
+    lineWidth: 5,
+  });
+
+  drawCollection({
+    geojson: riverRaviGeoJSON,
+    fillColor: RIVER_RAVI_COLOR,
+    fillOpacity: 0.72,
+    lineColor: RIVER_RAVI_COLOR,
+    lineWidth: 4,
+    riverRavi: true,
+  });
+};
+
+/**
+ * Draw phase/zone labels such as PHASE-1, PHASE-2A, PHASE-2B and PHASE-3
+ * on top of the zoning inset. Labels use the same property fallbacks as the
+ * existing MasterPlanPhasesLayer.
+ */
+const drawInsetPhaseLabels = ({ ctx, phaseGeoJSON, transform }) => {
+  const grouped = new Map();
+
+  (phaseGeoJSON?.features || []).forEach((feature) => {
+    const label = formatInsetPhaseLabel(getPhaseLabel(feature?.properties || {}));
+    if (!label || !feature?.geometry) return;
+    try {
+      const b = bbox(feature);
+      if (!b.every((v) => Number.isFinite(v))) return;
+      const existing = grouped.get(label);
+      if (!existing) grouped.set(label, [...b]);
+      else {
+        existing[0] = Math.min(existing[0], b[0]);
+        existing[1] = Math.min(existing[1], b[1]);
+        existing[2] = Math.max(existing[2], b[2]);
+        existing[3] = Math.max(existing[3], b[3]);
+      }
+    } catch {
+      // Skip malformed phase geometry without affecting the inset.
+    }
+  });
+
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "700 34px Arial, sans-serif";
+  ctx.lineJoin = "round";
+
+  grouped.forEach((b, label) => {
+    const lng = (b[0] + b[2]) / 2;
+    const lat = (b[1] + b[3]) / 2;
+    const [x, y] = projectLngLatToInset([lng, lat], transform);
+
+    // Strong white halo keeps the labels readable on saturated zoning fills.
+    ctx.strokeStyle = "rgba(255,255,255,0.96)";
+    ctx.lineWidth = 8;
+    ctx.strokeText(label, x, y);
+    ctx.fillStyle = "#2f3742";
+    ctx.fillText(label, x, y);
+  });
+
+  ctx.restore();
+};
+
 /**
  * Draw the compact Land Use Zoning legend directly onto the inset canvas.
  * Placed in the bottom-right corner by default; shifts up if that area is
  * likely to contain the KMZ callout.
  */
 const drawInsetZoningLegend = ({ ctx, width, height, kmzPixelX, kmzPixelY }) => {
-  const swatchW   = 22;
-  const swatchH   = 13;
-  const padX      = 10;
-  const padY      = 8;
-  const rowH      = swatchH + 6;
-  const fontSize  = 18;
-  const titleSize = 20;
-  ctx.font = `600 ${fontSize}px Arial, sans-serif`;
+  const swatchW   = 38;
+  const swatchH   = 22;
+  const padX      = 16;
+  const padY      = 14;
+  const rowH      = 33;
+  const fontSize  = 27;
+  const titleSize = 32;
 
-  // Measure widest label to size the box.
-  const maxLabelW = PRINT_ZONING_LEGEND.reduce((max, item) => {
+  const rows = PRINT_ZONING_LEGEND;
+
+  ctx.font = `600 ${fontSize}px Arial, sans-serif`;
+  const maxLabelW = rows.reduce((max, item) => {
     const w = ctx.measureText(item.label).width;
-    return w > max ? w : max;
+    return Math.max(max, w);
   }, 0);
 
   const boxW = swatchW + padX * 3 + maxLabelW;
-  const boxH = padY * 2 + titleSize + 4 + PRINT_ZONING_LEGEND.length * rowH;
-  const margin = 18;
+  const boxH =
+    padY * 2 + titleSize + 8 +
+    PRINT_ZONING_LEGEND.length * rowH;
+  const margin = 14;
 
-  // Default: bottom-right
-  let bx = width  - boxW - margin;
+  let bx = width - boxW - margin;
   let by = height - boxH - margin;
 
-  // If KMZ callout is in the bottom-right quadrant, shift legend to top-right.
   if (
     typeof kmzPixelX === "number" && typeof kmzPixelY === "number" &&
     kmzPixelX > width / 2 && kmzPixelY > height / 2
@@ -406,51 +606,43 @@ const drawInsetZoningLegend = ({ ctx, width, height, kmzPixelX, kmzPixelY }) => 
     by = margin;
   }
 
-  // Background
-  ctx.fillStyle = "rgba(255,255,255,0.95)";
+  ctx.fillStyle = "rgba(255,255,255,0.98)";
   ctx.fillRect(bx, by, boxW, boxH);
-  ctx.strokeStyle = "#475569";
-  ctx.lineWidth   = 1.2;
+  ctx.strokeStyle = "#334155";
+  ctx.lineWidth = 1.6;
   ctx.strokeRect(bx, by, boxW, boxH);
 
-  // Title
-  ctx.font      = `700 ${titleSize}px Arial, sans-serif`;
+  ctx.font = `700 ${titleSize}px Arial, sans-serif`;
   ctx.fillStyle = "#111827";
   ctx.textBaseline = "top";
   ctx.fillText("Land Use Zoning", bx + padX, by + padY);
 
-  let rowY = by + padY + titleSize + 4;
+  let rowY = by + padY + titleSize + 8;
 
-  PRINT_ZONING_LEGEND.forEach((item) => {
+  const drawLegendRow = (item) => {
     const sx = bx + padX;
     const sy = rowY + (rowH - swatchH) / 2;
-
-    // Swatch background
     ctx.fillStyle = item.fill;
     ctx.fillRect(sx, sy, swatchW, swatchH);
 
-    // Hatch overlay on the swatch
     if (item.hatch) {
-      const swatchPat = createPublicUtilityHatchPattern(
-        ctx, item.fill, item.hatch, 8,
-      );
+      const swatchPat = createPublicUtilityHatchPattern(ctx, item.fill, item.hatch, 8);
       ctx.fillStyle = swatchPat;
       ctx.fillRect(sx, sy, swatchW, swatchH);
     }
 
-    // Swatch border
-    ctx.strokeStyle = "rgba(17,24,39,0.4)";
-    ctx.lineWidth   = 0.8;
+    ctx.strokeStyle = "rgba(17,24,39,0.45)";
+    ctx.lineWidth = 1;
     ctx.strokeRect(sx, sy, swatchW, swatchH);
 
-    // Label
-    ctx.font      = `500 ${fontSize}px Arial, sans-serif`;
+    ctx.font = `500 ${fontSize}px Arial, sans-serif`;
     ctx.fillStyle = "#111827";
     ctx.textBaseline = "middle";
     ctx.fillText(item.label, sx + swatchW + padX, rowY + rowH / 2);
-
     rowY += rowH;
-  });
+  };
+
+  PRINT_ZONING_LEGEND.forEach(drawLegendRow);
 };
 
 /**
@@ -463,7 +655,7 @@ const drawKmzLocationCallout = ({ ctx, px, py, label, width, height }) => {
   // ── Marker ────────────────────────────────────────────────────────────────
   // White halo
   ctx.beginPath();
-  ctx.arc(px, py, 16, 0, Math.PI * 2);
+  ctx.arc(px, py, 18, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(255,255,255,0.92)";
   ctx.fill();
   ctx.strokeStyle = "#7f1d1d";
@@ -471,7 +663,7 @@ const drawKmzLocationCallout = ({ ctx, px, py, label, width, height }) => {
   ctx.stroke();
   // Red dot
   ctx.beginPath();
-  ctx.arc(px, py, 9, 0, Math.PI * 2);
+  ctx.arc(px, py, 10, 0, Math.PI * 2);
   ctx.fillStyle   = "#dc2626";
   ctx.fill();
   ctx.strokeStyle = "#ffffff";
@@ -479,12 +671,14 @@ const drawKmzLocationCallout = ({ ctx, px, py, label, width, height }) => {
   ctx.stroke();
 
   // ── Callout box ───────────────────────────────────────────────────────────
-  const fontSize   = 26;
-  const boxPadX    = 14;
-  const boxPadY    = 10;
-  const maxTextW   = 360;
-  const leaderGap  = 36;
-  const margin     = 22;
+  // Keep the locator readable after the high-resolution canvas is scaled
+  // into the print inset.
+  const fontSize   = 30;
+  const boxPadX    = 16;
+  const boxPadY    = 12;
+  const maxTextW   = 400;
+  const leaderGap  = 42;
+  const margin     = 24;
 
   ctx.font = `700 ${fontSize}px Arial, sans-serif`;
   const measured = Math.min(ctx.measureText(safeLabel).width, maxTextW);
@@ -548,47 +742,90 @@ const drawKmzLocationCallout = ({ ctx, px, py, label, width, height }) => {
  * a callout annotation at its geographic centre. Returns a PNG DataURL.
  */
 const createPrincipleLandUseInsetImage = async ({ importedGeoJSON, label }) => {
-  const rawZoning    = await getMpPrincipleZoningGeoJSON();
-  const zoningGeoJSON = normalizeLandUseGeoJSON(rawZoning);
+  // Fetch the exact RUDA Master Plan datasets used by the live layer manager.
+  // River/phase calls are optional: a failure must not stop the zoning inset.
+  const [zoningResult, proposedRiverResult, riverRaviResult, phasesResult] =
+    await Promise.allSettled([
+      getMpPrincipleZoningGeoJSON(),
+      getRiverGeoJSON(),
+      getRiverRaviGeoJSON(),
+      getRudaGeoJSON(),
+    ]);
 
+  if (zoningResult.status !== "fulfilled") {
+    throw zoningResult.reason || new Error("Could not load Principle Land Use Zoning.");
+  }
+
+  const zoningGeoJSON = normalizeLandUseGeoJSON(zoningResult.value);
   if (!zoningGeoJSON?.features?.length) {
     throw new Error("Principle Land Use Zoning contains no features.");
   }
 
-  const CANVAS_W = 1400;
-  const CANVAS_H =  900;
-  const PADDING  =   60;
+  const proposedRiverGeoJSON =
+    proposedRiverResult.status === "fulfilled"
+      ? toFeatureCollection(proposedRiverResult.value)
+      : { type: "FeatureCollection", features: [] };
+  const riverRaviGeoJSON =
+    riverRaviResult.status === "fulfilled"
+      ? toFeatureCollection(riverRaviResult.value)
+      : { type: "FeatureCollection", features: [] };
+  const phaseGeoJSON =
+    phasesResult.status === "fulfilled"
+      ? toFeatureCollection(phasesResult.value)
+      : { type: "FeatureCollection", features: [] };
+
+  if (proposedRiverResult.status === "rejected") {
+    console.warn("Proposed River could not be added to KMZ inset.", proposedRiverResult.reason);
+  }
+  if (riverRaviResult.status === "rejected") {
+    console.warn("River 2025 could not be added to KMZ inset.", riverRaviResult.reason);
+  }
+  if (phasesResult.status === "rejected") {
+    console.warn("RUDA phase labels could not be added to KMZ inset.", phasesResult.reason);
+  }
+
+  // Slightly taller canvas + very small geographic margin makes the long RUDA
+  // zoning footprint fill more of the inset while still preserving the full extent.
+  const CANVAS_W = 1180;
+  const CANVAS_H =  940;
+  const PADDING  =    8;
 
   const canvas = document.createElement("canvas");
-  canvas.width  = CANVAS_W;
+  canvas.width = CANVAS_W;
   canvas.height = CANVAS_H;
   const ctx = canvas.getContext("2d");
 
-  // White background
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-  // Compute geographic bounds of the zoning dataset and build the transform.
   const zoningBounds = bbox(zoningGeoJSON);
   if (!zoningBounds.every((v) => Number.isFinite(v))) {
     throw new Error("Could not compute zoning extent.");
   }
 
   const transform = createInsetTransform({
-    bounds:  zoningBounds,
-    width:   CANVAS_W,
-    height:  CANVAS_H,
+    bounds: zoningBounds,
+    width: CANVAS_W,
+    height: CANVAS_H,
     padding: PADDING,
   });
-
   if (!transform) throw new Error("Degenerate zoning extent.");
 
-  // ── Draw zoning polygons ──────────────────────────────────────────────────
+  // 1) Principle Land Use Zoning base.
   drawZoningFeatures({ ctx, geojson: zoningGeoJSON, transform });
 
-  // ── Compute KMZ canvas location ──────────────────────────────────────────
-  // Use the bounding-box centre of the uploaded KMZ as the representative
-  // point. Falls back gracefully if importedGeoJSON is undefined or empty.
+  // 2) Proposed River + River 2025 from RUDAMasterPlan.jsx configuration.
+  drawInsetRiverLayers({
+    ctx,
+    proposedRiverGeoJSON,
+    riverRaviGeoJSON,
+    transform,
+  });
+
+  // 3) Phase/zone labels, e.g. PHASE-1 / PHASE-2A / PHASE-2B / PHASE-3.
+  drawInsetPhaseLabels({ ctx, phaseGeoJSON, transform });
+
+  // 4) Locate the imported KMZ on the same geographic transform.
   let kmzPx = null;
   let kmzPy = null;
   try {
@@ -599,29 +836,28 @@ const createPrincipleLandUseInsetImage = async ({ importedGeoJSON, label }) => {
       [kmzPx, kmzPy] = projectLngLatToInset([kmzLng, kmzLat], transform);
     }
   } catch {
-    // KMZ location unavailable — omit callout, still render zoning.
+    // KMZ location unavailable — zoning + rivers + labels can still print.
   }
 
-  // ── Draw legend ───────────────────────────────────────────────────────────
-  drawInsetZoningLegend({
-    ctx,
-    width:    CANVAS_W,
-    height:   CANVAS_H,
-    kmzPixelX: kmzPx,
-    kmzPixelY: kmzPy,
-  });
-
-  // ── Draw KMZ callout (only when a valid location exists) ──────────────────
   if (kmzPx !== null && kmzPy !== null) {
     drawKmzLocationCallout({
       ctx,
-      px:     kmzPx,
-      py:     kmzPy,
+      px: kmzPx,
+      py: kmzPy,
       label,
-      width:  CANVAS_W,
+      width: CANVAS_W,
       height: CANVAS_H,
     });
   }
+
+  // Draw legend last so it is never hidden by river, phase or callout graphics.
+  drawInsetZoningLegend({
+    ctx,
+    width: CANVAS_W,
+    height: CANVAS_H,
+    kmzPixelX: kmzPx,
+    kmzPixelY: kmzPy,
+  });
 
   return canvas.toDataURL("image/png", 1);
 };
@@ -734,7 +970,7 @@ const makePrintableHtml = ({
       position: absolute;
       left: 18px;
       bottom: 18px;
-      width: 400px;
+      width: 560px;
       display: flex;
       flex-direction: column;
       gap: 0;
@@ -744,7 +980,7 @@ const makePrintableHtml = ({
       background: #ffffff;
       border: 2px solid #111827;
       border-bottom: none;
-      padding: 6px;
+      padding: 7px;
       box-shadow: 0 4px 14px rgba(0,0,0,.16);
     }
     .inset-map-wrap { position: relative; width: 100%; }

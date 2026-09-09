@@ -3,9 +3,6 @@ import { Filter as FilterIcon, X } from "lucide-react";
 import { LAYER_PANEL_SCROLL } from "./Layers/_layerScroll";
 import {
   getBlocks,
-  // getPlotOptionsAll,
-  getPlotOptions,
-  getProjects,
   getPlotsGeoJSON,
   normalizeFeatures,
 } from "../../../services/metaverseApi";
@@ -34,7 +31,6 @@ export default function Filter({
 }) {
   const activeProjectId = filters?.projectId || projectId || "";
 
-  const [projects, setProjects] = useState([]);
   const [blocks, setBlocks] = useState([]);
 
   const [plotOptions, setPlotOptions] = useState({
@@ -86,14 +82,6 @@ export default function Filter({
       ),
     );
 
-  const uniqueSorted = (arr = []) =>
-    [...new Set(arr.filter(Boolean))].sort((a, b) =>
-      String(a).localeCompare(String(b), undefined, {
-        numeric: true,
-        sensitivity: "base",
-      }),
-    );
-
   const areaToMarla = (value) => {
     const text = String(value || "")
       .toLowerCase()
@@ -108,34 +96,23 @@ export default function Filter({
     return number;
   };
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const res = await getProjects();
-        setProjects(res || []);
-      } catch (err) {
-        console.error("Projects error:", err);
-      }
-    };
-
-    loadProjects();
-  }, []);
-
-  useEffect(() => {
-    setSelectedFilters((prev) => ({
-      ...prev,
-      projectId: activeProjectId || prev.projectId || "",
-      block: filters?.block || prev.block || "",
-      plotNo: filters?.plotNo || prev.plotNo || "",
-      plotType: filters?.plotType || prev.plotType || "",
-      area: filters?.area || prev.area || "",
-      parkfront: filters?.parkfront || prev.parkfront || "",
-      rd_facing: filters?.rd_facing || prev.rd_facing || "",
-      poss_st: filters?.poss_st || prev.poss_st || "",
-      plotStatus: filters?.plotStatus || prev.plotStatus || "",
-      tr_cate: filters?.tr_cate || prev.tr_cate || "",
-      tr_own: filters?.tr_own || prev.tr_own || "",
-      site_plan: filters?.site_plan || prev.site_plan || "",
-    }));
+    // The selected project is owned by MetaverseSubHeader. Filter.jsx only
+    // consumes that project and never keeps a separate project selection.
+    setSelectedFilters({
+      ...initialSelectedFilters,
+      projectId: activeProjectId,
+      block: filters?.block || "",
+      plotNo: filters?.plotNo || "",
+      plotType: filters?.plotType || "",
+      area: filters?.area || "",
+      parkfront: filters?.parkfront || "",
+      rd_facing: filters?.rd_facing || "",
+      poss_st: filters?.poss_st || "",
+      plotStatus: filters?.plotStatus || "",
+      tr_cate: filters?.tr_cate || "",
+      tr_own: filters?.tr_own || "",
+      site_plan: filters?.site_plan || "",
+    });
   }, [
     activeProjectId,
     filters?.block,
@@ -290,21 +267,6 @@ export default function Filter({
         [key]: value,
       };
 
-      // Project changed
-      if (key === "projectId") {
-        updated.block = "";
-        updated.plotType = "";
-        updated.area = "";
-        updated.plotNo = "";
-        updated.parkfront = "";
-        updated.rd_facing = "";
-        updated.poss_st = "";
-        updated.plotStatus = "";
-        updated.tr_cate = "";
-        updated.tr_own = "";
-        updated.site_plan = "";
-      }
-
       // Block changed
       if (key === "block") {
         updated.plotType = "";
@@ -422,30 +384,23 @@ export default function Filter({
         </button>
       </div>
 
+      {!activeProjectId ? (
+        <div className="p-5 text-center text-[11px] leading-relaxed text-white/50">
+          Select a project from the top Phase → Project Type → Project filters
+          to enable Plot Filter.
+        </div>
+      ) : (
       <div
         className={`max-h-[calc(70vh-6.5rem)] p-4 sm:max-h-[min(360px,calc(100vh-180px))] ${LAYER_PANEL_SCROLL}`}
       >
         <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold text-white/80">
-              Project Name
-            </label>
-
-            <select
-              className="h-8 w-full rounded-md border border-[#0f3d2e] bg-[#1f2937] px-2 text-xs text-white"
-              value={selectedFilters.projectId || ""}
-              onChange={(e) => handleChange("projectId", e.target.value)}
-            >
-              <option value="">Select Project</option>
-
-              {naturalSort(projects, (p) => p.name || p.project_name).map(
-                (p) => (
-                  <option key={p.gid || p.id} value={p.gid || p.id}>
-                    {p.name || p.project_name || `Project ${p.gid || p.id}`}
-                  </option>
-                ),
-              )}
-            </select>
+          <div className="rounded-md border border-[#13593f] bg-[#0a3327] px-3 py-2">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-white/45">
+              Project Source
+            </div>
+            <div className="mt-0.5 text-[11px] font-semibold text-[#9be37b]">
+              Using the project selected in the top filter bar
+            </div>
           </div>
 
           <div>
@@ -703,6 +658,7 @@ export default function Filter({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

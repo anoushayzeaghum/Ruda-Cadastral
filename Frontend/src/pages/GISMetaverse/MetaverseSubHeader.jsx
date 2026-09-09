@@ -309,13 +309,37 @@ export default function MetaverseSubHeader({
         [key]: value,
       };
 
+      // Plot Filter values belong to one concrete project. Whenever any part
+      // of the Phase → Project Type → Project hierarchy changes, clear the
+      // detailed plot filters so values from the previous project cannot leak
+      // into the next project's API requests.
+      const clearPlotFilters = () => {
+        next.block = "";
+        next.plotNo = "";
+        next.plotType = "";
+        next.area = "";
+        next.parkfront = "";
+        next.rd_facing = "";
+        next.poss_st = "";
+        next.plotStatus = "";
+        next.tr_cate = "";
+        next.tr_own = "";
+        next.site_plan = "";
+      };
+
       if (key === "phase") {
         next.projectType = "";
         next.projectId = "";
+        clearPlotFilters();
       }
 
       if (key === "projectType") {
         next.projectId = "";
+        clearPlotFilters();
+      }
+
+      if (key === "projectId") {
+        clearPlotFilters();
       }
 
       return next;

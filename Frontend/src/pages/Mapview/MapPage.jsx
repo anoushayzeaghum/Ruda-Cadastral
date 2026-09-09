@@ -16,7 +16,7 @@ import AOIAnalysisPanel from "./Layers/AOIAnalysisPanel.jsx";
 import MapView from "./MapView.jsx";
 import MapPrinter from "../Mapview/Printing/MapPrinter.jsx";
 import { getRudaMauzas } from "../../services/api";
-
+import MapviewKpiCards from "./MapviewKpiCards.jsx";
 const getKhasraNumber = (props = {}) => {
   const candidates = [
     props.kh,
@@ -905,7 +905,12 @@ export default function MapPage() {
             }}
           />
         )}
-
+        <MapviewKpiCards filters={activeFilters}
+        selectedMauzaIds={activeSelectedMauzaDetails
+          .map((m) => getMauzaId(m))
+          .filter((id) => id !== undefined && id !== null && id !== "")
+          .map(String)}
+      />
         <LeftPanel
           map={mapboxMap}
           layers={layers}

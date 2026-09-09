@@ -33,9 +33,9 @@ const tools = [
   { id: "droneImagery", label: "Drone Analysis", icon: Drone },
   { id: "droneVideos", label: "Drone Videos", icon: Video },
   { id: "measurement", label: "Measurement", icon: Ruler },
+  { id: "basemaps", label: "Basemaps", icon: Globe2 },
   { id: "flyTo", label: "Fly To", icon: Send },
   { id: "import", label: "Import", icon: FileInput },
-  { id: "basemaps", label: "Basemaps", icon: Globe2 },
 ];
 
 const TOOL_BUTTON_SIZE = 36;
@@ -62,28 +62,45 @@ export default function MetaverseLeftToolbar({
   const selectedDroneConfig = getProjectDroneConfig(selectedProjectId);
   const droneImageryAvailable = hasProjectDroneImagery(selectedProjectId);
 
-  // ── Disabled-state resolver ──────────────────────────────────────────────
+  // ── Project-aware disabled-state resolver ────────────────────────────────
+  // Both Plot Filter and Drone Analysis depend on the project selected in the
+  // top MetaverseSubHeader. They stay visible in the toolbar, but remain
+  // disabled until their project prerequisite is satisfied.
   const getToolDisabledState = (toolId) => {
-    if (toolId !== "droneImagery") {
+    if (toolId === "filter") {
+      if (!selectedProjectId) {
+        return {
+          disabled: true,
+          reason: "Select a project from the top filters first.",
+        };
+      }
+
       return { disabled: false, reason: "" };
     }
 
-    if (!selectedProjectId) {
-      return { disabled: true, reason: "Select a project first." };
-    }
+    if (toolId === "droneImagery") {
+      if (!selectedProjectId) {
+        return { disabled: true, reason: "Select a project first." };
+      }
 
-    if (!droneImageryAvailable) {
-      return {
-        disabled: true,
-        reason: "Drone imagery is not available for the selected project.",
-      };
+      if (!droneImageryAvailable) {
+        return {
+          disabled: true,
+          reason: "Drone imagery is not available for the selected project.",
+        };
+      }
     }
 
     return { disabled: false, reason: "" };
   };
 
-  // ── Auto-close drone panel when project becomes invalid ──────────────────
+  // ── Auto-close project-dependent panels when selection becomes invalid ───
   useEffect(() => {
+    if (activeTool === "filter" && !selectedProjectId) {
+      setActiveTool(null);
+      return;
+    }
+
     if (
       activeTool === "droneImagery" &&
       (!selectedProjectId || !droneImageryAvailable)
@@ -234,16 +251,20 @@ export default function MetaverseLeftToolbar({
 
       {activeTool && activeTool !== "layers" && activeTool !== "import" && (
         <div
-          className={`absolute bottom-0 left-0 right-0 rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 sm:w-[320px] ${
-            isActiveToolExpanded ? "z-[10000]" : "z-30"
-          }`}
+          className={`absolute bottom-0 left-0 right-0 rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 ${
+            activeTool === "basemaps" ? "sm:w-[440px]" : "sm:w-[320px]"
+          } ${isActiveToolExpanded ? "z-[10000]" : "z-30"}`}
           style={{
+            // Every tool panel opens vertically in line with its own toolbar icon.
+            // Basemaps is positioned above Fly To in the toolbar so its larger
+            // 4-column panel still has enough room above the bottom statistics.
             top: window.innerWidth >= 640 ? `${panelTop}px` : undefined,
           }}
         >
           {activeTool === "filter" && (
             <Filter
               filters={filters}
+              projectId={selectedProjectId}
               setLayerVisibility={setLayerVisibility}
               onApply={(nextFilters) => {
                 setFilters((previous) => ({ ...previous, ...nextFilters }));

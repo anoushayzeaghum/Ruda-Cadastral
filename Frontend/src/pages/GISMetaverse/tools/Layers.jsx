@@ -2,6 +2,7 @@ import AdministrativeBoundaries from "./Layers/AdministrativeBoundaries";
 import RUDAMasterPlan from "./Layers/RUDAMasterPlan";
 import Cadastral from "./Layers/Cadastral";
 import Topographic from "./Layers/Topographic";
+import Hydrology from "./Layers/Hydrology";
 import BaseData from "./Layers/BaseData";
 import ProjectMasterPlan from "./Layers/ProjectMasterPlan";
 import PrivateHousingSchemes from "./Layers/PrivateHousingSchemes";
@@ -28,6 +29,7 @@ export default function LayersPanel({
       <RUDAMasterPlan map={map} />
       <Cadastral map={map} selectedProjectId={selectedProjectId} />
       <Topographic map={map} />
+      <Hydrology />
       <ProjectMasterPlan
         map={map}
         selectedProjectId={selectedProjectId}
