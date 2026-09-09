@@ -18,13 +18,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { TOUR_DATA, getSceneIndex } from '../data/tourData';
-
-// ---------------------------------------------------------------------------
-// Asset path helper (mirrors the one previously in App.jsx)
-// ---------------------------------------------------------------------------
-const VIRTUAL_TOUR_PUBLIC_BASE = `${import.meta.env.BASE_URL}virtual-tour/`;
-const asset = (path) =>
-  `${VIRTUAL_TOUR_PUBLIC_BASE}${path}`.replace(/([^:]\/)\/+/g, '$1');
+import { getTourTileRoot } from '../utils/virtualTourAssets';
 
 // ---------------------------------------------------------------------------
 // Stop touch / scroll events from propagating into the Marzipano viewer
@@ -244,11 +238,7 @@ export default function useMarzipanoViewer({
 
     // ── Scene creation ────────────────────────────────────────────────────
     const scenes = TOUR_DATA.scenes.map((data) => {
-      const mediaBase =
-        import.meta.env.VITE_VIRTUAL_TOUR_MEDIA_URL?.replace(/\/$/, '') ||
-        `${import.meta.env.BASE_URL}tiles`.replace(/([^:]\/)\/+/g, '$1');
-
-      const tileRoot = `${mediaBase}/${data.id}`;
+      const tileRoot = getTourTileRoot(data.id);
 
       const source = Marzipano.ImageUrlSource.fromString(
         `${tileRoot}/{z}/{f}/{y}/{x}.jpg`,

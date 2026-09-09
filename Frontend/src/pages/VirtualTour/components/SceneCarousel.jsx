@@ -8,12 +8,8 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { TOUR_DATA } from '../data/tourData';
 import { getSceneIndex } from '../data/tourData';
+import { getTourPreviewUrl } from '../utils/virtualTourAssets';
 
-const mediaBase =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_VIRTUAL_TOUR_MEDIA_URL?.replace(/\/$/, '')) ||
-  '/tiles';
-
-const thumbUrl = (id) => `${mediaBase}/${id}/preview.jpg`;
 
 export default function SceneCarousel({
   currentSceneId,
@@ -103,7 +99,7 @@ export default function SceneCarousel({
             >
               <img
                 className="vt-carousel__card-thumb"
-                src={thumbUrl(scene.id)}
+                src={getTourPreviewUrl(scene.id)}
                 alt=""
                 loading="lazy"
                 draggable={false}

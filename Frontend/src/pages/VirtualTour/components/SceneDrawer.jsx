@@ -3,12 +3,8 @@
  */
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { TOUR_DATA } from '../data/tourData';
+import { getTourPreviewUrl } from '../utils/virtualTourAssets';
 
-const mediaBase =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_VIRTUAL_TOUR_MEDIA_URL?.replace(/\/$/, '')) ||
-  '/tiles';
-
-const thumbUrl = (id) => `${mediaBase}/${id}/preview.jpg`;
 
 export default function SceneDrawer({ isOpen, currentSceneId, onSceneSelect, onClose }) {
   const [query, setQuery] = useState('');
@@ -80,7 +76,7 @@ export default function SceneDrawer({ isOpen, currentSceneId, onSceneSelect, onC
                 >
                   <img
                     className="vt-drawer__card-thumb"
-                    src={thumbUrl(scene.id)}
+                    src={getTourPreviewUrl(scene.id)}
                     alt=""
                     loading="lazy"
                     aria-hidden="true"

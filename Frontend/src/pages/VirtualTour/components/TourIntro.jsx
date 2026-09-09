@@ -6,13 +6,9 @@
  */
 import React, { useEffect, useState } from 'react';
 import { TOUR_DATA } from '../data/tourData';
+import { getTourPreviewUrl } from '../utils/virtualTourAssets';
 
-// Build the preview URL the same way the hook does for the first scene
-const mediaBase =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_VIRTUAL_TOUR_MEDIA_URL?.replace(/\/$/, '')) ||
-  '/tiles';
-
-const firstPreview = `${mediaBase}/${TOUR_DATA.scenes[0].id}/preview.jpg`;
+const firstPreview = getTourPreviewUrl(TOUR_DATA.scenes[0].id);
 
 // Format ISO date string → human-readable "Month YYYY"
 const formatDate = (iso) => {
