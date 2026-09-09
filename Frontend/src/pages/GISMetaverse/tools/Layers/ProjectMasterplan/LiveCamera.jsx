@@ -28,16 +28,6 @@ const CAMERA_STYLE = {
   labelLayer: "metaverse-camera-locations-label",
 };
 
-// Placeholder camera feeds — set `stream` to a real HLS URL when available
-const CAMERA_FEEDS = [
-  { id: 1, label: "Camera 1", location: "Main Entrance", stream: null },
-  { id: 2, label: "Camera 2", location: "Block-A Gate", stream: null },
-  { id: 3, label: "Camera 3", location: "Roundabout", stream: null },
-  { id: 4, label: "Camera 4", location: "Boulevard", stream: null },
-  { id: 5, label: "Camera 5", location: "Park North", stream: null },
-  { id: 6, label: "Camera 6", location: "Commercial Area", stream: null },
-];
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const clampOpacity = (value = 100) => {
@@ -100,13 +90,27 @@ export default function LiveCamera({
     opacity: layerVisibility.cameraLocationsOpacity ?? 100,
   });
   const [liveFeedOpen, setLiveFeedOpen] = useState(false);
-  const [selectedCamera, setSelectedCamera] = useState(CAMERA_FEEDS[0]);
+  const [cameraFeeds, setCameraFeeds] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [activeAttributeTable, setActiveAttributeTable] = useState(null);
   const [cameraDropdownOpen, setCameraDropdownOpen] = useState(false);
   const [cameraDropdownData, setCameraDropdownData] = useState([]);
 
   const cameraEnabled = !!layerVisibility.cameraLocations;
+
+  // Reset feeds when project changes
+  useEffect(() => {
+    setCameraFeeds([]);
+    setSelectedCamera(null);
+  }, [selectedProjectId]);
+
+  // Load camera feeds when modal opens (in case dropdown was never triggered)
+  useEffect(() => {
+    if (liveFeedOpen && cameraFeeds.length === 0) {
+      loadCameraDropdownData();
+    }
+  }, [liveFeedOpen]);
 
   const readCameraSourceOrFetch = async () => {
     const fromMap = getMapSourceGeoJSON(map, CAMERA_STYLE.sourceId);
@@ -123,7 +127,22 @@ export default function LiveCamera({
 
     try {
       const geojson = await readCameraSourceOrFetch();
-      setCameraDropdownData(geojson.features || []);
+      const features = geojson.features || [];
+      setCameraDropdownData(features);
+
+      // Build the live feeds list from the real API data
+      const feeds = features.map((f, i) => {
+        const props = f.properties || {};
+        return {
+          id: props.gid ?? i + 1,
+          label: props.camera || `Camera ${i + 1}`,
+          location: props.coordinate || props.camera || "-",
+          stream: props.iframe_lin || null,
+        };
+      });
+      setCameraFeeds(feeds);
+      // Default to first camera if not already selected
+      setSelectedCamera((prev) => prev ?? feeds[0] ?? null);
     } catch (error) {
       console.error("Camera locations dropdown load error:", error);
       setCameraDropdownData([]);
@@ -290,34 +309,40 @@ export default function LiveCamera({
             <div className="flex min-h-0 flex-1">
               {/* Camera list sidebar */}
               <div className="flex w-40 shrink-0 flex-col gap-1 overflow-y-auto border-r border-[#2a3548] bg-[#0d1420] p-2 [scrollbar-width:none]">
-                {CAMERA_FEEDS.map((cam) => (
-                  <button
-                    key={cam.id}
-                    type="button"
-                    onClick={() => setSelectedCamera(cam)}
-                    className={`flex flex-col rounded-md px-2.5 py-2 text-left transition ${
-                      selectedCamera.id === cam.id
-                        ? "border border-[#f97316]/40 bg-[#f97316]/15 text-[#f97316]"
-                        : "border border-transparent text-white/60 hover:bg-[#1a2535] hover:text-white"
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5 text-[11px] font-semibold">
-                      <span
-                        className="h-1.5 w-1.5 rounded-full"
-                        style={{
-                          backgroundColor:
-                            selectedCamera.id === cam.id
-                              ? "#f97316"
-                              : "#4b5563",
-                        }}
-                      />
-                      {cam.label}
-                    </span>
-                    <span className="mt-0.5 truncate text-[10px] opacity-60">
-                      {cam.location}
-                    </span>
-                  </button>
-                ))}
+                {cameraFeeds.length === 0 ? (
+                  <p className="px-2 py-3 text-[11px] text-white/40">
+                    Loading cameras…
+                  </p>
+                ) : (
+                  cameraFeeds.map((cam) => (
+                    <button
+                      key={cam.id}
+                      type="button"
+                      onClick={() => setSelectedCamera(cam)}
+                      className={`flex flex-col rounded-md px-2.5 py-2 text-left transition ${
+                        selectedCamera?.id === cam.id
+                          ? "border border-[#f97316]/40 bg-[#f97316]/15 text-[#f97316]"
+                          : "border border-transparent text-white/60 hover:bg-[#1a2535] hover:text-white"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 text-[11px] font-semibold">
+                        <span
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{
+                            backgroundColor:
+                              selectedCamera?.id === cam.id
+                                ? "#f97316"
+                                : "#4b5563",
+                          }}
+                        />
+                        {cam.label}
+                      </span>
+                      <span className="mt-0.5 truncate text-[10px] opacity-60">
+                        {cam.location}
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>
 
               {/* Feed viewer */}
@@ -326,27 +351,33 @@ export default function LiveCamera({
                 <div className="flex shrink-0 items-center justify-between border-b border-[#2a3548] bg-[#131c2b] px-4 py-2">
                   <div>
                     <p className="text-[12px] font-bold text-white">
-                      {selectedCamera.label}
+                      {selectedCamera?.label ?? "—"}
                     </p>
                     <p className="text-[10px] text-white/40">
-                      {selectedCamera.location}
+                      {selectedCamera?.location ?? ""}
                     </p>
                   </div>
-                  <span className="rounded bg-green-500/15 px-2 py-0.5 text-[10px] font-semibold text-green-400">
-                    Connected
+                  <span
+                    className={`rounded px-2 py-0.5 text-[10px] font-semibold ${
+                      selectedCamera?.stream
+                        ? "bg-green-500/15 text-green-400"
+                        : "bg-yellow-500/15 text-yellow-400"
+                    }`}
+                  >
+                    {selectedCamera?.stream ? "Connected" : "No Stream"}
                   </span>
                 </div>
 
-                {/* Stream / placeholder */}
+                {/* Stream / iframe */}
                 <div className="relative flex flex-1 items-center justify-center bg-black">
-                  {selectedCamera.stream ? (
-                    <video
+                  {selectedCamera?.stream ? (
+                    <iframe
                       key={selectedCamera.id}
                       src={selectedCamera.stream}
-                      autoPlay
-                      muted
-                      playsInline
-                      className="h-full w-full object-contain"
+                      title={selectedCamera.label}
+                      allow="autoplay; fullscreen"
+                      allowFullScreen
+                      className="h-full w-full border-0"
                     />
                   ) : (
                     <div className="flex flex-col items-center gap-3 text-center">
@@ -358,19 +389,25 @@ export default function LiveCamera({
                           Stream not available
                         </p>
                         <p className="mt-1 text-[11px] text-white/30">
-                          Configure a stream URL for {selectedCamera.label}
+                          {selectedCamera
+                            ? `No stream URL configured for ${selectedCamera.label}`
+                            : "Select a camera to view the feed"}
                         </p>
                       </div>
                     </div>
                   )}
 
                   {/* HUD overlays */}
-                  <div className="pointer-events-none absolute bottom-2 left-3 text-[10px] font-semibold text-white/50">
-                    {selectedCamera.label} · {selectedCamera.location}
-                  </div>
-                  <div className="pointer-events-none absolute bottom-2 right-3 font-mono text-[10px] text-white/40">
-                    <LiveClock />
-                  </div>
+                  {selectedCamera && (
+                    <>
+                      <div className="pointer-events-none absolute bottom-2 left-3 text-[10px] font-semibold text-white/50">
+                        {selectedCamera.label} · {selectedCamera.location}
+                      </div>
+                      <div className="pointer-events-none absolute bottom-2 right-3 font-mono text-[10px] text-white/40">
+                        <LiveClock />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
