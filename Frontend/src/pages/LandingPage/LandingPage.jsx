@@ -350,6 +350,16 @@ const GIS_APPS = [
     gradientTo: "#004225",
     tags: ["Location", "Analytics"],
   },
+  {
+    icon: <Eye size={22} />,
+    title: "RUDA Virtual Tour",
+    desc: "Explore RUDA development locations through immersive 360° panoramic tours with interactive scene navigation, information hotspots and progress monitoring.",
+    img: "/s2.png",
+    route: "/virtual-tour",
+    gradientFrom: "#0B7A3B",
+    gradientTo: "#00351F",
+    tags: ["360° Tour", "Site Progress"],
+  },
 ];
 
 const FEATURES = [
