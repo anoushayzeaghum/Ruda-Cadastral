@@ -10,6 +10,9 @@ import {
   getBlocks,
   getPrecientBoundaryGeoJSON,
   getProjects,
+  getProjectsByPhase,
+  getProjectsByPhaseAndType,
+  getProjectGeoJSON,
 } from "../../services/metaverseApi";
 
 const getProjectValue = (project, keys) => {
@@ -19,7 +22,6 @@ const getProjectValue = (project, keys) => {
       return String(value).trim();
     }
   }
-
   return "";
 };
 
@@ -47,32 +49,23 @@ function KpiCard({ icon, label, value, detail, accent }) {
   );
 }
 
-export default function MetaverseKpiCards({
-  filters,
-}) {
+export default function MetaverseKpiCards({ filters }) {
   const [projects, setProjects] = useState([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
   const [precinctBoundaryCount, setPrecinctBoundaryCount] = useState(null);
   const [blockCount, setBlockCount] = useState(null);
-  const [projectsLoading, setProjectsLoading] = useState(true);
 
+  // All projects fetched once — used to derive phase/type/project counts client-side.
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getProjects(), getPrecientBoundaryGeoJSON(), getBlocks()])
-      .then(([projectData, precinctData, blockData]) => {
-        if (cancelled) return;
-
-        setProjects(Array.isArray(projectData) ? projectData : []);
-        setPrecinctBoundaryCount(precinctData?.features?.length ?? 0);
-        setBlockCount(Array.isArray(blockData) ? blockData.length : 0);
+    getProjects()
+      .then((data) => {
+        if (!cancelled) setProjects(Array.isArray(data) ? data : []);
       })
       .catch((error) => {
-        console.error("KPI DATA ERROR:", error);
-        if (cancelled) return;
-
-        setProjects([]);
-        setPrecinctBoundaryCount(0);
-        setBlockCount(0);
+        console.error("KPI PROJECTS ERROR:", error);
+        if (!cancelled) setProjects([]);
       })
       .finally(() => {
         if (!cancelled) setProjectsLoading(false);
@@ -83,26 +76,83 @@ export default function MetaverseKpiCards({
     };
   }, []);
 
-  const phaseCount = useMemo(() => {
-    const phases = projects
-      .map((project) =>
-        getProjectValue(project, ["phase", "phases", "phase_name"]),
-      )
-      .filter(Boolean);
+  // Filtered project set, mirroring MetaverseSubHeader's filteredProjectOptions logic.
+  const filteredProjects = useMemo(() => {
+    return projects.filter((p) => {
+      if (filters?.projectId) {
+        return String(p.gid ?? p.id) === String(filters.projectId);
+      }
+      if (filters?.phase && p.phase !== filters.phase) return false;
+      if (filters?.projectType && p.type !== filters.projectType) return false;
+      return true;
+    });
+  }, [projects, filters?.phase, filters?.projectType, filters?.projectId]);
 
+  const phaseCount = useMemo(() => {
+    const phases = filteredProjects
+      .map((project) => getProjectValue(project, ["phase", "phases", "phase_name"]))
+      .filter(Boolean);
     return new Set(phases).size;
-  }, [projects]);
+  }, [filteredProjects]);
+
+  // Precinct boundary + block counts follow the same Project > Phase+Type > Phase > all cascade as the subheader's boundary loader.
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCounts = async () => {
+      try {
+        let boundaryGeojson;
+        let blocksData;
+
+        if (filters?.projectId) {
+          [boundaryGeojson, blocksData] = await Promise.all([
+            getProjectGeoJSON(filters.projectId),
+            getBlocks(filters.projectId),
+          ]);
+        } else if (filters?.phase && filters?.projectType) {
+          boundaryGeojson = await getProjectsByPhaseAndType(
+            filters.phase,
+            filters.projectType,
+          );
+          blocksData = await getBlocks();
+        } else if (filters?.phase) {
+          boundaryGeojson = await getProjectsByPhase(filters.phase);
+          blocksData = await getBlocks();
+        } else {
+          [boundaryGeojson, blocksData] = await Promise.all([
+            getPrecientBoundaryGeoJSON(),
+            getBlocks(),
+          ]);
+        }
+
+        if (!cancelled) {
+          setPrecinctBoundaryCount(boundaryGeojson?.features?.length ?? 0);
+          setBlockCount(Array.isArray(blocksData) ? blocksData.length : 0);
+        }
+      } catch (error) {
+        console.error("KPI DATA ERROR:", error);
+        if (!cancelled) {
+          setPrecinctBoundaryCount(0);
+          setBlockCount(0);
+        }
+      }
+    };
+
+    loadCounts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filters?.phase, filters?.projectType, filters?.projectId]);
 
   const selectedProject = projects.find(
-    (project) =>
-      String(project?.gid ?? project?.id ?? "") ===
-      String(filters?.projectId ?? ""),
+    (project) => String(project?.gid ?? project?.id ?? "") === String(filters?.projectId ?? ""),
   );
-
   const selectedProjectName = selectedProject
     ? getProjectValue(selectedProject, ["brief_name", "name", "project_name"])
     : "No project selected";
-  const projectCount = projectsLoading ? "-" : projects.length;
+
+  const projectCount = projectsLoading ? "-" : filteredProjects.length;
   const phaseValue = projectsLoading ? "-" : phaseCount;
   const precinctValue = precinctBoundaryCount === null ? "-" : precinctBoundaryCount;
   const blockValue = blockCount === null ? "-" : blockCount;
@@ -110,41 +160,11 @@ export default function MetaverseKpiCards({
   return (
     <section className="pointer-events-none absolute bottom-3 left-3 right-3 z-[100] sm:bottom-4 sm:left-16 sm:right-4">
       <div className="pointer-events-auto mx-auto flex max-w-[1180px] gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
-        <KpiCard
-          icon={MapPinned}
-          label="Total phases"
-          value={phaseValue}
-          detail="From project records"
-          accent="bg-emerald-400/15 text-emerald-300"
-        />
-        <KpiCard
-          icon={PanelsTopLeft}
-          label="Total projects"
-          value={projectCount}
-          detail="From backend projects"
-          accent="bg-sky-400/15 text-sky-300"
-        />
-        <KpiCard
-          icon={Layers3}
-          label="Precinct boundaries"
-          value={precinctValue}
-          detail="From precinct boundary records"
-          accent="bg-amber-400/15 text-amber-300"
-        />
-        <KpiCard
-          icon={SquareStack}
-          label="Total blocks"
-          value={blockValue}
-          detail="From backend block records"
-          accent="bg-violet-400/15 text-violet-300"
-        />
-        <KpiCard
-          icon={Ruler}
-          label="Current project"
-          value={filters?.projectId ? selectedProjectName || "Selected" : "-"}
-          detail="Selected backend project"
-          accent="bg-rose-400/15 text-rose-300"
-        />
+        <KpiCard icon={MapPinned} label="Total phases" value={phaseValue} detail="From project records" accent="bg-emerald-400/15 text-emerald-300" />
+        <KpiCard icon={PanelsTopLeft} label="Total projects" value={projectCount} detail="From backend projects" accent="bg-sky-400/15 text-sky-300" />
+        <KpiCard icon={Layers3} label="Precinct boundaries" value={precinctValue} detail="From precinct boundary records" accent="bg-amber-400/15 text-amber-300" />
+        <KpiCard icon={SquareStack} label="Total blocks" value={blockValue} detail="From backend block records" accent="bg-violet-400/15 text-violet-300" />
+        <KpiCard icon={Ruler} label="Current project" value={filters?.projectId ? selectedProjectName || "Selected" : "-"} detail="Selected backend project" accent="bg-rose-400/15 text-rose-300" />
       </div>
     </section>
   );
