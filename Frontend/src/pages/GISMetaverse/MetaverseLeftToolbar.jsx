@@ -33,9 +33,9 @@ const tools = [
   { id: "droneImagery", label: "Drone Analysis", icon: Drone },
   { id: "droneVideos", label: "Drone Videos", icon: Video },
   { id: "measurement", label: "Measurement", icon: Ruler },
+  { id: "basemaps", label: "Basemaps", icon: Globe2 },
   { id: "flyTo", label: "Fly To", icon: Send },
   { id: "import", label: "Import", icon: FileInput },
-  { id: "basemaps", label: "Basemaps", icon: Globe2 },
 ];
 
 const TOOL_BUTTON_SIZE = 36;
@@ -251,10 +251,13 @@ export default function MetaverseLeftToolbar({
 
       {activeTool && activeTool !== "layers" && activeTool !== "import" && (
         <div
-          className={`absolute bottom-0 left-0 right-0 rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 sm:w-[320px] ${
-            isActiveToolExpanded ? "z-[10000]" : "z-30"
-          }`}
+          className={`absolute bottom-0 left-0 right-0 rounded-md border border-[#13593f] bg-[#06291f] text-white shadow-2xl sm:bottom-auto sm:left-14 ${
+            activeTool === "basemaps" ? "sm:w-[440px]" : "sm:w-[320px]"
+          } ${isActiveToolExpanded ? "z-[10000]" : "z-30"}`}
           style={{
+            // Every tool panel opens vertically in line with its own toolbar icon.
+            // Basemaps is positioned above Fly To in the toolbar so its larger
+            // 4-column panel still has enough room above the bottom statistics.
             top: window.innerWidth >= 640 ? `${panelTop}px` : undefined,
           }}
         >

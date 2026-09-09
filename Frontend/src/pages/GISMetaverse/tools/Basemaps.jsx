@@ -1,121 +1,169 @@
 import { useState } from "react";
-import { Globe2, Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 
+// Fixed preview tile around Lahore so every card shows a real basemap preview
+// instead of a colour/gradient placeholder. These preview URLs are UI-only;
+// the actual basemap switching logic below is unchanged.
 const basemaps = [
   {
     id: "streets",
     label: "Streets",
     style: "mapbox://styles/mapbox/streets-v12",
-    preview: "linear-gradient(135deg, #d7e3c7, #8db57a)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/13/3339/5787",
+    previewColor: "#d7e3c7",
   },
   {
     id: "satellite",
     label: "Satellite",
     style: "mapbox://styles/mapbox/satellite-streets-v12",
-    preview: "linear-gradient(135deg, #26351f, #7c8b65)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/3339/5787",
+    previewColor: "#26351f",
   },
   {
     id: "light",
     label: "Light",
     style: "mapbox://styles/mapbox/light-v11",
-    preview: "linear-gradient(135deg, #f4f4f2, #cfcfcf)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/13/3339/5787",
+    previewColor: "#e5e7eb",
   },
   {
     id: "dark",
     label: "Dark",
     style: "mapbox://styles/mapbox/dark-v11",
-    preview: "linear-gradient(135deg, #0f3d2e, #374151)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/13/3339/5787",
+    previewColor: "#1f2937",
   },
   {
     id: "outdoors",
     label: "Outdoors",
     style: "mapbox://styles/mapbox/outdoors-v12",
-    preview: "linear-gradient(135deg, #b7d59a, #5f8f58)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/13/3339/5787",
+    previewColor: "#9fbe8a",
   },
-  // ── ESRI basemaps ───────────────────────────────────────────────────────────
+
+  // ── ESRI basemaps ────────────────────────────────────────────────────────
   {
     id: "esri-imagery",
     label: "ESRI Imagery",
-    preview: "linear-gradient(135deg, #2d3b2d, #4a6741)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/3339/5787",
+    previewColor: "#344634",
     style: {
       version: 8,
       sources: {
         "esri-basemap": {
           type: "raster",
-          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+          ],
           tileSize: 256,
-          attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+          attribution:
+            "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
         },
       },
-      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+      layers: [
+        { id: "esri-basemap-layer", type: "raster", source: "esri-basemap" },
+      ],
     },
   },
   {
     id: "esri-streets",
     label: "ESRI Streets",
-    preview: "linear-gradient(135deg, #c9d9b5, #7da86f)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/13/3339/5787",
+    previewColor: "#c9d9b5",
     style: {
       version: 8,
       sources: {
         "esri-basemap": {
           type: "raster",
-          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"],
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+          ],
           tileSize: 256,
-          attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, DeLorme, USGS, Intermap, iPC, NRCAN",
+          attribution:
+            "Tiles &copy; Esri &mdash; Source: Esri, HERE, DeLorme, USGS, Intermap, iPC, NRCAN",
         },
       },
-      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+      layers: [
+        { id: "esri-basemap-layer", type: "raster", source: "esri-basemap" },
+      ],
     },
   },
   {
     id: "esri-topo",
     label: "ESRI Topo",
-    preview: "linear-gradient(135deg, #a8c896, #6b8f5e)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/13/3339/5787",
+    previewColor: "#a8c896",
     style: {
       version: 8,
       sources: {
         "esri-basemap": {
           type: "raster",
-          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"],
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+          ],
           tileSize: 256,
-          attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, DeLorme, Intermap, USGS, NPS",
+          attribution:
+            "Tiles &copy; Esri &mdash; Source: Esri, HERE, DeLorme, Intermap, USGS, NPS",
         },
       },
-      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+      layers: [
+        { id: "esri-basemap-layer", type: "raster", source: "esri-basemap" },
+      ],
     },
   },
   {
     id: "esri-light-gray",
     label: "ESRI Light Gray",
-    preview: "linear-gradient(135deg, #e8e8e8, #c0c0c0)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/13/3339/5787",
+    previewColor: "#e8e8e8",
     style: {
       version: 8,
       sources: {
         "esri-basemap": {
           type: "raster",
-          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"],
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+          ],
           tileSize: 256,
           attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
         },
       },
-      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+      layers: [
+        { id: "esri-basemap-layer", type: "raster", source: "esri-basemap" },
+      ],
     },
   },
   {
     id: "esri-natgeo",
     label: "ESRI NatGeo",
-    preview: "linear-gradient(135deg, #d4e8c2, #8faf6d)",
+    previewUrl:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/13/3339/5787",
+    previewColor: "#d4e8c2",
     style: {
       version: 8,
       sources: {
         "esri-basemap": {
           type: "raster",
-          tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}"],
+          tiles: [
+            "https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}",
+          ],
           tileSize: 256,
-          attribution: "Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ",
+          attribution:
+            "Tiles &copy; Esri &mdash; National Geographic, Esri, DeLorme, NAVTEQ",
         },
       },
-      layers: [{ id: "esri-basemap-layer", type: "raster", source: "esri-basemap" }],
+      layers: [
+        { id: "esri-basemap-layer", type: "raster", source: "esri-basemap" },
+      ],
     },
   },
 ];
@@ -144,38 +192,38 @@ export default function Basemaps({ map, rebuildAllLayers }) {
   };
 
   return (
-    <div className="text-white">
-      <div className="flex items-center justify-between border-b border-[#343c4c] px-4 py-3">
-        <div className="flex items-center gap-2 text-[13px] font-bold">
-          <Globe2 size={15} />
-          <span>BASEMAPS</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 p-3">
+    <div className="max-h-[calc(100vh-150px)] overflow-y-auto text-white">
+      {/* Heading is intentionally NOT repeated here.
+          MetaverseLeftToolbar already renders the single BASemaps panel header. */}
+      <div className="grid grid-cols-4 gap-2 p-3">
         {basemaps.map((basemap) => {
           const isActive = activeBasemap === basemap.id;
 
           return (
             <button
               key={basemap.id}
+              type="button"
               onClick={() => handleBasemapChange(basemap)}
-              className={`overflow-hidden rounded-md border bg-[#06291f] text-left transition hover:border-[#9be37b] ${
+              className={`min-w-0 overflow-hidden rounded-md border bg-[#06291f] text-left transition hover:border-[#9be37b] ${
                 isActive ? "border-[#9be37b]" : "border-[#0f3d2e]"
               }`}
+              title={basemap.label}
             >
               <div
-                className="relative h-16 w-full"
-                style={{ background: basemap.preview }}
+                className="relative h-14 w-full bg-cover bg-center bg-no-repeat"
+                style={{
+                  backgroundColor: basemap.previewColor,
+                  backgroundImage: `url("${basemap.previewUrl}")`,
+                }}
               >
                 {isActive && (
-                  <div className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#9be37b] text-[#06291f]">
+                  <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#9be37b] text-[#06291f] shadow-sm">
                     <Check size={13} strokeWidth={3} />
                   </div>
                 )}
               </div>
 
-              <div className="px-3 py-2 text-xs font-semibold">
+              <div className="truncate px-2 py-2 text-[11px] font-semibold leading-tight">
                 {basemap.label}
               </div>
             </button>
