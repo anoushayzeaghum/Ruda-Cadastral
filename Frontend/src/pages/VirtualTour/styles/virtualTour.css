@@ -1,0 +1,1642 @@
+/* ==========================================================================
+   RUDA Virtual Tour — Design System
+   ==========================================================================
+
+   Token structure
+   ─────────────────────────────────────────────────────────────────────────
+   All colours, radii, shadows, and z-index layers are defined as CSS
+   custom properties on :root so every component inherits them.
+
+   Z-index ladder
+   ─────────────────────────────────────────────────────────────────────────
+   10   #pano (Marzipano canvas — always at the back)
+   100  scene carousel strip
+   200  scene drawer
+   300  viewer controls, mini-map, compass
+   400  header bar
+   500  info panel slide-in
+   600  help overlay / intro screen
+   700  loading screen
+   900  fullscreen / system chrome
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Custom properties
+   -------------------------------------------------------------------------- */
+.ruda-virtual-tour-page {
+  /* Brand palette */
+  --ruda-green:        #16845b;
+  --ruda-green-dim:    rgba(22, 132, 91, 0.18);
+  --ruda-green-mid:    rgba(22, 132, 91, 0.55);
+  --ruda-green-light:  #22c55e;
+
+  /* Dark surface */
+  --ruda-dark-900:     #0a1a14;
+  --ruda-dark-800:     #0d2218;
+  --ruda-dark-700:     #122d20;
+  --ruda-dark-600:     #1a3d2a;
+
+  /* Glass surfaces */
+  --glass-bg:          rgba(13, 34, 24, 0.72);
+  --glass-bg-heavy:    rgba(10, 26, 20, 0.90);
+  --glass-border:      rgba(22, 132, 91, 0.22);
+  --glass-blur:        blur(14px) saturate(1.4);
+
+  /* Text */
+  --text-primary:      #f0faf5;
+  --text-secondary:    #a3c4b2;
+  --text-muted:        #6b8c7d;
+  --text-accent:       var(--ruda-green-light);
+
+  /* Status colours */
+  --status-not-started: #6b7280;
+  --status-in-progress: #f59e0b;
+  --status-completed:   #16a34a;
+  --status-on-hold:     #ef4444;
+
+  /* Geometry */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:   0 2px 8px rgba(0,0,0,0.35);
+  --shadow-md:   0 4px 20px rgba(0,0,0,0.5);
+  --shadow-lg:   0 8px 40px rgba(0,0,0,0.65);
+  --shadow-glow: 0 0 16px rgba(22,132,91,0.35);
+
+  /* Motion */
+  --transition-fast:   150ms ease;
+  --transition-base:   250ms ease;
+  --transition-slow:   450ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --header-h:          56px;
+  --carousel-h:        96px;
+  --drawer-w:          260px;
+  --panel-w:           340px;
+  --minimap-size:      180px;
+  --controls-gap:      8px;
+}
+
+/* --------------------------------------------------------------------------
+   Global reset / base
+   -------------------------------------------------------------------------- */
+.ruda-virtual-tour-page, .ruda-virtual-tour-page *, .ruda-virtual-tour-page *::before, .ruda-virtual-tour-page *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ruda-virtual-tour-page {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--ruda-dark-900);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+               'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.ruda-virtual-tour-page a { color: inherit; text-decoration: none; }
+
+.ruda-virtual-tour-page button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+/* --------------------------------------------------------------------------
+   Pano container — full viewport, always behind everything
+   -------------------------------------------------------------------------- */
+.ruda-virtual-tour-page #pano {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--ruda-dark-900);
+}
+
+/* --------------------------------------------------------------------------
+   Virtual tour shell
+   -------------------------------------------------------------------------- */
+.vt-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none; /* let mouse reach Marzipano by default */
+}
+
+/* Any direct child that needs to intercept events must opt back in */
+.vt-shell > * {
+  pointer-events: auto;
+}
+
+/* --------------------------------------------------------------------------
+   Glass utility
+   -------------------------------------------------------------------------- */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
+.glass--heavy {
+  background: var(--glass-bg-heavy);
+}
+
+/* --------------------------------------------------------------------------
+   LOADING SCREEN
+   -------------------------------------------------------------------------- */
+.vt-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: var(--ruda-dark-900);
+  transition: opacity var(--transition-slow), visibility var(--transition-slow);
+}
+
+.vt-loading.vt-loading--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.vt-loading__logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ruda-green-light);
+  text-transform: uppercase;
+}
+
+.vt-loading__logo span {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.vt-loading__label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Spinner */
+.vt-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--ruda-dark-600);
+  border-top-color: var(--ruda-green);
+  border-radius: 50%;
+  animation: vt-spin 0.9s linear infinite;
+}
+
+@keyframes vt-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   INTRO SCREEN
+   -------------------------------------------------------------------------- */
+.vt-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+  overflow: hidden;
+}
+
+.vt-intro.vt-intro--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Blurred preview background */
+.vt-intro__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(18px) brightness(0.35);
+  transform: scale(1.05); /* hide blur edges */
+  transition: background-image 0.5s ease;
+}
+
+.vt-intro__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 26, 20, 0.55) 0%,
+    rgba(10, 26, 20, 0.80) 100%
+  );
+}
+
+.vt-intro__content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 0 24px;
+  max-width: 560px;
+}
+
+.vt-intro__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  background: var(--ruda-green-dim);
+  border: 1px solid var(--ruda-green-mid);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ruda-green-light);
+}
+
+.vt-intro__badge svg {
+  flex-shrink: 0;
+}
+
+.vt-intro__brand {
+  font-size: clamp(28px, 6vw, 44px);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.vt-intro__brand em {
+  font-style: normal;
+  color: var(--ruda-green-light);
+}
+
+.vt-intro__subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 400px;
+}
+
+.vt-intro__meta {
+  display: flex;
+  gap: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.vt-intro__meta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.vt-intro__meta-item strong {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.vt-intro__enter {
+  margin-top: 8px;
+  padding: 14px 40px;
+  border-radius: var(--radius-full);
+  background: var(--ruda-green);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-glow);
+}
+
+.vt-intro__enter:hover {
+  background: #1ea370;
+  transform: translateY(-1px);
+  box-shadow: 0 0 24px rgba(22,132,91,0.55);
+}
+
+.vt-intro__enter:active {
+  transform: translateY(0);
+}
+
+.vt-intro__skip {
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color var(--transition-fast);
+}
+
+.vt-intro__skip:hover { color: var(--text-secondary); }
+
+/* --------------------------------------------------------------------------
+   HEADER
+   -------------------------------------------------------------------------- */
+.vt-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  transition: transform var(--transition-slow), opacity var(--transition-slow);
+}
+
+.vt-header.vt-header--hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Logo area */
+.vt-header__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.vt-header__logo-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--ruda-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.vt-header__logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.vt-header__logo-text strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.06em;
+}
+
+.vt-header__logo-text span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Divider */
+.vt-header__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--glass-border);
+  flex-shrink: 0;
+}
+
+/* Scene meta */
+.vt-header__scene-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vt-header__scene-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vt-header__scene-sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-wrap: nowrap;
+}
+
+/* Capture date chip */
+.vt-header__date {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--ruda-green-dim);
+  border: 1px solid var(--glass-border);
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Timeline strip (capture version selector) */
+.vt-header__timeline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.vt-header__timeline-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.vt-header__timeline-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--ruda-green-dim);
+}
+
+.vt-header__timeline-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.vt-header__timeline-versions {
+  display: flex;
+  gap: 4px;
+}
+
+.vt-header__timeline-version {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.vt-header__timeline-version:hover {
+  color: var(--text-secondary);
+  border-color: var(--glass-border);
+}
+
+.vt-header__timeline-version.active {
+  color: var(--ruda-green-light);
+  background: var(--ruda-green-dim);
+  border-color: var(--ruda-green-mid);
+}
+
+/* Right controls cluster */
+.vt-header__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.vt-header__ctrl-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  position: relative;
+}
+
+.vt-header__ctrl-btn:hover {
+  background: var(--ruda-green-dim);
+  color: var(--text-primary);
+}
+
+.vt-header__ctrl-btn.active {
+  background: var(--ruda-green-dim);
+  color: var(--ruda-green-light);
+}
+
+/* Immersive mode toggle — hides header */
+.vt-header__immersive-btn {
+  /* same as ctrl-btn */
+}
+
+/* --------------------------------------------------------------------------
+   SCENE DRAWER (left) — full viewport height, no carousel offset
+   -------------------------------------------------------------------------- */
+.vt-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--drawer-w);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(calc(-1 * var(--drawer-w)));
+  transition: transform var(--transition-slow);
+  overflow: hidden;
+}
+
+.vt-drawer.vt-drawer--open {
+  transform: translateX(0);
+}
+
+.vt-drawer__inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Search */
+.vt-drawer__search {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.vt-drawer__search-input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px 7px 32px;
+  font-size: 13px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.vt-drawer__search-input::placeholder { color: var(--text-muted); }
+
+.vt-drawer__search-input:focus {
+  border-color: var(--ruda-green-mid);
+}
+
+.vt-drawer__search-icon {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.vt-drawer__search-wrap {
+  position: relative;
+}
+
+/* Scene list */
+.vt-drawer__list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ruda-green-mid) transparent;
+  padding: 8px 0;
+}
+
+.vt-drawer__list::-webkit-scrollbar { width: 4px; }
+.vt-drawer__list::-webkit-scrollbar-track { background: transparent; }
+.vt-drawer__list::-webkit-scrollbar-thumb {
+  background: var(--ruda-green-mid);
+  border-radius: 2px;
+}
+
+/* Scene card in drawer */
+.vt-drawer__card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+  user-select: none;
+}
+
+.vt-drawer__card:hover {
+  background: rgba(22,132,91,0.1);
+}
+
+.vt-drawer__card.active {
+  background: rgba(22,132,91,0.15);
+  border-left-color: var(--ruda-green);
+}
+
+.vt-drawer__card-thumb {
+  width: 68px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--ruda-dark-700);
+  flex-shrink: 0;
+  border: 1px solid var(--glass-border);
+}
+
+.vt-drawer__card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.vt-drawer__card-num {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.vt-drawer__card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.vt-drawer__card-zone {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   STATUS BADGE
+   -------------------------------------------------------------------------- */
+.vt-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.vt-status-badge--not-started {
+  background: rgba(107,114,128,0.2);
+  color: #9ca3af;
+  border: 1px solid rgba(107,114,128,0.3);
+}
+
+.vt-status-badge--in-progress {
+  background: rgba(245,158,11,0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245,158,11,0.3);
+}
+
+.vt-status-badge--completed {
+  background: rgba(22,163,74,0.15);
+  color: #4ade80;
+  border: 1px solid rgba(22,163,74,0.3);
+}
+
+.vt-status-badge--on-hold {
+  background: rgba(239,68,68,0.15);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.3);
+}
+
+/* --------------------------------------------------------------------------
+   SCENE CAROUSEL — removed, kept as dead CSS for reference
+   -------------------------------------------------------------------------- */
+.vt-carousel { display: none; }
+
+/* --------------------------------------------------------------------------
+   VIEWER CONTROLS — slim pill, vertically centred on right edge
+   -------------------------------------------------------------------------- */
+.vt-controls {
+  position: fixed;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  z-index: 300;
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+
+.vt-controls.vt-controls--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(60px);
+}
+
+/* Single unified pill */
+.vt-controls__pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 5px;
+  border-radius: var(--radius-xl);
+  gap: 2px;
+}
+
+/* Individual control button */
+.vt-ctrl-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+              transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.vt-ctrl-btn:hover {
+  background: var(--ruda-green-dim);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+.vt-ctrl-btn:active { transform: scale(0.93); }
+
+.vt-ctrl-btn.active {
+  color: var(--ruda-green-light);
+  background: var(--ruda-green-dim);
+}
+
+/* Keep the old group + dpad classes harmless (not used now but avoids CSS errors) */
+.vt-controls__group { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.vt-controls__dpad  { display: grid; grid-template-columns: repeat(3,32px); grid-template-rows: repeat(2,32px); gap: 2px; }
+.vt-controls__dpad .vt-ctrl-btn--up    { grid-column:2; grid-row:1; }
+.vt-controls__dpad .vt-ctrl-btn--left  { grid-column:1; grid-row:2; }
+.vt-controls__dpad .vt-ctrl-btn--down  { grid-column:2; grid-row:2; }
+.vt-controls__dpad .vt-ctrl-btn--right { grid-column:3; grid-row:2; }
+
+/* --------------------------------------------------------------------------
+   INFO PANEL (right slide-in) — full viewport height
+   -------------------------------------------------------------------------- */
+.vt-info-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--panel-w);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform var(--transition-slow);
+  overflow: hidden;
+}
+
+.vt-info-panel.vt-info-panel--open {
+  transform: translateX(0);
+}
+
+.vt-info-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.vt-info-panel__category {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ruda-green-light);
+  margin-bottom: 4px;
+}
+
+.vt-info-panel__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.vt-info-panel__close {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: 8px;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.vt-info-panel__close:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+}
+
+.vt-info-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ruda-green-mid) transparent;
+}
+
+.vt-info-panel__body::-webkit-scrollbar { width: 4px; }
+.vt-info-panel__body::-webkit-scrollbar-thumb {
+  background: var(--ruda-green-mid);
+  border-radius: 2px;
+}
+
+/* Media image */
+.vt-info-panel__media {
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--ruda-dark-700);
+  aspect-ratio: 16 / 9;
+}
+
+.vt-info-panel__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Progress bar */
+.vt-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vt-progress__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vt-progress__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.vt-progress__value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ruda-green-light);
+}
+
+.vt-progress__track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--ruda-dark-600);
+  overflow: hidden;
+}
+
+.vt-progress__fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--ruda-green) 0%, var(--ruda-green-light) 100%);
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Meta rows */
+.vt-info-panel__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vt-info-panel__meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.vt-info-panel__meta-key {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.vt-info-panel__meta-val {
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Description */
+.vt-info-panel__desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Comparison button */
+.vt-info-panel__compare {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--ruda-green-dim);
+  border: 1px solid var(--glass-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  width: 100%;
+  justify-content: center;
+}
+
+.vt-info-panel__compare:hover:not(:disabled) {
+  background: var(--ruda-green-mid);
+  color: var(--text-primary);
+}
+
+.vt-info-panel__compare:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   MINI MAP
+   -------------------------------------------------------------------------- */
+.vt-minimap {
+  position: fixed;
+  bottom: calc(var(--carousel-h) + 16px);
+  left: 16px;
+  width: var(--minimap-size);
+  z-index: 300;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: transform var(--transition-slow), opacity var(--transition-slow);
+}
+
+.vt-minimap.vt-minimap--hidden {
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vt-minimap__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--glass-border);
+  cursor: pointer;
+  user-select: none;
+}
+
+.vt-minimap__toggle-icon {
+  color: var(--text-muted);
+  font-size: 10px;
+  transition: transform var(--transition-fast);
+}
+
+.vt-minimap.collapsed .vt-minimap__toggle-icon {
+  transform: rotate(180deg);
+}
+
+.vt-minimap__body {
+  padding: 10px;
+  position: relative;
+  height: 110px;
+  transition: height var(--transition-base), padding var(--transition-base);
+  overflow: hidden;
+}
+
+.vt-minimap.collapsed .vt-minimap__body {
+  height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Scene node */
+.vt-minimap__node {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ruda-dark-600);
+  border: 2px solid var(--ruda-green-mid);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.vt-minimap__node:hover {
+  background: var(--ruda-green-mid);
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+.vt-minimap__node.active {
+  background: var(--ruda-green);
+  border-color: var(--ruda-green-light);
+  box-shadow: 0 0 0 3px var(--ruda-green-dim), var(--shadow-glow);
+  transform: translate(-50%, -50%) scale(1.25);
+}
+
+.vt-minimap__node-label {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.vt-minimap__node.active .vt-minimap__node-label {
+  color: var(--text-secondary);
+}
+
+/* Connector lines SVG */
+.vt-minimap__svg {
+  position: absolute;
+  inset: 10px;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   COMPASS
+   -------------------------------------------------------------------------- */
+.vt-compass {
+  position: fixed;
+  top: calc(var(--header-h) + 12px);
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  z-index: 300;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--transition-slow);
+}
+
+.vt-compass.vt-compass--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vt-compass__dial {
+  width: 40px;
+  height: 40px;
+  transition: transform 0.15s linear;
+}
+
+.vt-compass__label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   SCENE METADATA OVERLAY (top-left)
+   -------------------------------------------------------------------------- */
+.vt-scene-overlay {
+  position: fixed;
+  top: calc(var(--header-h) + 12px);
+  left: 16px;
+  z-index: 300;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  min-width: 160px;
+  max-width: 240px;
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+
+.vt-scene-overlay.vt-scene-overlay--hidden {
+  opacity: 0;
+  transform: translateX(-20px);
+  pointer-events: none;
+}
+
+.vt-scene-overlay__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.vt-scene-overlay__society {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.vt-scene-overlay__progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vt-scene-overlay__progress-track {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--ruda-dark-600);
+  overflow: hidden;
+}
+
+.vt-scene-overlay__progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--ruda-green) 0%, var(--ruda-green-light) 100%);
+}
+
+.vt-scene-overlay__progress-pct {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ruda-green-light);
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   HELP OVERLAY
+   -------------------------------------------------------------------------- */
+.vt-help {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 26, 20, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: opacity var(--transition-slow), visibility var(--transition-slow);
+}
+
+.vt-help.vt-help--hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.vt-help__card {
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
+  max-width: 400px;
+  width: calc(100% - 48px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: center;
+}
+
+.vt-help__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.vt-help__hints {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.vt-help__hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.04);
+}
+
+.vt-help__hint-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.vt-help__hint-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.vt-help__got-it {
+  padding: 12px 32px;
+  border-radius: var(--radius-full);
+  background: var(--ruda-green);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background var(--transition-fast);
+  align-self: center;
+}
+
+.vt-help__got-it:hover { background: #1ea370; }
+
+/* --------------------------------------------------------------------------
+   MODERN LINK HOTSPOT  (created in useMarzipanoViewer.js)
+   -------------------------------------------------------------------------- */
+.ruda-link-hotspot {
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+  margin-top: -32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
+
+/* Pulse ring */
+.ruda-link-hotspot__pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(22,132,91,0.5);
+  animation: vt-pulse 2s ease-out infinite;
+}
+
+@keyframes vt-pulse {
+  0%   { transform: scale(0.8); opacity: 0.8; }
+  70%  { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+/* Arrow SVG */
+.ruda-link-hotspot__arrow {
+  transition: transform 0.2s ease;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+}
+
+.ruda-link-hotspot:hover .ruda-link-hotspot__arrow {
+  filter: drop-shadow(0 0 10px rgba(22,132,91,0.7));
+}
+
+/* Tooltip */
+.ruda-link-hotspot__tooltip {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-6px);
+  background: var(--glass-bg-heavy);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ruda-link-hotspot:hover .ruda-link-hotspot__tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* --------------------------------------------------------------------------
+   MODERN INFO HOTSPOT  (created in useMarzipanoViewer.js)
+   -------------------------------------------------------------------------- */
+.ruda-info-hotspot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  margin-left: -18px;
+  margin-top: -18px;
+}
+
+.ruda-info-hotspot__btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.ruda-info-hotspot__btn:hover { transform: scale(1.1); }
+
+.ruda-info-hotspot__pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(22,132,91,0.45);
+  animation: vt-pulse 2.4s ease-out 0.6s infinite;
+  pointer-events: none;
+}
+
+.ruda-info-hotspot__label {
+  background: var(--glass-bg-heavy);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ruda-info-hotspot:hover .ruda-info-hotspot__label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   IMMERSIVE MODE — hides all chrome except pano
+   -------------------------------------------------------------------------- */
+.vt-immersive .vt-header,
+.vt-immersive .vt-drawer,
+.vt-immersive .vt-carousel,
+.vt-immersive .vt-controls,
+.vt-immersive .vt-minimap,
+.vt-immersive .vt-compass,
+.vt-immersive .vt-scene-overlay {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-slow);
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE overrides  (≤ 600 px wide or landscape short screens)
+   -------------------------------------------------------------------------- */
+@media (max-width: 600px), (max-height: 500px) {
+  :root {
+    --header-h:      50px;
+    --carousel-h:    80px;
+    --drawer-w:      100%;
+    --panel-w:       100%;
+    --minimap-size:  160px;
+  }
+
+  /* Drawer becomes a full-width bottom sheet on mobile */
+  .vt-drawer {
+    top: auto;
+    bottom: var(--carousel-h);
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 50dvh;
+    transform: translateY(100%);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-bottom: none;
+  }
+
+  .vt-drawer.vt-drawer--open {
+    transform: translateY(0);
+  }
+
+  /* Info panel becomes bottom sheet */
+  .vt-info-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: var(--carousel-h);
+    width: 100%;
+    max-height: 60dvh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    transform: translateY(100%);
+  }
+
+  .vt-info-panel.vt-info-panel--open {
+    transform: translateY(0);
+  }
+
+  /* Controls: smaller, less intrusive */
+  .vt-controls {
+    bottom: calc(var(--carousel-h) + 10px);
+    right: 10px;
+  }
+
+  .vt-ctrl-btn {
+    width: 40px;
+    height: 40px; /* min 44px touch target met by group padding */
+  }
+
+  /* Compass moves to bottom-left above minimap */
+  .vt-compass {
+    top: auto;
+    bottom: calc(var(--carousel-h) + 16px);
+    right: auto;
+    left: 16px;
+  }
+
+  /* Minimap: hidden by default on mobile */
+  .vt-minimap {
+    display: none;
+  }
+
+  /* Logo text hidden on small screens */
+  .vt-header__logo-text { display: none; }
+  .vt-header__divider   { display: none; }
+
+  /* Timeline hidden on very small screens */
+  .vt-header__timeline { display: none; }
+
+  /* Header date chip shorter */
+  .vt-header__date { display: none; }
+
+  /* Scene overlay briefer */
+  .vt-scene-overlay {
+    max-width: 180px;
+  }
+
+  /* Help hints 1-col on narrow */
+  .vt-help__hints {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dvh fallback for browsers that don't support dvh */
+@supports not (height: 100dvh) {
+  .vt-drawer  { max-height: 50vh; }
+  .vt-info-panel { max-height: 60vh; }
+}
+
+/* --------------------------------------------------------------------------
+   Scrollbar — global thin green
+   -------------------------------------------------------------------------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ruda-green-mid) transparent;
+}
+
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--ruda-green-mid);
+  border-radius: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Focus visible (accessibility)
+   -------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--ruda-green);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   Utility: visually hidden (screen-reader only)
+   -------------------------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* RUDA application integration chrome */
+.vt-back-to-ruda {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 650;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px !important;
+  border-radius: var(--radius-full) !important;
+  color: var(--text-primary) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.vt-back-to-ruda:hover {
+  transform: translateY(-1px);
+  background: rgba(16, 65, 43, 0.9);
+}
+
+.vt-integration-error {
+  position: fixed;
+  inset: 0;
+  z-index: 800;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+  background: var(--ruda-dark-900);
+  color: var(--text-primary);
+}
+
+.vt-integration-error h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.vt-integration-error p {
+  margin: 0;
+  max-width: 520px;
+  color: var(--text-secondary);
+}
+
+.vt-integration-error button {
+  margin-top: 6px;
+  padding: 10px 22px !important;
+  border-radius: var(--radius-full) !important;
+  background: var(--ruda-green) !important;
+  color: white !important;
+  font-weight: 700 !important;
+}
