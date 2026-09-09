@@ -337,7 +337,11 @@ const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
 // For the report's selected-plot snapshot, only draw plots that actually fall
 // inside the focused view. This avoids unrelated/distant plot groups appearing
 // in the same snapshot (and therefore avoids tiny, crowded labels).
-const getFocusedSiteFeatures = (selectedFeature, contextGeojson, siteBounds) => {
+const getFocusedSiteFeatures = (
+  selectedFeature,
+  contextGeojson,
+  siteBounds,
+) => {
   const all = contextGeojson?.features || [];
   if (!selectedFeature || !siteBounds || !all.length) {
     return selectedFeature ? [selectedFeature] : [];
@@ -354,7 +358,9 @@ const getFocusedSiteFeatures = (selectedFeature, contextGeojson, siteBounds) => 
   const visibleBounds = expandBounds(siteBounds, 0.02);
 
   const nearby = all
-    .filter((feature) => intersectsBounds(boundsOfFeature(feature), visibleBounds))
+    .filter((feature) =>
+      intersectsBounds(boundsOfFeature(feature), visibleBounds),
+    )
     .map((feature) => {
       const b = boundsOfFeature(feature);
       const cx = b ? (b.minX + b.maxX) / 2 : selectedCenter[0];

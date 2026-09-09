@@ -738,33 +738,19 @@ const buildOverviewView = (
   const baseSize = Math.max(selectedBounds.width, selectedBounds.height, 18);
   const centerX = selectedBounds.centerX;
   const centerY = selectedBounds.centerY;
-  const featureBounds = plotFeatures.map((feature) => ({
-    feature,
-    bounds: getBounds(projectFeaturePoints(feature, projectCoordinate)),
-  }));
+  // Keep a fixed zoom relative to the selected plot. Previously this view
+  // kept zooming out until enough neighbouring plots were visible, which
+  // made small/sparse blocks appear much farther away than dense blocks.
+  const heightFactor = 6.5;
+  const viewHeight = baseSize * heightFactor;
+  const viewWidth = viewHeight * aspect;
 
-  let heightFactor = 6.5;
-  let view;
-
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const viewHeight = baseSize * heightFactor;
-    const viewWidth = viewHeight * aspect;
-    view = {
-      minX: centerX - viewWidth / 2,
-      maxX: centerX + viewWidth / 2,
-      minY: centerY - viewHeight / 2,
-      maxY: centerY + viewHeight / 2,
-    };
-
-    const visibleCount = featureBounds.filter(({ bounds }) =>
-      boundsIntersect(bounds, view),
-    ).length;
-
-    if (visibleCount >= 16 || attempt === 4) break;
-    heightFactor *= 1.35;
-  }
-
-  return view;
+  return {
+    minX: centerX - viewWidth / 2,
+    maxX: centerX + viewWidth / 2,
+    minY: centerY - viewHeight / 2,
+    maxY: centerY + viewHeight / 2,
+  };
 };
 
 const drawOverviewPlotLabel = (
@@ -955,7 +941,10 @@ const getPrincipalAxes = (points = []) => {
 
   const angle = 0.5 * Math.atan2(2 * xy, xx - yy);
   let longAxis = { x: Math.cos(angle), y: Math.sin(angle) };
-  let shortAxis = { x: -longAxis.y, y: longAxis.x };
+
+  // Use a rotational perpendicular axis instead of a reflected one. This
+  // preserves the real left/right order of adjacent plots in the lower plan.
+  let shortAxis = { x: longAxis.y, y: -longAxis.x };
 
   const longExtent = getBounds(
     points.map((point) => ({
@@ -976,15 +965,16 @@ const getPrincipalAxes = (points = []) => {
   ).width;
 
   if (shortExtent > longExtent) {
-    const previousLong = longAxis;
     longAxis = shortAxis;
-    shortAxis = { x: -previousLong.x, y: -previousLong.y };
   }
 
+  // Keep the long axis pointing north/up whenever possible, then derive a
+  // right-facing short axis. This keeps the lower plan upright without
+  // swapping the real-world left and right neighbours.
   if (longAxis.y < 0) {
     longAxis = { x: -longAxis.x, y: -longAxis.y };
-    shortAxis = { x: -shortAxis.x, y: -shortAxis.y };
   }
+  shortAxis = { x: longAxis.y, y: -longAxis.x };
 
   return { centroid, longAxis, shortAxis };
 };
@@ -1628,8 +1618,6 @@ export const printPartPlan = async ({
         dimensionHeight - 10,
       );
     }
-
-    drawCompassRosePdf(doc, pageWidth - margin - 25, dimensionTop + 27, 9.2);
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
