@@ -111,6 +111,7 @@ export const printReport = async ({ parcel, filters = {}, contextGeojson }) => {
         watermark: false,
         showDimensions: false,
         showVertexLabels: false,
+        showCornerBoxes: true,
         showContextLabels: true,
         northArrow: true,
       });

@@ -244,6 +244,28 @@ const expandBounds = (bounds, factor = 0.18) => {
   };
 };
 
+// Build a consistent, square site-snapshot window around the selected plot.
+// Using the selected plot's larger dimension prevents long/narrow or irregular
+// plots from producing tall/skinny view extents that pull in distant rows of
+// plots and make their labels tiny. The selected plot stays centered and at a
+// predictable visual scale for every report.
+const getFocusedSiteBounds = (bounds, halfSpanMultiplier = 2.0) => {
+  if (!bounds) return null;
+
+  const width = Math.max(bounds.maxX - bounds.minX, 1e-8);
+  const height = Math.max(bounds.maxY - bounds.minY, 1e-8);
+  const centerX = (bounds.minX + bounds.maxX) / 2;
+  const centerY = (bounds.minY + bounds.maxY) / 2;
+  const halfSpan = Math.max(width, height) * halfSpanMultiplier;
+
+  return {
+    minX: centerX - halfSpan,
+    maxX: centerX + halfSpan,
+    minY: centerY - halfSpan,
+    maxY: centerY + halfSpan,
+  };
+};
+
 const intersectsBounds = (a, b) =>
   a &&
   b &&
@@ -310,6 +332,47 @@ const getContextFeatures = (selectedFeature, contextGeojson, mode) => {
   }
 
   return nearby.length ? nearby : [selectedFeature];
+};
+
+// For the report's selected-plot snapshot, only draw plots that actually fall
+// inside the focused view. This avoids unrelated/distant plot groups appearing
+// in the same snapshot (and therefore avoids tiny, crowded labels).
+const getFocusedSiteFeatures = (selectedFeature, contextGeojson, siteBounds) => {
+  const all = contextGeojson?.features || [];
+  if (!selectedFeature || !siteBounds || !all.length) {
+    return selectedFeature ? [selectedFeature] : [];
+  }
+
+  const selectedBounds = boundsOfFeature(selectedFeature);
+  const selectedCenter = selectedBounds
+    ? [
+        (selectedBounds.minX + selectedBounds.maxX) / 2,
+        (selectedBounds.minY + selectedBounds.maxY) / 2,
+      ]
+    : [0, 0];
+
+  const visibleBounds = expandBounds(siteBounds, 0.02);
+
+  const nearby = all
+    .filter((feature) => intersectsBounds(boundsOfFeature(feature), visibleBounds))
+    .map((feature) => {
+      const b = boundsOfFeature(feature);
+      const cx = b ? (b.minX + b.maxX) / 2 : selectedCenter[0];
+      const cy = b ? (b.minY + b.maxY) / 2 : selectedCenter[1];
+      return {
+        feature,
+        distance: Math.hypot(cx - selectedCenter[0], cy - selectedCenter[1]),
+      };
+    })
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 36)
+    .map(({ feature }) => feature);
+
+  if (!nearby.some((feature) => isSameFeature(feature, selectedFeature))) {
+    nearby.unshift(selectedFeature);
+  }
+
+  return nearby;
 };
 
 export const loadImage = (src) =>
@@ -747,15 +810,19 @@ const getCenteredPlotLabelPosition = (ring, project) => {
   const width = Math.max(maxX - minX, 1);
   const height = Math.max(maxY - minY, 1);
 
-  // Prefer the true polygon centroid so plot numbers line up naturally in the
-  // middle of their own plots. Fall back to the interior-point search only
-  // for unusual concave geometries where the centroid falls outside.
-  const centroid = project(polygonCentroid(ring));
-  if (pointInProjectedPolygon(centroid, projectedRing)) {
+  // Use the visual centre of the drawn polygon whenever that point is inside
+  // the plot. This keeps labels centred in rectangles, trapezoids, rotated
+  // plots and curved block layouts. For concave/irregular plots where the
+  // visual centre falls outside, fall back to the interior-point search.
+  const visualCenter = [(minX + maxX) / 2, (minY + maxY) / 2];
+  if (pointInProjectedPolygon(visualCenter, projectedRing)) {
     return {
-      x: centroid[0],
-      y: centroid[1],
-      radius: Math.max(projectedDistanceToPolygon(centroid, projectedRing), 0),
+      x: visualCenter[0],
+      y: visualCenter[1],
+      radius: Math.max(
+        projectedDistanceToPolygon(visualCenter, projectedRing),
+        0,
+      ),
       width,
       height,
       projectedRing,
@@ -764,7 +831,6 @@ const getCenteredPlotLabelPosition = (ring, project) => {
 
   return getInteriorLabelPosition(ring, project);
 };
-
 const drawPlotNumberInsidePolygon = (ctx, text, ring, project) => {
   const value = String(text || "").trim();
   if (!value || ring.length < 3) return;
@@ -1437,6 +1503,7 @@ export const createPlanCanvas = async ({
   watermark = true,
   showDimensions = true,
   showVertexLabels = true,
+  showCornerBoxes = false,
   showContextLabels = true,
   northArrow = true,
 }) => {
@@ -1449,7 +1516,7 @@ export const createPlanCanvas = async ({
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  const features = getContextFeatures(selectedFeature, contextGeojson, mode);
+  let features = getContextFeatures(selectedFeature, contextGeojson, mode);
   let selectedRing = getGeometryRing(selectedFeature?.geometry);
 
   // Fallback: if the selected feature passed in has no usable geometry
@@ -1469,6 +1536,16 @@ export const createPlanCanvas = async ({
   // the plot large and readable even when the context collection contains the
   // complete scheme. The location inset still uses the full project extent.
   const selectedBounds = boundsOfFeature(selectedFeature);
+  const focusedSiteBounds = getFocusedSiteBounds(selectedBounds);
+
+  if (mode === "site") {
+    features = getFocusedSiteFeatures(
+      selectedFeature,
+      contextGeojson,
+      focusedSiteBounds,
+    );
+  }
+
   const fullSchemeBounds = getBounds(
     contextGeojson?.features?.length ? contextGeojson.features : features,
   );
@@ -1499,7 +1576,7 @@ export const createPlanCanvas = async ({
         ? expandBounds(contextBounds, 0.01)
         : mode === "part"
           ? expandBounds(contextBounds, 0.005)
-          : expandBounds(selectedBounds, 2.15);
+          : focusedSiteBounds;
 
   if (!bounds || selectedRing.length < 3) {
     ctx.fillStyle = "#666666";
@@ -1680,6 +1757,28 @@ export const createPlanCanvas = async ({
       ctx.strokeText(dimension, 0, 0);
       ctx.fillStyle = "#161616";
       ctx.fillText(dimension, 0, 0);
+      ctx.restore();
+    });
+  }
+
+  if (showCornerBoxes && mode === "site") {
+    dimensionRing.slice(0, 8).forEach((point, index) => {
+      const [x, y] = project(point);
+      const vertexLabel = String.fromCharCode(65 + index);
+      const boxSize = 30;
+
+      ctx.save();
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = "#7b1f63";
+      ctx.lineWidth = 3;
+      ctx.fillRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
+      ctx.strokeRect(x - boxSize / 2, y - boxSize / 2, boxSize, boxSize);
+
+      ctx.font = "700 18px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#1e3a5f";
+      ctx.fillText(vertexLabel, x, y + 0.5);
       ctx.restore();
     });
   }
