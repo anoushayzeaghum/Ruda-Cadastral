@@ -970,7 +970,7 @@ const makePrintableHtml = ({
       position: absolute;
       left: 18px;
       bottom: 18px;
-      width: 560px;
+      width: 400px;
       display: flex;
       flex-direction: column;
       gap: 0;
@@ -980,8 +980,8 @@ const makePrintableHtml = ({
       background: #ffffff;
       border: 2px solid #111827;
       border-bottom: none;
-      padding: 7px;
-      box-shadow: 0 4px 14px rgba(0,0,0,.16);
+      padding: 5px;
+      box-shadow: 0 3px 10px rgba(0,0,0,.14);
     }
     .inset-map-wrap { position: relative; width: 100%; }
     .inset img {
@@ -1040,12 +1040,12 @@ const makePrintableHtml = ({
     }
     .credit {
       width: 100%;
-      padding: 6px 8px;
+      padding: 5px 6px;
       background: rgba(255,255,255,.96);
       border: 2px solid #111827;
       border-top: 1px solid #334155;
-      font-size: 9.5px;
-      line-height: 1.3;
+      font-size: 8.5px;
+      line-height: 1.25;
       font-weight: 700;
       text-align: center;
     }
