@@ -7,6 +7,7 @@ import MetaverseSubHeader from "./MetaverseSubHeader";
 import MetaverseMapControls from "./MetaverseMapControls";
 import MetaverseLegend from "./tools/Layers/MetaverseLegend";
 import MapPrinter from "./Printing/MapPrinter";
+import MetaverseKpiCards from "./MetaverseKpiCards";
 
 export default function MetaverseDashboard() {
   const mapRef = useRef(null);
@@ -181,6 +182,12 @@ export default function MetaverseDashboard() {
           setShowMetaverseLegend={setShowMetaverseLegend}
           adminBoundaryVisibility={adminBoundaryVisibility}
           layerVisibility={layerVisibility}
+        />
+
+        <MetaverseKpiCards
+          filters={metaverseFilters}
+          layerVisibility={layerVisibility}
+          adminBoundaryVisibility={adminBoundaryVisibility}
         />
       </div>
     </div>
