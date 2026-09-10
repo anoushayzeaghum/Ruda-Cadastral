@@ -307,6 +307,17 @@ router.register(r"lahore-transportation-roads/create", CreateLahoreTransportatio
 router.register(r"lahore-transportation-roads/update", UpdateLahoreTransportationRoadView, basename="update-lahore-transportation-road",)
 router.register(r"lahore-transportation-roads/delete", DeleteLahoreTransportationRoadView, basename="delete-lahore-transportation-road",)
 
+
+router.register(r"floodextent", ListFloodExtentView, basename="floodextent")
+router.register(r"floodextent/create", CreateFloodExtentView, basename="create-floodextent")
+router.register(r"floodextent/update", UpdateFloodExtentView, basename="update-floodextent")
+router.register(r"floodextent/delete", DeleteFloodExtentView, basename="delete-floodextent")
+
+router.register(r"sw-line", ListSWLineView, basename="sw-line")
+router.register(r"sw-line/create", CreateSWLineView, basename="create-sw-line")
+router.register(r"sw-line/update", UpdateSWLineView, basename="update-sw-line")
+router.register(r"sw-line/delete", DeleteSWLineView, basename="delete-sw-line")
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 

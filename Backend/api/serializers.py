@@ -1713,3 +1713,33 @@ class ExistingDrainSerializer(GeoFeatureModelSerializer):
         read_only_fields = (
             "gid",
         )
+
+class FloodExtentSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = FloodExtent
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "area",
+            "year",
+            "geom",
+        )
+
+class SWLineSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = SWLine
+        geo_field = "geom"
+        id_field = "gid"
+        fields = (
+            "gid",
+            "objectid",
+            "name",
+            "dia",
+            "shape_leng",
+            "project_id",
+            "geom",
+        )

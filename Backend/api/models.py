@@ -2622,3 +2622,33 @@ class ExistingDrain(models.Model):
     class Meta:
         managed = False
         db_table = "existing_drains"
+
+class FloodExtent(models.Model):
+    gid = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    area = models.FloatField(null=True, blank=True)
+    year = models.IntegerField(null=True, blank=True)
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return self.name or f"Flood Extent {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "floodextent"
+
+class SWLine(models.Model):
+    gid = models.AutoField(primary_key=True)
+    objectid = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    dia = models.CharField(max_length=50, null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+    project_id = models.IntegerField(null=True, blank=True)
+    geom = gis_models.MultiLineStringField(srid=4326)
+
+    def __str__(self):
+        return self.name or f"SW Line {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "sw_line"
