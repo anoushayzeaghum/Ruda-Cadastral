@@ -319,6 +319,33 @@ export const getSewagePointsGeoJSON = async (projectId) => {
   return unwrapGeoJSON(res.data);
 };
 
+// Preferred naming for the UI. Keep getSewagePointsGeoJSON above for backward compatibility.
+export const getSewerPointsGeoJSON = getSewagePointsGeoJSON;
+
+export const getSewerLinesGeoJSON = async (projectId) => {
+  if (!projectId) return emptyFC();
+
+  // Avoid the SWLine backend's failing project_id query filter. Fetch the
+  // collection and preserve project-specific behavior by filtering locally.
+  const res = await axios.get(`${API_BASE}/sw-line/`);
+  const geojson = unwrapGeoJSON(res.data);
+  const targetProjectId = String(projectId);
+
+  return {
+    ...geojson,
+    features: (geojson.features || []).filter((feature) => {
+      const featureProjectId =
+        feature?.properties?.project_id ?? feature?.properties?.projectId;
+
+      return (
+        featureProjectId !== undefined &&
+        featureProjectId !== null &&
+        String(featureProjectId) === targetProjectId
+      );
+    }),
+  };
+};
+
 export const getCameraLocationsGeoJSON = async (projectId) => {
   if (!projectId) return emptyFC();
 
