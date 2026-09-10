@@ -1032,12 +1032,22 @@ const makePrintableHtml = ({
       font-weight: 700;
     }
     .scale-bar {
-      width: 210px;
-      height: 10px;
+      display: flex;
+      width: 260px;
+      height: 11px;
       margin-top: 5px;
       border: 1px solid #111827;
-      background: linear-gradient(90deg,#111827 0 25%,#fff 25% 50%,#111827 50% 75%,#fff 75% 100%);
+      background: #ffffff;
+      overflow: hidden;
     }
+    .scale-segment {
+      flex: 1 1 10%;
+      height: 100%;
+      border-right: 1px solid #111827;
+    }
+    .scale-segment:last-child { border-right: none; }
+    .scale-segment.white { background: #ffffff; }
+    .scale-segment.black { background: #111111; }
     .credit {
       width: 100%;
       padding: 5px 6px;
@@ -1099,7 +1109,18 @@ const makePrintableHtml = ({
 
     <div class="scale">
       ${escapeHtml(scaleText)}
-      <div class="scale-bar"></div>
+      <div class="scale-bar" aria-label="Map scale bar">
+        <span class="scale-segment white"></span>
+        <span class="scale-segment black"></span>
+        <span class="scale-segment white"></span>
+        <span class="scale-segment black"></span>
+        <span class="scale-segment white"></span>
+        <span class="scale-segment black"></span>
+        <span class="scale-segment white"></span>
+        <span class="scale-segment black"></span>
+        <span class="scale-segment white"></span>
+        <span class="scale-segment black"></span>
+      </div>
     </div>
   </div>
   <script>
