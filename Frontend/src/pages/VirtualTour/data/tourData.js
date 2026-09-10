@@ -5,7 +5,7 @@
  *  - Do NOT move or rename tile files; they live under /public/virtual-tour/tiles/
  *  - Marzipano-required fields (id, levels, faceSize, initialViewParameters,
  *    linkHotspots, infoHotspots) must stay intact.
- *  - Extra RUDA fields (progress, status, zone, northOffset, mapPosition, …)
+ *  - Extra RUDA fields (status, zone, northOffset, mapPosition, …)
  *    are read only by the React UI layer.
  */
 
@@ -85,7 +85,6 @@ export const TOUR_DATA = {
         'Primary entrance gate area of Chahar Bagh society. Access road and security booth construction is ongoing.',
       captureDate: '2026-09-01',
       zone: 'Zone A',
-      progress: 45,
       status: 'In Progress', // 'Not Started' | 'In Progress' | 'Completed' | 'On Hold'
       northOffset: 0,
 
@@ -125,7 +124,6 @@ export const TOUR_DATA = {
           text: 'Primary access boulevard — double-lane road with central median landscaping.',
 
           category: 'Road Infrastructure',
-          progress: 67,
           status: 'In Progress',
           date: 'September 2026',
           contractor: 'RDA Civil Works Dept.',
@@ -141,7 +139,6 @@ export const TOUR_DATA = {
         'Central boulevard connecting the main gate to the residential blocks. Road formation and kerbing underway.',
       captureDate: '2026-09-01',
       zone: 'Zone B',
-      progress: 67,
       status: 'In Progress',
       northOffset: 0,
       mapPosition: { x: 50, y: 50 },
@@ -176,7 +173,6 @@ export const TOUR_DATA = {
         'Green belt and central recreation park area. Soil preparation and irrigation pipeline installation in progress.',
       captureDate: '2026-09-01',
       zone: 'Zone C',
-      progress: 28,
       status: 'In Progress',
       northOffset: 0,
       mapPosition: { x: 80, y: 50 },

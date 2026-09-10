@@ -1,0 +1,27 @@
+RUDA Virtual Tour — Arrow pad + zoom implementation
+
+Implemented:
+1. Direction arrows now use keyboard-arrow layout:
+       UP
+   LEFT DOWN RIGHT
+
+2. All directional icons remain pure white.
+
+3. The directional pad remains at the bottom-right on desktop and mobile.
+
+4. Zoom In / Zoom Out are now deterministic:
+   - Uses the active Marzipano RectilinearView FOV.
+   - Zoom In reduces FOV by 10 degrees per click.
+   - Zoom Out increases FOV by 10 degrees per click.
+   - FOV is clamped between 35° and 115°.
+   - Current yaw/pitch are preserved while zooming.
+   - Active autorotation is stopped before a manual zoom action.
+   - Uses view.setParameters() so the renderer is updated directly.
+
+Placement:
+Replace:
+Frontend/src/pages/VirtualTour
+
+Keep:
+Frontend/public/virtual-tour
+unchanged.
