@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || 
-  "http://localhost:8000/api";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 const unwrapApiData = (data) => data?.data || data?.results || data;
 
@@ -533,6 +532,11 @@ export const getRiverRaviGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getFloodExtentGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/floodextent/`);
+  return unwrapGeoJSON(res.data);
+};
+
 export const getRudaJurisdictionGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/ruda-jurisdiction/`);
   return unwrapGeoJSON(res.data);
@@ -567,7 +571,6 @@ export const getProposedRoadsGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/proposed-road/`);
   return unwrapGeoJSON(res.data);
 };
-
 
 export const getLahoreTransportationRoadsGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/lahore-transportation-roads/`);
