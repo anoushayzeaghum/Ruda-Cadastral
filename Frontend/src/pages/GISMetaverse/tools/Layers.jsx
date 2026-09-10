@@ -29,7 +29,7 @@ export default function LayersPanel({
       <RUDAMasterPlan map={map} />
       <Cadastral map={map} selectedProjectId={selectedProjectId} />
       <Topographic map={map} />
-      <Hydrology />
+      <Hydrology map={map} />
       <ProjectMasterPlan
         map={map}
         selectedProjectId={selectedProjectId}
