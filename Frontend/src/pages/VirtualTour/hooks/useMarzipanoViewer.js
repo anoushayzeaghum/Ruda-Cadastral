@@ -246,20 +246,42 @@ export default function useMarzipanoViewer({
       view.offsetPitch(8 * Math.PI / 180);
     };
 
+    const setZoomFov = (nextFov) => {
+      const view = getActiveView();
+      if (!view) return;
+
+      prepareManualControl();
+
+      const yaw = view.yaw();
+      const pitch = view.pitch();
+
+      // Keep zoom inside a comfortable interactive range.
+      // Lower FOV = zoom in, higher FOV = zoom out.
+      const minFov = 35 * Math.PI / 180;
+      const maxFov = 115 * Math.PI / 180;
+      const safeFov = clamp(nextFov, minFov, maxFov);
+
+      view.setParameters({
+        yaw,
+        pitch,
+        fov: safeFov,
+      });
+    };
+
     const zoomIn = () => {
       const view = getActiveView();
       if (!view) return;
-      prepareManualControl();
-      // Smaller FOV = zoom in.
-      view.offsetFov(-8 * Math.PI / 180);
+
+      // Reduce FOV by 10 degrees per click.
+      setZoomFov(view.fov() - (10 * Math.PI / 180));
     };
 
     const zoomOut = () => {
       const view = getActiveView();
       if (!view) return;
-      prepareManualControl();
-      // Larger FOV = zoom out.
-      view.offsetFov(8 * Math.PI / 180);
+
+      // Increase FOV by 10 degrees per click.
+      setZoomFov(view.fov() + (10 * Math.PI / 180));
     };
 
     // Native fullscreen API. Target the entire integrated Virtual Tour page.

@@ -2156,3 +2156,125 @@
     display: flex !important;
   }
 }
+
+
+/* ==========================================================================
+   RUDA Virtual Tour — Keyboard-style arrow pad + reliable zoom controls
+   ========================================================================== */
+
+/* Bottom-right directional pad shaped like a physical keyboard arrow cluster:
+           ↑
+         ← ↓ →
+*/
+.ruda-virtual-tour-page .vt-direction-controls {
+  position: fixed;
+  right: 20px;
+  bottom: 22px;
+  z-index: 470;
+  padding: 8px;
+
+  background: rgba(5, 28, 21, .80);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.24);
+
+  backdrop-filter: blur(18px) saturate(1.16);
+  -webkit-backdrop-filter: blur(18px) saturate(1.16);
+}
+
+.ruda-virtual-tour-page .vt-direction-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(2, 40px);
+  gap: 4px;
+
+  grid-template-areas:
+    ". up ."
+    "left down right";
+}
+
+.ruda-virtual-tour-page .vt-direction-pad__up    { grid-area: up; }
+.ruda-virtual-tour-page .vt-direction-pad__left  { grid-area: left; }
+.ruda-virtual-tour-page .vt-direction-pad__down  { grid-area: down; }
+.ruda-virtual-tour-page .vt-direction-pad__right { grid-area: right; }
+
+.ruda-virtual-tour-page .vt-direction-pad .vt-ctrl-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 9px;
+
+  background: rgba(255,255,255,.045);
+  color: #ffffff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+
+  transition:
+    background .15s ease,
+    transform .12s ease,
+    border-color .15s ease;
+}
+
+.ruda-virtual-tour-page .vt-direction-pad .vt-ctrl-btn svg,
+.ruda-virtual-tour-page .vt-direction-pad .vt-ctrl-btn path {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.ruda-virtual-tour-page .vt-direction-pad .vt-ctrl-btn:hover {
+  background: rgba(255,255,255,.11);
+  border-color: rgba(255,255,255,.18);
+  transform: translateY(-1px);
+}
+
+.ruda-virtual-tour-page .vt-direction-pad .vt-ctrl-btn:active {
+  transform: scale(.94);
+  background: rgba(83,216,157,.22);
+}
+
+/* Ensure zoom controls are visibly interactive and never inherit disabled styles. */
+.ruda-virtual-tour-page .vt-controls--utilities .vt-ctrl-btn {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.ruda-virtual-tour-page .vt-controls--utilities .vt-ctrl-btn[aria-label="Zoom in"],
+.ruda-virtual-tour-page .vt-controls--utilities .vt-ctrl-btn[aria-label="Zoom out"] {
+  color: #ffffff !important;
+}
+
+.ruda-virtual-tour-page .vt-controls--utilities .vt-ctrl-btn[aria-label="Zoom in"] svg,
+.ruda-virtual-tour-page .vt-controls--utilities .vt-ctrl-btn[aria-label="Zoom out"] svg,
+.ruda-virtual-tour-page .vt-controls--utilities .vt-ctrl-btn[aria-label="Zoom in"] path,
+.ruda-virtual-tour-page .vt-controls--utilities .vt-ctrl-btn[aria-label="Zoom out"] path,
+.ruda-virtual-tour-page .vt-controls--utilities .vt-ctrl-btn[aria-label="Zoom in"] circle,
+.ruda-virtual-tour-page .vt-controls--utilities .vt-ctrl-btn[aria-label="Zoom out"] circle {
+  stroke: #ffffff !important;
+}
+
+@media (max-width: 720px) {
+  .ruda-virtual-tour-page .vt-direction-controls {
+    right: 10px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .ruda-virtual-tour-page .vt-direction-pad {
+    grid-template-columns: repeat(3, 38px);
+    grid-template-rows: repeat(2, 38px);
+    gap: 3px;
+  }
+
+  .ruda-virtual-tour-page .vt-direction-pad .vt-ctrl-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+  }
+}

@@ -126,10 +126,20 @@ export default function ViewerControls({
 
       {/* Directional navigation is intentionally separated and placed bottom-right. */}
       <div className="vt-direction-controls" role="toolbar" aria-label="Pan panorama">
-        <Btn onClick={onPanLeft} label="Pan left"><Left /></Btn>
-        <Btn onClick={onPanUp} label="Pan up"><Up /></Btn>
-        <Btn onClick={onPanDown} label="Pan down"><Down /></Btn>
-        <Btn onClick={onPanRight} label="Pan right"><Right /></Btn>
+        <div className="vt-direction-pad">
+          <div className="vt-direction-pad__up">
+            <Btn onClick={onPanUp} label="Pan up"><Up /></Btn>
+          </div>
+          <div className="vt-direction-pad__left">
+            <Btn onClick={onPanLeft} label="Pan left"><Left /></Btn>
+          </div>
+          <div className="vt-direction-pad__down">
+            <Btn onClick={onPanDown} label="Pan down"><Down /></Btn>
+          </div>
+          <div className="vt-direction-pad__right">
+            <Btn onClick={onPanRight} label="Pan right"><Right /></Btn>
+          </div>
+        </div>
       </div>
     </>
   );
