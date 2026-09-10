@@ -27,7 +27,7 @@ function SceneThumb({ scene, active, onSelect }) {
       </div>
       <div className="vt-gallery-card__meta">
         <strong>{scene.name}</strong>
-        <span>{scene.zone || 'Tour location'} · {scene.progress ?? 0}%</span>
+        <span>{scene.zone || 'Tour location'}</span>
       </div>
     </button>
   );

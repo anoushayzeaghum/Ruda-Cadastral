@@ -6,7 +6,14 @@ const InfoIcon = () => <svg width="21" height="21" viewBox="0 0 24 24" fill="non
 
 function Action({ active, label, onClick, children }) {
   return (
-    <button type="button" className={`vt-side-action${active ? ' active' : ''}`} onClick={onClick} aria-label={label} aria-pressed={active}>
+    <button
+      type="button"
+      className={`vt-side-action${active ? ' active' : ''}`}
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={active || undefined}
+      title={label}
+    >
       {children}
       <span className="vt-side-action__label">{label}</span>
     </button>

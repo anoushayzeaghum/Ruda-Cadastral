@@ -42,7 +42,6 @@ export default function useMarzipanoViewer({
 
   useEffect(() => {
     const Marzipano = window.Marzipano;
-    const screenfull = window.screenfull;
     if (!Marzipano) {
       onError?.('Marzipano library did not load. Check /public/virtual-tour/vendor/marzipano.js.');
       return;
@@ -130,7 +129,7 @@ export default function useMarzipanoViewer({
       img.alt = '';
       img.onerror = () => { if (!img.dataset.fallback) { img.dataset.fallback='1'; img.src=getTourPreviewUrl(hotspot.target); } };
       const copy = document.createElement('div'); copy.className = 'ruda-destination-card__copy';
-      copy.innerHTML = `<span class="ruda-destination-card__eyebrow">NEXT LOCATION</span><strong>${targetName}</strong>${targetData?.progress != null ? `<span>${targetData.progress}% complete</span>` : ''}`;
+      copy.innerHTML = `<span class="ruda-destination-card__eyebrow">NEXT LOCATION</span><strong>${targetName}</strong>`;
       card.append(copy, img);
 
       const openPreview = (e) => {
@@ -202,38 +201,259 @@ export default function useMarzipanoViewer({
       }, duration));
     };
 
-    const velocity=0.7, friction=3, ctls=viewer.controls();
-    const registerBtn=(ref,id,axis,sign)=>{ if(ref.current) ctls.registerMethod(id,new Marzipano.ElementPressControlMethod(ref.current,axis,sign*velocity,friction),true); };
-    registerBtn(viewUpRef,'upElement','y',-1); registerBtn(viewDownRef,'downElement','y',1); registerBtn(viewLeftRef,'leftElement','x',-1); registerBtn(viewRightRef,'rightElement','x',1); registerBtn(viewInRef,'inElement','zoom',-1); registerBtn(viewOutRef,'outElement','zoom',1);
+    // Panorama controls.
+    // Use Marzipano's native RectilinearView offset methods instead of
+    // rebuilding all parameters manually. These methods apply the active
+    // scene limiter correctly and immediately notify the renderer.
+    const getActiveView = () => runtimeRef.current?.currentScene?.view ?? null;
 
-    let removeFullscreenListener=null;
-    if(screenfull?.isEnabled){const onFs=()=>setIsFullscreen(!!screenfull.isFullscreen);screenfull.on('change',onFs);removeFullscreenListener=()=>screenfull.off('change',onFs);}
+    const prepareManualControl = () => {
+      // A running movement can immediately overwrite pitch/FOV changes.
+      // Stop it before every manual pan/zoom action.
+      stopAutorotate();
+    };
 
-    const gyro = { enabled:false, listener:null, baseline:null, startYaw:0, startPitch:0, smoothedYaw:0, smoothedPitch:0 };
+    const panLeft = () => {
+      const view = getActiveView();
+      if (!view) return;
+      prepareManualControl();
+      view.offsetYaw(-10 * Math.PI / 180);
+    };
+
+    const panRight = () => {
+      const view = getActiveView();
+      if (!view) return;
+      prepareManualControl();
+      view.offsetYaw(10 * Math.PI / 180);
+    };
+
+    const panUp = () => {
+      const view = getActiveView();
+      if (!view) return;
+      prepareManualControl();
+
+      // Match the visible image movement expected by the UI:
+      // pressing UP moves the panorama/view upward on screen.
+      view.offsetPitch(-8 * Math.PI / 180);
+    };
+
+    const panDown = () => {
+      const view = getActiveView();
+      if (!view) return;
+      prepareManualControl();
+
+      // pressing DOWN moves the panorama/view downward on screen.
+      view.offsetPitch(8 * Math.PI / 180);
+    };
+
+    const zoomIn = () => {
+      const view = getActiveView();
+      if (!view) return;
+      prepareManualControl();
+      // Smaller FOV = zoom in.
+      view.offsetFov(-8 * Math.PI / 180);
+    };
+
+    const zoomOut = () => {
+      const view = getActiveView();
+      if (!view) return;
+      prepareManualControl();
+      // Larger FOV = zoom out.
+      view.offsetFov(8 * Math.PI / 180);
+    };
+
+    // Native fullscreen API. Target the entire integrated Virtual Tour page.
+    const getFullscreenElement = () =>
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement ||
+      null;
+
+    const getFullscreenTarget = () =>
+      panoRef.current?.closest?.('.ruda-virtual-tour-page') ||
+      panoRef.current?.parentElement ||
+      panoRef.current;
+
+    const requestFullscreen = async (element) => {
+      if (!element) throw new Error('Fullscreen target is unavailable.');
+      if (element.requestFullscreen) return element.requestFullscreen();
+      if (element.webkitRequestFullscreen) return element.webkitRequestFullscreen();
+      if (element.msRequestFullscreen) return element.msRequestFullscreen();
+      throw new Error('Fullscreen is not supported by this browser.');
+    };
+
+    const exitFullscreen = async () => {
+      if (document.exitFullscreen) return document.exitFullscreen();
+      if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+      if (document.msExitFullscreen) return document.msExitFullscreen();
+    };
+
+    const toggleFullscreenInternal = async () => {
+      try {
+        if (getFullscreenElement()) {
+          await exitFullscreen();
+        } else {
+          await requestFullscreen(getFullscreenTarget());
+        }
+      } catch (error) {
+        console.error('Virtual Tour fullscreen error:', error);
+        setGyroMessage('Fullscreen could not be started in this browser.');
+      }
+    };
+
+    const onFullscreenChange = () => {
+      setIsFullscreen(Boolean(getFullscreenElement()));
+      // Marzipano normally handles resize, but dispatching resize keeps all
+      // browser engines in sync after entering/exiting fullscreen.
+      window.setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+    };
+
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+    const gyro = {
+      enabled: false,
+      listener: null,
+      eventName: null,
+      baseline: null,
+      startYaw: 0,
+      startPitch: 0,
+      smoothedYaw: 0,
+      smoothedPitch: 0,
+      receivedEvent: false,
+      noEventTimer: null,
+    };
+
+    const getScreenAngle = () => {
+      const angle =
+        window.screen?.orientation?.angle ??
+        window.orientation ??
+        0;
+      return Number(angle) || 0;
+    };
+
     const disableGyroscopeInternal = () => {
-      if (gyro.listener) window.removeEventListener('deviceorientation', gyro.listener, true);
-      gyro.enabled=false; gyro.listener=null; gyro.baseline=null;
+      if (gyro.listener && gyro.eventName) {
+        window.removeEventListener(gyro.eventName, gyro.listener, true);
+      }
+      if (gyro.noEventTimer) clearTimeout(gyro.noEventTimer);
+
+      gyro.enabled = false;
+      gyro.listener = null;
+      gyro.eventName = null;
+      gyro.baseline = null;
+      gyro.receivedEvent = false;
+      gyro.noEventTimer = null;
+
       setIsGyroscopeEnabled(false);
     };
+
     const enableGyroscopeInternal = () => {
-      const cur = runtimeRef.current?.currentScene;
-      if (!cur) return;
+      const current = runtimeRef.current?.currentScene;
+      if (!current) return;
+
       stopAutorotate();
-      gyro.enabled=true; gyro.baseline=null; gyro.startYaw=cur.view.yaw(); gyro.startPitch=cur.view.pitch(); gyro.smoothedYaw=gyro.startYaw; gyro.smoothedPitch=gyro.startPitch;
-      gyro.listener=(event)=>{
-        if (!gyro.enabled || event.alpha == null || event.beta == null) return;
-        if (!gyro.baseline) { gyro.baseline={alpha:event.alpha,beta:event.beta}; return; }
-        const yawDelta = shortestAngleDeg(event.alpha, gyro.baseline.alpha) * Math.PI/180;
-        const pitchDelta = (event.beta - gyro.baseline.beta) * Math.PI/180;
-        const targetYaw = gyro.startYaw - yawDelta;
-        const targetPitch = clamp(gyro.startPitch + pitchDelta, -Math.PI/2 + .08, Math.PI/2 - .08);
-        gyro.smoothedYaw += shortestAngleDeg(targetYaw*180/Math.PI, gyro.smoothedYaw*180/Math.PI)*Math.PI/180*0.15;
-        gyro.smoothedPitch += (targetPitch-gyro.smoothedPitch)*0.15;
-        const fov = cur.view.fov();
-        cur.view.setParameters({ yaw:gyro.smoothedYaw, pitch:gyro.smoothedPitch, fov });
+
+      gyro.enabled = true;
+      gyro.baseline = null;
+      gyro.startYaw = current.view.yaw();
+      gyro.startPitch = current.view.pitch();
+      gyro.smoothedYaw = gyro.startYaw;
+      gyro.smoothedPitch = gyro.startPitch;
+      gyro.receivedEvent = false;
+
+      const eventName =
+        'ondeviceorientationabsolute' in window
+          ? 'deviceorientationabsolute'
+          : 'deviceorientation';
+
+      gyro.eventName = eventName;
+
+      gyro.listener = (event) => {
+        if (!gyro.enabled) return;
+
+        const alpha = Number(event.alpha);
+        const beta = Number(event.beta);
+        const gamma = Number(event.gamma);
+
+        if (!Number.isFinite(alpha) || !Number.isFinite(beta)) return;
+
+        gyro.receivedEvent = true;
+
+        // Always use the currently active scene so gyroscope still works
+        // after a hotspot/gallery scene switch.
+        const active = runtimeRef.current?.currentScene;
+        if (!active) return;
+
+        const screenAngle = getScreenAngle();
+
+        if (!gyro.baseline) {
+          gyro.baseline = {
+            alpha,
+            beta,
+            gamma: Number.isFinite(gamma) ? gamma : 0,
+            screenAngle,
+          };
+          gyro.startYaw = active.view.yaw();
+          gyro.startPitch = active.view.pitch();
+          gyro.smoothedYaw = gyro.startYaw;
+          gyro.smoothedPitch = gyro.startPitch;
+          setGyroMessage('');
+          return;
+        }
+
+        const alphaDelta =
+          shortestAngleDeg(alpha, gyro.baseline.alpha) * Math.PI / 180;
+        const betaDelta =
+          shortestAngleDeg(beta, gyro.baseline.beta) * Math.PI / 180;
+
+        let targetYaw = gyro.startYaw - alphaDelta;
+        let targetPitch = gyro.startPitch + betaDelta;
+
+        // Landscape compensation: gamma becomes a better vertical control.
+        if (Math.abs(screenAngle) === 90 && Number.isFinite(gamma)) {
+          const gammaDelta =
+            shortestAngleDeg(gamma, gyro.baseline.gamma) * Math.PI / 180;
+          targetPitch = gyro.startPitch - gammaDelta;
+        }
+
+        targetPitch = clamp(
+          targetPitch,
+          -Math.PI / 2 + 0.08,
+          Math.PI / 2 - 0.08
+        );
+
+        const currentYawDeg = gyro.smoothedYaw * 180 / Math.PI;
+        const targetYawDeg = targetYaw * 180 / Math.PI;
+
+        gyro.smoothedYaw +=
+          shortestAngleDeg(targetYawDeg, currentYawDeg) *
+          Math.PI / 180 *
+          0.18;
+
+        gyro.smoothedPitch +=
+          (targetPitch - gyro.smoothedPitch) * 0.18;
+
+        active.view.setParameters({
+          yaw: gyro.smoothedYaw,
+          pitch: gyro.smoothedPitch,
+          fov: active.view.fov(),
+        });
       };
-      window.addEventListener('deviceorientation',gyro.listener,true);
-      setIsGyroscopeEnabled(true); setGyroMessage('');
+
+      window.addEventListener(eventName, gyro.listener, true);
+      setIsGyroscopeEnabled(true);
+      setGyroMessage('Gyroscope enabled');
+
+      gyro.noEventTimer = setTimeout(() => {
+        if (gyro.enabled && !gyro.receivedEvent) {
+          setGyroMessage(
+            window.isSecureContext
+              ? 'No motion data received. Use a phone/tablet with motion sensors enabled.'
+              : 'Gyroscope requires HTTPS on mobile devices.'
+          );
+        }
+      }, 2500);
     };
 
     const onPanoClick = (e) => { if (!e.target.closest?.('.ruda-link-hotspot')) closeActiveHotspot(); };
@@ -241,15 +461,62 @@ export default function useMarzipanoViewer({
 
     const onKeyDown=(e)=>{
       const tag=document.activeElement?.tagName; if(tag==='INPUT'||tag==='TEXTAREA')return;
-      if(e.key==='f'||e.key==='F'){e.preventDefault();if(screenfull?.isEnabled)screenfull.toggle();}
-      else if(e.key==='r'||e.key==='R'){e.preventDefault();const c=runtimeRef.current?.currentScene;c?.view.setParameters(c.data.initialViewParameters);}
-      else if(e.key===' '){e.preventDefault();runtimeRef.current?.toggleAutorotate?.();}
-      else if(e.key==='Escape') closeActiveHotspot();
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        runtimeRef.current?.toggleFullscreenInternal?.();
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        const c = runtimeRef.current?.currentScene;
+        c?.view.setParameters(c.data.initialViewParameters);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        runtimeRef.current?.panLeft?.();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        runtimeRef.current?.panRight?.();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        runtimeRef.current?.panUp?.();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        runtimeRef.current?.panDown?.();
+      } else if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        runtimeRef.current?.zoomIn?.();
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        runtimeRef.current?.zoomOut?.();
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        runtimeRef.current?.toggleAutorotate?.();
+      } else if (e.key === 'Escape') {
+        closeActiveHotspot();
+      }
     };
     window.addEventListener('keydown',onKeyDown);
 
-    runtimeRef.current={ viewer,scenes,currentScene:scenes[0],switchScene,startAutorotate,stopAutorotate,gyro,transitioning:false,activeHotspotEl:null,
-      get autorotateEnabled(){return autorotateEnabled;}, _setAutorotateEnabled(v){autorotateEnabled=v;}, disableGyroscopeInternal, enableGyroscopeInternal };
+    runtimeRef.current = {
+      viewer,
+      scenes,
+      currentScene: scenes[0],
+      switchScene,
+      startAutorotate,
+      stopAutorotate,
+      gyro,
+      transitioning: false,
+      activeHotspotEl: null,
+      toggleFullscreenInternal,
+      panLeft,
+      panRight,
+      panUp,
+      panDown,
+      zoomIn,
+      zoomOut,
+      get autorotateEnabled() { return autorotateEnabled; },
+      _setAutorotateEnabled(v) { autorotateEnabled = v; },
+      disableGyroscopeInternal,
+      enableGyroscopeInternal
+    };
 
     const initialSceneId=new URLSearchParams(window.location.search).get('scene');
     const initialScene=(initialSceneId&&scenes.find((s)=>s.data.id===initialSceneId))||scenes[0];
@@ -260,7 +527,11 @@ export default function useMarzipanoViewer({
 
     return()=>{
       clearTransitionTimers(); cancelAnimationFrame(bearingRaf); clearTimeout(loadFallback); disableGyroscopeInternal(); stopAutorotate();
-      window.removeEventListener('keydown',onKeyDown); panoRef.current?.removeEventListener('click',onPanoClick); removeFullscreenListener?.(); mq?.removeEventListener?.('change',applyMode);
+      window.removeEventListener('keydown', onKeyDown);
+      panoRef.current?.removeEventListener('click', onPanoClick);
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', onFullscreenChange);
+      mq?.removeEventListener?.('change', applyMode);
       body.classList.remove('multiple-scenes','single-scene','mobile','desktop','touch','no-touch'); runtimeRef.current=null; if(panoRef.current)panoRef.current.innerHTML='';
     };
   }, []);
@@ -269,22 +540,75 @@ export default function useMarzipanoViewer({
   const switchToNext=useCallback(()=>{const rt=runtimeRef.current;if(!rt)return;const idx=getSceneIndex(rt.currentScene?.data?.id);rt.switchScene(rt.scenes[(idx+1)%rt.scenes.length]);},[]);
   const switchToPrev=useCallback(()=>{const rt=runtimeRef.current;if(!rt)return;const idx=getSceneIndex(rt.currentScene?.data?.id);rt.switchScene(rt.scenes[(idx-1+rt.scenes.length)%rt.scenes.length]);},[]);
   const toggleAutorotate=useCallback(()=>{const rt=runtimeRef.current;if(!rt)return;if(rt.autorotateEnabled){rt.stopAutorotate();rt._setAutorotateEnabled(false);}else{rt._setAutorotateEnabled(true);rt.startAutorotate();}},[]);
-  const resetView=useCallback(()=>{const c=runtimeRef.current?.currentScene;c?.view.setParameters(c.data.initialViewParameters);},[]);
-  const toggleFullscreen=useCallback(()=>{const s=window.screenfull;if(s?.isEnabled)s.toggle();},[]);
+  const resetView = useCallback(() => {
+    const rt = runtimeRef.current;
+    const current = rt?.currentScene;
+    if (!current) return;
+    rt.stopAutorotate?.();
+    current.view.setParameters(current.data.initialViewParameters);
+  }, []);
+  const toggleFullscreen = useCallback(() => {
+    runtimeRef.current?.toggleFullscreenInternal?.();
+  }, []);
+
+  const panLeft = useCallback(() => runtimeRef.current?.panLeft?.(), []);
+  const panRight = useCallback(() => runtimeRef.current?.panRight?.(), []);
+  const panUp = useCallback(() => runtimeRef.current?.panUp?.(), []);
+  const panDown = useCallback(() => runtimeRef.current?.panDown?.(), []);
+  const zoomIn = useCallback(() => runtimeRef.current?.zoomIn?.(), []);
+  const zoomOut = useCallback(() => runtimeRef.current?.zoomOut?.(), []);
 
   const toggleGyroscope=useCallback(async()=>{
     const rt=runtimeRef.current;
     if(!rt)return;
     if(rt.gyro?.enabled){rt.disableGyroscopeInternal();setGyroMessage('');return;}
-    if(typeof window.DeviceOrientationEvent==='undefined'){setGyroMessage('Gyroscope is available on supported mobile devices.');return;}
-    try{
-      if(typeof window.DeviceOrientationEvent.requestPermission==='function'){
-        const result=await window.DeviceOrientationEvent.requestPermission();
-        if(result!=='granted'){setGyroMessage('Gyroscope permission was not granted.');return;}
+    if (typeof window.DeviceOrientationEvent === 'undefined') {
+      setGyroMessage('Gyroscope is available on supported phones and tablets.');
+      return;
+    }
+
+    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
+      setGyroMessage('Gyroscope requires HTTPS on mobile devices.');
+      return;
+    }
+
+    try {
+      if (typeof window.DeviceOrientationEvent.requestPermission === 'function') {
+        const result = await window.DeviceOrientationEvent.requestPermission();
+        if (result !== 'granted') {
+          setGyroMessage('Motion permission was not granted.');
+          return;
+        }
       }
+
       rt.enableGyroscopeInternal();
-    }catch(err){console.error('Gyroscope error:',err);setGyroMessage('Unable to start gyroscope on this device.');}
+    } catch (err) {
+      console.error('Gyroscope error:', err);
+      setGyroMessage('Unable to start gyroscope. Check motion-sensor permissions.');
+    }
   },[]);
 
-  return { currentSceneId,isAutorotating,isFullscreen,bearing,isTransitioning,isGyroscopeEnabled,gyroMessage,switchSceneById,switchToNext,switchToPrev,toggleAutorotate,resetView,toggleFullscreen,toggleGyroscope,viewUpRef,viewDownRef,viewLeftRef,viewRightRef,viewInRef,viewOutRef,runtimeRef };
+  return {
+    currentSceneId,
+    isAutorotating,
+    isFullscreen,
+    bearing,
+    isTransitioning,
+    isGyroscopeEnabled,
+    gyroMessage,
+    switchSceneById,
+    switchToNext,
+    switchToPrev,
+    toggleAutorotate,
+    resetView,
+    toggleFullscreen,
+    toggleGyroscope,
+    panLeft,
+    panRight,
+    panUp,
+    panDown,
+    zoomIn,
+    zoomOut,
+    runtimeRef
+  };
 }

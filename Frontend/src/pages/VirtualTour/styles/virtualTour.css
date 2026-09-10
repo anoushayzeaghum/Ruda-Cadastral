@@ -1744,3 +1744,415 @@
   .ruda-virtual-tour-page .ruda-link-hotspot__pulse { animation:none; opacity:.5; }
   .ruda-virtual-tour-page .vt-gallery,.ruda-virtual-tour-page .vt-gallery-backdrop { animation:none; }
 }
+
+
+/* ==========================================================================
+   FINAL RUDA VIRTUAL TOUR UI/UX — TOP-RIGHT COMMAND CENTER
+   ========================================================================== */
+
+.ruda-virtual-tour-page {
+  --vt-surface: rgba(6, 27, 21, .76);
+  --vt-surface-strong: rgba(6, 27, 21, .90);
+  --vt-border: rgba(255,255,255,.12);
+  --vt-highlight: #53d89d;
+  --vt-highlight-bg: rgba(22,132,91,.38);
+}
+
+/* Keep the image as the hero. Controls occupy one quiet area only. */
+.ruda-virtual-tour-page .vt-top-right-control-stack {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 460;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+  max-width: calc(100vw - 36px);
+  pointer-events: auto;
+}
+
+/* Gallery / gyro / info */
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-actions {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  border-radius: 15px;
+  background: var(--vt-surface);
+  border: 1px solid var(--vt-border);
+  box-shadow: 0 12px 34px rgba(0,0,0,.22);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-action {
+  position: relative;
+  width: 39px;
+  height: 39px;
+  min-width: 39px;
+  min-height: 39px;
+  border-radius: 11px;
+  color: rgba(255,255,255,.90);
+  display: grid;
+  place-items: center;
+  transition: background .16s ease, color .16s ease, transform .16s ease;
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-action:hover {
+  background: rgba(255,255,255,.09);
+  transform: translateY(-1px);
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-action.active {
+  background: var(--vt-highlight-bg);
+  color: #8af0bd;
+  box-shadow: inset 0 0 0 1px rgba(83,216,157,.20);
+}
+
+/* Tooltip opens to the left to remain onscreen. */
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-action__label {
+  position: absolute;
+  right: calc(100% + 8px);
+  left: auto;
+  top: 50%;
+  transform: translate(5px,-50%);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(3,18,14,.92);
+  border: 1px solid rgba(255,255,255,.10);
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-action:hover .vt-side-action__label {
+  opacity: 1;
+  transform: translate(0,-50%);
+}
+
+/* Viewer controls: compact horizontal command bar. */
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-controls {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  z-index: auto !important;
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-controls__pill {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  border-radius: 15px;
+  background: var(--vt-surface);
+  border: 1px solid var(--vt-border);
+  box-shadow: 0 12px 34px rgba(0,0,0,.22);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
+.ruda-virtual-tour-page .vt-controls__cluster {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-ctrl-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: rgba(255,255,255,.87);
+  background: transparent;
+  transition: background .16s ease, color .16s ease, transform .16s ease;
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-ctrl-btn:hover {
+  background: rgba(255,255,255,.09);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-ctrl-btn:active {
+  transform: translateY(0) scale(.95);
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-ctrl-btn.active {
+  background: var(--vt-highlight-bg);
+  color: #74e8ac;
+  box-shadow: inset 0 0 0 1px rgba(83,216,157,.16);
+}
+
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-controls__sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 2px;
+  background: rgba(255,255,255,.11);
+}
+
+/* Current location/progress display is intentionally removed. */
+.ruda-virtual-tour-page .vt-scene-chip,
+.ruda-virtual-tour-page .vt-progress,
+.ruda-virtual-tour-page .vt-info-panel__compare {
+  display: none !important;
+}
+
+/* More premium Back to RUDA chip, kept away from controls. */
+.ruda-virtual-tour-page .vt-back-to-ruda {
+  top: 18px;
+  left: 18px;
+  min-height: 42px;
+  padding: 0 15px;
+  border-radius: 13px;
+  background: rgba(255,255,255,.72);
+  color: #15382d;
+  border: 1px solid rgba(255,255,255,.50);
+  box-shadow: 0 8px 24px rgba(0,0,0,.13);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-weight: 800;
+}
+
+.ruda-virtual-tour-page .vt-back-to-ruda:hover {
+  background: rgba(255,255,255,.88);
+  transform: translateY(-1px);
+}
+
+/* Keep toast clear of top-right tools. */
+.ruda-virtual-tour-page .vt-toast {
+  top: auto !important;
+  bottom: 22px !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  max-width: min(460px, calc(100vw - 28px));
+  text-align: center;
+}
+
+/* Native fullscreen: fill the actual screen with the whole tour. */
+.ruda-virtual-tour-page:fullscreen,
+.ruda-virtual-tour-page:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  inset: 0 !important;
+  background: #061b15;
+  overflow: hidden;
+}
+
+.ruda-virtual-tour-page:fullscreen #pano,
+.ruda-virtual-tour-page:-webkit-full-screen #pano {
+  width: 100vw !important;
+  height: 100vh !important;
+  inset: 0 !important;
+}
+
+/* Gallery sits below command center and never hides the top-right controls. */
+.ruda-virtual-tour-page .vt-gallery {
+  border-color: rgba(255,255,255,.12);
+}
+
+/* Mobile: same top-right design, reduced density. */
+@media (max-width: 720px) {
+  .ruda-virtual-tour-page .vt-top-right-control-stack {
+    top: calc(env(safe-area-inset-top, 0px) + 9px);
+    right: 9px;
+    gap: 5px;
+    max-width: calc(100vw - 18px);
+  }
+
+  .ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-actions {
+    padding: 4px;
+    border-radius: 13px;
+  }
+
+  .ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-action {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 10px;
+  }
+
+  .ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-action__label {
+    display: none;
+  }
+
+  .ruda-virtual-tour-page .vt-top-right-control-stack .vt-controls__pill {
+    max-width: min(390px, calc(100vw - 18px));
+    padding: 4px;
+    border-radius: 13px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .ruda-virtual-tour-page .vt-top-right-control-stack .vt-ctrl-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    border-radius: 9px;
+  }
+
+  .ruda-virtual-tour-page .vt-back-to-ruda {
+    top: calc(env(safe-area-inset-top, 0px) + 9px);
+    left: 9px;
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+}
+
+/* Narrow phones: hide pan arrows because drag/gyro already handle looking.
+   Keep fullscreen, zoom, reset and autorotate visible and functional. */
+@media (max-width: 480px) {
+  .ruda-virtual-tour-page .vt-controls__cluster:first-of-type {
+    display: none;
+  }
+
+  .ruda-virtual-tour-page .vt-top-right-control-stack .vt-controls__pill {
+    max-width: calc(100vw - 18px);
+  }
+
+  .ruda-virtual-tour-page .vt-top-right-control-stack .vt-ctrl-btn,
+  .ruda-virtual-tour-page .vt-top-right-control-stack .vt-side-action {
+    width: 33px;
+    height: 33px;
+    min-width: 33px;
+    min-height: 33px;
+  }
+}
+
+
+/* ==========================================================================
+   RUDA VIRTUAL TOUR — directional controls + RUDA brand button refinements
+   ========================================================================== */
+
+.ruda-virtual-tour-page {
+  --ruda-brand-blue: #0f4f73;
+  --ruda-brand-blue-hover: #0b4160;
+}
+
+/* Keep only utility controls in the top-right command area. */
+.ruda-virtual-tour-page .vt-top-right-control-stack .vt-controls--utilities {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+}
+
+/* Four directional controls: bottom-right, independent of the top toolbar. */
+.ruda-virtual-tour-page .vt-direction-controls {
+  position: fixed;
+  right: 20px;
+  bottom: 22px;
+  z-index: 465;
+
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  padding: 6px;
+  border-radius: 15px;
+
+  background: rgba(5, 28, 21, .78);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 12px 32px rgba(0,0,0,.24);
+
+  backdrop-filter: blur(18px) saturate(1.16);
+  -webkit-backdrop-filter: blur(18px) saturate(1.16);
+}
+
+.ruda-virtual-tour-page .vt-direction-controls .vt-ctrl-btn {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+  color: rgba(255,255,255,.93);
+  background: transparent;
+
+  transition:
+    background .16s ease,
+    color .16s ease,
+    transform .16s ease;
+}
+
+.ruda-virtual-tour-page .vt-direction-controls .vt-ctrl-btn:hover {
+  background: rgba(255,255,255,.10);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.ruda-virtual-tour-page .vt-direction-controls .vt-ctrl-btn:active {
+  background: rgba(83,216,157,.22);
+  transform: scale(.94);
+}
+
+/* Back to RUDA — RUDA logo blue background + white text. */
+.ruda-virtual-tour-page .vt-back-to-ruda,
+.ruda-virtual-tour-page .vt-back-ruda,
+.ruda-virtual-tour-page .vt-back-button {
+  background: var(--ruda-brand-blue) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,.20) !important;
+  box-shadow: 0 9px 24px rgba(15,79,115,.30) !important;
+  text-shadow: none !important;
+}
+
+.ruda-virtual-tour-page .vt-back-to-ruda:hover,
+.ruda-virtual-tour-page .vt-back-ruda:hover,
+.ruda-virtual-tour-page .vt-back-button:hover {
+  background: var(--ruda-brand-blue-hover) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 30px rgba(15,79,115,.36) !important;
+}
+
+.ruda-virtual-tour-page .vt-back-to-ruda svg,
+.ruda-virtual-tour-page .vt-back-ruda svg,
+.ruda-virtual-tour-page .vt-back-button svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Mobile: keep the same four arrows at bottom-right with thumb-friendly targets. */
+@media (max-width: 720px) {
+  .ruda-virtual-tour-page .vt-direction-controls {
+    right: 10px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    padding: 5px;
+    gap: 2px;
+    border-radius: 13px;
+  }
+
+  .ruda-virtual-tour-page .vt-direction-controls .vt-ctrl-btn {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    border-radius: 9px;
+  }
+}
+
+/* Do not hide the directional group on narrow phones. */
+@media (max-width: 480px) {
+  .ruda-virtual-tour-page .vt-direction-controls {
+    display: flex !important;
+  }
+}

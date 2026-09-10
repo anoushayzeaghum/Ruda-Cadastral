@@ -34,14 +34,37 @@ export default function VirtualTourViewer() {
     onTransitionChange: useCallback((v)=>setTransitionActive(v),[]),
   });
 
-  const { currentSceneId,isAutorotating,isFullscreen,isGyroscopeEnabled,gyroMessage,switchSceneById,toggleAutorotate,resetView,toggleFullscreen,toggleGyroscope,viewUpRef,viewDownRef,viewLeftRef,viewRightRef,viewInRef,viewOutRef }=viewer;
+  const {
+    currentSceneId,
+    isAutorotating,
+    isFullscreen,
+    isGyroscopeEnabled,
+    gyroMessage,
+    switchSceneById,
+    toggleAutorotate,
+    resetView,
+    toggleFullscreen,
+    toggleGyroscope,
+    panUp,
+    panDown,
+    panLeft,
+    panRight,
+    zoomIn,
+    zoomOut
+  } = viewer;
   const currentScene=useMemo(()=>getSceneById(currentSceneId),[currentSceneId]);
 
   useEffect(()=>{ if(shouldShowHelp()) setTimeout(()=>setShowHelp(true),900); },[]);
 
   const openTourInfo=()=>{
     if(!currentScene)return;
-    setActivePanel({ title:currentScene.name, text:currentScene.description, category:currentScene.zone || 'Tour Location', progress:currentScene.progress, status:currentScene.status, date:currentScene.captureDate });
+    setActivePanel({
+      title: currentScene.name,
+      text: currentScene.description,
+      category: currentScene.zone || 'Tour Location',
+      status: currentScene.status,
+      date: currentScene.captureDate
+    });
   };
 
   return <>
@@ -51,17 +74,36 @@ export default function VirtualTourViewer() {
     <ErrorBanner message={errorMessage}/>
 
     <div className="vt-shell">
-      <SideActions galleryOpen={galleryOpen} onGallery={()=>setGalleryOpen(v=>!v)} gyroEnabled={isGyroscopeEnabled} onGyro={toggleGyroscope} onInfo={openTourInfo}/>
+      <div className="vt-top-right-control-stack">
+        <SideActions
+          galleryOpen={galleryOpen}
+          onGallery={()=>setGalleryOpen(v=>!v)}
+          gyroEnabled={isGyroscopeEnabled}
+          onGyro={toggleGyroscope}
+          onInfo={openTourInfo}
+        />
 
-      <SceneGallery isOpen={galleryOpen} currentSceneId={currentSceneId} onClose={()=>setGalleryOpen(false)} onSceneSelect={switchSceneById}/>
-
-      <ViewerControls viewUpRef={viewUpRef} viewDownRef={viewDownRef} viewLeftRef={viewLeftRef} viewRightRef={viewRightRef} viewInRef={viewInRef} viewOutRef={viewOutRef} onReset={resetView} onToggleAutorotate={toggleAutorotate} onToggleFullscreen={toggleFullscreen} isAutorotating={isAutorotating} isFullscreen={isFullscreen}/>
-
-      <div className="vt-scene-chip glass" aria-live="polite">
-        <span className="vt-scene-chip__eyebrow">CURRENT LOCATION</span>
-        <strong>{currentScene?.name || 'Virtual Tour'}</strong>
-        {currentScene?.progress != null && <span>{currentScene.progress}% complete</span>}
+        <ViewerControls
+          onPanUp={panUp}
+          onPanDown={panDown}
+          onPanLeft={panLeft}
+          onPanRight={panRight}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onReset={resetView}
+          onToggleAutorotate={toggleAutorotate}
+          onToggleFullscreen={toggleFullscreen}
+          isAutorotating={isAutorotating}
+          isFullscreen={isFullscreen}
+        />
       </div>
+
+      <SceneGallery
+        isOpen={galleryOpen}
+        currentSceneId={currentSceneId}
+        onClose={()=>setGalleryOpen(false)}
+        onSceneSelect={switchSceneById}
+      />
 
       {gyroMessage && <div className="vt-toast glass" role="status">{gyroMessage}</div>}
 
