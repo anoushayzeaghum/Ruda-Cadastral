@@ -13,6 +13,7 @@ import {
   getProjectsByPhase,
   getProjectsByPhaseAndType,
   getProjectGeoJSON,
+  getRudaNotifiedPhasesBoundaryGeoJSON,
 } from "../../services/metaverseApi";
 
 const getProjectValue = (project, keys) => {
@@ -52,6 +53,7 @@ function KpiCard({ icon, label, value, detail, accent }) {
 export default function MetaverseKpiCards({ filters }) {
   const [projects, setProjects] = useState([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
+  const [phaseCount, setPhaseCount] = useState(null);
   const [precinctBoundaryCount, setPrecinctBoundaryCount] = useState(null);
   const [blockCount, setBlockCount] = useState(null);
 
@@ -88,12 +90,35 @@ export default function MetaverseKpiCards({ filters }) {
     });
   }, [projects, filters?.phase, filters?.projectType, filters?.projectId]);
 
-  const phaseCount = useMemo(() => {
-    const phases = filteredProjects
-      .map((project) => getProjectValue(project, ["phase", "phases", "phase_name"]))
-      .filter(Boolean);
-    return new Set(phases).size;
-  }, [filteredProjects]);
+  // Keep this KPI aligned with Layers > Administrative > Phases Boundary,
+  // rather than with the subheader's project filters.
+  useEffect(() => {
+    let cancelled = false;
+
+    getRudaNotifiedPhasesBoundaryGeoJSON()
+      .then((geojson) => {
+        const phases = (geojson?.features || [])
+          .map((feature) =>
+            getProjectValue(feature?.properties, [
+              "phases_new",
+              "phases",
+              "phase_name",
+              "phase",
+            ]),
+          )
+          .filter(Boolean);
+
+        if (!cancelled) setPhaseCount(new Set(phases).size);
+      })
+      .catch((error) => {
+        console.error("KPI PHASE BOUNDARY ERROR:", error);
+        if (!cancelled) setPhaseCount(0);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Precinct boundary + block counts follow the same Project > Phase+Type > Phase > all cascade as the subheader's boundary loader.
   useEffect(() => {
@@ -153,14 +178,14 @@ export default function MetaverseKpiCards({ filters }) {
     : "No project selected";
 
   const projectCount = projectsLoading ? "-" : filteredProjects.length;
-  const phaseValue = projectsLoading ? "-" : phaseCount;
+  const phaseValue = phaseCount === null ? "-" : phaseCount;
   const precinctValue = precinctBoundaryCount === null ? "-" : precinctBoundaryCount;
   const blockValue = blockCount === null ? "-" : blockCount;
 
   return (
     <section className="pointer-events-none absolute bottom-3 left-3 right-3 z-[100] sm:bottom-4 sm:left-16 sm:right-4">
       <div className="pointer-events-auto mx-auto flex max-w-[1180px] gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible">
-        <KpiCard icon={MapPinned} label="Total phases" value={phaseValue} detail="From project records" accent="bg-emerald-400/15 text-emerald-300" />
+        <KpiCard icon={MapPinned} label="Total phases" value={phaseValue} detail="From phases boundary" accent="bg-emerald-400/15 text-emerald-300" />
         <KpiCard icon={PanelsTopLeft} label="Total projects" value={projectCount} detail="From backend projects" accent="bg-sky-400/15 text-sky-300" />
         <KpiCard icon={Layers3} label="Precinct boundaries" value={precinctValue} detail="From precinct boundary records" accent="bg-amber-400/15 text-amber-300" />
         <KpiCard icon={SquareStack} label="Total blocks" value={blockValue} detail="From backend block records" accent="bg-violet-400/15 text-violet-300" />
