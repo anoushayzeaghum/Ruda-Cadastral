@@ -8,9 +8,9 @@ import {
   valueOrDash,
 } from "./printUtils";
 
-const THEME = [30, 92, 58];
+const THEME = [30, 58, 95];
 const TEXT = [28, 28, 28];
-const MUTED = [92, 92, 92];
+const MUTED = [92, 103, 116];
 
 const normalizeText = (value, fallback = "") => {
   if (value === null || value === undefined || String(value).trim() === "") {
@@ -93,7 +93,12 @@ const drawWrapped = (
   x,
   y,
   maxWidth,
-  { fontSize = 7.7, lineHeight = 3.45, fontStyle = "normal", color = TEXT } = {},
+  {
+    fontSize = 7.7,
+    lineHeight = 3.45,
+    fontStyle = "normal",
+    color = TEXT,
+  } = {},
 ) => {
   doc.setFont("helvetica", fontStyle);
   doc.setFontSize(fontSize);
@@ -127,21 +132,27 @@ const drawKeyValue = (
   });
 };
 
-const drawTwoColumnRow = (
+const drawTableKeyValue = (
   doc,
-  left,
-  right,
+  label,
+  value,
   x,
   y,
-  totalWidth,
-  { gap = 6, labelWidthLeft = 27, labelWidthRight = 27 } = {},
+  width,
+  { labelWidth = 29, fontSize = 6.9 } = {},
 ) => {
-  const colWidth = (totalWidth - gap) / 2;
-  drawKeyValue(doc, left[0], left[1], x, y, colWidth, {
-    labelWidth: labelWidthLeft,
-  });
-  drawKeyValue(doc, right[0], right[1], x + colWidth + gap, y, colWidth, {
-    labelWidth: labelWidthRight,
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(fontSize);
+  doc.setTextColor(...THEME);
+  doc.text(label, x, y);
+
+  const valueX = x + labelWidth;
+  const maxValueWidth = Math.max(8, width - labelWidth);
+  drawFittedText(doc, value, valueX, y, maxValueWidth, {
+    fontSize,
+    minFontSize: 5.8,
+    fontStyle: "normal",
+    color: TEXT,
   });
 };
 
@@ -181,7 +192,10 @@ const cropImageForPdf = async (
   const panX = Math.max(-100, Math.min(100, Number(crop.x) || 0));
   const panY = Math.max(-100, Math.min(100, Number(crop.y) || 0));
 
-  const baseScale = Math.max(outputWidth / img.width, outputHeight / img.height);
+  const baseScale = Math.max(
+    outputWidth / img.width,
+    outputHeight / img.height,
+  );
   const scale = baseScale * zoom;
   const drawWidth = img.width * scale;
   const drawHeight = img.height * scale;
@@ -208,13 +222,60 @@ const getCropSettings = (root, key) => ({
 const wireImageEditor = (root, key) => {
   const input = root.querySelector(`[data-${key}-file]`);
   const preview = root.querySelector(`[data-${key}-preview]`);
+  const frame = root.querySelector(`[data-${key}-frame]`);
   const zoom = root.querySelector(`[data-${key}-zoom]`);
   const x = root.querySelector(`[data-${key}-x]`);
   const y = root.querySelector(`[data-${key}-y]`);
-  if (!input || !preview || !zoom || !x || !y) return;
+  const reset = root.querySelector(`[data-${key}-reset]`);
+  if (!input || !preview || !frame || !zoom || !x || !y) return;
 
+  let dragging = false;
+  let startClientX = 0;
+  let startClientY = 0;
+  let startPanX = 0;
+  let startPanY = 0;
+
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+  // Render the editor with the same "cover + zoom + pan" math used by the
+  // generated PDF, so the position seen here closely matches the report.
   const apply = () => {
-    preview.style.transform = `translate(${Number(x.value) * 0.18}%, ${Number(y.value) * 0.18}%) scale(${zoom.value})`;
+    if (!preview.src || !preview.naturalWidth || !preview.naturalHeight) return;
+
+    const frameWidth = frame.clientWidth;
+    const frameHeight = frame.clientHeight;
+    if (!frameWidth || !frameHeight) return;
+
+    const zoomValue = Math.max(1, Number(zoom.value) || 1);
+    const panX = clamp(Number(x.value) || 0, -100, 100);
+    const panY = clamp(Number(y.value) || 0, -100, 100);
+
+    const baseScale = Math.max(
+      frameWidth / preview.naturalWidth,
+      frameHeight / preview.naturalHeight,
+    );
+    const scale = baseScale * zoomValue;
+    const drawWidth = preview.naturalWidth * scale;
+    const drawHeight = preview.naturalHeight * scale;
+    const overflowX = Math.max(0, drawWidth - frameWidth);
+    const overflowY = Math.max(0, drawHeight - frameHeight);
+
+    const left = -overflowX / 2 + (panX / 100) * (overflowX / 2);
+    const top = -overflowY / 2 + (panY / 100) * (overflowY / 2);
+
+    preview.style.width = `${drawWidth}px`;
+    preview.style.height = `${drawHeight}px`;
+    preview.style.left = `${left}px`;
+    preview.style.top = `${top}px`;
+    preview.style.transform = "none";
+    preview.style.cursor = overflowX > 0 || overflowY > 0 ? "grab" : "default";
+  };
+
+  const resetPosition = () => {
+    zoom.value = "1";
+    x.value = "0";
+    y.value = "0";
+    apply();
   };
 
   input.addEventListener("change", () => {
@@ -224,15 +285,67 @@ const wireImageEditor = (root, key) => {
       return;
     }
     const url = URL.createObjectURL(file);
-    preview.onload = () => URL.revokeObjectURL(url);
+    preview.onload = () => {
+      URL.revokeObjectURL(url);
+      resetPosition();
+    };
     preview.src = url;
-    zoom.value = "1";
-    x.value = "0";
-    y.value = "0";
-    apply();
   });
 
-  [zoom, x, y].forEach((control) => control.addEventListener("input", apply));
+  zoom.addEventListener("input", apply);
+  reset?.addEventListener("click", resetPosition);
+
+  frame.addEventListener("pointerdown", (event) => {
+    if (!preview.src || !preview.naturalWidth) return;
+    dragging = true;
+    startClientX = event.clientX;
+    startClientY = event.clientY;
+    startPanX = Number(x.value) || 0;
+    startPanY = Number(y.value) || 0;
+    frame.setPointerCapture?.(event.pointerId);
+    preview.style.cursor = "grabbing";
+    event.preventDefault();
+  });
+
+  frame.addEventListener("pointermove", (event) => {
+    if (!dragging || !preview.naturalWidth || !preview.naturalHeight) return;
+
+    const frameWidth = frame.clientWidth;
+    const frameHeight = frame.clientHeight;
+    const zoomValue = Math.max(1, Number(zoom.value) || 1);
+    const baseScale = Math.max(
+      frameWidth / preview.naturalWidth,
+      frameHeight / preview.naturalHeight,
+    );
+    const drawWidth = preview.naturalWidth * baseScale * zoomValue;
+    const drawHeight = preview.naturalHeight * baseScale * zoomValue;
+    const halfOverflowX = Math.max(0, drawWidth - frameWidth) / 2;
+    const halfOverflowY = Math.max(0, drawHeight - frameHeight) / 2;
+
+    const deltaX = event.clientX - startClientX;
+    const deltaY = event.clientY - startClientY;
+
+    const nextX =
+      halfOverflowX > 0 ? startPanX + (deltaX / halfOverflowX) * 100 : 0;
+    const nextY =
+      halfOverflowY > 0 ? startPanY + (deltaY / halfOverflowY) * 100 : 0;
+
+    x.value = String(clamp(nextX, -100, 100));
+    y.value = String(clamp(nextY, -100, 100));
+    apply();
+    event.preventDefault();
+  });
+
+  const stopDragging = (event) => {
+    if (!dragging) return;
+    dragging = false;
+    frame.releasePointerCapture?.(event.pointerId);
+    apply();
+  };
+
+  frame.addEventListener("pointerup", stopDragging);
+  frame.addEventListener("pointercancel", stopDragging);
+  window.addEventListener("resize", apply);
 };
 
 const imageEditorMarkup = (key, title, subtitle, required = true) => `
@@ -240,15 +353,17 @@ const imageEditorMarkup = (key, title, subtitle, required = true) => `
     <div class="tl-image-title">${escapeHtml(title)}</div>
     <div class="tl-image-subtitle">${escapeHtml(subtitle)}</div>
     <input data-${key}-file type="file" accept="image/*" ${required ? "required" : ""} />
-    <div class="tl-preview-frame">
-      <img data-${key}-preview alt="${escapeHtml(title)} preview" />
-      <div class="tl-preview-placeholder">Image preview</div>
+    <div class="tl-preview-frame ${key === "owner" ? "tl-preview-owner" : "tl-preview-party"}" data-${key}-frame>
+      <img data-${key}-preview alt="${escapeHtml(title)} preview" draggable="false" />
+      <div class="tl-preview-placeholder">Upload an image, then drag it to position</div>
     </div>
-    <div class="tl-sliders">
+    <div class="tl-editor-controls">
       <label>Zoom <input data-${key}-zoom type="range" min="1" max="3" step="0.05" value="1" /></label>
-      <label>Horizontal <input data-${key}-x type="range" min="-100" max="100" step="1" value="0" /></label>
-      <label>Vertical <input data-${key}-y type="range" min="-100" max="100" step="1" value="0" /></label>
+      <button data-${key}-reset type="button" class="tl-reset-photo">Reset position</button>
     </div>
+    <input data-${key}-x type="hidden" value="0" />
+    <input data-${key}-y type="hidden" value="0" />
+    <div class="tl-drag-hint">Drag the photo directly inside the box to move it. You can choose another image at any time.</div>
   </div>
 `;
 
@@ -265,7 +380,7 @@ const collectTransferLetterData = (details) =>
           position: fixed;
           inset: 0;
           z-index: 999999;
-          background: rgba(15, 23, 42, 0.58);
+          background: rgba(15, 23, 42, 0.68); backdrop-filter: blur(4px);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -274,20 +389,20 @@ const collectTransferLetterData = (details) =>
         }
         #ruda-transfer-letter-modal * { box-sizing: border-box; }
         #ruda-transfer-letter-modal .tl-modal {
-          width: min(1120px, 96vw);
+          width: min(1160px, 96vw);
           max-height: 94vh;
           overflow: auto;
-          background: #fff;
-          border-radius: 12px;
-          box-shadow: 0 24px 80px rgba(0,0,0,.28);
+          background: #ffffff;
+          border-radius: 14px;
+          box-shadow: 0 28px 90px rgba(15,23,42,.36); border: 1px solid rgba(30,58,95,.12);
         }
         #ruda-transfer-letter-modal .tl-header {
           position: sticky;
           top: 0;
           z-index: 2;
-          background: #fff;
-          border-bottom: 1px solid #e5e7eb;
-          padding: 16px 20px;
+          background: linear-gradient(135deg, #1e3a5f 0%, #294d78 100%);
+          border-bottom: 0;
+          padding: 18px 22px;
           display: flex;
           justify-content: space-between;
           gap: 16px;
@@ -296,34 +411,40 @@ const collectTransferLetterData = (details) =>
         #ruda-transfer-letter-modal .tl-header h2 {
           margin: 0;
           font-size: 18px;
-          color: #1e3a5f;
+          color: #ffffff;
         }
         #ruda-transfer-letter-modal .tl-header p {
           margin: 4px 0 0;
           font-size: 12px;
-          color: #64748b;
+          color: #dbe7f5;
         }
         #ruda-transfer-letter-modal .tl-close {
           width: 34px;
           height: 34px;
           border: 0;
           border-radius: 8px;
-          background: #f1f5f9;
+          background: rgba(255,255,255,.14);
           font-size: 22px;
+          color: #fff;
           cursor: pointer;
         }
-        #ruda-transfer-letter-modal form { padding: 18px 20px 20px; }
+        #ruda-transfer-letter-modal form { padding: 20px 22px 22px; background: #f5f7fa; }
         #ruda-transfer-letter-modal .tl-section {
-          margin-bottom: 18px;
-          padding: 15px;
-          border: 1px solid #e2e8f0;
+          margin-bottom: 16px;
+          padding: 16px;
+          border: 1px solid #d9e1ea;
           border-radius: 10px;
-          background: #fbfdff;
+          background: #ffffff;
+          box-shadow: 0 2px 10px rgba(15,23,42,.04);
         }
         #ruda-transfer-letter-modal .tl-section h3 {
-          margin: 0 0 12px;
-          font-size: 14px;
-          color: #1e3a5f;
+          margin: -16px -16px 14px;
+          padding: 9px 12px;
+          font-size: 13px;
+          letter-spacing: .25px;
+          color: #ffffff;
+          background: #1e3a5f;
+          border-radius: 9px 9px 0 0;
         }
         #ruda-transfer-letter-modal .tl-grid {
           display: grid;
@@ -344,15 +465,18 @@ const collectTransferLetterData = (details) =>
         #ruda-transfer-letter-modal select {
           width: 100%;
           height: 38px;
-          border: 1px solid #cbd5e1;
-          border-radius: 7px;
+          border: 1px solid #c7d2df;
+          border-radius: 6px;
           padding: 0 10px;
-          background: #fff;
-          color: #111827;
+          background: #ffffff;
+          color: #172033;
           outline: none;
         }
         #ruda-transfer-letter-modal input:focus,
-        #ruda-transfer-letter-modal select:focus { border-color: #1e3a5f; }
+        #ruda-transfer-letter-modal select:focus {
+          border-color: #1e3a5f;
+          box-shadow: 0 0 0 2px rgba(30,58,95,.09);
+        }
         #ruda-transfer-letter-modal .tl-images {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -360,14 +484,14 @@ const collectTransferLetterData = (details) =>
         }
         #ruda-transfer-letter-modal .tl-image-card {
           padding: 12px;
-          border: 1px solid #dbe3ec;
-          border-radius: 9px;
-          background: #fff;
+          border: 1px solid #d6dee8;
+          border-radius: 8px;
+          background: #ffffff;
         }
         #ruda-transfer-letter-modal .tl-image-title {
           font-size: 12px;
           font-weight: 800;
-          color: #1f2937;
+          color: #1e3a5f;
         }
         #ruda-transfer-letter-modal .tl-image-subtitle {
           min-height: 30px;
@@ -383,19 +507,26 @@ const collectTransferLetterData = (details) =>
         }
         #ruda-transfer-letter-modal .tl-preview-frame {
           position: relative;
-          height: 150px;
           overflow: hidden;
           border: 1px dashed #94a3b8;
-          border-radius: 7px;
+          border-radius: 6px;
           background: #f8fafc;
+          touch-action: none;
+          user-select: none;
         }
+        /* Match the actual report photo proportions as closely as possible. */
+        #ruda-transfer-letter-modal .tl-preview-party { aspect-ratio: 2.28 / 1; }
+        #ruda-transfer-letter-modal .tl-preview-owner { aspect-ratio: 1.4 / 1; }
         #ruda-transfer-letter-modal .tl-preview-frame img {
-          position: relative;
+          position: absolute;
           z-index: 1;
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
+          max-width: none;
+          max-height: none;
+          object-fit: fill;
           transform-origin: center center;
+          cursor: grab;
+          user-select: none;
+          -webkit-user-drag: none;
         }
         #ruda-transfer-letter-modal .tl-preview-frame img:not([src]) { display: none; }
         #ruda-transfer-letter-modal .tl-preview-placeholder {
@@ -403,21 +534,42 @@ const collectTransferLetterData = (details) =>
           inset: 0;
           display: grid;
           place-items: center;
+          padding: 10px;
+          text-align: center;
           color: #94a3b8;
-          font-size: 11px;
+          font-size: 10px;
         }
-        #ruda-transfer-letter-modal .tl-sliders {
+        #ruda-transfer-letter-modal .tl-editor-controls {
           display: grid;
-          gap: 5px;
+          grid-template-columns: 1fr auto;
+          align-items: center;
+          gap: 10px;
           margin-top: 9px;
         }
-        #ruda-transfer-letter-modal .tl-sliders label {
+        #ruda-transfer-letter-modal .tl-editor-controls label {
           display: grid;
-          grid-template-columns: 70px 1fr;
+          grid-template-columns: 42px 1fr;
           align-items: center;
-          gap: 8px;
+          gap: 7px;
           font-size: 10px;
           color: #475569;
+        }
+        #ruda-transfer-letter-modal .tl-reset-photo {
+          height: 28px;
+          padding: 0 9px;
+          border: 1px solid #cbd5e1;
+          border-radius: 5px;
+          background: #f8fafc;
+          color: #334155;
+          font-size: 10px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        #ruda-transfer-letter-modal .tl-drag-hint {
+          margin-top: 6px;
+          font-size: 9.5px;
+          line-height: 1.35;
+          color: #64748b;
         }
         #ruda-transfer-letter-modal .tl-actions {
           position: sticky;
@@ -426,19 +578,19 @@ const collectTransferLetterData = (details) =>
           justify-content: flex-end;
           gap: 10px;
           padding-top: 10px;
-          background: linear-gradient(to top, #fff 72%, rgba(255,255,255,0));
+          background: linear-gradient(to top, #f5f7fa 72%, rgba(245,247,250,0));
         }
         #ruda-transfer-letter-modal .tl-btn {
           height: 40px;
           padding: 0 17px;
           border: 0;
-          border-radius: 7px;
+          border-radius: 6px;
           font-size: 12px;
           font-weight: 800;
           cursor: pointer;
         }
-        #ruda-transfer-letter-modal .tl-btn.cancel { background: #e2e8f0; color: #334155; }
-        #ruda-transfer-letter-modal .tl-btn.primary { background: #176934; color: #fff; }
+        #ruda-transfer-letter-modal .tl-btn.cancel { background: #e5eaf0; color: #334155; }
+        #ruda-transfer-letter-modal .tl-btn.primary { background: #1e3a5f; color: #fff; box-shadow: 0 5px 14px rgba(30,58,95,.2); }
         @media (max-width: 850px) {
           #ruda-transfer-letter-modal .tl-grid,
           #ruda-transfer-letter-modal .tl-grid.two,
@@ -566,17 +718,17 @@ const collectTransferLetterData = (details) =>
               ${imageEditorMarkup(
                 "seller",
                 "Seller + Identification Officer",
-                "Upload the single photo containing both persons. Use zoom/horizontal/vertical controls to align both faces under their headings.",
+                "Upload the single photo containing both persons. Zoom if needed, then drag the image directly inside the preview to align both faces under their headings.",
               )}
               ${imageEditorMarkup(
                 "buyer",
                 "Buyer + Identification Officer",
-                "Upload the single photo containing both persons and adjust its placement for the printed box.",
+                "Upload the single photo containing both persons. Zoom if needed, then drag it inside the preview until both faces fit the printed box.",
               )}
               ${imageEditorMarkup(
                 "owner",
                 "New Owner Photograph",
-                "Upload the new owner's single photograph and adjust the face position inside the new-owner box.",
+                "Upload the new owner's single photograph, then drag it inside the preview to place the face correctly in the new-owner box.",
               )}
             </div>
           </section>
@@ -613,7 +765,8 @@ const collectTransferLetterData = (details) =>
       const form = event.currentTarget;
       const data = new FormData(form);
 
-      const sellerImage = overlay.querySelector("[data-seller-file]")?.files?.[0];
+      const sellerImage =
+        overlay.querySelector("[data-seller-file]")?.files?.[0];
       const buyerImage = overlay.querySelector("[data-buyer-file]")?.files?.[0];
       const ownerImage = overlay.querySelector("[data-owner-file]")?.files?.[0];
 
@@ -632,7 +785,9 @@ const collectTransferLetterData = (details) =>
         transferMode: normalizeText(data.get("transferMode"), "Normal"),
         buildingPeriod: normalizeText(data.get("buildingPeriod")),
         buildingExpiryDate: normalizeText(data.get("buildingExpiryDate")),
-        buildingCompletionDate: normalizeText(data.get("buildingCompletionDate")),
+        buildingCompletionDate: normalizeText(
+          data.get("buildingCompletionDate"),
+        ),
         previousRefNo: normalizeText(data.get("previousRefNo")),
         originalAllotteeName: normalizeText(data.get("originalAllotteeName")),
         originalRelationType: normalizeText(data.get("originalRelationType")),
@@ -670,7 +825,16 @@ const formatInputDate = (value) => {
   return `${day}-${month}-${year}`;
 };
 
-const drawPhotoBox = (doc, image, x, y, width, height, leftTitle, rightTitle) => {
+const drawPhotoBox = (
+  doc,
+  image,
+  x,
+  y,
+  width,
+  height,
+  leftTitle,
+  rightTitle,
+) => {
   const headerHeight = 6;
   const imageTop = y + headerHeight;
   const imageHeight = height - headerHeight;
@@ -681,11 +845,11 @@ const drawPhotoBox = (doc, image, x, y, width, height, leftTitle, rightTitle) =>
   doc.line(x + width / 2, y, x + width / 2, y + headerHeight);
   doc.line(x, imageTop, x + width, imageTop);
 
-  doc.setFillColor(244, 247, 245);
+  doc.setFillColor(238, 242, 247);
   doc.rect(x, y, width, headerHeight, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.1);
-  doc.setTextColor(...TEXT);
+  doc.setTextColor(...THEME);
   doc.text(leftTitle, x + width / 4, y + 4.1, { align: "center" });
   doc.text(rightTitle, x + (width * 3) / 4, y + 4.1, { align: "center" });
 
@@ -722,38 +886,56 @@ const drawThumbSignatureBox = (doc, x, y, width, roleLabel) => {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(6.4);
   doc.setTextColor(...TEXT);
-  doc.text(`Signature of ${roleLabel}`, x + thumbWidth + (width - thumbWidth) / 2, y + height - 2, {
-    align: "center",
-  });
+  doc.text(
+    `Signature of ${roleLabel}`,
+    x + thumbWidth + (width - thumbWidth) / 2,
+    y + height - 2,
+    {
+      align: "center",
+    },
+  );
 };
 
 const drawPartyInfo = (doc, x, y, width, party, title) => {
+  // Keep every value in the party card on the exact same vertical start line.
+  const innerX = x + 2.5;
+  const innerWidth = width - 5;
+  const valueStart = 28;
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.4);
   doc.setTextColor(...THEME);
-  doc.text(title, x, y);
+  doc.text(title, innerX, y);
 
-  drawKeyValue(doc, "Mr./Ms:", party.name, x, y + 5.3, width, {
-    labelWidth: 18,
+  drawKeyValue(doc, "Mr./Ms:", party.name, innerX, y + 5.3, innerWidth, {
+    labelWidth: valueStart,
     fontSize: 6.9,
   });
   drawKeyValue(
     doc,
     "S/O,D/O,W/O:",
     relationText(party.relationType, party.relationName),
-    x,
+    innerX,
     y + 10,
-    width,
-    { labelWidth: 27, fontSize: 6.9 },
+    innerWidth,
+    { labelWidth: valueStart, fontSize: 6.9 },
   );
-  drawKeyValue(doc, "CNIC NO:", party.cnic, x, y + 14.7, width, {
-    labelWidth: 21,
+  drawKeyValue(doc, "CNIC NO:", party.cnic, innerX, y + 14.7, innerWidth, {
+    labelWidth: valueStart,
     fontSize: 6.9,
   });
-  drawKeyValue(doc, `Multiple ${title}:`, party.multiple, x, y + 19.4, width, {
-    labelWidth: 28,
-    fontSize: 6.9,
-  });
+  drawKeyValue(
+    doc,
+    `Multiple ${title}:`,
+    party.multiple,
+    innerX,
+    y + 19.4,
+    innerWidth,
+    {
+      labelWidth: valueStart,
+      fontSize: 6.9,
+    },
+  );
 };
 
 export const printTransferLetter = async ({ parcel, filters = {} }) => {
@@ -772,9 +954,24 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     const [{ gopLogo, rudaLogo }, sellerPhoto, buyerPhoto, ownerPhoto] =
       await Promise.all([
         loadPrintAssets(),
-        cropImageForPdf(transferData.sellerImage, transferData.sellerCrop, 1500, 760),
-        cropImageForPdf(transferData.buyerImage, transferData.buyerCrop, 1500, 760),
-        cropImageForPdf(transferData.ownerImage, transferData.ownerCrop, 760, 760),
+        cropImageForPdf(
+          transferData.sellerImage,
+          transferData.sellerCrop,
+          1600,
+          700,
+        ),
+        cropImageForPdf(
+          transferData.buyerImage,
+          transferData.buyerCrop,
+          1600,
+          700,
+        ),
+        cropImageForPdf(
+          transferData.ownerImage,
+          transferData.ownerCrop,
+          980,
+          700,
+        ),
       ]);
 
     const doc = new jsPDF({
@@ -786,7 +983,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
 
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 8;
+    const margin = 10;
     const contentWidth = pageWidth - margin * 2;
     const rightEdge = pageWidth - margin;
     const dateText = todayDisplay();
@@ -797,90 +994,174 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.2);
     doc.setTextColor(...MUTED);
-    doc.text("ORIGINAL COPY", pageWidth / 2, 5.2, { align: "center" });
+    doc.text("ORIGINAL COPY", pageWidth / 2, 5.1, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.6);
-    doc.text(`Serial No: ${valueOrDash(transferData.letterNo)}`, rightEdge, 5.2, {
-      align: "right",
-    });
+    doc.text(
+      `Serial No: ${valueOrDash(transferData.letterNo)}`,
+      rightEdge,
+      5.2,
+      {
+        align: "right",
+      },
+    );
 
-    const logoY = 14.2;
-    drawCircularLogo(doc, rudaLogo, margin + 9, logoY, 17.5);
-    drawCircularLogo(doc, gopLogo, rightEdge - 9, logoY, 17.5);
+    const logoY = 17.3;
+    drawCircularLogo(doc, gopLogo, margin + 11.5, logoY, 22.5);
+    drawCircularLogo(doc, rudaLogo, rightEdge - 11, logoY, 21.5);
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14.2);
+    doc.setFontSize(14.8);
     doc.setTextColor(...THEME);
-    doc.text("RAVI URBAN DEVELOPMENT AUTHORITY", pageWidth / 2, 11.5, {
+    doc.text("RAVI URBAN DEVELOPMENT AUTHORITY", pageWidth / 2, 11.2, {
       align: "center",
     });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.7);
     doc.setTextColor(...MUTED);
-    doc.text("Government of the Punjab", pageWidth / 2, 15.7, { align: "center" });
+    // doc.text("Government of the Punjab", pageWidth / 2, 15.8, {
+    //   align: "center",
+    // });
 
     drawFittedText(
       doc,
       valueOrDash(details.project),
       pageWidth / 2,
-      20.1,
+      20.8,
       115,
       { fontSize: 9.6, minFontSize: 7.2, align: "center", fontStyle: "bold" },
     );
 
+    const badgeW = 50;
+    const badgeH = 7.5;
+    const badgeX = (pageWidth - badgeW) / 2;
+    const badgeY = 24.0;
+    doc.setFillColor(...THEME);
     doc.setDrawColor(...THEME);
-    doc.setLineWidth(0.65);
-    doc.rect(56, 23.2, 98, 9.2);
+    doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, "FD");
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(15.2);
-    doc.setTextColor(...TEXT);
-    doc.text("TRANSFER LETTER", pageWidth / 2, 29.8, { align: "center" });
-
-    const metaY = 37.2;
-    doc.setFontSize(7.4);
-    drawKeyValue(doc, "Transfer Letter No:", transferData.letterNo, margin, metaY, 108, {
-      labelWidth: 34,
-      fontSize: 7.4,
+    doc.setFontSize(10.8);
+    doc.setTextColor(255, 255, 255);
+    doc.text("TRANSFER LETTER", pageWidth / 2, badgeY + 5.1, {
+      align: "center",
     });
+    doc.setTextColor(...TEXT);
+
+    const metaY = 36.6;
+    doc.setFontSize(7.4);
+    drawKeyValue(
+      doc,
+      "Transfer Letter No:",
+      transferData.letterNo,
+      margin,
+      metaY,
+      108,
+      {
+        labelWidth: 34,
+        fontSize: 7.4,
+      },
+    );
     drawKeyValue(doc, "DATE:", dateText, 156, metaY, rightEdge - 156, {
       labelWidth: 12,
       fontSize: 7.4,
     });
 
-    const boxTop = 41;
+    const detailsHeaderY = 40.2;
+    const detailsHeaderH = 6.5;
+    doc.setFillColor(...THEME);
+    doc.setDrawColor(...THEME);
+    doc.rect(margin, detailsHeaderY, contentWidth, detailsHeaderH, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.2);
+    doc.setTextColor(255, 255, 255);
+    doc.text("TRANSFER & PLOT INFORMATION", margin + 2.5, detailsHeaderY + 4.5);
+    doc.setTextColor(...TEXT);
+
+    const boxTop = detailsHeaderY + detailsHeaderH;
     const boxHeight = 39.5;
-    doc.setDrawColor(115, 115, 115);
+    doc.setDrawColor(168, 177, 188);
     doc.setLineWidth(0.25);
     doc.rect(margin, boxTop, contentWidth, boxHeight);
 
     const rows = [
-      [["TRANSFER NO:", transferData.transferNo], ["OWC NO:", transferData.owcNo]],
-      [["SCHEME / PROJECT:", details.project], ["BLOCK:", details.block]],
-      [["PHASE:", details.phase], ["PLOT NO:", details.plotNo]],
-      [["PLOT AREA:", details.plotArea], ["PLOT TYPE:", details.landUse]],
-      [["ROAD FACING:", details.roadFacing], ["TR PLOT NO:", details.transferPlotNo]],
-      [["TR CATEGORY:", details.transferCategory], ["TRANSFER MODE:", transferData.transferMode]],
-      [["BUILDING PERIOD:", transferData.buildingPeriod], ["EXPIRY DATE:", formatInputDate(transferData.buildingExpiryDate)]],
-      [["COMPLETION DATE:", formatInputDate(transferData.buildingCompletionDate)], ["UNIQUE ID:", details.uniqueId]],
+      [
+        ["Transfer No.", transferData.transferNo],
+        ["OWC No.", transferData.owcNo],
+      ],
+      [
+        ["Scheme / Project", details.project],
+        ["Block", details.block],
+      ],
+      [
+        ["Phase", details.phase],
+        ["Plot No.", details.plotNo],
+      ],
+      [
+        ["Plot Area", details.plotArea],
+        ["Plot Type", details.landUse],
+      ],
+      [
+        ["Road Facing", details.roadFacing],
+        ["TR Plot No.", details.transferPlotNo],
+      ],
+      [
+        ["TR Category", details.transferCategory],
+        ["Transfer Mode", transferData.transferMode],
+      ],
+      [
+        ["Building Period", transferData.buildingPeriod],
+        ["Expiry Date", formatInputDate(transferData.buildingExpiryDate)],
+      ],
+      [
+        [
+          "Completion Date",
+          formatInputDate(transferData.buildingCompletionDate),
+        ],
+        ["Unique ID", details.uniqueId],
+      ],
     ];
 
     const rowHeight = boxHeight / rows.length;
     rows.forEach((row, index) => {
       const rowTop = boxTop + index * rowHeight;
+      if (index % 2 === 1) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(margin, rowTop, contentWidth, rowHeight, "F");
+      }
+      doc.setDrawColor(190, 198, 208);
       if (index > 0) doc.line(margin, rowTop, rightEdge, rowTop);
       doc.line(pageWidth / 2, rowTop, pageWidth / 2, rowTop + rowHeight);
       const textY = rowTop + 3.35;
-      drawKeyValue(doc, row[0][0], row[0][1], margin + 2, textY, contentWidth / 2 - 4, {
-        labelWidth: 29,
-        fontSize: 6.9,
-      });
-      drawKeyValue(doc, row[1][0], row[1][1], pageWidth / 2 + 2, textY, contentWidth / 2 - 4, {
-        labelWidth: 26,
-        fontSize: 6.9,
-      });
+      drawTableKeyValue(
+        doc,
+        row[0][0],
+        row[0][1],
+        margin + 2,
+        textY,
+        contentWidth / 2 - 4,
+        {
+          labelWidth: 29,
+          fontSize: 6.9,
+        },
+      );
+      drawTableKeyValue(
+        doc,
+        row[1][0],
+        row[1][1],
+        pageWidth / 2 + 2,
+        textY,
+        contentWidth / 2 - 4,
+        {
+          labelWidth: 26,
+          fontSize: 6.9,
+        },
+      );
     });
 
-    const paraY = boxTop + boxHeight + 5;
+    const paraY = boxTop + boxHeight + 6;
+    doc.setDrawColor(...THEME);
+    doc.setLineWidth(0.45);
+    doc.line(margin, paraY - 3.2, rightEdge, paraY - 3.2);
     const originalRelation = relationText(
       transferData.originalRelationType,
       transferData.originalRelationName,
@@ -890,15 +1171,24 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
       : ".";
     const paragraph = `The title of the plot cited above is hereby transferred in the name of the buyer below, in view of verification of record, on the same terms & conditions as it was held by original allottee / exemptee ${transferData.originalAllotteeName} ${originalRelation}${previousRef}`;
 
-    const paragraphEnd = drawWrapped(doc, paragraph, margin, paraY, contentWidth, {
-      fontSize: 7.5,
-      lineHeight: 3.45,
-    });
+    const paragraphEnd = drawWrapped(
+      doc,
+      paragraph,
+      margin,
+      paraY,
+      contentWidth,
+      {
+        fontSize: 7.5,
+        lineHeight: 3.45,
+      },
+    );
 
-    const photosY = paragraphEnd + 4.6;
+    // Start the verification photos directly after the transfer paragraph.
+    // The extra blue "TRANSFER PARTY VERIFICATION" heading is intentionally removed.
+    const photosY = paragraphEnd + 4.8;
     const photoGap = 4;
     const photoWidth = (contentWidth - photoGap) / 2;
-    const photoHeight = 43;
+    const photoHeight = 52;
 
     drawPhotoBox(
       doc,
@@ -932,7 +1222,17 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     );
 
     const partyInfoY = thumbY + 20.5;
-    const partyWidth = (contentWidth - 12) / 2;
+    const partyWidth = (contentWidth - 6) / 2;
+    const partyCardHeight = 25;
+    doc.setDrawColor(187, 195, 205);
+    doc.setLineWidth(0.25);
+    doc.rect(margin, partyInfoY - 3.8, partyWidth, partyCardHeight);
+    doc.rect(
+      margin + partyWidth + 6,
+      partyInfoY - 3.8,
+      partyWidth,
+      partyCardHeight,
+    );
     drawPartyInfo(
       doc,
       margin,
@@ -949,7 +1249,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     );
     drawPartyInfo(
       doc,
-      margin + partyWidth + 12,
+      margin + partyWidth + 6,
       partyInfoY,
       partyWidth,
       {
@@ -963,21 +1263,24 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     );
 
     const ownerY = partyInfoY + 24.5;
-    const ownerHeight = 35;
-    doc.setDrawColor(90, 90, 90);
+    const ownerHeight = 42;
+    doc.setFillColor(247, 249, 252);
+    doc.rect(margin, ownerY, contentWidth, ownerHeight, "F");
+    doc.setDrawColor(145, 156, 170);
     doc.setLineWidth(0.3);
     doc.rect(margin, ownerY, contentWidth, ownerHeight);
-    doc.setFillColor(244, 247, 245);
+    doc.setFillColor(...THEME);
     doc.rect(margin, ownerY, contentWidth, 6.2, "F");
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.4);
-    doc.setTextColor(...THEME);
-    doc.text("NEW OWNER", margin + 2.2, ownerY + 4.2);
+    doc.setFontSize(8.2);
+    doc.setTextColor(255, 255, 255);
+    doc.text("NEW OWNER", margin + 2.2, ownerY + 4.3);
+    doc.setTextColor(...TEXT);
 
     const ownerPhotoX = margin + 3;
     const ownerPhotoY = ownerY + 8.3;
     const ownerPhotoW = 42;
-    const ownerPhotoH = 24;
+    const ownerPhotoH = 31;
     doc.setDrawColor(110, 110, 110);
     doc.rect(ownerPhotoX, ownerPhotoY, ownerPhotoW, ownerPhotoH);
     if (ownerPhoto) {
@@ -993,25 +1296,88 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
       );
     }
 
-    const ownerInfoX = ownerPhotoX + ownerPhotoW + 7;
-    const ownerInfoWidth = rightEdge - ownerInfoX - 3;
-    drawKeyValue(doc, "Mr./Ms:", transferData.buyerName, ownerInfoX, ownerY + 12.3, ownerInfoWidth, {
-      labelWidth: 18,
-      fontSize: 7.1,
-    });
+    // Compact two-column owner information block so the section does not leave
+    // a large empty area on the right. Only existing transfer/plot data is reused.
+    const ownerInfoX = ownerPhotoX + ownerPhotoW + 6;
+    const ownerInfoWidth = rightEdge - ownerInfoX - 4;
+    const ownerColGap = 5;
+    const ownerColWidth = (ownerInfoWidth - ownerColGap) / 2;
+    const ownerRightX = ownerInfoX + ownerColWidth + ownerColGap;
+    const ownerInfoTop = ownerY + 14.2;
+    const ownerLabelWidth = 23;
+
     drawKeyValue(
       doc,
-      "S/O,D/O,W/O:",
-      relationText(transferData.buyerRelationType, transferData.buyerRelationName),
+      "Mr./Ms:",
+      transferData.buyerName,
       ownerInfoX,
-      ownerY + 19.1,
-      ownerInfoWidth,
-      { labelWidth: 28, fontSize: 7.1 },
+      ownerInfoTop,
+      ownerColWidth,
+      {
+        labelWidth: ownerLabelWidth,
+        fontSize: 7.0,
+      },
     );
-    drawKeyValue(doc, "CNIC NO:", transferData.buyerCnic, ownerInfoX, ownerY + 25.9, ownerInfoWidth, {
-      labelWidth: 21,
-      fontSize: 7.1,
-    });
+    drawKeyValue(
+      doc,
+      "CNIC No:",
+      transferData.buyerCnic,
+      ownerRightX,
+      ownerInfoTop,
+      ownerColWidth,
+      {
+        labelWidth: 20,
+        fontSize: 7.0,
+      },
+    );
+    drawKeyValue(
+      doc,
+      "Relation:",
+      relationText(
+        transferData.buyerRelationType,
+        transferData.buyerRelationName,
+      ),
+      ownerInfoX,
+      ownerInfoTop + 7,
+      ownerColWidth,
+      { labelWidth: ownerLabelWidth, fontSize: 7.0 },
+    );
+    drawKeyValue(
+      doc,
+      "Transfer No:",
+      transferData.transferNo,
+      ownerRightX,
+      ownerInfoTop + 7,
+      ownerColWidth,
+      {
+        labelWidth: 24,
+        fontSize: 7.0,
+      },
+    );
+    drawKeyValue(
+      doc,
+      "Plot No:",
+      details.plotNo,
+      ownerInfoX,
+      ownerInfoTop + 14,
+      ownerColWidth,
+      {
+        labelWidth: ownerLabelWidth,
+        fontSize: 7.0,
+      },
+    );
+    drawKeyValue(
+      doc,
+      "Transfer Mode:",
+      transferData.transferMode,
+      ownerRightX,
+      ownerInfoTop + 14,
+      ownerColWidth,
+      {
+        labelWidth: 27,
+        fontSize: 7.0,
+      },
+    );
 
     const footerY = ownerY + ownerHeight + 7;
     doc.setFont("helvetica", "bold");
@@ -1028,31 +1394,52 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     const signatureY = footerY - 1;
     const signatureW = rightEdge - signatureX;
     const signatureH = 24;
-    doc.setDrawColor(90, 90, 90);
-    doc.rect(signatureX, signatureY, signatureW, signatureH);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(7.2);
-    doc.text("Signature of Transfer Officer", signatureX + signatureW / 2, signatureY + 5, {
-      align: "center",
-    });
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.1);
-    doc.text("Deputy Director Land / Authorized Officer", signatureX + signatureW / 2, signatureY + signatureH + 5, {
-      align: "center",
-    });
-
-    const bottomLogoSize = 18;
-    drawCircularLogo(doc, rudaLogo, margin + 13, pageHeight - 16, bottomLogoSize);
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.7);
-    doc.setTextColor(...THEME);
-    doc.text("RAVI URBAN DEVELOPMENT AUTHORITY", rightEdge, pageHeight - 8.2, {
-      align: "right",
-    });
     doc.setDrawColor(...THEME);
     doc.setLineWidth(0.35);
-    doc.line(61, pageHeight - 6.2, rightEdge, pageHeight - 6.2);
+    doc.rect(signatureX, signatureY, signatureW, signatureH);
+    doc.setFillColor(247, 249, 252);
+    doc.rect(signatureX, signatureY, signatureW, 6, "F");
+    doc.line(
+      signatureX,
+      signatureY + 6,
+      signatureX + signatureW,
+      signatureY + 6,
+    );
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.2);
+    doc.setTextColor(...THEME);
+    doc.text(
+      "Signature of Transfer Officer",
+      signatureX + signatureW / 2,
+      signatureY + 4.2,
+      {
+        align: "center",
+      },
+    );
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.1);
+    doc.setTextColor(...THEME);
+    doc.text(
+      "Deputy Director Land / Authorized Officer",
+      signatureX + signatureW / 2,
+      signatureY + signatureH + 5,
+      {
+        align: "center",
+      },
+    );
+
+    doc.setDrawColor(...THEME);
+    doc.setLineWidth(0.5);
+    doc.line(margin, 286, rightEdge, 286);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.2);
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Generated: ${new Date().toLocaleDateString("en-GB")} | RUDA Transfer Letter System | This is a computer-generated document.`,
+      pageWidth / 2,
+      290,
+      { align: "center" },
+    );
 
     openPdfPreview(
       doc,
