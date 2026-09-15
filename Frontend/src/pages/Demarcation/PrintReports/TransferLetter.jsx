@@ -514,9 +514,13 @@ const collectTransferLetterData = (details) =>
           touch-action: none;
           user-select: none;
         }
-        /* Match the actual report photo proportions as closely as possible. */
-        #ruda-transfer-letter-modal .tl-preview-party { aspect-ratio: 2.28 / 1; }
-        #ruda-transfer-letter-modal .tl-preview-owner { aspect-ratio: 1.4 / 1; }
+        /*
+         * Match the exact printable image areas used below in the PDF.
+         * Party photo: 92.1 mm x 51.1 mm
+         * Owner photo: 41.1 mm x 33.1 mm
+         */
+        #ruda-transfer-letter-modal .tl-preview-party { aspect-ratio: 92.1 / 51.1; }
+        #ruda-transfer-letter-modal .tl-preview-owner { aspect-ratio: 41.1 / 33.1; }
         #ruda-transfer-letter-modal .tl-preview-frame img {
           position: absolute;
           z-index: 1;
@@ -957,20 +961,20 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
         cropImageForPdf(
           transferData.sellerImage,
           transferData.sellerCrop,
-          1600,
-          700,
+          1802,
+          1000,
         ),
         cropImageForPdf(
           transferData.buyerImage,
           transferData.buyerCrop,
-          1600,
-          700,
+          1802,
+          1000,
         ),
         cropImageForPdf(
           transferData.ownerImage,
           transferData.ownerCrop,
-          980,
-          700,
+          1242,
+          1000,
         ),
       ]);
 
@@ -1027,7 +1031,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
       doc,
       valueOrDash(details.project),
       pageWidth / 2,
-      20.8,
+      17.8,
       115,
       { fontSize: 9.6, minFontSize: 7.2, align: "center", fontStyle: "bold" },
     );
@@ -1035,7 +1039,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     const badgeW = 50;
     const badgeH = 7.5;
     const badgeX = (pageWidth - badgeW) / 2;
-    const badgeY = 24.0;
+    const badgeY = 21.2;
     doc.setFillColor(...THEME);
     doc.setDrawColor(...THEME);
     doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, "FD");
@@ -1047,7 +1051,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     });
     doc.setTextColor(...TEXT);
 
-    const metaY = 36.6;
+    const metaY = 33.8;
     doc.setFontSize(7.4);
     drawKeyValue(
       doc,
@@ -1066,7 +1070,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
       fontSize: 7.4,
     });
 
-    const detailsHeaderY = 40.2;
+    const detailsHeaderY = 37.4;
     const detailsHeaderH = 6.5;
     doc.setFillColor(...THEME);
     doc.setDrawColor(...THEME);
@@ -1122,16 +1126,52 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     ];
 
     const rowHeight = boxHeight / rows.length;
+
+    // Fixed vertical separator positions between each label and its value.
+    // These align the table into four clear columns:
+    // LABEL | VALUE | LABEL | VALUE
+    const leftLabelSeparatorX = margin + 31;
+    const rightLabelSeparatorX = pageWidth / 2 + 28;
+
     rows.forEach((row, index) => {
       const rowTop = boxTop + index * rowHeight;
-      if (index % 2 === 1) {
-        doc.setFillColor(248, 250, 252);
-        doc.rect(margin, rowTop, contentWidth, rowHeight, "F");
-      }
+
+      // Keep every row pure white so there is no alternating row shading.
+      doc.setFillColor(255, 255, 255);
+      doc.rect(margin, rowTop, contentWidth, rowHeight, "F");
+
+      // Light horizontal separators between rows.
       doc.setDrawColor(190, 198, 208);
-      if (index > 0) doc.line(margin, rowTop, rightEdge, rowTop);
+      doc.setLineWidth(0.22);
+      if (index > 0) {
+        doc.line(margin, rowTop, rightEdge, rowTop);
+      }
+
+      // Slightly darker center divider between the left and right halves.
+      doc.setDrawColor(120, 135, 150);
+      doc.setLineWidth(0.28);
       doc.line(pageWidth / 2, rowTop, pageWidth / 2, rowTop + rowHeight);
+
+      // Vertical separator between label and value on the left half.
+      doc.setDrawColor(150, 160, 172);
+      doc.setLineWidth(0.22);
+      doc.line(
+        leftLabelSeparatorX,
+        rowTop,
+        leftLabelSeparatorX,
+        rowTop + rowHeight,
+      );
+
+      // Vertical separator between label and value on the right half.
+      doc.line(
+        rightLabelSeparatorX,
+        rowTop,
+        rightLabelSeparatorX,
+        rowTop + rowHeight,
+      );
+
       const textY = rowTop + 3.35;
+
       drawTableKeyValue(
         doc,
         row[0][0],
@@ -1140,10 +1180,11 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
         textY,
         contentWidth / 2 - 4,
         {
-          labelWidth: 29,
+          labelWidth: 31,
           fontSize: 6.9,
         },
       );
+
       drawTableKeyValue(
         doc,
         row[1][0],
@@ -1152,16 +1193,23 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
         textY,
         contentWidth / 2 - 4,
         {
-          labelWidth: 26,
+          labelWidth: 28,
           fontSize: 6.9,
         },
       );
     });
 
-    const paraY = boxTop + boxHeight + 6;
+    // Draw the outer border last so the table left/right edges stay
+    // clean and slightly darker than the internal grid lines.
+    doc.setDrawColor(70, 85, 105);
+    doc.setLineWidth(0.4);
+    doc.rect(margin, boxTop, contentWidth, boxHeight);
+
+    const separatorY = boxTop + boxHeight + 4.0;
+    const paraY = separatorY + 4.2;
     doc.setDrawColor(...THEME);
     doc.setLineWidth(0.45);
-    doc.line(margin, paraY - 3.2, rightEdge, paraY - 3.2);
+    doc.line(margin, separatorY, rightEdge, separatorY);
     const originalRelation = relationText(
       transferData.originalRelationType,
       transferData.originalRelationName,
@@ -1188,7 +1236,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     const photosY = paragraphEnd + 4.8;
     const photoGap = 4;
     const photoWidth = (contentWidth - photoGap) / 2;
-    const photoHeight = 52;
+    const photoHeight = 58;
 
     drawPhotoBox(
       doc,
@@ -1263,7 +1311,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     );
 
     const ownerY = partyInfoY + 24.5;
-    const ownerHeight = 42;
+    const ownerHeight = 44;
     doc.setFillColor(247, 249, 252);
     doc.rect(margin, ownerY, contentWidth, ownerHeight, "F");
     doc.setDrawColor(145, 156, 170);
@@ -1280,7 +1328,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     const ownerPhotoX = margin + 3;
     const ownerPhotoY = ownerY + 8.3;
     const ownerPhotoW = 42;
-    const ownerPhotoH = 31;
+    const ownerPhotoH = 34;
     doc.setDrawColor(110, 110, 110);
     doc.rect(ownerPhotoX, ownerPhotoY, ownerPhotoW, ownerPhotoH);
     if (ownerPhoto) {
@@ -1296,88 +1344,42 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
       );
     }
 
-    // Compact two-column owner information block so the section does not leave
-    // a large empty area on the right. Only existing transfer/plot data is reused.
+    // New-owner details — six clean rows, aligned like Seller/Buyer.
     const ownerInfoX = ownerPhotoX + ownerPhotoW + 6;
     const ownerInfoWidth = rightEdge - ownerInfoX - 4;
-    const ownerColGap = 5;
-    const ownerColWidth = (ownerInfoWidth - ownerColGap) / 2;
-    const ownerRightX = ownerInfoX + ownerColWidth + ownerColGap;
-    const ownerInfoTop = ownerY + 14.2;
-    const ownerLabelWidth = 23;
+    const ownerInfoTop = ownerY + 11.7;
+    const ownerRowGap = 5.15;
+    const ownerLabelWidth = 30;
 
-    drawKeyValue(
-      doc,
-      "Mr./Ms:",
-      transferData.buyerName,
-      ownerInfoX,
-      ownerInfoTop,
-      ownerColWidth,
-      {
-        labelWidth: ownerLabelWidth,
-        fontSize: 7.0,
-      },
-    );
-    drawKeyValue(
-      doc,
-      "CNIC No:",
-      transferData.buyerCnic,
-      ownerRightX,
-      ownerInfoTop,
-      ownerColWidth,
-      {
-        labelWidth: 20,
-        fontSize: 7.0,
-      },
-    );
-    drawKeyValue(
-      doc,
-      "Relation:",
-      relationText(
-        transferData.buyerRelationType,
-        transferData.buyerRelationName,
-      ),
-      ownerInfoX,
-      ownerInfoTop + 7,
-      ownerColWidth,
-      { labelWidth: ownerLabelWidth, fontSize: 7.0 },
-    );
-    drawKeyValue(
-      doc,
-      "Transfer No:",
-      transferData.transferNo,
-      ownerRightX,
-      ownerInfoTop + 7,
-      ownerColWidth,
-      {
-        labelWidth: 24,
-        fontSize: 7.0,
-      },
-    );
-    drawKeyValue(
-      doc,
-      "Plot No:",
-      details.plotNo,
-      ownerInfoX,
-      ownerInfoTop + 14,
-      ownerColWidth,
-      {
-        labelWidth: ownerLabelWidth,
-        fontSize: 7.0,
-      },
-    );
-    drawKeyValue(
-      doc,
-      "Transfer Mode:",
-      transferData.transferMode,
-      ownerRightX,
-      ownerInfoTop + 14,
-      ownerColWidth,
-      {
-        labelWidth: 27,
-        fontSize: 7.0,
-      },
-    );
+    const ownerItems = [
+      ["Mr./Ms:", transferData.buyerName],
+      [
+        "S/O,D/O,W/O:",
+        relationText(
+          transferData.buyerRelationType,
+          transferData.buyerRelationName,
+        ),
+      ],
+      ["CNIC NO:", transferData.buyerCnic],
+      ["Transfer No:", transferData.transferNo],
+      ["Plot No:", details.plotNo],
+      ["Transfer Mode:", transferData.transferMode],
+    ];
+
+    ownerItems.forEach(([label, value], index) => {
+      drawKeyValue(
+        doc,
+        label,
+        value,
+        ownerInfoX,
+        ownerInfoTop + index * ownerRowGap,
+        ownerInfoWidth,
+        {
+          labelWidth: ownerLabelWidth,
+          fontSize: 6.9,
+        },
+      );
+    });
 
     const footerY = ownerY + ownerHeight + 7;
     doc.setFont("helvetica", "bold");
