@@ -1525,7 +1525,10 @@ export default function Import({ map, onClose }) {
     }
   };
 
-  const handlePrint = async (customTitle = "") => {
+  const handlePrint = async ({
+    customTitle = "",
+    useImportedKmzName = false,
+  } = {}) => {
     if (!map || importedFileType !== "kmz" || !importedGeoJSON?.features?.length) {
       setError("Import a .KMZ file before using Print Imported .KMZ.");
       return;
@@ -1645,7 +1648,9 @@ export default function Import({ map, onClose }) {
         );
       }
 
-      const title = customTitle?.trim() || summary?.title || "Imported Boundary Map";
+      const title = useImportedKmzName
+        ? importedKmzLabel
+        : customTitle?.trim() || summary?.title || "Imported Boundary Map";
       // The page title is independent from the KMZ legend label.
       // Legend uses the actual imported KMZ/map label (e.g. "GCB Survey Plan").
       const legendRows = buildLegendRows(importedKmzLabel);
@@ -1682,7 +1687,10 @@ export default function Import({ map, onClose }) {
   // Allow the main Header print button to use this exact printing workflow.
   useEffect(() => {
     const handleHeaderPrint = (event) => {
-      handlePrint(event.detail?.customTitle || "");
+      handlePrint({
+        customTitle: event.detail?.customTitle || "",
+        useImportedKmzName: Boolean(event.detail?.useImportedKmzName),
+      });
     };
 
     window.addEventListener(PRINT_EVENTS.PRINT_IMPORTED_KMZ, handleHeaderPrint);
@@ -1704,6 +1712,13 @@ export default function Import({ map, onClose }) {
             hasLayer,
             hasKmz: hasLayer && importedFileType === "kmz",
             printLoading,
+            kmzTitle:
+              hasLayer && importedFileType === "kmz"
+                ? getImportedKmzDisplayLabel(
+                    importedGeoJSON,
+                    summary?.title || "Imported KMZ",
+                  )
+                : "",
           },
         }),
       );
@@ -1718,7 +1733,13 @@ export default function Import({ map, onClose }) {
         publishPrintState,
       );
     };
-  }, [hasLayer, importedFileType, printLoading]);
+  }, [
+    hasLayer,
+    importedFileType,
+    importedGeoJSON,
+    summary,
+    printLoading,
+  ]);
 
   // ── event handlers ───────────────────────────────────────────────────────────
   const onFileChange = (e) => {
