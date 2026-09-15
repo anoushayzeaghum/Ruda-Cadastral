@@ -43,6 +43,16 @@ const LAYER_IDS = {
   point: "user-imported-point",
 };
 
+// Single source of truth for the imported KMZ polygon print/map styling.
+// The main map layer and the printed legend MUST use these exact values.
+const IMPORTED_KMZ_STYLE = Object.freeze({
+  fillColor: "#d1d5db",
+  fillOpacity: 0.34,
+  outlineColor: "#facc15",
+  outlineWidth: 3,
+  legendFill: "rgba(209, 213, 219, 0.34)",
+});
+
 // ── helpers ────────────────────────────────────────────────────────────────────
 
 /** Detect file type from extension */
@@ -202,6 +212,16 @@ const prepareImportedFeatures = (geojson, fallbackLabel) => ({
     };
   }),
 });
+
+// Use the exact same label that is rendered by the imported KMZ symbol layer.
+// This keeps the map label, inset callout and bottom-right legend consistent.
+const getImportedKmzDisplayLabel = (geojson, fallbackLabel = "Imported KMZ") => {
+  const featureLabel = (geojson?.features || [])
+    .map((feature) => feature?.properties?._import_label)
+    .find((value) => String(value ?? "").trim());
+
+  return String(featureLabel || fallbackLabel || "Imported KMZ").trim();
+};
 
 const escapeHtml = (value = "") =>
   String(value)
@@ -1013,8 +1033,8 @@ const makePrintableHtml = ({
       background: transparent;
     }
     .legend-swatch.imported {
-      border: 3px solid #ffff00;
-      background: rgba(209,213,219,.5);
+      border: ${IMPORTED_KMZ_STYLE.outlineWidth}px solid ${IMPORTED_KMZ_STYLE.outlineColor};
+      background: ${IMPORTED_KMZ_STYLE.legendFill};
     }
     .legend-swatch.jurisdiction {
       border: 3px solid #d100b8;
@@ -1218,8 +1238,8 @@ export default function Import({ map, onClose }) {
       type: "fill",
       source: SOURCE_ID,
       paint: {
-        "fill-color": "#d1d5db",
-        "fill-opacity": 0.34,
+        "fill-color": IMPORTED_KMZ_STYLE.fillColor,
+        "fill-opacity": IMPORTED_KMZ_STYLE.fillOpacity,
       },
       filter: ["any", ["==", "$type", "Polygon"]],
     });
@@ -1230,8 +1250,8 @@ export default function Import({ map, onClose }) {
       type: "line",
       source: SOURCE_ID,
       paint: {
-        "line-color": "#facc15",
-        "line-width": 3,
+        "line-color": IMPORTED_KMZ_STYLE.outlineColor,
+        "line-width": IMPORTED_KMZ_STYLE.outlineWidth,
       },
       filter: ["any", ["==", "$type", "Polygon"]],
     });
@@ -1550,11 +1570,18 @@ export default function Import({ map, onClose }) {
       await waitForMapRender(map);
       const fallbackOverviewImage = map.getCanvas().toDataURL("image/png", 1);
 
+      // Resolve one canonical KMZ display label. Prefer the same _import_label
+      // used by the map's symbol layer, then fall back to the uploaded file name.
+      const importedKmzLabel = getImportedKmzDisplayLabel(
+        importedGeoJSON,
+        summary?.title || "Imported KMZ",
+      );
+
       let zoningInsetImage = fallbackOverviewImage;
       try {
         zoningInsetImage = await createPrincipleLandUseInsetImage({
           importedGeoJSON,
-          label: summary?.title || "Imported KMZ",
+          label: importedKmzLabel,
         });
       } catch (insetError) {
         console.warn(
@@ -1566,12 +1593,28 @@ export default function Import({ map, onClose }) {
       // Force the imported polygon to use the official print symbology,
       // regardless of the styling contained in the uploaded file.
       if (map.getLayer(LAYER_IDS.fill)) {
-        map.setPaintProperty(LAYER_IDS.fill, "fill-color", "#d1d5db");
-        map.setPaintProperty(LAYER_IDS.fill, "fill-opacity", 0.34);
+        map.setPaintProperty(
+          LAYER_IDS.fill,
+          "fill-color",
+          IMPORTED_KMZ_STYLE.fillColor,
+        );
+        map.setPaintProperty(
+          LAYER_IDS.fill,
+          "fill-opacity",
+          IMPORTED_KMZ_STYLE.fillOpacity,
+        );
       }
       if (map.getLayer(LAYER_IDS.outline)) {
-        map.setPaintProperty(LAYER_IDS.outline, "line-color", "#ffff00");
-        map.setPaintProperty(LAYER_IDS.outline, "line-width", 3);
+        map.setPaintProperty(
+          LAYER_IDS.outline,
+          "line-color",
+          IMPORTED_KMZ_STYLE.outlineColor,
+        );
+        map.setPaintProperty(
+          LAYER_IDS.outline,
+          "line-width",
+          IMPORTED_KMZ_STYLE.outlineWidth,
+        );
       }
 
       const bounds = bbox(importedGeoJSON);
@@ -1603,7 +1646,9 @@ export default function Import({ map, onClose }) {
       }
 
       const title = customTitle?.trim() || summary?.title || "Imported Boundary Map";
-      const legendRows = buildLegendRows(title);
+      // The page title is independent from the KMZ legend label.
+      // Legend uses the actual imported KMZ/map label (e.g. "GCB Survey Plan").
+      const legendRows = buildLegendRows(importedKmzLabel);
       const center = map.getCenter();
       const scaleText = `Map center: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)} · Zoom ${map.getZoom().toFixed(1)}`;
 

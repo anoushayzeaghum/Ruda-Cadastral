@@ -2,7 +2,7 @@ import os
 
 # Allow Windows to resolve GDAL/GEOS transitive DLL dependencies from the QGIS bin directory.
 # This must happen before any Django/GeoDjango imports load the native libraries.
-_qgis_bin = r"C:\Program Files\QGIS 3.44.13\bin"
+_qgis_bin = r"C:\Program Files\QGIS 3.44.11\bin"
 if os.path.isdir(_qgis_bin):
     os.add_dll_directory(_qgis_bin)
 
