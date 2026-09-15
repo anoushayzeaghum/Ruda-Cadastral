@@ -8,12 +8,13 @@ import {
   Eye,
   FileArchive,
   FileDown,
-  MapPinned,
   RotateCcw,
   Search,
   Upload,
 } from "lucide-react";
 import Header from "../../Header";
+import JSZip from "jszip";
+import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import { getKmzPrintLogs } from "../../../../services/metaverseApi";
 
 const formatFileSize = (bytes) => {
@@ -24,138 +25,209 @@ const formatFileSize = (bytes) => {
 
 const formatDateTime = (value) => {
   if (!value) return { date: "-", time: "-" };
+
   const date = new Date(value);
+
   return {
     date: date.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
       year: "numeric",
     }),
-    time: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    time: date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
   };
 };
 
+const toDateInputValue = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
 const normalizeLog = (item) => {
-  const imported = formatDateTime(item.imported_at);
-  const printed = formatDateTime(item.printed_at);
+  // Print and upload happen together in this workflow, so show only one date.
+  // Prefer printed_at because this page is specifically a print log.
+  const logDateRaw = item.printed_at || item.imported_at;
+  const logDate = formatDateTime(logDateRaw);
+
+  const fallbackTitle = String(item.file_name || "Untitled Map")
+    .replace(/\.kmz$/i, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
+
   return {
     ...item,
     fileName: item.file_name,
     fileSize: formatFileSize(item.file_size),
-    project: item.project || "-",
-    projectType: item.project_type || "-",
-    phase: item.phase || "-",
-    uploadedOn: imported.date,
-    uploadedTime: imported.time,
-    printedOn: printed.date,
-    printedTime: printed.time,
-    printedBy: item.printed_by || "-",
-    preview: "parcel",
+
+    // Support the common backend field names without breaking older log records.
+    title:
+      item.title ||
+      item.map_title ||
+      item.report_title ||
+      item.print_title ||
+      fallbackTitle ||
+      "Untitled Map",
+
+    printedBy:
+      item.printed_by ||
+      item.user_name ||
+      item.username ||
+      item.created_by ||
+      "-",
+
+    logDate: logDate.date,
+    logTime: logDate.time,
+    logDateValue: toDateInputValue(logDateRaw),
   };
 };
 
 const openStoredFile = (url) => {
-  if (url) window.open(url, "_blank", "noopener,noreferrer");
+  if (url) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 };
 
-const openLogInMap = (item) => {
-  if (!item.file_url) return;
+const downloadStoredFile = async (url, fallbackName) => {
+  if (!url) return;
 
-  sessionStorage.setItem(
-    "ruda:open-kmz-in-map",
-    JSON.stringify({ url: item.file_url, fileName: item.fileName }),
-  );
-  window.location.assign("/gis-metaverse");
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Download failed with status ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = objectUrl;
+    anchor.download = fallbackName || "download";
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  } catch (downloadError) {
+    console.warn(
+      "Direct download failed; opening stored file instead.",
+      downloadError,
+    );
+
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 };
+
+// Open-in-map functionality is intentionally kept commented for now.
+// const openLogInMap = (item) => {
+//   if (!item.file_url) return;
+//
+//   sessionStorage.setItem(
+//     "ruda:open-kmz-in-map",
+//     JSON.stringify({
+//       url: item.file_url,
+//       fileName: item.fileName,
+//     }),
+//   );
+//
+//   window.location.assign("/gis-metaverse");
+// };
 
 export default function KMZLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [query, setQuery] = useState("");
-  const [phase, setPhase] = useState("All Phases");
-  const [projectType, setProjectType] = useState("All Project Types");
-  const [project, setProject] = useState("All Projects");
-  const [printedBy, setPrintedBy] = useState("All Users");
-  const [dateRange, setDateRange] = useState("");
+  const [date, setDate] = useState("");
+
+  const [appliedQuery, setAppliedQuery] = useState("");
+  const [appliedDate, setAppliedDate] = useState("");
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
   useEffect(() => {
     let mounted = true;
+
     getKmzPrintLogs()
       .then((data) => {
-        if (mounted) setLogs((Array.isArray(data) ? data : []).map(normalizeLog));
+        if (mounted) {
+          setLogs((Array.isArray(data) ? data : []).map(normalizeLog));
+        }
       })
       .catch(() => {
-        if (mounted) setError("KMZ print logs could not be loaded.");
+        if (mounted) {
+          setError("KMZ print logs could not be loaded.");
+        }
       })
       .finally(() => {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       });
+
     return () => {
       mounted = false;
     };
   }, []);
 
-  const phases = useMemo(
-    () => ["All Phases", ...new Set(logs.map((item) => item.phase))],
-    [logs],
-  );
-  const projectTypes = useMemo(
-    () => ["All Project Types", ...new Set(logs.map((item) => item.projectType))],
-    [logs],
-  );
-  const projects = useMemo(
-    () => ["All Projects", ...new Set(logs.map((item) => item.project))],
-    [logs],
-  );
-  const users = useMemo(
-    () => ["All Users", ...new Set(logs.map((item) => item.printedBy))],
-    [logs],
-  );
-
   const filteredLogs = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = appliedQuery.trim().toLowerCase();
 
     return logs.filter((item) => {
+      const fileName = String(item.fileName || "").toLowerCase();
+      const title = String(item.title || "").toLowerCase();
+
       const matchesQuery =
         !normalizedQuery ||
-        item.fileName.toLowerCase().includes(normalizedQuery) ||
-        item.reference.toLowerCase().includes(normalizedQuery) ||
-        item.project.toLowerCase().includes(normalizedQuery);
+        fileName.includes(normalizedQuery) ||
+        title.includes(normalizedQuery);
 
-      return (
-        matchesQuery &&
-        (phase === "All Phases" || item.phase === phase) &&
-        (projectType === "All Project Types" ||
-          item.projectType === projectType) &&
-        (project === "All Projects" || item.project === project) &&
-        (printedBy === "All Users" || item.printedBy === printedBy)
-      );
+      const matchesDate = !appliedDate || item.logDateValue === appliedDate;
+
+      return matchesQuery && matchesDate;
     });
-  }, [logs, query, phase, projectType, project, printedBy, dateRange]);
+  }, [logs, appliedQuery, appliedDate]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
   const safePage = Math.min(page, totalPages);
+
   const visibleLogs = filteredLogs.slice(
     (safePage - 1) * pageSize,
     safePage * pageSize,
   );
 
-  const resetFilters = () => {
-    setQuery("");
-    setPhase("All Phases");
-    setProjectType("All Project Types");
-    setProject("All Projects");
-    setPrintedBy("All Users");
-    setDateRange("");
+  const runSearch = () => {
+    setAppliedQuery(query);
+    setAppliedDate(date);
     setPage(1);
   };
 
-  const handleFilterChange = (setter) => (event) => {
-    setter(event.target.value);
+  const resetFilters = () => {
+    setQuery("");
+    setDate("");
+    setAppliedQuery("");
+    setAppliedDate("");
     setPage(1);
+  };
+
+  const handleSearchKeyDown = (event) => {
+    if (event.key === "Enter") {
+      runSearch();
+    }
   };
 
   return (
@@ -166,15 +238,16 @@ export default function KMZLogs() {
         <section className="mx-auto max-w-[1800px]">
           <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="flex items-center gap-3">
-                <ClipboardList size={30} className="text-[#0f3d2e]" />
-                <h2 className="text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
+              <div className="flex items-center gap-2.5">
+                <ClipboardList size={24} className="text-[#0f3d2e]" />
+
+                <h2 className="text-xl font-semibold tracking-normal text-slate-800">
                   KMZ Print Logs
                 </h2>
               </div>
-              <p className="mt-1 text-sm text-slate-500">
-                View and manage uploaded KMZ files and their printed maps.
-                Search, download or open them on the map.
+
+              <p className="mt-1.5 text-sm font-normal text-slate-500">
+                View uploaded KMZ files and their saved printed maps.
               </p>
             </div>
 
@@ -189,62 +262,40 @@ export default function KMZLogs() {
           </div>
 
           <div className="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1.35fr_0.85fr_0.95fr_0.95fr_0.85fr_1.1fr_auto_auto]">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_230px_auto_auto]">
               <div className="relative">
                 <Search
-                  size={17}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={18}
+                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                 />
+
                 <input
                   value={query}
-                  onChange={handleFilterChange(setQuery)}
-                  placeholder="Search by KMZ name or reference..."
-                  className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search by map title or KMZ file name..."
+                  className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-sm outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
                 />
               </div>
-
-              <FilterSelect
-                label="Phase"
-                value={phase}
-                onChange={handleFilterChange(setPhase)}
-                options={phases}
-              />
-              <FilterSelect
-                label="Project Type"
-                value={projectType}
-                onChange={handleFilterChange(setProjectType)}
-                options={projectTypes}
-              />
-              <FilterSelect
-                label="Project"
-                value={project}
-                onChange={handleFilterChange(setProject)}
-                options={projects}
-              />
-              <FilterSelect
-                label="Printed By"
-                value={printedBy}
-                onChange={handleFilterChange(setPrintedBy)}
-                options={users}
-              />
 
               <label className="relative flex h-11 items-center rounded-lg border border-slate-200 bg-white px-3">
                 <CalendarDays
                   size={17}
-                  className="mr-2 shrink-0 text-slate-500"
+                  className="mr-2.5 shrink-0 text-slate-500"
                 />
+
                 <input
-                  value={dateRange}
-                  onChange={handleFilterChange(setDateRange)}
-                  placeholder="From - To"
-                  className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-700 outline-none"
                 />
               </label>
 
               <button
                 type="button"
-                onClick={() => setPage(1)}
-                className="h-11 rounded-lg bg-[#0f4d39] px-5 text-sm font-semibold text-white transition hover:bg-[#123f32]"
+                onClick={runSearch}
+                className="h-11 rounded-lg bg-[#0f4d39] px-6 text-sm font-semibold text-white transition hover:bg-[#123f32]"
               >
                 Search
               </button>
@@ -252,7 +303,7 @@ export default function KMZLogs() {
               <button
                 type="button"
                 onClick={resetFilters}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 <RotateCcw size={15} />
                 Reset
@@ -277,18 +328,15 @@ export default function KMZLogs() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-[1450px] w-full border-collapse text-left text-sm">
+              <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
                 <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   <tr>
                     <Th>#</Th>
-                    <Th>Reference No.</Th>
+                    <Th>Title</Th>
                     <Th>KMZ File</Th>
-                    <Th>Project</Th>
-                    <Th>Phase</Th>
-                    <Th>Uploaded On</Th>
-                    <Th>Printed On</Th>
+                    <Th>Date</Th>
                     <Th>Printed By</Th>
-                    <Th>Preview</Th>
+                    <Th>KMZ Preview</Th>
                     <Th>Actions</Th>
                   </tr>
                 </thead>
@@ -296,98 +344,127 @@ export default function KMZLogs() {
                 <tbody>
                   {loading && (
                     <tr>
-                      <td colSpan={10} className="px-6 py-16 text-center text-sm text-slate-500">
+                      <td
+                        colSpan={7}
+                        className="px-6 py-16 text-center text-sm text-slate-500"
+                      >
                         Loading KMZ print logs...
                       </td>
                     </tr>
                   )}
+
                   {!loading && error && (
                     <tr>
-                      <td colSpan={10} className="px-6 py-16 text-center text-sm text-red-600">
+                      <td
+                        colSpan={7}
+                        className="px-6 py-16 text-center text-sm text-red-600"
+                      >
                         {error}
                       </td>
                     </tr>
                   )}
-                  {!loading && !error && visibleLogs.map((item, index) => (
-                    <tr
-                      key={item.id}
-                      className="border-t border-slate-100 hover:bg-slate-50/60"
-                    >
-                      <Td>{(safePage - 1) * pageSize + index + 1}</Td>
-                      <Td>
-                        <span className="font-medium text-slate-700">
-                          {item.reference}
-                        </span>
-                      </Td>
-                      <Td>
-                        <div className="flex items-center gap-2.5">
-                          <FileArchive
-                            size={20}
-                            className="shrink-0 text-[#174f7a]"
-                          />
-                          <div>
-                            <div className="font-semibold text-slate-800">
-                              {item.fileName}
-                            </div>
-                            <div className="text-xs text-slate-400">
-                              ({item.fileSize})
+
+                  {!loading &&
+                    !error &&
+                    visibleLogs.map((item, index) => (
+                      <tr
+                        key={item.id}
+                        className="border-t border-slate-100 hover:bg-slate-50/60"
+                      >
+                        <Td>{(safePage - 1) * pageSize + index + 1}</Td>
+
+                        <Td>
+                          <div className="max-w-[260px] whitespace-normal font-medium leading-5 text-slate-800">
+                            {item.title}
+                          </div>
+                        </Td>
+
+                        <Td>
+                          <div className="flex items-center gap-2.5">
+                            <FileArchive
+                              size={20}
+                              className="shrink-0 text-[#174f7a]"
+                            />
+
+                            <div>
+                              <div className="font-semibold text-slate-800">
+                                {item.fileName}
+                              </div>
+
+                              <div className="text-xs text-slate-400">
+                                ({item.fileSize})
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Td>
-                      <Td>{item.project}</Td>
-                      <Td>{item.phase}</Td>
-                      <Td>
-                        <DateCell
-                          date={item.uploadedOn}
-                          time={item.uploadedTime}
-                        />
-                      </Td>
-                      <Td>
-                        <DateCell
-                          date={item.printedOn}
-                          time={item.printedTime}
-                        />
-                      </Td>
-                      <Td>{item.printedBy}</Td>
-                      <Td>
-                        <MapPreview type={item.preview} />
-                      </Td>
-                      <Td>
-                        <div className="flex min-w-max items-center gap-2">
-                          <ActionButton
-                            icon={<Eye size={15} />}
-                            label="View"
-                            onClick={() => openStoredFile(item.report_url)}
-                          />
-                          <ActionButton
-                            icon={<Download size={15} />}
-                            label="KMZ"
-                            onClick={() => openStoredFile(item.file_url)}
-                          />
-                          <ActionButton
-                            icon={<FileDown size={15} />}
-                            label="PDF"
-                            onClick={() => openStoredFile(item.report_url)}
-                          />
-                          <ActionButton
-                            icon={<MapPinned size={15} />}
-                            label="Open in Map"
-                            accent
-                            onClick={() => openLogInMap(item)}
-                          />
-                        </div>
-                      </Td>
-                    </tr>
-                  ))}
+                        </Td>
 
-                  {visibleLogs.length === 0 && (
+                        <Td>
+                          <DateCell date={item.logDate} time={item.logTime} />
+                        </Td>
+
+                        <Td>
+                          <span className="font-medium text-slate-700">
+                            {item.printedBy}
+                          </span>
+                        </Td>
+
+                        <Td>
+                          <KMZPreview
+                            fileUrl={item.file_url}
+                            fileName={item.fileName}
+                          />
+                        </Td>
+
+                        <Td>
+                          <div className="flex min-w-max items-center gap-2">
+                            <ActionButton
+                              icon={<Eye size={15} />}
+                              label="View"
+                              onClick={() => openStoredFile(item.report_url)}
+                            />
+
+                            <ActionButton
+                              icon={<Download size={15} />}
+                              label="KMZ"
+                              onClick={() =>
+                                downloadStoredFile(item.file_url, item.fileName)
+                              }
+                            />
+
+                            <ActionButton
+                              icon={<FileDown size={15} />}
+                              label="PDF"
+                              onClick={() =>
+                                downloadStoredFile(
+                                  item.report_url,
+                                  `${
+                                    item.fileName.replace(/\.kmz$/i, "") ||
+                                    "KMZ_Map"
+                                  }.pdf`,
+                                )
+                              }
+                            />
+
+                            {/*
+                            <ActionButton
+                              icon={<MapPinned size={15} />}
+                              label="Open in Map"
+                              accent
+                              onClick={() => openLogInMap(item)}
+                            />
+                            */}
+                          </div>
+                        </Td>
+                      </tr>
+                    ))}
+
+                  {!loading && !error && visibleLogs.length === 0 && (
                     <tr>
                       <td
-                        colSpan={10}
+                        colSpan={7}
                         className="px-6 py-16 text-center text-sm text-slate-500"
                       >
-                        No KMZ print logs match the selected filters.
+                        No KMZ print logs match the current search.
                       </td>
                     </tr>
                   )}
@@ -398,6 +475,7 @@ export default function KMZLogs() {
             <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 <span>Show</span>
+
                 <select
                   value={pageSize}
                   onChange={(event) => {
@@ -412,6 +490,7 @@ export default function KMZLogs() {
                     </option>
                   ))}
                 </select>
+
                 <span>entries</span>
               </div>
 
@@ -453,30 +532,6 @@ export default function KMZLogs() {
   );
 }
 
-function FilterSelect({ label, value, onChange, options }) {
-  return (
-    <label className="relative flex h-11 flex-col justify-center rounded-lg border border-slate-200 bg-white px-3">
-      <span className="absolute -top-2 left-2 bg-white px-1 text-[10px] font-medium text-slate-500">
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={onChange}
-        className="h-full w-full appearance-none bg-transparent pr-5 text-sm font-medium text-slate-700 outline-none"
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500">
-        ▼
-      </span>
-    </label>
-  );
-}
-
 function Th({ children }) {
   return <th className="whitespace-nowrap px-4 py-3">{children}</th>;
 }
@@ -491,7 +546,7 @@ function Td({ children }) {
 
 function DateCell({ date, time }) {
   return (
-    <div>
+    <div className="min-w-[120px]">
       <div className="font-medium text-slate-700">{date}</div>
       <div className="mt-0.5 text-xs text-slate-400">{time}</div>
     </div>
@@ -532,28 +587,262 @@ function PageButton({ children, active = false, disabled = false, onClick }) {
   );
 }
 
-function MapPreview({ type }) {
-  const variants = {
-    parcel: ["bg-orange-100", "border-yellow-400"],
-    zoning: ["bg-fuchsia-100", "border-fuchsia-400"],
-    boundary: ["bg-emerald-100", "border-emerald-400"],
-    roads: ["bg-sky-50", "border-sky-300"],
+function collectCoordinatePairs(geometry, pairs) {
+  if (!geometry) return;
+
+  const walk = (value) => {
+    if (!Array.isArray(value)) return;
+
+    if (
+      value.length >= 2 &&
+      typeof value[0] === "number" &&
+      typeof value[1] === "number"
+    ) {
+      pairs.push([value[0], value[1]]);
+      return;
+    }
+
+    value.forEach(walk);
   };
-  const [background, border] = variants[type] || variants.parcel;
+
+  walk(geometry.coordinates);
+}
+
+function geometryToSvgPaths(geometry, project) {
+  if (!geometry) return [];
+
+  const paths = [];
+
+  const lineToPath = (coordinates, close = false) => {
+    if (!coordinates?.length) return "";
+
+    const commands = coordinates.map((coord, index) => {
+      const [x, y] = project(coord);
+      return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    });
+
+    return `${commands.join(" ")}${close ? " Z" : ""}`;
+  };
+
+  if (geometry.type === "Polygon") {
+    geometry.coordinates.forEach((ring) => {
+      const path = lineToPath(ring, true);
+      if (path) paths.push(path);
+    });
+  } else if (geometry.type === "MultiPolygon") {
+    geometry.coordinates.forEach((polygon) => {
+      polygon.forEach((ring) => {
+        const path = lineToPath(ring, true);
+        if (path) paths.push(path);
+      });
+    });
+  } else if (geometry.type === "LineString") {
+    const path = lineToPath(geometry.coordinates, false);
+    if (path) paths.push(path);
+  } else if (geometry.type === "MultiLineString") {
+    geometry.coordinates.forEach((line) => {
+      const path = lineToPath(line, false);
+      if (path) paths.push(path);
+    });
+  } else if (geometry.type === "Point") {
+    const [x, y] = project(geometry.coordinates);
+    paths.push({ point: true, x, y });
+  } else if (geometry.type === "MultiPoint") {
+    geometry.coordinates.forEach((coord) => {
+      const [x, y] = project(coord);
+      paths.push({ point: true, x, y });
+    });
+  }
+
+  return paths;
+}
+
+function KMZPreview({ fileUrl, fileName }) {
+  const [preview, setPreview] = useState({
+    loading: true,
+    paths: [],
+    error: "",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPreview = async () => {
+      if (!fileUrl) {
+        setPreview({
+          loading: false,
+          paths: [],
+          error: "KMZ unavailable",
+        });
+        return;
+      }
+
+      try {
+        setPreview({
+          loading: true,
+          paths: [],
+          error: "",
+        });
+
+        const response = await fetch(fileUrl);
+
+        if (!response.ok) {
+          throw new Error(`KMZ request failed (${response.status})`);
+        }
+
+        const kmzBuffer = await response.arrayBuffer();
+        const zip = await JSZip.loadAsync(kmzBuffer);
+
+        const kmlEntry = Object.values(zip.files).find(
+          (entry) => !entry.dir && entry.name.toLowerCase().endsWith(".kml"),
+        );
+
+        if (!kmlEntry) {
+          throw new Error("No KML document found inside KMZ");
+        }
+
+        const kmlText = await kmlEntry.async("text");
+        const xml = new DOMParser().parseFromString(kmlText, "text/xml");
+
+        if (xml.querySelector("parsererror")) {
+          throw new Error("Invalid KML");
+        }
+
+        const geojson = kmlToGeoJSON(xml);
+        const features = geojson?.features || [];
+
+        const coordinatePairs = [];
+        features.forEach((feature) => {
+          collectCoordinatePairs(feature.geometry, coordinatePairs);
+        });
+
+        if (!coordinatePairs.length) {
+          throw new Error("No drawable geometry");
+        }
+
+        const lngs = coordinatePairs.map(([lng]) => lng);
+        const lats = coordinatePairs.map(([, lat]) => lat);
+
+        const minLng = Math.min(...lngs);
+        const maxLng = Math.max(...lngs);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+
+        const width = 132;
+        const height = 82;
+        const padding = 8;
+
+        const geoWidth = Math.max(maxLng - minLng, 0.0000001);
+        const geoHeight = Math.max(maxLat - minLat, 0.0000001);
+
+        const scale = Math.min(
+          (width - padding * 2) / geoWidth,
+          (height - padding * 2) / geoHeight,
+        );
+
+        const renderedWidth = geoWidth * scale;
+        const renderedHeight = geoHeight * scale;
+
+        const offsetX = (width - renderedWidth) / 2;
+        const offsetY = (height - renderedHeight) / 2;
+
+        const project = ([lng, lat]) => [
+          offsetX + (lng - minLng) * scale,
+          offsetY + renderedHeight - (lat - minLat) * scale,
+        ];
+
+        const svgPaths = [];
+
+        features.forEach((feature, featureIndex) => {
+          const featurePaths = geometryToSvgPaths(feature.geometry, project);
+
+          featurePaths.forEach((path, pathIndex) => {
+            svgPaths.push({
+              key: `${featureIndex}-${pathIndex}`,
+              value: path,
+            });
+          });
+        });
+
+        if (!cancelled) {
+          setPreview({
+            loading: false,
+            paths: svgPaths,
+            error: "",
+          });
+        }
+      } catch (previewError) {
+        console.warn("KMZ preview could not be generated.", previewError);
+
+        if (!cancelled) {
+          setPreview({
+            loading: false,
+            paths: [],
+            error: "Preview unavailable",
+          });
+        }
+      }
+    };
+
+    loadPreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fileUrl]);
+
+  if (preview.loading) {
+    return (
+      <div className="flex h-[82px] w-[132px] items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-[11px] text-slate-400">
+        Loading...
+      </div>
+    );
+  }
+
+  if (preview.error || preview.paths.length === 0) {
+    return (
+      <div className="flex h-[82px] w-[132px] items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 text-center text-[11px] leading-4 text-slate-400">
+        {preview.error || "Preview unavailable"}
+      </div>
+    );
+  }
 
   return (
     <div
-      className={`relative h-14 w-24 overflow-hidden rounded border border-slate-200 ${background}`}
+      className="h-[82px] w-[132px] overflow-hidden rounded-md border border-slate-200 bg-[#eef3f1] shadow-sm"
+      title={fileName || "KMZ preview"}
     >
-      <div className="absolute inset-0 opacity-70">
-        <span className="absolute left-1 top-2 h-px w-24 rotate-[18deg] bg-slate-300" />
-        <span className="absolute -left-1 top-8 h-px w-28 -rotate-[12deg] bg-slate-300" />
-        <span className="absolute left-10 top-0 h-16 w-px rotate-[8deg] bg-slate-300" />
-      </div>
-      <div
-        className={`absolute left-1/2 top-1/2 h-6 w-7 -translate-x-1/2 -translate-y-1/2 border-2 ${border} bg-white/25`}
-      />
-      <div className="absolute left-1/2 top-1.5 h-1.5 w-9 -translate-x-1/2 rounded bg-white/80" />
+      <svg
+        viewBox="0 0 132 82"
+        className="h-full w-full"
+        role="img"
+        aria-label={`${fileName || "KMZ"} geometry preview`}
+      >
+        <rect x="0" y="0" width="132" height="82" fill="#eef3f1" />
+
+        {preview.paths.map(({ key, value }) =>
+          typeof value === "string" ? (
+            <path
+              key={key}
+              d={value}
+              fill="rgba(250, 204, 21, 0.22)"
+              stroke="#d39e00"
+              strokeWidth="1.6"
+              vectorEffect="non-scaling-stroke"
+            />
+          ) : (
+            <circle
+              key={key}
+              cx={value.x}
+              cy={value.y}
+              r="2.5"
+              fill="#d39e00"
+              stroke="#ffffff"
+              strokeWidth="0.8"
+            />
+          ),
+        )}
+      </svg>
     </div>
   );
 }
