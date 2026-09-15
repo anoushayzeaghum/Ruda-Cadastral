@@ -232,6 +232,81 @@ const cropImageForPdf = async (
   return canvas.toDataURL("image/jpeg", 0.93);
 };
 
+// Create a small Mapbox satellite snapshot for the selected plot. The selected
+// parcel boundary is the only vector overlay drawn on top of the imagery.
+const getMapboxAccessToken = () =>
+  normalizeText(
+    import.meta.env?.VITE_MAPBOX_ACCESS_TOKEN ||
+      import.meta.env?.VITE_MAPBOX_TOKEN ||
+      window?.MAPBOX_ACCESS_TOKEN ||
+      window?.mapboxgl?.accessToken,
+  );
+
+const blobToDataUrl = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+const isLngLatCoordinate = (coord) =>
+  Array.isArray(coord) &&
+  coord.length >= 2 &&
+  Number.isFinite(Number(coord[0])) &&
+  Number.isFinite(Number(coord[1])) &&
+  Math.abs(Number(coord[0])) <= 180 &&
+  Math.abs(Number(coord[1])) <= 90;
+
+const geometryHasLngLatCoordinates = (geometry) => {
+  if (!geometry?.coordinates) return false;
+
+  const walk = (coordinates) => {
+    if (!Array.isArray(coordinates)) return false;
+    if (isLngLatCoordinate(coordinates)) return true;
+    return coordinates.some((item) => walk(item));
+  };
+
+  return walk(geometry.coordinates);
+};
+
+const createPlotSatelliteSnapshot = async (parcel) => {
+  const geometry = parcel?.geometry;
+  const accessToken = getMapboxAccessToken();
+
+  if (!geometry || !accessToken || !geometryHasLngLatCoordinates(geometry)) {
+    return null;
+  }
+
+  const overlay = {
+    type: "Feature",
+    properties: {
+      stroke: "#ff1744",
+      "stroke-width": 4,
+      "stroke-opacity": 1,
+      fill: "#ff1744",
+      "fill-opacity": 0,
+    },
+    geometry,
+  };
+
+  const encodedOverlay = encodeURIComponent(JSON.stringify(overlay));
+  const url =
+    `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/` +
+    `geojson(${encodedOverlay})/auto/700x420@2x` +
+    `?padding=65&access_token=${encodeURIComponent(accessToken)}`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok)
+      throw new Error(`Mapbox snapshot failed: ${response.status}`);
+    return await blobToDataUrl(await response.blob());
+  } catch (error) {
+    console.warn("Could not create Mapbox plot snapshot", error);
+    return null;
+  }
+};
+
 const getCropSettings = (root, key) => ({
   zoom: root.querySelector(`[data-${key}-zoom]`)?.value || 1,
   x: root.querySelector(`[data-${key}-x]`)?.value || 0,
@@ -975,28 +1050,34 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
   const previewWindow = transferData.previewWindow;
 
   try {
-    const [{ gopLogo, rudaLogo }, sellerPhoto, buyerPhoto, ownerPhoto] =
-      await Promise.all([
-        loadPrintAssets(),
-        cropImageForPdf(
-          transferData.sellerImage,
-          transferData.sellerCrop,
-          1802,
-          1000,
-        ),
-        cropImageForPdf(
-          transferData.buyerImage,
-          transferData.buyerCrop,
-          1802,
-          1000,
-        ),
-        cropImageForPdf(
-          transferData.ownerImage,
-          transferData.ownerCrop,
-          1242,
-          1000,
-        ),
-      ]);
+    const [
+      { gopLogo, rudaLogo },
+      sellerPhoto,
+      buyerPhoto,
+      ownerPhoto,
+      plotMapSnapshot,
+    ] = await Promise.all([
+      loadPrintAssets(),
+      cropImageForPdf(
+        transferData.sellerImage,
+        transferData.sellerCrop,
+        1802,
+        1000,
+      ),
+      cropImageForPdf(
+        transferData.buyerImage,
+        transferData.buyerCrop,
+        1802,
+        1000,
+      ),
+      cropImageForPdf(
+        transferData.ownerImage,
+        transferData.ownerCrop,
+        1242,
+        1000,
+      ),
+      createPlotSatelliteSnapshot(parcel),
+    ]);
 
     const doc = new jsPDF({
       orientation: "portrait",
@@ -1332,13 +1413,20 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
 
     const ownerY = partyInfoY + 24.5;
     const ownerHeight = 44;
+    const ownerMapGap = 3;
+    const ownerDetailsWidth = 121;
+    const ownerMapX = margin + ownerDetailsWidth + ownerMapGap;
+    const ownerMapWidth = rightEdge - ownerMapX;
+
+    // Left: existing new-owner information, narrowed only enough to make room
+    // for the requested plot-location satellite snapshot on the right.
     doc.setFillColor(247, 249, 252);
-    doc.rect(margin, ownerY, contentWidth, ownerHeight, "F");
+    doc.rect(margin, ownerY, ownerDetailsWidth, ownerHeight, "F");
     doc.setDrawColor(145, 156, 170);
     doc.setLineWidth(0.3);
-    doc.rect(margin, ownerY, contentWidth, ownerHeight);
+    doc.rect(margin, ownerY, ownerDetailsWidth, ownerHeight);
     doc.setFillColor(...THEME);
-    doc.rect(margin, ownerY, contentWidth, 6.2, "F");
+    doc.rect(margin, ownerY, ownerDetailsWidth, 6.2, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.2);
     doc.setTextColor(255, 255, 255);
@@ -1364,9 +1452,9 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
       );
     }
 
-    // New-owner details — six clean rows, aligned like Seller/Buyer.
+    // New-owner details — same fields and row layout as before.
     const ownerInfoX = ownerPhotoX + ownerPhotoW + 6;
-    const ownerInfoWidth = rightEdge - ownerInfoX - 4;
+    const ownerInfoWidth = margin + ownerDetailsWidth - ownerInfoX - 3;
     const ownerInfoTop = ownerY + 11.7;
     const ownerRowGap = 5.15;
     const ownerLabelWidth = 30;
@@ -1400,6 +1488,57 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
         },
       );
     });
+
+    // Right: Mapbox satellite snapshot with only the selected plot boundary.
+    doc.setFillColor(247, 249, 252);
+    doc.rect(ownerMapX, ownerY, ownerMapWidth, ownerHeight, "F");
+    doc.setDrawColor(145, 156, 170);
+    doc.setLineWidth(0.3);
+    doc.rect(ownerMapX, ownerY, ownerMapWidth, ownerHeight);
+    doc.setFillColor(...THEME);
+    doc.rect(ownerMapX, ownerY, ownerMapWidth, 6.2, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.2);
+    doc.setTextColor(255, 255, 255);
+    doc.text("PLOT LOCATION", ownerMapX + 2.2, ownerY + 4.3);
+
+    const mapImageX = ownerMapX + 1.2;
+    const mapImageY = ownerY + 7.4;
+    const mapImageW = ownerMapWidth - 2.4;
+    const mapImageH = ownerHeight - 8.6;
+
+    if (plotMapSnapshot) {
+      const plotMapFormat = plotMapSnapshot.startsWith("data:image/png")
+        ? "PNG"
+        : "JPEG";
+      doc.addImage(
+        plotMapSnapshot,
+        plotMapFormat,
+        mapImageX,
+        mapImageY,
+        mapImageW,
+        mapImageH,
+        undefined,
+        "FAST",
+      );
+    } else {
+      doc.setFillColor(242, 244, 247);
+      doc.rect(mapImageX, mapImageY, mapImageW, mapImageH, "F");
+      doc.setDrawColor(190, 198, 208);
+      doc.rect(mapImageX, mapImageY, mapImageW, mapImageH);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.5);
+      doc.setTextColor(...MUTED);
+      doc.text(
+        "Satellite map unavailable",
+        ownerMapX + ownerMapWidth / 2,
+        ownerY + 24,
+        {
+          align: "center",
+        },
+      );
+    }
+    doc.setTextColor(...TEXT);
 
     const footerY = ownerY + ownerHeight + 7;
     doc.setFont("helvetica", "bold");
