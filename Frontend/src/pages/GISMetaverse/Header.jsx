@@ -112,12 +112,19 @@ export default function Header() {
     });
   };
 
-  const handleTitleConfirm = ({ title, titleMode = "custom" }) => {
+  const handleTitleConfirm = ({
+    title,
+    titleMode = "custom",
+    calloutLabel = "",
+  }) => {
     setTitleModal((prev) => ({ ...prev, open: false }));
 
     dispatchPrintEvent(titleModal.eventName, {
       customTitle: titleMode === "kmz" ? "" : title,
       useImportedKmzName: titleMode === "kmz",
+      // This is intentionally independent from the page title.
+      // Imported-KMZ printing uses it only for the boxed locator/callout.
+      calloutLabel: calloutLabel.trim(),
     });
   };
 

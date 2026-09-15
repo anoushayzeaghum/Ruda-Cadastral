@@ -84,6 +84,39 @@ const detectFileType = (fileName) => {
   return null;
 };
 
+/**
+ * Add the normal LIVE-page imported-vector text label.
+ * The print workflow removes this layer completely before capturing the map
+ * and recreates it afterwards, so print-only boxed annotation is deterministic.
+ */
+const addImportedLabelLayer = (map) => {
+  if (!map?.getSource?.(SOURCE_ID) || map.getLayer?.(LAYER_IDS.label)) return;
+
+  map.addLayer({
+    id: LAYER_IDS.label,
+    type: "symbol",
+    source: SOURCE_ID,
+    layout: {
+      "text-field": [
+        "coalesce",
+        ["get", "_import_label"],
+        "Imported Boundary",
+      ],
+      "text-size": 15,
+      "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+      "text-anchor": "center",
+      "text-allow-overlap": false,
+    },
+    paint: {
+      "text-color": "#111827",
+      "text-halo-color": "#ffffff",
+      "text-halo-width": 2,
+      "text-halo-blur": 0.5,
+    },
+    filter: ["==", "$type", "Polygon"],
+  });
+};
+
 /** Safely remove all imported layers + source from the map */
 const removeImportedLayers = (map) => {
   if (!map) return;
@@ -200,6 +233,66 @@ const waitForMapRender = (map, timeoutMs = 5000) =>
     map.once("render", onRender);
     map.triggerRepaint?.();
   });
+
+/**
+ * Wait for a genuinely new WebGL frame. This is stricter than waiting for an
+ * arbitrary `render`/`idle` event and is used by the KMZ print workflow after
+ * removing the live text-label layer. It prevents the previous symbol glyphs
+ * from surviving in preserveDrawingBuffer and being copied into the print.
+ */
+const waitForFreshMapFrame = (map, timeoutMs = 2500) =>
+  new Promise((resolve) => {
+    if (!map) {
+      resolve();
+      return;
+    }
+
+    let finished = false;
+    let timeoutId;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeoutId);
+      map.off?.("render", handleRender);
+      resolve();
+    };
+
+    const handleRender = () => {
+      // Two browser frames ensure the newly rendered WebGL buffer has been
+      // committed before toDataURL()/drawImage() reads from it.
+      requestAnimationFrame(() => requestAnimationFrame(finish));
+    };
+
+    timeoutId = setTimeout(finish, timeoutMs);
+    map.once?.("render", handleRender);
+    map.triggerRepaint?.();
+  });
+
+/** Wait for any active camera animation to finish, then force a fresh frame. */
+const waitForCameraAndFreshFrame = async (map, timeoutMs = 6000) => {
+  if (!map) return;
+
+  if (map.isMoving?.()) {
+    await new Promise((resolve) => {
+      let finished = false;
+      let timeoutId;
+
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timeoutId);
+        map.off?.("moveend", finish);
+        resolve();
+      };
+
+      timeoutId = setTimeout(finish, timeoutMs);
+      map.once?.("moveend", finish);
+    });
+  }
+
+  await waitForFreshMapFrame(map);
+};
 
 const getImportedTitle = (fileName = "Imported Boundary") =>
   fileName
@@ -1742,30 +1835,10 @@ export default function Import({ map, onClose }) {
       filter: ["any", ["==", "$type", "Polygon"]],
     });
 
-    // Polygon label layer — places the imported KMZ / vector name inside polygons
-    map.addLayer({
-      id: LAYER_IDS.label,
-      type: "symbol",
-      source: SOURCE_ID,
-      layout: {
-        "text-field": [
-          "coalesce",
-          ["get", "_import_label"],
-          "Imported Boundary",
-        ],
-        "text-size": 15,
-        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-        "text-anchor": "center",
-        "text-allow-overlap": false,
-      },
-      paint: {
-        "text-color": "#111827",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 2,
-        "text-halo-blur": 0.5,
-      },
-      filter: ["==", "$type", "Polygon"],
-    });
+    // Normal live-page vector label. During Print Imported .KMZ this layer is
+    // removed completely and recreated afterwards so no stale glyphs can leak
+    // into the print canvas.
+    addImportedLabelLayer(map);
 
     // Line layer
     map.addLayer({
@@ -2018,6 +2091,7 @@ export default function Import({ map, onClose }) {
   const handlePrint = async ({
     customTitle = "",
     useImportedKmzName = false,
+    calloutLabel = "",
   } = {}) => {
     if (!map || importedFileType !== "kmz" || !importedGeoJSON?.features?.length) {
       setError("Import a .KMZ file before using Print Imported .KMZ.");
@@ -2056,7 +2130,8 @@ export default function Import({ map, onClose }) {
       pitch: map.getPitch(),
     };
 
-    const originalImportedLabelVisibility = map.getLayer(LAYER_IDS.label)
+    const hadImportedLabelLayer = Boolean(map.getLayer(LAYER_IDS.label));
+    const originalImportedLabelVisibility = hadImportedLabelLayer
       ? map.getLayoutProperty(LAYER_IDS.label, "visibility") || "visible"
       : null;
 
@@ -2073,19 +2148,43 @@ export default function Import({ map, onClose }) {
         importedGeoJSON,
         summary?.title || "Imported KMZ",
       );
+      // Callout text is a separate user-controlled print value. It must never
+      // be coupled to the map title or the canonical KMZ/legend name.
+      const printCalloutLabel =
+        calloutLabel?.trim() || importedKmzLabel || "Imported KMZ";
 
-      // The normal map label layer repeats the KMZ name once per polygon.
-      // Hide it only while preparing the print capture; one reference-style
-      // leader/callout is added later at the centre of the complete KMZ.
+      // During print preparation blank the label property in the imported
+      // source itself. This is an additional guard beyond removing the symbol
+      // layer: even if a style/rebuild callback recreates that layer while the
+      // camera is moving, there is no text available for it to render.
+      const printGeoJSONWithoutLabels = {
+        ...importedGeoJSON,
+        features: (importedGeoJSON.features || []).map((feature) => ({
+          ...feature,
+          properties: {
+            ...(feature.properties || {}),
+            _import_label: "",
+          },
+        })),
+      };
+      map.getSource(SOURCE_ID)?.setData?.(printGeoJSONWithoutLabels);
+
+      // The normal live-map symbol layer repeats the KMZ name once per polygon.
+      // IMPORTANT: remove the layer completely — do not only set visibility to
+      // `none`. With preserveDrawingBuffer, a hidden symbol can intermittently
+      // remain in the previous WebGL frame and leak into the print capture.
+      // Removing it and forcing a fresh render makes the printed result
+      // deterministic: ONLY the boxed callout drawn below is present.
       if (map.getLayer(LAYER_IDS.label)) {
-        map.setLayoutProperty(LAYER_IDS.label, "visibility", "none");
+        map.removeLayer(LAYER_IDS.label);
+        await waitForFreshMapFrame(map);
       }
 
       let zoningInsetImage = fallbackOverviewImage;
       try {
         zoningInsetImage = await createPrincipleLandUseInsetImage({
           importedGeoJSON,
-          label: importedKmzLabel,
+          label: printCalloutLabel,
         });
       } catch (insetError) {
         console.warn(
@@ -2138,7 +2237,20 @@ export default function Import({ map, onClose }) {
         );
       }
 
-      await waitForMapRender(map);
+      // Do not capture on the first render event of the fitBounds animation.
+      // Wait until movement has ended and then force one clean label-free frame.
+      await waitForCameraAndFreshFrame(map);
+
+      // Defensive assertion: the repeated live text-label layer must not exist
+      // at capture time. If some style/rebuild callback recreated it, remove it
+      // again and force another fresh WebGL frame.
+      // Re-apply the label-free print source after the camera movement because
+      // basemap/style rebuilds can replace source data asynchronously.
+      map.getSource(SOURCE_ID)?.setData?.(printGeoJSONWithoutLabels);
+      if (map.getLayer(LAYER_IDS.label)) {
+        map.removeLayer(LAYER_IDS.label);
+      }
+      await waitForFreshMapFrame(map);
 
       // IMPORTANT: do not add the print callout to the live Mapbox map.
       // Capture the current map and draw the reference-style KMZ callout only
@@ -2147,7 +2259,7 @@ export default function Import({ map, onClose }) {
       const mapImage = captureMapWithKmzPrintCallout({
         map,
         importedGeoJSON,
-        label: importedKmzLabel,
+        label: printCalloutLabel,
       });
 
       if (!mapImage || mapImage === "data:," || mapImage.length < 1000) {
@@ -2187,15 +2299,27 @@ export default function Import({ map, onClose }) {
     } finally {
       removePrintKmzCallout(map);
 
-      if (
-        originalImportedLabelVisibility !== null &&
-        map.getLayer(LAYER_IDS.label)
-      ) {
-        map.setLayoutProperty(
-          LAYER_IDS.label,
-          "visibility",
-          originalImportedLabelVisibility,
-        );
+      // Restore the exact imported source data first, then restore the normal
+      // LIVE-page vector label. The print-only blank label values must never
+      // leak back into `/gis-metaverse`.
+      if (map.getSource(SOURCE_ID)) {
+        map.getSource(SOURCE_ID).setData(importedGeoJSON);
+      }
+
+      // Restore the normal LIVE-page vector label only after the print image has
+      // already been captured. This layer is never part of the printed canvas.
+      if (hadImportedLabelLayer && map.getSource(SOURCE_ID)) {
+        addImportedLabelLayer(map);
+        if (
+          originalImportedLabelVisibility &&
+          map.getLayer(LAYER_IDS.label)
+        ) {
+          map.setLayoutProperty(
+            LAYER_IDS.label,
+            "visibility",
+            originalImportedLabelVisibility,
+          );
+        }
       }
 
       map.easeTo({
@@ -2212,6 +2336,7 @@ export default function Import({ map, onClose }) {
       handlePrint({
         customTitle: event.detail?.customTitle || "",
         useImportedKmzName: Boolean(event.detail?.useImportedKmzName),
+        calloutLabel: event.detail?.calloutLabel || "",
       });
     };
 

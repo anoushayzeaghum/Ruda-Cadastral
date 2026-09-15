@@ -17,6 +17,7 @@ export default function PrintTitleModal({
 }) {
   const [value, setValue] = useState(defaultTitle);
   const [titleMode, setTitleMode] = useState("custom");
+  const [calloutLabel, setCalloutLabel] = useState("");
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -24,6 +25,9 @@ export default function PrintTitleModal({
 
     setValue(defaultTitle);
     setTitleMode("custom");
+    // Keep the callout text independent from the page title while still
+    // providing the imported KMZ name as a useful editable default.
+    setCalloutLabel(importedKmzName?.trim() || "Imported KMZ");
 
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [isOpen, defaultTitle, allowImportedKmzName, importedKmzName]);
@@ -45,6 +49,7 @@ export default function PrintTitleModal({
       onConfirm({
         title: resolvedKmzName,
         titleMode: "kmz",
+        calloutLabel: calloutLabel.trim() || resolvedKmzName,
       });
       return;
     }
@@ -52,6 +57,9 @@ export default function PrintTitleModal({
     onConfirm({
       title: value.trim() || defaultTitle,
       titleMode: "custom",
+      calloutLabel: allowImportedKmzName
+        ? calloutLabel.trim() || resolvedKmzName
+        : "",
     });
   };
 
@@ -92,11 +100,10 @@ export default function PrintTitleModal({
           {allowImportedKmzName && (
             <div className="mb-4 grid gap-2">
               <label
-                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
-                  titleMode === "custom"
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${titleMode === "custom"
                     ? "border-[#0f3d2e] bg-emerald-50/70 ring-1 ring-[#0f3d2e]/15"
                     : "border-slate-200 bg-white hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <input
                   type="radio"
@@ -121,11 +128,10 @@ export default function PrintTitleModal({
               </label>
 
               <label
-                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${
-                  titleMode === "kmz"
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${titleMode === "kmz"
                     ? "border-[#0f3d2e] bg-emerald-50/70 ring-1 ring-[#0f3d2e]/15"
                     : "border-slate-200 bg-white hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <input
                   type="radio"
@@ -173,6 +179,23 @@ export default function PrintTitleModal({
               className="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-[#0f3d2e] focus:ring-2 focus:ring-[#0f3d2e]/20 disabled:cursor-not-allowed"
             />
           </div>
+
+          {allowImportedKmzName && (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                KMZ Callout Label
+              </label>
+              <input
+                type="text"
+                value={calloutLabel}
+                onChange={(event) => setCalloutLabel(event.target.value)}
+                placeholder={resolvedKmzName}
+                maxLength={80}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-[#0f3d2e] focus:ring-2 focus:ring-[#0f3d2e]/20"
+              />
+
+            </div>
+          )}
 
           <div className="mt-4 flex justify-end gap-2">
             <button
