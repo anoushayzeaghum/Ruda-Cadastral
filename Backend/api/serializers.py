@@ -1743,3 +1743,56 @@ class SWLineSerializer(GeoFeatureModelSerializer):
             "project_id",
             "geom",
         )
+
+
+class KmzPrintLogSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+    report_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = KmzPrintLog
+        fields = (
+            "id",
+            "reference",
+            "folder_name",
+            "file",
+            "file_url",
+            "report_file",
+            "report_url",
+            "file_name",
+            "file_size",
+            "project",
+            "project_type",
+            "phase",
+            "feature_count",
+            "geometry_types",
+            "imported_at",
+            "printed_at",
+            "printed_by",
+            "print_title",
+        )
+        read_only_fields = (
+            "id",
+            "reference",
+            "folder_name",
+            "file_url",
+            "report_url",
+            "imported_at",
+            "printed_at",
+        )
+
+    def get_file_url(self, obj):
+        if not obj.file:
+            return None
+        request = self.context.get("request")
+        return request.build_absolute_uri(obj.file.url) if request else obj.file.url
+
+    def get_report_url(self, obj):
+        if not obj.report_file:
+            return None
+        request = self.context.get("request")
+        return (
+            request.build_absolute_uri(obj.report_file.url)
+            if request
+            else obj.report_file.url
+        )

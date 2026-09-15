@@ -12,6 +12,8 @@ import { useNavigate } from "react-router-dom";
 import bbox from "@turf/bbox";
 import shp from "shpjs";
 import JSZip from "jszip";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import RudaLogo from "../../../assets/Ruda.png";
 import { PRINT_EVENTS, dispatchPrintEvent } from "../Printing/PrintEvents";
@@ -20,6 +22,7 @@ import {
   getRiverGeoJSON,
   getRiverRaviGeoJSON,
   getRudaGeoJSON,
+  createKmzPrintLog,
 } from "../../../services/metaverseApi";
 import { normalizeLandUseGeoJSON } from "./Layers/LayerManager/BaseData/LandUseLayer";
 import { RIVER_BOUNDARY_COLOR } from "./Layers/LayerManager/RudaMasterPlanLayers/RTWLayers/RiverBoundaryLayer";
@@ -1820,13 +1823,63 @@ const makePrintableHtml = ({
 </html>`;
 };
 
+const createPdfReportFile = async (printWindow, title) => {
+  const reportElement = printWindow.document.querySelector(".sheet");
+  if (!reportElement) {
+    throw new Error("The printable report could not be created.");
+  }
+
+  await Promise.all(
+    Array.from(printWindow.document.images).map(
+      (image) =>
+        image.complete
+          ? Promise.resolve()
+          : new Promise((resolve) => {
+              image.addEventListener("load", resolve, { once: true });
+              image.addEventListener("error", resolve, { once: true });
+            }),
+    ),
+  );
+
+  const canvas = await html2canvas(reportElement, {
+    backgroundColor: "#ffffff",
+    scale: 1.5,
+    useCORS: true,
+    logging: false,
+  });
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a3" });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const imageRatio = canvas.width / canvas.height;
+  const pageRatio = pageWidth / pageHeight;
+  const imageWidth = imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio;
+  const imageHeight = imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
+
+  pdf.addImage(
+    canvas.toDataURL("image/jpeg", 0.92),
+    "JPEG",
+    (pageWidth - imageWidth) / 2,
+    (pageHeight - imageHeight) / 2,
+    imageWidth,
+    imageHeight,
+  );
+
+  const safeName = String(title || "KMZ_Report")
+    .replace(/[^a-z0-9]+/gi, "_")
+    .replace(/^_+|_+$/g, "") || "KMZ_Report";
+  return new File([pdf.output("blob")], `${safeName}.pdf`, {
+    type: "application/pdf",
+  });
+};
+
 // ── component ──────────────────────────────────────────────────────────────────
-export default function Import({ map, onClose }) {
+export default function Import({ map, filters, onClose }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
   const [summary, setSummary] = useState(null); // { fileName, count, types }
+  const [importedFile, setImportedFile] = useState(null);
   const [importedGeoJSON, setImportedGeoJSON] = useState(null);
   const [importedFileType, setImportedFileType] = useState(null);
   const [printLoading, setPrintLoading] = useState(false);
@@ -1855,6 +1908,7 @@ export default function Import({ map, onClose }) {
     removeImportedLayers(map);
     setHasLayer(false);
     setSummary(null);
+    setImportedFile(null);
     setImportedGeoJSON(null);
     setImportedFileType(null);
     setError(null);
@@ -2142,6 +2196,7 @@ export default function Import({ map, onClose }) {
 
       const { count, types } = summarise(preparedGeoJSON);
       setSummary({ fileName: file.name, title: importTitle, count, types });
+        setImportedFile(file);
     } catch (e) {
       console.error("Import error:", e);
       setError("An unexpected error occurred while importing the file.");
@@ -2150,6 +2205,45 @@ export default function Import({ map, onClose }) {
       setLoading(false);
     }
   };
+
+  // Load a previously printed KMZ selected from the KMZ logs page.
+  useEffect(() => {
+    const pendingImport = sessionStorage.getItem("ruda:open-kmz-in-map");
+    if (!pendingImport) return undefined;
+
+    sessionStorage.removeItem("ruda:open-kmz-in-map");
+
+    let cancelled = false;
+    const loadPendingImport = async () => {
+      try {
+        const { url, fileName } = JSON.parse(pendingImport);
+        if (!url) return;
+
+        setLoading(true);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("The stored KMZ file could not be loaded.");
+
+        const blob = await response.blob();
+        if (!cancelled) {
+          await handleFile(
+            new File([blob], fileName || "Imported KMZ.kmz", {
+              type: "application/vnd.google-earth.kmz",
+            }),
+          );
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError?.message || "The stored KMZ file could not be loaded.");
+          setLoading(false);
+        }
+      }
+    };
+
+    loadPendingImport();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handlePrint = async ({
     customTitle = "",
@@ -2357,6 +2451,34 @@ export default function Import({ map, onClose }) {
         }),
       );
       printWindow.document.close();
+
+      const reportFile = await createPdfReportFile(printWindow, title);
+
+      const printedBy = (() => {
+        try {
+          const user = JSON.parse(localStorage.getItem("user") || "null");
+          return user?.full_name || user?.name || user?.email || "";
+        } catch {
+          return "";
+        }
+      })();
+
+      const logPayload = new FormData();
+      logPayload.append("file", importedFile);
+      logPayload.append("report_file", reportFile);
+      logPayload.append("file_name", importedFile.name);
+      logPayload.append("file_size", String(importedFile.size));
+      logPayload.append("project", String(filters?.projectId || ""));
+      logPayload.append("project_type", String(filters?.projectType || ""));
+      logPayload.append("phase", String(filters?.phase || ""));
+      logPayload.append("feature_count", String(summary?.count || 0));
+      logPayload.append(
+        "geometry_types",
+        JSON.stringify(summary?.types || []),
+      );
+      logPayload.append("printed_by", printedBy);
+      logPayload.append("print_title", title);
+      await createKmzPrintLog(logPayload);
     } catch (printError) {
       console.error("Print error:", printError);
       printWindow.close();
