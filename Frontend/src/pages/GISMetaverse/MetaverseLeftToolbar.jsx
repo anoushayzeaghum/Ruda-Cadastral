@@ -246,7 +246,11 @@ export default function MetaverseLeftToolbar({
           display: activeTool === "import" ? "block" : "none",
         }}
       >
-        <Import map={map} onClose={() => setActiveTool(null)} />
+        <Import
+          map={map}
+          filters={filters}
+          onClose={() => setActiveTool(null)}
+        />
       </div>
 
       {activeTool && activeTool !== "layers" && activeTool !== "import" && (

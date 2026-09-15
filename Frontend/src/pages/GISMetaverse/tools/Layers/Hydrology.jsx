@@ -1,20 +1,72 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { FLOOD_LAYER } from "./LayerManager/Hydrology/FloodLayer";
+import { getFloodExtentGeoJSON } from "../../../../services/metaverseApi";
+import {
+  FLOOD_LAYER,
+  addOrUpdateFloodLayer,
+  setFloodLayerVisibility,
+} from "./LayerManager/Hydrology/FloodLayer";
 
 /**
  * Hydrology layer group.
  *
- * Flood is a frontend-only placeholder at this stage. Toggling it only changes
- * local UI state; it does not add/remove any Mapbox layer or request backend data.
+ * Flood Extent 2025 is loaded from the FloodExtent backend API and displayed
+ * as a Mapbox GeoJSON fill layer when enabled.
  */
-export default function Hydrology() {
+export default function Hydrology({ map }) {
   const [open, setOpen] = useState(false);
   const [floodVisible, setFloodVisible] = useState(false);
+  const floodVisibleRef = useRef(false);
+  const floodCache = useRef(null);
+  const floodRequest = useRef(null);
+
+  const fetchFloodExtent = async () => {
+    if (floodCache.current) return floodCache.current;
+    if (floodRequest.current) return floodRequest.current;
+
+    const request = getFloodExtentGeoJSON()
+      .then((geojson) => {
+        floodCache.current = geojson;
+        return geojson;
+      })
+      .finally(() => {
+        floodRequest.current = null;
+      });
+
+    floodRequest.current = request;
+    return request;
+  };
+
+  const setFloodVisibility = async (visible) => {
+    floodVisibleRef.current = visible;
+    setFloodVisible(visible);
+
+    if (!map) return;
+
+    if (!visible) {
+      setFloodLayerVisibility(map, false);
+      return;
+    }
+
+    try {
+      const geojson = await fetchFloodExtent();
+
+      // Prevent a completed request from re-showing the layer if the user
+      // switched it off while the request was still in progress.
+      if (!floodVisibleRef.current) return;
+
+      addOrUpdateFloodLayer(map, geojson);
+    } catch (error) {
+      console.error(`${FLOOD_LAYER.label} load error:`, error);
+      floodVisibleRef.current = false;
+      setFloodVisible(false);
+      setFloodLayerVisibility(map, false);
+    }
+  };
 
   const toggleAll = (event) => {
     event.stopPropagation();
-    setFloodVisible((current) => !current);
+    void setFloodVisibility(!floodVisibleRef.current);
   };
 
   return (
@@ -55,7 +107,9 @@ export default function Hydrology() {
             <input
               type="checkbox"
               checked={floodVisible}
-              onChange={(event) => setFloodVisible(event.target.checked)}
+              onChange={(event) =>
+                void setFloodVisibility(event.target.checked)
+              }
               className="accent-[#65c96b]"
             />
 

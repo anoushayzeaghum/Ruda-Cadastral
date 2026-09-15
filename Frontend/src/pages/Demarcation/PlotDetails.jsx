@@ -5,6 +5,7 @@ import { printPartPlan } from "./PrintReports/PrintPartPlan";
 import { printPossessionCertificate } from "./PrintReports/PrintPossessionCertificate";
 import { printReport } from "./PrintReports/PrintReport";
 import { printSitePlan } from "./PrintReports/PrintSitePlan";
+import { printTransferLetter } from "./PrintReports/TransferLetter";
 import { buildPlotDetails, valueOrDash } from "./PrintReports/printUtils";
 
 export default function PlotDetails({
@@ -76,6 +77,10 @@ export default function PlotDetails({
     {
       label: "Print Possession Certificate",
       action: printPossessionCertificate,
+    },
+    {
+      label: "Print Transfer Letter",
+      action: printTransferLetter,
     },
   ];
 

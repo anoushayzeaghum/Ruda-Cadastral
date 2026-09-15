@@ -163,11 +163,11 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
   doc.setFontSize(7);
   doc.setTextColor(40, 40, 40);
   doc.text("Corner", x + columns[0] / 2, headerY + 3.8, { align: "center" });
-  doc.text("Easting (m)", x + columns[0] + columns[1] / 2, headerY + 3.8, {
+  doc.text("Easting (ft)", x + columns[0] + columns[1] / 2, headerY + 3.8, {
     align: "center",
   });
   doc.text(
-    "Northing (m)",
+    "Northing (ft)",
     x + columns[0] + columns[1] + columns[2] / 2,
     headerY + 3.8,
     { align: "center" },
@@ -191,13 +191,13 @@ const drawCoordinateTable = (doc, coordinates, details, x, y, width) => {
     doc.setTextColor(20, 20, 20);
     doc.text(coordinate.label, x + columns[0] / 2, textY, { align: "center" });
     doc.text(
-      coordinate.easting.toFixed(3),
+      (coordinate.easting * 3.280839895).toFixed(3),
       x + columns[0] + columns[1] / 2,
       textY,
       { align: "center" },
     );
     doc.text(
-      coordinate.northing.toFixed(3),
+      (coordinate.northing * 3.280839895).toFixed(3),
       x + columns[0] + columns[1] + columns[2] / 2,
       textY,
       { align: "center" },

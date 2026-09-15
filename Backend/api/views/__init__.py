@@ -36,6 +36,8 @@ from .GISMetaverse.RtwPackageView import *
 from .GISMetaverse.PossessionLandView import *
 from .GISMetaverse.StateLandView import *
 from .GISMetaverse.AwardedLandView import *
+from .GISMetaverse.FloodExtentView import *
+from .GISMetaverse.SWLineView import *
 
 # Ruda MasterPlan
 from .RudaMasterPlan.CityLevelServiceView import *
@@ -58,3 +60,4 @@ from .RudaMasterPlan.LahoreTransportationRoadView import *
 from .GISMetaverse.PHSPPPScheme import *
 from .GISMetaverse.ForestBoundary import *
 from .GISMetaverse.ExistingDrains import *
+from .KmzPrintLogView import *

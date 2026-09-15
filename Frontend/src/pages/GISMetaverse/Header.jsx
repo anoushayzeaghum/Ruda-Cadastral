@@ -27,6 +27,7 @@ export default function Header() {
   const [importPrintState, setImportPrintState] = useState({
     hasKmz: false,
     printLoading: false,
+    kmzTitle: "",
   });
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function Header() {
       setImportPrintState({
         hasKmz: Boolean(event.detail?.hasKmz),
         printLoading: Boolean(event.detail?.printLoading),
+        kmzTitle: String(event.detail?.kmzTitle || ""),
       });
     };
 
@@ -91,16 +93,39 @@ export default function Header() {
     open: false,
     defaultTitle: "",
     eventName: "",
+    allowImportedKmzName: false,
+    importedKmzName: "",
   });
 
-  const openTitleModal = (eventName, defaultTitle) => {
+  const openTitleModal = (
+    eventName,
+    defaultTitle,
+    { allowImportedKmzName = false, importedKmzName = "" } = {},
+  ) => {
     setIsPrintMenuOpen(false);
-    setTitleModal({ open: true, defaultTitle, eventName });
+    setTitleModal({
+      open: true,
+      defaultTitle,
+      eventName,
+      allowImportedKmzName,
+      importedKmzName,
+    });
   };
 
-  const handleTitleConfirm = (title) => {
+  const handleTitleConfirm = ({
+    title,
+    titleMode = "custom",
+    calloutLabel = "",
+  }) => {
     setTitleModal((prev) => ({ ...prev, open: false }));
-    dispatchPrintEvent(titleModal.eventName, { customTitle: title });
+
+    dispatchPrintEvent(titleModal.eventName, {
+      customTitle: titleMode === "kmz" ? "" : title,
+      useImportedKmzName: titleMode === "kmz",
+      // This is intentionally independent from the page title.
+      // Imported-KMZ printing uses it only for the boxed locator/callout.
+      calloutLabel: calloutLabel.trim(),
+    });
   };
 
   const handleTitleCancel = () => {
@@ -112,7 +137,14 @@ export default function Header() {
   };
 
   const handleImportedKmzPrint = () => {
-    openTitleModal(PRINT_EVENTS.PRINT_IMPORTED_KMZ, "RUDA Imported KMZ Map");
+    openTitleModal(
+      PRINT_EVENTS.PRINT_IMPORTED_KMZ,
+      "RUDA Imported KMZ Map",
+      {
+        allowImportedKmzName: true,
+        importedKmzName: importPrintState.kmzTitle || "Imported KMZ",
+      },
+    );
   };
 
   const handleHome = () => {
@@ -136,6 +168,8 @@ export default function Header() {
       <PrintTitleModal
         isOpen={titleModal.open}
         defaultTitle={titleModal.defaultTitle}
+        allowImportedKmzName={titleModal.allowImportedKmzName}
+        importedKmzName={titleModal.importedKmzName}
         onConfirm={handleTitleConfirm}
         onCancel={handleTitleCancel}
       />

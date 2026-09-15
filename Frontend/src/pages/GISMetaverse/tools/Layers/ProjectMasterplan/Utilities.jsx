@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import WaterSupplyPointAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/WaterSupplyPointAttribute";  
+import WaterSupplyPointAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/WaterSupplyPointAttribute";
 import WaterSupplyLevelAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/WaterSupplyLevelAttribute";
 import SewagePointAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/SewagePointAttribute";
 import {
@@ -34,6 +34,14 @@ const UTILITY_LAYER_STYLES = {
     endpoint: "/swpoint-cb1/",
     circleLayer: "metaverse-sewage-points-circle",
     labelLayer: "metaverse-sewage-points-label",
+  },
+  sewerLines: {
+    color: "#7d3c98",
+    opacity: 100,
+    sourceId: "metaverse-sewer-lines-source",
+    endpoint: "/sw-line/",
+    lineLayer: "metaverse-sewer-lines-line",
+    labelLayer: "metaverse-sewer-lines-label",
   },
 };
 
@@ -91,6 +99,77 @@ const applyAfterLayerLoads = (map, key, style) => {
   });
 };
 
+const setUtilityLayerVisibility = (map, key, visible) => {
+  const def = UTILITY_LAYER_STYLES[key];
+  if (!map || !def) return;
+
+  const visibility = visible ? "visible" : "none";
+  [def.circleLayer, def.lineLayer, def.labelLayer]
+    .filter(Boolean)
+    .forEach((layerId) => {
+      if (map.getLayer?.(layerId)) {
+        map.setLayoutProperty(layerId, "visibility", visibility);
+      }
+    });
+};
+
+const addOrUpdateSewerLines = (map, geojson, style = {}) => {
+  const def = UTILITY_LAYER_STYLES.sewerLines;
+  if (!map || !def || !geojson) return;
+
+  const source = map.getSource?.(def.sourceId);
+  if (source?.setData) {
+    source.setData(geojson);
+  } else if (!source) {
+    map.addSource(def.sourceId, {
+      type: "geojson",
+      data: geojson,
+    });
+  }
+
+  const color = style.color || def.color;
+  const opacityRatio = clampOpacity(style.opacity ?? def.opacity) / 100;
+
+  if (!map.getLayer?.(def.lineLayer)) {
+    map.addLayer({
+      id: def.lineLayer,
+      type: "line",
+      source: def.sourceId,
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
+      paint: {
+        "line-color": color,
+        "line-width": 2.5,
+        "line-opacity": opacityRatio,
+      },
+    });
+  }
+
+  if (!map.getLayer?.(def.labelLayer)) {
+    map.addLayer({
+      id: def.labelLayer,
+      type: "symbol",
+      source: def.sourceId,
+      layout: {
+        "symbol-placement": "line",
+        "text-field": ["coalesce", ["get", "name"], ""],
+        "text-size": 10,
+      },
+      paint: {
+        "text-color": color,
+        "text-opacity": opacityRatio,
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1,
+      },
+    });
+  }
+
+  applyUtilityLayerStyle(map, "sewerLines", style);
+  setUtilityLayerVisibility(map, "sewerLines", true);
+};
+
 const uniqueValues = (features = [], keys = []) => {
   const values = new Set();
   features.forEach((feature) => {
@@ -119,11 +198,13 @@ export default function Utilities({
     waterSupplyPoints: false,
     waterSupplyLines: false,
     sewagePoints: false,
+    sewerLines: false,
   });
   const [dropdownData, setDropdownData] = useState({
     waterSupplyPoints: [],
     waterSupplyLines: [],
     sewagePoints: [],
+    sewerLines: [],
   });
   const [styles, setStyles] = useState(() => ({
     waterSupplyPoints: {
@@ -138,18 +219,85 @@ export default function Utilities({
       color: UTILITY_LAYER_STYLES.sewagePoints.color,
       opacity: layerVisibility.sewagePointsOpacity ?? 100,
     },
+    sewerLines: {
+      color: UTILITY_LAYER_STYLES.sewerLines.color,
+      opacity: layerVisibility.sewerLinesOpacity ?? 100,
+    },
   }));
+
+  const filterGeoJSONByProjectId = (geojson, projectId) => {
+    if (!projectId) return geojson;
+
+    const targetProjectId = String(projectId);
+    return {
+      ...geojson,
+      features: (geojson?.features || []).filter((feature) => {
+        const featureProjectId =
+          feature?.properties?.project_id ?? feature?.properties?.projectId;
+
+        return (
+          featureProjectId !== undefined &&
+          featureProjectId !== null &&
+          String(featureProjectId) === targetProjectId
+        );
+      }),
+    };
+  };
 
   const readSourceOrFetch = async (key) => {
     const def = UTILITY_LAYER_STYLES[key];
     const fromMap = getMapSourceGeoJSON(map, def.sourceId);
     if (fromMap.features?.length) return fromMap;
 
+    // Avoid the SWLine backend's failing project_id query filter. Fetch the
+    // collection and preserve project-specific behavior by filtering locally.
+    if (key === "sewerLines") {
+      const res = await axios.get(`${API_BASE}${def.endpoint}`);
+      return filterGeoJSONByProjectId(
+        unwrapGeoJSON(res.data),
+        selectedProjectId,
+      );
+    }
+
     const res = await axios.get(`${API_BASE}${def.endpoint}`, {
       params: { project_id: selectedProjectId },
     });
     return unwrapGeoJSON(res.data);
   };
+
+  useEffect(() => {
+    if (!map) return undefined;
+
+    if (!selectedProjectId || !layerVisibility.sewerLines) {
+      setUtilityLayerVisibility(map, "sewerLines", false);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const loadSewerLines = async () => {
+      try {
+        const def = UTILITY_LAYER_STYLES.sewerLines;
+        const res = await axios.get(`${API_BASE}${def.endpoint}`);
+        const geojson = filterGeoJSONByProjectId(
+          unwrapGeoJSON(res.data),
+          selectedProjectId,
+        );
+
+        if (cancelled || !layerVisibility.sewerLines) return;
+
+        addOrUpdateSewerLines(map, geojson, styles.sewerLines);
+      } catch (error) {
+        console.error("sewerLines utility layer load error:", error);
+      }
+    };
+
+    loadSewerLines();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [map, selectedProjectId, layerVisibility.sewerLines]);
 
   const loadDropdownData = async (key) => {
     if (!selectedProjectId) return;
@@ -235,6 +383,14 @@ export default function Utilities({
       types: uniqueValues(features, ["type"]),
     };
   }, [dropdownData.sewagePoints]);
+
+  const sewerLineSummary = useMemo(() => {
+    const features = dropdownData.sewerLines || [];
+    return {
+      count: features.length,
+      values: uniqueValues(features, ["dia", "name"]),
+    };
+  }, [dropdownData.sewerLines]);
 
   const renderAttributeTable = () => {
     const commonProps = {
@@ -346,7 +502,7 @@ export default function Utilities({
             disabled={!selectedProjectId}
             checked={!!layerVisibility.sewagePoints}
             color={styles.sewagePoints.color}
-            label="Sewage Points"
+            label="Sewer Points"
             opacity={styles.sewagePoints.opacity}
             onChange={() => toggleLayer("sewagePoints")}
             onOpacityChange={(value) => updateOpacity("sewagePoints", value)}
@@ -360,7 +516,7 @@ export default function Utilities({
           {dropdownOpen.sewagePoints && (
             <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
               <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
-                <span>Total Sewage Points</span>
+                <span>Total Sewer Points</span>
                 <span>{sewagePointSummary.count}</span>
               </div>
               {sewagePointSummary.types.length > 0 && (
@@ -371,6 +527,41 @@ export default function Utilities({
                       {type}
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <LayerItem
+            disabled={!selectedProjectId}
+            checked={!!layerVisibility.sewerLines}
+            color={styles.sewerLines.color}
+            label="Sewer Lines"
+            opacity={styles.sewerLines.opacity}
+            onChange={() => toggleLayer("sewerLines")}
+            onOpacityChange={(value) => updateOpacity("sewerLines", value)}
+            onColorChange={(value) => updateColor("sewerLines", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.sewerLines}
+            onDropdownToggle={() => toggleDropdown("sewerLines")}
+          />
+
+          {dropdownOpen.sewerLines && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Sewer Lines</span>
+                <span>{sewerLineSummary.count}</span>
+              </div>
+              {sewerLineSummary.values.length > 0 && (
+                <div className="pt-1">
+                  <p className="mb-1 text-white/55">Diameter / Name</p>
+                  <div className="max-h-36 overflow-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {sewerLineSummary.values.map((value) => (
+                      <div key={value} className="truncate py-0.5">
+                        {value}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

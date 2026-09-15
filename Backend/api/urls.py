@@ -20,6 +20,8 @@ from api.views.RudaMasterPlan.RudaNotifiedPhasesBoundary import (
 
 router = DefaultRouter()
 
+router.register(r"kmz-print-logs", KmzPrintLogViewSet, basename="kmz-print-log")
+
 #--------------------------------- User View ---------------------------------
 router.register(r'create-user', UserCreateView, basename='create-user')
 router.register(r'login-user', UserLoginDashboardCreateView, basename='login-user')
@@ -306,6 +308,17 @@ router.register(r"lahore-transportation-roads", ListLahoreTransportationRoadView
 router.register(r"lahore-transportation-roads/create", CreateLahoreTransportationRoadView, basename="create-lahore-transportation-road",)
 router.register(r"lahore-transportation-roads/update", UpdateLahoreTransportationRoadView, basename="update-lahore-transportation-road",)
 router.register(r"lahore-transportation-roads/delete", DeleteLahoreTransportationRoadView, basename="delete-lahore-transportation-road",)
+
+
+router.register(r"floodextent", ListFloodExtentView, basename="floodextent")
+router.register(r"floodextent/create", CreateFloodExtentView, basename="create-floodextent")
+router.register(r"floodextent/update", UpdateFloodExtentView, basename="update-floodextent")
+router.register(r"floodextent/delete", DeleteFloodExtentView, basename="delete-floodextent")
+
+router.register(r"sw-line", ListSWLineView, basename="sw-line")
+router.register(r"sw-line/create", CreateSWLineView, basename="create-sw-line")
+router.register(r"sw-line/update", UpdateSWLineView, basename="update-sw-line")
+router.register(r"sw-line/delete", DeleteSWLineView, basename="delete-sw-line")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
