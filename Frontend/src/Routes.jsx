@@ -25,7 +25,7 @@ import MetaverseDashboard from "./pages/GISMetaverse/MetaverseDashboard";
 import FlyToDashboard from "./pages/FlyToDedicated/FlyToDashboard";
 import MasterPlanDashboard from "./pages/MasterPlan/MasterPlanDashboard";
 import VirtualTourPage from "./pages/VirtualTour/VirtualTourPage";
-
+import KMZLogs from "./pages/GISMetaverse/tools/Layers/KMZLogs";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -47,6 +47,7 @@ const AppRoutes = () => {
           <Route path="/society-map" element={<SocietyMapPage />} />
           <Route path="/society-3d" element={<Society3DMapPage />} />
           <Route path="/gis-metaverse" element={<MetaverseDashboard />} />
+          <Route path="/gis-metaverse/kmz-logs" element={<KMZLogs />} />
           <Route path="/virtual-tour" element={<VirtualTourPage />} />
           <Route path="/flyto-dashboard" element={<FlyToDashboard />} />
           <Route path="/masterplan" element={<MasterPlanDashboard />} />

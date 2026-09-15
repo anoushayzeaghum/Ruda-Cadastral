@@ -126,12 +126,27 @@ function addOrUpdateMapLayer(map, geojson, opacity, style = {}) {
 }
 
 function removeMapLayer(map) {
-  if (!map) return;
+  // On navigation away from the Metaverse, the parent Mapbox instance can be
+  // destroyed before this component's cleanup effect runs.
+  if (!map || !map.style) return;
+
   const ids = getIds();
-  [ids.point, ids.line, ids.fill].forEach((layerId) => {
-    if (map.getLayer(layerId)) map.removeLayer(layerId);
-  });
-  if (map.getSource(ids.source)) map.removeSource(ids.source);
+
+  try {
+    [ids.point, ids.line, ids.fill].forEach((layerId) => {
+      if (map.style && map.getLayer?.(layerId)) {
+        map.removeLayer(layerId);
+      }
+    });
+
+    if (map.style && map.getSource?.(ids.source)) {
+      map.removeSource(ids.source);
+    }
+  } catch (error) {
+    if (map.style) {
+      console.warn("Could not clean up Private Housing Schemes layers.", error);
+    }
+  }
 }
 
 export default function PrivateHousingSchemes({ map }) {
@@ -236,7 +251,8 @@ export default function PrivateHousingSchemes({ map }) {
 
   useEffect(() => {
     return () => {
-      if (map) removeMapLayer(map);
+      if (!map || !map.style) return;
+      removeMapLayer(map);
     };
   }, [map]);
 

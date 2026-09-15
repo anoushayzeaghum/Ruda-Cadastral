@@ -277,15 +277,29 @@ function addOrUpdateMapLayer(map, key, geojson, color, opacity, style = {}) {
 }
 
 function removeMapLayer(map, key) {
-  if (!map) return;
+  // During route changes Mapbox may already have destroyed its style object.
+  // Calling getLayer/getSource after that point throws from inside Mapbox.
+  if (!map || !map.style) return;
 
   const ids = getIds(key);
 
-  [ids.point, ids.line, ids.fill].forEach((layerId) => {
-    if (map.getLayer(layerId)) map.removeLayer(layerId);
-  });
+  try {
+    [ids.point, ids.line, ids.fill].forEach((layerId) => {
+      if (map.style && map.getLayer?.(layerId)) {
+        map.removeLayer(layerId);
+      }
+    });
 
-  if (map.getSource(ids.source)) map.removeSource(ids.source);
+    if (map.style && map.getSource?.(ids.source)) {
+      map.removeSource(ids.source);
+    }
+  } catch (error) {
+    // Route teardown can race with map.remove(). Nothing needs to be removed
+    // if Mapbox has already disposed of the style.
+    if (map.style) {
+      console.warn(`Could not clean up base-data layer "${key}".`, error);
+    }
+  }
 }
 
 export default function BaseData({ map }) {
@@ -455,10 +469,27 @@ export default function BaseData({ map }) {
 
   useEffect(() => {
     return () => {
-      if (!map) return;
+      // The parent Metaverse map can be removed before child cleanup effects
+      // run. In that case Mapbox's internal style is already undefined.
+      if (!map || !map.style) return;
+
       LAYER_DEFS.forEach((definition) => {
-        if (definition.customRoadStyle) removeRoadNetworkLayer(map);
-        else removeMapLayer(map, definition.key);
+        try {
+          if (!map.style) return;
+
+          if (definition.customRoadStyle) {
+            removeRoadNetworkLayer(map);
+          } else {
+            removeMapLayer(map, definition.key);
+          }
+        } catch (error) {
+          if (map.style) {
+            console.warn(
+              `Could not clean up base-data layer "${definition.key}".`,
+              error,
+            );
+          }
+        }
       });
     };
   }, [map]);

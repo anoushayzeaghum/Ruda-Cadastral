@@ -6,7 +6,9 @@ import {
   FileCheck,
   AlertTriangle,
   Loader2,
+  ClipboardList,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import bbox from "@turf/bbox";
 import shp from "shpjs";
 import JSZip from "jszip";
@@ -19,12 +21,8 @@ import {
   getRiverRaviGeoJSON,
   getRudaGeoJSON,
 } from "../../../services/metaverseApi";
-import {
-  normalizeLandUseGeoJSON,
-} from "./Layers/LayerManager/BaseData/LandUseLayer";
-import {
-  RIVER_BOUNDARY_COLOR,
-} from "./Layers/LayerManager/RudaMasterPlanLayers/RTWLayers/RiverBoundaryLayer";
+import { normalizeLandUseGeoJSON } from "./Layers/LayerManager/BaseData/LandUseLayer";
+import { RIVER_BOUNDARY_COLOR } from "./Layers/LayerManager/RudaMasterPlanLayers/RTWLayers/RiverBoundaryLayer";
 import {
   RIVER_RAVI_COLOR,
   RIVER_RAVI_WATER_PLANE_COLOR,
@@ -211,7 +209,6 @@ const escapeHtml = (value = "") =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
-
 // ── KMZ print inset: pure Canvas 2D cartographic renderer ─────────────────────
 //
 // No Mapbox map is created for the inset. All rendering is done with Canvas 2D
@@ -220,22 +217,26 @@ const escapeHtml = (value = "") =>
 
 // Print-specific zoning colours — saturated to match the reference image.
 const PRINT_ZONING_STYLE = {
-  "brown zone":        { fill: "#f9c65b", outline: "#f218b8" },
-  "green zone":        { fill: "#7df15a", outline: "#f218b8" },
-  "infill development":{ fill: "#ff22c8", outline: "#f218b8" },
-  "industrial zone":   { fill: "#b62ce8", outline: "#f218b8" },
-  "public utility zone":{ fill: "#ffd15a", hatch: "#ff5a36", outline: "#f218b8" },
-  "pond area":         { fill: "#73c7f2", outline: "#3a91d8" },
+  "brown zone": { fill: "#f9c65b", outline: "#f218b8" },
+  "green zone": { fill: "#7df15a", outline: "#f218b8" },
+  "infill development": { fill: "#ff22c8", outline: "#f218b8" },
+  "industrial zone": { fill: "#b62ce8", outline: "#f218b8" },
+  "public utility zone": {
+    fill: "#ffd15a",
+    hatch: "#ff5a36",
+    outline: "#f218b8",
+  },
+  "pond area": { fill: "#73c7f2", outline: "#3a91d8" },
 };
 
 // Legend definition for the canvas-drawn inset legend (order matches reference).
 const PRINT_ZONING_LEGEND = [
-  { label: "Brown Zone",         fill: "#f9c65b" },
-  { label: "Green Zone",         fill: "#7df15a" },
+  { label: "Brown Zone", fill: "#f9c65b" },
+  { label: "Green Zone", fill: "#7df15a" },
   { label: "Infill Development", fill: "#ff22c8" },
-  { label: "Industrial Zone",    fill: "#b62ce8" },
-  { label: "Public Utility Zone",fill: "#ffd15a", hatch: "#ff5a36" },
-  { label: "Pond Area",          fill: "#73c7f2" },
+  { label: "Industrial Zone", fill: "#b62ce8" },
+  { label: "Public Utility Zone", fill: "#ffd15a", hatch: "#ff5a36" },
+  { label: "Pond Area", fill: "#73c7f2" },
 ];
 
 /** Normalise common API response shapes to a GeoJSON FeatureCollection. */
@@ -278,8 +279,18 @@ const formatInsetPhaseLabel = (value = "") => {
   const lower = text.toLowerCase();
   if (lower.includes("2b")) return "PHASE-2B";
   if (lower.includes("2a")) return "PHASE-2A";
-  if (lower.includes("phase 3") || lower.includes("phase-3") || lower.includes("phase - 3")) return "PHASE-3";
-  if (lower.includes("phase 1") || lower.includes("phase-1") || lower.includes("phase - 1")) return "PHASE-1";
+  if (
+    lower.includes("phase 3") ||
+    lower.includes("phase-3") ||
+    lower.includes("phase - 3")
+  )
+    return "PHASE-3";
+  if (
+    lower.includes("phase 1") ||
+    lower.includes("phase-1") ||
+    lower.includes("phase - 1")
+  )
+    return "PHASE-1";
   if (lower.includes("jhok")) return "JHOK FOREST";
   return text.toUpperCase();
 };
@@ -300,7 +311,7 @@ const createInsetTransform = ({ bounds, width, height, padding }) => {
   const geoH = maxLat - minLat;
   if (geoW === 0 || geoH === 0) return null;
 
-  const usableW = width  - padding * 2;
+  const usableW = width - padding * 2;
   const usableH = height - padding * 2;
 
   // Single scale factor so circles remain circles and shapes aren't distorted.
@@ -330,9 +341,14 @@ const projectLngLatToInset = ([lng, lat], transform) => {
  * Create a repeating diagonal hatch canvas pattern for Public Utility Zone.
  * Returns a CanvasPattern that can be set as ctx.fillStyle.
  */
-const createPublicUtilityHatchPattern = (ctx, bgColor, hatchColor, size = 12) => {
+const createPublicUtilityHatchPattern = (
+  ctx,
+  bgColor,
+  hatchColor,
+  size = 12,
+) => {
   const patCanvas = document.createElement("canvas");
-  patCanvas.width  = size;
+  patCanvas.width = size;
   patCanvas.height = size;
   const pctx = patCanvas.getContext("2d");
 
@@ -379,14 +395,17 @@ const drawZoningFeatures = ({ ctx, geojson, transform }) => {
   };
 
   const drawFeature = (feature) => {
-    const cat  = feature?.properties?.[NORMALIZED_FIELD] ?? "";
+    const cat = feature?.properties?.[NORMALIZED_FIELD] ?? "";
     const style = getPrintZoningStyle(cat);
-    const geom  = feature?.geometry;
+    const geom = feature?.geometry;
     if (!geom) return;
 
     const polygons =
-      geom.type === "Polygon"      ? [geom.coordinates] :
-      geom.type === "MultiPolygon" ? geom.coordinates   : [];
+      geom.type === "Polygon"
+        ? [geom.coordinates]
+        : geom.type === "MultiPolygon"
+          ? geom.coordinates
+          : [];
 
     for (const polygon of polygons) {
       // polygon = array of rings (outer + holes)
@@ -400,7 +419,9 @@ const drawZoningFeatures = ({ ctx, geojson, transform }) => {
       if (style.hatch) {
         if (!hatchPatterns[cat]) {
           hatchPatterns[cat] = createPublicUtilityHatchPattern(
-            ctx, style.fill, style.hatch,
+            ctx,
+            style.fill,
+            style.hatch,
           );
         }
         ctx.fillStyle = hatchPatterns[cat];
@@ -410,7 +431,7 @@ const drawZoningFeatures = ({ ctx, geojson, transform }) => {
 
       // Polygon outline
       ctx.strokeStyle = style.outline;
-      ctx.lineWidth   = 1.8;
+      ctx.lineWidth = 1.8;
       buildPath(polygon);
       ctx.stroke();
     }
@@ -466,7 +487,14 @@ const drawInsetRiverLayers = ({
   riverRaviGeoJSON,
   transform,
 }) => {
-  const drawCollection = ({ geojson, fillColor, fillOpacity, lineColor, lineWidth, riverRavi = false }) => {
+  const drawCollection = ({
+    geojson,
+    fillColor,
+    fillOpacity,
+    lineColor,
+    lineWidth,
+    riverRavi = false,
+  }) => {
     (geojson?.features || []).forEach((feature) => {
       const geometry = feature?.geometry;
       if (!geometry) return;
@@ -475,14 +503,21 @@ const drawInsetRiverLayers = ({
       if (riverRavi) {
         const props = feature.properties || {};
         const type = String(
-          props.type ?? props.river_type ?? props.category ?? props.landuse ?? "",
-        ).trim().toLowerCase();
+          props.type ??
+            props.river_type ??
+            props.category ??
+            props.landuse ??
+            "",
+        )
+          .trim()
+          .toLowerCase();
         resolvedColor = type.includes("bed")
           ? RIVER_RAVI_RIVER_BED_COLOR
           : RIVER_RAVI_WATER_PLANE_COLOR;
       }
 
-      const isPolygon = geometry.type === "Polygon" || geometry.type === "MultiPolygon";
+      const isPolygon =
+        geometry.type === "Polygon" || geometry.type === "MultiPolygon";
       ctx.beginPath();
       traceGeometryOnInset({ ctx, geometry, transform });
       if (isPolygon) {
@@ -528,7 +563,9 @@ const drawInsetPhaseLabels = ({ ctx, phaseGeoJSON, transform }) => {
   const grouped = new Map();
 
   (phaseGeoJSON?.features || []).forEach((feature) => {
-    const label = formatInsetPhaseLabel(getPhaseLabel(feature?.properties || {}));
+    const label = formatInsetPhaseLabel(
+      getPhaseLabel(feature?.properties || {}),
+    );
     if (!label || !feature?.geometry) return;
     try {
       const b = bbox(feature);
@@ -573,13 +610,19 @@ const drawInsetPhaseLabels = ({ ctx, phaseGeoJSON, transform }) => {
  * Placed in the bottom-right corner by default; shifts up if that area is
  * likely to contain the KMZ callout.
  */
-const drawInsetZoningLegend = ({ ctx, width, height, kmzPixelX, kmzPixelY }) => {
-  const swatchW   = 38;
-  const swatchH   = 22;
-  const padX      = 16;
-  const padY      = 14;
-  const rowH      = 33;
-  const fontSize  = 27;
+const drawInsetZoningLegend = ({
+  ctx,
+  width,
+  height,
+  kmzPixelX,
+  kmzPixelY,
+}) => {
+  const swatchW = 38;
+  const swatchH = 22;
+  const padX = 16;
+  const padY = 14;
+  const rowH = 33;
+  const fontSize = 27;
   const titleSize = 32;
 
   const rows = PRINT_ZONING_LEGEND;
@@ -591,17 +634,17 @@ const drawInsetZoningLegend = ({ ctx, width, height, kmzPixelX, kmzPixelY }) => 
   }, 0);
 
   const boxW = swatchW + padX * 3 + maxLabelW;
-  const boxH =
-    padY * 2 + titleSize + 8 +
-    PRINT_ZONING_LEGEND.length * rowH;
+  const boxH = padY * 2 + titleSize + 8 + PRINT_ZONING_LEGEND.length * rowH;
   const margin = 14;
 
   let bx = width - boxW - margin;
   let by = height - boxH - margin;
 
   if (
-    typeof kmzPixelX === "number" && typeof kmzPixelY === "number" &&
-    kmzPixelX > width / 2 && kmzPixelY > height / 2
+    typeof kmzPixelX === "number" &&
+    typeof kmzPixelY === "number" &&
+    kmzPixelX > width / 2 &&
+    kmzPixelY > height / 2
   ) {
     by = margin;
   }
@@ -626,7 +669,12 @@ const drawInsetZoningLegend = ({ ctx, width, height, kmzPixelX, kmzPixelY }) => 
     ctx.fillRect(sx, sy, swatchW, swatchH);
 
     if (item.hatch) {
-      const swatchPat = createPublicUtilityHatchPattern(ctx, item.fill, item.hatch, 8);
+      const swatchPat = createPublicUtilityHatchPattern(
+        ctx,
+        item.fill,
+        item.hatch,
+        8,
+      );
       ctx.fillStyle = swatchPat;
       ctx.fillRect(sx, sy, swatchW, swatchH);
     }
@@ -659,54 +707,48 @@ const drawKmzLocationCallout = ({ ctx, px, py, label, width, height }) => {
   ctx.fillStyle = "rgba(255,255,255,0.92)";
   ctx.fill();
   ctx.strokeStyle = "#7f1d1d";
-  ctx.lineWidth   = 2;
+  ctx.lineWidth = 2;
   ctx.stroke();
   // Red dot
   ctx.beginPath();
   ctx.arc(px, py, 10, 0, Math.PI * 2);
-  ctx.fillStyle   = "#dc2626";
+  ctx.fillStyle = "#dc2626";
   ctx.fill();
   ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth   = 1.5;
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
   // ── Callout box ───────────────────────────────────────────────────────────
   // Keep the locator readable after the high-resolution canvas is scaled
   // into the print inset.
-  const fontSize   = 30;
-  const boxPadX    = 16;
-  const boxPadY    = 12;
-  const maxTextW   = 400;
-  const leaderGap  = 42;
-  const margin     = 24;
+  const fontSize = 30;
+  const boxPadX = 16;
+  const boxPadY = 12;
+  const maxTextW = 400;
+  const leaderGap = 42;
+  const margin = 24;
 
   ctx.font = `700 ${fontSize}px Arial, sans-serif`;
   const measured = Math.min(ctx.measureText(safeLabel).width, maxTextW);
   const boxW = measured + boxPadX * 2;
-  const boxH = fontSize  + boxPadY * 2;
+  const boxH = fontSize + boxPadY * 2;
 
   // Quadrant: push the box away from the canvas centre so it sits in open space.
-  const placeRight = px < width  / 2;
+  const placeRight = px < width / 2;
   const placeBelow = py < height / 2;
 
   let bx = placeRight ? px + leaderGap : px - leaderGap - boxW;
   let by = placeBelow ? py + leaderGap : py - leaderGap - boxH;
 
-  bx = Math.max(margin, Math.min(bx, width  - boxW - margin));
+  bx = Math.max(margin, Math.min(bx, width - boxW - margin));
   by = Math.max(margin, Math.min(by, height - boxH - margin));
 
   // Leader line: connect marker centre to nearest edge of the box
-  const anchorX =
-    px < bx         ? bx :
-    px > bx + boxW  ? bx + boxW :
-    bx + boxW / 2;
-  const anchorY =
-    py < by         ? by :
-    py > by + boxH  ? by + boxH :
-    by + boxH / 2;
+  const anchorX = px < bx ? bx : px > bx + boxW ? bx + boxW : bx + boxW / 2;
+  const anchorY = py < by ? by : py > by + boxH ? by + boxH : by + boxH / 2;
 
   ctx.strokeStyle = "#8b2d2d";
-  ctx.lineWidth   = 2.2;
+  ctx.lineWidth = 2.2;
   ctx.setLineDash([]);
   ctx.beginPath();
   ctx.moveTo(px, py);
@@ -714,22 +756,22 @@ const drawKmzLocationCallout = ({ ctx, px, py, label, width, height }) => {
   ctx.stroke();
 
   // Box shadow
-  ctx.shadowColor   = "rgba(0,0,0,0.18)";
-  ctx.shadowBlur    = 6;
+  ctx.shadowColor = "rgba(0,0,0,0.18)";
+  ctx.shadowBlur = 6;
   ctx.shadowOffsetX = 1;
   ctx.shadowOffsetY = 1;
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(bx, by, boxW, boxH);
   ctx.shadowColor = "transparent";
-  ctx.shadowBlur  = 0;
+  ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
 
   ctx.strokeStyle = "#8b2d2d";
-  ctx.lineWidth   = 1.5;
+  ctx.lineWidth = 1.5;
   ctx.strokeRect(bx, by, boxW, boxH);
 
-  ctx.fillStyle    = "#111827";
+  ctx.fillStyle = "#111827";
   ctx.textBaseline = "middle";
   ctx.fillText(safeLabel, bx + boxPadX, by + boxH / 2, maxTextW);
 };
@@ -753,7 +795,10 @@ const createPrincipleLandUseInsetImage = async ({ importedGeoJSON, label }) => {
     ]);
 
   if (zoningResult.status !== "fulfilled") {
-    throw zoningResult.reason || new Error("Could not load Principle Land Use Zoning.");
+    throw (
+      zoningResult.reason ||
+      new Error("Could not load Principle Land Use Zoning.")
+    );
   }
 
   const zoningGeoJSON = normalizeLandUseGeoJSON(zoningResult.value);
@@ -775,20 +820,29 @@ const createPrincipleLandUseInsetImage = async ({ importedGeoJSON, label }) => {
       : { type: "FeatureCollection", features: [] };
 
   if (proposedRiverResult.status === "rejected") {
-    console.warn("Proposed River could not be added to KMZ inset.", proposedRiverResult.reason);
+    console.warn(
+      "Proposed River could not be added to KMZ inset.",
+      proposedRiverResult.reason,
+    );
   }
   if (riverRaviResult.status === "rejected") {
-    console.warn("River 2025 could not be added to KMZ inset.", riverRaviResult.reason);
+    console.warn(
+      "River 2025 could not be added to KMZ inset.",
+      riverRaviResult.reason,
+    );
   }
   if (phasesResult.status === "rejected") {
-    console.warn("RUDA phase labels could not be added to KMZ inset.", phasesResult.reason);
+    console.warn(
+      "RUDA phase labels could not be added to KMZ inset.",
+      phasesResult.reason,
+    );
   }
 
   // Slightly taller canvas + very small geographic margin makes the long RUDA
   // zoning footprint fill more of the inset while still preserving the full extent.
   const CANVAS_W = 1180;
-  const CANVAS_H =  940;
-  const PADDING  =    8;
+  const CANVAS_H = 940;
+  const PADDING = 8;
 
   const canvas = document.createElement("canvas");
   canvas.width = CANVAS_W;
@@ -1179,6 +1233,7 @@ const makePrintableHtml = ({
 
 // ── component ──────────────────────────────────────────────────────────────────
 export default function Import({ map, onClose }) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
@@ -1506,7 +1561,11 @@ export default function Import({ map, onClose }) {
   };
 
   const handlePrint = async (customTitle = "") => {
-    if (!map || importedFileType !== "kmz" || !importedGeoJSON?.features?.length) {
+    if (
+      !map ||
+      importedFileType !== "kmz" ||
+      !importedGeoJSON?.features?.length
+    ) {
       setError("Import a .KMZ file before using Print Imported .KMZ.");
       return;
     }
@@ -1602,7 +1661,8 @@ export default function Import({ map, onClose }) {
         );
       }
 
-      const title = customTitle?.trim() || summary?.title || "Imported Boundary Map";
+      const title =
+        customTitle?.trim() || summary?.title || "Imported Boundary Map";
       const legendRows = buildLegendRows(title);
       const center = map.getCenter();
       const scaleText = `Map center: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)} · Zoom ${map.getZoom().toFixed(1)}`;
@@ -1665,7 +1725,10 @@ export default function Import({ map, onClose }) {
     };
 
     publishPrintState();
-    window.addEventListener(PRINT_EVENTS.REQUEST_IMPORT_STATE, publishPrintState);
+    window.addEventListener(
+      PRINT_EVENTS.REQUEST_IMPORT_STATE,
+      publishPrintState,
+    );
 
     return () => {
       window.removeEventListener(
@@ -1799,6 +1862,19 @@ export default function Import({ map, onClose }) {
           Clear Imported Data
         </button>
       )}
+
+      {/* KMZ print logs */}
+      <button
+        type="button"
+        onClick={() => navigate("/gis-metaverse/kmz-logs")}
+        className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md
+                   bg-white/5 text-emerald-300 text-xs font-semibold
+                   hover:bg-emerald-500/15 hover:text-emerald-200 transition-colors duration-200
+                   border border-emerald-500/30"
+      >
+        <ClipboardList size={14} />
+        View KMZ Map Logs
+      </button>
     </div>
   );
 }
