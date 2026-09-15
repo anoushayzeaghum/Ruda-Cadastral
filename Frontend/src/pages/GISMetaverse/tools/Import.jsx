@@ -53,6 +53,25 @@ const IMPORTED_KMZ_STYLE = Object.freeze({
   legendFill: "rgba(209, 213, 219, 0.34)",
 });
 
+// Temporary print-only callout used on the main KMZ print map.
+// It replaces the repeated polygon text labels with one cartographic callout
+// anchored to the centre of the complete imported KMZ extent.
+const PRINT_KMZ_CALLOUT_IDS = Object.freeze({
+  source: "print-kmz-callout-source",
+  leader: "print-kmz-callout-leader",
+  anchor: "print-kmz-callout-anchor",
+  label: "print-kmz-callout-label",
+  image: "print-kmz-callout-label-image",
+});
+
+const PRINT_KMZ_CALLOUT_STYLE = Object.freeze({
+  lineColor: "#ff2415",
+  markerColor: "#ff2415",
+  boxBackground: "#fff7cc",
+  boxBorder: "#ff2415",
+  textColor: "#111111",
+});
+
 // ── helpers ────────────────────────────────────────────────────────────────────
 
 /** Detect file type from extension */
@@ -882,6 +901,418 @@ const createPrincipleLandUseInsetImage = async ({ importedGeoJSON, label }) => {
   return canvas.toDataURL("image/png", 1);
 };
 
+/** Clamp a numeric value between min and max. */
+const clampNumber = (value, min, max) => Math.max(min, Math.min(max, value));
+
+/**
+ * Build the single cream/red KMZ callout box shown on the PRINTED main map.
+ * The image is registered in Mapbox at pixelRatio 2 for crisp PDF output.
+ */
+const createKmzPrintCalloutImage = (label) => {
+  const safeLabel = String(label || "Imported KMZ").trim() || "Imported KMZ";
+  const pixelRatio = 2;
+  const fontSize = 42;
+  const horizontalPadding = 26;
+  const verticalPadding = 18;
+  const borderWidth = 6;
+
+  const measureCanvas = document.createElement("canvas");
+  const measureCtx = measureCanvas.getContext("2d");
+  measureCtx.font = `700 ${fontSize}px Arial, Helvetica, sans-serif`;
+
+  const measuredWidth = Math.min(measureCtx.measureText(safeLabel).width, 720);
+  const width = Math.ceil(measuredWidth + horizontalPadding * 2 + borderWidth * 2);
+  const height = Math.ceil(fontSize + verticalPadding * 2 + borderWidth * 2);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = PRINT_KMZ_CALLOUT_STYLE.boxBackground;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = PRINT_KMZ_CALLOUT_STYLE.boxBorder;
+  ctx.lineWidth = borderWidth;
+  ctx.strokeRect(
+    borderWidth / 2,
+    borderWidth / 2,
+    width - borderWidth,
+    height - borderWidth,
+  );
+
+  ctx.font = `700 ${fontSize}px Arial, Helvetica, sans-serif`;
+  ctx.fillStyle = PRINT_KMZ_CALLOUT_STYLE.textColor;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(
+    safeLabel,
+    width / 2,
+    height / 2 + 1,
+    width - horizontalPadding * 2 - borderWidth * 2,
+  );
+
+  return {
+    imageData: ctx.getImageData(0, 0, width, height),
+    pixelRatio,
+    displayWidth: width / pixelRatio,
+    displayHeight: height / pixelRatio,
+  };
+};
+
+/** Remove every temporary print-callout resource from the live map. */
+const removePrintKmzCallout = (map) => {
+  if (!map) return;
+
+  [
+    PRINT_KMZ_CALLOUT_IDS.label,
+    PRINT_KMZ_CALLOUT_IDS.anchor,
+    PRINT_KMZ_CALLOUT_IDS.leader,
+  ].forEach((layerId) => {
+    try {
+      if (map.getLayer(layerId)) map.removeLayer(layerId);
+    } catch {
+      // Map/style may be transitioning; print cleanup should never fail printing.
+    }
+  });
+
+  try {
+    if (map.getSource(PRINT_KMZ_CALLOUT_IDS.source)) {
+      map.removeSource(PRINT_KMZ_CALLOUT_IDS.source);
+    }
+  } catch {
+    // Ignore cleanup race with style changes.
+  }
+
+  try {
+    if (map.hasImage?.(PRINT_KMZ_CALLOUT_IDS.image)) {
+      map.removeImage(PRINT_KMZ_CALLOUT_IDS.image);
+    }
+  } catch {
+    // Ignore cleanup race with style changes.
+  }
+};
+
+/**
+ * Add one print-only KMZ callout to the current Mapbox view.
+ * The leader starts at the centre of the complete imported KMZ extent and the
+ * label box is displaced in screen space, matching the supplied reference.
+ */
+const addPrintKmzCallout = ({ map, importedGeoJSON, label }) => {
+  if (!map || !importedGeoJSON?.features?.length) return;
+
+  const bounds = bbox(importedGeoJSON);
+  if (!bounds.every((value) => Number.isFinite(value))) return;
+
+  removePrintKmzCallout(map);
+
+  const centerLngLat = [
+    (bounds[0] + bounds[2]) / 2,
+    (bounds[1] + bounds[3]) / 2,
+  ];
+
+  const labelImage = createKmzPrintCalloutImage(label);
+  map.addImage(PRINT_KMZ_CALLOUT_IDS.image, labelImage.imageData, {
+    pixelRatio: labelImage.pixelRatio,
+  });
+
+  const centerPixel = map.project(centerLngLat);
+  const container = map.getContainer?.();
+  const mapWidth = container?.clientWidth || map.getCanvas()?.clientWidth || 1000;
+  const mapHeight = container?.clientHeight || map.getCanvas()?.clientHeight || 700;
+
+  // Prefer an upper-left / upper-right box like a conventional cadastral
+  // callout. If the KMZ is already close to the top, move the box below it.
+  const placeRight = centerPixel.x < mapWidth * 0.56;
+  const placeBelow = centerPixel.y < Math.max(150, mapHeight * 0.25);
+  const horizontalGap = 78;
+  const verticalGap = 82;
+
+  let labelX = placeRight
+    ? centerPixel.x + labelImage.displayWidth / 2 + horizontalGap
+    : centerPixel.x - labelImage.displayWidth / 2 - horizontalGap;
+  let labelY = placeBelow
+    ? centerPixel.y + labelImage.displayHeight / 2 + verticalGap
+    : centerPixel.y - labelImage.displayHeight / 2 - verticalGap;
+
+  // Reserve space for the print title at the top and for the bottom layout
+  // boxes. This prevents the callout from being clipped or covered.
+  const sideMargin = 18;
+  const topMargin = 112;
+  const bottomMargin = 95;
+
+  labelX = clampNumber(
+    labelX,
+    sideMargin + labelImage.displayWidth / 2,
+    mapWidth - sideMargin - labelImage.displayWidth / 2,
+  );
+  labelY = clampNumber(
+    labelY,
+    topMargin + labelImage.displayHeight / 2,
+    mapHeight - bottomMargin - labelImage.displayHeight / 2,
+  );
+
+  const boxLeft = labelX - labelImage.displayWidth / 2;
+  const boxRight = labelX + labelImage.displayWidth / 2;
+  const boxTop = labelY - labelImage.displayHeight / 2;
+  const boxBottom = labelY + labelImage.displayHeight / 2;
+
+  // Connect the leader to the nearest point on the callout rectangle instead
+  // of drawing underneath the centre of the box.
+  const leaderEndPixel = {
+    x: clampNumber(centerPixel.x, boxLeft, boxRight),
+    y: clampNumber(centerPixel.y, boxTop, boxBottom),
+  };
+
+  const labelLngLat = map.unproject([labelX, labelY]);
+  const leaderEndLngLat = map.unproject([
+    leaderEndPixel.x,
+    leaderEndPixel.y,
+  ]);
+
+  map.addSource(PRINT_KMZ_CALLOUT_IDS.source, {
+    type: "geojson",
+    data: {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: { kind: "leader" },
+          geometry: {
+            type: "LineString",
+            coordinates: [centerLngLat, [leaderEndLngLat.lng, leaderEndLngLat.lat]],
+          },
+        },
+        {
+          type: "Feature",
+          properties: { kind: "anchor" },
+          geometry: { type: "Point", coordinates: centerLngLat },
+        },
+        {
+          type: "Feature",
+          properties: { kind: "label" },
+          geometry: {
+            type: "Point",
+            coordinates: [labelLngLat.lng, labelLngLat.lat],
+          },
+        },
+      ],
+    },
+  });
+
+  map.addLayer({
+    id: PRINT_KMZ_CALLOUT_IDS.leader,
+    type: "line",
+    source: PRINT_KMZ_CALLOUT_IDS.source,
+    filter: ["==", ["get", "kind"], "leader"],
+    layout: {
+      "line-cap": "round",
+      "line-join": "round",
+    },
+    paint: {
+      "line-color": PRINT_KMZ_CALLOUT_STYLE.lineColor,
+      "line-width": 4,
+    },
+  });
+
+  map.addLayer({
+    id: PRINT_KMZ_CALLOUT_IDS.anchor,
+    type: "circle",
+    source: PRINT_KMZ_CALLOUT_IDS.source,
+    filter: ["==", ["get", "kind"], "anchor"],
+    paint: {
+      "circle-radius": 5,
+      "circle-color": PRINT_KMZ_CALLOUT_STYLE.markerColor,
+      "circle-stroke-color": "#ffffff",
+      "circle-stroke-width": 1.5,
+    },
+  });
+
+  map.addLayer({
+    id: PRINT_KMZ_CALLOUT_IDS.label,
+    type: "symbol",
+    source: PRINT_KMZ_CALLOUT_IDS.source,
+    filter: ["==", ["get", "kind"], "label"],
+    layout: {
+      "icon-image": PRINT_KMZ_CALLOUT_IDS.image,
+      "icon-anchor": "center",
+      "icon-size": 1,
+      "icon-allow-overlap": true,
+      "icon-ignore-placement": true,
+    },
+  });
+};
+
+/**
+ * Build the PRINTED main-map image without adding any print annotation to the
+ * live Mapbox map. The live `/gis-metaverse` view therefore keeps only the
+ * normal vector-style text label, while this off-screen canvas receives the
+ * cream/red callout used by the approved print layout.
+ */
+const captureMapWithKmzPrintCallout = ({ map, importedGeoJSON, label }) => {
+  if (!map?.getCanvas || !importedGeoJSON?.features?.length) {
+    throw new Error("KMZ print callout cannot be generated without map data.");
+  }
+
+  const sourceCanvas = map.getCanvas();
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = sourceCanvas.width;
+  outputCanvas.height = sourceCanvas.height;
+
+  const ctx = outputCanvas.getContext("2d");
+  if (!ctx) throw new Error("Unable to create KMZ print canvas.");
+
+  // Copy the rendered WebGL map first. All annotation below is print-only.
+  ctx.drawImage(sourceCanvas, 0, 0, outputCanvas.width, outputCanvas.height);
+
+  const bounds = bbox(importedGeoJSON);
+  if (!bounds.every((value) => Number.isFinite(value))) {
+    return outputCanvas.toDataURL("image/png", 1);
+  }
+
+  const centerLngLat = [
+    (bounds[0] + bounds[2]) / 2,
+    (bounds[1] + bounds[3]) / 2,
+  ];
+  const projected = map.project(centerLngLat);
+
+  // map.project() returns CSS pixels, while the backing canvas may be scaled
+  // by devicePixelRatio. Convert into backing-canvas coordinates.
+  const cssWidth = sourceCanvas.clientWidth || map.getContainer?.()?.clientWidth || sourceCanvas.width;
+  const cssHeight = sourceCanvas.clientHeight || map.getContainer?.()?.clientHeight || sourceCanvas.height;
+  const scaleX = outputCanvas.width / Math.max(1, cssWidth);
+  const scaleY = outputCanvas.height / Math.max(1, cssHeight);
+  const scale = (scaleX + scaleY) / 2;
+
+  const anchorX = projected.x * scaleX;
+  const anchorY = projected.y * scaleY;
+  const safeLabel = String(label || "Imported KMZ").trim() || "Imported KMZ";
+
+  const fontSize = 22 * scale;
+  const padX = 12 * scale;
+  const padY = 8 * scale;
+  const borderWidth = 2.5 * scale;
+  const margin = 18 * scale;
+  const gapX = 38 * scale;
+  const gapY = 46 * scale;
+
+  ctx.save();
+  ctx.font = `700 ${fontSize}px Arial, Helvetica, sans-serif`;
+  ctx.textBaseline = "middle";
+
+  const maxTextWidth = Math.min(outputCanvas.width * 0.32, 430 * scale);
+  const measuredTextWidth = Math.min(ctx.measureText(safeLabel).width, maxTextWidth);
+  const boxWidth = measuredTextWidth + padX * 2;
+  const boxHeight = fontSize + padY * 2;
+
+  // Prefer an above/right cartographic callout like the supplied reference,
+  // but flip it when that would clip against the print-map edges.
+  const putRight = anchorX + gapX + boxWidth <= outputCanvas.width - margin;
+  const putAbove = anchorY - gapY - boxHeight >= margin;
+
+  let boxX = putRight ? anchorX + gapX : anchorX - gapX - boxWidth;
+  let boxY = putAbove ? anchorY - gapY - boxHeight : anchorY + gapY;
+
+  boxX = clampNumber(boxX, margin, outputCanvas.width - boxWidth - margin);
+  boxY = clampNumber(boxY, margin, outputCanvas.height - boxHeight - margin);
+
+  // Connect the leader to the nearest edge of the label rectangle.
+  const targetX = clampNumber(anchorX, boxX + padX, boxX + boxWidth - padX);
+  const targetY = anchorY < boxY
+    ? boxY
+    : anchorY > boxY + boxHeight
+      ? boxY + boxHeight
+      : clampNumber(anchorY, boxY + 4 * scale, boxY + boxHeight - 4 * scale);
+
+  // Two-segment/elbow leader line, matching the reference map style.
+  const elbowY = anchorY + (targetY - anchorY) * 0.58;
+  ctx.beginPath();
+  ctx.moveTo(anchorX, anchorY);
+  ctx.lineTo(anchorX, elbowY);
+  ctx.lineTo(targetX, targetY);
+  ctx.strokeStyle = PRINT_KMZ_CALLOUT_STYLE.lineColor;
+  ctx.lineWidth = 3 * scale;
+  ctx.lineJoin = "miter";
+  ctx.lineCap = "butt";
+  ctx.stroke();
+
+  // Cream label box with red border; no red point/anchor marker is drawn.
+  ctx.fillStyle = PRINT_KMZ_CALLOUT_STYLE.boxBackground;
+  ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+  ctx.strokeStyle = PRINT_KMZ_CALLOUT_STYLE.boxBorder;
+  ctx.lineWidth = borderWidth;
+  ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+  ctx.fillStyle = PRINT_KMZ_CALLOUT_STYLE.textColor;
+  ctx.fillText(
+    safeLabel,
+    boxX + padX,
+    boxY + boxHeight / 2,
+    measuredTextWidth,
+  );
+
+  ctx.restore();
+  return outputCanvas.toDataURL("image/png", 1);
+};
+
+const EARTH_RADIUS_METERS = 6378137;
+const A3_LANDSCAPE_CSS_WIDTH_PX = (420 / 25.4) * 96;
+
+const chooseNiceScaleDistance = (rawMeters) => {
+  const safe = Math.max(1, Number(rawMeters) || 1);
+  const exponent = 10 ** Math.floor(Math.log10(safe));
+  const normalized = safe / exponent;
+  const steps = [1, 1.5, 2, 2.5, 5, 7.5, 10];
+  const selected = [...steps].reverse().find((step) => step <= normalized) || 1;
+  return selected * exponent;
+};
+
+/**
+ * Compute a scale bar that stays geographically meaningful after the captured
+ * Mapbox canvas is stretched to an A3-landscape print sheet.
+ */
+const getPrintScaleBarInfo = (map) => {
+  if (!map) {
+    return { widthPx: 240, halfLabel: "75", totalLabel: "150", unit: "Meters" };
+  }
+
+  const latitude = map.getCenter().lat;
+  const zoom = map.getZoom();
+  const metersPerMapPixel =
+    (Math.cos((latitude * Math.PI) / 180) *
+      2 *
+      Math.PI *
+      EARTH_RADIUS_METERS) /
+    (512 * 2 ** zoom);
+
+  const mapCssWidth =
+    map.getContainer?.()?.clientWidth || map.getCanvas?.()?.clientWidth || 1000;
+  const printPixelsPerMapPixel = A3_LANDSCAPE_CSS_WIDTH_PX / mapCssWidth;
+
+  const targetPrintWidth = 265;
+  const rawMeters =
+    (targetPrintWidth / printPixelsPerMapPixel) * metersPerMapPixel;
+  const totalMeters = chooseNiceScaleDistance(rawMeters);
+  const widthPx = clampNumber(
+    (totalMeters / metersPerMapPixel) * printPixelsPerMapPixel,
+    150,
+    300,
+  );
+
+  const formatMeters = (meters) => {
+    if (meters >= 100) return String(Math.round(meters));
+    if (meters >= 10) return String(Math.round(meters * 10) / 10);
+    return String(Math.round(meters * 100) / 100);
+  };
+
+  return {
+    widthPx,
+    halfLabel: formatMeters(totalMeters / 2),
+    totalLabel: formatMeters(totalMeters),
+    unit: "Meters",
+  };
+};
+
 const buildLegendRows = (uploadedTitle) => [
   {
     id: "ruda-jurisdiction",
@@ -901,7 +1332,7 @@ const makePrintableHtml = ({
   insetImage,
   legendRows,
   logoUrl,
-  scaleText,
+  scaleBarInfo,
 }) => {
   const legendHtml = legendRows
     .map(
@@ -914,6 +1345,13 @@ const makePrintableHtml = ({
     .join("");
 
   const landUseLegendHtml = ""; // Legend is now rendered directly into the inset PNG.
+  const resolvedScaleBar = scaleBarInfo || {
+    widthPx: 240,
+    halfLabel: "75",
+    totalLabel: "150",
+    unit: "Meters",
+  };
+  const scaleBarWidth = Math.max(150, Math.min(300, Number(resolvedScaleBar.widthPx) || 240));
 
   return `<!doctype html>
 <html>
@@ -1040,34 +1478,63 @@ const makePrintableHtml = ({
       border: 3px solid #d100b8;
       box-shadow: inset 0 0 0 1px #ffffff;
     }
-    .scale {
+    .scale-wrap {
       position: absolute;
       left: 50%;
       bottom: 18px;
       transform: translateX(-50%);
-      background: rgba(255,255,255,.94);
-      border: 1px solid #334155;
-      padding: 7px 12px;
-      font-size: 12px;
-      font-weight: 700;
+      background: rgba(255,255,255,.98);
+      border: 1px solid #111827;
+      padding: 2px 5px 4px;
+      box-shadow: 0 2px 7px rgba(0,0,0,.15);
+    }
+    .scale-labels {
+      position: relative;
+      width: ${scaleBarWidth.toFixed(1)}px;
+      height: 14px;
+      color: #111111;
+      font-size: 9px;
+      line-height: 12px;
+      font-weight: 600;
+    }
+    .scale-label {
+      position: absolute;
+      top: 0;
+      white-space: nowrap;
+    }
+    .scale-label.start { left: 0; }
+    .scale-label.mid { left: 50%; transform: translateX(-50%); }
+    .scale-label.end { right: 0; }
+    .scale-bar-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
     }
     .scale-bar {
       display: flex;
-      width: 260px;
-      height: 11px;
-      margin-top: 5px;
-      border: 1px solid #111827;
-      background: #ffffff;
+      width: ${scaleBarWidth.toFixed(1)}px;
+      height: 13px;
+      border: 1px solid #111111;
       overflow: hidden;
+      background: #ffffff;
     }
     .scale-segment {
-      flex: 1 1 10%;
+      flex: 1 1 25%;
       height: 100%;
-      border-right: 1px solid #111827;
+      border-right: 1px solid #111111;
     }
     .scale-segment:last-child { border-right: none; }
     .scale-segment.white { background: #ffffff; }
     .scale-segment.black { background: #111111; }
+    .scale-unit {
+      margin-left: 0;
+      padding-bottom: 0;
+      font-size: 9px;
+      line-height: 12px;
+      font-weight: 600;
+      color: #111111;
+      white-space: nowrap;
+    }
     .credit {
       width: 100%;
       padding: 5px 6px;
@@ -1127,19 +1594,20 @@ const makePrintableHtml = ({
       ${legendHtml || '<div class="legend-row">Visible map layers</div>'}
     </div>
 
-    <div class="scale">
-      ${escapeHtml(scaleText)}
-      <div class="scale-bar" aria-label="Map scale bar">
-        <span class="scale-segment white"></span>
-        <span class="scale-segment black"></span>
-        <span class="scale-segment white"></span>
-        <span class="scale-segment black"></span>
-        <span class="scale-segment white"></span>
-        <span class="scale-segment black"></span>
-        <span class="scale-segment white"></span>
-        <span class="scale-segment black"></span>
-        <span class="scale-segment white"></span>
-        <span class="scale-segment black"></span>
+    <div class="scale-wrap" aria-label="Map scale bar">
+      <div class="scale-labels">
+        <span class="scale-label start">0</span>
+        <span class="scale-label mid">${escapeHtml(resolvedScaleBar.halfLabel)}</span>
+        <span class="scale-label end">${escapeHtml(resolvedScaleBar.totalLabel)}</span>
+      </div>
+      <div class="scale-bar-row">
+        <div class="scale-bar">
+          <span class="scale-segment black"></span>
+          <span class="scale-segment white"></span>
+          <span class="scale-segment black"></span>
+          <span class="scale-segment white"></span>
+        </div>
+        <span class="scale-unit">${escapeHtml(resolvedScaleBar.unit || "Meters")}</span>
       </div>
     </div>
   </div>
@@ -1211,6 +1679,21 @@ export default function Import({ map, onClose }) {
   });
   const fileInputRef = useRef(null);
 
+  // Print annotations are never part of the live GIS Metaverse presentation.
+  // Remove any stale resources left by an older build/style before rendering.
+  useEffect(() => {
+    if (!map) return undefined;
+
+    const cleanupPrintAnnotation = () => removePrintKmzCallout(map);
+    cleanupPrintAnnotation();
+    map.on?.("style.load", cleanupPrintAnnotation);
+
+    return () => {
+      map.off?.("style.load", cleanupPrintAnnotation);
+      cleanupPrintAnnotation();
+    };
+  }, [map]);
+
   // ── clear imported data ──────────────────────────────────────────────────────
   const clearImportedData = () => {
     removeImportedLayers(map);
@@ -1223,7 +1706,10 @@ export default function Import({ map, onClose }) {
   };
 
   // ── add layers to map ────────────────────────────────────────────────────────
-  const addLayers = (geojson) => {
+  const addLayers = (geojson, fileType = null) => {
+    // The live GIS Metaverse page must never keep the print-only annotation.
+    // Clear any stale print callout before adding/replacing imported data.
+    removePrintKmzCallout(map);
     removeImportedLayers(map);
 
     map.addSource(SOURCE_ID, {
@@ -1293,19 +1779,23 @@ export default function Import({ map, onClose }) {
       filter: ["==", "$type", "LineString"],
     });
 
-    // Point layer
-    map.addLayer({
-      id: LAYER_IDS.point,
-      type: "circle",
-      source: SOURCE_ID,
-      paint: {
-        "circle-radius": 6,
-        "circle-color": "#f87171",
-        "circle-stroke-color": "#ffffff",
-        "circle-stroke-width": 1.5,
-      },
-      filter: ["==", "$type", "Point"],
-    });
+    // Point layer is useful for generic GeoJSON/KML/Shapefile imports, but
+    // KMZ files often contain helper/vertex placemarks. Do not render those
+    // as red dots on the live GIS Metaverse page.
+    if (fileType !== "kmz") {
+      map.addLayer({
+        id: LAYER_IDS.point,
+        type: "circle",
+        source: SOURCE_ID,
+        paint: {
+          "circle-radius": 6,
+          "circle-color": "#f87171",
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1.5,
+        },
+        filter: ["==", "$type", "Point"],
+      });
+    }
 
     // Fit map bounds
     try {
@@ -1510,7 +2000,7 @@ export default function Import({ map, onClose }) {
       const importTitle = getImportedTitle(file.name);
       const preparedGeoJSON = prepareImportedFeatures(geojson, importTitle);
 
-      addLayers(preparedGeoJSON);
+      addLayers(preparedGeoJSON, type);
       setImportedGeoJSON(preparedGeoJSON);
       setImportedFileType(type);
 
@@ -1566,6 +2056,10 @@ export default function Import({ map, onClose }) {
       pitch: map.getPitch(),
     };
 
+    const originalImportedLabelVisibility = map.getLayer(LAYER_IDS.label)
+      ? map.getLayoutProperty(LAYER_IDS.label, "visibility") || "visible"
+      : null;
+
     try {
       // Keep the current-view capture only as a safe fallback. The preferred
       // lower-left inset is generated from the RUDA Principle Land Use Zoning
@@ -1579,6 +2073,13 @@ export default function Import({ map, onClose }) {
         importedGeoJSON,
         summary?.title || "Imported KMZ",
       );
+
+      // The normal map label layer repeats the KMZ name once per polygon.
+      // Hide it only while preparing the print capture; one reference-style
+      // leader/callout is added later at the centre of the complete KMZ.
+      if (map.getLayer(LAYER_IDS.label)) {
+        map.setLayoutProperty(LAYER_IDS.label, "visibility", "none");
+      }
 
       let zoningInsetImage = fallbackOverviewImage;
       try {
@@ -1639,8 +2140,15 @@ export default function Import({ map, onClose }) {
 
       await waitForMapRender(map);
 
-      const canvas = map.getCanvas();
-      const mapImage = canvas.toDataURL("image/png", 1);
+      // IMPORTANT: do not add the print callout to the live Mapbox map.
+      // Capture the current map and draw the reference-style KMZ callout only
+      // on an off-screen canvas used by the printable output. This guarantees
+      // `/gis-metaverse` always keeps its normal vector-style text labeling.
+      const mapImage = captureMapWithKmzPrintCallout({
+        map,
+        importedGeoJSON,
+        label: importedKmzLabel,
+      });
 
       if (!mapImage || mapImage === "data:," || mapImage.length < 1000) {
         throw new Error(
@@ -1654,8 +2162,9 @@ export default function Import({ map, onClose }) {
       // The page title is independent from the KMZ legend label.
       // Legend uses the actual imported KMZ/map label (e.g. "GCB Survey Plan").
       const legendRows = buildLegendRows(importedKmzLabel);
-      const center = map.getCenter();
-      const scaleText = `Map center: ${center.lat.toFixed(5)}, ${center.lng.toFixed(5)} · Zoom ${map.getZoom().toFixed(1)}`;
+      // Reference-style scale bar only. Latitude / longitude / zoom metadata
+      // are intentionally omitted from the printed layout.
+      const scaleBarInfo = getPrintScaleBarInfo(map);
 
       printWindow.document.open();
       printWindow.document.write(
@@ -1665,7 +2174,7 @@ export default function Import({ map, onClose }) {
           insetImage: zoningInsetImage || fallbackOverviewImage || mapImage,
           legendRows,
           logoUrl: RudaLogo,
-          scaleText,
+          scaleBarInfo,
         }),
       );
       printWindow.document.close();
@@ -1676,6 +2185,19 @@ export default function Import({ map, onClose }) {
         printError?.message || "The map could not be prepared for printing.",
       );
     } finally {
+      removePrintKmzCallout(map);
+
+      if (
+        originalImportedLabelVisibility !== null &&
+        map.getLayer(LAYER_IDS.label)
+      ) {
+        map.setLayoutProperty(
+          LAYER_IDS.label,
+          "visibility",
+          originalImportedLabelVisibility,
+        );
+      }
+
       map.easeTo({
         ...previousCamera,
         duration: 500,
