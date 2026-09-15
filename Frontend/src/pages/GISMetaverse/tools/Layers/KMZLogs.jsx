@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   ChevronLeft,
@@ -14,129 +14,64 @@ import {
   Upload,
 } from "lucide-react";
 import Header from "../../Header";
-const MOCK_LOGS = [
-  {
-    id: 1,
-    reference: "KMZ-2026-0012",
-    fileName: "parcel_2225.kmz",
-    fileSize: "2.4 MB",
-    project: "Master Plan",
-    projectType: "Planning",
-    phase: "Phase - 3",
-    uploadedOn: "15 Sep 2026",
-    uploadedTime: "11:24 AM",
-    printedOn: "15 Sep 2026",
-    printedTime: "11:27 AM",
-    printedBy: "Hayat",
-    preview: "parcel",
-  },
-  {
-    id: 2,
-    reference: "KMZ-2026-0011",
-    fileName: "sector_boundary.kmz",
-    fileSize: "1.8 MB",
-    project: "Ravi Urban Zone",
-    projectType: "Development",
-    phase: "Phase - 2A",
-    uploadedOn: "14 Sep 2026",
-    uploadedTime: "04:12 PM",
-    printedOn: "14 Sep 2026",
-    printedTime: "04:15 PM",
-    printedBy: "Admin",
-    preview: "zoning",
-  },
-  {
-    id: 3,
-    reference: "KMZ-2026-0010",
-    fileName: "acquisition_area.kmz",
-    fileSize: "3.1 MB",
-    project: "CBD District",
-    projectType: "Acquisition",
-    phase: "Phase - 1",
-    uploadedOn: "13 Sep 2026",
-    uploadedTime: "10:05 AM",
-    printedOn: "13 Sep 2026",
-    printedTime: "10:20 AM",
-    printedBy: "Ali Khan",
-    preview: "boundary",
-  },
-  {
-    id: 4,
-    reference: "KMZ-2026-0009",
-    fileName: "utilities.kmz",
-    fileSize: "1.2 MB",
-    project: "Infrastructure",
-    projectType: "Utilities",
-    phase: "Phase - 3",
-    uploadedOn: "12 Sep 2026",
-    uploadedTime: "02:33 PM",
-    printedOn: "12 Sep 2026",
-    printedTime: "02:40 PM",
-    printedBy: "Sara",
-    preview: "roads",
-  },
-  {
-    id: 5,
-    reference: "KMZ-2026-0008",
-    fileName: "development_zone.kmz",
-    fileSize: "2.6 MB",
-    project: "Sapphire Bay",
-    projectType: "Development",
-    phase: "Phase - 2B",
-    uploadedOn: "11 Sep 2026",
-    uploadedTime: "09:18 AM",
-    printedOn: "11 Sep 2026",
-    printedTime: "09:25 AM",
-    printedBy: "Usman",
-    preview: "zoning",
-  },
-  {
-    id: 6,
-    reference: "KMZ-2026-0007",
-    fileName: "commercial_blocks.kmz",
-    fileSize: "1.5 MB",
-    project: "Chahar Bagh",
-    projectType: "Commercial",
-    phase: "Phase - 2A",
-    uploadedOn: "10 Sep 2026",
-    uploadedTime: "01:10 PM",
-    printedOn: "10 Sep 2026",
-    printedTime: "01:18 PM",
-    printedBy: "Admin",
-    preview: "parcel",
-  },
-  {
-    id: 7,
-    reference: "KMZ-2026-0006",
-    fileName: "road_alignment.kmz",
-    fileSize: "0.9 MB",
-    project: "Infrastructure",
-    projectType: "Roads",
-    phase: "Phase - 3",
-    uploadedOn: "09 Sep 2026",
-    uploadedTime: "03:41 PM",
-    printedOn: "09 Sep 2026",
-    printedTime: "03:49 PM",
-    printedBy: "Hayat",
-    preview: "roads",
-  },
-];
+import { getKmzPrintLogs } from "../../../../services/metaverseApi";
 
-const PHASES = ["All Phases", ...new Set(MOCK_LOGS.map((item) => item.phase))];
-const PROJECT_TYPES = [
-  "All Project Types",
-  ...new Set(MOCK_LOGS.map((item) => item.projectType)),
-];
-const PROJECTS = [
-  "All Projects",
-  ...new Set(MOCK_LOGS.map((item) => item.project)),
-];
-const USERS = [
-  "All Users",
-  ...new Set(MOCK_LOGS.map((item) => item.printedBy)),
-];
+const formatFileSize = (bytes) => {
+  if (!bytes) return "0 B";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+};
+
+const formatDateTime = (value) => {
+  if (!value) return { date: "-", time: "-" };
+  const date = new Date(value);
+  return {
+    date: date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+    time: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  };
+};
+
+const normalizeLog = (item) => {
+  const imported = formatDateTime(item.imported_at);
+  const printed = formatDateTime(item.printed_at);
+  return {
+    ...item,
+    fileName: item.file_name,
+    fileSize: formatFileSize(item.file_size),
+    project: item.project || "-",
+    projectType: item.project_type || "-",
+    phase: item.phase || "-",
+    uploadedOn: imported.date,
+    uploadedTime: imported.time,
+    printedOn: printed.date,
+    printedTime: printed.time,
+    printedBy: item.printed_by || "-",
+    preview: "parcel",
+  };
+};
+
+const openStoredFile = (url) => {
+  if (url) window.open(url, "_blank", "noopener,noreferrer");
+};
+
+const openLogInMap = (item) => {
+  if (!item.file_url) return;
+
+  sessionStorage.setItem(
+    "ruda:open-kmz-in-map",
+    JSON.stringify({ url: item.file_url, fileName: item.fileName }),
+  );
+  window.location.assign("/gis-metaverse");
+};
 
 export default function KMZLogs() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [phase, setPhase] = useState("All Phases");
   const [projectType, setProjectType] = useState("All Project Types");
@@ -146,10 +81,44 @@ export default function KMZLogs() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
+  useEffect(() => {
+    let mounted = true;
+    getKmzPrintLogs()
+      .then((data) => {
+        if (mounted) setLogs((Array.isArray(data) ? data : []).map(normalizeLog));
+      })
+      .catch(() => {
+        if (mounted) setError("KMZ print logs could not be loaded.");
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const phases = useMemo(
+    () => ["All Phases", ...new Set(logs.map((item) => item.phase))],
+    [logs],
+  );
+  const projectTypes = useMemo(
+    () => ["All Project Types", ...new Set(logs.map((item) => item.projectType))],
+    [logs],
+  );
+  const projects = useMemo(
+    () => ["All Projects", ...new Set(logs.map((item) => item.project))],
+    [logs],
+  );
+  const users = useMemo(
+    () => ["All Users", ...new Set(logs.map((item) => item.printedBy))],
+    [logs],
+  );
+
   const filteredLogs = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return MOCK_LOGS.filter((item) => {
+    return logs.filter((item) => {
       const matchesQuery =
         !normalizedQuery ||
         item.fileName.toLowerCase().includes(normalizedQuery) ||
@@ -165,7 +134,7 @@ export default function KMZLogs() {
         (printedBy === "All Users" || item.printedBy === printedBy)
       );
     });
-  }, [query, phase, projectType, project, printedBy, dateRange]);
+  }, [logs, query, phase, projectType, project, printedBy, dateRange]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -238,25 +207,25 @@ export default function KMZLogs() {
                 label="Phase"
                 value={phase}
                 onChange={handleFilterChange(setPhase)}
-                options={PHASES}
+                options={phases}
               />
               <FilterSelect
                 label="Project Type"
                 value={projectType}
                 onChange={handleFilterChange(setProjectType)}
-                options={PROJECT_TYPES}
+                options={projectTypes}
               />
               <FilterSelect
                 label="Project"
                 value={project}
                 onChange={handleFilterChange(setProject)}
-                options={PROJECTS}
+                options={projects}
               />
               <FilterSelect
                 label="Printed By"
                 value={printedBy}
                 onChange={handleFilterChange(setPrintedBy)}
-                options={USERS}
+                options={users}
               />
 
               <label className="relative flex h-11 items-center rounded-lg border border-slate-200 bg-white px-3">
@@ -325,7 +294,21 @@ export default function KMZLogs() {
                 </thead>
 
                 <tbody>
-                  {visibleLogs.map((item, index) => (
+                  {loading && (
+                    <tr>
+                      <td colSpan={10} className="px-6 py-16 text-center text-sm text-slate-500">
+                        Loading KMZ print logs...
+                      </td>
+                    </tr>
+                  )}
+                  {!loading && error && (
+                    <tr>
+                      <td colSpan={10} className="px-6 py-16 text-center text-sm text-red-600">
+                        {error}
+                      </td>
+                    </tr>
+                  )}
+                  {!loading && !error && visibleLogs.map((item, index) => (
                     <tr
                       key={item.id}
                       className="border-t border-slate-100 hover:bg-slate-50/60"
@@ -372,22 +355,26 @@ export default function KMZLogs() {
                       </Td>
                       <Td>
                         <div className="flex min-w-max items-center gap-2">
-                          <ActionButton icon={<Eye size={15} />} label="View" />
+                          <ActionButton
+                            icon={<Eye size={15} />}
+                            label="View"
+                            onClick={() => openStoredFile(item.report_url)}
+                          />
                           <ActionButton
                             icon={<Download size={15} />}
                             label="KMZ"
+                            onClick={() => openStoredFile(item.file_url)}
                           />
                           <ActionButton
                             icon={<FileDown size={15} />}
                             label="PDF"
+                            onClick={() => openStoredFile(item.report_url)}
                           />
                           <ActionButton
                             icon={<MapPinned size={15} />}
                             label="Open in Map"
                             accent
-                            onClick={() =>
-                              window.location.assign("/gis-metaverse")
-                            }
+                            onClick={() => openLogInMap(item)}
                           />
                         </div>
                       </Td>

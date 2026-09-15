@@ -4,6 +4,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+import re
 
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -2652,3 +2653,48 @@ class SWLine(models.Model):
     class Meta:
         managed = False
         db_table = "sw_line"
+
+
+# =========================
+# KMZ Print Log
+# =========================
+def kmz_print_upload_path(instance, filename):
+    return f"KMZ/{instance.folder_name}/{filename}"
+
+
+class KmzPrintLog(models.Model):
+    reference = models.CharField(max_length=32, unique=True, blank=True)
+    folder_name = models.CharField(max_length=64, blank=True, editable=False)
+    file = models.FileField(upload_to=kmz_print_upload_path, null=True, blank=True)
+    report_file = models.FileField(
+        upload_to=kmz_print_upload_path,
+        null=True,
+        blank=True,
+    )
+    file_name = models.CharField(max_length=255)
+    file_size = models.PositiveBigIntegerField(default=0)
+    project = models.CharField(max_length=255, blank=True, default="")
+    project_type = models.CharField(max_length=255, blank=True, default="")
+    phase = models.CharField(max_length=255, blank=True, default="")
+    feature_count = models.PositiveIntegerField(default=0)
+    geometry_types = models.JSONField(default=list, blank=True)
+    imported_at = models.DateTimeField(default=timezone.now)
+    printed_at = models.DateTimeField(default=timezone.now)
+    printed_by = models.CharField(max_length=255, blank=True, default="")
+    print_title = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        ordering = ("-printed_at",)
+        db_table = "kmz_print_log"
+
+    def save(self, *args, **kwargs):
+        if not self.reference:
+            self.reference = f"KMZ-{timezone.now():%Y%m%d%H%M%S%f}"
+        if not self.folder_name:
+            report_name = re.sub(
+                r"[^A-Za-z0-9]+",
+                "_",
+                self.print_title or self.file_name or "KMZ_Report",
+            ).strip("_")[:32] or "KMZ_Report"
+            self.folder_name = f"{report_name}_{timezone.now():%Y%m%d_%H%M%S_%f}"
+        super().save(*args, **kwargs)

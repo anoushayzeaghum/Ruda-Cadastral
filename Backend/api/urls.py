@@ -20,6 +20,8 @@ from api.views.RudaMasterPlan.RudaNotifiedPhasesBoundary import (
 
 router = DefaultRouter()
 
+router.register(r"kmz-print-logs", KmzPrintLogViewSet, basename="kmz-print-log")
+
 #--------------------------------- User View ---------------------------------
 router.register(r'create-user', UserCreateView, basename='create-user')
 router.register(r'login-user', UserLoginDashboardCreateView, basename='login-user')
