@@ -58,6 +58,25 @@ const drawCircularLogo = (doc, image, cx, cy, size) => {
   );
 };
 
+const drawContainedLogo = (doc, image, cx, cy, boxWidth, boxHeight) => {
+  if (!image) return;
+  const iw = image.naturalWidth || image.width || boxWidth;
+  const ih = image.naturalHeight || image.height || boxHeight;
+  const scale = Math.min(boxWidth / iw, boxHeight / ih);
+  const drawWidth = iw * scale;
+  const drawHeight = ih * scale;
+  doc.addImage(
+    image,
+    "PNG",
+    cx - drawWidth / 2,
+    cy - drawHeight / 2,
+    drawWidth,
+    drawHeight,
+    undefined,
+    "FAST",
+  );
+};
+
 const drawFittedText = (
   doc,
   text,
@@ -849,13 +868,14 @@ const drawPhotoBox = (
   doc.line(x + width / 2, y, x + width / 2, y + headerHeight);
   doc.line(x, imageTop, x + width, imageTop);
 
-  doc.setFillColor(238, 242, 247);
+  doc.setFillColor(...THEME);
   doc.rect(x, y, width, headerHeight, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.1);
-  doc.setTextColor(...THEME);
+  doc.setTextColor(255, 255, 255);
   doc.text(leftTitle, x + width / 4, y + 4.1, { align: "center" });
   doc.text(rightTitle, x + (width * 3) / 4, y + 4.1, { align: "center" });
+  doc.setTextColor(...TEXT);
 
   if (image) {
     doc.addImage(
@@ -999,19 +1019,8 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     doc.setFontSize(7.2);
     doc.setTextColor(...MUTED);
     doc.text("ORIGINAL COPY", pageWidth / 2, 5.1, { align: "center" });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.6);
-    doc.text(
-      `Serial No: ${valueOrDash(transferData.letterNo)}`,
-      rightEdge,
-      5.2,
-      {
-        align: "right",
-      },
-    );
-
     const logoY = 17.3;
-    drawCircularLogo(doc, gopLogo, margin + 11.5, logoY, 22.5);
+    drawContainedLogo(doc, gopLogo, margin + 11.5, logoY, 24.5, 22.5);
     drawCircularLogo(doc, rudaLogo, rightEdge - 11, logoY, 21.5);
 
     doc.setFont("helvetica", "bold");
@@ -1065,10 +1074,21 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
         fontSize: 7.4,
       },
     );
-    drawKeyValue(doc, "DATE:", dateText, 156, metaY, rightEdge - 156, {
-      labelWidth: 12,
-      fontSize: 7.4,
-    });
+    const dateValueWidth = 28;
+    const dateLabelWidth = 12;
+    const dateX = rightEdge - dateLabelWidth - dateValueWidth + 14;
+    drawKeyValue(
+      doc,
+      "DATE:",
+      dateText,
+      dateX,
+      metaY,
+      dateLabelWidth + dateValueWidth,
+      {
+        labelWidth: dateLabelWidth,
+        fontSize: 7.4,
+      },
+    );
 
     const detailsHeaderY = 37.4;
     const detailsHeaderH = 6.5;
@@ -1270,13 +1290,13 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     );
 
     const partyInfoY = thumbY + 20.5;
-    const partyWidth = (contentWidth - 6) / 2;
+    const partyWidth = photoWidth;
     const partyCardHeight = 25;
     doc.setDrawColor(187, 195, 205);
     doc.setLineWidth(0.25);
     doc.rect(margin, partyInfoY - 3.8, partyWidth, partyCardHeight);
     doc.rect(
-      margin + partyWidth + 6,
+      margin + partyWidth + photoGap,
       partyInfoY - 3.8,
       partyWidth,
       partyCardHeight,
@@ -1297,7 +1317,7 @@ export const printTransferLetter = async ({ parcel, filters = {} }) => {
     );
     drawPartyInfo(
       doc,
-      margin + partyWidth + 6,
+      margin + partyWidth + photoGap,
       partyInfoY,
       partyWidth,
       {
