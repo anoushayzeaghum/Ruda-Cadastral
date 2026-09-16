@@ -1,13 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  FileUp,
-  Grid2X2,
-  RefreshCcw,
-  Search,
-} from "lucide-react";
+import { ArrowLeft, FileUp, Grid2X2, RefreshCcw, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getKhasras } from "../../../services/api";
+import { getRudaKhasras } from "../../../services/api";
 import ImportModal from "../../../components/ImportModal";
 
 const asFeatureRows = (data) => {
@@ -38,6 +32,14 @@ const firstDisplayValue = (...values) => {
   return value ?? "-";
 };
 
+const getMauzaLabel = (item) =>
+  firstDisplayValue(
+    item?.mauza_text,
+    item?.mauza_name,
+    item?.mauza,
+    item?.mauza_id,
+  );
+
 // Follow the actual Khasra model: join_shp is also the first value used by __str__.
 const getKhasraLabel = (item) =>
   firstDisplayValue(item?.join_shp, item?.sk, item?.kh, item?.khasra_id);
@@ -51,21 +53,33 @@ const getKhasraTypeLabel = (item) => {
   if (normalizedType === "SQ" || normalizedType === "SQUARE") return "Square";
 
   // Some Square rows have no type text but do have the backend `sq` value.
-  if (!rawType && item?.sq !== null && item?.sq !== undefined && item?.sq !== "") {
+  if (
+    !rawType &&
+    item?.sq !== null &&
+    item?.sq !== undefined &&
+    item?.sq !== ""
+  ) {
     return "Square";
   }
 
   return rawType || "-";
 };
 
-const getMauzaLabel = (item) =>
-  firstDisplayValue(item?.mauza_name, item?.mauza, item?.mauza_id);
-
 const getTehsilLabel = (item) =>
-  firstDisplayValue(item?.tehsil_name, item?.tehsil, item?.tehsil_id);
+  firstDisplayValue(
+    item?.tehsil_text,
+    item?.tehsil_name,
+    item?.tehsil,
+    item?.tehsil_id,
+  );
 
 const getDistrictLabel = (item) =>
-  firstDisplayValue(item?.district_name, item?.district, item?.dist_id);
+  firstDisplayValue(
+    item?.district_text,
+    item?.district_name,
+    item?.district,
+    item?.dist_id,
+  );
 
 const formatKaram = (value) => {
   if (value === null || value === undefined || value === "") return "-";
@@ -88,7 +102,7 @@ export default function Khasra() {
     try {
       setLoading(true);
 
-      const res = await getKhasras();
+      const res = await getRudaKhasras();
       const rows = asFeatureRows(res).map(featureToProperties);
 
       setItems(rows);
@@ -260,7 +274,6 @@ export default function Khasra() {
                     <th className="px-4 py-3 whitespace-nowrap">Mauza</th>
                     <th className="px-4 py-3 whitespace-nowrap">Type</th>
                     <th className="px-4 py-3 whitespace-nowrap">Khasra</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Karam</th>
                     <th className="px-4 py-3 whitespace-nowrap">Tehsil</th>
                     <th className="px-4 py-3 whitespace-nowrap">District</th>
                     <th className="px-4 py-3 text-right whitespace-nowrap">
@@ -286,9 +299,7 @@ export default function Khasra() {
                       <td className="px-4 py-3 font-bold text-slate-700 dark:text-white whitespace-nowrap">
                         {getKhasraLabel(d)}
                       </td>
-                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
-                        {formatKaram(d.karam)}
-                      </td>
+                     
                       <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
                         {getTehsilLabel(d)}
                       </td>
@@ -311,8 +322,8 @@ export default function Khasra() {
               <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-white/5">
                 <p className="text-[10px] text-slate-400">
                   Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
-                  {Math.min(currentPage * itemsPerPage, filteredItems.length)} of{" "}
-                  {filteredItems.length}
+                  {Math.min(currentPage * itemsPerPage, filteredItems.length)}{" "}
+                  of {filteredItems.length}
                 </p>
 
                 <div className="flex items-center gap-2">
