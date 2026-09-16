@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getMurabbas, getMauzas } from "../../services/api";
-import ImportModal from "../../components/ImportModal";
+import { getMurabbas, getMauzas } from "../../../services/api";
+import ImportModal from "../../../components/ImportModal";
 
 export default function Murabba() {
   const [items, setItems] = useState([]);

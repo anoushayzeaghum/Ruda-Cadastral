@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getSquares } from "../../services/api";
-import ImportModal from "../../components/ImportModal";
+import { getSquares } from "../../../services/api";
+import ImportModal from "../../../components/ImportModal";
 
 const featureRows = (data) => {
   if (Array.isArray(data)) return data;

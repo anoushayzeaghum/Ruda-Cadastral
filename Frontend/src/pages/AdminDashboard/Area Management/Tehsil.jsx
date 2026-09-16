@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getTehsils, getDistricts } from "../../services/api";
-import ImportModal from "../../components/ImportModal";
+import { getTehsils, getDistricts } from "../../../services/api";
+import ImportModal from "../../../components/ImportModal";
 
 export default function Tehsil() {
   const [items, setItems] = useState([]);

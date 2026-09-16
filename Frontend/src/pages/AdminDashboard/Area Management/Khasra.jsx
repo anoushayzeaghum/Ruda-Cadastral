@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getKhasras } from "../../services/api";
-import ImportModal from "../../components/ImportModal";
+import { getKhasras } from "../../../services/api";
+import ImportModal from "../../../components/ImportModal";
 
 const asFeatureRows = (data) => {
   if (Array.isArray(data)) return data;
