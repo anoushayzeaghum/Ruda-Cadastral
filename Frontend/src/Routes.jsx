@@ -14,7 +14,7 @@ import SocietyMapPage from "./pages/SocietyMapDashboard/SocietyMapPage";
 import Society3DMapPage from "./pages/3DMapview/Society3DMapPage";
 import Society3DMapUploadPage from "./pages/Cesium3DModelUpload/Society3DMapPage";
 import MetaverseDashboard from "./pages/GISMetaverse/MetaverseDashboard";
-import KMZLogs from "./pages/GISMetaverse/tools/Layers/KMZLogs";
+import MetaverseKMZLogs from "./pages/GISMetaverse/tools/Layers/KMZLogs";
 import FlyToDashboard from "./pages/FlyToDedicated/FlyToDashboard";
 import MasterPlanDashboard from "./pages/MasterPlan/MasterPlanDashboard";
 import VirtualTourPage from "./pages/VirtualTour/VirtualTourPage";
@@ -36,6 +36,7 @@ import PlotDetails from "./pages/AdminDashboard/Admin/PlotDetails";
 import TransferPlotData from "./pages/AdminDashboard/Admin/TransferPlotData";
 import Transfers from "./pages/AdminDashboard/Admin/Transfers";
 import SimpleAdminPage from "./pages/AdminDashboard/Admin/SimpleAdminPage";
+import AdminKMZLogs from "./pages/AdminDashboard/Admin/KMZMapLogs";
 
 // ============================================================
 // AREA / SHAPEFILE MODULES
@@ -119,6 +120,7 @@ const AppRoutes = () => {
               />
             }
           />
+          <Route path="/kmz-logs" element={<AdminKMZLogs />} />
 
           {/* ====================================================
               EXISTING APPLICATION ROUTES
@@ -129,7 +131,10 @@ const AppRoutes = () => {
           <Route path="/society-map" element={<SocietyMapPage />} />
           <Route path="/society-3d" element={<Society3DMapPage />} />
           <Route path="/gis-metaverse" element={<MetaverseDashboard />} />
-          <Route path="/gis-metaverse/kmz-logs" element={<KMZLogs />} />
+          <Route
+            path="/gis-metaverse/kmz-logs"
+            element={<MetaverseKMZLogs />}
+          />
           <Route path="/virtual-tour" element={<VirtualTourPage />} />
           <Route path="/flyto-dashboard" element={<FlyToDashboard />} />
           <Route path="/masterplan" element={<MasterPlanDashboard />} />
