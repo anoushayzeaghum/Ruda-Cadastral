@@ -9,6 +9,7 @@ import {
   Settings,
   SlidersHorizontal,
   Users,
+  Map,
   Workflow,
 } from "lucide-react";
 
@@ -17,7 +18,7 @@ const groups = [
   {
     label: "Data Management",
     icon: Database,
-    path: "/data-management",
+    path: "/data-management/import",
     match: ["/data-management", "/area/"],
     children: [
       { label: "Shapefile Import", path: "/data-management/import" },
@@ -35,8 +36,8 @@ const groups = [
     ],
   },
   { label: "Transfers", icon: Workflow, path: "/transfers" },
+  { label: "KMZ Map Logs", icon: Map, path: "/kmz-map-logs" },
   { label: "Reports", icon: BarChart3, path: "/reports" },
-  { label: "Users", icon: Users, path: "/users" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 

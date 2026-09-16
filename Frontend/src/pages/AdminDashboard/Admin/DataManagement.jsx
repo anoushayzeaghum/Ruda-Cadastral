@@ -169,81 +169,40 @@ export default function DataManagement({ importOnly = false }) {
                   className="group rounded-2xl border border-slate-200 p-4 text-left transition hover:-translate-y-0.5 hover:border-[#0B7A3B]/35 hover:shadow-md dark:border-white/10"
                 >
                   <div className="flex items-start justify-between gap-3">
+                    {/* Icon */}
                     <span
                       className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.tone}`}
                     >
                       <Icon size={20} />
                     </span>
-                    <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-700">
-                      Available
-                    </span>
-                  </div>
-                  <h3 className="mt-3 text-sm font-extrabold text-[#14233a] dark:text-white">
-                    {item.title}
-                  </h3>
-                  <p className="mt-1 min-h-[32px] text-[10px] leading-relaxed text-slate-400">
-                    {item.description}
-                  </p>
-                  <div className="mt-3 flex items-end justify-between border-t border-slate-100 pt-3 dark:border-white/10">
-                    <div>
+
+                    {/* Replaced 'Available' with Total Records and Count */}
+                    <div className="text-right">
                       <span className="block text-[9px] uppercase tracking-wide text-slate-400">
-                        Records
+                        Total Records
                       </span>
-                      <span className="text-sm font-black text-slate-800 dark:text-white">
+                      <span className="text-2xl font-normal font-black text-slate-800 dark:text-white">
                         {item.count}
                       </span>
                     </div>
-                    <span className="rounded-lg bg-[#0B7A3B] px-3 py-2 text-[10px] font-bold text-white transition group-hover:bg-[#086532]">
-                      Open Module
-                    </span>
                   </div>
+
+                  {/* Title */}
+                  <h3 className="mt-3 text-m font-normal text-[#14233a] dark:text-white">
+                    {item.title}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="mt-1 min-h-[32px] text-[10px] leading-relaxed text-slate-400">
+                    {item.description}
+                  </p>
                 </button>
               );
             })}
           </div>
         </section>
 
-        <div className="mt-3 grid gap-3 xl:grid-cols-[1.35fr_.65fr]">
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
-            <h2 className="text-sm font-extrabold text-[#13223a] dark:text-white">
-              Recommended Import Workflow
-            </h2>
-            <p className="text-[10px] text-slate-400">
-              The module buttons above continue to use your existing
-              ImportModal/API flow.
-            </p>
-            <div className="mt-4 grid gap-2 sm:grid-cols-4">
-              {[
-                "Choose Dataset",
-                "Upload Shapefile",
-                "Validate & Import",
-                "Refresh Records",
-              ].map((step, index) => (
-                <div
-                  key={step}
-                  className="rounded-xl bg-slate-50 p-3 dark:bg-white/5"
-                >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0B7A3B] text-[10px] font-black text-white">
-                    {index + 1}
-                  </span>
-                  <div className="mt-2 text-[11px] font-bold text-slate-700 dark:text-slate-200">
-                    {step}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-[#043b2c] to-[#08703d] p-4 text-white shadow-sm">
-            <FileUp size={24} className="text-[#8FEA67]" />
-            <h2 className="mt-3 text-base font-black">One clean entry point</h2>
-            <p className="mt-1 text-[10px] leading-relaxed text-white/65">
-              Instead of keeping District, Tehsil, Mauza, Khasra and related
-              imports nested in the sidebar, this page becomes the visual import
-              center.
-            </p>
-          </section>
-        </div>
+    
       </div>
     </AdminPage>
   );
