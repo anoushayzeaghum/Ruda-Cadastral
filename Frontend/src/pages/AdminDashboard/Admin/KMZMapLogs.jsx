@@ -12,10 +12,10 @@ import {
   Search,
   Upload,
 } from "lucide-react";
-import Header from "../../Header";
+import AdminPage from "../dashboard/AdminPage";
 import JSZip from "jszip";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
-import { getKmzPrintLogs } from "../../../../services/metaverseApi";
+import { getKmzPrintLogs } from "../../../services/metaverseApi";
 
 const formatFileSize = (bytes) => {
   if (!bytes) return "0 B";
@@ -231,10 +231,8 @@ export default function KMZLogs() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f7f6] text-slate-800">
-      <Header />
-
-      <main className="px-4 py-5 sm:px-6 lg:px-8">
+    <AdminPage>
+      <div className="px-4 py-5 text-slate-800 sm:px-6 lg:px-8">
         <section className="mx-auto max-w-[1800px]">
           <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -527,8 +525,8 @@ export default function KMZLogs() {
             </div>
           </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </AdminPage>
   );
 }
 

@@ -123,6 +123,57 @@ const removeImportedLayers = (map) => {
   if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
 };
 
+
+/**
+ * Rebuild the imported dataset for print capture without live text/point layers.
+ * This keeps the user's current camera untouched while guaranteeing that only
+ * the intended KMZ polygon/line geometry is captured.
+ */
+const addImportedGeometryOnlyForPrint = (map, geojson) => {
+  if (!map || !geojson) return;
+
+  removeImportedLayers(map);
+
+  map.addSource(SOURCE_ID, {
+    type: "geojson",
+    data: geojson,
+    generateId: true,
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.fill,
+    type: "fill",
+    source: SOURCE_ID,
+    paint: {
+      "fill-color": IMPORTED_KMZ_STYLE.fillColor,
+      "fill-opacity": IMPORTED_KMZ_STYLE.fillOpacity,
+    },
+    filter: ["any", ["==", "$type", "Polygon"]],
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.outline,
+    type: "line",
+    source: SOURCE_ID,
+    paint: {
+      "line-color": IMPORTED_KMZ_STYLE.outlineColor,
+      "line-width": IMPORTED_KMZ_STYLE.outlineWidth,
+    },
+    filter: ["any", ["==", "$type", "Polygon"]],
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.line,
+    type: "line",
+    source: SOURCE_ID,
+    paint: {
+      "line-color": "#60a5fa",
+      "line-width": 2.5,
+    },
+    filter: ["==", "$type", "LineString"],
+  });
+};
+
 /** Normalise shpjs output — if multiple shapefiles, merge into one FeatureCollection */
 const normaliseGeoJSON = (data) => {
   if (Array.isArray(data)) {
@@ -1770,54 +1821,9 @@ const makePrintableHtml = ({
     </div>
   </div>
   <script>
-    const waitForImages = () => {
-      const images = Array.from(document.images);
-      return Promise.all(
-        images.map((image) => {
-          if (image.complete) return Promise.resolve();
-          return new Promise((resolve) => {
-            image.addEventListener("load", resolve, { once: true });
-            image.addEventListener("error", resolve, { once: true });
-          });
-        }),
-      );
-    };
-
-    const returnToApplication = () => {
-      try {
-        if (window.opener && !window.opener.closed) {
-          window.opener.focus();
-        }
-      } catch (error) {
-        // Ignore cross-window focus errors.
-      }
-
-      // Close the temporary print tab so it cannot keep focus or leave the
-      // application feeling blocked after printing/cancelling.
-      setTimeout(() => {
-        try {
-          window.close();
-        } catch (error) {
-          // Ignore browsers that do not allow scripted closing.
-        }
-      }, 100);
-    };
-
-    window.addEventListener("afterprint", returnToApplication, { once: true });
-
-    window.addEventListener("load", async () => {
-      await waitForImages();
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          window.focus();
-          window.print();
-
-          // Some browsers do not fire afterprint when the print dialog is
-          // cancelled. Restore focus and close the temporary tab as fallback.
-          setTimeout(returnToApplication, 1500);
-        });
-      });
-    });
+    // Printing is triggered by the parent window only after the PDF snapshot
+    // has been generated and the KMZ log upload has completed. This avoids a
+    // race where this temporary tab closes while html2canvas is still reading it.
   </script>
 </body>
 </html>`;
@@ -1916,7 +1922,7 @@ export default function Import({ map, filters, onClose }) {
   };
 
   // ── add layers to map ────────────────────────────────────────────────────────
-  const addLayers = (geojson, fileType = null) => {
+  const addLayers = (geojson, fileType = null, { fitMap = true } = {}) => {
     // The live GIS Metaverse page must never keep the print-only annotation.
     // Clear any stale print callout before adding/replacing imported data.
     removePrintKmzCallout(map);
@@ -1987,20 +1993,24 @@ export default function Import({ map, filters, onClose }) {
       });
     }
 
-    // Fit map bounds
-    try {
-      const bounds = bbox(geojson);
-      if (bounds.every((v) => isFinite(v))) {
-        map.fitBounds(
-          [
-            [bounds[0], bounds[1]],
-            [bounds[2], bounds[3]],
-          ],
-          { padding: 60, maxZoom: 18 },
-        );
+    // Fit only for a normal user import. Print cleanup/restoration must never
+    // move the camera, otherwise the saved/printed view can differ from what
+    // the user was looking at when Print was clicked.
+    if (fitMap) {
+      try {
+        const bounds = bbox(geojson);
+        if (bounds.every((v) => Number.isFinite(v))) {
+          map.fitBounds(
+            [
+              [bounds[0], bounds[1]],
+              [bounds[2], bounds[3]],
+            ],
+            { padding: 60, maxZoom: 18 },
+          );
+        }
+      } catch {
+        // bbox may fail on empty / degenerate geometry — ignore
       }
-    } catch {
-      // bbox may fail on empty / degenerate geometry — ignore
     }
 
     setHasLayer(true);
@@ -2284,13 +2294,6 @@ export default function Import({ map, filters, onClose }) {
     setPrintLoading(true);
     setError(null);
 
-    const previousCamera = {
-      center: map.getCenter(),
-      zoom: map.getZoom(),
-      bearing: map.getBearing(),
-      pitch: map.getPitch(),
-    };
-
     const hadImportedLabelLayer = Boolean(map.getLayer(LAYER_IDS.label));
     const originalImportedLabelVisibility = hadImportedLabelLayer
       ? map.getLayoutProperty(LAYER_IDS.label, "visibility") || "visible"
@@ -2314,32 +2317,11 @@ export default function Import({ map, filters, onClose }) {
       const printCalloutLabel =
         calloutLabel?.trim() || importedKmzLabel || "Imported KMZ";
 
-      // During print preparation blank the label property in the imported
-      // source itself. This is an additional guard beyond removing the symbol
-      // layer: even if a style/rebuild callback recreates that layer while the
-      // camera is moving, there is no text available for it to render.
-      const printGeoJSONWithoutLabels = {
-        ...importedGeoJSON,
-        features: (importedGeoJSON.features || []).map((feature) => ({
-          ...feature,
-          properties: {
-            ...(feature.properties || {}),
-            _import_label: "",
-          },
-        })),
-      };
-      map.getSource(SOURCE_ID)?.setData?.(printGeoJSONWithoutLabels);
-
-      // The normal live-map symbol layer repeats the KMZ name once per polygon.
-      // IMPORTANT: remove the layer completely — do not only set visibility to
-      // `none`. With preserveDrawingBuffer, a hidden symbol can intermittently
-      // remain in the previous WebGL frame and leak into the print capture.
-      // Removing it and forcing a fresh render makes the printed result
-      // deterministic: ONLY the boxed callout drawn below is present.
-      if (map.getLayer(LAYER_IDS.label)) {
-        map.removeLayer(LAYER_IDS.label);
-        await waitForFreshMapFrame(map);
-      }
+      // Rebuild ONLY the imported KMZ geometry for capture. Crucially, do not
+      // call fitBounds/easeTo/jumpTo here: the print must preserve the exact
+      // center/zoom/bearing/pitch visible when the user clicked Print.
+      addImportedGeometryOnlyForPrint(map, importedGeoJSON);
+      await waitForFreshMapFrame(map);
 
       let zoningInsetImage = fallbackOverviewImage;
       try {
@@ -2354,64 +2336,11 @@ export default function Import({ map, filters, onClose }) {
         );
       }
 
-      // Force the imported polygon to use the official print symbology,
-      // regardless of the styling contained in the uploaded file.
-      if (map.getLayer(LAYER_IDS.fill)) {
-        map.setPaintProperty(
-          LAYER_IDS.fill,
-          "fill-color",
-          IMPORTED_KMZ_STYLE.fillColor,
-        );
-        map.setPaintProperty(
-          LAYER_IDS.fill,
-          "fill-opacity",
-          IMPORTED_KMZ_STYLE.fillOpacity,
-        );
-      }
-      if (map.getLayer(LAYER_IDS.outline)) {
-        map.setPaintProperty(
-          LAYER_IDS.outline,
-          "line-color",
-          IMPORTED_KMZ_STYLE.outlineColor,
-        );
-        map.setPaintProperty(
-          LAYER_IDS.outline,
-          "line-width",
-          IMPORTED_KMZ_STYLE.outlineWidth,
-        );
-      }
-
-      const bounds = bbox(importedGeoJSON);
-
-      if (bounds.every((value) => Number.isFinite(value))) {
-        map.fitBounds(
-          [
-            [bounds[0], bounds[1]],
-            [bounds[2], bounds[3]],
-          ],
-          {
-            padding: { top: 90, right: 90, bottom: 90, left: 90 },
-            maxZoom: 17,
-            duration: 700,
-            essential: true,
-          },
-        );
-      }
-
-      // Do not capture on the first render event of the fitBounds animation.
-      // Wait until movement has ended and then force one clean label-free frame.
+      // Hard guarantee immediately before capture: no repeated live KMZ label
+      // and no helper point markers can leak into the PDF.
+      if (map.getLayer(LAYER_IDS.label)) map.removeLayer(LAYER_IDS.label);
+      if (map.getLayer(LAYER_IDS.point)) map.removeLayer(LAYER_IDS.point);
       await waitForCameraAndFreshFrame(map);
-
-      // Defensive assertion: the repeated live text-label layer must not exist
-      // at capture time. If some style/rebuild callback recreated it, remove it
-      // again and force another fresh WebGL frame.
-      // Re-apply the label-free print source after the camera movement because
-      // basemap/style rebuilds can replace source data asynchronously.
-      map.getSource(SOURCE_ID)?.setData?.(printGeoJSONWithoutLabels);
-      if (map.getLayer(LAYER_IDS.label)) {
-        map.removeLayer(LAYER_IDS.label);
-      }
-      await waitForFreshMapFrame(map);
 
       // IMPORTANT: do not add the print callout to the live Mapbox map.
       // Capture the current map and draw the reference-style KMZ callout only
@@ -2479,6 +2408,27 @@ export default function Import({ map, filters, onClose }) {
       logPayload.append("printed_by", printedBy);
       logPayload.append("print_title", title);
       await createKmzPrintLog(logPayload);
+
+      // The exact same already-rendered print document was used to create the
+      // stored PDF above. Open the browser print dialog only after persistence
+      // succeeds so logs and the user's printed output cannot diverge.
+      const closePrintWindow = () => {
+        try {
+          if (window && !window.closed) window.focus();
+        } catch {
+          // Ignore focus restrictions.
+        }
+        setTimeout(() => {
+          try {
+            if (!printWindow.closed) printWindow.close();
+          } catch {
+            // Ignore browser close restrictions.
+          }
+        }, 100);
+      };
+      printWindow.addEventListener?.("afterprint", closePrintWindow, { once: true });
+      printWindow.focus();
+      printWindow.print();
     } catch (printError) {
       console.error("Print error:", printError);
       printWindow.close();
@@ -2488,30 +2438,23 @@ export default function Import({ map, filters, onClose }) {
     } finally {
       removePrintKmzCallout(map);
 
-      // Restore the exact imported source data first, then restore the normal
-      // LIVE-page vector label. The print-only blank label values must never
-      // leak back into `/gis-metaverse`.
-      if (map.getSource(SOURCE_ID)) {
-        map.getSource(SOURCE_ID).setData(importedGeoJSON);
+      // Restore the complete live imported-KMZ presentation without fitting or
+      // animating the map. The camera therefore remains exactly where it was.
+      removeImportedLayers(map);
+      addLayers(importedGeoJSON, importedFileType, { fitMap: false });
+
+      if (
+        hadImportedLabelLayer &&
+        originalImportedLabelVisibility &&
+        map.getLayer(LAYER_IDS.label)
+      ) {
+        map.setLayoutProperty(
+          LAYER_IDS.label,
+          "visibility",
+          originalImportedLabelVisibility,
+        );
       }
 
-      // Restore the normal LIVE-page vector label only after the print image has
-      // already been captured. This layer is never part of the printed canvas.
-      if (hadImportedLabelLayer && map.getSource(SOURCE_ID)) {
-        addImportedLabelLayer(map);
-        if (originalImportedLabelVisibility && map.getLayer(LAYER_IDS.label)) {
-          map.setLayoutProperty(
-            LAYER_IDS.label,
-            "visibility",
-            originalImportedLabelVisibility,
-          );
-        }
-      }
-
-      map.easeTo({
-        ...previousCamera,
-        duration: 500,
-      });
       setPrintLoading(false);
     }
   };
