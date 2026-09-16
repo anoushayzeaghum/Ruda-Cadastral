@@ -19,7 +19,7 @@ const KPI_META = [
   ["Districts", "2", Building2, "bg-emerald-50 text-emerald-700"],
   ["Tehsils", "10", Layers3, "bg-sky-50 text-sky-700"],
   ["Mauzas", "173", MapPinned, "bg-amber-50 text-amber-700"],
-  ["Projects", "19", PackageOpen, "bg-violet-50 text-violet-700"],
+  ["Projects", "8", PackageOpen, "bg-violet-50 text-violet-700"],
   ["Phases", "5", Map, "bg-emerald-50 text-emerald-700"],
   ["Khasras", "237,754", Database, "bg-rose-50 text-rose-700"],
   ["Zones", "6", Layers3, "bg-blue-50 text-blue-700"],
@@ -36,7 +36,7 @@ function StatCard({ label, value, icon: Icon, tone }) {
           <Icon size={18} />
         </span>
         <div className="min-w-0">
-          <div className="text-lg font-black leading-none text-slate-900 dark:text-white">
+          <div className="text-xl font-black font-normal leading-none text-slate-900 dark:text-white">
             {value}
           </div>
           <div className="mt-1 truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400">
@@ -87,7 +87,7 @@ export default function Dashboard() {
       <div className="mx-auto max-w-[1680px] space-y-3 p-3 md:p-4 xl:p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-xl font-black tracking-tight text-[#0f2039] dark:text-white md:text-2xl">
+            <h1 className="text-xl font-black font-semibold tracking-tight text-[#0f2039] dark:text-white md:text-2xl">
               Welcome back, Admin!
             </h1>
             <p className="mt-1 text-xs text-slate-500">
@@ -117,7 +117,7 @@ export default function Dashboard() {
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 dark:border-white/10">
               <div>
-                <h2 className="text-sm font-extrabold text-[#13223a] dark:text-white">
+                <h2 className="text-sm font-semibold text-[#13223a] dark:text-white">
                   RUDA Project Areas Overview
                 </h2>
                 <p className="text-[10px] text-slate-400">
@@ -140,7 +140,7 @@ export default function Dashboard() {
           <div className="space-y-3">
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
               <div className="mb-3">
-                <h2 className="text-sm font-extrabold text-[#13223a] dark:text-white">
+                <h2 className="text-sm font-semibold text-[#13223a] dark:text-white">
                   Quick Actions
                 </h2>
                 <p className="text-[10px] text-slate-400">
@@ -173,7 +173,7 @@ export default function Dashboard() {
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
               <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-extrabold text-[#13223a] dark:text-white">
+                  <h2 className="text-sm font-semibold text-[#13223a] dark:text-white">
                     System Snapshot
                   </h2>
                   <p className="text-[10px] text-slate-400">

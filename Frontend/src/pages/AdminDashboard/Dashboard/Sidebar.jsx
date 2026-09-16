@@ -30,15 +30,14 @@ const groups = [
     path: "/plot-management",
     match: ["/plot-management"],
     children: [
-      { label: "Plot Explorer", path: "/plot-management" },
-      { label: "Plot Details", path: "/plot-management/details" },
+      { label: "Plot Explorer", path: "/plot-management/details" },
       { label: "Transfer Plot Data", path: "/plot-management/transfer" },
     ],
   },
   { label: "Transfers", icon: Workflow, path: "/transfers" },
   { label: "KMZ Map Logs", icon: Map, path: "/kmz-map-logs" },
   { label: "Reports", icon: BarChart3, path: "/reports" },
-  { label: "Settings", icon: Settings, path: "/settings" },
+  // { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
 export default function Sidebar({ sidebarOpen }) {

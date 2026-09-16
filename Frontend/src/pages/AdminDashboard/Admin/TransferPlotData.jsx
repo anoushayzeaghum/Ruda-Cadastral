@@ -1051,7 +1051,7 @@ const Section = ({ number, title, subtitle, children }) => (
         {number}
       </span>
       <div>
-        <h2 className="text-xs font-extrabold text-[#10203a] dark:text-white">
+        <h2 className="text-xs font-semibold text-[#10203a] dark:text-white">
           {title}
         </h2>
         <p className="text-[9px] text-slate-400">{subtitle}</p>
@@ -1361,17 +1361,17 @@ export default function TransferPlotData({
       <div className="mx-auto max-w-[1680px] p-3 md:p-5">
         <div className="mb-3 flex items-end justify-between gap-3">
           <div>
-            <h1 className="text-xl font-black text-[#10203a] dark:text-white md:text-2xl">
+            <h1 className="text-xl font-black font-semibold text-[#10203a] dark:text-white md:text-2xl">
               Transfer Plot Data
             </h1>
-            <p className="text-[10px] text-slate-400">
+            <p className="text-[12px] text-slate-400">
               Plot Management / Plot Details / Transfer Plot Data
             </p>
           </div>
           <button
             type="button"
             onClick={() => navigate("/plot-management/details")}
-            className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold text-slate-600 sm:flex dark:border-white/10 dark:bg-[#0d1b15] dark:text-white"
+            className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-bold text-slate-600 sm:flex dark:border-white/10 dark:bg-[#0d1b15] dark:text-white"
           >
             <Map size={14} /> View Plot
           </button>
@@ -1382,17 +1382,17 @@ export default function TransferPlotData({
             <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
               <div className="mb-3 flex items-center gap-2">
                 <FileText size={16} className="text-[#0B7A3B]" />
-                <h2 className="text-xs font-extrabold text-[#10203a] dark:text-white">
+                <h2 className="text-xs font-semibold text-[#10203a] dark:text-white">
                   Selected Plot
                 </h2>
               </div>
               <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
                 {selectedPlotItems.map(([key, value]) => (
                   <div key={key}>
-                    <div className="text-[8px] uppercase tracking-wide text-slate-400">
+                    <div className="text-[10px] uppercase tracking-wide text-slate-400">
                       {key}
                     </div>
-                    <div className="mt-1 text-[10px] font-bold text-slate-700 dark:text-white">
+                    <div className="mt-1 text-[12px] font-bold text-slate-700 dark:text-white">
                       {value || "—"}
                     </div>
                   </div>
@@ -1756,7 +1756,7 @@ export default function TransferPlotData({
                 <button
                   type="button"
                   onClick={() => navigate("/plot-management/details")}
-                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold text-slate-600 dark:border-white/10 dark:text-white"
+                  className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-[12px] font-bold text-slate-600 dark:border-white/10 dark:text-white"
                 >
                   <X size={13} /> Cancel
                 </button>
@@ -1764,21 +1764,21 @@ export default function TransferPlotData({
                   <button
                     type="button"
                     onClick={handleSaveDraft}
-                    className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-[10px] font-bold text-slate-600 dark:border-white/10 dark:text-white"
+                    className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-[12px] font-bold text-slate-600 dark:border-white/10 dark:text-white"
                   >
                     <Save size={13} /> Save Draft
                   </button>
                   <button
                     type="button"
                     onClick={handleSendForApproval}
-                    className="flex items-center gap-2 rounded-lg border border-[#0B7A3B]/25 bg-emerald-50 px-3 py-2 text-[10px] font-bold text-[#0B7A3B]"
+                    className="flex items-center gap-2 rounded-lg border border-[#0B7A3B]/25 bg-emerald-50 px-3 py-2 text-[12px] font-bold text-[#0B7A3B]"
                   >
                     <Send size={13} /> Send for Approval
                   </button>
                   <button
                     type="button"
                     onClick={handlePrintTransferLetter}
-                    className="flex items-center gap-2 rounded-lg bg-[#0B7A3B] px-4 py-2 text-[10px] font-bold text-white"
+                    className="flex items-center gap-2 rounded-lg bg-[#0B7A3B] px-4 py-2 text-[12px] font-bold text-white"
                   >
                     <Printer size={13} /> Generate / Print Letter
                   </button>
@@ -1789,10 +1789,10 @@ export default function TransferPlotData({
 
           <aside className="space-y-3">
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
-              <h3 className="text-xs font-extrabold text-[#10203a] dark:text-white">
+              <h3 className="text-xs font-semibold text-[#10203a] dark:text-white">
                 Transfer Summary
               </h3>
-              <div className="mt-3 space-y-2 text-[10px]">
+              <div className="mt-3 space-y-2 text-[12px]">
                 {summaryItems.map(([key, value]) => (
                   <div
                     key={key}
@@ -1808,10 +1808,10 @@ export default function TransferPlotData({
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
-              <h3 className="text-xs font-extrabold text-[#10203a] dark:text-white">
+              <h3 className="text-xs font-semibold text-[#10203a] dark:text-white">
                 Process Checklist
               </h3>
-              <div className="mt-3 space-y-2 text-[10px]">
+              <div className="mt-3 space-y-2 text-[12px]">
                 {[
                   ["Complete transfer application", applicationComplete],
                   ["Upload required photographs", photosComplete],
@@ -1837,10 +1837,10 @@ export default function TransferPlotData({
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
-              <h3 className="text-xs font-extrabold text-[#10203a] dark:text-white">
+              <h3 className="text-xs font-semibold text-[#10203a] dark:text-white">
                 Approval Workflow
               </h3>
-              <div className="mt-3 space-y-3 text-[10px]">
+              <div className="mt-3 space-y-3 text-[12px]">
                 {[
                   "Application Submission",
                   "Department Review",

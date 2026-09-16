@@ -301,7 +301,7 @@ const GIS_APPS = [
   },
   {
     icon: <Eye size={22} />,
-    title: "Metaverse KPIs",
+    title: "Administration Portal",
     desc: "Control and manage the complete cadastral system, including users, records, spatial datasets, dashboards, permissions and administrative workflows.",
     img: "/s5.png",
     route: "/dashboard",

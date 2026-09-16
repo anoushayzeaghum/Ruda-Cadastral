@@ -45,7 +45,7 @@ export default function Header({ darkMode, setDarkMode, toggleSidebar }) {
           </span>
         </button>
 
-        <div className="mx-auto hidden w-full max-w-[520px] md:block">
+        {/* <div className="mx-auto hidden w-full max-w-[520px] md:block">
           <div className="flex h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 backdrop-blur-sm">
             <Search size={16} className="text-white/65" />
             <input
@@ -55,7 +55,7 @@ export default function Header({ darkMode, setDarkMode, toggleSidebar }) {
             />
             <span className="rounded-md bg-black/15 px-2 py-1 text-[10px] font-semibold text-white/55">Ctrl K</span>
           </div>
-        </div>
+        </div> */}
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 md:gap-2">
           <button
