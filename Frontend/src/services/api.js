@@ -213,6 +213,11 @@ export const importDistrict = ({ file }) => {
   }).then((res) => res.data);
 };
 
+export const getProjects = async () => {
+  const res = await API.get("/project/");
+  return normalizeData(res);
+};
+
 export const importTehsil = async ({ file }) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -275,6 +280,35 @@ const importSpatialShapefile = async (endpoint, { file }) => {
   });
 
   return res.data;
+};
+
+export const importProjectBoundary = ({ file }) =>
+  importSpatialShapefile("/import/project-boundary/", { file });
+
+export const importBlockBoundary = ({ file }) =>
+  importSpatialShapefile("/import/block-boundary/", { file });
+
+export const importMasterplanPlotData = ({ file }) =>
+  importSpatialShapefile("/import/masterplanplotdata/", { file });
+
+export const importSpotLevel = ({ file }) =>
+  importSpatialShapefile("/import/spotlevel/", { file });
+
+export const importSewerLines = ({ file }) =>
+  importSpatialShapefile("/import/sewerlines/", { file });
+
+export const importSewerPoints = ({ file }) =>
+  importSpatialShapefile("/import/sewerpoints/", { file });
+
+export const importWaterSupplyLines = ({ file }) =>
+  importSpatialShapefile("/import/watersupplylines/", { file });
+
+export const importWaterSupplyPoints = ({ file }) =>
+  importSpatialShapefile("/import/watersupplypoints/", { file });
+
+export const getProjectDataset = async (endpoint) => {
+  const res = await API.get(endpoint);
+  return normalizeGeoJson(res);
 };
 
 export const importSquare = ({ file }) =>

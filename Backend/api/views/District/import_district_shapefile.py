@@ -4,7 +4,7 @@ import tempfile
 import shutil
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from api.shapefiles.import_district import run_shapefile_import
+from api.shapefiles.GISLayersShapefiles.import_district import run_shapefile_import
 
 
 @csrf_exempt

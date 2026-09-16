@@ -5,3 +5,4 @@ from .DeletePlotView import *
 from .PlotIntersectingKhasrasAPIView import *
 
 from .PlotOptionsView import *
+from .import_masterplanplot_shapefile import *
