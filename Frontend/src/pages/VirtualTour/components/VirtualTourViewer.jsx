@@ -46,6 +46,8 @@ export default function VirtualTourViewer() {
   const [showHelp,         setShowHelp]          = useState(false);
   const [activePanel,      setActivePanel]       = useState(null);   // info hotspot data
   const [transitionActive, setTransitionActive]  = useState(false);
+  const [fsHintVisible,    setFsHintVisible]     = useState(false);  // exit-hint on mouse move
+  const fsHintTimer = useRef(null);
 
   /* ── Marzipano hook ── */
   const viewer = useMarzipanoViewer({
@@ -92,6 +94,26 @@ export default function VirtualTourViewer() {
       return () => clearTimeout(t);
     }
   }, []);
+
+  /* ── Fullscreen mouse-move: show exit hint briefly ── */
+  useEffect(() => {
+    if (!isFullscreen) {
+      setFsHintVisible(false);
+      return;
+    }
+    const handleMove = () => {
+      setFsHintVisible(true);
+      clearTimeout(fsHintTimer.current);
+      fsHintTimer.current = setTimeout(() => setFsHintVisible(false), 2400);
+    };
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('touchstart', handleMove, { passive: true });
+    return () => {
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('touchstart', handleMove);
+      clearTimeout(fsHintTimer.current);
+    };
+  }, [isFullscreen]);
 
   /* ── Open scene info panel ── */
   const openTourInfo = useCallback(() => {
