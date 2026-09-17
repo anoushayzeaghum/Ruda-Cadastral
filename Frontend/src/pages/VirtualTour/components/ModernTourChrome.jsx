@@ -7,6 +7,7 @@
  *   • Bottom-center: prev / scene-name / next navigator
  */
 import React, { useMemo } from 'react';
+import RudaLogo from '../../../assets/RUDA L&M.png';
 import { useNavigate } from 'react-router-dom';
 import { TOUR_DATA, getSceneIndex } from '../data/tourData';
 import { getTourThumbnailUrl } from '../utils/virtualTourAssets';
@@ -31,21 +32,31 @@ const formatDate = (iso) => {
 /* ── Sub-components ───────────────────────────────────────────────────────── */
 function Brand({ onClick }) {
   return (
-    <button
-      type="button"
-      className="vt-brand"
-      onClick={onClick}
-      aria-label="Back to RUDA"
-    >
-      <span className="vt-brand__back" aria-hidden="true">
+    <div className="vt-brand" aria-label="RUDA Virtual Tour">
+      <button
+        type="button"
+        className="vt-brand__back"
+        onClick={onClick}
+        aria-label="Back to RUDA"
+        title="Back to RUDA"
+      >
         <BackArrow />
-      </span>
-      <span className="vt-brand__mark" aria-hidden="true">RU</span>
-      <span className="vt-brand__text">
-        <strong>RUDA</strong>
-        <small>Virtual Tour</small>
-      </span>
-    </button>
+      </button>
+
+      <button
+        type="button"
+        className="vt-brand__identity"
+        onClick={onClick}
+        aria-label="RUDA home"
+        title="Back to RUDA"
+      >
+        <img className="vt-brand__logo" src={RudaLogo} alt="RUDA" />
+        <span className="vt-brand__text">
+          <strong>RUDA</strong>
+          <small>Virtual Tour</small>
+        </span>
+      </button>
+    </div>
   );
 }
 
