@@ -2015,3 +2015,98 @@
   .vt-more-menu { width:216px; }
   .vt-gallery-grid { grid-template-columns:1fr 1fr; gap:10px; }
 }
+
+/* ========================================================================== 
+   TOP CHROME ALIGNMENT REFINEMENT — 17 Sep 2026
+   Keeps the existing left/right positions, but places both control groups on
+   one shared horizontal line and gives the RUDA mark stronger visual weight.
+   ========================================================================== */
+@media (min-width: 761px) {
+  .vt-topbar {
+    top: 20px;
+    left: 24px;
+    right: 24px;
+    min-height: 54px;
+    align-items: center;
+  }
+
+  .vt-brand {
+    height: 54px;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .vt-brand__back {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  /* Larger RUDA identity mark so it is legible at panorama scale. */
+  .vt-brand__mark {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    border-radius: 15px;
+    font-size: 12px;
+    box-shadow: 0 8px 24px rgba(8,35,49,.16);
+  }
+
+  .vt-brand__text strong {
+    font-size: 15px;
+    line-height: 1.05;
+  }
+
+  .vt-brand__text small {
+    font-size: 9.5px;
+    line-height: 1.1;
+  }
+
+  /* Share the exact same top coordinate as the left-side brand group. */
+  .vt-toolbar {
+    top: 20px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    min-height: 54px;
+  }
+
+  .vt-quick-tools {
+    min-height: 54px;
+    align-items: center;
+  }
+
+  .vt-floating-btn {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px !important;
+  }
+
+  .vt-floating-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .vt-more-menu {
+    top: 64px;
+  }
+}
+
+@media (max-width: 760px) {
+  .vt-topbar {
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    align-items: center;
+  }
+
+  .vt-toolbar {
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    right: 10px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .vt-quick-tools {
+    align-items: center;
+  }
+}
