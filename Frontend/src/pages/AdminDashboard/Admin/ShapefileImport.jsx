@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Database,
@@ -12,6 +12,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import AdminPage from "../dashboard/AdminPage";
+import { getProjectDatasetCount } from "../../../services/api";
 
 const DATASETS = [
   {
@@ -85,6 +86,7 @@ const RUDA_PROJECT_DATASETS = [
     title: "Project Boundary",
     description: "Project-level boundary datasets for RUDA schemes",
     path: "/area/project-boundary",
+    endpoint: "/project/",
     icon: Landmark,
     tone: "bg-emerald-50 text-emerald-700",
   },
@@ -163,6 +165,34 @@ const RUDA_PROJECT_DATASETS = [
 export default function ShapefileImport() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [projectCounts, setProjectCounts] = useState({});
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProjectCounts = async () => {
+      const results = await Promise.all(
+        RUDA_PROJECT_DATASETS.map(async (item) => {
+          if (!item.endpoint) return [item.title, null];
+
+          try {
+            return [item.title, await getProjectDatasetCount(item.endpoint)];
+          } catch (error) {
+            console.error(`Failed to load ${item.title} count:`, error);
+            return [item.title, null];
+          }
+        }),
+      );
+
+      if (active) setProjectCounts(Object.fromEntries(results));
+    };
+
+    loadProjectCounts();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -180,7 +210,7 @@ export default function ShapefileImport() {
           <div>
             <div className="mb-1 flex items-center gap-2">
               <span className="h-8 w-1 rounded-full bg-gradient-to-b from-[#0B7A3B] to-[#70D84F]" />
-              <h1 className="text-xl font-black font-semibold text-[#10203a] dark:text-white md:text-2xl">
+              <h1 className="text-xl font-semibold text-[#10203a] dark:text-white md:text-2xl">
                 Shapefile Import Center
               </h1>
             </div>
@@ -259,7 +289,7 @@ export default function ShapefileImport() {
                       <span className="block text-[9px] uppercase tracking-wide text-slate-400">
                         Total Records
                       </span>
-                      <span className="text-2xl font-normal font-black text-slate-800 dark:text-white">
+                      <span className="text-2xl font-normal text-slate-800 dark:text-white">
                         {item.count}
                       </span>
                     </div>
@@ -318,10 +348,10 @@ export default function ShapefileImport() {
 
                     <div className="text-right">
                       <span className="block text-[9px] uppercase tracking-wide text-slate-400">
-                        Status
+                        Total Records
                       </span>
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-300">
-                        Import ready
+                      <span className="text-2xl font-normal text-slate-800 dark:text-white">
+                        {projectCounts[item.title] ?? "—"}
                       </span>
                     </div>
                   </div>

@@ -1,4 +1,15 @@
 export const projectDatasetConfigs = {
+  projectBoundary: {
+    title: "Project Boundary",
+    description: "Project boundaries within the RUDA cadastral system.",
+    type: "projectBoundary",
+    endpoint: "/project/",
+    columns: [
+      { key: "name", label: "Project" },
+      { key: "type", label: "Type" },
+      { key: "phase", label: "Phase" },
+    ],
+  },
   blockBoundary: {
     title: "Block Boundary",
     description: "Block boundaries within selected RUDA projects.",

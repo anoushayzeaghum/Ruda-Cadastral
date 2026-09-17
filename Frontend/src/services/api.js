@@ -311,6 +311,15 @@ export const getProjectDataset = async (endpoint) => {
   return normalizeGeoJson(res);
 };
 
+export const getProjectDatasetCount = async (endpoint) => {
+  const res = await API.get(endpoint);
+  const payload = extractPayload(res);
+
+  if (Number.isFinite(payload?.count)) return payload.count;
+
+  return extractCollection(payload).length;
+};
+
 export const importSquare = ({ file }) =>
   importSpatialShapefile("/import/square/", { file });
 
