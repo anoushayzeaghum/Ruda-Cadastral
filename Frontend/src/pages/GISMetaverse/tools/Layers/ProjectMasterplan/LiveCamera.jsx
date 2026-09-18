@@ -8,6 +8,8 @@ import {
   VideoOff,
   Maximize2,
   Eye,
+  Download,
+  Loader2,
 } from "lucide-react";
 import axios from "axios";
 import CameraLocationsAttribute from "../AttributeTable/ProjectMasterPlan/LiveCamera/CameraLocationsAttribute";
@@ -27,6 +29,16 @@ const CAMERA_STYLE = {
   circleLayer: "metaverse-camera-locations-circle",
   labelLayer: "metaverse-camera-locations-label",
 };
+
+// Snapshot download API contract. Keep these configurable so the frontend does
+// not need another code change when the Django endpoint is finalized.
+const CAMERA_SNAPSHOT_ENDPOINT =
+  import.meta.env.VITE_CAMERA_SNAPSHOT_ENDPOINT ||
+  "/camera-location/{cameraId}/snapshot/";
+
+const CAMERA_SNAPSHOT_BULK_ENDPOINT =
+  import.meta.env.VITE_CAMERA_SNAPSHOT_BULK_ENDPOINT ||
+  "/camera-location/download-snapshots/";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -76,6 +88,29 @@ const applyAfterLayerLoads = (map, style) => {
   });
 };
 
+const sanitizeFileName = (value = "camera") =>
+  String(value)
+    .trim()
+    .replace(/[^a-z0-9._-]+/gi, "_")
+    .replace(/^_+|_+$/g, "") || "camera";
+
+const triggerBlobDownload = (blob, fileName) => {
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+};
+
+const buildSnapshotUrl = (cameraId) =>
+  `${API_BASE}${CAMERA_SNAPSHOT_ENDPOINT.replace(
+    "{cameraId}",
+    encodeURIComponent(cameraId),
+  )}`;
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function LiveCamera({
@@ -96,6 +131,9 @@ export default function LiveCamera({
   const [activeAttributeTable, setActiveAttributeTable] = useState(null);
   const [cameraDropdownOpen, setCameraDropdownOpen] = useState(false);
   const [cameraDropdownData, setCameraDropdownData] = useState([]);
+  const [downloadingCameraId, setDownloadingCameraId] = useState(null);
+  const [downloadingAll, setDownloadingAll] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
   const cameraEnabled = !!layerVisibility.cameraLocations;
 
@@ -138,6 +176,8 @@ export default function LiveCamera({
           label: props.camera || `Camera ${i + 1}`,
           location: props.coordinate || props.camera || "-",
           stream: props.iframe_lin || null,
+          snapshotUrl: props.snapshot_url || props.snapshot || null,
+          rawProperties: props,
         };
       });
       setCameraFeeds(feeds);
@@ -146,6 +186,90 @@ export default function LiveCamera({
     } catch (error) {
       console.error("Camera locations dropdown load error:", error);
       setCameraDropdownData([]);
+    }
+  };
+
+  const downloadCameraImage = async (camera) => {
+    if (!camera?.id || downloadingCameraId) return;
+
+    setDownloadError("");
+    setDownloadingCameraId(camera.id);
+
+    try {
+      // If the API already supplies a direct snapshot URL, prefer it. Otherwise
+      // call the RUDA backend snapshot endpoint so cross-origin iframe pixels are
+      // never read from React.
+      const requestUrl = camera.snapshotUrl || buildSnapshotUrl(camera.id);
+      const response = await axios.get(requestUrl, {
+        responseType: "blob",
+        params: camera.snapshotUrl
+          ? undefined
+          : { project_id: selectedProjectId },
+      });
+
+      const contentType = response.headers?.["content-type"] || "";
+      if (!contentType.includes("image/")) {
+        throw new Error(
+          "The snapshot endpoint did not return an image. Check the backend camera snapshot endpoint.",
+        );
+      }
+
+      triggerBlobDownload(
+        response.data,
+        `${sanitizeFileName(camera.label)}_${camera.id}.jpeg`,
+      );
+    } catch (error) {
+      console.error("Camera snapshot download error:", error);
+      setDownloadError(
+        error?.response?.data?.detail ||
+          error?.message ||
+          "Unable to download the camera image.",
+      );
+    } finally {
+      setDownloadingCameraId(null);
+    }
+  };
+
+  const downloadAllCameraImages = async () => {
+    if (!selectedProjectId || cameraFeeds.length === 0 || downloadingAll) return;
+
+    setDownloadError("");
+    setDownloadingAll(true);
+
+    try {
+      const response = await axios.post(
+        `${API_BASE}${CAMERA_SNAPSHOT_BULK_ENDPOINT}`,
+        {
+          project_id: selectedProjectId,
+          camera_ids: cameraFeeds.map((camera) => camera.id),
+        },
+        { responseType: "blob" },
+      );
+
+      const contentType = response.headers?.["content-type"] || "";
+      if (
+        !contentType.includes("zip") &&
+        !contentType.includes("octet-stream")
+      ) {
+        throw new Error(
+          "The bulk snapshot endpoint did not return a ZIP archive.",
+        );
+      }
+
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      triggerBlobDownload(
+        response.data,
+        `camera_images_project_${selectedProjectId}_${dateStamp}.zip`,
+      );
+    } catch (error) {
+      console.error("Bulk camera snapshot download error:", error);
+      setDownloadError(
+        error?.response?.data?.detail ||
+          error?.message ||
+          "Unable to download all camera images.",
+      );
+    } finally {
+      setDownloadingAll(false);
     }
   };
 
@@ -286,6 +410,24 @@ export default function LiveCamera({
               <div className="flex items-center gap-1">
                 <button
                   type="button"
+                  title="Download all camera images as JPEG files"
+                  onClick={downloadAllCameraImages}
+                  disabled={
+                    downloadingAll ||
+                    cameraFeeds.length === 0 ||
+                    !selectedProjectId
+                  }
+                  className="mr-1 flex h-7 items-center gap-1.5 rounded-md border border-[#f97316]/30 bg-[#f97316]/10 px-2.5 text-[10px] font-semibold text-[#f97316] transition hover:bg-[#f97316]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {downloadingAll ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Download size={12} />
+                  )}
+                  {downloadingAll ? "Preparing..." : "Download All"}
+                </button>
+                <button
+                  type="button"
                   title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
                   onClick={() => setFullscreen((f) => !f)}
                   className="flex h-7 w-7 items-center justify-center rounded text-white/50 transition hover:bg-[#2a3548] hover:text-white"
@@ -315,32 +457,51 @@ export default function LiveCamera({
                   </p>
                 ) : (
                   cameraFeeds.map((cam) => (
-                    <button
+                    <div
                       key={cam.id}
-                      type="button"
-                      onClick={() => setSelectedCamera(cam)}
-                      className={`flex flex-col rounded-md px-2.5 py-2 text-left transition ${
+                      className={`flex items-stretch rounded-md border transition ${
                         selectedCamera?.id === cam.id
-                          ? "border border-[#f97316]/40 bg-[#f97316]/15 text-[#f97316]"
-                          : "border border-transparent text-white/60 hover:bg-[#1a2535] hover:text-white"
+                          ? "border-[#f97316]/40 bg-[#f97316]/15 text-[#f97316]"
+                          : "border-transparent text-white/60 hover:bg-[#1a2535] hover:text-white"
                       }`}
                     >
-                      <span className="flex items-center gap-1.5 text-[11px] font-semibold">
-                        <span
-                          className="h-1.5 w-1.5 rounded-full"
-                          style={{
-                            backgroundColor:
-                              selectedCamera?.id === cam.id
-                                ? "#f97316"
-                                : "#4b5563",
-                          }}
-                        />
-                        {cam.label}
-                      </span>
-                      <span className="mt-0.5 truncate text-[10px] opacity-60">
-                        {cam.location}
-                      </span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCamera(cam)}
+                        className="min-w-0 flex-1 px-2.5 py-2 text-left"
+                      >
+                        <span className="flex items-center gap-1.5 text-[11px] font-semibold">
+                          <span
+                            className="h-1.5 w-1.5 rounded-full"
+                            style={{
+                              backgroundColor:
+                                selectedCamera?.id === cam.id
+                                  ? "#f97316"
+                                  : "#4b5563",
+                            }}
+                          />
+                          <span className="truncate">{cam.label}</span>
+                        </span>
+                        <span className="mt-0.5 block truncate text-[10px] opacity-60">
+                          {cam.location}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        title={`Download ${cam.label} JPEG`}
+                        onClick={() => downloadCameraImage(cam)}
+                        disabled={
+                          downloadingCameraId === cam.id || downloadingAll
+                        }
+                        className="flex w-8 shrink-0 items-center justify-center border-l border-white/5 text-white/40 transition hover:bg-[#f97316]/15 hover:text-[#f97316] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {downloadingCameraId === cam.id ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Download size={13} />
+                        )}
+                      </button>
+                    </div>
                   ))
                 )}
               </div>
@@ -357,7 +518,26 @@ export default function LiveCamera({
                       {selectedCamera?.location ?? ""}
                     </p>
                   </div>
-                  <span
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => downloadCameraImage(selectedCamera)}
+                      disabled={
+                        !selectedCamera ||
+                        downloadingCameraId === selectedCamera?.id ||
+                        downloadingAll
+                      }
+                      className="flex h-7 items-center gap-1.5 rounded-md border border-[#f97316]/30 bg-[#f97316]/10 px-2.5 text-[10px] font-semibold text-[#f97316] transition hover:bg-[#f97316]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      title="Download current camera image as JPEG"
+                    >
+                      {downloadingCameraId === selectedCamera?.id ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <Download size={12} />
+                      )}
+                      JPEG
+                    </button>
+                    <span
                     className={`rounded px-2 py-0.5 text-[10px] font-semibold ${
                       selectedCamera?.stream
                         ? "bg-green-500/15 text-green-400"
@@ -365,8 +545,15 @@ export default function LiveCamera({
                     }`}
                   >
                     {selectedCamera?.stream ? "Connected" : "No Stream"}
-                  </span>
+                    </span>
+                  </div>
                 </div>
+
+                {downloadError && (
+                  <div className="shrink-0 border-b border-red-500/20 bg-red-500/10 px-4 py-2 text-[10px] text-red-300">
+                    {downloadError}
+                  </div>
+                )}
 
                 {/* Stream / iframe */}
                 <div className="relative flex flex-1 items-center justify-center bg-black">
