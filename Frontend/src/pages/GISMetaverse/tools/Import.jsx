@@ -123,7 +123,6 @@ const removeImportedLayers = (map) => {
   if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
 };
 
-
 /**
  * Rebuild the imported dataset for print capture without live text/point layers.
  * This keeps the user's current camera untouched while guaranteeing that only
@@ -1398,13 +1397,13 @@ const captureMapWithKmzPrintCallout = ({ map, importedGeoJSON, label }) => {
   const anchorY = projected.y * scaleY;
   const safeLabel = String(label || "Imported KMZ").trim() || "Imported KMZ";
 
-  const fontSize = 22 * scale;
-  const padX = 12 * scale;
-  const padY = 8 * scale;
-  const borderWidth = 2.5 * scale;
+  const fontSize = 15 * scale;
+  const padX = 9 * scale;
+  const padY = 5 * scale;
+  const borderWidth = 2 * scale;
   const margin = 18 * scale;
-  const gapX = 38 * scale;
-  const gapY = 46 * scale;
+  const gapX = 28 * scale;
+  const gapY = 34 * scale;
 
   ctx.save();
   ctx.font = `700 ${fontSize}px Arial, Helvetica, sans-serif`;
@@ -1712,7 +1711,9 @@ const makePrintableHtml = ({
       white-space: nowrap;
     }
     .scale-label.start { left: 0; }
-    .scale-label.mid { left: 50%; transform: translateX(-50%); }
+    .scale-label.q1 { left: 25%; transform: translateX(-50%); }
+    .scale-label.q2 { left: 50%; transform: translateX(-50%); }
+    .scale-label.q3 { left: 75%; transform: translateX(-50%); }
     .scale-label.end { right: 0; }
     .scale-bar-row {
       display: flex;
@@ -1806,8 +1807,10 @@ const makePrintableHtml = ({
     <div class="scale-wrap" aria-label="Map scale bar">
       <div class="scale-labels">
         <span class="scale-label start">0</span>
-        <span class="scale-label mid">${escapeHtml(resolvedScaleBar.halfLabel)}</span>
-        <span class="scale-label end">${escapeHtml(resolvedScaleBar.totalLabel)}</span>
+        <span class="scale-label q1">50</span>
+        <span class="scale-label q2">100</span>
+        <span class="scale-label q3">150</span>
+        <span class="scale-label end">200</span>
       </div>
       <div class="scale-bar-row">
         <div class="scale-bar">
@@ -1836,14 +1839,13 @@ const createPdfReportFile = async (printWindow, title) => {
   }
 
   await Promise.all(
-    Array.from(printWindow.document.images).map(
-      (image) =>
-        image.complete
-          ? Promise.resolve()
-          : new Promise((resolve) => {
-              image.addEventListener("load", resolve, { once: true });
-              image.addEventListener("error", resolve, { once: true });
-            }),
+    Array.from(printWindow.document.images).map((image) =>
+      image.complete
+        ? Promise.resolve()
+        : new Promise((resolve) => {
+            image.addEventListener("load", resolve, { once: true });
+            image.addEventListener("error", resolve, { once: true });
+          }),
     ),
   );
 
@@ -1858,8 +1860,10 @@ const createPdfReportFile = async (printWindow, title) => {
   const pageHeight = pdf.internal.pageSize.getHeight();
   const imageRatio = canvas.width / canvas.height;
   const pageRatio = pageWidth / pageHeight;
-  const imageWidth = imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio;
-  const imageHeight = imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
+  const imageWidth =
+    imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio;
+  const imageHeight =
+    imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
 
   pdf.addImage(
     canvas.toDataURL("image/jpeg", 0.92),
@@ -1870,9 +1874,10 @@ const createPdfReportFile = async (printWindow, title) => {
     imageHeight,
   );
 
-  const safeName = String(title || "KMZ_Report")
-    .replace(/[^a-z0-9]+/gi, "_")
-    .replace(/^_+|_+$/g, "") || "KMZ_Report";
+  const safeName =
+    String(title || "KMZ_Report")
+      .replace(/[^a-z0-9]+/gi, "_")
+      .replace(/^_+|_+$/g, "") || "KMZ_Report";
   return new File([pdf.output("blob")], `${safeName}.pdf`, {
     type: "application/pdf",
   });
@@ -2206,7 +2211,7 @@ export default function Import({ map, filters, onClose }) {
 
       const { count, types } = summarise(preparedGeoJSON);
       setSummary({ fileName: file.name, title: importTitle, count, types });
-        setImportedFile(file);
+      setImportedFile(file);
     } catch (e) {
       console.error("Import error:", e);
       setError("An unexpected error occurred while importing the file.");
@@ -2231,7 +2236,8 @@ export default function Import({ map, filters, onClose }) {
 
         setLoading(true);
         const response = await fetch(url);
-        if (!response.ok) throw new Error("The stored KMZ file could not be loaded.");
+        if (!response.ok)
+          throw new Error("The stored KMZ file could not be loaded.");
 
         const blob = await response.blob();
         if (!cancelled) {
@@ -2243,7 +2249,9 @@ export default function Import({ map, filters, onClose }) {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError?.message || "The stored KMZ file could not be loaded.");
+          setError(
+            loadError?.message || "The stored KMZ file could not be loaded.",
+          );
           setLoading(false);
         }
       }
@@ -2401,10 +2409,7 @@ export default function Import({ map, filters, onClose }) {
       logPayload.append("project_type", String(filters?.projectType || ""));
       logPayload.append("phase", String(filters?.phase || ""));
       logPayload.append("feature_count", String(summary?.count || 0));
-      logPayload.append(
-        "geometry_types",
-        JSON.stringify(summary?.types || []),
-      );
+      logPayload.append("geometry_types", JSON.stringify(summary?.types || []));
       logPayload.append("printed_by", printedBy);
       logPayload.append("print_title", title);
       await createKmzPrintLog(logPayload);
@@ -2426,7 +2431,9 @@ export default function Import({ map, filters, onClose }) {
           }
         }, 100);
       };
-      printWindow.addEventListener?.("afterprint", closePrintWindow, { once: true });
+      printWindow.addEventListener?.("afterprint", closePrintWindow, {
+        once: true,
+      });
       printWindow.focus();
       printWindow.print();
     } catch (printError) {

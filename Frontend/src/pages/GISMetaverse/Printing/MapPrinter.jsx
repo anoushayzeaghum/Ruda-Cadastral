@@ -3,10 +3,12 @@ import RudaLogo from "../../../assets/Ruda.png";
 import { buildVisibleLegendRows } from "./LegendGenerator";
 import { PRINT_EVENTS, dispatchPrintEvent } from "./PrintEvents";
 import { makePrintableHtml } from "./PrintTemplate";
+import { createPhaseInsetImage } from "./PhaseInset";
 import {
   captureMapCanvas,
   getMapMetadata,
   getSelectedProjectTitle,
+  getPrintScaleBarInfo,
   openPreparingPrintWindow,
 } from "./PrintUtils";
 
@@ -30,65 +32,84 @@ export default function MapPrinter({
     publishState();
     window.addEventListener(PRINT_EVENTS.REQUEST_PRINT_STATE, publishState);
     return () => {
-      window.removeEventListener(PRINT_EVENTS.REQUEST_PRINT_STATE, publishState);
+      window.removeEventListener(
+        PRINT_EVENTS.REQUEST_PRINT_STATE,
+        publishState,
+      );
     };
   }, [publishState]);
 
-  const printCurrentMap = useCallback(async (event) => {
-    if (!map || !isMapReady || printLoading) return;
+  const printCurrentMap = useCallback(
+    async (event) => {
+      if (!map || !isMapReady || printLoading) return;
 
-    // Use custom title from the event if the header provided one
-    const customTitle = event?.detail?.customTitle || null;
+      // Use custom title from the event if the header provided one
+      const customTitle = event?.detail?.customTitle || null;
 
-    const printWindow = openPreparingPrintWindow();
-    if (!printWindow) {
-      window.alert(
-        "The browser blocked the print window. Allow pop-ups for this site and try again.",
-      );
-      return;
-    }
+      const printWindow = openPreparingPrintWindow();
+      if (!printWindow) {
+        window.alert(
+          "The browser blocked the print window. Allow pop-ups for this site and try again.",
+        );
+        return;
+      }
 
-    setPrintLoading(true);
+      setPrintLoading(true);
 
-    try {
-      const mapImage = await captureMapCanvas(map);
-      const legendRows = buildVisibleLegendRows({
-        map,
-        layerVisibility,
-        adminBoundaryVisibility,
-        includeImportedLayer: true,
-      });
-      const metadata = getMapMetadata(map);
-      const title = customTitle || getSelectedProjectTitle(filters);
+      try {
+        const mapImage = await captureMapCanvas(map);
+        const legendRows = buildVisibleLegendRows({
+          map,
+          layerVisibility,
+          adminBoundaryVisibility,
+          includeImportedLayer: true,
+        });
+        const metadata = getMapMetadata(map);
+        let insetImage = mapImage;
+        try {
+          insetImage = await createPhaseInsetImage();
+        } catch (error) {
+          console.warn(
+            "Master Plan Phases inset could not be generated.",
+            error,
+          );
+        }
+        const title = customTitle || getSelectedProjectTitle(filters);
 
-      printWindow.document.open();
-      printWindow.document.write(
-        makePrintableHtml({
-          title,
-          subtitle: "Current Visible Layers",
-          mapImage,
-          insetImage: mapImage,
-          legendRows,
-          logoUrl: RudaLogo,
-          metadata,
-        }),
-      );
-      printWindow.document.close();
-    } catch (error) {
-      console.error("[MapPrinter] Current map print failed", error);
-      printWindow.close();
-      window.alert(error?.message || "The map could not be prepared for printing.");
-    } finally {
-      setPrintLoading(false);
-    }
-  }, [
-    map,
-    isMapReady,
-    printLoading,
-    filters,
-    layerVisibility,
-    adminBoundaryVisibility,
-  ]);
+        printWindow.document.open();
+        printWindow.document.write(
+          makePrintableHtml({
+            title,
+            subtitle: "Current Visible Layers",
+            mapImage,
+            insetImage,
+            legendRows,
+            logoUrl: RudaLogo,
+            metadata,
+            insetTitle: "RUDA Master Plan Phases Overview",
+            scaleBarInfo: getPrintScaleBarInfo(map),
+          }),
+        );
+        printWindow.document.close();
+      } catch (error) {
+        console.error("[MapPrinter] Current map print failed", error);
+        printWindow.close();
+        window.alert(
+          error?.message || "The map could not be prepared for printing.",
+        );
+      } finally {
+        setPrintLoading(false);
+      }
+    },
+    [
+      map,
+      isMapReady,
+      printLoading,
+      filters,
+      layerVisibility,
+      adminBoundaryVisibility,
+    ],
+  );
 
   useEffect(() => {
     window.addEventListener(PRINT_EVENTS.PRINT_CURRENT_MAP, printCurrentMap);
