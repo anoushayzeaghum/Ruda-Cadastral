@@ -121,6 +121,7 @@ const AppRoutes = () => {
             }
           />
           <Route path="/kmz-logs" element={<AdminKMZLogs />} />
+          <Route path="/kmz-map-logs" element={<AdminKMZLogs />} />
 
           {/* ====================================================
               EXISTING APPLICATION ROUTES
