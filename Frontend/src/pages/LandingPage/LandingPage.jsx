@@ -69,6 +69,10 @@ const ARC_SERVER_LINKS = [
     label: "Plot Information Portal",
     href: "https://arcgis-server.ruda.gov.pk/portal/apps/experiencebuilder/experience/?id=1d2b9481f4db447799e9da7156dd7bf4&draft=true",
   },
+  {
+    label: "GIS Spatial Lense",
+    href: "https://arcgis-server.ruda.gov.pk/portal/apps/experiencebuilder/experience/?id=4bbdd207d33347159b3cdd758e68722c&draft=true",
+  },
 ];
 
 const STAT_GROUPS = [
