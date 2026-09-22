@@ -1729,13 +1729,16 @@ const makePrintableHtml = ({
       background: #ffffff;
     }
     .scale-segment {
-      flex: 1 1 25%;
+      display: block;
+      flex: 0 0 20%;
       height: 100%;
       border-right: 1px solid #111111;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
+    .scale-segment:nth-child(odd) { background: #000000 !important; }
+    .scale-segment:nth-child(even) { background: #ffffff !important; }
     .scale-segment:last-child { border-right: none; }
-    .scale-segment.white { background: #ffffff; }
-    .scale-segment.black { background: #111111; }
     .scale-unit {
       margin-left: 0;
       padding-bottom: 0;
@@ -1814,10 +1817,11 @@ const makePrintableHtml = ({
       </div>
       <div class="scale-bar-row">
         <div class="scale-bar">
-          <span class="scale-segment black"></span>
-          <span class="scale-segment white"></span>
-          <span class="scale-segment black"></span>
-          <span class="scale-segment white"></span>
+          <span class="scale-segment" style="background-color:#000000"></span>
+          <span class="scale-segment" style="background-color:#ffffff"></span>
+          <span class="scale-segment" style="background-color:#000000"></span>
+          <span class="scale-segment" style="background-color:#ffffff"></span>
+          <span class="scale-segment" style="background-color:#000000"></span>
         </div>
         <span class="scale-unit">${escapeHtml(resolvedScaleBar.unit || "Meters")}</span>
       </div>

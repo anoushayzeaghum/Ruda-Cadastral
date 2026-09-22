@@ -104,8 +104,10 @@ export const makePrintableHtml = ({
     .scale-label.start { left: 0; } .scale-label.mid { left: 50%; transform: translateX(-50%); } .scale-label.end { right: 0; }
     .scale-bar-row { display: flex; align-items: flex-end; gap: 3px; }
     .scale-bar { display: flex; width: 240px; height: 13px; border: 1px solid #111; overflow: hidden; }
-    .scale-segment { flex: 1 1 20%; border-right: 1px solid #111; } .scale-segment:last-child { border-right: none; }
-    .scale-segment.black { background: #111; } .scale-segment.white { background: #fff; }
+    .scale-segment { display: block; flex: 0 0 20%; height: 100%; border-right: 1px solid #111; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .scale-segment:nth-child(odd) { background: #000 !important; }
+    .scale-segment:nth-child(even) { background: #fff !important; }
+    .scale-segment:last-child { border-right: none; }
     .scale-unit { font-size: 9px; line-height: 12px; font-weight: 600; white-space: nowrap; }
     .metadata { display: none; }
     @media print { html, body, .sheet { width: 420mm; height: 297mm; } }
@@ -126,7 +128,7 @@ export const makePrintableHtml = ({
       <div><strong>Printed:</strong> ${escapeHtml(metadata.printedAt || "-")}</div>
     </div>
     <div class="legend"><h3>LEGEND</h3><div class="legend-grid">${legendHtml}</div></div>
-    <div class="scale-wrap" aria-label="Map scale bar"><div class="scale-labels"><span class="scale-label start">0</span><span class="scale-label mid">250</span><span class="scale-label end">500</span></div><div class="scale-bar-row"><div class="scale-bar"><span class="scale-segment black"></span><span class="scale-segment white"></span><span class="scale-segment black"></span><span class="scale-segment white"></span><span class="scale-segment black"></span></div><span class="scale-unit">${escapeHtml(scaleBarInfo?.unit || "Meters")}</span></div></div>
+    <div class="scale-wrap" aria-label="Map scale bar"><div class="scale-labels"><span class="scale-label start">0</span><span class="scale-label mid">250</span><span class="scale-label end">500</span></div><div class="scale-bar-row"><div class="scale-bar"><span class="scale-segment" style="background-color:#000000"></span><span class="scale-segment" style="background-color:#ffffff"></span><span class="scale-segment" style="background-color:#000000"></span><span class="scale-segment" style="background-color:#ffffff"></span><span class="scale-segment" style="background-color:#000000"></span></div><span class="scale-unit">${escapeHtml(scaleBarInfo?.unit || "Meters")}</span></div></div>
   </div>
   <script>
     const waitForImages = () => Promise.all(Array.from(document.images).map((image) => {
