@@ -96,7 +96,11 @@ const RUDA_PROJECT_DATASETS = [
     path: "/area/block-boundary",
     type: "blockBoundary",
     endpoint: "/block/",
-    columns: [{ key: "name", label: "Name" }, { key: "block", label: "Block" }, { key: "project", label: "Project ID" }],
+    columns: [
+      { key: "name", label: "Name" },
+      { key: "block", label: "Block" },
+      { key: "project", label: "Project ID" },
+    ],
     icon: SquareStack,
     tone: "bg-sky-50 text-sky-700",
   },
@@ -106,7 +110,13 @@ const RUDA_PROJECT_DATASETS = [
     path: "/area/masterplan-plot-data",
     type: "masterplanPlotData",
     endpoint: "/plot/",
-    columns: [{ key: "plot_no", label: "Plot No" }, { key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "project", label: "Project ID" }, { key: "block", label: "Block ID" }],
+    columns: [
+      { key: "plot_no", label: "Plot No" },
+      { key: "name", label: "Name" },
+      { key: "type", label: "Type" },
+      { key: "project", label: "Project ID" },
+      { key: "block", label: "Block ID" },
+    ],
     icon: Grid2X2,
     tone: "bg-violet-50 text-violet-700",
   },
@@ -116,7 +126,14 @@ const RUDA_PROJECT_DATASETS = [
     path: "/area/spot-level",
     type: "spotLevel",
     endpoint: "/spot-level/",
-    columns: [{ key: "id", label: "ID" }, { key: "x", label: "X" }, { key: "y", label: "Y" }, { key: "z", label: "Z" }, { key: "elevation", label: "Elevation" }, { key: "project", label: "Project ID" }],
+    columns: [
+      { key: "id", label: "ID" },
+      { key: "x", label: "X" },
+      { key: "y", label: "Y" },
+      { key: "z", label: "Z" },
+      { key: "elevation", label: "Elevation" },
+      { key: "project", label: "Project ID" },
+    ],
     icon: MapPin,
     tone: "bg-amber-50 text-amber-700",
   },
@@ -126,7 +143,11 @@ const RUDA_PROJECT_DATASETS = [
     path: "/area/water-supply-points",
     type: "waterSupplyPoints",
     endpoint: "/wspoint-features-cb1/",
-    columns: [{ key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "project_id", label: "Project ID" }],
+    columns: [
+      { key: "name", label: "Name" },
+      { key: "type", label: "Type" },
+      { key: "project_id", label: "Project ID" },
+    ],
     icon: Waypoints,
     tone: "bg-cyan-50 text-cyan-700",
   },
@@ -136,7 +157,12 @@ const RUDA_PROJECT_DATASETS = [
     path: "/area/water-supply-lines",
     type: "waterSupplyLines",
     endpoint: "/wsl-cb1/",
-    columns: [{ key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "dia", label: "Diameter" }, { key: "project_id", label: "Project ID" }],
+    columns: [
+      { key: "name", label: "Name" },
+      { key: "type", label: "Type" },
+      { key: "dia", label: "Diameter" },
+      { key: "project_id", label: "Project ID" },
+    ],
     icon: Shapes,
     tone: "bg-blue-50 text-blue-700",
   },
@@ -146,7 +172,11 @@ const RUDA_PROJECT_DATASETS = [
     path: "/area/sewer-points",
     type: "sewerPoints",
     endpoint: "/swpoint-cb1/",
-    columns: [{ key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "project_id", label: "Project ID" }],
+    columns: [
+      { key: "name", label: "Name" },
+      { key: "type", label: "Type" },
+      { key: "project_id", label: "Project ID" },
+    ],
     icon: Database,
     tone: "bg-rose-50 text-rose-700",
   },
@@ -156,7 +186,12 @@ const RUDA_PROJECT_DATASETS = [
     path: "/area/sewer-lines",
     type: "sewerLines",
     endpoint: "/sw-line/",
-    columns: [{ key: "name", label: "Name" }, { key: "dia", label: "Diameter" }, { key: "shape_leng", label: "Length" }, { key: "project_id", label: "Project ID" }],
+    columns: [
+      { key: "name", label: "Name" },
+      { key: "dia", label: "Diameter" },
+      { key: "shape_leng", label: "Length" },
+      { key: "project_id", label: "Project ID" },
+    ],
     icon: FileUp,
     tone: "bg-lime-50 text-lime-700",
   },
@@ -270,38 +305,36 @@ export default function ShapefileImport() {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {filtered.map((item) => {
               const Icon = item.icon;
+
               return (
                 <button
                   key={item.title}
                   onClick={() => navigate(item.path)}
-                  className="group rounded-2xl border border-slate-200 p-4 text-left transition hover:-translate-y-0.5 hover:border-[#0B7A3B]/35 hover:shadow-md dark:border-white/10"
+                  className="group rounded-2xl border border-slate-200 px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-[#0B7A3B]/35 hover:shadow-md dark:border-white/10"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    {/* Icon */}
                     <span
-                      className={`flex h-11 w-11 items-center justify-center rounded-xl ${item.tone}`}
+                      className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.tone}`}
                     >
-                      <Icon size={20} />
+                      <Icon size={18} />
                     </span>
 
-                    {/* Replaced 'Available' with Total Records and Count */}
                     <div className="text-right">
                       <span className="block text-[9px] uppercase tracking-wide text-slate-400">
                         Total Records
                       </span>
+
                       <span className="text-2xl font-normal text-slate-800 dark:text-white">
                         {item.count}
                       </span>
                     </div>
                   </div>
 
-                  {/* Title */}
-                  <h3 className="mt-3 text-m font-normal text-[#14233a] dark:text-white">
+                  <h3 className="mt-2 text-m font-normal text-[#14233a] dark:text-white">
                     {item.title}
                   </h3>
 
-                  {/* Description */}
-                  <p className="mt-1 min-h-[32px] text-[10px] leading-relaxed text-slate-400">
+                  <p className="mt-1 text-[10px] leading-relaxed text-slate-400">
                     {item.description}
                   </p>
                 </button>
