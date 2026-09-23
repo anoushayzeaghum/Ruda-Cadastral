@@ -24,13 +24,13 @@ export default function AdminPage({ children, contentClassName = "" }) {
   }, [sidebarOpen]);
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f5f7f8] text-slate-900 dark:bg-[#08110d] dark:text-white">
+    <div className="h-screen overflow-hidden bg-[#f4f6f8] text-slate-900 dark:bg-[#08110d] dark:text-white">
       <div className="flex h-full flex-col">
         <Header
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           sidebarOpen={sidebarOpen}
-          toggleSidebar={() => setSidebarOpen((v) => !v)}
+          toggleSidebar={() => setSidebarOpen((value) => !value)}
         />
 
         <div className="flex min-h-0 flex-1 overflow-hidden">
