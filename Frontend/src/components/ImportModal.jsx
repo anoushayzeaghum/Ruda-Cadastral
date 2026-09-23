@@ -9,6 +9,14 @@ import {
   importAcre,
   importTrijunction,
   importFieldPoints,
+  importProjectBoundary,
+  importBlockBoundary,
+  importMasterplanPlotData,
+  importSpotLevel,
+  importSewerLines,
+  importSewerPoints,
+  importWaterSupplyLines,
+  importWaterSupplyPoints,
 } from "../services/api";
 
 const importHandlers = {
@@ -22,6 +30,14 @@ const importHandlers = {
   acre: importAcre,
   trijunction: importTrijunction,
   fieldpoints: importFieldPoints,
+  projectBoundary: importProjectBoundary,
+  blockBoundary: importBlockBoundary,
+  masterplanPlotData: importMasterplanPlotData,
+  spotLevel: importSpotLevel,
+  sewerLines: importSewerLines,
+  sewerPoints: importSewerPoints,
+  waterSupplyLines: importWaterSupplyLines,
+  waterSupplyPoints: importWaterSupplyPoints,
 };
 
 export default function ImportModal({

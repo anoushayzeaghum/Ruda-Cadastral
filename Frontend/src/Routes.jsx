@@ -40,17 +40,25 @@ import AdminKMZLogs from "./pages/AdminDashboard/Admin/KMZMapLogs";
 
 // ============================================================
 // AREA / SHAPEFILE MODULES
-// src/pages/AdminDashboard/Area Management/
+// src/pages/AdminDashboard/ShapefileImport/
 // ============================================================
-import District from "./pages/AdminDashboard/Area Management/District";
-import Tehsil from "./pages/AdminDashboard/Area Management/Tehsil";
-import Mauza from "./pages/AdminDashboard/Area Management/Mauza";
-import Khasra from "./pages/AdminDashboard/Area Management/Khasra";
-import Murabba from "./pages/AdminDashboard/Area Management/Murabba";
-import Square from "./pages/AdminDashboard/Area Management/Square";
-import Acre from "./pages/AdminDashboard/Area Management/Acre";
-import Trijunction from "./pages/AdminDashboard/Area Management/Trijunction";
-import FieldPoints from "./pages/AdminDashboard/Area Management/FieldPoints";
+import District from "./pages/AdminDashboard/ShapefileImport/GISLayersDatasets/District";
+import Tehsil from "./pages/AdminDashboard/ShapefileImport/GISLayersDatasets/Tehsil";
+import Mauza from "./pages/AdminDashboard/ShapefileImport/GISLayersDatasets/Mauza";
+import Khasra from "./pages/AdminDashboard/ShapefileImport/GISLayersDatasets/Khasra";
+import Murabba from "./pages/AdminDashboard/ShapefileImport/GISLayersDatasets/Murabba";
+import Square from "./pages/AdminDashboard/ShapefileImport/GISLayersDatasets/Square";
+import Acre from "./pages/AdminDashboard/ShapefileImport/GISLayersDatasets/Acre";
+import Trijunction from "./pages/AdminDashboard/ShapefileImport/GISLayersDatasets/Trijunction";
+import FieldPoints from "./pages/AdminDashboard/ShapefileImport/GISLayersDatasets/FieldPoints";
+import ProjectBoundary from "./pages/AdminDashboard/ShapefileImport/RudaProjectsDatasets/ProjectBoundary";
+import BlockBoundary from "./pages/AdminDashboard/ShapefileImport/RudaProjectsDatasets/BlockBoundary";
+import MasterPlanPlotData from "./pages/AdminDashboard/ShapefileImport/RudaProjectsDatasets/MasterPlanPlotData";
+import SpotLevel from "./pages/AdminDashboard/ShapefileImport/RudaProjectsDatasets/SpotLevel";
+import WaterSupplyPoints from "./pages/AdminDashboard/ShapefileImport/RudaProjectsDatasets/WaterSupplyPoints";
+import WaterSupplyLines from "./pages/AdminDashboard/ShapefileImport/RudaProjectsDatasets/WaterSupplyLines";
+import SewerPoints from "./pages/AdminDashboard/ShapefileImport/RudaProjectsDatasets/SewerPoints";
+import SewerLines from "./pages/AdminDashboard/ShapefileImport/RudaProjectsDatasets/SewerLines";
 
 const AppRoutes = () => {
   return (
@@ -145,7 +153,7 @@ const AppRoutes = () => {
           />
 
           {/* ====================================================
-              SHAPEFILE / AREA MANAGEMENT ROUTES
+              SHAPEFILE / ShapefileImport ROUTES
               The new Import Center links to these URLs.
              ==================================================== */}
           <Route path="/area" element={<AreaLayout />}>
@@ -158,6 +166,14 @@ const AppRoutes = () => {
             <Route path="trijunction" element={<Trijunction />} />
             <Route path="fieldpoints" element={<FieldPoints />} />
             <Route path="murabba" element={<Murabba />} />
+            <Route path="project-boundary" element={<ProjectBoundary />} />
+            <Route path="block-boundary" element={<BlockBoundary />} />
+            <Route path="masterplan-plot-data" element={<MasterPlanPlotData />} />
+            <Route path="spot-level" element={<SpotLevel />} />
+            <Route path="water-supply-points" element={<WaterSupplyPoints />} />
+            <Route path="water-supply-lines" element={<WaterSupplyLines />} />
+            <Route path="sewer-points" element={<SewerPoints />} />
+            <Route path="sewer-lines" element={<SewerLines />} />
             <Route
               path="society-3d-upload"
               element={<Society3DMapUploadPage />}

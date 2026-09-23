@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Database,
@@ -12,6 +12,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import AdminPage from "../dashboard/AdminPage";
+import { getProjectDatasetCount } from "../../../services/api";
 
 const DATASETS = [
   {
@@ -84,48 +85,78 @@ const RUDA_PROJECT_DATASETS = [
   {
     title: "Project Boundary",
     description: "Project-level boundary datasets for RUDA schemes",
+    path: "/area/project-boundary",
+    endpoint: "/project/",
     icon: Landmark,
     tone: "bg-emerald-50 text-emerald-700",
   },
   {
     title: "Block Boundary",
     description: "Block boundaries within selected RUDA projects",
+    path: "/area/block-boundary",
+    type: "blockBoundary",
+    endpoint: "/block/",
+    columns: [{ key: "name", label: "Name" }, { key: "block", label: "Block" }, { key: "project", label: "Project ID" }],
     icon: SquareStack,
     tone: "bg-sky-50 text-sky-700",
   },
   {
     title: "Masterplan Plot Data",
     description: "Masterplan plot boundaries and related project data",
+    path: "/area/masterplan-plot-data",
+    type: "masterplanPlotData",
+    endpoint: "/plot/",
+    columns: [{ key: "plot_no", label: "Plot No" }, { key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "project", label: "Project ID" }, { key: "block", label: "Block ID" }],
     icon: Grid2X2,
     tone: "bg-violet-50 text-violet-700",
   },
   {
     title: "Spot Level",
     description: "Survey spot-level points and elevation information",
+    path: "/area/spot-level",
+    type: "spotLevel",
+    endpoint: "/spot-level/",
+    columns: [{ key: "id", label: "ID" }, { key: "x", label: "X" }, { key: "y", label: "Y" }, { key: "z", label: "Z" }, { key: "elevation", label: "Elevation" }, { key: "project", label: "Project ID" }],
     icon: MapPin,
     tone: "bg-amber-50 text-amber-700",
   },
   {
     title: "Water Supply Points",
     description: "Water supply nodes, assets and service points",
+    path: "/area/water-supply-points",
+    type: "waterSupplyPoints",
+    endpoint: "/wspoint-features-cb1/",
+    columns: [{ key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "project_id", label: "Project ID" }],
     icon: Waypoints,
     tone: "bg-cyan-50 text-cyan-700",
   },
   {
     title: "Water Supply Lines",
     description: "Water supply network and distribution line datasets",
+    path: "/area/water-supply-lines",
+    type: "waterSupplyLines",
+    endpoint: "/wsl-cb1/",
+    columns: [{ key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "dia", label: "Diameter" }, { key: "project_id", label: "Project ID" }],
     icon: Shapes,
     tone: "bg-blue-50 text-blue-700",
   },
   {
     title: "Sewer Points",
     description: "Sewer network nodes, chambers and control points",
+    path: "/area/sewer-points",
+    type: "sewerPoints",
+    endpoint: "/swpoint-cb1/",
+    columns: [{ key: "name", label: "Name" }, { key: "type", label: "Type" }, { key: "project_id", label: "Project ID" }],
     icon: Database,
     tone: "bg-rose-50 text-rose-700",
   },
   {
     title: "Sewer Lines",
     description: "Sewerage network and pipeline alignment datasets",
+    path: "/area/sewer-lines",
+    type: "sewerLines",
+    endpoint: "/sw-line/",
+    columns: [{ key: "name", label: "Name" }, { key: "dia", label: "Diameter" }, { key: "shape_leng", label: "Length" }, { key: "project_id", label: "Project ID" }],
     icon: FileUp,
     tone: "bg-lime-50 text-lime-700",
   },
@@ -134,11 +165,39 @@ const RUDA_PROJECT_DATASETS = [
 export default function ShapefileImport() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [projectCounts, setProjectCounts] = useState({});
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProjectCounts = async () => {
+      const results = await Promise.all(
+        RUDA_PROJECT_DATASETS.map(async (item) => {
+          if (!item.endpoint) return [item.title, null];
+
+          try {
+            return [item.title, await getProjectDatasetCount(item.endpoint)];
+          } catch (error) {
+            console.error(`Failed to load ${item.title} count:`, error);
+            return [item.title, null];
+          }
+        }),
+      );
+
+      if (active) setProjectCounts(Object.fromEntries(results));
+    };
+
+    loadProjectCounts();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return q
-      ? DATASETS.filter((item) =>
+      ? [...DATASETS, ...RUDA_PROJECT_DATASETS].filter((item) =>
           `${item.title} ${item.description}`.toLowerCase().includes(q),
         )
       : DATASETS;
@@ -151,7 +210,7 @@ export default function ShapefileImport() {
           <div>
             <div className="mb-1 flex items-center gap-2">
               <span className="h-8 w-1 rounded-full bg-gradient-to-b from-[#0B7A3B] to-[#70D84F]" />
-              <h1 className="text-xl font-black font-semibold text-[#10203a] dark:text-white md:text-2xl">
+              <h1 className="text-xl font-semibold text-[#10203a] dark:text-white md:text-2xl">
                 Shapefile Import Center
               </h1>
             </div>
@@ -230,7 +289,7 @@ export default function ShapefileImport() {
                       <span className="block text-[9px] uppercase tracking-wide text-slate-400">
                         Total Records
                       </span>
-                      <span className="text-2xl font-normal font-black text-slate-800 dark:text-white">
+                      <span className="text-2xl font-normal text-slate-800 dark:text-white">
                         {item.count}
                       </span>
                     </div>
@@ -251,7 +310,7 @@ export default function ShapefileImport() {
           </div>
         </section>
 
-        {/* RUDA PROJECT DATASETS - UI ONLY FOR NOW */}
+        {/* RUDA PROJECT DATASETS */}
         <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
           <div className="mb-4 flex items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
@@ -275,6 +334,9 @@ export default function ShapefileImport() {
               return (
                 <div
                   key={item.title}
+                  onClick={() => item.path && navigate(item.path)}
+                  role={item.path ? "button" : undefined}
+                  tabIndex={item.path ? 0 : undefined}
                   className="rounded-2xl border border-slate-200 p-4 text-left dark:border-white/10"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -286,10 +348,10 @@ export default function ShapefileImport() {
 
                     <div className="text-right">
                       <span className="block text-[9px] uppercase tracking-wide text-slate-400">
-                        Status
+                        Total Records
                       </span>
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-300">
-                        ------
+                      <span className="text-2xl font-normal text-slate-800 dark:text-white">
+                        {projectCounts[item.title] ?? "—"}
                       </span>
                     </div>
                   </div>

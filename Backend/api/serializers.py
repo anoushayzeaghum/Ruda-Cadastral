@@ -592,7 +592,7 @@ class ProjectMauzaSerializer(serializers.ModelSerializer):
 # -------------------------------------------------------
 
 class SpotLevelSerializer(serializers.ModelSerializer):
-    project_name = serializers.CharField(source="project.project_name", read_only=True)
+    project_name = serializers.CharField(source="project.name", read_only=True)
 
     class Meta:
         model = SpotLevel
