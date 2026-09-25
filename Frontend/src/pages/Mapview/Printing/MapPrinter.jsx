@@ -154,9 +154,9 @@ export default function MapPrinter({
       printWindow.document.write(
         makePrintableHtml({
           title,
-          subtitle: isCadastralMode
-            ? "Cadastral Map — Current Visible Layers"
-            : "GIS Metaverse • Current Visible Layers",
+          // subtitle: isCadastralMode
+          //   ? "Cadastral Map — Current Visible Layers"
+          //   : "GIS Metaverse • Current Visible Layers",
           mapImage,
           insetImage: mapImage,
           legendRows,

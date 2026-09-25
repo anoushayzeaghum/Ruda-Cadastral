@@ -7,6 +7,7 @@ import {
   createPdfPreviewWindow,
   drawUnderlinedValue,
   getCornerCoordinates,
+  getPlotAreaSummary,
   loadPrintAssets,
   normalizeAreaText,
   openPdfPreview,
@@ -24,7 +25,7 @@ const PRINT_LAYOUT = {
   mainMapPanY: 10,
   // A little extra zoom makes the location map easier to read without
   // changing its box size or the surrounding layout.
-  insetMapZoom: 3.2,
+  insetMapZoom: 1.18,
   insetMapPanX: 0,
   insetMapPanY: 0,
 };
@@ -240,7 +241,10 @@ export const printSitePlan = async ({
   if (!previewWindow) return;
 
   try {
-    const details = buildPlotDetails(parcel, filters);
+    const details = {
+      ...buildPlotDetails(parcel, filters),
+      areaSummary: getPlotAreaSummary(parcel),
+    };
     const { gopLogo, rudaLogo } = await loadPrintAssets();
 
     const [mainCanvas, insetCanvas] = await Promise.all([
@@ -252,7 +256,7 @@ export const printSitePlan = async ({
         width: 2100,
         height: 1380,
         selectedFill: "#eba4d8",
-        selectedStroke: "#252525",
+        selectedStroke: "#d100b5",
         watermark: true,
         showDimensions: true,
         showVertexLabels: true,
@@ -266,8 +270,8 @@ export const printSitePlan = async ({
         mode: "location",
         width: 1200,
         height: 760,
-        selectedFill: "#f000ba",
-        selectedStroke: "#17256f",
+        selectedFill: "#eba4d8",
+        selectedStroke: "#d100b5",
         watermark: false,
         showDimensions: false,
         showVertexLabels: false,

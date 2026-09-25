@@ -9,6 +9,7 @@ from api.views.SquareView.import_square_shapefile import import_square_shapefile
 from api.views.AcreView.import_acre_shapefile import import_acre_shapefile
 from api.views.Trijunction.import_trijunction_shapefile import import_trijunction_shapefile
 from api.views.FieldPointsView.import_fieldpoints_shapefile import import_fieldpoints_shapefile
+from api.views.GISMetaverse.ProjectBoundaryView.import_projectboundary_shapefile import import_projectboundary_shapefile
 
 from api.views.RudaMasterPlan.RudaNotifiedPhasesBoundary import (
     CreateRudaNotifiedPhasesBoundaryView,
@@ -352,6 +353,15 @@ urlpatterns = [
     path("import/acre/", import_acre_shapefile),
     path("import/trijunction/", import_trijunction_shapefile),
     path("import/fieldpoints/", import_fieldpoints_shapefile),
+
+    path("import/project-boundary/", import_projectboundary_shapefile),
+    path("import/block-boundary/", import_blockboundary_shapefile),
+    path("import/masterplanplotdata/", import_masterplanplotdata_shapefile),
+    path("import/sewerlines/", import_sewerlines_shapefile),
+    path("import/sewerpoints/", import_sewerpoints_shapefile),
+    path("import/spotlevel/", import_spotlevel_shapefile),
+    path("import/watersupplylines/", import_watersupplylines_shapefile),
+    path("import/watersupplypoints/", import_watersupplypoints_shapefile),
 
     path(
         "plot-options/",

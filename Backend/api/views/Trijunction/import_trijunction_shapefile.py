@@ -11,7 +11,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from api.shapefiles.import_trijunction import ShapefileImportError, run_trijunction_import
+from api.shapefiles.GISLayersShapefiles.import_trijunction import ShapefileImportError, run_trijunction_import
 
 
 def _safe_extract(archive, destination):

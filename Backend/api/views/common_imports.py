@@ -24,7 +24,11 @@ from ..models import *
 from ..serializers import *
 
 # Custom utilities
-import api.shapefiles as shapefiles
+# import Backend.api.shapefiles.GISLayersShapefiles as GISLayersShapefiles
+
+from api.shapefiles import GISLayersShapefiles
+from api.shapefiles import RudaProjectsShapefiles
+
 from api.utils import ApiResponse, get_tokens_for_user
 
 # Export Excel

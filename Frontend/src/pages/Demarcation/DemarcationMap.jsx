@@ -298,7 +298,7 @@ function addBaseLayers(map) {
       id: LAYERS.projectLine,
       type: "line",
       source: SOURCES.project,
-      paint: { "line-color": "#ff8b24", "line-width": 3 },
+      paint: { "line-color": "#06291f", "line-width": 3 },
     });
   }
 

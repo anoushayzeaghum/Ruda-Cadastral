@@ -318,12 +318,25 @@ class KhasraSerializer(GeoFeatureModelSerializer):
 
     def get_mauza_name(self, obj):
         direct_name = self._clean_name(getattr(obj, "mauza", None))
-        if direct_name:
+        mauza_id = getattr(obj, "mauza_id", None)
+
+        # Some verified Khasra rows contain the mauza ID in the text `mauza`
+        # column (for example "42") instead of the readable Mauza name.
+        # Keep genuine text names unchanged, but when the text value is the
+        # same identifier as mauza_id, use the existing Mauza lookup below.
+        direct_value_is_id = False
+        if direct_name and mauza_id is not None:
+            try:
+                direct_value_is_id = float(direct_name) == float(mauza_id)
+            except (TypeError, ValueError):
+                direct_value_is_id = False
+
+        if direct_name and not direct_value_is_id:
             return direct_name
 
         mauza_record = self._get_mauza_record(obj)
         return self._clean_name(
-            getattr(mauza_record, "mauza", None) if mauza_record else None
+            getattr(mauza_record, "mauza", None) if mauza_record else direct_name
         )
 
     class Meta:
@@ -579,7 +592,7 @@ class ProjectMauzaSerializer(serializers.ModelSerializer):
 # -------------------------------------------------------
 
 class SpotLevelSerializer(serializers.ModelSerializer):
-    project_name = serializers.CharField(source="project.project_name", read_only=True)
+    project_name = serializers.CharField(source="project.name", read_only=True)
 
     class Meta:
         model = SpotLevel

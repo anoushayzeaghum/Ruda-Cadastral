@@ -61,3 +61,5 @@ from .GISMetaverse.PHSPPPScheme import *
 from .GISMetaverse.ForestBoundary import *
 from .GISMetaverse.ExistingDrains import *
 from .KmzPrintLogView import *
+
+from .GISMetaverse.ProjectBoundaryView import *

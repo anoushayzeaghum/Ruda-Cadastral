@@ -69,6 +69,10 @@ const ARC_SERVER_LINKS = [
     label: "Plot Information Portal",
     href: "https://arcgis-server.ruda.gov.pk/portal/apps/experiencebuilder/experience/?id=1d2b9481f4db447799e9da7156dd7bf4&draft=true",
   },
+  {
+    label: "GIS Spatial Lense",
+    href: "https://arcgis-server.ruda.gov.pk/portal/apps/experiencebuilder/experience/?id=4bbdd207d33347159b3cdd758e68722c&draft=true",
+  },
 ];
 
 const STAT_GROUPS = [
@@ -227,13 +231,13 @@ const TEAM_MEMBERS = [
   },
   {
     id: 2,
-    name: "Brig. Mansoor",
+    name: "Brig. Mansoor Ahmad Janjua",
     designation: "Chief Operating Officer",
     image: "/Ruda_Official/Brig_Mansoor.png",
   },
   {
     id: 3,
-    name: "Brig. Bakhtiar",
+    name: "Brig. Bakhtiar Akram",
     designation: "EXECUTIVE DIRECTOR-LA&EM",
     image: "/Ruda_Official/Brig_Bakhtiar.png",
   },
@@ -301,7 +305,7 @@ const GIS_APPS = [
   },
   {
     icon: <Eye size={22} />,
-    title: "Metaverse KPIs",
+    title: "Administration Portal",
     desc: "Control and manage the complete cadastral system, including users, records, spatial datasets, dashboards, permissions and administrative workflows.",
     img: "/s5.png",
     route: "/dashboard",

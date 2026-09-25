@@ -4,7 +4,7 @@ import tempfile
 import shutil
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from api.shapefiles.import_mauza import run_mauza_import
+from api.shapefiles.GISLayersShapefiles.import_mauza import run_mauza_import
 
 
 @csrf_exempt

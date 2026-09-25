@@ -49,8 +49,10 @@ export const makePrintableHtml = ({
   insetImage,
   legendRows = [],
   logoUrl,
+  departmentLogoUrl,
   metadata = {},
   insetTitle = "RUDA / LP Principle Boundary Overview",
+  scaleBarInfo = null,
 }) => {
   const legendHtml = legendRows.length
     ? legendRows
@@ -78,13 +80,16 @@ export const makePrintableHtml = ({
     .map { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
     .title { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); min-width: 38%; max-width: 65%; padding: 10px 20px; background: rgba(255,255,255,.94); border: 1px solid #334155; text-align: center; font-size: 28px; font-weight: 800; letter-spacing: .02em; box-shadow: 0 8px 22px rgba(0,0,0,.18); }
     .subtitle { margin-top: 4px; font-size: 12px; font-weight: 600; color: #475569; }
-    .logo-box { position: absolute; left: 16px; top: 16px; width: 108px; height: 108px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.96); border: 1px solid #334155; padding: 8px; }
-    .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .north { position: absolute; right: 18px; top: 16px; width: 108px; height: 108px; border: 1px solid #334155; background: rgba(255,255,255,.96); display: flex; align-items: center; justify-content: center; padding: 5px; }
-    .north svg { width: 96px; height: 96px; display: block; }
-    .inset { position: absolute; left: 18px; bottom: 18px; width: 300px; background: rgba(255,255,255,.96); border: 2px solid #334155; padding: 8px; }
-    .inset-title { font-size: 12px; font-weight: 800; margin-bottom: 6px; }
-    .inset img { width: 100%; height: 165px; object-fit: cover; background: #eef2f7; border: 1px solid #64748b; }
+    .logo-box { position: absolute; left: 16px; top: 16px; width: 112px; height: 112px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.96); border: 1px solid #334155; border-radius: 50%; padding: 7px; overflow: hidden; }
+    .logo-box img { width: 98px; height: 98px; object-fit: contain; display: block; }
+    .north { position: absolute; right: 18px; top: 16px; width: 112px; height: 112px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.96); border: 1px solid #334155; border-radius: 50%; padding: 7px; overflow: hidden; }
+    .north svg { width: 98px; height: 98px; display: block; }
+    .inset { position: absolute; left: 18px; bottom: 18px; width: 300px; background: rgba(255,255,255,.96); border: 2px solid #334155; padding: 8px 8px 0; }
+    .inset img { width: 100%; height: 215px; object-fit: cover; background: #eef2f7; border: 1px solid #64748b; display: block; }
+    .inset-credit { margin: 6px -8px 0; padding: 5px 8px; border-top: 1px solid #334155; text-align: center; font-size: 10px; line-height: 1.2; font-weight: 700; }
+    .department-logo { position: absolute; left: 330px; bottom: 18px; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; padding: 0; }
+    .department-logo img { width: 96px; height: 96px; object-fit: contain; display: block; }
+    .bottom-scale-zone { position: absolute; left: 438px; right: 303px; bottom: 18px; display: flex; justify-content: center; align-items: flex-end; pointer-events: none; }
     .legend { position: absolute; right: 18px; bottom: 18px; width: 285px; max-height: 405px; overflow: hidden; background: rgba(255,255,255,.96); border: 2px solid #334155; padding: 12px; }
     .legend h3 { margin: 0 0 8px; font-size: 18px; }
     .legend-grid { display: grid; grid-template-columns: 1fr; gap: 3px; }
@@ -97,10 +102,18 @@ export const makePrintableHtml = ({
     .legend-polygon { width: 34px; height: 17px; border: 3px solid #111827; }
     .legend-gradient { width: 34px; height: 17px; border: 1px solid #334155; background: linear-gradient(90deg,#166534,#eab308,#dc2626); }
     .legend-empty { font-size: 11px; color: #64748b; }
-    .scale { display: none; }
-    .scale-bar { display: none; }
+    .scale-wrap { position: relative; background: rgba(255,255,255,.98); border: 1px solid #111827; padding: 2px 5px 4px; box-shadow: 0 2px 7px rgba(0,0,0,.15); }
+    .scale-labels { position: relative; width: 240px; height: 14px; color: #111; font-size: 9px; line-height: 12px; font-weight: 600; }
+    .scale-label { position: absolute; top: 0; white-space: nowrap; }
+    .scale-label.start { left: 0; } .scale-label.mid { left: 50%; transform: translateX(-50%); } .scale-label.end { right: 0; }
+    .scale-bar-row { display: flex; align-items: flex-end; gap: 3px; }
+    .scale-bar { display: flex; width: 240px; height: 13px; border: 1px solid #111; overflow: hidden; }
+    .scale-segment { display: block; flex: 0 0 20%; height: 100%; border-right: 1px solid #111; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .scale-segment:nth-child(odd) { background: #000 !important; }
+    .scale-segment:nth-child(even) { background: #fff !important; }
+    .scale-segment:last-child { border-right: none; }
+    .scale-unit { font-size: 9px; line-height: 12px; font-weight: 600; white-space: nowrap; }
     .metadata { display: none; }
-    .credit { position: absolute; left: 18px; bottom: 203px; padding: 5px 8px; background: rgba(255,255,255,.92); border: 1px solid #334155; font-size: 10px; font-weight: 700; }
     @media print { html, body, .sheet { width: 420mm; height: 297mm; } }
   </style>
 </head>
@@ -110,8 +123,8 @@ export const makePrintableHtml = ({
     <div class="logo-box"><img src="${logoUrl}" alt="RUDA Logo" /></div>
     <div class="title">${escapeHtml(title)}${subtitle ? `<div class="subtitle">${escapeHtml(subtitle)}</div>` : ""}</div>
     <div class="north">${northArrowSvg}</div>
-    <div class="inset"><div class="inset-title">${escapeHtml(insetTitle)}</div><img src="${insetImage || mapImage}" alt="Overview map" /></div>
-    <div class="credit">Prepared by: GIS Section, LA&amp;EM Department — RUDA</div>
+    <div class="inset"><img src="${insetImage || mapImage}" alt="Overview map" /><div class="inset-credit">Prepared By: GIS Section, LA&amp;EM Department<br/>Ravi Urban Development Authority (RUDA)</div></div>
+    ${departmentLogoUrl ? `<div class="department-logo"><img src="${departmentLogoUrl}" alt="RUDA GIS Directorate LA&EM Department Logo" /></div>` : ""}
     <div class="metadata">
       <div><strong>Center:</strong> ${escapeHtml(metadata.centerText || "-")}</div>
       <div><strong>Zoom:</strong> ${escapeHtml(metadata.zoomText || "-")}</div>
@@ -120,7 +133,7 @@ export const makePrintableHtml = ({
       <div><strong>Printed:</strong> ${escapeHtml(metadata.printedAt || "-")}</div>
     </div>
     <div class="legend"><h3>LEGEND</h3><div class="legend-grid">${legendHtml}</div></div>
-    <div class="scale">Approximate scale: ${escapeHtml(metadata.scaleText || "-")}<div class="scale-bar"></div></div>
+    <div class="bottom-scale-zone"><div class="scale-wrap" aria-label="Map scale bar"><div class="scale-labels"><span class="scale-label start">0</span><span class="scale-label mid">250</span><span class="scale-label end">500</span></div><div class="scale-bar-row"><div class="scale-bar"><span class="scale-segment" style="background-color:#000000"></span><span class="scale-segment" style="background-color:#ffffff"></span><span class="scale-segment" style="background-color:#000000"></span><span class="scale-segment" style="background-color:#ffffff"></span><span class="scale-segment" style="background-color:#000000"></span></div><span class="scale-unit">${escapeHtml(scaleBarInfo?.unit || "Meters")}</span></div></div></div>
   </div>
   <script>
     const waitForImages = () => Promise.all(Array.from(document.images).map((image) => {

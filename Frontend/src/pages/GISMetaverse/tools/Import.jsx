@@ -16,6 +16,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import RudaLogo from "../../../assets/Ruda.png";
+import RudaLandManagementLogo from "../../../assets/RUDA L&M.png";
 import { PRINT_EVENTS, dispatchPrintEvent } from "../Printing/PrintEvents";
 import {
   getMpPrincipleZoningGeoJSON,
@@ -121,6 +122,56 @@ const removeImportedLayers = (map) => {
     if (map.getLayer(id)) map.removeLayer(id);
   });
   if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+};
+
+/**
+ * Rebuild the imported dataset for print capture without live text/point layers.
+ * This keeps the user's current camera untouched while guaranteeing that only
+ * the intended KMZ polygon/line geometry is captured.
+ */
+const addImportedGeometryOnlyForPrint = (map, geojson) => {
+  if (!map || !geojson) return;
+
+  removeImportedLayers(map);
+
+  map.addSource(SOURCE_ID, {
+    type: "geojson",
+    data: geojson,
+    generateId: true,
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.fill,
+    type: "fill",
+    source: SOURCE_ID,
+    paint: {
+      "fill-color": IMPORTED_KMZ_STYLE.fillColor,
+      "fill-opacity": IMPORTED_KMZ_STYLE.fillOpacity,
+    },
+    filter: ["any", ["==", "$type", "Polygon"]],
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.outline,
+    type: "line",
+    source: SOURCE_ID,
+    paint: {
+      "line-color": IMPORTED_KMZ_STYLE.outlineColor,
+      "line-width": IMPORTED_KMZ_STYLE.outlineWidth,
+    },
+    filter: ["any", ["==", "$type", "Polygon"]],
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.line,
+    type: "line",
+    source: SOURCE_ID,
+    paint: {
+      "line-color": "#60a5fa",
+      "line-width": 2.5,
+    },
+    filter: ["==", "$type", "LineString"],
+  });
 };
 
 /** Normalise shpjs output — if multiple shapefiles, merge into one FeatureCollection */
@@ -1347,13 +1398,13 @@ const captureMapWithKmzPrintCallout = ({ map, importedGeoJSON, label }) => {
   const anchorY = projected.y * scaleY;
   const safeLabel = String(label || "Imported KMZ").trim() || "Imported KMZ";
 
-  const fontSize = 22 * scale;
-  const padX = 12 * scale;
-  const padY = 8 * scale;
-  const borderWidth = 2.5 * scale;
+  const fontSize = 15 * scale;
+  const padX = 9 * scale;
+  const padY = 5 * scale;
+  const borderWidth = 2 * scale;
   const margin = 18 * scale;
-  const gapX = 38 * scale;
-  const gapY = 46 * scale;
+  const gapX = 28 * scale;
+  const gapY = 34 * scale;
 
   ctx.save();
   ctx.font = `700 ${fontSize}px Arial, Helvetica, sans-serif`;
@@ -1487,6 +1538,7 @@ const makePrintableHtml = ({
   insetImage,
   legendRows,
   logoUrl,
+  departmentLogoUrl,
   scaleBarInfo,
 }) => {
   const legendHtml = legendRows
@@ -1557,30 +1609,34 @@ const makePrintableHtml = ({
       position: absolute;
       left: 16px;
       top: 16px;
-      width: 108px;
-      height: 108px;
+      width: 112px;
+      height: 112px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: rgba(255,255,255,.96);
       border: 1px solid #334155;
-      padding: 8px;
+      border-radius: 50%;
+      padding: 7px;
+      overflow: hidden;
     }
-    .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .logo-box img { width: 98px; height: 98px; object-fit: contain; display: block; }
     .north {
       position: absolute;
       right: 18px;
       top: 16px;
-      width: 108px;
-      height: 108px;
-      border: 1px solid #334155;
-      background: rgba(255,255,255,.96);
+      width: 112px;
+      height: 112px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 5px;
+      background: rgba(255,255,255,.96);
+      border: 1px solid #334155;
+      border-radius: 50%;
+      padding: 7px;
+      overflow: hidden;
     }
-    .north svg { width: 96px; height: 96px; display: block; }
+    .north svg { width: 98px; height: 98px; display: block; }
     /* ── Bottom-left block: inset map + credit, visually attached ── */
     .bottom-left-block {
       position: absolute;
@@ -1608,6 +1664,30 @@ const makePrintableHtml = ({
       background: #ffffff;
       border: 1px solid #64748b;
       display: block;
+    }
+    .department-logo {
+      position: absolute;
+      left: 432px;
+      bottom: 18px;
+      width: 96px;
+      height: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 0;
+      padding: 0;
+    }
+    .department-logo img { width: 96px; height: 96px; object-fit: contain; display: block; }
+    .bottom-scale-zone {
+      position: absolute;
+      left: 540px;
+      right: 288px;
+      bottom: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      pointer-events: none;
     }
     .legend {
       position: absolute;
@@ -1637,10 +1717,7 @@ const makePrintableHtml = ({
       box-shadow: inset 0 0 0 1px #ffffff;
     }
     .scale-wrap {
-      position: absolute;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
+      position: relative;
       background: rgba(255,255,255,.98);
       border: 1px solid #111827;
       padding: 2px 5px 4px;
@@ -1661,7 +1738,9 @@ const makePrintableHtml = ({
       white-space: nowrap;
     }
     .scale-label.start { left: 0; }
-    .scale-label.mid { left: 50%; transform: translateX(-50%); }
+    .scale-label.q1 { left: 25%; transform: translateX(-50%); }
+    .scale-label.q2 { left: 50%; transform: translateX(-50%); }
+    .scale-label.q3 { left: 75%; transform: translateX(-50%); }
     .scale-label.end { right: 0; }
     .scale-bar-row {
       display: flex;
@@ -1677,13 +1756,16 @@ const makePrintableHtml = ({
       background: #ffffff;
     }
     .scale-segment {
-      flex: 1 1 25%;
+      display: block;
+      flex: 0 0 20%;
       height: 100%;
       border-right: 1px solid #111111;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
+    .scale-segment:nth-child(odd) { background: #000000 !important; }
+    .scale-segment:nth-child(even) { background: #ffffff !important; }
     .scale-segment:last-child { border-right: none; }
-    .scale-segment.white { background: #ffffff; }
-    .scale-segment.black { background: #111111; }
     .scale-unit {
       margin-left: 0;
       padding-bottom: 0;
@@ -1747,77 +1829,39 @@ const makePrintableHtml = ({
       </div>
     </div>
 
+    ${departmentLogoUrl ? `<div class="department-logo"><img src="${departmentLogoUrl}" alt="RUDA GIS Directorate LA&EM Department Logo" /></div>` : ""}
+
     <div class="legend">
       <h3>Legend</h3>
       ${legendHtml || '<div class="legend-row">Visible map layers</div>'}
     </div>
 
-    <div class="scale-wrap" aria-label="Map scale bar">
-      <div class="scale-labels">
-        <span class="scale-label start">0</span>
-        <span class="scale-label mid">${escapeHtml(resolvedScaleBar.halfLabel)}</span>
-        <span class="scale-label end">${escapeHtml(resolvedScaleBar.totalLabel)}</span>
-      </div>
-      <div class="scale-bar-row">
-        <div class="scale-bar">
-          <span class="scale-segment black"></span>
-          <span class="scale-segment white"></span>
-          <span class="scale-segment black"></span>
-          <span class="scale-segment white"></span>
+    <div class="bottom-scale-zone">
+      <div class="scale-wrap" aria-label="Map scale bar">
+        <div class="scale-labels">
+          <span class="scale-label start">0</span>
+          <span class="scale-label q1">50</span>
+          <span class="scale-label q2">100</span>
+          <span class="scale-label q3">150</span>
+          <span class="scale-label end">200</span>
         </div>
-        <span class="scale-unit">${escapeHtml(resolvedScaleBar.unit || "Meters")}</span>
+        <div class="scale-bar-row">
+          <div class="scale-bar">
+            <span class="scale-segment" style="background-color:#000000"></span>
+            <span class="scale-segment" style="background-color:#ffffff"></span>
+            <span class="scale-segment" style="background-color:#000000"></span>
+            <span class="scale-segment" style="background-color:#ffffff"></span>
+            <span class="scale-segment" style="background-color:#000000"></span>
+          </div>
+          <span class="scale-unit">${escapeHtml(resolvedScaleBar.unit || "Meters")}</span>
+        </div>
       </div>
     </div>
   </div>
   <script>
-    const waitForImages = () => {
-      const images = Array.from(document.images);
-      return Promise.all(
-        images.map((image) => {
-          if (image.complete) return Promise.resolve();
-          return new Promise((resolve) => {
-            image.addEventListener("load", resolve, { once: true });
-            image.addEventListener("error", resolve, { once: true });
-          });
-        }),
-      );
-    };
-
-    const returnToApplication = () => {
-      try {
-        if (window.opener && !window.opener.closed) {
-          window.opener.focus();
-        }
-      } catch (error) {
-        // Ignore cross-window focus errors.
-      }
-
-      // Close the temporary print tab so it cannot keep focus or leave the
-      // application feeling blocked after printing/cancelling.
-      setTimeout(() => {
-        try {
-          window.close();
-        } catch (error) {
-          // Ignore browsers that do not allow scripted closing.
-        }
-      }, 100);
-    };
-
-    window.addEventListener("afterprint", returnToApplication, { once: true });
-
-    window.addEventListener("load", async () => {
-      await waitForImages();
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          window.focus();
-          window.print();
-
-          // Some browsers do not fire afterprint when the print dialog is
-          // cancelled. Restore focus and close the temporary tab as fallback.
-          setTimeout(returnToApplication, 1500);
-        });
-      });
-    });
+    // Printing is triggered by the parent window only after the PDF snapshot
+    // has been generated and the KMZ log upload has completed. This avoids a
+    // race where this temporary tab closes while html2canvas is still reading it.
   </script>
 </body>
 </html>`;
@@ -1830,14 +1874,13 @@ const createPdfReportFile = async (printWindow, title) => {
   }
 
   await Promise.all(
-    Array.from(printWindow.document.images).map(
-      (image) =>
-        image.complete
-          ? Promise.resolve()
-          : new Promise((resolve) => {
-              image.addEventListener("load", resolve, { once: true });
-              image.addEventListener("error", resolve, { once: true });
-            }),
+    Array.from(printWindow.document.images).map((image) =>
+      image.complete
+        ? Promise.resolve()
+        : new Promise((resolve) => {
+            image.addEventListener("load", resolve, { once: true });
+            image.addEventListener("error", resolve, { once: true });
+          }),
     ),
   );
 
@@ -1852,8 +1895,10 @@ const createPdfReportFile = async (printWindow, title) => {
   const pageHeight = pdf.internal.pageSize.getHeight();
   const imageRatio = canvas.width / canvas.height;
   const pageRatio = pageWidth / pageHeight;
-  const imageWidth = imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio;
-  const imageHeight = imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
+  const imageWidth =
+    imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio;
+  const imageHeight =
+    imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
 
   pdf.addImage(
     canvas.toDataURL("image/jpeg", 0.92),
@@ -1864,9 +1909,10 @@ const createPdfReportFile = async (printWindow, title) => {
     imageHeight,
   );
 
-  const safeName = String(title || "KMZ_Report")
-    .replace(/[^a-z0-9]+/gi, "_")
-    .replace(/^_+|_+$/g, "") || "KMZ_Report";
+  const safeName =
+    String(title || "KMZ_Report")
+      .replace(/[^a-z0-9]+/gi, "_")
+      .replace(/^_+|_+$/g, "") || "KMZ_Report";
   return new File([pdf.output("blob")], `${safeName}.pdf`, {
     type: "application/pdf",
   });
@@ -1916,7 +1962,7 @@ export default function Import({ map, filters, onClose }) {
   };
 
   // ── add layers to map ────────────────────────────────────────────────────────
-  const addLayers = (geojson, fileType = null) => {
+  const addLayers = (geojson, fileType = null, { fitMap = true } = {}) => {
     // The live GIS Metaverse page must never keep the print-only annotation.
     // Clear any stale print callout before adding/replacing imported data.
     removePrintKmzCallout(map);
@@ -1987,20 +2033,24 @@ export default function Import({ map, filters, onClose }) {
       });
     }
 
-    // Fit map bounds
-    try {
-      const bounds = bbox(geojson);
-      if (bounds.every((v) => isFinite(v))) {
-        map.fitBounds(
-          [
-            [bounds[0], bounds[1]],
-            [bounds[2], bounds[3]],
-          ],
-          { padding: 60, maxZoom: 18 },
-        );
+    // Fit only for a normal user import. Print cleanup/restoration must never
+    // move the camera, otherwise the saved/printed view can differ from what
+    // the user was looking at when Print was clicked.
+    if (fitMap) {
+      try {
+        const bounds = bbox(geojson);
+        if (bounds.every((v) => Number.isFinite(v))) {
+          map.fitBounds(
+            [
+              [bounds[0], bounds[1]],
+              [bounds[2], bounds[3]],
+            ],
+            { padding: 60, maxZoom: 18 },
+          );
+        }
+      } catch {
+        // bbox may fail on empty / degenerate geometry — ignore
       }
-    } catch {
-      // bbox may fail on empty / degenerate geometry — ignore
     }
 
     setHasLayer(true);
@@ -2196,7 +2246,7 @@ export default function Import({ map, filters, onClose }) {
 
       const { count, types } = summarise(preparedGeoJSON);
       setSummary({ fileName: file.name, title: importTitle, count, types });
-        setImportedFile(file);
+      setImportedFile(file);
     } catch (e) {
       console.error("Import error:", e);
       setError("An unexpected error occurred while importing the file.");
@@ -2221,7 +2271,8 @@ export default function Import({ map, filters, onClose }) {
 
         setLoading(true);
         const response = await fetch(url);
-        if (!response.ok) throw new Error("The stored KMZ file could not be loaded.");
+        if (!response.ok)
+          throw new Error("The stored KMZ file could not be loaded.");
 
         const blob = await response.blob();
         if (!cancelled) {
@@ -2233,7 +2284,9 @@ export default function Import({ map, filters, onClose }) {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError?.message || "The stored KMZ file could not be loaded.");
+          setError(
+            loadError?.message || "The stored KMZ file could not be loaded.",
+          );
           setLoading(false);
         }
       }
@@ -2284,13 +2337,6 @@ export default function Import({ map, filters, onClose }) {
     setPrintLoading(true);
     setError(null);
 
-    const previousCamera = {
-      center: map.getCenter(),
-      zoom: map.getZoom(),
-      bearing: map.getBearing(),
-      pitch: map.getPitch(),
-    };
-
     const hadImportedLabelLayer = Boolean(map.getLayer(LAYER_IDS.label));
     const originalImportedLabelVisibility = hadImportedLabelLayer
       ? map.getLayoutProperty(LAYER_IDS.label, "visibility") || "visible"
@@ -2314,32 +2360,11 @@ export default function Import({ map, filters, onClose }) {
       const printCalloutLabel =
         calloutLabel?.trim() || importedKmzLabel || "Imported KMZ";
 
-      // During print preparation blank the label property in the imported
-      // source itself. This is an additional guard beyond removing the symbol
-      // layer: even if a style/rebuild callback recreates that layer while the
-      // camera is moving, there is no text available for it to render.
-      const printGeoJSONWithoutLabels = {
-        ...importedGeoJSON,
-        features: (importedGeoJSON.features || []).map((feature) => ({
-          ...feature,
-          properties: {
-            ...(feature.properties || {}),
-            _import_label: "",
-          },
-        })),
-      };
-      map.getSource(SOURCE_ID)?.setData?.(printGeoJSONWithoutLabels);
-
-      // The normal live-map symbol layer repeats the KMZ name once per polygon.
-      // IMPORTANT: remove the layer completely — do not only set visibility to
-      // `none`. With preserveDrawingBuffer, a hidden symbol can intermittently
-      // remain in the previous WebGL frame and leak into the print capture.
-      // Removing it and forcing a fresh render makes the printed result
-      // deterministic: ONLY the boxed callout drawn below is present.
-      if (map.getLayer(LAYER_IDS.label)) {
-        map.removeLayer(LAYER_IDS.label);
-        await waitForFreshMapFrame(map);
-      }
+      // Rebuild ONLY the imported KMZ geometry for capture. Crucially, do not
+      // call fitBounds/easeTo/jumpTo here: the print must preserve the exact
+      // center/zoom/bearing/pitch visible when the user clicked Print.
+      addImportedGeometryOnlyForPrint(map, importedGeoJSON);
+      await waitForFreshMapFrame(map);
 
       let zoningInsetImage = fallbackOverviewImage;
       try {
@@ -2354,64 +2379,11 @@ export default function Import({ map, filters, onClose }) {
         );
       }
 
-      // Force the imported polygon to use the official print symbology,
-      // regardless of the styling contained in the uploaded file.
-      if (map.getLayer(LAYER_IDS.fill)) {
-        map.setPaintProperty(
-          LAYER_IDS.fill,
-          "fill-color",
-          IMPORTED_KMZ_STYLE.fillColor,
-        );
-        map.setPaintProperty(
-          LAYER_IDS.fill,
-          "fill-opacity",
-          IMPORTED_KMZ_STYLE.fillOpacity,
-        );
-      }
-      if (map.getLayer(LAYER_IDS.outline)) {
-        map.setPaintProperty(
-          LAYER_IDS.outline,
-          "line-color",
-          IMPORTED_KMZ_STYLE.outlineColor,
-        );
-        map.setPaintProperty(
-          LAYER_IDS.outline,
-          "line-width",
-          IMPORTED_KMZ_STYLE.outlineWidth,
-        );
-      }
-
-      const bounds = bbox(importedGeoJSON);
-
-      if (bounds.every((value) => Number.isFinite(value))) {
-        map.fitBounds(
-          [
-            [bounds[0], bounds[1]],
-            [bounds[2], bounds[3]],
-          ],
-          {
-            padding: { top: 90, right: 90, bottom: 90, left: 90 },
-            maxZoom: 17,
-            duration: 700,
-            essential: true,
-          },
-        );
-      }
-
-      // Do not capture on the first render event of the fitBounds animation.
-      // Wait until movement has ended and then force one clean label-free frame.
+      // Hard guarantee immediately before capture: no repeated live KMZ label
+      // and no helper point markers can leak into the PDF.
+      if (map.getLayer(LAYER_IDS.label)) map.removeLayer(LAYER_IDS.label);
+      if (map.getLayer(LAYER_IDS.point)) map.removeLayer(LAYER_IDS.point);
       await waitForCameraAndFreshFrame(map);
-
-      // Defensive assertion: the repeated live text-label layer must not exist
-      // at capture time. If some style/rebuild callback recreated it, remove it
-      // again and force another fresh WebGL frame.
-      // Re-apply the label-free print source after the camera movement because
-      // basemap/style rebuilds can replace source data asynchronously.
-      map.getSource(SOURCE_ID)?.setData?.(printGeoJSONWithoutLabels);
-      if (map.getLayer(LAYER_IDS.label)) {
-        map.removeLayer(LAYER_IDS.label);
-      }
-      await waitForFreshMapFrame(map);
 
       // IMPORTANT: do not add the print callout to the live Mapbox map.
       // Capture the current map and draw the reference-style KMZ callout only
@@ -2432,9 +2404,13 @@ export default function Import({ map, filters, onClose }) {
       const title = useImportedKmzName
         ? importedKmzLabel
         : customTitle?.trim() || summary?.title || "Imported Boundary Map";
-      // The page title is independent from the KMZ legend label.
-      // Legend uses the actual imported KMZ/map label (e.g. "GCB Survey Plan").
-      const legendRows = buildLegendRows(importedKmzLabel);
+      // The page title is independent from the imported-file legend label.
+      // The legend must show the actual uploaded KML/KMZ file name rather than
+      // a generic feature label such as "Imported KML" / "Imported KMZ".
+      const importedFileLegendLabel = getImportedTitle(
+        importedFile?.name || summary?.title || "Imported Boundary",
+      );
+      const legendRows = buildLegendRows(importedFileLegendLabel);
       // Reference-style scale bar only. Latitude / longitude / zoom metadata
       // are intentionally omitted from the printed layout.
       const scaleBarInfo = getPrintScaleBarInfo(map);
@@ -2447,6 +2423,7 @@ export default function Import({ map, filters, onClose }) {
           insetImage: zoningInsetImage || fallbackOverviewImage || mapImage,
           legendRows,
           logoUrl: RudaLogo,
+          departmentLogoUrl: RudaLandManagementLogo,
           scaleBarInfo,
         }),
       );
@@ -2472,13 +2449,33 @@ export default function Import({ map, filters, onClose }) {
       logPayload.append("project_type", String(filters?.projectType || ""));
       logPayload.append("phase", String(filters?.phase || ""));
       logPayload.append("feature_count", String(summary?.count || 0));
-      logPayload.append(
-        "geometry_types",
-        JSON.stringify(summary?.types || []),
-      );
+      logPayload.append("geometry_types", JSON.stringify(summary?.types || []));
       logPayload.append("printed_by", printedBy);
       logPayload.append("print_title", title);
       await createKmzPrintLog(logPayload);
+
+      // The exact same already-rendered print document was used to create the
+      // stored PDF above. Open the browser print dialog only after persistence
+      // succeeds so logs and the user's printed output cannot diverge.
+      const closePrintWindow = () => {
+        try {
+          if (window && !window.closed) window.focus();
+        } catch {
+          // Ignore focus restrictions.
+        }
+        setTimeout(() => {
+          try {
+            if (!printWindow.closed) printWindow.close();
+          } catch {
+            // Ignore browser close restrictions.
+          }
+        }, 100);
+      };
+      printWindow.addEventListener?.("afterprint", closePrintWindow, {
+        once: true,
+      });
+      printWindow.focus();
+      printWindow.print();
     } catch (printError) {
       console.error("Print error:", printError);
       printWindow.close();
@@ -2488,30 +2485,23 @@ export default function Import({ map, filters, onClose }) {
     } finally {
       removePrintKmzCallout(map);
 
-      // Restore the exact imported source data first, then restore the normal
-      // LIVE-page vector label. The print-only blank label values must never
-      // leak back into `/gis-metaverse`.
-      if (map.getSource(SOURCE_ID)) {
-        map.getSource(SOURCE_ID).setData(importedGeoJSON);
+      // Restore the complete live imported-KMZ presentation without fitting or
+      // animating the map. The camera therefore remains exactly where it was.
+      removeImportedLayers(map);
+      addLayers(importedGeoJSON, importedFileType, { fitMap: false });
+
+      if (
+        hadImportedLabelLayer &&
+        originalImportedLabelVisibility &&
+        map.getLayer(LAYER_IDS.label)
+      ) {
+        map.setLayoutProperty(
+          LAYER_IDS.label,
+          "visibility",
+          originalImportedLabelVisibility,
+        );
       }
 
-      // Restore the normal LIVE-page vector label only after the print image has
-      // already been captured. This layer is never part of the printed canvas.
-      if (hadImportedLabelLayer && map.getSource(SOURCE_ID)) {
-        addImportedLabelLayer(map);
-        if (originalImportedLabelVisibility && map.getLayer(LAYER_IDS.label)) {
-          map.setLayoutProperty(
-            LAYER_IDS.label,
-            "visibility",
-            originalImportedLabelVisibility,
-          );
-        }
-      }
-
-      map.easeTo({
-        ...previousCamera,
-        duration: 500,
-      });
       setPrintLoading(false);
     }
   };

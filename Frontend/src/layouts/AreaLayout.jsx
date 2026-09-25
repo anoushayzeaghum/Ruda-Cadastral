@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useOutletContext } from "react-router-dom";
-import Sidebar from "../pages/Dashboard/Sidebar";
-import Header from "../pages/Dashboard/Header";
+import Sidebar from "../pages/AdminDashboard/Dashboard/Sidebar";
+import Header from "../pages/AdminDashboard/Dashboard/Header";
 
 export default function AreaLayout() {
   const outletContext = useOutletContext();
