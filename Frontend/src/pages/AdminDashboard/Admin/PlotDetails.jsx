@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download, History, Printer, Search, RefreshCcw, ArrowRightLeft } from "lucide-react";
-import AdminPage from "../dashboard/AdminPage";
+import AdminPage from "../Dashboard/AdminPage";
 import PlotMapPreview from "./PlotMapPreview";
 
 const Field = ({ label, value, children }) => (
