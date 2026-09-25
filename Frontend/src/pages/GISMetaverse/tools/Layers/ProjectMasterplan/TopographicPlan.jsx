@@ -2,12 +2,21 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import LayerRow from "../_LayerRow";
 import { pointLegend, lineLegend, polygonLegend } from "../_legendUtils";
+import ContoursAttribute from "../AttributeTable/ProjectMasterPlan/TopographicPlan/ContoursAttribute";
 
 const DSM_SOURCE = "gis-dsm-source";
 const DSM_LAYER = "gis-dsm-layer";
 const DTM_SOURCE = "gis-dtm-source";
 const DTM_LAYER = "gis-dtm-layer";
 const TOPO_SOURCE = "gis-topo-cb1-source";
+
+const TOPOGRAPHIC_COLORS = {
+  spotLevel: "#a855f7",
+  contours: "#d7bf32",
+  topography: "#22c55e",
+  dsm: "#f97316",
+  dtm: "#0ea5e9",
+};
 
 const DSM_TILE_URL =
   "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DSM/{z}/{x}/{y}.png";
@@ -197,8 +206,15 @@ export default function TopographicPlan({
   const hasSelectedProject = Boolean(selectedProjectId);
   const [spotLevelVisible, setSpotLevelVisible] = useState(false);
   const [spotLevelOpacity, setSpotLevelOpacity] = useState(100);
+  const [spotLevelColor, setSpotLevelColor] = useState(
+    TOPOGRAPHIC_COLORS.spotLevel,
+  );
   const [contoursVisible, setContoursVisible] = useState(false);
   const [contoursOpacity, setContoursOpacity] = useState(100);
+  const [contoursColor, setContoursColor] = useState(
+    TOPOGRAPHIC_COLORS.contours,
+  );
+  const [activeAttributeTable, setActiveAttributeTable] = useState(null);
 
   const [dsmVisible, setDsmVisible] = useState(false);
   const [dsmOpacity, setDsmOpacity] = useState(85);
@@ -209,6 +225,21 @@ export default function TopographicPlan({
   const topoOpacity = layerVisibility.topographyOpacity ?? 80;
   const [topoLoading, setTopoLoading] = useState(false);
   const topoDataRef = useRef(null);
+
+  const updateTopographicColor = (layers, color) => {
+    layers.forEach((layer) => {
+      if (!map?.getLayer?.(layer.id)) return;
+      const property =
+        layer.type === "symbol"
+          ? "text-color"
+          : layer.type === "circle"
+            ? "circle-color"
+            : layer.type === "fill"
+              ? "fill-color"
+              : "line-color";
+      map.setPaintProperty(layer.id, property, color);
+    });
+  };
 
   const setTopoVisible = (value) => {
     setLayerVisibility?.((previous) => ({ ...previous, topography: value }));
@@ -265,6 +296,9 @@ export default function TopographicPlan({
         topoOpacity,
       );
 
+      updateTopographicColor(SPOT_LEVEL_LAYERS, spotLevelColor);
+      updateTopographicColor(CONTOUR_LAYERS, contoursColor);
+
       // if (anyGeoJsonLayerVisible) flyToChaharbagh();
     };
 
@@ -294,6 +328,8 @@ export default function TopographicPlan({
     topoVisible,
     spotLevelOpacity,
     contoursOpacity,
+    spotLevelColor,
+    contoursColor,
     topoOpacity,
   ]);
 
@@ -360,27 +396,41 @@ export default function TopographicPlan({
         <div className="mx-3 mb-3 rounded-sm border border-[#13593f]/40 bg-[#093024] p-2">
           <LayerRow
             label="Spot Level"
+            color={spotLevelColor}
             checked={spotLevelVisible}
             disabled={!hasSelectedProject}
             opacity={spotLevelOpacity}
             loading={topoLoading && spotLevelVisible}
             onCheckedChange={setSpotLevelVisible}
             onOpacityChange={setSpotLevelOpacity}
+            colorEditable
+            onColorChange={(color) => {
+              setSpotLevelColor(color);
+              updateTopographicColor(SPOT_LEVEL_LAYERS, color);
+            }}
             legendItems={[pointLegend("Spot Level", "#a855f7")]}
           />
 
-          {/* <LayerRow
+          <LayerRow
             label="Contours"
+            color={contoursColor}
             checked={contoursVisible}
-            disabled={false}
+            disabled={!hasSelectedProject}
             opacity={contoursOpacity}
             loading={topoLoading && contoursVisible}
             onCheckedChange={setContoursVisible}
             onOpacityChange={setContoursOpacity}
-          /> */}
+            colorEditable
+            onColorChange={(color) => {
+              setContoursColor(color);
+              updateTopographicColor(CONTOUR_LAYERS, color);
+            }}
+            onTableOpen={() => setActiveAttributeTable("contours")}
+          />
 
           <LayerRow
             label="Topographic Boundary"
+            color={TOPOGRAPHIC_COLORS.topography}
             checked={topoVisible}
             disabled={!hasSelectedProject}
             opacity={topoOpacity}
@@ -399,6 +449,7 @@ export default function TopographicPlan({
 
           <LayerRow
             label="DSM"
+            color={TOPOGRAPHIC_COLORS.dsm}
             checked={dsmVisible}
             disabled={!hasSelectedProject}
             opacity={dsmOpacity}
@@ -408,6 +459,7 @@ export default function TopographicPlan({
 
           <LayerRow
             label="DTM"
+            color={TOPOGRAPHIC_COLORS.dtm}
             checked={dtmVisible}
             disabled={!hasSelectedProject}
             opacity={dtmOpacity}
@@ -415,6 +467,14 @@ export default function TopographicPlan({
             onOpacityChange={setDtmOpacity}
           />
         </div>
+      )}
+
+      {activeAttributeTable === "contours" && (
+        <ContoursAttribute
+          map={map}
+          selectedProjectId={selectedProjectId}
+          onClose={() => setActiveAttributeTable(null)}
+        />
       )}
     </div>
   );

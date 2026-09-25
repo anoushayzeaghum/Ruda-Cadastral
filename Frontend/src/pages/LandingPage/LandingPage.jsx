@@ -231,13 +231,13 @@ const TEAM_MEMBERS = [
   },
   {
     id: 2,
-    name: "Brig. Mansoor",
+    name: "Brig. Mansoor Ahmad Janjua",
     designation: "Chief Operating Officer",
     image: "/Ruda_Official/Brig_Mansoor.png",
   },
   {
     id: 3,
-    name: "Brig. Bakhtiar",
+    name: "Brig. Bakhtiar Akram",
     designation: "EXECUTIVE DIRECTOR-LA&EM",
     image: "/Ruda_Official/Brig_Bakhtiar.png",
   },

@@ -16,6 +16,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import RudaLogo from "../../../assets/Ruda.png";
+import RudaLandManagementLogo from "../../../assets/RUDA L&M.png";
 import { PRINT_EVENTS, dispatchPrintEvent } from "../Printing/PrintEvents";
 import {
   getMpPrincipleZoningGeoJSON,
@@ -1537,6 +1538,7 @@ const makePrintableHtml = ({
   insetImage,
   legendRows,
   logoUrl,
+  departmentLogoUrl,
   scaleBarInfo,
 }) => {
   const legendHtml = legendRows
@@ -1607,30 +1609,34 @@ const makePrintableHtml = ({
       position: absolute;
       left: 16px;
       top: 16px;
-      width: 108px;
-      height: 108px;
+      width: 112px;
+      height: 112px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: rgba(255,255,255,.96);
       border: 1px solid #334155;
-      padding: 8px;
+      border-radius: 50%;
+      padding: 7px;
+      overflow: hidden;
     }
-    .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .logo-box img { width: 98px; height: 98px; object-fit: contain; display: block; }
     .north {
       position: absolute;
       right: 18px;
       top: 16px;
-      width: 108px;
-      height: 108px;
-      border: 1px solid #334155;
-      background: rgba(255,255,255,.96);
+      width: 112px;
+      height: 112px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 5px;
+      background: rgba(255,255,255,.96);
+      border: 1px solid #334155;
+      border-radius: 50%;
+      padding: 7px;
+      overflow: hidden;
     }
-    .north svg { width: 96px; height: 96px; display: block; }
+    .north svg { width: 98px; height: 98px; display: block; }
     /* ── Bottom-left block: inset map + credit, visually attached ── */
     .bottom-left-block {
       position: absolute;
@@ -1658,6 +1664,30 @@ const makePrintableHtml = ({
       background: #ffffff;
       border: 1px solid #64748b;
       display: block;
+    }
+    .department-logo {
+      position: absolute;
+      left: 432px;
+      bottom: 18px;
+      width: 96px;
+      height: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 0;
+      padding: 0;
+    }
+    .department-logo img { width: 96px; height: 96px; object-fit: contain; display: block; }
+    .bottom-scale-zone {
+      position: absolute;
+      left: 540px;
+      right: 288px;
+      bottom: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      pointer-events: none;
     }
     .legend {
       position: absolute;
@@ -1687,10 +1717,7 @@ const makePrintableHtml = ({
       box-shadow: inset 0 0 0 1px #ffffff;
     }
     .scale-wrap {
-      position: absolute;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
+      position: relative;
       background: rgba(255,255,255,.98);
       border: 1px solid #111827;
       padding: 2px 5px 4px;
@@ -1802,28 +1829,32 @@ const makePrintableHtml = ({
       </div>
     </div>
 
+    ${departmentLogoUrl ? `<div class="department-logo"><img src="${departmentLogoUrl}" alt="RUDA GIS Directorate LA&EM Department Logo" /></div>` : ""}
+
     <div class="legend">
       <h3>Legend</h3>
       ${legendHtml || '<div class="legend-row">Visible map layers</div>'}
     </div>
 
-    <div class="scale-wrap" aria-label="Map scale bar">
-      <div class="scale-labels">
-        <span class="scale-label start">0</span>
-        <span class="scale-label q1">50</span>
-        <span class="scale-label q2">100</span>
-        <span class="scale-label q3">150</span>
-        <span class="scale-label end">200</span>
-      </div>
-      <div class="scale-bar-row">
-        <div class="scale-bar">
-          <span class="scale-segment" style="background-color:#000000"></span>
-          <span class="scale-segment" style="background-color:#ffffff"></span>
-          <span class="scale-segment" style="background-color:#000000"></span>
-          <span class="scale-segment" style="background-color:#ffffff"></span>
-          <span class="scale-segment" style="background-color:#000000"></span>
+    <div class="bottom-scale-zone">
+      <div class="scale-wrap" aria-label="Map scale bar">
+        <div class="scale-labels">
+          <span class="scale-label start">0</span>
+          <span class="scale-label q1">50</span>
+          <span class="scale-label q2">100</span>
+          <span class="scale-label q3">150</span>
+          <span class="scale-label end">200</span>
         </div>
-        <span class="scale-unit">${escapeHtml(resolvedScaleBar.unit || "Meters")}</span>
+        <div class="scale-bar-row">
+          <div class="scale-bar">
+            <span class="scale-segment" style="background-color:#000000"></span>
+            <span class="scale-segment" style="background-color:#ffffff"></span>
+            <span class="scale-segment" style="background-color:#000000"></span>
+            <span class="scale-segment" style="background-color:#ffffff"></span>
+            <span class="scale-segment" style="background-color:#000000"></span>
+          </div>
+          <span class="scale-unit">${escapeHtml(resolvedScaleBar.unit || "Meters")}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -2373,9 +2404,13 @@ export default function Import({ map, filters, onClose }) {
       const title = useImportedKmzName
         ? importedKmzLabel
         : customTitle?.trim() || summary?.title || "Imported Boundary Map";
-      // The page title is independent from the KMZ legend label.
-      // Legend uses the actual imported KMZ/map label (e.g. "GCB Survey Plan").
-      const legendRows = buildLegendRows(importedKmzLabel);
+      // The page title is independent from the imported-file legend label.
+      // The legend must show the actual uploaded KML/KMZ file name rather than
+      // a generic feature label such as "Imported KML" / "Imported KMZ".
+      const importedFileLegendLabel = getImportedTitle(
+        importedFile?.name || summary?.title || "Imported Boundary",
+      );
+      const legendRows = buildLegendRows(importedFileLegendLabel);
       // Reference-style scale bar only. Latitude / longitude / zoom metadata
       // are intentionally omitted from the printed layout.
       const scaleBarInfo = getPrintScaleBarInfo(map);
@@ -2388,6 +2423,7 @@ export default function Import({ map, filters, onClose }) {
           insetImage: zoningInsetImage || fallbackOverviewImage || mapImage,
           legendRows,
           logoUrl: RudaLogo,
+          departmentLogoUrl: RudaLandManagementLogo,
           scaleBarInfo,
         }),
       );

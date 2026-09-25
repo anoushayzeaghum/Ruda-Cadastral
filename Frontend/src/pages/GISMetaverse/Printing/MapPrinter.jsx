@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import RudaLogo from "../../../assets/Ruda.png";
+import RudaLandManagementLogo from "../../../assets/RUDA L&M.png";
 import { buildVisibleLegendRows } from "./LegendGenerator";
 import { PRINT_EVENTS, dispatchPrintEvent } from "./PrintEvents";
 import { makePrintableHtml } from "./PrintTemplate";
@@ -80,11 +81,11 @@ export default function MapPrinter({
         printWindow.document.write(
           makePrintableHtml({
             title,
-            subtitle: "Current Visible Layers",
             mapImage,
             insetImage,
             legendRows,
             logoUrl: RudaLogo,
+            departmentLogoUrl: RudaLandManagementLogo,
             metadata,
             insetTitle: "RUDA Master Plan Phases Overview",
             scaleBarInfo: getPrintScaleBarInfo(map),
