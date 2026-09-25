@@ -1,4 +1,4 @@
-import AdminPage from "../dashboard/AdminPage";
+import AdminPage from "../Dashboard/AdminPage";
 
 export default function SimpleAdminPage({ title = "Administration", description = "This module is ready for your existing content." }) {
   return (

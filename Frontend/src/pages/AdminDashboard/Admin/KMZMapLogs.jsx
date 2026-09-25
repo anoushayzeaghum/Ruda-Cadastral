@@ -12,7 +12,7 @@ import {
   Search,
   Upload,
 } from "lucide-react";
-import AdminPage from "../dashboard/AdminPage";
+import AdminPage from "../Dashboard/AdminPage";
 import JSZip from "jszip";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import { getKmzPrintLogs } from "../../../services/metaverseApi";
