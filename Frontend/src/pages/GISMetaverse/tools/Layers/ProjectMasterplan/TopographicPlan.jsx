@@ -109,9 +109,9 @@ const CONTOUR_LAYERS = [
     id: "gis-topo-contours-line",
     type: "line",
     filter: [
-      "in",
-      ["downcase", ["to-string", ["get", "layer"]]],
-      ["literal", ["contour", "contours", "contour line", "contour lines"]],
+      "==",
+      ["index-of", "contour", ["downcase", ["to-string", ["get", "layer"]]]],
+      0,
     ],
     baseOpacity: 0.9,
     paint: { "line-color": "#d7bf32", "line-width": 1.4 },
@@ -120,9 +120,9 @@ const CONTOUR_LAYERS = [
     id: "gis-topo-contours-label",
     type: "symbol",
     filter: [
-      "in",
-      ["downcase", ["to-string", ["get", "layer"]]],
-      ["literal", ["contour", "contours", "contour line", "contour lines"]],
+      "==",
+      ["index-of", "contour", ["downcase", ["to-string", ["get", "layer"]]]],
+      0,
     ],
     baseOpacity: 1,
     layout: {
