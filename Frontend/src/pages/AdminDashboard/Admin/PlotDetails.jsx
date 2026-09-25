@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import { ArrowRightLeft, History, Printer, RefreshCcw, Search } from "lucide-react";
-import AdminPage from "../dashboard/AdminPage";
+import AdminPage from "../Dashboard/AdminPage";
 import PlotMapPreview from "./PlotMapPreview";
 import {
   getBlocks,
