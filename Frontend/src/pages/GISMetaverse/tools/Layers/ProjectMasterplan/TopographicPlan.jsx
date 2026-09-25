@@ -411,7 +411,7 @@ export default function TopographicPlan({
             legendItems={[pointLegend("Spot Level", "#a855f7")]}
           />
 
-          <LayerRow
+          {/* <LayerRow
             label="Contours"
             color={contoursColor}
             checked={contoursVisible}
@@ -426,7 +426,7 @@ export default function TopographicPlan({
               updateTopographicColor(CONTOUR_LAYERS, color);
             }}
             onTableOpen={() => setActiveAttributeTable("contours")}
-          />
+          /> */}
 
           <LayerRow
             label="Topographic Boundary"
