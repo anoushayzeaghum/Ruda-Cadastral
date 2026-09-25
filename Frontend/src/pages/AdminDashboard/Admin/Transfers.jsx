@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRightLeft, CheckCircle2, Clock3, FileText, Plus } from "lucide-react";
-import AdminPage from "../dashboard/AdminPage";
+import AdminPage from "../Dashboard/AdminPage";
 
 export default function Transfers() {
   const navigate = useNavigate();

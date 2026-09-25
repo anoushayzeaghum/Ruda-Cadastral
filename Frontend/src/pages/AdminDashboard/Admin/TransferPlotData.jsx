@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
-import AdminPage from "../dashboard/AdminPage";
+import AdminPage from "../Dashboard/AdminPage";
 import {
   buildPlotDetails,
   createPdfPreviewWindow,
