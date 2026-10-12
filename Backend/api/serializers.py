@@ -1742,6 +1742,24 @@ class FloodExtentSerializer(GeoFeatureModelSerializer):
             "geom",
         )
 
+
+class FloodExtentScenariosSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = FloodExtentScenarios
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "shape_leng",
+            "shape_le_1",
+            "shape_area",
+            "cusic",
+            "geom",
+        )
+
 class SWLineSerializer(GeoFeatureModelSerializer):
     class Meta:
         model = SWLine

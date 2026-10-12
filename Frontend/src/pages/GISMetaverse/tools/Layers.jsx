@@ -3,6 +3,7 @@ import RUDAMasterPlan from "./Layers/RUDAMasterPlan";
 import Cadastral from "./Layers/Cadastral";
 import Topographic from "./Layers/Topographic";
 import Hydrology from "./Layers/Hydrology";
+import FloodExtentScenarios from "./Layers/FloodExtentScenarios";
 import BaseData from "./Layers/BaseData";
 import ProjectMasterPlan from "./Layers/ProjectMasterPlan";
 import PrivateHousingSchemes from "./Layers/PrivateHousingSchemes";
@@ -30,6 +31,7 @@ export default function LayersPanel({
       <Cadastral map={map} selectedProjectId={selectedProjectId} />
       <Topographic map={map} />
       <Hydrology map={map} />
+      <FloodExtentScenarios map={map} />
       <ProjectMasterPlan
         map={map}
         selectedProjectId={selectedProjectId}

@@ -2638,6 +2638,23 @@ class FloodExtent(models.Model):
         managed = False
         db_table = "floodextent"
 
+
+class FloodExtentScenarios(models.Model):
+    gid = models.AutoField(primary_key=True)
+    objectid = models.FloatField(null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_le_1 = models.FloatField(null=True, blank=True)
+    shape_area = models.FloatField(null=True, blank=True)
+    cusic = models.FloatField(null=True, blank=True)
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return f"Flood Extent Scenario {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "floodextentscenarios"
+
 class SWLine(models.Model):
     gid = models.AutoField(primary_key=True)
     objectid = models.FloatField(null=True, blank=True)

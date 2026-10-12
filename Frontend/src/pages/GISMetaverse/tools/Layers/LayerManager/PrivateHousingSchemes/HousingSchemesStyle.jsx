@@ -1,19 +1,19 @@
 export const RUDA_SCHEME_COLORS = Object.freeze({
-  "approved by other authorities": "#32E34B",
-  "del-up": "#3D63D8",
-  "fs granted": "#3E9BE8",
-  "indigenous project": "#20C4C6",
-  "jv-c": "#D9F45B",
-  "ppp granted": "#F020C8",
-  "reserved area": "#D95B05",
-  "ta granted": "#F39A5B",
-  "under process": "#E8430B",
-  underprocess: "#B51E0B",
+  "approved by other authorities": "#18d231",
+  "del-up": "#2049c3",
+  "fs granted": "#239afc",
+  "indigenous project": "#00585a",
+  "jv-c": "#d8ff28",
+  "ppp granted": "#650051",
+  "reserved area": "#ff7213",
+  "ta granted": "#9a4c14",
+  "under process": "#c53100",
+  underprocess: "#ac1400",
 });
 
 export const RUDA_STATUS_COLORS = RUDA_SCHEME_COLORS;
 
-export const HOUSING_SCHEME_FALLBACK_COLOR = "#8B0A05";
+export const HOUSING_SCHEME_FALLBACK_COLOR = "#b34f4c";
 
 const normalizedRudaScheme = [
   "downcase",

@@ -37,6 +37,7 @@ from .GISMetaverse.PossessionLandView import *
 from .GISMetaverse.StateLandView import *
 from .GISMetaverse.AwardedLandView import *
 from .GISMetaverse.FloodExtentView import *
+from .GISMetaverse.FloodExtentScenarios import *
 from .GISMetaverse.SWLineView import *
 
 # Ruda MasterPlan
