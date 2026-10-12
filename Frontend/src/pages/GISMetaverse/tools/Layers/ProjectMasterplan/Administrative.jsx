@@ -115,6 +115,11 @@ const applyMasterPlanLayerColor = (map, key, color) => {
       setPaint(map, "metaverse-contours-label", "text-color", color);
       break;
 
+    case "roads":
+      setPaint(map, "metaverse-roads-fill", "fill-color", color);
+      setPaint(map, "metaverse-roads-line", "line-color", color);
+      break;
+
     case "masterPlan":
       // Master Plan boundary styling is controlled centrally by MasterPlanLayer.jsx.
       // Prevent UI runtime overrides from changing line/text color here.
@@ -208,7 +213,7 @@ const applyMasterPlanLayerStyle = (map, key, style = {}) => {
 
   applyMasterPlanLayerOpacity(map, key, style.opacity ?? 100);
 
-  if (["boundary", "spotLevel", "contours"].includes(key)) {
+  if (["boundary", "spotLevel", "contours", "roads"].includes(key)) {
     applyMasterPlanLayerColor(
       map,
       key,
@@ -743,6 +748,44 @@ export default function MasterPlan({
                   >
                     <span className="max-w-[150px] truncate">{type}</span>
                     <span>{count}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          <LayerItem
+            disabled={!selectedProjectId}
+            checked={!!layerVisibility.roads}
+            color={styles.roads.color}
+            label="Road Boundary"
+            opacity={styles.roads.opacity}
+            onChange={() => toggleLayer("roads")}
+            onOpacityChange={(value) => updateOpacity("roads", value)}
+            colorEditable
+            onColorChange={(value) => updateColor("roads", value)}
+            hasDropdown
+            dropdownOpen={dropdownOpen.roads}
+            onDropdownToggle={() => toggleDropdown("roads")}
+            onTableOpen={() => setActiveAttributeTable("roads")}
+          />
+
+          {dropdownOpen.roads && (
+            <div className="ml-6 mt-2 rounded-sm border border-[#13593f]/30 bg-[#051f17] px-3 py-2 text-[11px] text-white/80">
+              <div className="flex justify-between border-b border-[#343c4c]/70 py-1">
+                <span>Total Roads</span>
+                <span>{dropdownData.roads.length}</span>
+              </div>
+              {roadsSummary.length === 0 ? (
+                <p className="py-1 text-white/60">No roads found</p>
+              ) : (
+                roadsSummary.map(([type, summary]) => (
+                  <div
+                    key={type}
+                    className="flex justify-between border-b border-[#343c4c]/70 py-1 last:border-b-0"
+                  >
+                    <span className="max-w-[150px] truncate">{type}</span>
+                    <span>{summary.count}</span>
                   </div>
                 ))
               )}

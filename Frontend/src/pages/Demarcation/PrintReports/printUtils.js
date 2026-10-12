@@ -684,6 +684,182 @@ const simplifyPlotRing = (ring = []) => {
   return cleaned;
 };
 
+// Site-plan corner order: start at the visually bottom-left (south-west)
+// corner and proceed A -> B -> C -> D counter-clockwise. This keeps the
+// canvas vertex labels and the coordinate table synchronized regardless of
+// the source polygon's original vertex order.
+const orderSitePlanRing = (ring = []) => {
+  const cleaned = simplifyPlotRing(ring);
+  if (cleaned.length < 3) return cleaned;
+
+  const xs = cleaned.map((point) => Number(point[0]));
+  const ys = cleaned.map((point) => Number(point[1]));
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const spanX = Math.max(maxX - minX, 1e-12);
+  const spanY = Math.max(maxY - minY, 1e-12);
+
+  // In a north-up map, screen bottom-left corresponds to low easting + low
+  // northing. Normalization prevents one axis' numeric magnitude dominating.
+  let startIndex = 0;
+  let bestScore = Infinity;
+  cleaned.forEach((point, index) => {
+    const nx = (Number(point[0]) - minX) / spanX;
+    const ny = (Number(point[1]) - minY) / spanY;
+    const score = nx + ny;
+    if (score < bestScore) {
+      bestScore = score;
+      startIndex = index;
+    }
+  });
+
+  const signedTwiceArea = cleaned.reduce((sum, point, index) => {
+    const next = cleaned[(index + 1) % cleaned.length];
+    return sum +
+      Number(point[0]) * Number(next[1]) -
+      Number(next[0]) * Number(point[1]);
+  }, 0);
+
+  const oriented = signedTwiceArea < 0 ? [cleaned[0], ...cleaned.slice(1).reverse()] : cleaned.slice();
+  const startPoint = cleaned[startIndex];
+  const orientedStartIndex = oriented.findIndex((point) => samePoint(point, startPoint));
+  if (orientedStartIndex < 0) return oriented;
+
+  return [
+    ...oriented.slice(orientedStartIndex),
+    ...oriented.slice(0, orientedStartIndex),
+  ];
+};
+
+const polygonAreaSquareMeters = (ring = []) => {
+  if (ring.length < 3) return 0;
+
+  // Project lon/lat rings to a small local metric plane. Projected source
+  // data (the normal RUDA case) is already in metres and can be used directly.
+  const looksGeographic = ring.every(
+    ([x, y]) => Math.abs(Number(x)) <= 180 && Math.abs(Number(y)) <= 90,
+  );
+
+  let metricRing;
+  if (looksGeographic) {
+    const meanLat = ring.reduce((sum, point) => sum + Number(point[1]), 0) / ring.length;
+    const latScale = 110540;
+    const lonScale = 111320 * Math.cos(degToRad(meanLat));
+    metricRing = ring.map(([lng, lat]) => [Number(lng) * lonScale, Number(lat) * latScale]);
+  } else {
+    metricRing = ring.map(([x, y]) => [Number(x), Number(y)]);
+  }
+
+  // Translate near the origin before applying the shoelace formula to avoid
+  // floating-point cancellation with large UTM coordinates.
+  const [originX, originY] = metricRing[0];
+  const local = metricRing.map(([x, y]) => [x - originX, y - originY]);
+  const twiceArea = local.reduce((sum, point, index) => {
+    const next = local[(index + 1) % local.length];
+    return sum + point[0] * next[1] - next[0] * point[1];
+  }, 0);
+  return Math.abs(twiceArea) / 2;
+};
+
+const numericProperty = (properties = {}, keys = []) => {
+  for (const key of keys) {
+    const value = Number(properties?.[key]);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return null;
+};
+
+const parsePlotAreaToSquareFeet = (value) => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+
+  const numberMatch = raw.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+  if (!numberMatch) return null;
+
+  const amount = Number(numberMatch[0]);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  const text = raw.toLowerCase();
+  if (/\b(sq\.?\s*ft|sqft|sft|square\s*feet|square\s*foot)\b/.test(text)) {
+    return amount;
+  }
+  if (/\bmarla(s)?\b/.test(text)) return amount * 225;
+  if (/\bkanal(s)?\b/.test(text)) return amount * 4500;
+
+  // A plain numeric plot_area in this RUDA plot dataset is normally an area
+  // value rather than a length. Keep it as square feet only when it is in a
+  // realistic plot-size range; otherwise let the stronger GIS fields win.
+  return amount >= 100 ? amount : null;
+};
+
+export const getPlotAreaSummary = (feature) => {
+  const p = feature?.properties || {};
+  const ring = simplifyPlotRing(getGeometryRing(feature?.geometry));
+  const geometrySquareMeters = polygonAreaSquareMeters(ring);
+  const SQM_TO_SQFT = 10.7639104167;
+
+  // 1) Explicit square-foot fields are authoritative when present.
+  let squareFeet = numericProperty(p, [
+    "area_sqft",
+    "area_sft",
+    "plot_area_sqft",
+    "plot_area_sft",
+    "sq_ft",
+    "sqft",
+  ]);
+
+  // 2) Some plot records carry a human-readable plot_area such as
+  //    "10 Marla", "2285 Sft" or a plain square-foot value.
+  if (squareFeet === null) {
+    squareFeet = parsePlotAreaToSquareFeet(p.plot_area);
+  }
+
+  // 3) IMPORTANT FOR THE CURRENT RUDA PLOT TABLE:
+  //    shape_leng contains the plot area in square feet (for example the
+  //    supplied Plot 01 record stores 2286.02029046 here). Do not interpret
+  //    shape_area=0.508 as square metres; that was the reason the PDF showed
+  //    only ~5 Sft.
+  if (squareFeet === null) {
+    squareFeet = numericProperty(p, ["shape_leng", "Shape_Leng", "SHAPE_Leng"]);
+  }
+
+  // 4) shape_area in this imported plot dataset is consistent with kanal
+  //    (0.508 kanal ~= 2286 Sft). Use it only as a fallback because field
+  //    conventions can differ between GIS layers.
+  if (squareFeet === null) {
+    const shapeArea = numericProperty(p, ["shape_area", "Shape_Area", "SHAPE_Area"]);
+    if (shapeArea !== null && shapeArea <= 50) {
+      squareFeet = shapeArea * 4500;
+    }
+  }
+
+  // 5) Last resort: calculate geodesic/local-planar area from geometry.
+  if (squareFeet === null && geometrySquareMeters > 0) {
+    squareFeet = geometrySquareMeters * SQM_TO_SQFT;
+  }
+
+  if (!Number.isFinite(squareFeet) || squareFeet <= 0) {
+    return { squareFeet: null, marla: null, squareFeetText: "", marlaText: "" };
+  }
+
+  const roundedSquareFeet = Math.round(squareFeet);
+  const marla = squareFeet / 225;
+  return {
+    squareFeet,
+    marla,
+    squareFeetText: `(${roundedSquareFeet.toLocaleString("en-US")} Sft)`,
+    marlaText: `${marla.toFixed(1)} Marla`,
+  };
+};
+
+const formatSitePlotNumber = (value) => {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+  return /^\d+$/.test(text) ? text.padStart(2, "0") : text;
+};
+
 const getProjectedRingBox = (ring, project) => {
   const points = ring.map(project);
   const xs = points.map(([x]) => x);
@@ -1161,33 +1337,67 @@ const drawDetailedSelectedPlotLabel = (ctx, details, ring, project) => {
 
   ctx.restore();
 };
+const getSiteLabelRotation = (ring, project) => {
+  if (!Array.isArray(ring) || ring.length < 2) return 0;
+
+  const projected = ring.map(project);
+  const edges = projected.map((point, index) => {
+    const next = projected[(index + 1) % projected.length];
+    const dx = next[0] - point[0];
+    const dy = next[1] - point[1];
+    return { length: Math.hypot(dx, dy), angle: Math.atan2(dy, dx) };
+  });
+
+  // The reference site plans print the plot text parallel to the shorter
+  // frontage/back edge, not horizontally to the page. Using the shortest
+  // substantial edge gives the same behaviour for rotated rectangular and
+  // trapezoidal plots.
+  const meaningful = edges.filter((edge) => edge.length > 2);
+  if (!meaningful.length) return 0;
+  let angle = meaningful.reduce((best, edge) =>
+    edge.length < best.length ? edge : best, meaningful[0]).angle;
+
+  // Keep text upright/readable while preserving the plot's actual direction.
+  while (angle > Math.PI / 2) angle -= Math.PI;
+  while (angle < -Math.PI / 2) angle += Math.PI;
+  return angle;
+};
+
 const drawSitePlotLabel = (ctx, details, ring, project) => {
   const placement = getCenteredPlotLabelPosition(ring, project);
   if (placement.radius < 4) return;
 
+  const areaSummary = details.areaSummary || {};
   const lines = [
     {
-      text: details.plotNo,
+      text: formatSitePlotNumber(details.plotNo),
       weight: 700,
-      color: "#001a66", // ← much darker navy
-      sizeFactor: 1.05, // ← was 0.85 (uses way more of the polygon)
-      maxSize: 50, // ← was 46
-      minSize: 14, // ← was 16
+      color: "#001a66",
+      sizeFactor: 1.0,
+      maxSize: 46,
+      minSize: 14,
     },
     {
-      text: firstValue(details.plotSize, details.plotArea),
+      text: areaSummary.squareFeetText,
       weight: 600,
       color: "#202020",
-      sizeFactor: 0.45,
-      maxSize: 26,
+      sizeFactor: 0.40,
+      maxSize: 23,
+      minSize: 9,
+    },
+    {
+      text: areaSummary.marlaText,
+      weight: 700,
+      color: "#202020",
+      sizeFactor: 0.44,
+      maxSize: 25,
       minSize: 10,
     },
   ].filter((line) => line.text);
 
   if (lines.length === 0) return;
 
-  const maxTextWidth = Math.max(placement.radius * 2.0, 10); // ← was 1.7
-
+  const maxTextWidth = Math.max(placement.radius * 2.0, 10);
   const sized = lines.map((line) => {
     let fontSize = Math.min(line.maxSize, placement.radius * line.sizeFactor);
     ctx.font = `${line.weight} ${fontSize}px Arial`;
@@ -1202,7 +1412,7 @@ const drawSitePlotLabel = (ctx, details, ring, project) => {
   });
 
   const totalHeight = sized.reduce((sum, line) => sum + line.lineHeight, 0);
-  let cursorY = placement.y - totalHeight / 2;
+  const rotation = getSiteLabelRotation(ring, project);
 
   ctx.save();
   ctx.beginPath();
@@ -1210,6 +1420,12 @@ const drawSitePlotLabel = (ctx, details, ring, project) => {
   placement.projectedRing.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
   ctx.closePath();
   ctx.clip();
+
+  // Rotate the complete plot-number/area block around its centre so 01 and the
+  // area text stay on the same axis as the plot, matching the manual plan.
+  ctx.translate(placement.x, placement.y);
+  ctx.rotate(rotation);
+  let cursorY = -totalHeight / 2;
 
   sized.forEach((line) => {
     cursorY += line.lineHeight / 2;
@@ -1219,9 +1435,9 @@ const drawSitePlotLabel = (ctx, details, ring, project) => {
     ctx.lineJoin = "round";
     ctx.lineWidth = Math.max(2.5, line.fontSize * 0.12);
     ctx.strokeStyle = "rgba(255,255,255,0.98)";
-    ctx.strokeText(String(line.text), placement.x, cursorY);
+    ctx.strokeText(String(line.text), 0, cursorY);
     ctx.fillStyle = line.color;
-    ctx.fillText(String(line.text), placement.x, cursorY);
+    ctx.fillText(String(line.text), 0, cursorY);
     cursorY += line.lineHeight / 2;
   });
 
@@ -1536,7 +1752,7 @@ export const createPlanCanvas = async ({
       selectedRing = getGeometryRing(matched.geometry);
     }
   }
-  const dimensionRing = simplifyPlotRing(selectedRing);
+  const dimensionRing = orderSitePlanRing(selectedRing);
 
   // Main site plan is always framed from the selected plot itself. This keeps
   // the plot large and readable even when the context collection contains the
@@ -1577,7 +1793,10 @@ export const createPlanCanvas = async ({
 
   const bounds =
     mode === "location"
-      ? expandBounds(locationViewBounds, 0.06)
+      // Keep the inset centered on the selected plot and its immediate block
+      // context, so the pink plot remains visible instead of disappearing in
+      // the full-scheme extent.
+      ? expandBounds(selectedBounds || locationViewBounds, 4.0)
       : mode === "partOverview"
         ? expandBounds(contextBounds, 0.01)
         : mode === "part"
@@ -1642,7 +1861,12 @@ export const createPlanCanvas = async ({
       } else if (mode === "part") {
         drawAdjacentClientLabel(ctx, feature, ring, project);
       } else if (["site", "location"].includes(mode)) {
-        drawUniformPlotNumber(ctx, getPlotLabel(feature), ring, project, {
+        drawUniformPlotNumber(
+          ctx,
+          formatSitePlotNumber(getPlotLabel(feature)),
+          ring,
+          project,
+          {
           fontSize: mode === "location" ? 17 : 20,
           fillStyle: "#0b35d5",
           centered: mode === "site",
@@ -1658,39 +1882,23 @@ export const createPlanCanvas = async ({
     selectedFill,
     selectedStroke,
     mode === "location"
-      ? 9
+      ? 7
       : mode === "partOverview"
         ? 10
         : mode === "part"
           ? 11
-          : 7,
+          : 4.5,
   );
 
   const selectedCenter = project(polygonCentroid(selectedRing));
   const selectedProjectedBox = getProjectedRingBox(selectedRing, project);
 
   if (mode === "location" || mode === "partOverview") {
-    if (mode === "location") {
-      drawSelectionRing(ctx, selectedRing, project, width, height);
-    }
-    drawUniformPlotNumber(ctx, details.plotNo, selectedRing, project, {
+    drawUniformPlotNumber(ctx, formatSitePlotNumber(details.plotNo), selectedRing, project, {
       fontSize: mode === "partOverview" ? 32 : 22,
       fillStyle: "#0637ff",
       haloWidth: 4,
     });
-    if (mode === "location") {
-      // Use the average of the already-projected vertices so the pin is
-      // guaranteed to land on the visually drawn shape, avoiding any
-      // CRS-to-screen distortion that can shift a computed centroid.
-      const projectedRing = selectedRing.map(project);
-      const pinX =
-        projectedRing.reduce((s, p) => s + p[0], 0) / projectedRing.length;
-      const pinY =
-        projectedRing.reduce((s, p) => s + p[1], 0) / projectedRing.length;
-
-      // Draw the pin LAST so it sits on top of the plot fill and label.
-      drawLocatorPin(ctx, pinX, pinY, 16);
-    }
   } else if (mode === "part") {
     drawDetailedSelectedPlotLabel(ctx, details, selectedRing, project);
   } else {
@@ -1911,7 +2119,7 @@ const wgs84ToUtm = (lng, lat) => {
 };
 
 export const getCornerCoordinates = (geometry) =>
-  simplifyPlotRing(getGeometryRing(geometry))
+  orderSitePlanRing(getGeometryRing(geometry))
     .slice(0, 8)
     .map((coord, index) => {
       const lng = Number(coord[0]);

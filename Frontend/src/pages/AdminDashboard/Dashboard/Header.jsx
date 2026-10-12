@@ -36,8 +36,8 @@ export default function Header({ darkMode, setDarkMode, toggleSidebar }) {
             <img src={rudaFirmLogo} alt="RUDA" className="h-full w-full object-contain" />
           </span>
           <span className="hidden min-w-0 lg:block">
-            <span className="block truncate text-[20px] font-extrabold tracking-tight">
-              RUDA GIS — Administration Portal
+            <span className="block truncate text-[24px] font-semibold tracking-tight">
+              Administration Portal
             </span>
             <span className="block text-[10px] font-medium tracking-wide text-white/60">
               Urban Development for a Better Tomorrow

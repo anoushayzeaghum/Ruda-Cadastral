@@ -184,11 +184,11 @@ export default function MetaverseDashboard() {
           layerVisibility={layerVisibility}
         />
 
-        <MetaverseKpiCards
+        {/* <MetaverseKpiCards
           filters={metaverseFilters}
           layerVisibility={layerVisibility}
           adminBoundaryVisibility={adminBoundaryVisibility}
-        />
+        /> */}
       </div>
     </div>
   );

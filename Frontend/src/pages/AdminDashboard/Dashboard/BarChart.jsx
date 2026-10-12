@@ -11,46 +11,99 @@ import { STRUCTURE_COMPARISON } from "./dashboardData";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
+const valueLabels = {
+  id: "valueLabels",
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    ctx.save();
+    ctx.fillStyle = "#607080";
+    ctx.font = "500 11px sans-serif";
+    ctx.textBaseline = "middle";
+
+    chart.data.datasets.forEach((dataset, datasetIndex) => {
+      const meta = chart.getDatasetMeta(datasetIndex);
+      meta.data.forEach((bar, index) => {
+        const value = dataset.data[index];
+        ctx.fillText(String(value), bar.x + 4, bar.y);
+      });
+    });
+
+    ctx.restore();
+  },
+};
+
 export default function BarChart() {
   const data = {
     labels: STRUCTURE_COMPARISON.categories,
-    datasets: STRUCTURE_COMPARISON.series.map((s) => ({
-      label: s.label,
-      data: s.data,
-      backgroundColor: s.color,
-      borderRadius: 8,
-      maxBarThickness: 32,
+    datasets: STRUCTURE_COMPARISON.series.map((series) => ({
+      label: series.label,
+      data: series.data,
+      backgroundColor: series.color,
+      borderRadius: 2,
+      borderSkipped: false,
+      barThickness: 6,
+      categoryPercentage: 0.7,
+      barPercentage: 0.85,
     })),
   };
 
   const options = {
+    indexAxis: "y",
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+      padding: { right: 18 },
+    },
     plugins: {
       legend: {
         position: "top",
         align: "end",
-        labels: { color: "#64748b", font: { size: 10 }, boxWidth: 9, padding: 12 },
+        labels: {
+          color: "#8c98a4",
+          font: { size: 9, weight: "500" },
+          boxWidth: 8,
+          boxHeight: 8,
+          padding: 10,
+          usePointStyle: false,
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.x}`,
+        },
       },
     },
     scales: {
-      x: { grid: { display: false }, ticks: { color: "#64748b", font: { size: 10 } } },
-      y: {
+      x: {
         beginAtZero: true,
-        grid: { color: "rgba(148,163,184,.15)" },
-        ticks: { color: "#94a3b8", precision: 0, font: { size: 9 } },
+        suggestedMax: 25,
+        grid: { color: "rgba(148,163,184,.14)", drawBorder: false },
+        border: { display: false },
+        ticks: {
+          color: "#99a5b1",
+          font: { size: 9 },
+          stepSize: 5,
+        },
+      },
+      y: {
+        grid: { display: false },
+        border: { display: false },
+        ticks: {
+          color: "#8b98a5",
+          font: { size: 9 },
+        },
       },
     },
   };
 
   return (
-    <div className="h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
-      <div className="mb-2">
-        <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Platform Structure</h3>
-        <p className="mt-0.5 text-[10px] text-slate-400">RUDA Metaverse vs RTW Packages</p>
+    <div className="h-full rounded-[8px] border border-[#e4e8eb] bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.02)] dark:border-white/10 dark:bg-[#0d1b15]">
+      <div>
+        <h3 className="text-[12px] font-semibold text-[#314155] dark:text-white">Platform Structure</h3>
+        <p className="mt-1 text-[12px] text-[#9aa6b2]">RUDA Metaverse vs RTW Packages</p>
       </div>
-      <div className="h-[calc(100%-38px)]">
-        <Bar data={data} options={options} />
+      <div className="mt-2 h-[calc(100%-34px)]">
+        <Bar data={data} options={options} plugins={[valueLabels]} />
       </div>
     </div>
   );

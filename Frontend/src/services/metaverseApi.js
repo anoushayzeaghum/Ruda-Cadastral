@@ -574,6 +574,11 @@ export const getFloodExtentGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getFloodExtentScenariosGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/floodextentscenarios/`);
+  return unwrapGeoJSON(res.data);
+};
+
 export const getRudaJurisdictionGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/ruda-jurisdiction/`);
   return unwrapGeoJSON(res.data);

@@ -23,6 +23,9 @@ export default function LayerRow({
   legendItems = [],
   showLegend,
   legendComponent = null,
+  colorEditable = false,
+  onColorChange,
+  onTableOpen,
 }) {
   const handleCheckedChange = (nextValue) => {
     onCheckedChange?.(nextValue);
@@ -48,14 +51,50 @@ export default function LayerRow({
             onChange={(e) => handleCheckedChange(e.target.checked)}
             className="accent-[#65c96b] disabled:cursor-not-allowed"
           />
-          <span
-            className="h-4 w-4 shrink-0 rounded-sm border-2"
-            style={{ borderColor: color }}
-          />
+          {colorEditable ? (
+            <span
+              className="relative h-4 w-4 shrink-0 overflow-hidden rounded-sm border border-white/35"
+              style={{ backgroundColor: color }}
+              title={`Change ${label} color`}
+              onClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <input
+                type="color"
+                value={color}
+                disabled={disabled}
+                aria-label={`Change ${label} color`}
+                onClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                onChange={(event) => onColorChange?.(event.target.value)}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+              />
+            </span>
+          ) : (
+            <span
+              className="h-4 w-4 shrink-0 rounded-sm border border-white/35"
+              style={{ backgroundColor: color }}
+            />
+          )}
           <span className="text-[11px]">{label}</span>
         </label>
 
-        <Grid3X3 size={14} className="text-white/60 shrink-0" />
+        {onTableOpen ? (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={(event) => {
+              event.stopPropagation();
+              onTableOpen();
+            }}
+            className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            title={`Open ${label} attribute table`}
+          >
+            <Grid3X3 size={14} />
+          </button>
+        ) : (
+          <Grid3X3 size={14} className="text-white/60 shrink-0" />
+        )}
       </div>
 
       {/* Opacity slider — always interactive */}

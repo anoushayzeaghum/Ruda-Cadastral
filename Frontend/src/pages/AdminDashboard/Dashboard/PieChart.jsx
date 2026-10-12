@@ -4,7 +4,7 @@ import { LAND_USE_DATA } from "./dashboardData";
 
 ChartJS.register(ArcElement, Tooltip);
 
-const COLORS = ["#0B7A3B", "#45C8FF", "#70D84F", "#f5b942"];
+const COLORS = ["#08753f", "#2db8df", "#64c85b", "#f3b82f"];
 
 export default function PieChart() {
   const data = {
@@ -14,8 +14,9 @@ export default function PieChart() {
         data: LAND_USE_DATA.map((d) => d.value),
         backgroundColor: COLORS,
         borderColor: "#ffffff",
-        borderWidth: 3,
-        cutout: "67%",
+        borderWidth: 0,
+        spacing: 0,
+        cutout: "68%",
       },
     ],
   };
@@ -23,41 +24,50 @@ export default function PieChart() {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    rotation: -90,
     plugins: {
       legend: { display: false },
-      tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}%` } },
+      tooltip: {
+        callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}%` },
+      },
     },
   };
 
   return (
-    <div className="h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0d1b15]">
-      <div className="mb-3 flex items-start justify-between">
-        <div>
-          <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">Land Use Distribution</h3>
-          <p className="mt-0.5 text-[10px] text-slate-400">Chahar Bagh Phase 1</p>
-        </div>
-        <span className="text-[10px] font-bold text-[#0B7A3B]">LIVE</span>
+    <div className="h-full rounded-[8px] border border-[#e4e8eb] bg-white p-3 shadow-[0_1px_2px_rgba(15,23,42,0.02)] dark:border-white/10 dark:bg-[#0d1b15]">
+      <div>
+        <h3 className="text-[12px] font-semibold text-[#314155] dark:text-white">Land Use</h3>
+        <p className="mt-1 text-[12px] text-[#9aa6b2]">Chahar Bagh Phase 1</p>
       </div>
 
-      <div className="grid h-[calc(100%-42px)] grid-cols-[150px_1fr] items-center gap-3">
-        <div className="relative h-[150px]">
+      <div className="mt-1 flex justify-center">
+        <div className="relative h-[132px] w-[132px]">
           <Doughnut data={data} options={options} />
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-[10px] text-slate-400">Total</span>
-            <span className="text-xl font-black text-slate-900 dark:text-white">100%</span>
-            <span className="text-[9px] text-slate-400">Land Use</span>
+            <span className="text-[20px] font-bold leading-none text-[#223044] dark:text-white">100%</span>
+            <span className="mt-1 text-[9px] text-[#9aa6b2]">Total land use</span>
           </div>
         </div>
+      </div>
 
-        <div className="space-y-2.5">
-          {LAND_USE_DATA.map((item, i) => (
-            <div key={item.label} className="flex items-center gap-2 text-[11px]">
-              <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: COLORS[i] }} />
-              <span className="flex-1 text-slate-600 dark:text-slate-300">{item.label}</span>
-              <span className="font-extrabold text-slate-900 dark:text-white">{item.value}%</span>
+      <div className="mt-3 space-y-2">
+        {LAND_USE_DATA.map((item, i) => (
+          <div key={item.label} className="grid grid-cols-[78px_1fr_34px] items-center gap-2">
+            <span className="truncate text-[12px] text-[#8f99a5]">{item.label}</span>
+            <div className="h-1 overflow-hidden rounded-full bg-[#eef2f4] dark:bg-white/10">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${item.value}%`,
+                  backgroundColor: COLORS[i],
+                }}
+              />
             </div>
-          ))}
-        </div>
+            <span className="text-right text-[12px] font-semibold text-[#596574] dark:text-slate-300">
+              {item.value}%
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );

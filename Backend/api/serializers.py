@@ -592,7 +592,7 @@ class ProjectMauzaSerializer(serializers.ModelSerializer):
 # -------------------------------------------------------
 
 class SpotLevelSerializer(serializers.ModelSerializer):
-    project_name = serializers.CharField(source="project.project_name", read_only=True)
+    project_name = serializers.CharField(source="project.name", read_only=True)
 
     class Meta:
         model = SpotLevel
@@ -1739,6 +1739,24 @@ class FloodExtentSerializer(GeoFeatureModelSerializer):
             "name",
             "area",
             "year",
+            "geom",
+        )
+
+
+class FloodExtentScenariosSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = FloodExtentScenarios
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "objectid",
+            "shape_leng",
+            "shape_le_1",
+            "shape_area",
+            "cusic",
             "geom",
         )
 

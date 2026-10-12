@@ -5,10 +5,16 @@ from api.views import *
 from api.views.RudaMasterPlan import *
 from api.views.GISMetaverse import *
 
+from api.views.GISMetaverse.FloodExtentScenarios.CreateFloodExtentScenarios import CreateFloodExtentScenariosView
+from api.views.GISMetaverse.FloodExtentScenarios.DeleteFloodExtentScenarios import DeleteFloodExtentScenariosView
+from api.views.GISMetaverse.FloodExtentScenarios.ListFloodExtentScenarios import ListFloodExtentScenariosView
+from api.views.GISMetaverse.FloodExtentScenarios.UpdateFloodExtentScenarios import UpdateFloodExtentScenariosView
+
 from api.views.SquareView.import_square_shapefile import import_square_shapefile
 from api.views.AcreView.import_acre_shapefile import import_acre_shapefile
 from api.views.Trijunction.import_trijunction_shapefile import import_trijunction_shapefile
 from api.views.FieldPointsView.import_fieldpoints_shapefile import import_fieldpoints_shapefile
+from api.views.GISMetaverse.ProjectBoundaryView.import_projectboundary_shapefile import import_projectboundary_shapefile
 
 from api.views.RudaMasterPlan.RudaNotifiedPhasesBoundary import (
     CreateRudaNotifiedPhasesBoundaryView,
@@ -315,6 +321,12 @@ router.register(r"floodextent/create", CreateFloodExtentView, basename="create-f
 router.register(r"floodextent/update", UpdateFloodExtentView, basename="update-floodextent")
 router.register(r"floodextent/delete", DeleteFloodExtentView, basename="delete-floodextent")
 
+# ------------------------------ Flood Extent Scenarios Views ------------------------------
+router.register(r"floodextentscenarios", ListFloodExtentScenariosView, basename="floodextentscenarios")
+router.register(r"floodextentscenarios/create", CreateFloodExtentScenariosView, basename="create-floodextentscenarios")
+router.register(r"floodextentscenarios/update", UpdateFloodExtentScenariosView, basename="update-floodextentscenarios")
+router.register(r"floodextentscenarios/delete", DeleteFloodExtentScenariosView, basename="delete-floodextentscenarios")
+
 router.register(r"sw-line", ListSWLineView, basename="sw-line")
 router.register(r"sw-line/create", CreateSWLineView, basename="create-sw-line")
 router.register(r"sw-line/update", UpdateSWLineView, basename="update-sw-line")
@@ -352,6 +364,15 @@ urlpatterns = [
     path("import/acre/", import_acre_shapefile),
     path("import/trijunction/", import_trijunction_shapefile),
     path("import/fieldpoints/", import_fieldpoints_shapefile),
+
+    path("import/project-boundary/", import_projectboundary_shapefile),
+    path("import/block-boundary/", import_blockboundary_shapefile),
+    path("import/masterplanplotdata/", import_masterplanplotdata_shapefile),
+    path("import/sewerlines/", import_sewerlines_shapefile),
+    path("import/sewerpoints/", import_sewerpoints_shapefile),
+    path("import/spotlevel/", import_spotlevel_shapefile),
+    path("import/watersupplylines/", import_watersupplylines_shapefile),
+    path("import/watersupplypoints/", import_watersupplypoints_shapefile),
 
     path(
         "plot-options/",

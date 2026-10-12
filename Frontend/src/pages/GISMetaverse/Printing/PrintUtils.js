@@ -85,6 +85,29 @@ const niceDistance = (meters) => {
   return niceFraction * 10 ** exponent;
 };
 
+export const getPrintScaleBarInfo = (map) => {
+  if (!map)
+    return {
+      widthPx: 240,
+      halfLabel: "100",
+      totalLabel: "200",
+      unit: "Meters",
+    };
+  const latitude = map.getCenter().lat;
+  const zoom = map.getZoom();
+  const metersPerMapPixel =
+    (Math.cos((latitude * Math.PI) / 180) * 2 * Math.PI * EARTH_RADIUS_METERS) /
+    (512 * 2 ** zoom);
+  const mapCssWidth =
+    map.getContainer?.()?.clientWidth || map.getCanvas?.()?.clientWidth || 1000;
+  const printPixelsPerMapPixel = ((420 / 25.4) * 96) / mapCssWidth;
+  const widthPx = Math.max(
+    150,
+    Math.min(300, (200 / metersPerMapPixel) * printPixelsPerMapPixel),
+  );
+  return { widthPx, halfLabel: "100", totalLabel: "200", unit: "Meters" };
+};
+
 export const getScaleInfo = (map, targetPixels = 210) => {
   if (!map) return { label: "Scale unavailable", segmentCount: 4 };
 

@@ -16,6 +16,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import RudaLogo from "../../../assets/Ruda.png";
+import RudaLandManagementLogo from "../../../assets/RUDA L&M.png";
 import { PRINT_EVENTS, dispatchPrintEvent } from "../Printing/PrintEvents";
 import {
   getMpPrincipleZoningGeoJSON,
@@ -122,7 +123,6 @@ const removeImportedLayers = (map) => {
   });
   if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
 };
-
 
 /**
  * Rebuild the imported dataset for print capture without live text/point layers.
@@ -1398,13 +1398,13 @@ const captureMapWithKmzPrintCallout = ({ map, importedGeoJSON, label }) => {
   const anchorY = projected.y * scaleY;
   const safeLabel = String(label || "Imported KMZ").trim() || "Imported KMZ";
 
-  const fontSize = 22 * scale;
-  const padX = 12 * scale;
-  const padY = 8 * scale;
-  const borderWidth = 2.5 * scale;
+  const fontSize = 15 * scale;
+  const padX = 9 * scale;
+  const padY = 5 * scale;
+  const borderWidth = 2 * scale;
   const margin = 18 * scale;
-  const gapX = 38 * scale;
-  const gapY = 46 * scale;
+  const gapX = 28 * scale;
+  const gapY = 34 * scale;
 
   ctx.save();
   ctx.font = `700 ${fontSize}px Arial, Helvetica, sans-serif`;
@@ -1538,6 +1538,7 @@ const makePrintableHtml = ({
   insetImage,
   legendRows,
   logoUrl,
+  departmentLogoUrl,
   scaleBarInfo,
 }) => {
   const legendHtml = legendRows
@@ -1608,30 +1609,34 @@ const makePrintableHtml = ({
       position: absolute;
       left: 16px;
       top: 16px;
-      width: 108px;
-      height: 108px;
+      width: 112px;
+      height: 112px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: rgba(255,255,255,.96);
       border: 1px solid #334155;
-      padding: 8px;
+      border-radius: 50%;
+      padding: 7px;
+      overflow: hidden;
     }
-    .logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .logo-box img { width: 98px; height: 98px; object-fit: contain; display: block; }
     .north {
       position: absolute;
       right: 18px;
       top: 16px;
-      width: 108px;
-      height: 108px;
-      border: 1px solid #334155;
-      background: rgba(255,255,255,.96);
+      width: 112px;
+      height: 112px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 5px;
+      background: rgba(255,255,255,.96);
+      border: 1px solid #334155;
+      border-radius: 50%;
+      padding: 7px;
+      overflow: hidden;
     }
-    .north svg { width: 96px; height: 96px; display: block; }
+    .north svg { width: 98px; height: 98px; display: block; }
     /* ── Bottom-left block: inset map + credit, visually attached ── */
     .bottom-left-block {
       position: absolute;
@@ -1659,6 +1664,30 @@ const makePrintableHtml = ({
       background: #ffffff;
       border: 1px solid #64748b;
       display: block;
+    }
+    .department-logo {
+      position: absolute;
+      left: 432px;
+      bottom: 18px;
+      width: 96px;
+      height: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 0;
+      padding: 0;
+    }
+    .department-logo img { width: 96px; height: 96px; object-fit: contain; display: block; }
+    .bottom-scale-zone {
+      position: absolute;
+      left: 540px;
+      right: 288px;
+      bottom: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      pointer-events: none;
     }
     .legend {
       position: absolute;
@@ -1688,10 +1717,7 @@ const makePrintableHtml = ({
       box-shadow: inset 0 0 0 1px #ffffff;
     }
     .scale-wrap {
-      position: absolute;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
+      position: relative;
       background: rgba(255,255,255,.98);
       border: 1px solid #111827;
       padding: 2px 5px 4px;
@@ -1712,7 +1738,9 @@ const makePrintableHtml = ({
       white-space: nowrap;
     }
     .scale-label.start { left: 0; }
-    .scale-label.mid { left: 50%; transform: translateX(-50%); }
+    .scale-label.q1 { left: 25%; transform: translateX(-50%); }
+    .scale-label.q2 { left: 50%; transform: translateX(-50%); }
+    .scale-label.q3 { left: 75%; transform: translateX(-50%); }
     .scale-label.end { right: 0; }
     .scale-bar-row {
       display: flex;
@@ -1728,13 +1756,16 @@ const makePrintableHtml = ({
       background: #ffffff;
     }
     .scale-segment {
-      flex: 1 1 25%;
+      display: block;
+      flex: 0 0 20%;
       height: 100%;
       border-right: 1px solid #111111;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
+    .scale-segment:nth-child(odd) { background: #000000 !important; }
+    .scale-segment:nth-child(even) { background: #ffffff !important; }
     .scale-segment:last-child { border-right: none; }
-    .scale-segment.white { background: #ffffff; }
-    .scale-segment.black { background: #111111; }
     .scale-unit {
       margin-left: 0;
       padding-bottom: 0;
@@ -1798,25 +1829,32 @@ const makePrintableHtml = ({
       </div>
     </div>
 
+    ${departmentLogoUrl ? `<div class="department-logo"><img src="${departmentLogoUrl}" alt="RUDA GIS Directorate LA&EM Department Logo" /></div>` : ""}
+
     <div class="legend">
       <h3>Legend</h3>
       ${legendHtml || '<div class="legend-row">Visible map layers</div>'}
     </div>
 
-    <div class="scale-wrap" aria-label="Map scale bar">
-      <div class="scale-labels">
-        <span class="scale-label start">0</span>
-        <span class="scale-label mid">${escapeHtml(resolvedScaleBar.halfLabel)}</span>
-        <span class="scale-label end">${escapeHtml(resolvedScaleBar.totalLabel)}</span>
-      </div>
-      <div class="scale-bar-row">
-        <div class="scale-bar">
-          <span class="scale-segment black"></span>
-          <span class="scale-segment white"></span>
-          <span class="scale-segment black"></span>
-          <span class="scale-segment white"></span>
+    <div class="bottom-scale-zone">
+      <div class="scale-wrap" aria-label="Map scale bar">
+        <div class="scale-labels">
+          <span class="scale-label start">0</span>
+          <span class="scale-label q1">50</span>
+          <span class="scale-label q2">100</span>
+          <span class="scale-label q3">150</span>
+          <span class="scale-label end">200</span>
         </div>
-        <span class="scale-unit">${escapeHtml(resolvedScaleBar.unit || "Meters")}</span>
+        <div class="scale-bar-row">
+          <div class="scale-bar">
+            <span class="scale-segment" style="background-color:#000000"></span>
+            <span class="scale-segment" style="background-color:#ffffff"></span>
+            <span class="scale-segment" style="background-color:#000000"></span>
+            <span class="scale-segment" style="background-color:#ffffff"></span>
+            <span class="scale-segment" style="background-color:#000000"></span>
+          </div>
+          <span class="scale-unit">${escapeHtml(resolvedScaleBar.unit || "Meters")}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -1836,14 +1874,13 @@ const createPdfReportFile = async (printWindow, title) => {
   }
 
   await Promise.all(
-    Array.from(printWindow.document.images).map(
-      (image) =>
-        image.complete
-          ? Promise.resolve()
-          : new Promise((resolve) => {
-              image.addEventListener("load", resolve, { once: true });
-              image.addEventListener("error", resolve, { once: true });
-            }),
+    Array.from(printWindow.document.images).map((image) =>
+      image.complete
+        ? Promise.resolve()
+        : new Promise((resolve) => {
+            image.addEventListener("load", resolve, { once: true });
+            image.addEventListener("error", resolve, { once: true });
+          }),
     ),
   );
 
@@ -1858,8 +1895,10 @@ const createPdfReportFile = async (printWindow, title) => {
   const pageHeight = pdf.internal.pageSize.getHeight();
   const imageRatio = canvas.width / canvas.height;
   const pageRatio = pageWidth / pageHeight;
-  const imageWidth = imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio;
-  const imageHeight = imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
+  const imageWidth =
+    imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio;
+  const imageHeight =
+    imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
 
   pdf.addImage(
     canvas.toDataURL("image/jpeg", 0.92),
@@ -1870,9 +1909,10 @@ const createPdfReportFile = async (printWindow, title) => {
     imageHeight,
   );
 
-  const safeName = String(title || "KMZ_Report")
-    .replace(/[^a-z0-9]+/gi, "_")
-    .replace(/^_+|_+$/g, "") || "KMZ_Report";
+  const safeName =
+    String(title || "KMZ_Report")
+      .replace(/[^a-z0-9]+/gi, "_")
+      .replace(/^_+|_+$/g, "") || "KMZ_Report";
   return new File([pdf.output("blob")], `${safeName}.pdf`, {
     type: "application/pdf",
   });
@@ -2206,7 +2246,7 @@ export default function Import({ map, filters, onClose }) {
 
       const { count, types } = summarise(preparedGeoJSON);
       setSummary({ fileName: file.name, title: importTitle, count, types });
-        setImportedFile(file);
+      setImportedFile(file);
     } catch (e) {
       console.error("Import error:", e);
       setError("An unexpected error occurred while importing the file.");
@@ -2231,7 +2271,8 @@ export default function Import({ map, filters, onClose }) {
 
         setLoading(true);
         const response = await fetch(url);
-        if (!response.ok) throw new Error("The stored KMZ file could not be loaded.");
+        if (!response.ok)
+          throw new Error("The stored KMZ file could not be loaded.");
 
         const blob = await response.blob();
         if (!cancelled) {
@@ -2243,7 +2284,9 @@ export default function Import({ map, filters, onClose }) {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError?.message || "The stored KMZ file could not be loaded.");
+          setError(
+            loadError?.message || "The stored KMZ file could not be loaded.",
+          );
           setLoading(false);
         }
       }
@@ -2361,9 +2404,13 @@ export default function Import({ map, filters, onClose }) {
       const title = useImportedKmzName
         ? importedKmzLabel
         : customTitle?.trim() || summary?.title || "Imported Boundary Map";
-      // The page title is independent from the KMZ legend label.
-      // Legend uses the actual imported KMZ/map label (e.g. "GCB Survey Plan").
-      const legendRows = buildLegendRows(importedKmzLabel);
+      // The page title is independent from the imported-file legend label.
+      // The legend must show the actual uploaded KML/KMZ file name rather than
+      // a generic feature label such as "Imported KML" / "Imported KMZ".
+      const importedFileLegendLabel = getImportedTitle(
+        importedFile?.name || summary?.title || "Imported Boundary",
+      );
+      const legendRows = buildLegendRows(importedFileLegendLabel);
       // Reference-style scale bar only. Latitude / longitude / zoom metadata
       // are intentionally omitted from the printed layout.
       const scaleBarInfo = getPrintScaleBarInfo(map);
@@ -2376,6 +2423,7 @@ export default function Import({ map, filters, onClose }) {
           insetImage: zoningInsetImage || fallbackOverviewImage || mapImage,
           legendRows,
           logoUrl: RudaLogo,
+          departmentLogoUrl: RudaLandManagementLogo,
           scaleBarInfo,
         }),
       );
@@ -2401,10 +2449,7 @@ export default function Import({ map, filters, onClose }) {
       logPayload.append("project_type", String(filters?.projectType || ""));
       logPayload.append("phase", String(filters?.phase || ""));
       logPayload.append("feature_count", String(summary?.count || 0));
-      logPayload.append(
-        "geometry_types",
-        JSON.stringify(summary?.types || []),
-      );
+      logPayload.append("geometry_types", JSON.stringify(summary?.types || []));
       logPayload.append("printed_by", printedBy);
       logPayload.append("print_title", title);
       await createKmzPrintLog(logPayload);
@@ -2426,7 +2471,9 @@ export default function Import({ map, filters, onClose }) {
           }
         }, 100);
       };
-      printWindow.addEventListener?.("afterprint", closePrintWindow, { once: true });
+      printWindow.addEventListener?.("afterprint", closePrintWindow, {
+        once: true,
+      });
       printWindow.focus();
       printWindow.print();
     } catch (printError) {
@@ -2640,7 +2687,7 @@ export default function Import({ map, filters, onClose }) {
       )}
 
       {/* KMZ print logs */}
-      <button
+      {/* <button
         type="button"
         onClick={() => navigate("/gis-metaverse/kmz-logs")}
         className="mt-3 w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md
@@ -2650,7 +2697,7 @@ export default function Import({ map, filters, onClose }) {
       >
         <ClipboardList size={14} />
         View KMZ Map Logs
-      </button>
+      </button> */}
     </div>
   );
 }

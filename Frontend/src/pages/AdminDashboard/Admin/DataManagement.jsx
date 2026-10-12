@@ -11,7 +11,7 @@ import {
   SquareStack,
   Waypoints,
 } from "lucide-react";
-import AdminPage from "../dashboard/AdminPage";
+import AdminPage from "../Dashboard/AdminPage";
 
 const DATASETS = [
   {
