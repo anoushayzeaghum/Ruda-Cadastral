@@ -549,6 +549,11 @@ export const getHousingSchemesGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getIllegalHousingSchemesGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/illegal-housing-schemes/`);
+  return unwrapGeoJSON(res.data);
+};
+
 export const getExistingDrainsGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/existing-drains/`);
   return unwrapGeoJSON(res.data);
@@ -571,6 +576,11 @@ export const getRiverRaviGeoJSON = async () => {
 
 export const getFloodExtentGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/floodextent/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getFloodExtentScenariosGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/floodextentscenarios/`);
   return unwrapGeoJSON(res.data);
 };
 
@@ -653,5 +663,10 @@ export const getAwardedLandGeoJSON = async () => {
 
 export const getPossessionLandGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/possessionland/`);
+  return unwrapGeoJSON(res.data);
+};
+
+export const getMpPrincipleZoningNotifiedGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/mp-principle-zoing-notified/`);
   return unwrapGeoJSON(res.data);
 };

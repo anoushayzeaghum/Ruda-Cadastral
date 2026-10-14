@@ -26,6 +26,15 @@ import {
   getMasterPlanPhasesLabelPaint,
   getMasterPlanPhasesOutlinePaint,
 } from "./LayerManager/RudaMasterPlanLayers/MasterPlanPhasesLayer";
+import MpPrincipleZoningNotifiedStyle, {
+  DEFAULT_MP_PRINCIPLE_ZONING_NOTIFIED_COLORS,
+  MP_PRINCIPLE_ZONING_NOTIFIED_LEGEND,
+  ensureMpPrincipleZoningNotifiedPatterns,
+  getMpPrincipleZoningNotifiedFillPaint,
+  getMpPrincipleZoningNotifiedLinePaint,
+  getMpPrincipleZoningNotifiedOutlinePaint,
+  getMpPrincipleZoningNotifiedPatternFillPaint,
+} from "./LayerManager/RudaMasterPlanLayers/MpPrincipleZoningNotifiedStyle";
 import {
   PRECINCT_BOUNDARY_COLOR,
   getPrecinctBoundaryLabelLayout,
@@ -104,6 +113,7 @@ import {
 import {
   getCityLevelServiceGeoJSON,
   getMpPrincipleZoningGeoJSON,
+  getMpPrincipleZoningNotifiedGeoJSON,
   getPrecientBoundaryGeoJSON,
   getProposedRoadsGeoJSON,
   getProposedWWTPGeoJSON,
@@ -141,6 +151,21 @@ const RUDA_MASTER_PLAN_GROUPS = [
         key: "masterPlanPhases",
         label: "Master Plan Phases",
         color: MASTER_PLAN_PHASES_COLOR,
+      },
+    ],
+  },
+  {
+    key: "mpPrincipleZoningNotifiedGroup",
+    label: "MP Notified Principle Zoning",
+    standalone: true,
+    children: [
+      {
+        key: "mpPrincipleZoningNotified",
+        label: "MP Notified Principle Zoning",
+        color: DEFAULT_MP_PRINCIPLE_ZONING_NOTIFIED_COLORS["Brown Zone"],
+        previewColors: Object.values(
+          DEFAULT_MP_PRINCIPLE_ZONING_NOTIFIED_COLORS,
+        ),
       },
     ],
   },
@@ -264,6 +289,22 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     getLabelLayout: getMasterPlanPhasesLabelLayout,
     getLabelPaint: getMasterPlanPhasesLabelPaint,
     labelMinZoom: 6,
+    outlineLineCap: "round",
+    lineCap: "round",
+  },
+  mpPrincipleZoningNotified: {
+    endpoint: "/mp-principle-zoing-notified/",
+    fetchGeoJSON: getMpPrincipleZoningNotifiedGeoJSON,
+    categorized: true,
+    categoryLegend: MP_PRINCIPLE_ZONING_NOTIFIED_LEGEND,
+    defaultCategoryColors: DEFAULT_MP_PRINCIPLE_ZONING_NOTIFIED_COLORS,
+    LegendComponent: MpPrincipleZoningNotifiedStyle,
+    ensureMapImages: ensureMpPrincipleZoningNotifiedPatterns,
+    getFillPaint: getMpPrincipleZoningNotifiedFillPaint,
+    getPatternFillPaint: getMpPrincipleZoningNotifiedPatternFillPaint,
+    patternFillFilter: ["==", ["get", "zoning_cat"], "Public Utility Zone"],
+    getOutlinePaint: getMpPrincipleZoningNotifiedOutlinePaint,
+    getLinePaint: getMpPrincipleZoningNotifiedLinePaint,
     outlineLineCap: "round",
     lineCap: "round",
   },

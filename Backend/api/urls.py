@@ -5,6 +5,7 @@ from api.views import *
 from api.views.RudaMasterPlan import *
 from api.views.GISMetaverse import *
 
+
 from api.views.SquareView.import_square_shapefile import import_square_shapefile
 from api.views.AcreView.import_acre_shapefile import import_acre_shapefile
 from api.views.Trijunction.import_trijunction_shapefile import import_trijunction_shapefile
@@ -221,6 +222,12 @@ router.register(r"city-level-service-points/create", CreateCityLevelServicePoint
 router.register(r"city-level-service-points/update", UpdateCityLevelServicePointsView, basename="update-city-level-service-points")
 router.register(r"city-level-service-points/delete", DeleteCityLevelServicePointsView, basename="delete-city-level-service-points")
 
+# ------------------------------ MP Principle Zoing Notified Views ------------------------------
+router.register(r"mp-principle-zoing-notified", ListMPPrincipleZoingNotifiedView, basename="mp-principle-zoing-notified")
+router.register(r"mp-principle-zoing-notified/create", CreateMPPrincipleZoingNotifiedView, basename="create-mp-principle-zoing-notified")
+router.register(r"mp-principle-zoing-notified/update", UpdateMPPrincipleZoingNotifiedView, basename="update-mp-principle-zoing-notified")
+router.register(r"mp-principle-zoing-notified/delete", DeleteMPPrincipleZoingNotifiedView, basename="delete-mp-principle-zoing-notified")
+
 router.register(r"mp-principle-zoning", ListMpPrincipleZoningView, basename="mp-principle-zoning")
 router.register(r"mp-principle-zoning/create", CreateMpPrincipleZoningView, basename="create-mp-principle-zoning")
 router.register(r"mp-principle-zoning/update", UpdateMpPrincipleZoningView, basename="update-mp-principle-zoning")
@@ -315,6 +322,19 @@ router.register(r"floodextent", ListFloodExtentView, basename="floodextent")
 router.register(r"floodextent/create", CreateFloodExtentView, basename="create-floodextent")
 router.register(r"floodextent/update", UpdateFloodExtentView, basename="update-floodextent")
 router.register(r"floodextent/delete", DeleteFloodExtentView, basename="delete-floodextent")
+
+# ------------------------------ Flood Extent Scenarios Views ------------------------------
+router.register(r"floodextentscenarios", ListFloodExtentScenariosView, basename="floodextentscenarios")
+router.register(r"floodextentscenarios/create", CreateFloodExtentScenariosView, basename="create-floodextentscenarios")
+router.register(r"floodextentscenarios/update", UpdateFloodExtentScenariosView, basename="update-floodextentscenarios")
+router.register(r"floodextentscenarios/delete", DeleteFloodExtentScenariosView, basename="delete-floodextentscenarios")
+
+
+# ------------------------------ Illegal Housing Scheme Views ------------------------------
+router.register(r"illegal-housing-schemes", ListIllegalHousingSchemeView, basename="illegal-housing-schemes")
+router.register(r"illegal-housing-schemes/create", CreateIllegalHousingSchemeView, basename="create-illegal-housing-schemes")
+router.register(r"illegal-housing-schemes/update", UpdateIllegalHousingSchemeView, basename="update-illegal-housing-schemes")
+router.register(r"illegal-housing-schemes/delete", DeleteIllegalHousingSchemeView, basename="delete-illegal-housing-schemes")
 
 router.register(r"sw-line", ListSWLineView, basename="sw-line")
 router.register(r"sw-line/create", CreateSWLineView, basename="create-sw-line")

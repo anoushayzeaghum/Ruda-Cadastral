@@ -1639,6 +1639,36 @@ class MpPrincipleZoning(models.Model):
         managed = False
         db_table = "mp_principle_zoning"
 
+# ======================================
+# MP Principle Zoing Notified
+# Database table: public.mp_principle_zoing_notified
+# ======================================
+class MPPrincipleZoingNotified(models.Model):
+    gid = models.AutoField(primary_key=True, db_column="gid")
+    area225a = models.FloatField(db_column="area225a", null=True, blank=True)
+    zoning_cat = models.CharField(
+        db_column="zoning_cat",
+        max_length=50,
+        null=True,
+        blank=True,
+    )
+    area_sqft = models.FloatField(db_column="area_sqft", null=True, blank=True)
+
+    geom = gis_models.MultiPolygonField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.zoning_cat or f"MP Principle Zoing Notified {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "mp_principle_zoing_notified"
+
+
 # =========================
 # City Level Service
 # =========================
@@ -2638,6 +2668,23 @@ class FloodExtent(models.Model):
         managed = False
         db_table = "floodextent"
 
+
+class FloodExtentScenarios(models.Model):
+    gid = models.AutoField(primary_key=True)
+    objectid = models.FloatField(null=True, blank=True)
+    shape_leng = models.FloatField(null=True, blank=True)
+    shape_le_1 = models.FloatField(null=True, blank=True)
+    shape_area = models.FloatField(null=True, blank=True)
+    cusic = models.FloatField(null=True, blank=True)
+    geom = gis_models.MultiPolygonField(srid=4326)
+
+    def __str__(self):
+        return f"Flood Extent Scenario {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "floodextentscenarios"
+
 class SWLine(models.Model):
     gid = models.AutoField(primary_key=True)
     objectid = models.FloatField(null=True, blank=True)
@@ -2653,6 +2700,38 @@ class SWLine(models.Model):
     class Meta:
         managed = False
         db_table = "sw_line"
+
+
+# =========================
+# Illegal Housing Scheme
+# DB table: illegalhousingscheme
+# =========================
+class IllegalHousingScheme(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    name = models.CharField(
+        db_column="name",
+        max_length=254,
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Illegal Housing Scheme {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "illegalhousingscheme"
 
 
 # =========================

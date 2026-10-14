@@ -45,6 +45,18 @@ const LAYER_IDS = {
   point: "user-imported-point",
 };
 
+// Dedicated print-only geometry IDs. These deliberately do NOT reuse the
+// live `user-imported-*` source/layer IDs because Mapbox can retain/reuse
+// symbol buckets for a source across rapid remove/re-add operations. Using a
+// separate source guarantees the print capture has geometry only and can never
+// inherit the live repeated KMZ text labels.
+const PRINT_IMPORTED_GEOMETRY_IDS = Object.freeze({
+  source: "print-user-imported-data",
+  fill: "print-user-imported-fill",
+  outline: "print-user-imported-outline",
+  line: "print-user-imported-line",
+});
+
 // Single source of truth for the imported KMZ polygon print/map styling.
 // The main map layer and the printed legend MUST use these exact values.
 const IMPORTED_KMZ_STYLE = Object.freeze({
@@ -124,26 +136,78 @@ const removeImportedLayers = (map) => {
   if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
 };
 
+/** Remove every print-only imported geometry layer/source. */
+const removePrintImportedGeometry = (map) => {
+  if (!map) return;
+
+  [
+    PRINT_IMPORTED_GEOMETRY_IDS.line,
+    PRINT_IMPORTED_GEOMETRY_IDS.outline,
+    PRINT_IMPORTED_GEOMETRY_IDS.fill,
+  ].forEach((layerId) => {
+    try {
+      if (map.getLayer?.(layerId)) map.removeLayer(layerId);
+    } catch {
+      // Map/style can be changing; cleanup is best effort.
+    }
+  });
+
+  try {
+    if (map.getSource?.(PRINT_IMPORTED_GEOMETRY_IDS.source)) {
+      map.removeSource(PRINT_IMPORTED_GEOMETRY_IDS.source);
+    }
+  } catch {
+    // Ignore cleanup errors during style transitions.
+  }
+};
+
 /**
- * Rebuild the imported dataset for print capture without live text/point layers.
- * This keeps the user's current camera untouched while guaranteeing that only
- * the intended KMZ polygon/line geometry is captured.
+ * Defensive cleanup for any symbol layer attached to the LIVE imported source.
+ * This catches the known `user-imported-label` layer and any future/legacy
+ * symbol layer that may use the same source.
+ */
+const removeLiveImportedSymbolLayers = (map) => {
+  if (!map?.getStyle) return;
+
+  try {
+    const layers = map.getStyle()?.layers || [];
+    layers
+      .filter(
+        (layer) =>
+          layer?.type === "symbol" &&
+          (layer?.source === SOURCE_ID || layer?.id === LAYER_IDS.label),
+      )
+      .map((layer) => layer.id)
+      .reverse()
+      .forEach((layerId) => {
+        if (map.getLayer?.(layerId)) map.removeLayer(layerId);
+      });
+  } catch {
+    // Best effort; `removeImportedLayers` below is the final cleanup.
+  }
+};
+
+/**
+ * Add a completely separate geometry-only copy of the imported KMZ for print.
+ * There is intentionally NO symbol/text layer and NO point layer here.
+ * The source/layer IDs are different from the live map IDs, preventing stale
+ * live label glyphs from being reused in the print render.
  */
 const addImportedGeometryOnlyForPrint = (map, geojson) => {
   if (!map || !geojson) return;
 
-  removeImportedLayers(map);
+  removePrintImportedGeometry(map);
 
-  map.addSource(SOURCE_ID, {
+  map.addSource(PRINT_IMPORTED_GEOMETRY_IDS.source, {
     type: "geojson",
     data: geojson,
     generateId: true,
   });
 
   map.addLayer({
-    id: LAYER_IDS.fill,
+    id: PRINT_IMPORTED_GEOMETRY_IDS.fill,
     type: "fill",
-    source: SOURCE_ID,
+    source: PRINT_IMPORTED_GEOMETRY_IDS.source,
     paint: {
       "fill-color": IMPORTED_KMZ_STYLE.fillColor,
       "fill-opacity": IMPORTED_KMZ_STYLE.fillOpacity,
@@ -152,9 +216,9 @@ const addImportedGeometryOnlyForPrint = (map, geojson) => {
   });
 
   map.addLayer({
-    id: LAYER_IDS.outline,
+    id: PRINT_IMPORTED_GEOMETRY_IDS.outline,
     type: "line",
-    source: SOURCE_ID,
+    source: PRINT_IMPORTED_GEOMETRY_IDS.source,
     paint: {
       "line-color": IMPORTED_KMZ_STYLE.outlineColor,
       "line-width": IMPORTED_KMZ_STYLE.outlineWidth,
@@ -163,9 +227,9 @@ const addImportedGeometryOnlyForPrint = (map, geojson) => {
   });
 
   map.addLayer({
-    id: LAYER_IDS.line,
+    id: PRINT_IMPORTED_GEOMETRY_IDS.line,
     type: "line",
-    source: SOURCE_ID,
+    source: PRINT_IMPORTED_GEOMETRY_IDS.source,
     paint: {
       "line-color": "#60a5fa",
       "line-width": 2.5,
@@ -340,6 +404,38 @@ const waitForCameraAndFreshFrame = async (map, timeoutMs = 6000) => {
   }
 
   await waitForFreshMapFrame(map);
+};
+
+/**
+ * Wait until a style mutation has produced a clean, settled render. We wait for
+ * both a fresh WebGL frame and an idle cycle, then two browser frames. This is
+ * used between removing the live KMZ and adding the print-only geometry.
+ */
+const waitForPrintMapSettled = async (map, timeoutMs = 4000) => {
+  if (!map) return;
+
+  await waitForFreshMapFrame(map, Math.min(timeoutMs, 2500));
+
+  await new Promise((resolve) => {
+    let finished = false;
+    let timeoutId;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeoutId);
+      map.off?.("idle", finish);
+      resolve();
+    };
+
+    timeoutId = setTimeout(finish, timeoutMs);
+    map.once?.("idle", finish);
+    map.triggerRepaint?.();
+  });
+
+  await new Promise((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve)),
+  );
 };
 
 const getImportedTitle = (fileName = "Imported Boundary") =>
@@ -1939,7 +2035,10 @@ export default function Import({ map, filters, onClose }) {
   useEffect(() => {
     if (!map) return undefined;
 
-    const cleanupPrintAnnotation = () => removePrintKmzCallout(map);
+    const cleanupPrintAnnotation = () => {
+      removePrintKmzCallout(map);
+      removePrintImportedGeometry(map);
+    };
     cleanupPrintAnnotation();
     map.on?.("style.load", cleanupPrintAnnotation);
 
@@ -1951,6 +2050,7 @@ export default function Import({ map, filters, onClose }) {
 
   // ── clear imported data ──────────────────────────────────────────────────────
   const clearImportedData = () => {
+    removePrintImportedGeometry(map);
     removeImportedLayers(map);
     setHasLayer(false);
     setSummary(null);
@@ -2360,11 +2460,19 @@ export default function Import({ map, filters, onClose }) {
       const printCalloutLabel =
         calloutLabel?.trim() || importedKmzLabel || "Imported KMZ";
 
-      // Rebuild ONLY the imported KMZ geometry for capture. Crucially, do not
-      // call fitBounds/easeTo/jumpTo here: the print must preserve the exact
-      // center/zoom/bearing/pitch visible when the user clicked Print.
+      // PRINT ISOLATION STEP 1: remove the complete live imported dataset,
+      // including every symbol layer attached to it, and wait until Mapbox has
+      // committed a genuinely clean frame. The user's camera is untouched.
+      removeLiveImportedSymbolLayers(map);
+      removeImportedLayers(map);
+      removePrintImportedGeometry(map);
+      await waitForPrintMapSettled(map);
+
+      // PRINT ISOLATION STEP 2: add a geometry-only copy under DIFFERENT
+      // source/layer IDs. No symbol or point layer exists in this print copy,
+      // therefore repeated `_import_label` text cannot be rendered.
       addImportedGeometryOnlyForPrint(map, importedGeoJSON);
-      await waitForFreshMapFrame(map);
+      await waitForPrintMapSettled(map);
 
       let zoningInsetImage = fallbackOverviewImage;
       try {
@@ -2379,11 +2487,23 @@ export default function Import({ map, filters, onClose }) {
         );
       }
 
-      // Hard guarantee immediately before capture: no repeated live KMZ label
-      // and no helper point markers can leak into the PDF.
-      if (map.getLayer(LAYER_IDS.label)) map.removeLayer(LAYER_IDS.label);
-      if (map.getLayer(LAYER_IDS.point)) map.removeLayer(LAYER_IDS.point);
+      // Final hard guarantee immediately before capture. Remove any live-source
+      // symbol layer that may have been recreated by external code/style events,
+      // then confirm the print geometry still has NO symbol layers.
+      removeLiveImportedSymbolLayers(map);
+      if (map.getLayer?.(LAYER_IDS.point)) map.removeLayer(LAYER_IDS.point);
+
+      const leakedPrintSymbol = (map.getStyle?.()?.layers || []).find(
+        (layer) =>
+          layer?.type === "symbol" &&
+          layer?.source === PRINT_IMPORTED_GEOMETRY_IDS.source,
+      );
+      if (leakedPrintSymbol && map.getLayer?.(leakedPrintSymbol.id)) {
+        map.removeLayer(leakedPrintSymbol.id);
+      }
+
       await waitForCameraAndFreshFrame(map);
+      await waitForPrintMapSettled(map);
 
       // IMPORTANT: do not add the print callout to the live Mapbox map.
       // Capture the current map and draw the reference-style KMZ callout only
@@ -2484,6 +2604,7 @@ export default function Import({ map, filters, onClose }) {
       );
     } finally {
       removePrintKmzCallout(map);
+      removePrintImportedGeometry(map);
 
       // Restore the complete live imported-KMZ presentation without fitting or
       // animating the map. The camera therefore remains exactly where it was.
