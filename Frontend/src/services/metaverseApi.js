@@ -665,3 +665,8 @@ export const getPossessionLandGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/possessionland/`);
   return unwrapGeoJSON(res.data);
 };
+
+export const getMpPrincipleZoningNotifiedGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/mp-principle-zoing-notified/`);
+  return unwrapGeoJSON(res.data);
+};

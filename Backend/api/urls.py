@@ -5,15 +5,6 @@ from api.views import *
 from api.views.RudaMasterPlan import *
 from api.views.GISMetaverse import *
 
-from api.views.GISMetaverse.FloodExtentScenarios.CreateFloodExtentScenarios import CreateFloodExtentScenariosView
-from api.views.GISMetaverse.FloodExtentScenarios.DeleteFloodExtentScenarios import DeleteFloodExtentScenariosView
-from api.views.GISMetaverse.FloodExtentScenarios.ListFloodExtentScenarios import ListFloodExtentScenariosView
-from api.views.GISMetaverse.FloodExtentScenarios.UpdateFloodExtentScenarios import UpdateFloodExtentScenariosView
-
-from api.views.GISMetaverse.IllegalHousingScheme.CreateIllegalHousingScheme import CreateIllegalHousingSchemeView
-from api.views.GISMetaverse.IllegalHousingScheme.DeleteIllegalHousingScheme import DeleteIllegalHousingSchemeView
-from api.views.GISMetaverse.IllegalHousingScheme.ListIllegalHousingScheme import ListIllegalHousingSchemeView
-from api.views.GISMetaverse.IllegalHousingScheme.UpdateIllegalHousingScheme import UpdateIllegalHousingSchemeView
 
 from api.views.SquareView.import_square_shapefile import import_square_shapefile
 from api.views.AcreView.import_acre_shapefile import import_acre_shapefile
@@ -230,6 +221,12 @@ router.register(r"city-level-service-points", ListCityLevelServicePointsView, ba
 router.register(r"city-level-service-points/create", CreateCityLevelServicePointsView, basename="create-city-level-service-points")
 router.register(r"city-level-service-points/update", UpdateCityLevelServicePointsView, basename="update-city-level-service-points")
 router.register(r"city-level-service-points/delete", DeleteCityLevelServicePointsView, basename="delete-city-level-service-points")
+
+# ------------------------------ MP Principle Zoing Notified Views ------------------------------
+router.register(r"mp-principle-zoing-notified", ListMPPrincipleZoingNotifiedView, basename="mp-principle-zoing-notified")
+router.register(r"mp-principle-zoing-notified/create", CreateMPPrincipleZoingNotifiedView, basename="create-mp-principle-zoing-notified")
+router.register(r"mp-principle-zoing-notified/update", UpdateMPPrincipleZoingNotifiedView, basename="update-mp-principle-zoing-notified")
+router.register(r"mp-principle-zoing-notified/delete", DeleteMPPrincipleZoingNotifiedView, basename="delete-mp-principle-zoing-notified")
 
 router.register(r"mp-principle-zoning", ListMpPrincipleZoningView, basename="mp-principle-zoning")
 router.register(r"mp-principle-zoning/create", CreateMpPrincipleZoningView, basename="create-mp-principle-zoning")

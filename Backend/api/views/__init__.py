@@ -50,6 +50,7 @@ from .RudaMasterPlan.RiverRaviView import *
 from .RudaMasterPlan.RudaJurisdictionView import *
 from .RudaMasterPlan.CityLevelServicePointsView import *
 from .RudaMasterPlan.MpPrincipleZoningView import *
+from .RudaMasterPlan.MpPrincipleZoningNotifiedView import *
 from .RudaMasterPlan.ExistingForestView import *
 from .RudaMasterPlan.RudaPlanningBoundaryView import *
 from .RudaMasterPlan.ProposedRoadNetworkView import *

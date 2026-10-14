@@ -1245,6 +1245,29 @@ class MpPrincipleZoningSerializer(GeoFeatureModelSerializer):
         )
 
 # --------------------------------------------------------
+# MP Principle Zoing Notified Serializer
+# --------------------------------------------------------
+class MPPrincipleZoingNotifiedSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = MPPrincipleZoingNotified
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "area225a",
+            "zoning_cat",
+            "area_sqft",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+
+
+# --------------------------------------------------------
 # City Level Service Serializer
 # --------------------------------------------------------
 class CityLevelServiceSerializer(GeoFeatureModelSerializer):
