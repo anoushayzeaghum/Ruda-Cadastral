@@ -549,6 +549,11 @@ export const getHousingSchemesGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+export const getIllegalHousingSchemesGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/illegal-housing-schemes/`);
+  return unwrapGeoJSON(res.data);
+};
+
 export const getExistingDrainsGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/existing-drains/`);
   return unwrapGeoJSON(res.data);

@@ -10,6 +10,11 @@ from api.views.GISMetaverse.FloodExtentScenarios.DeleteFloodExtentScenarios impo
 from api.views.GISMetaverse.FloodExtentScenarios.ListFloodExtentScenarios import ListFloodExtentScenariosView
 from api.views.GISMetaverse.FloodExtentScenarios.UpdateFloodExtentScenarios import UpdateFloodExtentScenariosView
 
+from api.views.GISMetaverse.IllegalHousingScheme.CreateIllegalHousingScheme import CreateIllegalHousingSchemeView
+from api.views.GISMetaverse.IllegalHousingScheme.DeleteIllegalHousingScheme import DeleteIllegalHousingSchemeView
+from api.views.GISMetaverse.IllegalHousingScheme.ListIllegalHousingScheme import ListIllegalHousingSchemeView
+from api.views.GISMetaverse.IllegalHousingScheme.UpdateIllegalHousingScheme import UpdateIllegalHousingSchemeView
+
 from api.views.SquareView.import_square_shapefile import import_square_shapefile
 from api.views.AcreView.import_acre_shapefile import import_acre_shapefile
 from api.views.Trijunction.import_trijunction_shapefile import import_trijunction_shapefile
@@ -326,6 +331,13 @@ router.register(r"floodextentscenarios", ListFloodExtentScenariosView, basename=
 router.register(r"floodextentscenarios/create", CreateFloodExtentScenariosView, basename="create-floodextentscenarios")
 router.register(r"floodextentscenarios/update", UpdateFloodExtentScenariosView, basename="update-floodextentscenarios")
 router.register(r"floodextentscenarios/delete", DeleteFloodExtentScenariosView, basename="delete-floodextentscenarios")
+
+
+# ------------------------------ Illegal Housing Scheme Views ------------------------------
+router.register(r"illegal-housing-schemes", ListIllegalHousingSchemeView, basename="illegal-housing-schemes")
+router.register(r"illegal-housing-schemes/create", CreateIllegalHousingSchemeView, basename="create-illegal-housing-schemes")
+router.register(r"illegal-housing-schemes/update", UpdateIllegalHousingSchemeView, basename="update-illegal-housing-schemes")
+router.register(r"illegal-housing-schemes/delete", DeleteIllegalHousingSchemeView, basename="delete-illegal-housing-schemes")
 
 router.register(r"sw-line", ListSWLineView, basename="sw-line")
 router.register(r"sw-line/create", CreateSWLineView, basename="create-sw-line")

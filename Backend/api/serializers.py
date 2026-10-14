@@ -1776,6 +1776,27 @@ class SWLineSerializer(GeoFeatureModelSerializer):
         )
 
 
+# --------------------------------------------------------
+# Illegal Housing Scheme Serializer
+# --------------------------------------------------------
+class IllegalHousingSchemeSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = IllegalHousingScheme
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+
+
 class KmzPrintLogSerializer(serializers.ModelSerializer):
     file_url = serializers.SerializerMethodField()
     report_url = serializers.SerializerMethodField()

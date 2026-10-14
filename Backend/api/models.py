@@ -2673,6 +2673,38 @@ class SWLine(models.Model):
 
 
 # =========================
+# Illegal Housing Scheme
+# DB table: illegalhousingscheme
+# =========================
+class IllegalHousingScheme(models.Model):
+    gid = models.AutoField(
+        primary_key=True,
+        db_column="gid",
+    )
+
+    name = models.CharField(
+        db_column="name",
+        max_length=254,
+        null=True,
+        blank=True,
+    )
+
+    geom = gis_models.MultiPolygonField(
+        db_column="geom",
+        srid=4326,
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return self.name or f"Illegal Housing Scheme {self.gid}"
+
+    class Meta:
+        managed = False
+        db_table = "illegalhousingscheme"
+
+
+# =========================
 # KMZ Print Log
 # =========================
 def kmz_print_upload_path(instance, filename):
