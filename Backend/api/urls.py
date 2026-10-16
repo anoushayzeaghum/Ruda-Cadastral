@@ -5,6 +5,12 @@ from api.views import *
 from api.views.RudaMasterPlan import *
 from api.views.GISMetaverse import *
 
+
+from api.views.RudaMasterPlan.KlmToSaggianView.ListKlmToSaggianView import ListKlmToSaggianView
+from api.views.RudaMasterPlan.KlmToSaggianView.CreateKlmToSaggianView import CreateKlmToSaggianView
+from api.views.RudaMasterPlan.KlmToSaggianView.UpdateKlmToSaggianView import UpdateKlmToSaggianView
+from api.views.RudaMasterPlan.KlmToSaggianView.DeleteKlmToSaggianView import DeleteKlmToSaggianView
+
 from api.views.GISMetaverse.FloodExtentScenarios.CreateFloodExtentScenarios import CreateFloodExtentScenariosView
 from api.views.GISMetaverse.FloodExtentScenarios.DeleteFloodExtentScenarios import DeleteFloodExtentScenariosView
 from api.views.GISMetaverse.FloodExtentScenarios.ListFloodExtentScenarios import ListFloodExtentScenariosView
@@ -260,6 +266,36 @@ router.register(r"existing-drains", ListExistingDrainView, basename="existing-dr
 router.register(r"existing-drains/create",CreateExistingDrainView, basename="create-existing-drains",)
 router.register(r"existing-drains/update", UpdateExistingDrainView, basename="update-existing-drains",)
 router.register(r"existing-drains/delete", DeleteExistingDrainView, basename="delete-existing-drains",)
+
+
+# --------------------------------------------------------
+# KLM to Saggian Road - Masterplan CRUD
+# --------------------------------------------------------
+
+router.register(
+    r"klm-to-saggian",
+    ListKlmToSaggianView,
+    basename="klm-to-saggian"
+)
+
+router.register(
+    r"klm-to-saggian/create",
+    CreateKlmToSaggianView,
+    basename="create-klm-to-saggian"
+)
+
+router.register(
+    r"klm-to-saggian/update",
+    UpdateKlmToSaggianView,
+    basename="update-klm-to-saggian"
+)
+
+router.register(
+    r"klm-to-saggian/delete",
+    DeleteKlmToSaggianView,
+    basename="delete-klm-to-saggian"
+)
+
 
 # ------------------------------ Proposed Roads Views ------------------------------
 # DB table: public.ruda_proposed_road

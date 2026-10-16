@@ -660,3 +660,9 @@ export const getPossessionLandGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/possessionland/`);
   return unwrapGeoJSON(res.data);
 };
+
+// Standalone RUDA Masterplan road layer.
+export const getKlmToSaggianGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/klm-to-saggian/`);
+  return unwrapGeoJSON(res.data);
+};

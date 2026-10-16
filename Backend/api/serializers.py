@@ -1827,3 +1827,34 @@ class KmzPrintLogSerializer(serializers.ModelSerializer):
             if request
             else obj.report_file.url
         )
+        
+# --------------------------------------------------------
+# KLM to Saggian Road Serializer
+# RUDA Masterplan → KLM to Saggian
+# --------------------------------------------------------
+
+class KlmToSaggianSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = KlmToSaggian
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "id",
+            "name",
+            "descriptio",
+            "timestamp",
+            "begin",
+            "end",
+            "altitudemo",
+            "tessellate",
+            "extrude",
+            "visibility",
+            "draworder",
+            "icon",
+            "geom",
+        )
+
+        read_only_fields = ("gid",)
