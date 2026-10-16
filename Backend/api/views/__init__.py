@@ -39,6 +39,7 @@ from .GISMetaverse.AwardedLandView import *
 from .GISMetaverse.FloodExtentView import *
 from .GISMetaverse.FloodExtentScenarios import *
 from .GISMetaverse.SWLineView import *
+from .GISMetaverse.IllegalHousingScheme import *
 
 # Ruda MasterPlan
 from .RudaMasterPlan.CityLevelServiceView import *
@@ -49,6 +50,7 @@ from .RudaMasterPlan.RiverRaviView import *
 from .RudaMasterPlan.RudaJurisdictionView import *
 from .RudaMasterPlan.CityLevelServicePointsView import *
 from .RudaMasterPlan.MpPrincipleZoningView import *
+from .RudaMasterPlan.MpPrincipleZoningNotifiedView import *
 from .RudaMasterPlan.ExistingForestView import *
 from .RudaMasterPlan.RudaPlanningBoundaryView import *
 from .RudaMasterPlan.ProposedRoadNetworkView import *

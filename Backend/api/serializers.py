@@ -1245,6 +1245,29 @@ class MpPrincipleZoningSerializer(GeoFeatureModelSerializer):
         )
 
 # --------------------------------------------------------
+# MP Principle Zoing Notified Serializer
+# --------------------------------------------------------
+class MPPrincipleZoingNotifiedSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = MPPrincipleZoingNotified
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "area225a",
+            "zoning_cat",
+            "area_sqft",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
+        )
+
+
+# --------------------------------------------------------
 # City Level Service Serializer
 # --------------------------------------------------------
 class CityLevelServiceSerializer(GeoFeatureModelSerializer):
@@ -1773,6 +1796,27 @@ class SWLineSerializer(GeoFeatureModelSerializer):
             "shape_leng",
             "project_id",
             "geom",
+        )
+
+
+# --------------------------------------------------------
+# Illegal Housing Scheme Serializer
+# --------------------------------------------------------
+class IllegalHousingSchemeSerializer(GeoFeatureModelSerializer):
+
+    class Meta:
+        model = IllegalHousingScheme
+        geo_field = "geom"
+        id_field = "gid"
+
+        fields = (
+            "gid",
+            "name",
+            "geom",
+        )
+
+        read_only_fields = (
+            "gid",
         )
 
 
