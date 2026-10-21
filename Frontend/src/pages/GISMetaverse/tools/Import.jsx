@@ -1624,7 +1624,7 @@ const getPrintScaleBarInfo = (map) => {
 const buildLegendRows = (uploadedTitle) => [
   {
     id: "ruda-jurisdiction",
-    label: "RUDA Jurisdiction",
+    label: "Lahore RUDA Jurisdiction",
     kind: "jurisdiction",
   },
   {
