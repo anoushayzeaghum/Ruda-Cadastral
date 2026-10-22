@@ -497,27 +497,33 @@ const escapeHtml = (value = "") =>
 // reference RUDA Principle Land Use Zoning layout.
 
 // Print-specific zoning colours — saturated to match the reference image.
+// Keep the KMZ print inset identical to the live Principle Land Use Zoning
+// symbology used by LandUseLayer.jsx in the GIS Metaverse.
 const PRINT_ZONING_STYLE = {
-  "brown zone": { fill: "#f9c65b", outline: "#f218b8" },
-  "green zone": { fill: "#7df15a", outline: "#f218b8" },
-  "infill development": { fill: "#ff22c8", outline: "#f218b8" },
-  "industrial zone": { fill: "#b62ce8", outline: "#f218b8" },
+  "brown zone": { fill: "#F9C55B", outline: "#7A7A7A" },
+  "green zone": { fill: "#86F15B", outline: "#7A7A7A" },
+  "industrial zone": { fill: "#CF67E8", outline: "#7A7A7A" },
+  "infill development": { fill: "#4F96B5", outline: "#7A7A7A" },
   "public utility zone": {
-    fill: "#ffd15a",
-    hatch: "#ff5a36",
-    outline: "#f218b8",
+    fill: "#FFF35B",
+    hatch: "#FF5A4F",
+    outline: "#7A7A7A",
   },
-  "pond area": { fill: "#73c7f2", outline: "#3a91d8" },
+  "pond area": {
+    fill: "#73C7F2",
+    dot: "#3A91D8",
+    outline: "#7A7A7A",
+  },
 };
 
-// Legend definition for the canvas-drawn inset legend (order matches reference).
+// Legend definition mirrors LAND_USE_LEGEND from LandUseLayer.jsx.
 const PRINT_ZONING_LEGEND = [
-  { label: "Brown Zone", fill: "#f9c65b" },
-  { label: "Green Zone", fill: "#7df15a" },
-  { label: "Infill Development", fill: "#ff22c8" },
-  { label: "Industrial Zone", fill: "#b62ce8" },
-  { label: "Public Utility Zone", fill: "#ffd15a", hatch: "#ff5a36" },
-  { label: "Pond Area", fill: "#73c7f2" },
+  { label: "Brown Zone", fill: "#F9C55B" },
+  { label: "Green Zone", fill: "#86F15B" },
+  { label: "Industrial Zone", fill: "#CF67E8" },
+  { label: "Infill Development", fill: "#4F96B5" },
+  { label: "Public Utility Zone", fill: "#FFF35B", hatch: "#FF5A4F" },
+  { label: "Pond Area", fill: "#73C7F2", dot: "#3A91D8" },
 ];
 
 /** Normalise common API response shapes to a GeoJSON FeatureCollection. */
