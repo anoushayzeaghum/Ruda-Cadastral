@@ -666,6 +666,14 @@ export const getPossessionLandGeoJSON = async () => {
   return unwrapGeoJSON(res.data);
 };
 
+// Standalone RUDA Masterplan road layer.
+export const getKlmToSaggianGeoJSON = async () => {
+  const res = await axios.get(`${API_BASE}/klm-to-saggian/`);
+  return unwrapGeoJSON(res.data);
+};
+
+// MP Notified Principle Zoning (preserved alongside KLM to Saggian).
+// Route spelling follows the existing backend registration.
 export const getMpPrincipleZoningNotifiedGeoJSON = async () => {
   const res = await axios.get(`${API_BASE}/mp-principle-zoing-notified/`);
   return unwrapGeoJSON(res.data);

@@ -8,6 +8,7 @@ import MasterPlanPhasesAttribute from "./AttributeTable/RudaMasterPlan/MasterPla
 import PrecinctBoundaryAttribute from "./AttributeTable/RudaMasterPlan/PrecinctBoundaryAttribute";
 import CityLevelServicesAttribute from "./AttributeTable/RudaMasterPlan/CityLevelServicesAttribute";
 import ProposedRoadsAttribute from "./AttributeTable/RudaMasterPlan/ProposedRoadsAttribute";
+import KlmToSaggianAttribute from "./AttributeTable/RudaMasterPlan/KlmToSaggianAttribute";
 import PrincipalZoningAttribute from "./AttributeTable/RudaMasterPlan/PrincipalZoningAttribute";
 import RTWAttribute from "./AttributeTable/RudaMasterPlan/RTWAttribute";
 import ProposedRiverAttribute from "./AttributeTable/RudaMasterPlan/ProposedRiverAttribute";
@@ -116,6 +117,7 @@ import {
   getMpPrincipleZoningNotifiedGeoJSON,
   getPrecientBoundaryGeoJSON,
   getProposedRoadsGeoJSON,
+  getKlmToSaggianGeoJSON,
   getProposedWWTPGeoJSON,
   getRiverGeoJSON,
   getRiverRaviGeoJSON,
@@ -208,6 +210,14 @@ const RUDA_MASTER_PLAN_GROUPS = [
     standalone: true,
     children: [
       { key: "rudaProposedRoads", label: "Proposed Roads", color: "#19598d" },
+    ],
+  },
+  {
+    key: "klmToSaggianGroup",
+    label: "NHA Proposed Road",
+    standalone: true,
+    children: [
+      { key: "klmToSaggian", label: "NHA Proposed Road", color: "#e8b44a" },
     ],
   },
   {
@@ -395,6 +405,13 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     getLinePaint: getRudaProposedRoadLinePaint,
     outlineLineCap: "round",
     lineCap: "round",
+  },
+  klmToSaggian: {
+    endpoint: "/klm-to-saggian/",
+    fetchGeoJSON: getKlmToSaggianGeoJSON,
+    paintUsesLayerColor: true,
+    lineCap: "round",
+    outlineLineCap: "round",
   },
   principleLandUseZoning: {
     endpoint: "/mp-principle-zoning/",
@@ -691,7 +708,7 @@ const addOrUpdateRudaMapLayer = ({
       type: "geojson",
       data,
     });
-  } else {
+  } else if (layerKey !== "klmToSaggian") {
     map.getSource(ids.sourceId)?.setData?.(data);
   }
 
@@ -1364,8 +1381,8 @@ export default function RUDAMasterPlan({ map }) {
       map,
       layerKey,
       layerStateRef.current[layerKey]?.color ||
-        layerLookup[layerKey]?.color ||
-        "#6bb7e8",
+      layerLookup[layerKey]?.color ||
+      "#6bb7e8",
       layerStateRef.current[layerKey]?.opacity ?? 100,
       RUDA_MASTER_PLAN_LAYER_CONFIG[layerKey],
       nextColors,
@@ -1396,6 +1413,8 @@ export default function RUDAMasterPlan({ map }) {
         return <CityLevelServicesAttribute {...commonProps} />;
       case "rudaProposedRoads":
         return <ProposedRoadsAttribute {...commonProps} />;
+      case "klmToSaggian":
+        return <KlmToSaggianAttribute {...commonProps} />;
       case "principleLandUseZoning":
         return <PrincipalZoningAttribute {...commonProps} />;
       case "rtwAlignment":
@@ -1449,6 +1468,9 @@ export default function RUDAMasterPlan({ map }) {
         polygonLegend("Master Plan Phases", color || MASTER_PLAN_PHASES_COLOR),
       ];
     }
+    if (layerKey === "klmToSaggian") {
+      return [lineLegend("NHA Proposed Road", color || "#e8b44a", { width: 2 })];
+    }
     if (layerKey === "precinctBoundaryLayer") {
       return [
         lineLegend("Precinct Boundary", color || PRECINCT_BOUNDARY_COLOR, {
@@ -1484,10 +1506,10 @@ export default function RUDAMasterPlan({ map }) {
     // Determine which legend items to pass into LayerDetails
     const legendItems = isVisible
       ? getInlineLegendForLayer(
-          layer.key,
-          currentLayerState,
-          currentLayerConfig,
-        )
+        layer.key,
+        currentLayerState,
+        currentLayerConfig,
+      )
       : [];
 
     return (
@@ -1598,14 +1620,12 @@ export default function RUDAMasterPlan({ map }) {
               : "Show all RUDA Master Plan layers"
           }
           onClick={toggleAllRudaLayers}
-          className={`relative ml-2 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus:outline-none ${
-            allOn ? "bg-[#65c96b]" : "bg-white/20"
-          }`}
+          className={`relative ml-2 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus:outline-none ${allOn ? "bg-[#65c96b]" : "bg-white/20"
+            }`}
         >
           <span
-            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
-              allOn ? "translate-x-4" : "translate-x-0"
-            }`}
+            className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${allOn ? "translate-x-4" : "translate-x-0"
+              }`}
           />
         </button>
       </div>
@@ -1804,9 +1824,9 @@ function LayerItem({
 
   const paletteItems = previewColors.length
     ? previewColors.map((itemColor, index) => ({
-        label: `${label}-${index}`,
-        color: itemColor,
-      }))
+      label: `${label}-${index}`,
+      color: itemColor,
+    }))
     : categoryLegend;
 
   const categorizedGradient = `linear-gradient(90deg, ${paletteItems
@@ -1837,9 +1857,9 @@ function LayerItem({
             style={
               categorized || previewColors.length
                 ? {
-                    background: categorizedGradient,
-                    borderColor: "rgba(255,255,255,0.6)",
-                  }
+                  background: categorizedGradient,
+                  borderColor: "rgba(255,255,255,0.6)",
+                }
                 : { backgroundColor: color, borderColor: color }
             }
             title={

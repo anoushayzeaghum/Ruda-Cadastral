@@ -2777,3 +2777,29 @@ class KmzPrintLog(models.Model):
             ).strip("_")[:32] or "KMZ_Report"
             self.folder_name = f"{report_name}_{timezone.now():%Y%m%d_%H%M%S_%f}"
         super().save(*args, **kwargs)
+
+class KlmToSaggian(models.Model):
+    gid = models.AutoField(primary_key=True)
+    id = models.CharField(max_length=254, blank=True, null=True)
+    name = models.CharField(max_length=254, blank=True, null=True)
+    descriptio = models.CharField(max_length=254, blank=True, null=True)
+    timestamp = models.CharField(max_length=24, blank=True, null=True)
+    begin = models.CharField(max_length=24, blank=True, null=True)
+    end = models.CharField(max_length=24, blank=True, null=True)
+    altitudemo = models.CharField(max_length=254, blank=True, null=True)
+    tessellate = models.FloatField(blank=True, null=True)
+    extrude = models.FloatField(blank=True, null=True)
+    visibility = models.FloatField(blank=True, null=True)
+    draworder = models.FloatField(blank=True, null=True)
+    icon = models.CharField(max_length=254, blank=True, null=True)
+    geom = gis_models.MultiLineStringField(
+    dim=4,
+    srid=4326,
+    blank=True,
+    null=True
+)
+
+    class Meta:
+        managed = False
+        db_table = "klm_to_saggian"
+

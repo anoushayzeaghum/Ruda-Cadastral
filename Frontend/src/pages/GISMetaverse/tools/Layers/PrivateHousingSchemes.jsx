@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import ColorPalette from "./ColorPalette";
 import {
   getHousingSchemesGeoJSON,
   getIllegalHousingSchemesGeoJSON,
@@ -9,6 +10,7 @@ import HousingSchemesStyle, {
 } from "./LayerManager/PrivateHousingSchemes/HousingSchemesStyle";
 import IllegalHousingSchemeStyle, {
   ILLEGAL_HOUSING_SCHEME_COLOR,
+  ILLEGAL_HOUSING_SCHEME_OUTLINE_COLOR,
 } from "./LayerManager/PrivateHousingSchemes/IllegalHousingSchemeStyle";
 import HousingSchemesAttribute from "./AttributeTable/PrivateHousingSchemes/HousingSchemesAttribute";
 
@@ -40,6 +42,7 @@ const POINT_FILTER = [
 const getIds = (sourcePrefix) => ({
   source: `${sourcePrefix}-source`,
   fill: `${sourcePrefix}-fill`,
+  outline: `${sourcePrefix}-outline`,
   line: `${sourcePrefix}-line`,
   point: `${sourcePrefix}-point`,
 });
@@ -69,7 +72,7 @@ function setMapLayerVisibility(map, sourcePrefix, visible) {
   const ids = getIds(sourcePrefix);
   const visibility = visible ? "visible" : "none";
 
-  [ids.fill, ids.line, ids.point].forEach((layerId) => {
+  [ids.fill, ids.outline, ids.line, ids.point].forEach((layerId) => {
     if (map.getLayer(layerId)) {
       map.setLayoutProperty(layerId, "visibility", visibility);
     }
@@ -81,12 +84,33 @@ function applyLayerStyle(map, sourcePrefix, opacity, style = {}) {
 
   const ids = getIds(sourcePrefix);
   const ratio = opacity / 100;
+  const fillColor = style.fillColor || style.dataDrivenColor || style.color;
+  const outlineColor = style.outlineColor || style.color || "#ffffff";
+  const fillEnabled = style.fillEnabled ?? true;
+  const outlineEnabled = style.outlineEnabled ?? false;
 
   if (map.getLayer(ids.fill)) {
+    if (fillColor) {
+      map.setPaintProperty(ids.fill, "fill-color", fillColor);
+    }
     map.setPaintProperty(
       ids.fill,
       "fill-opacity",
-      (style.fillOpacity ?? 0.35) * ratio,
+      fillEnabled ? (style.fillOpacity ?? 0.35) * ratio : 0,
+    );
+  }
+
+  if (map.getLayer(ids.outline)) {
+    map.setPaintProperty(ids.outline, "line-color", outlineColor);
+    map.setPaintProperty(
+      ids.outline,
+      "line-opacity",
+      outlineEnabled ? (style.outlineOpacity ?? style.lineOpacity ?? 1) * ratio : 0,
+    );
+    map.setPaintProperty(
+      ids.outline,
+      "line-width",
+      style.outlineWidth ?? style.lineWidth ?? 2,
     );
   }
 
@@ -125,8 +149,27 @@ function addOrUpdateMapLayer(map, sourcePrefix, geojson, opacity, style = {}) {
       filter: POLYGON_FILTER,
       layout: { visibility: "visible" },
       paint: {
-        "fill-color": style.dataDrivenColor || style.color,
-        "fill-opacity": (style.fillOpacity ?? 0.35) * ratio,
+        "fill-color": style.fillColor || style.dataDrivenColor || style.color,
+        "fill-opacity": (style.fillEnabled ?? true)
+          ? (style.fillOpacity ?? 0.35) * ratio
+          : 0,
+      },
+    });
+  }
+
+  if (!map.getLayer(ids.outline)) {
+    map.addLayer({
+      id: ids.outline,
+      type: "line",
+      source: ids.source,
+      filter: POLYGON_FILTER,
+      layout: { visibility: "visible" },
+      paint: {
+        "line-color": style.outlineColor || style.color || "#ffffff",
+        "line-width": style.outlineWidth ?? style.lineWidth ?? 2,
+        "line-opacity": (style.outlineEnabled ?? false)
+          ? (style.outlineOpacity ?? style.lineOpacity ?? 1) * ratio
+          : 0,
       },
     });
   }
@@ -190,7 +233,7 @@ function removeMapLayer(map, sourcePrefix) {
   const ids = getIds(sourcePrefix);
 
   try {
-    [ids.point, ids.line, ids.fill].forEach((layerId) => {
+    [ids.point, ids.line, ids.outline, ids.fill].forEach((layerId) => {
       if (map.style && map.getLayer?.(layerId)) {
         map.removeLayer(layerId);
       }
@@ -219,6 +262,14 @@ export default function PrivateHousingSchemes({ map }) {
   const [illegalLoading, setIllegalLoading] = useState(false);
   const [illegalOpacity, setIllegalOpacity] = useState(100);
   const [illegalStatus, setIllegalStatus] = useState(null);
+  const [illegalFillEnabled, setIllegalFillEnabled] = useState(false);
+  const [illegalFillColor, setIllegalFillColor] = useState(
+    ILLEGAL_HOUSING_SCHEME_COLOR,
+  );
+  const [illegalOutlineEnabled, setIllegalOutlineEnabled] = useState(true);
+  const [illegalOutlineColor, setIllegalOutlineColor] = useState(
+    ILLEGAL_HOUSING_SCHEME_OUTLINE_COLOR,
+  );
 
   const housingVisibleRef = useRef(housingVisible);
   const housingOpacityRef = useRef(housingOpacity);
@@ -227,6 +278,10 @@ export default function PrivateHousingSchemes({ map }) {
 
   const illegalVisibleRef = useRef(illegalVisible);
   const illegalOpacityRef = useRef(illegalOpacity);
+  const illegalFillEnabledRef = useRef(illegalFillEnabled);
+  const illegalFillColorRef = useRef(illegalFillColor);
+  const illegalOutlineEnabledRef = useRef(illegalOutlineEnabled);
+  const illegalOutlineColorRef = useRef(illegalOutlineColor);
   const illegalGeoJSONRef = useRef(null);
   const illegalRequestRef = useRef(null);
 
@@ -240,7 +295,18 @@ export default function PrivateHousingSchemes({ map }) {
   useEffect(() => {
     illegalVisibleRef.current = illegalVisible;
     illegalOpacityRef.current = illegalOpacity;
-  }, [illegalVisible, illegalOpacity]);
+    illegalFillEnabledRef.current = illegalFillEnabled;
+    illegalFillColorRef.current = illegalFillColor;
+    illegalOutlineEnabledRef.current = illegalOutlineEnabled;
+    illegalOutlineColorRef.current = illegalOutlineColor;
+  }, [
+    illegalVisible,
+    illegalOpacity,
+    illegalFillEnabled,
+    illegalFillColor,
+    illegalOutlineEnabled,
+    illegalOutlineColor,
+  ]);
 
   const runWhenMapReady = (callback) => {
     if (!map) return;
@@ -270,6 +336,14 @@ export default function PrivateHousingSchemes({ map }) {
     });
   };
 
+  const getIllegalStyle = () => ({
+    ...IllegalHousingSchemeStyle,
+    fillEnabled: illegalFillEnabledRef.current,
+    fillColor: illegalFillColorRef.current,
+    outlineEnabled: illegalOutlineEnabledRef.current,
+    outlineColor: illegalOutlineColorRef.current,
+  });
+
   const showIllegalLayer = () => {
     const geojson = illegalGeoJSONRef.current;
     if (!geojson) return;
@@ -282,7 +356,7 @@ export default function PrivateHousingSchemes({ map }) {
         ILLEGAL_SOURCE_PREFIX,
         geojson,
         illegalOpacityRef.current,
-        IllegalHousingSchemeStyle,
+        getIllegalStyle(),
       );
     });
   };
@@ -433,8 +507,44 @@ export default function PrivateHousingSchemes({ map }) {
       map,
       ILLEGAL_SOURCE_PREFIX,
       value,
-      IllegalHousingSchemeStyle,
+      getIllegalStyle(),
     );
+  };
+
+  const handleIllegalFillToggle = (checked) => {
+    setIllegalFillEnabled(checked);
+    illegalFillEnabledRef.current = checked;
+    applyLayerStyle(map, ILLEGAL_SOURCE_PREFIX, illegalOpacityRef.current, {
+      ...getIllegalStyle(),
+      fillEnabled: checked,
+    });
+  };
+
+  const handleIllegalFillColorChange = (color) => {
+    setIllegalFillColor(color);
+    illegalFillColorRef.current = color;
+    applyLayerStyle(map, ILLEGAL_SOURCE_PREFIX, illegalOpacityRef.current, {
+      ...getIllegalStyle(),
+      fillColor: color,
+    });
+  };
+
+  const handleIllegalOutlineToggle = (checked) => {
+    setIllegalOutlineEnabled(checked);
+    illegalOutlineEnabledRef.current = checked;
+    applyLayerStyle(map, ILLEGAL_SOURCE_PREFIX, illegalOpacityRef.current, {
+      ...getIllegalStyle(),
+      outlineEnabled: checked,
+    });
+  };
+
+  const handleIllegalOutlineColorChange = (color) => {
+    setIllegalOutlineColor(color);
+    illegalOutlineColorRef.current = color;
+    applyLayerStyle(map, ILLEGAL_SOURCE_PREFIX, illegalOpacityRef.current, {
+      ...getIllegalStyle(),
+      outlineColor: color,
+    });
   };
 
   const handleGroupToggle = () => {
@@ -598,15 +708,74 @@ export default function PrivateHousingSchemes({ map }) {
             </div>
 
             {illegalVisible && (
-              <div className="mt-2 flex items-center gap-2 pl-6 text-[10px] text-white/80">
-                <span
-                  className="inline-block h-3 w-3 shrink-0"
-                  style={{
-                    backgroundColor: ILLEGAL_HOUSING_SCHEME_COLOR,
-                    opacity: illegalOpacity / 100,
-                  }}
-                />
-                <span>Illegal Housing Scheme</span>
+              <div className="mt-3 space-y-3 pl-6">
+                <div className="rounded border border-white/10 bg-black/10 p-2">
+                  <label className="flex cursor-pointer items-center gap-2 text-[10px] text-white/90">
+                    <input
+                      type="checkbox"
+                      checked={illegalFillEnabled}
+                      onChange={(event) =>
+                        handleIllegalFillToggle(event.target.checked)
+                      }
+                      className="accent-[#65c96b]"
+                    />
+                    <span>Fill</span>
+                    <span
+                      className="ml-auto inline-block h-3 w-5 rounded-sm border border-white/30"
+                      style={{
+                        backgroundColor: illegalFillEnabled
+                          ? illegalFillColor
+                          : "transparent",
+                        opacity: illegalFillEnabled ? illegalOpacity / 100 : 0.35,
+                      }}
+                    />
+                  </label>
+
+                  <div
+                    className={`mt-1 ${
+                      illegalFillEnabled ? "opacity-100" : "pointer-events-none opacity-35"
+                    }`}
+                  >
+                    <div className="mb-1 text-[9px] text-white/55">Fill color</div>
+                    <ColorPalette onSelect={handleIllegalFillColorChange} />
+                  </div>
+                </div>
+
+                <div className="rounded border border-white/10 bg-black/10 p-2">
+                  <label className="flex cursor-pointer items-center gap-2 text-[10px] text-white/90">
+                    <input
+                      type="checkbox"
+                      checked={illegalOutlineEnabled}
+                      onChange={(event) =>
+                        handleIllegalOutlineToggle(event.target.checked)
+                      }
+                      className="accent-[#65c96b]"
+                    />
+                    <span>Outline</span>
+                    <span
+                      className="ml-auto inline-block h-3 w-5 rounded-sm border"
+                      style={{
+                        borderColor: illegalOutlineEnabled
+                          ? illegalOutlineColor
+                          : "rgba(255,255,255,0.3)",
+                        opacity: illegalOutlineEnabled
+                          ? illegalOpacity / 100
+                          : 0.35,
+                      }}
+                    />
+                  </label>
+
+                  <div
+                    className={`mt-1 ${
+                      illegalOutlineEnabled
+                        ? "opacity-100"
+                        : "pointer-events-none opacity-35"
+                    }`}
+                  >
+                    <div className="mb-1 text-[9px] text-white/55">Outline color</div>
+                    <ColorPalette onSelect={handleIllegalOutlineColorChange} />
+                  </div>
+                </div>
               </div>
             )}
 
