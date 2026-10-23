@@ -8,7 +8,7 @@ import {
   updateFloodScenarioLayerColor,
 } from "./LayerManager/Hydrology/FloodExtentScenariosLayer";
 
-const SCENARIOS = [50000, 326000, 450000, 500000];
+const SCENARIOS = [50000, 250000, 326000, 450000, 500000];
 
 const formatCusic = (value) => Number(value).toLocaleString("en-US");
 

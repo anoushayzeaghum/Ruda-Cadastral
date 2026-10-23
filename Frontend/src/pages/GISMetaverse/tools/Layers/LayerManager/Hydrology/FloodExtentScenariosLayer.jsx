@@ -10,6 +10,7 @@ const createScenarioDefinition = (cusic, color) => ({
 
 export const FLOOD_SCENARIO_LAYERS = Object.freeze({
   50000: createScenarioDefinition(50000, "#38bdf8"),
+  250000: createScenarioDefinition(250000, "#22c55e"),
   326000: createScenarioDefinition(326000, "#2563eb"),
   450000: createScenarioDefinition(450000, "#7c3aed"),
   500000: createScenarioDefinition(500000, "#dc2626"),
