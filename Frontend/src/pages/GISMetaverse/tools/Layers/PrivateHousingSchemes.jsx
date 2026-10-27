@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import ColorPalette from "./ColorPalette";
 import {
   getHousingSchemesGeoJSON,
   getIllegalHousingSchemesGeoJSON,
@@ -732,12 +731,31 @@ export default function PrivateHousingSchemes({ map }) {
                   </label>
 
                   <div
-                    className={`mt-1 ${
+                    className={`mt-2 flex items-center justify-between ${
                       illegalFillEnabled ? "opacity-100" : "pointer-events-none opacity-35"
                     }`}
                   >
-                    <div className="mb-1 text-[9px] text-white/55">Fill color</div>
-                    <ColorPalette onSelect={handleIllegalFillColorChange} />
+                    <span className="text-[9px] text-white/55">Fill color</span>
+                    <span
+                      className="relative h-4 w-6 shrink-0 overflow-hidden rounded-sm border border-white/35"
+                      style={{ backgroundColor: illegalFillColor }}
+                      title="Change Illegal Housing Schemes fill color"
+                      onClick={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                    >
+                      <input
+                        type="color"
+                        value={illegalFillColor}
+                        disabled={!illegalFillEnabled}
+                        aria-label="Change Illegal Housing Schemes fill color"
+                        onClick={(event) => event.stopPropagation()}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          handleIllegalFillColorChange(event.target.value)
+                        }
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                      />
+                    </span>
                   </div>
                 </div>
 
@@ -766,14 +784,33 @@ export default function PrivateHousingSchemes({ map }) {
                   </label>
 
                   <div
-                    className={`mt-1 ${
+                    className={`mt-2 flex items-center justify-between ${
                       illegalOutlineEnabled
                         ? "opacity-100"
                         : "pointer-events-none opacity-35"
                     }`}
                   >
-                    <div className="mb-1 text-[9px] text-white/55">Outline color</div>
-                    <ColorPalette onSelect={handleIllegalOutlineColorChange} />
+                    <span className="text-[9px] text-white/55">Outline color</span>
+                    <span
+                      className="relative h-4 w-6 shrink-0 overflow-hidden rounded-sm border border-white/35"
+                      style={{ backgroundColor: illegalOutlineColor }}
+                      title="Change Illegal Housing Schemes outline color"
+                      onClick={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                    >
+                      <input
+                        type="color"
+                        value={illegalOutlineColor}
+                        disabled={!illegalOutlineEnabled}
+                        aria-label="Change Illegal Housing Schemes outline color"
+                        onClick={(event) => event.stopPropagation()}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          handleIllegalOutlineColorChange(event.target.value)
+                        }
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                      />
+                    </span>
                   </div>
                 </div>
               </div>
