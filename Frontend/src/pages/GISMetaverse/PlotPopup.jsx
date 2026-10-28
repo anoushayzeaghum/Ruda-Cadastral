@@ -364,8 +364,54 @@ export function setupVectorClickPopups({
     }
   };
 
-  const getExistingClickableLayers = () =>
-    allLayerIds.filter((id) => safeHasLayer(map, id));
+  const getGenericVectorLayerIds = () => {
+    const style = safeMapCall(map, () => map.getStyle(), null);
+    if (!style?.layers?.length || !style?.sources) return [];
+
+    return style.layers
+      .filter((layer) => {
+        if (!layer?.id || !layer?.source) return false;
+        if (!["fill", "line", "circle", "symbol"].includes(layer.type)) return false;
+
+        // Only application GeoJSON sources are included. This deliberately
+        // excludes vector-tile basemap labels/roads so a click never opens a
+        // popup for the basemap instead of a RUDA dataset.
+        const sourceDefinition = style.sources[layer.source];
+        if (sourceDefinition?.type !== "geojson") return false;
+
+        const visibility = layer.layout?.visibility;
+        return visibility !== "none";
+      })
+      .map((layer) => layer.id);
+  };
+
+  const genericLayerLabel = (layerId = "") => {
+    const cleaned = String(layerId)
+      .replace(/^metaverse-ruda-master-plan-/, "")
+      .replace(/^metaverse-admin-/, "")
+      .replace(/^metaverse-/, "")
+      .replace(/^gism-/, "")
+      .replace(/^gis-topo-/, "")
+      .replace(/^flood-/, "Flood ")
+      .replace(/-(fill|outline|line|circle|point|label|pattern-fill|line-casing|line-overlay)$/, "")
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+      .trim();
+
+    return cleaned || "Vector Feature";
+  };
+
+  const createGenericGroup = (feature) => ({
+    id: `generic:${feature?.layer?.id || "vector"}`,
+    label: genericLayerLabel(feature?.layer?.id),
+    titleKeys: [
+      "name", "Name", "scheme_nam", "scheme_name", "plot_no",
+      "brief_name", "project", "phase", "district", "tehsil",
+      "mauza", "Mauza", "cusic", "year", "type", "code",
+    ],
+    fields: [],
+    maxFallbackFields: 30,
+  });
 
   const clearHighlight = () => {
     if (!activeHighlightGroup?.highlightLayerId) return;
@@ -427,9 +473,6 @@ export function setupVectorClickPopups({
   };
 
   const findClickedFeature = (event) => {
-    const existingLayers = getExistingClickableLayers();
-    if (!existingLayers.length) return null;
-
     const pt = event?.point;
     if (!pt) return null;
 
@@ -438,19 +481,39 @@ export function setupVectorClickPopups({
       [pt.x + clickTolerance, pt.y + clickTolerance],
     ];
 
-    const features = safeMapCall(
+    // Prefer explicitly configured layers so their curated titles/field labels
+    // win even when a generic label layer is rendered above the same feature.
+    const configuredLayers = allLayerIds.filter((id) => safeHasLayer(map, id));
+    if (configuredLayers.length) {
+      const configuredFeatures = safeMapCall(
+        map,
+        () => map.queryRenderedFeatures(bbox, { layers: configuredLayers }),
+        [],
+      );
+      const configuredFeature = configuredFeatures?.[0];
+      if (configuredFeature?.layer?.id) {
+        const configuredGroup = layerIdToGroup.get(configuredFeature.layer.id);
+        if (configuredGroup) {
+          return { feature: configuredFeature, group: configuredGroup };
+        }
+      }
+    }
+
+    // Fallback for every other visible application GeoJSON vector dataset.
+    const genericLayers = getGenericVectorLayerIds().filter(
+      (id) => safeHasLayer(map, id) && !layerIdToGroup.has(id),
+    );
+    if (!genericLayers.length) return null;
+
+    const genericFeatures = safeMapCall(
       map,
-      () => map.queryRenderedFeatures(bbox, { layers: existingLayers }),
+      () => map.queryRenderedFeatures(bbox, { layers: genericLayers }),
       [],
     );
-
-    const feature = features?.[0];
+    const feature = genericFeatures?.[0];
     if (!feature?.layer?.id) return null;
 
-    const group = layerIdToGroup.get(feature.layer.id);
-    if (!group) return null;
-
-    return { feature, group };
+    return { feature, group: createGenericGroup(feature) };
   };
 
   const attachKhasraButtonListener = (feature, group) => {
