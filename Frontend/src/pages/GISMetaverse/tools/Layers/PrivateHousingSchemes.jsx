@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
-import ColorPalette from "./ColorPalette";
 import {
   getHousingSchemesGeoJSON,
   getIllegalHousingSchemesGeoJSON,
 } from "../../../../services/metaverseApi";
 import HousingSchemesStyle, {
-  RUDA_SCHEME_COLORS,
+  createHousingSchemeCategoryConfig,
+  createHousingSchemeColorExpression,
+  normalizeHousingSchemeStatus,
 } from "./LayerManager/PrivateHousingSchemes/HousingSchemesStyle";
 import IllegalHousingSchemeStyle, {
   ILLEGAL_HOUSING_SCHEME_COLOR,
@@ -58,13 +59,6 @@ const normalizeGeoJSON = (data) => {
   }
   return { type: "FeatureCollection", features: [] };
 };
-
-const housingLegendItems = Object.entries(RUDA_SCHEME_COLORS)
-  .filter(([status]) => status !== "underprocess")
-  .map(([status, color]) => ({
-    label: status.replace(/\b\w/g, (char) => char.toUpperCase()),
-    color,
-  }));
 
 function setMapLayerVisibility(map, sourcePrefix, visible) {
   if (!map) return;
@@ -256,6 +250,7 @@ export default function PrivateHousingSchemes({ map }) {
   const [housingLoading, setHousingLoading] = useState(false);
   const [housingOpacity, setHousingOpacity] = useState(100);
   const [housingStatus, setHousingStatus] = useState(null);
+  const [housingLegendItems, setHousingLegendItems] = useState([]);
   const [tableOpen, setTableOpen] = useState(false);
 
   const [illegalVisible, setIllegalVisible] = useState(false);
@@ -275,6 +270,7 @@ export default function PrivateHousingSchemes({ map }) {
   const housingOpacityRef = useRef(housingOpacity);
   const housingGeoJSONRef = useRef(null);
   const housingRequestRef = useRef(null);
+  const housingLegendItemsRef = useRef([]);
 
   const illegalVisibleRef = useRef(illegalVisible);
   const illegalOpacityRef = useRef(illegalOpacity);
@@ -319,6 +315,13 @@ export default function PrivateHousingSchemes({ map }) {
     map.once("style.load", callback);
   };
 
+  const getHousingStyle = () => ({
+    ...HousingSchemesStyle,
+    dataDrivenColor: createHousingSchemeColorExpression(
+      housingLegendItemsRef.current,
+    ),
+  });
+
   const showHousingLayer = () => {
     const geojson = housingGeoJSONRef.current;
     if (!geojson) return;
@@ -331,7 +334,7 @@ export default function PrivateHousingSchemes({ map }) {
         HOUSING_SOURCE_PREFIX,
         geojson,
         housingOpacityRef.current,
-        HousingSchemesStyle,
+        getHousingStyle(),
       );
     });
   };
@@ -380,9 +383,35 @@ export default function PrivateHousingSchemes({ map }) {
 
     const request = (async () => {
       try {
-        const geojson = normalizeGeoJSON(await getHousingSchemesGeoJSON());
+        const rawGeojson = normalizeGeoJSON(await getHousingSchemesGeoJSON());
+        const geojson = {
+          ...rawGeojson,
+          features: (rawGeojson.features || []).map((feature) => ({
+            ...feature,
+            properties: {
+              ...(feature?.properties || {}),
+              _ruda_status_key: normalizeHousingSchemeStatus(
+                feature?.properties?.ruda_st ??
+                  feature?.properties?.ruda_scheme,
+              ),
+            },
+          })),
+        };
+
         housingGeoJSONRef.current = geojson;
-        setHousingStatus(geojson.features.length ? null : "No features");
+
+        const categoryConfig = createHousingSchemeCategoryConfig(geojson);
+        housingLegendItemsRef.current = categoryConfig;
+        setHousingLegendItems(categoryConfig);
+
+        setHousingStatus(
+          geojson.features.length
+            ? categoryConfig.length
+              ? null
+              : "No RUDA status categories found"
+            : "No features",
+        );
+
         return geojson;
       } catch (error) {
         console.error("Failed to load Housing Schemes", error);
@@ -732,12 +761,31 @@ export default function PrivateHousingSchemes({ map }) {
                   </label>
 
                   <div
-                    className={`mt-1 ${
+                    className={`mt-2 flex items-center justify-between ${
                       illegalFillEnabled ? "opacity-100" : "pointer-events-none opacity-35"
                     }`}
                   >
-                    <div className="mb-1 text-[9px] text-white/55">Fill color</div>
-                    <ColorPalette onSelect={handleIllegalFillColorChange} />
+                    <span className="text-[9px] text-white/55">Fill color</span>
+                    <span
+                      className="relative h-4 w-6 shrink-0 overflow-hidden rounded-sm border border-white/35"
+                      style={{ backgroundColor: illegalFillColor }}
+                      title="Change Illegal Housing Schemes fill color"
+                      onClick={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                    >
+                      <input
+                        type="color"
+                        value={illegalFillColor}
+                        disabled={!illegalFillEnabled}
+                        aria-label="Change Illegal Housing Schemes fill color"
+                        onClick={(event) => event.stopPropagation()}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          handleIllegalFillColorChange(event.target.value)
+                        }
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                      />
+                    </span>
                   </div>
                 </div>
 
@@ -766,14 +814,33 @@ export default function PrivateHousingSchemes({ map }) {
                   </label>
 
                   <div
-                    className={`mt-1 ${
+                    className={`mt-2 flex items-center justify-between ${
                       illegalOutlineEnabled
                         ? "opacity-100"
                         : "pointer-events-none opacity-35"
                     }`}
                   >
-                    <div className="mb-1 text-[9px] text-white/55">Outline color</div>
-                    <ColorPalette onSelect={handleIllegalOutlineColorChange} />
+                    <span className="text-[9px] text-white/55">Outline color</span>
+                    <span
+                      className="relative h-4 w-6 shrink-0 overflow-hidden rounded-sm border border-white/35"
+                      style={{ backgroundColor: illegalOutlineColor }}
+                      title="Change Illegal Housing Schemes outline color"
+                      onClick={(event) => event.stopPropagation()}
+                      onMouseDown={(event) => event.stopPropagation()}
+                    >
+                      <input
+                        type="color"
+                        value={illegalOutlineColor}
+                        disabled={!illegalOutlineEnabled}
+                        aria-label="Change Illegal Housing Schemes outline color"
+                        onClick={(event) => event.stopPropagation()}
+                        onMouseDown={(event) => event.stopPropagation()}
+                        onChange={(event) =>
+                          handleIllegalOutlineColorChange(event.target.value)
+                        }
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                      />
+                    </span>
                   </div>
                 </div>
               </div>
