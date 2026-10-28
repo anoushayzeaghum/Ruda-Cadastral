@@ -5,7 +5,9 @@ import {
   getIllegalHousingSchemesGeoJSON,
 } from "../../../../services/metaverseApi";
 import HousingSchemesStyle, {
-  RUDA_SCHEME_COLORS,
+  createHousingSchemeCategoryConfig,
+  createHousingSchemeColorExpression,
+  normalizeHousingSchemeStatus,
 } from "./LayerManager/PrivateHousingSchemes/HousingSchemesStyle";
 import IllegalHousingSchemeStyle, {
   ILLEGAL_HOUSING_SCHEME_COLOR,
@@ -57,13 +59,6 @@ const normalizeGeoJSON = (data) => {
   }
   return { type: "FeatureCollection", features: [] };
 };
-
-const housingLegendItems = Object.entries(RUDA_SCHEME_COLORS)
-  .filter(([status]) => status !== "underprocess")
-  .map(([status, color]) => ({
-    label: status.replace(/\b\w/g, (char) => char.toUpperCase()),
-    color,
-  }));
 
 function setMapLayerVisibility(map, sourcePrefix, visible) {
   if (!map) return;
@@ -255,6 +250,7 @@ export default function PrivateHousingSchemes({ map }) {
   const [housingLoading, setHousingLoading] = useState(false);
   const [housingOpacity, setHousingOpacity] = useState(100);
   const [housingStatus, setHousingStatus] = useState(null);
+  const [housingLegendItems, setHousingLegendItems] = useState([]);
   const [tableOpen, setTableOpen] = useState(false);
 
   const [illegalVisible, setIllegalVisible] = useState(false);
@@ -274,6 +270,7 @@ export default function PrivateHousingSchemes({ map }) {
   const housingOpacityRef = useRef(housingOpacity);
   const housingGeoJSONRef = useRef(null);
   const housingRequestRef = useRef(null);
+  const housingLegendItemsRef = useRef([]);
 
   const illegalVisibleRef = useRef(illegalVisible);
   const illegalOpacityRef = useRef(illegalOpacity);
@@ -318,6 +315,13 @@ export default function PrivateHousingSchemes({ map }) {
     map.once("style.load", callback);
   };
 
+  const getHousingStyle = () => ({
+    ...HousingSchemesStyle,
+    dataDrivenColor: createHousingSchemeColorExpression(
+      housingLegendItemsRef.current,
+    ),
+  });
+
   const showHousingLayer = () => {
     const geojson = housingGeoJSONRef.current;
     if (!geojson) return;
@@ -330,7 +334,7 @@ export default function PrivateHousingSchemes({ map }) {
         HOUSING_SOURCE_PREFIX,
         geojson,
         housingOpacityRef.current,
-        HousingSchemesStyle,
+        getHousingStyle(),
       );
     });
   };
@@ -379,9 +383,35 @@ export default function PrivateHousingSchemes({ map }) {
 
     const request = (async () => {
       try {
-        const geojson = normalizeGeoJSON(await getHousingSchemesGeoJSON());
+        const rawGeojson = normalizeGeoJSON(await getHousingSchemesGeoJSON());
+        const geojson = {
+          ...rawGeojson,
+          features: (rawGeojson.features || []).map((feature) => ({
+            ...feature,
+            properties: {
+              ...(feature?.properties || {}),
+              _ruda_status_key: normalizeHousingSchemeStatus(
+                feature?.properties?.ruda_st ??
+                  feature?.properties?.ruda_scheme,
+              ),
+            },
+          })),
+        };
+
         housingGeoJSONRef.current = geojson;
-        setHousingStatus(geojson.features.length ? null : "No features");
+
+        const categoryConfig = createHousingSchemeCategoryConfig(geojson);
+        housingLegendItemsRef.current = categoryConfig;
+        setHousingLegendItems(categoryConfig);
+
+        setHousingStatus(
+          geojson.features.length
+            ? categoryConfig.length
+              ? null
+              : "No RUDA status categories found"
+            : "No features",
+        );
+
         return geojson;
       } catch (error) {
         console.error("Failed to load Housing Schemes", error);
