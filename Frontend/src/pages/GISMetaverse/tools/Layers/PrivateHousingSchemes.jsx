@@ -12,6 +12,7 @@ import IllegalHousingSchemeStyle, {
   ILLEGAL_HOUSING_SCHEME_OUTLINE_COLOR,
 } from "./LayerManager/PrivateHousingSchemes/IllegalHousingSchemeStyle";
 import HousingSchemesAttribute from "./AttributeTable/PrivateHousingSchemes/HousingSchemesAttribute";
+import IllegalHousingSchemesAttribute from "./AttributeTable/PrivateHousingSchemes/IllegalHousingSchemesAttribute";
 
 const HOUSING_SOURCE_PREFIX = "gism-private-housing-schemes";
 const ILLEGAL_SOURCE_PREFIX = "gism-illegal-housing-schemes";
@@ -256,6 +257,7 @@ export default function PrivateHousingSchemes({ map }) {
   const [housingOpacity, setHousingOpacity] = useState(100);
   const [housingStatus, setHousingStatus] = useState(null);
   const [tableOpen, setTableOpen] = useState(false);
+  const [illegalTableOpen, setIllegalTableOpen] = useState(false);
 
   const [illegalVisible, setIllegalVisible] = useState(false);
   const [illegalLoading, setIllegalLoading] = useState(false);
@@ -688,6 +690,18 @@ export default function PrivateHousingSchemes({ map }) {
                   )}
                 </span>
               </label>
+
+              <button
+                type="button"
+                className="shrink-0 rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIllegalTableOpen(true);
+                }}
+                title="Open Illegal Housing Schemes attribute table"
+              >
+                <Grid3X3 size={14} />
+              </button>
             </div>
 
             <div className="mt-2 flex items-center gap-2 pl-6">
@@ -705,6 +719,29 @@ export default function PrivateHousingSchemes({ map }) {
                 {illegalOpacity}%
               </span>
             </div>
+
+            {illegalVisible && (
+              <div className="mt-3 pl-6">
+                <div className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-white/55">
+                  Legend
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-white/85">
+                  <span
+                    className="inline-block h-3.5 w-5 shrink-0 rounded-[1px] border-2"
+                    style={{
+                      backgroundColor: illegalFillEnabled
+                        ? illegalFillColor
+                        : "transparent",
+                      borderColor: illegalOutlineEnabled
+                        ? illegalOutlineColor
+                        : "transparent",
+                      opacity: illegalOpacity / 100,
+                    }}
+                  />
+                  <span>Illegal Housing Schemes</span>
+                </div>
+              </div>
+            )}
 
             {illegalVisible && (
               <div className="mt-3 space-y-3 pl-6">
@@ -830,6 +867,14 @@ export default function PrivateHousingSchemes({ map }) {
           map={map}
           geojson={housingGeoJSONRef.current || null}
           onClose={() => setTableOpen(false)}
+        />
+      )}
+
+      {illegalTableOpen && (
+        <IllegalHousingSchemesAttribute
+          map={map}
+          geojson={illegalGeoJSONRef.current || null}
+          onClose={() => setIllegalTableOpen(false)}
         />
       )}
     </div>
