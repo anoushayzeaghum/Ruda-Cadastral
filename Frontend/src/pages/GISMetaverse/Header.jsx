@@ -116,6 +116,8 @@ export default function Header() {
     title,
     titleMode = "custom",
     calloutLabel = "",
+    paperSize = "a4",
+    resolutionDpi = 200,
   }) => {
     setTitleModal((prev) => ({ ...prev, open: false }));
 
@@ -125,6 +127,8 @@ export default function Header() {
       // This is intentionally independent from the page title.
       // Imported-KMZ printing uses it only for the boxed locator/callout.
       calloutLabel: calloutLabel.trim(),
+      paperSize,
+      resolutionDpi,
     });
   };
 
