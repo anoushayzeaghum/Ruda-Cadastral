@@ -2801,5 +2801,5 @@ class KlmToSaggian(models.Model):
 
     class Meta:
         managed = False
-        db_table = "klm to saggian"
+        db_table = "klm_to_saggian"
 

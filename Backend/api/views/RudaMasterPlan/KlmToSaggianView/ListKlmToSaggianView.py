@@ -72,7 +72,7 @@ class ListKlmToSaggianView(viewsets.ViewSet):
                     ST_AsGeoJSON(
                         ST_Force2D(geom)
                     ) AS geometry_json
-                FROM public."klm to saggian"
+                FROM public."klm_to_saggian"
                 {where_clause}
                 ORDER BY gid
             """
