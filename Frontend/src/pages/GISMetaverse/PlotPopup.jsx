@@ -21,10 +21,15 @@ const stripHtml = (value = "") =>
     .replace(/\s+/g, " ")
     .trim();
 
-const formatValue = (value, { stripHtml: shouldStripHtml = false } = {}) => {
+const formatValue = (
+  value,
+  { stripHtml: shouldStripHtml = false, preservePrecision = false } = {},
+) => {
   if (value === null || value === undefined) return "";
   if (shouldStripHtml) return stripHtml(value);
-  if (typeof value === "number") return value.toFixed(2);
+  if (typeof value === "number") {
+    return preservePrecision ? String(value) : value.toFixed(2);
+  }
   return String(value);
 };
 
@@ -211,7 +216,10 @@ const buildFeaturePopupHTML = (props = {}, group, zoom = 16) => {
       }
 
       const displayValue = escapeHTML(
-        formatValue(rawValue, { stripHtml: field.stripHtml }),
+        formatValue(rawValue, {
+          stripHtml: field.stripHtml,
+          preservePrecision: field.preservePrecision,
+        }),
       );
 
       return `

@@ -1261,20 +1261,19 @@ class Plot(models.Model):
 # Spot Level
 # =========================
 class SpotLevel(models.Model):
+    """Existing public.spot_level schema (unmanaged PostgreSQL/PostGIS table).
+
+    Preserve shapefile X/Y attribute values exactly as stored in varchar(50).
+    The geom column is the independent spatial point used for mapping.
+    """
+
     gid = models.AutoField(primary_key=True)
-
-    objectid_1 = models.IntegerField(null=True, blank=True)
-    objectid = models.IntegerField(null=True, blank=True)
-    id = models.IntegerField(null=True, blank=True)
-
-    x = models.FloatField(null=True, blank=True)
-    y = models.FloatField(null=True, blank=True)
-    z = models.FloatField(null=True, blank=True)
-
-    elevation = models.FloatField(null=True, blank=True)
-    elevatin_i = models.IntegerField(null=True, blank=True)
-
-    geom = gis_models.GeometryField(srid=4326)
+    objectid = models.FloatField(null=True, blank=True)   # double precision
+    id = models.FloatField(null=True, blank=True)         # double precision
+    x = models.CharField(max_length=50, null=True, blank=True)  # varchar(50)
+    y = models.CharField(max_length=50, null=True, blank=True)  # varchar(50)
+    zz = models.DecimalField(max_digits=30, decimal_places=12, null=True, blank=True)  # numeric
+    geom = gis_models.PointField(srid=4326, null=True, blank=True)
 
     project = models.ForeignKey(
         Project,

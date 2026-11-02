@@ -42,13 +42,20 @@ export default function SpotLevelAttribute({ map, selectedProjectId, onClose }) 
           geojson = unwrapGeoJSON(res.data);
         }
 
-        const formatted = (geojson.features || []).map((feature, index) => ({
-          id: feature.properties?.gid || feature.id || index,
-          sr: index + 1,
-          coordinate: coordinateText(feature.geometry),
-          project: projectName === "-" ? String(selectedProjectId || "-") : projectName,
-          geometry: feature.geometry,
-        }));
+        const formatted = (geojson.features || []).map((feature, index) => {
+          const props = feature.properties || {};
+          return {
+            id: props.gid ?? feature.id ?? index,
+            objectid: props.OBJECTID ?? props.objectid ?? "-",
+            recordId: props.Id ?? props.id ?? "-",
+            x: props.X ?? props.x ?? "-",
+            y: props.Y ?? props.y ?? "-",
+            zz: props.ZZ ?? props.zz ?? "-",
+            coordinate: coordinateText(feature.geometry),
+            project: projectName === "-" ? String(selectedProjectId || "-") : projectName,
+            geometry: feature.geometry,
+          };
+        });
 
         if (active) setRows(formatted);
       } catch (error) {
@@ -68,13 +75,16 @@ export default function SpotLevelAttribute({ map, selectedProjectId, onClose }) 
     <AdminAttributeTableShell
       map={map}
       title="Spot Level"
-      placeholder="Search coordinate or project..."
+      placeholder="Search Spot Level OBJECTID, elevation or coordinates..."
       loading={loading}
       rows={rows}
       onClose={onClose}
       columns={[
-        { key: "sr", label: "SR" },
-        { key: "coordinate", label: "Coordinate" },
+        { key: "objectid", label: "OBJECTID" },
+        { key: "recordId", label: "Id" },
+        { key: "x", label: "X" },
+        { key: "y", label: "Y" },
+        { key: "zz", label: "Elevation (ZZ)" },
         { key: "project", label: "Project" },
       ]}
     />

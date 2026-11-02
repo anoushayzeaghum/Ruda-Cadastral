@@ -592,23 +592,22 @@ class ProjectMauzaSerializer(serializers.ModelSerializer):
 # -------------------------------------------------------
 
 class SpotLevelSerializer(serializers.ModelSerializer):
+    """Match the actual spot_level table, without requesting legacy columns."""
+
     project_name = serializers.CharField(source="project.name", read_only=True)
+
+    # Shapefile-style keys for the map popup; lowercase names remain intact.
+    OBJECTID = serializers.FloatField(source="objectid", read_only=True)
+    Id = serializers.FloatField(source="id", read_only=True)
+    X = serializers.CharField(source="x", read_only=True)
+    Y = serializers.CharField(source="y", read_only=True)
+    ZZ = serializers.FloatField(source="zz", read_only=True)
 
     class Meta:
         model = SpotLevel
         fields = [
-            "gid",
-            "objectid_1",
-            "objectid",
-            "id",
-            "x",
-            "y",
-            "z",
-            "elevation",
-            "elevatin_i",
-            "geom",
-            "project",
-            "project_name",
+            "gid", "objectid", "id", "x", "y", "zz", "geom", "project",
+            "project_name", "OBJECTID", "Id", "X", "Y", "ZZ",
         ]
 
 

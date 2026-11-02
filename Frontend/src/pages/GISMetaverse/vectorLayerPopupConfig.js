@@ -142,17 +142,21 @@ export const VECTOR_POPUP_GROUPS = [
       { key: "area", label: "Area (Acres)" },
     ],
   },
-  // ── Spot Level ───────────────────────────────────────────────────────────────
+  // ── Spot Level (new Spot_Levels.shp: OBJECTID, Id, X, Y, ZZ) ─────────────
   {
     id: "spotLevel",
     label: "Spot Level",
-    layerIds: [LAYERS.spotLevelCircle],
+    layerIds: [LAYERS.spotLevelCircle, "gis-topo-spotlevel-circle"],
     titlePrefix: "Spot Level",
-    titleKeys: ["name"],
+    titleKeys: ["OBJECTID", "objectid"],
     fields: [
-      { keys: ["name"], label: "Name" },
-      { keys: ["elevation", "level"], label: "Elevation (m)" },
+      { keys: ["OBJECTID", "objectid"], label: "Object ID", preservePrecision: true },
+      { keys: ["Id", "id"], label: "ID", preservePrecision: true },
+      { keys: ["X", "x"], label: "X", preservePrecision: true },
+      { keys: ["Y", "y"], label: "Y", preservePrecision: true },
+      { keys: ["ZZ", "zz"], label: "Elevation (ZZ)", preservePrecision: true },
     ],
+    maxFallbackFields: 0,
   },
   // ── Contours ─────────────────────────────────────────────────────────────────
   {
