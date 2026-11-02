@@ -7,24 +7,22 @@ import {
   setFloodLayerVisibility,
 } from "./LayerManager/Hydrology/FloodLayer";
 
-const FLOOD_YEARS = [2025, 2026];
+const FLOOD_YEARS = [2025];
 
 /**
  * Hydrology layer group.
  *
  * Flood extent data is loaded once from the FloodExtent backend API.
- * The visible GeoJSON is then filtered by the selected year(s).
+ * Only Flood Extent 2025 is offered and rendered; other years are filtered out.
  */
 export default function Hydrology({ map }) {
   const [open, setOpen] = useState(false);
   const [floodYearsVisible, setFloodYearsVisible] = useState({
     2025: false,
-    2026: false,
   });
 
   const floodYearsVisibleRef = useRef({
     2025: false,
-    2026: false,
   });
 
   const floodCache = useRef(null);
@@ -100,7 +98,6 @@ export default function Hydrology({ map }) {
 
       const hiddenState = {
         2025: false,
-        2026: false,
       };
 
       floodYearsVisibleRef.current = hiddenState;
@@ -127,7 +124,6 @@ export default function Hydrology({ map }) {
 
     const nextVisibility = {
       2025: !anyVisible,
-      2026: !anyVisible,
     };
 
     void applyFloodVisibility(nextVisibility);
