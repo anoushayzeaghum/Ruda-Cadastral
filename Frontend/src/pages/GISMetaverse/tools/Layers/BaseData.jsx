@@ -659,7 +659,7 @@ export default function BaseData({ map }) {
                   onColorChange={(color) => setColor(definition.key, color)}
                   showColorPicker={!definition.customRoadStyle}
                   previewColors={definition.previewColors}
-                  onTableOpen={() => openAttributeTable(definition.key)}
+                  onTableOpen={definition.fetchGeoJSON ? () => openAttributeTable(definition.key) : undefined}
                 />
 
                 {definition.customRoadStyle && state.visible && (

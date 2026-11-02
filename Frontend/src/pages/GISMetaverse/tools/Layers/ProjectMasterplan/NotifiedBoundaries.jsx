@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import VectorGeoJSONAttribute from "../AttributeTable/VectorGeoJSONAttribute";
 
 const NOTIFIED_STYLE = {
   color: "#ef4444",
@@ -55,6 +56,7 @@ export default function NotifiedBoundaries({
   setLayerVisibility,
 }) {
   const [open, setOpen] = useState(false);
+  const [tableOpen, setTableOpen] = useState(false);
   const [style, setStyle] = useState({
     color: NOTIFIED_STYLE.color,
     opacity: layerVisibility.notifiedBoundaryOpacity ?? 100,
@@ -119,12 +121,20 @@ export default function NotifiedBoundaries({
             checked={!!layerVisibility.notifiedBoundary}
             color={style.color}
             label="Notified Boundary"
+            onTableOpen={() => setTableOpen(true)}
             opacity={style.opacity}
             onChange={toggleLayer}
             onOpacityChange={updateOpacity}
             onColorChange={updateColor}
           />
         </div>
+      )}
+      {tableOpen && (
+        <VectorGeoJSONAttribute map={map} title="Project Notified Boundary"
+          selectedProjectId={selectedProjectId}
+          sourceIds={["metaverse-notified-boundary-source"]}
+          endpoint="/ruda-notified-phases-boundary/"
+          onClose={() => setTableOpen(false)} />
       )}
     </div>
   );
@@ -161,6 +171,7 @@ function LayerItem({
   onOpacityChange,
   onColorChange,
   disabled,
+  onTableOpen,
 }) {
   return (
     <div className={`mt-3 first:mt-1 ${disabled ? "opacity-50" : ""}`}>
@@ -184,7 +195,13 @@ function LayerItem({
           <span className="text-[11px]">{label}</span>
         </label>
 
-        <Grid3X3 size={14} className="text-white/60" />
+        {onTableOpen ? (
+          <button type="button" disabled={disabled} title={`Open ${label} attribute table`}
+            onClick={(event) => { event.stopPropagation(); onTableOpen(); }}
+            className="rounded p-0.5 text-white/70 hover:bg-[#0f3d2e] disabled:opacity-40">
+            <Grid3X3 size={14} />
+          </button>
+        ) : <Grid3X3 size={14} className="text-white/60" />}
       </div>
 
       <div className="mt-2 flex items-center gap-2 pl-6">

@@ -4,6 +4,8 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import LayerRow from "../_LayerRow";
 import { pointLegend, lineLegend, polygonLegend } from "../_legendUtils";
 import ContoursAttribute from "../AttributeTable/ProjectMasterPlan/TopographicPlan/ContoursAttribute";
+import SpotLevelAttribute from "../AttributeTable/ProjectMasterPlan/TopographicPlan/SpotLevelAttribute";
+import VectorGeoJSONAttribute from "../AttributeTable/VectorGeoJSONAttribute";
 import { getContourGeoJSON } from "../../../../../services/metaverseApi";
 
 const DSM_SOURCE = "gis-dsm-source";
@@ -57,6 +59,9 @@ const loadSpotLevelMapGeoJSON = async (projectId) => {
   return { type: "FeatureCollection", features };
 };
 
+
+const isTopoBoundaryFeature = (p) =>
+  ["Builtup", "Park", "Green Belt", "Road Track", "Manholes", "Light Poles"].includes(p.layer);
 
 const TOPOGRAPHIC_COLORS = {
   spotLevel: "#a855f7",
@@ -486,6 +491,7 @@ export default function TopographicPlan({
               updateTopographicColor(SPOT_LEVEL_LAYERS, color);
             }}
             legendItems={[pointLegend("Spot Level", "#a855f7")]}
+            onTableOpen={() => setActiveAttributeTable("spotLevel")}
           />
 
           <LayerRow
@@ -507,6 +513,7 @@ export default function TopographicPlan({
 
           <LayerRow
             label="Topographic Boundary"
+            onTableOpen={() => setActiveAttributeTable("topographicBoundary")}
             color={TOPOGRAPHIC_COLORS.topography}
             checked={topoVisible}
             disabled={!hasSelectedProject}
@@ -546,6 +553,16 @@ export default function TopographicPlan({
         </div>
       )}
 
+      {activeAttributeTable === "spotLevel" && (
+        <SpotLevelAttribute map={map} selectedProjectId={selectedProjectId}
+          onClose={() => setActiveAttributeTable(null)} />
+      )}
+      {activeAttributeTable === "topographicBoundary" && (
+        <VectorGeoJSONAttribute map={map} title="Topographic Boundary"
+          sourceIds={[TOPO_SOURCE]} publicUrl="/Topogeojson_backup/Topography.geojson"
+          filterProperties={isTopoBoundaryFeature}
+          onClose={() => setActiveAttributeTable(null)} />
+      )}
       {activeAttributeTable === "contours" && (
         <ContoursAttribute
           map={map}

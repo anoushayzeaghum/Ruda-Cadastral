@@ -72,6 +72,7 @@ export default function AdminAttributeTableShell({
   columns = [],
   rows = [],
   loading = false,
+  error = "",
   onClose,
 }) {
   const [query, setQuery] = useState("");
@@ -120,18 +121,29 @@ export default function AdminAttributeTableShell({
     };
   }, [title, onClose]);
 
+  // Suppress columns which are null/empty for EVERY returned record.
+  // This applies to all existing attribute tables, not just the new ones.
+  const visibleColumns = useMemo(() => {
+    if (!rows.length) return columns;
+    return columns.filter((column) => rows.some((row) => {
+      const value = row?.[column.key];
+      return value !== null && value !== undefined &&
+        !(typeof value === "string" && ["", "-", "null", "none"].includes(value.trim().toLowerCase()));
+    }));
+  }, [columns, rows]);
+
   const filteredRows = useMemo(() => {
     const search = activeQuery.trim().toLowerCase();
     if (!search) return rows;
 
     return rows.filter((row) =>
-      columns.some((column) =>
+      visibleColumns.some((column) =>
         String(row?.[column.key] ?? "")
           .toLowerCase()
           .includes(search),
       ),
     );
-  }, [activeQuery, columns, rows]);
+  }, [activeQuery, visibleColumns, rows]);
 
   const handleSearch = () => setActiveQuery(query);
 
@@ -254,7 +266,7 @@ export default function AdminAttributeTableShell({
             <table className="w-full border-separate border-spacing-0 text-left">
               <thead className="sticky top-0 z-10 bg-[#052319] text-[#9be37b]/90">
                 <tr>
-                  {columns.map((column) => (
+                  {visibleColumns.map((column) => (
                     <th
                       key={column.key}
                       className="border-b border-[#13593f]/30 px-3 py-2 text-[10px] font-bold uppercase tracking-wider bg-[#052319] whitespace-nowrap"
@@ -269,7 +281,7 @@ export default function AdminAttributeTableShell({
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={columns.length}
+                      colSpan={Math.max(visibleColumns.length, 1)}
                       className="px-3 py-8 text-center text-white/40"
                     >
                       <div className="flex items-center justify-center gap-2">
@@ -281,10 +293,10 @@ export default function AdminAttributeTableShell({
                 ) : filteredRows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={columns.length}
+                      colSpan={Math.max(visibleColumns.length, 1)}
                       className="px-3 py-8 text-center text-white/40 whitespace-nowrap"
                     >
-                      No records match query
+                      {error || "No records match query"}
                     </td>
                   </tr>
                 ) : (
@@ -299,7 +311,7 @@ export default function AdminAttributeTableShell({
                       key={row.id || index}
                       className="group transition-colors duration-150 hover:bg-[#9be37b]/5"
                     >
-                      {columns.map((column) => (
+                      {visibleColumns.map((column) => (
                         <td
                           key={column.key}
                           className="px-3 py-2 text-white/80 group-hover:text-white border-b border-[#13593f]/5 whitespace-nowrap"
