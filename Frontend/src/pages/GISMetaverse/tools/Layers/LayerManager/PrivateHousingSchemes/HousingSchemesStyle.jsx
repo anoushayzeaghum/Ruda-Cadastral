@@ -38,6 +38,14 @@ const HousingSchemesStyle = Object.freeze({
   // MapLibre/Mapbox feature-level color expression.
   dataDrivenColor: HousingSchemesColorExpression,
 
+  // Follow the existing scheme-status palette for text labels.
+  // 15 <= zoom <= 18 (maxzoom is exclusive in Mapbox GL JS).
+  labelColor: HousingSchemesColorExpression,
+  labelMinZoom: 15,
+  labelMaxZoom: 18.01,
+  labelHaloColor: "#ffffff",
+  labelHaloWidth: 1.8,
+
   fillOpacity: 0.42,
   lineOpacity: 1,
   lineWidth: ["interpolate", ["linear"], ["zoom"], 7, 1.2, 14, 2.8],

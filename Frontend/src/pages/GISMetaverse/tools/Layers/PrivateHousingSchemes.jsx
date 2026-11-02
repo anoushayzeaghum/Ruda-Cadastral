@@ -45,6 +45,7 @@ const getIds = (sourcePrefix) => ({
   outline: `${sourcePrefix}-outline`,
   line: `${sourcePrefix}-line`,
   point: `${sourcePrefix}-point`,
+  label: `${sourcePrefix}-label`,
 });
 
 const normalizeGeoJSON = (data) => {
@@ -57,6 +58,46 @@ const normalizeGeoJSON = (data) => {
     return { type: "FeatureCollection", features: raw };
   }
   return { type: "FeatureCollection", features: [] };
+};
+
+// These are the backend attribute spellings used for the "Scheme Name"
+// column. Keep the values in the original fields for popups and tables.
+const HOUSING_SCHEME_NAME_FIELDS = [
+  "scheme_nam",
+  "scheme_name",
+  "Scheme_Name",
+  "Scheme Name",
+  "SCHEME_NAM",
+  "SCHEME_NAME",
+  "SCHEME NAME",
+];
+
+const normalizeHousingGeoJSON = (response) => {
+  const collection = normalizeGeoJSON(response);
+  return {
+    ...collection,
+    features: collection.features.map((feature) => {
+      const properties = feature?.properties || {};
+      const label = HOUSING_SCHEME_NAME_FIELDS
+        .map((key) => properties[key])
+        .find((value) =>
+          value != null &&
+          String(value).trim() !== "" &&
+          !["null", "none", "n/a", "-"].includes(String(value).trim().toLowerCase()),
+        );
+
+      // The private, underscore-prefixed property is ignored by the
+      // generic feature popup; it does not rename or replace Scheme Name.
+      if (label === undefined) return feature;
+      return {
+        ...feature,
+        properties: {
+          ...properties,
+          _housing_scheme_label: String(label).trim(),
+        },
+      };
+    }),
+  };
 };
 
 const housingLegendItems = Object.entries(RUDA_SCHEME_COLORS)
@@ -72,7 +113,7 @@ function setMapLayerVisibility(map, sourcePrefix, visible) {
   const ids = getIds(sourcePrefix);
   const visibility = visible ? "visible" : "none";
 
-  [ids.fill, ids.outline, ids.line, ids.point].forEach((layerId) => {
+  [ids.fill, ids.outline, ids.line, ids.point, ids.label].forEach((layerId) => {
     if (map.getLayer(layerId)) {
       map.setLayoutProperty(layerId, "visibility", visibility);
     }
@@ -125,6 +166,15 @@ function applyLayerStyle(map, sourcePrefix, opacity, style = {}) {
   if (map.getLayer(ids.point)) {
     map.setPaintProperty(ids.point, "circle-opacity", ratio);
     map.setPaintProperty(ids.point, "circle-stroke-opacity", ratio);
+  }
+
+  if (sourcePrefix === HOUSING_SOURCE_PREFIX && map.getLayer(ids.label)) {
+    map.setPaintProperty(
+      ids.label,
+      "text-color",
+      style.labelColor || style.dataDrivenColor || style.color,
+    );
+    map.setPaintProperty(ids.label, "text-opacity", ratio);
   }
 }
 
@@ -223,6 +273,40 @@ function addOrUpdateMapLayer(map, sourcePrefix, geojson, opacity, style = {}) {
     });
   }
 
+  // Labels use the same GeoJSON source and status-color symbology as the
+  // Housing Schemes polygons. The Mapbox zoom range controls appearance
+  // automatically; no separate zoom event handler is needed.
+  if (sourcePrefix === HOUSING_SOURCE_PREFIX && !map.getLayer(ids.label)) {
+    map.addLayer({
+      id: ids.label,
+      type: "symbol",
+      source: ids.source,
+      filter: ["has", "_housing_scheme_label"],
+      minzoom: style.labelMinZoom ?? 15,
+      // Mapbox maxzoom is exclusive: 18.01 keeps labels visible at zoom 18.
+      maxzoom: style.labelMaxZoom ?? 18.01,
+      layout: {
+        visibility: "visible",
+        "symbol-placement": "point",
+        "text-field": ["get", "_housing_scheme_label"],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 15, 11, 18, 14],
+        "text-max-width": 12,
+        "text-anchor": "center",
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": style.labelColor || style.dataDrivenColor || style.color,
+        "text-halo-color": style.labelHaloColor || "#ffffff",
+        "text-halo-width": style.labelHaloWidth ?? 1.8,
+        "text-halo-blur": 0.2,
+        "text-opacity": ratio,
+      },
+    });
+  }
+
   applyLayerStyle(map, sourcePrefix, opacity, style);
   setMapLayerVisibility(map, sourcePrefix, true);
 }
@@ -233,7 +317,7 @@ function removeMapLayer(map, sourcePrefix) {
   const ids = getIds(sourcePrefix);
 
   try {
-    [ids.point, ids.line, ids.outline, ids.fill].forEach((layerId) => {
+    [ids.label, ids.point, ids.line, ids.outline, ids.fill].forEach((layerId) => {
       if (map.style && map.getLayer?.(layerId)) {
         map.removeLayer(layerId);
       }
@@ -381,7 +465,7 @@ export default function PrivateHousingSchemes({ map }) {
 
     const request = (async () => {
       try {
-        const geojson = normalizeGeoJSON(await getHousingSchemesGeoJSON());
+        const geojson = normalizeHousingGeoJSON(await getHousingSchemesGeoJSON());
         housingGeoJSONRef.current = geojson;
         setHousingStatus(geojson.features.length ? null : "No features");
         return geojson;
