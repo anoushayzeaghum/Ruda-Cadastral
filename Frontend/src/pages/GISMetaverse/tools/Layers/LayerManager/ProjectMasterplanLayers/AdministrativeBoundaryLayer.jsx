@@ -1,3 +1,4 @@
+import { upsertUniqueLabelSource, UNIQUE_LABEL_PROPERTY, VECTOR_LABEL_MIN_ZOOM } from "../_vectorLabelStandards";
 import {
   SOURCES,
   LAYERS,
@@ -185,27 +186,32 @@ export function addRudaMauzaBoundaryLayer(
     });
   }
 
+  const labelSourceId = upsertUniqueLabelSource(
+    map, data, SOURCES.rudaMauzaBoundary,
+    ["Mouza", "mouza", "mauza", "Mauza", "moza", "name", "Name"],
+  );
+  const previousLabelSource = map.getStyle?.()?.layers?.find(
+    (layer) => layer.id === LAYERS.rudaMauzaBoundaryLabel,
+  )?.source;
+  if (map.getLayer(LAYERS.rudaMauzaBoundaryLabel) && previousLabelSource !== labelSourceId) {
+    map.removeLayer(LAYERS.rudaMauzaBoundaryLabel);
+  }
   const labelLayout = {
-    "text-field": [
-      "coalesce",
-      ["to-string", ["get", "Mouza"]],
-      ["to-string", ["get", "mouza"]],
-      ["to-string", ["get", "name"]],
-      ["to-string", ["get", "Name"]],
-      "",
-    ],
+    "text-field": ["get", UNIQUE_LABEL_PROPERTY],
     "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 15, 12],
     "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
     "text-allow-overlap": false,
     "text-ignore-placement": false,
+    "symbol-placement": "point",
+    "text-padding": 8,
   };
 
   if (!map.getLayer(LAYERS.rudaMauzaBoundaryLabel)) {
     map.addLayer({
       id: LAYERS.rudaMauzaBoundaryLabel,
       type: "symbol",
-      source: SOURCES.rudaMauzaBoundary,
-      minzoom: 11,
+      source: labelSourceId,
+      minzoom: VECTOR_LABEL_MIN_ZOOM,
       layout: labelLayout,
       paint: {
         "text-color": RUDA_MAUZA_LABEL_COLOR,

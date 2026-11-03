@@ -1,3 +1,4 @@
+import { upsertUniqueLabelSource, UNIQUE_LABEL_PROPERTY, VECTOR_LABEL_MIN_ZOOM } from "../_vectorLabelStandards";
 import { ensureSource } from "../MetaverseLayerConfig";
 
 const LABEL_FONT = ["Open Sans Semibold", "Arial Unicode MS Bold"];
@@ -62,13 +63,15 @@ export function addImportedPolygonLayer({
 
   const labelLayout = {
     visibility: "visible",
-    "text-field": getTextField(labelFields),
+    "text-field": ["get", UNIQUE_LABEL_PROPERTY],
     "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 14, 11, 17, 13],
     "text-anchor": "center",
     "text-font": LABEL_FONT,
     "text-allow-overlap": false,
     "text-ignore-placement": false,
     "text-optional": true,
+    "symbol-placement": "point",
+    "text-padding": 8,
   };
 
   const labelPaint = {
@@ -107,12 +110,19 @@ export function addImportedPolygonLayer({
 
   if (!labelLayerId) return;
 
+  const labelSourceId = upsertUniqueLabelSource(map, data, sourceId, labelFields);
+  const existingSource = map.getStyle?.()?.layers?.find((layer) => layer.id === labelLayerId)?.source;
+  if (map.getLayer(labelLayerId) && existingSource !== labelSourceId) {
+    map.removeLayer(labelLayerId);
+  }
+
+
   if (!map.getLayer(labelLayerId)) {
     map.addLayer({
       id: labelLayerId,
       type: "symbol",
-      source: sourceId,
-      minzoom: labelMinZoom,
+      source: labelSourceId,
+      minzoom: VECTOR_LABEL_MIN_ZOOM,
       layout: labelLayout,
       paint: labelPaint,
     });

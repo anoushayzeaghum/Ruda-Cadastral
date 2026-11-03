@@ -1,3 +1,4 @@
+import { upsertUniqueLabelSource, UNIQUE_LABEL_PROPERTY, VECTOR_LABEL_MIN_ZOOM } from "./LayerManager/_vectorLabelStandards";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import {
@@ -276,21 +277,30 @@ function addOrUpdateMapLayer(map, sourcePrefix, geojson, opacity, style = {}) {
   // Labels use the same GeoJSON source and status-color symbology as the
   // Housing Schemes polygons. The Mapbox zoom range controls appearance
   // automatically; no separate zoom event handler is needed.
+  if (sourcePrefix === HOUSING_SOURCE_PREFIX) {
+    const labelSourceId = upsertUniqueLabelSource(
+      map, data, ids.source, ["_housing_scheme_label"],
+    );
+    const previousSource = map.getStyle?.()?.layers?.find((layer) => layer.id === ids.label)?.source;
+    if (map.getLayer(ids.label) && previousSource !== labelSourceId) {
+      map.removeLayer(ids.label);
+    }
+  }
   if (sourcePrefix === HOUSING_SOURCE_PREFIX && !map.getLayer(ids.label)) {
     map.addLayer({
       id: ids.label,
       type: "symbol",
-      source: ids.source,
-      filter: ["has", "_housing_scheme_label"],
-      minzoom: style.labelMinZoom ?? 15,
+      source: `${ids.source}-unique-label-points`,
+      filter: ["has", UNIQUE_LABEL_PROPERTY],
+      minzoom: VECTOR_LABEL_MIN_ZOOM,
       // Mapbox maxzoom is exclusive: 18.01 keeps labels visible at zoom 18.
       maxzoom: style.labelMaxZoom ?? 18.01,
       layout: {
         visibility: "visible",
         "symbol-placement": "point",
-        "text-field": ["get", "_housing_scheme_label"],
+        "text-field": ["get", UNIQUE_LABEL_PROPERTY],
         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 15, 11, 18, 14],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 14, 11, 18, 14],
         "text-max-width": 12,
         "text-anchor": "center",
         "text-allow-overlap": false,
@@ -323,6 +333,10 @@ function removeMapLayer(map, sourcePrefix) {
       }
     });
 
+    const labelSourceId = `${ids.source}-unique-label-points`;
+    if (map.style && map.getSource?.(labelSourceId)) {
+      map.removeSource(labelSourceId);
+    }
     if (map.style && map.getSource?.(ids.source)) {
       map.removeSource(ids.source);
     }

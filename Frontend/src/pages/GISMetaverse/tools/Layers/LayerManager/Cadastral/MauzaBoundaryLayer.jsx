@@ -40,6 +40,7 @@ export function addMauzaBoundaryLayer(
       : ["interpolate", ["linear"], ["zoom"], 8, 1, 16, 1.5],
     fillOpacity: 0,
     labelExpression: MAUZA_LABEL,
+    labelFields: ["mauza", "Mauza", "moza", "Moza", "mouza", "name", "Name"],
     labelMinZoom: 14,
     beforeId,
   });

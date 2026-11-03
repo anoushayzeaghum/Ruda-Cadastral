@@ -1,3 +1,5 @@
+import { upsertUniqueLabelSource, UNIQUE_LABEL_PROPERTY, VECTOR_LABEL_MIN_ZOOM } from "../_vectorLabelStandards";
+
 const LABEL_FONT = ["Open Sans Semibold", "Arial Unicode MS Bold"];
 
 const ensureSource = (map, sourceId, data) => {
@@ -48,7 +50,8 @@ export function addCadastralBoundaryLayer({
   lineDasharray,
   fillOpacity = 0,
   labelExpression,
-  labelMinZoom = 14,
+  labelFields,
+  labelMinZoom = VECTOR_LABEL_MIN_ZOOM,
   beforeId,
 }) {
   if (!map || !data || !ids?.src || !ids?.fill || !ids?.line) return;
@@ -106,13 +109,29 @@ export function addCadastralBoundaryLayer({
 
   if (!ids.label || !labelExpression) return;
 
+  const labelSourceId = Array.isArray(labelFields) && labelFields.length
+    ? upsertUniqueLabelSource(map, data, ids.src, labelFields)
+    : ids.src;
+  const labelTextField = labelSourceId === ids.src
+    ? labelExpression
+    : ["get", UNIQUE_LABEL_PROPERTY];
+
+  // Mapbox sources are immutable on an existing layer.  Replace an old
+  // polygon-label layer during Vite hot reload when migrating to point labels.
+  const existingLabelSource = map.getStyle?.()?.layers?.find((layer) => layer.id === ids.label)?.source;
+  if (map.getLayer(ids.label) && existingLabelSource !== labelSourceId) {
+    map.removeLayer(ids.label);
+  }
+
   const labelLayout = {
     visibility: "visible",
-    "text-field": labelExpression,
+    "text-field": labelTextField,
     "text-size": ["interpolate", ["linear"], ["zoom"], 14, 9, 18, 12],
     "text-font": LABEL_FONT,
     "text-allow-overlap": false,
     "text-ignore-placement": false,
+    "symbol-placement": "point",
+    "text-padding": 8,
   };
 
   const labelPaint = {
@@ -128,8 +147,8 @@ export function addCadastralBoundaryLayer({
       {
         id: ids.label,
         type: "symbol",
-        source: ids.src,
-        minzoom: labelMinZoom,
+        source: labelSourceId,
+        minzoom: VECTOR_LABEL_MIN_ZOOM,
         layout: labelLayout,
         paint: labelPaint,
       },

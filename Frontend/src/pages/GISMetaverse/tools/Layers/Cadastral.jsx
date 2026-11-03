@@ -1,3 +1,4 @@
+import { setBasemapMauzaPlaceFilter } from "./LayerManager/_basemapPlaceLabelFilter";
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
@@ -567,7 +568,7 @@ function ensureKhasraVectorLayer(map, opacity, color) {
         type: "symbol",
         source: sourceId,
         "source-layer": KHASRA_SOURCE_LAYER,
-        minzoom: 15,
+        minzoom: 14,
         layout: {
           visibility,
           "text-field": getLabelExpression("khasra"),
@@ -662,11 +663,18 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity, color, mauzaSizes =
     key === "moza" ? mauzaSizes : undefined,
   );
 
+  if (key === "moza") {
+    setBasemapMauzaPlaceFilter(
+      map, "cadastral-mauza",
+      (geojson?.features || []).map(getMauzaName),
+    );
+  }
   reorderLandRevenueLayers(map);
 }
 
 function hideLayer(map, key) {
   if (!map) return;
+  if (key === "moza") setBasemapMauzaPlaceFilter(map, "cadastral-mauza", []);
 
   if (key === "masawi") {
     try {

@@ -39,9 +39,9 @@ const HousingSchemesStyle = Object.freeze({
   dataDrivenColor: HousingSchemesColorExpression,
 
   // Follow the existing scheme-status palette for text labels.
-  // 15 <= zoom <= 18 (maxzoom is exclusive in Mapbox GL JS).
+  // Starts at zoom 14; Mapbox maxzoom is exclusive (18.01 includes 18).
   labelColor: HousingSchemesColorExpression,
-  labelMinZoom: 15,
+  labelMinZoom: 14,
   labelMaxZoom: 18.01,
   labelHaloColor: "#ffffff",
   labelHaloWidth: 1.8,

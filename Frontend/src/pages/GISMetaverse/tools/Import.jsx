@@ -1491,7 +1491,7 @@ const captureMapWithKmzPrintCallout = ({ map, importedGeoJSON, label }) => {
 
   const bounds = bbox(importedGeoJSON);
   if (!bounds.every((value) => Number.isFinite(value))) {
-    return outputCanvas.toDataURL("image/png", 1);
+    return outputCanvas.toDataURL("image/jpeg", 0.92);
   }
 
   const centerLngLat = [
@@ -1581,7 +1581,7 @@ const captureMapWithKmzPrintCallout = ({ map, importedGeoJSON, label }) => {
   ctx.fillText(safeLabel, boxX + padX, boxY + boxHeight / 2, measuredTextWidth);
 
   ctx.restore();
-  return outputCanvas.toDataURL("image/png", 1);
+  return outputCanvas.toDataURL("image/jpeg", 0.92);
 };
 
 
@@ -1604,8 +1604,19 @@ const captureHighResolutionKmzPrintMap = async ({
 
   const paper = normalizePrintPaperSize(paperSize);
   const dpi = normalizePrintDpi(resolutionDpi);
-  const targetWidth = mmToPixels(paper.widthMm, dpi);
-  const targetHeight = mmToPixels(paper.heightMm, dpi);
+  // A3 at 300 DPI exceeds 17 million WebGL pixels before the annotation
+  // canvas, HTML print page and PDF snapshot are allocated. Cap the offscreen
+  // rendering area to keep the workflow stable in ordinary Chrome sessions.
+  const requestedWidth = mmToPixels(paper.widthMm, dpi);
+  const requestedHeight = mmToPixels(paper.heightMm, dpi);
+  const memoryScale = Math.min(
+    1,
+    3072 / requestedWidth,
+    3072 / requestedHeight,
+    Math.sqrt(5_000_000 / (requestedWidth * requestedHeight)),
+  );
+  const targetWidth = Math.max(1, Math.round(requestedWidth * memoryScale));
+  const targetHeight = Math.max(1, Math.round(requestedHeight * memoryScale));
 
   const container = document.createElement("div");
   container.setAttribute("aria-hidden", "true");
@@ -2134,14 +2145,31 @@ const createPdfReportFile = async (
   );
 
   const resolvedPaper = normalizePrintPaperSize(paperSize);
-  const resolvedDpi = normalizePrintDpi(resolutionDpi);
+  // The browser's native print already uses the exact HTML layout. The log
+  // PDF must capture that SAME .sheet, not re-project the KMZ from its KML.
+  // html2canvas previously rasterized it at up to 300/96x, allocating a huge
+  // second image while the high-resolution WebGL map was still in memory.
+  // Capture at a bounded scale; embedded map images retain their detail.
+  const rect = reportElement.getBoundingClientRect();
+  const snapshotScale = Math.min(
+    1.35,
+    2300 / Math.max(1, rect.width),
+    1700 / Math.max(1, rect.height),
+  );
   const canvas = await html2canvas(reportElement, {
     backgroundColor: "#ffffff",
-    scale: resolvedDpi / 96,
+    scale: snapshotScale,
     useCORS: true,
     logging: false,
     imageTimeout: 8000,
     removeContainer: true,
+    foreignObjectRendering: false,
+    onclone: (documentClone) => {
+      // Avoid animation frames being recorded differently from the print.
+      const style = documentClone.createElement("style");
+      style.textContent = "*, *::before, *::after { animation: none !important; transition: none !important; }";
+      documentClone.head.appendChild(style);
+    },
   });
   const pdf = new jsPDF({
     orientation: "landscape",
@@ -2159,7 +2187,7 @@ const createPdfReportFile = async (
     imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
 
   pdf.addImage(
-    canvas.toDataURL("image/jpeg", resolvedDpi >= 300 ? 0.98 : 0.96),
+    canvas.toDataURL("image/jpeg", 0.86),
     "JPEG",
     (pageWidth - imageWidth) / 2,
     (pageHeight - imageHeight) / 2,
@@ -2611,7 +2639,7 @@ export default function Import({ map, filters, onClose }) {
       // lower-left inset is generated from the RUDA Principle Land Use Zoning
       // dataset and the uploaded KMZ is highlighted at its true location.
       await waitForMapRender(map);
-      const fallbackOverviewImage = map.getCanvas().toDataURL("image/png", 1);
+      const fallbackOverviewImage = map.getCanvas().toDataURL("image/jpeg", 0.9);
 
       // Resolve one canonical KMZ display label. Prefer the same _import_label
       // used by the map's symbol layer, then fall back to the uploaded file name.
@@ -2746,16 +2774,23 @@ export default function Import({ map, filters, onClose }) {
         ),
       );
 
+      // Capture the SAME completed print DOM while it is still accessible.
+      // Previously this happened after window.print(); closing the print tab
+      // or the dialog could invalidate the document, and high-DPI re-capture
+      // could exhaust Chrome memory. A failed PDF must not lose the KMZ log.
+      let reportFile = null;
+      try {
+        reportFile = await createPdfReportFile(printWindow, title, {
+          paperSize,
+          resolutionDpi,
+        });
+      } catch (reportError) {
+        console.error("Saved KMZ map PDF could not be generated", reportError);
+        setWarning("The map can be printed, but the saved PDF could not be generated. The KMZ log will still be saved.");
+      }
+
       printWindow.focus();
       printWindow.print();
-
-      // After the user has completed/cancelled the browser print dialog, create
-      // the exact same stored PDF copy for KMZ logs. This work is intentionally
-      // moved after window.print() for a faster user-facing workflow.
-      const reportFile = await createPdfReportFile(printWindow, title, {
-        paperSize,
-        resolutionDpi,
-      });
 
       const printedBy = (() => {
         try {
@@ -2768,7 +2803,7 @@ export default function Import({ map, filters, onClose }) {
 
       const logPayload = new FormData();
       logPayload.append("file", importedFile);
-      logPayload.append("report_file", reportFile);
+      if (reportFile) logPayload.append("report_file", reportFile);
       logPayload.append("file_name", importedFile.name);
       logPayload.append("file_size", String(importedFile.size));
       logPayload.append("project", String(filters?.projectId || ""));
