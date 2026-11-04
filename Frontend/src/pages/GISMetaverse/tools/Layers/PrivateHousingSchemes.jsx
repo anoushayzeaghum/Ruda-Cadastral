@@ -1,3 +1,4 @@
+import { upsertUniqueLabelSource, UNIQUE_LABEL_PROPERTY, VECTOR_LABEL_MIN_ZOOM } from "./LayerManager/_vectorLabelStandards";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import {
@@ -5,15 +6,14 @@ import {
   getIllegalHousingSchemesGeoJSON,
 } from "../../../../services/metaverseApi";
 import HousingSchemesStyle, {
-  createHousingSchemeCategoryConfig,
-  createHousingSchemeColorExpression,
-  normalizeHousingSchemeStatus,
+  RUDA_SCHEME_COLORS,
 } from "./LayerManager/PrivateHousingSchemes/HousingSchemesStyle";
 import IllegalHousingSchemeStyle, {
   ILLEGAL_HOUSING_SCHEME_COLOR,
   ILLEGAL_HOUSING_SCHEME_OUTLINE_COLOR,
 } from "./LayerManager/PrivateHousingSchemes/IllegalHousingSchemeStyle";
 import HousingSchemesAttribute from "./AttributeTable/PrivateHousingSchemes/HousingSchemesAttribute";
+import IllegalHousingSchemesAttribute from "./AttributeTable/PrivateHousingSchemes/IllegalHousingSchemesAttribute";
 
 const HOUSING_SOURCE_PREFIX = "gism-private-housing-schemes";
 const ILLEGAL_SOURCE_PREFIX = "gism-illegal-housing-schemes";
@@ -46,6 +46,7 @@ const getIds = (sourcePrefix) => ({
   outline: `${sourcePrefix}-outline`,
   line: `${sourcePrefix}-line`,
   point: `${sourcePrefix}-point`,
+  label: `${sourcePrefix}-label`,
 });
 
 const normalizeGeoJSON = (data) => {
@@ -60,13 +61,60 @@ const normalizeGeoJSON = (data) => {
   return { type: "FeatureCollection", features: [] };
 };
 
+// These are the backend attribute spellings used for the "Scheme Name"
+// column. Keep the values in the original fields for popups and tables.
+const HOUSING_SCHEME_NAME_FIELDS = [
+  "scheme_nam",
+  "scheme_name",
+  "Scheme_Name",
+  "Scheme Name",
+  "SCHEME_NAM",
+  "SCHEME_NAME",
+  "SCHEME NAME",
+];
+
+const normalizeHousingGeoJSON = (response) => {
+  const collection = normalizeGeoJSON(response);
+  return {
+    ...collection,
+    features: collection.features.map((feature) => {
+      const properties = feature?.properties || {};
+      const label = HOUSING_SCHEME_NAME_FIELDS
+        .map((key) => properties[key])
+        .find((value) =>
+          value != null &&
+          String(value).trim() !== "" &&
+          !["null", "none", "n/a", "-"].includes(String(value).trim().toLowerCase()),
+        );
+
+      // The private, underscore-prefixed property is ignored by the
+      // generic feature popup; it does not rename or replace Scheme Name.
+      if (label === undefined) return feature;
+      return {
+        ...feature,
+        properties: {
+          ...properties,
+          _housing_scheme_label: String(label).trim(),
+        },
+      };
+    }),
+  };
+};
+
+const housingLegendItems = Object.entries(RUDA_SCHEME_COLORS)
+  .filter(([status]) => status !== "underprocess")
+  .map(([status, color]) => ({
+    label: status.replace(/\b\w/g, (char) => char.toUpperCase()),
+    color,
+  }));
+
 function setMapLayerVisibility(map, sourcePrefix, visible) {
   if (!map) return;
 
   const ids = getIds(sourcePrefix);
   const visibility = visible ? "visible" : "none";
 
-  [ids.fill, ids.outline, ids.line, ids.point].forEach((layerId) => {
+  [ids.fill, ids.outline, ids.line, ids.point, ids.label].forEach((layerId) => {
     if (map.getLayer(layerId)) {
       map.setLayoutProperty(layerId, "visibility", visibility);
     }
@@ -119,6 +167,15 @@ function applyLayerStyle(map, sourcePrefix, opacity, style = {}) {
   if (map.getLayer(ids.point)) {
     map.setPaintProperty(ids.point, "circle-opacity", ratio);
     map.setPaintProperty(ids.point, "circle-stroke-opacity", ratio);
+  }
+
+  if (sourcePrefix === HOUSING_SOURCE_PREFIX && map.getLayer(ids.label)) {
+    map.setPaintProperty(
+      ids.label,
+      "text-color",
+      style.labelColor || style.dataDrivenColor || style.color,
+    );
+    map.setPaintProperty(ids.label, "text-opacity", ratio);
   }
 }
 
@@ -217,6 +274,49 @@ function addOrUpdateMapLayer(map, sourcePrefix, geojson, opacity, style = {}) {
     });
   }
 
+  // Labels use the same GeoJSON source and status-color symbology as the
+  // Housing Schemes polygons. The Mapbox zoom range controls appearance
+  // automatically; no separate zoom event handler is needed.
+  if (sourcePrefix === HOUSING_SOURCE_PREFIX) {
+    const labelSourceId = upsertUniqueLabelSource(
+      map, data, ids.source, ["_housing_scheme_label"],
+    );
+    const previousSource = map.getStyle?.()?.layers?.find((layer) => layer.id === ids.label)?.source;
+    if (map.getLayer(ids.label) && previousSource !== labelSourceId) {
+      map.removeLayer(ids.label);
+    }
+  }
+  if (sourcePrefix === HOUSING_SOURCE_PREFIX && !map.getLayer(ids.label)) {
+    map.addLayer({
+      id: ids.label,
+      type: "symbol",
+      source: `${ids.source}-unique-label-points`,
+      filter: ["has", UNIQUE_LABEL_PROPERTY],
+      minzoom: VECTOR_LABEL_MIN_ZOOM,
+      // Mapbox maxzoom is exclusive: 18.01 keeps labels visible at zoom 18.
+      maxzoom: style.labelMaxZoom ?? 18.01,
+      layout: {
+        visibility: "visible",
+        "symbol-placement": "point",
+        "text-field": ["get", UNIQUE_LABEL_PROPERTY],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 14, 11, 18, 14],
+        "text-max-width": 12,
+        "text-anchor": "center",
+        "text-allow-overlap": false,
+        "text-ignore-placement": false,
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": style.labelColor || style.dataDrivenColor || style.color,
+        "text-halo-color": style.labelHaloColor || "#ffffff",
+        "text-halo-width": style.labelHaloWidth ?? 1.8,
+        "text-halo-blur": 0.2,
+        "text-opacity": ratio,
+      },
+    });
+  }
+
   applyLayerStyle(map, sourcePrefix, opacity, style);
   setMapLayerVisibility(map, sourcePrefix, true);
 }
@@ -227,12 +327,16 @@ function removeMapLayer(map, sourcePrefix) {
   const ids = getIds(sourcePrefix);
 
   try {
-    [ids.point, ids.line, ids.outline, ids.fill].forEach((layerId) => {
+    [ids.label, ids.point, ids.line, ids.outline, ids.fill].forEach((layerId) => {
       if (map.style && map.getLayer?.(layerId)) {
         map.removeLayer(layerId);
       }
     });
 
+    const labelSourceId = `${ids.source}-unique-label-points`;
+    if (map.style && map.getSource?.(labelSourceId)) {
+      map.removeSource(labelSourceId);
+    }
     if (map.style && map.getSource?.(ids.source)) {
       map.removeSource(ids.source);
     }
@@ -250,8 +354,8 @@ export default function PrivateHousingSchemes({ map }) {
   const [housingLoading, setHousingLoading] = useState(false);
   const [housingOpacity, setHousingOpacity] = useState(100);
   const [housingStatus, setHousingStatus] = useState(null);
-  const [housingLegendItems, setHousingLegendItems] = useState([]);
   const [tableOpen, setTableOpen] = useState(false);
+  const [illegalTableOpen, setIllegalTableOpen] = useState(false);
 
   const [illegalVisible, setIllegalVisible] = useState(false);
   const [illegalLoading, setIllegalLoading] = useState(false);
@@ -270,7 +374,6 @@ export default function PrivateHousingSchemes({ map }) {
   const housingOpacityRef = useRef(housingOpacity);
   const housingGeoJSONRef = useRef(null);
   const housingRequestRef = useRef(null);
-  const housingLegendItemsRef = useRef([]);
 
   const illegalVisibleRef = useRef(illegalVisible);
   const illegalOpacityRef = useRef(illegalOpacity);
@@ -315,13 +418,6 @@ export default function PrivateHousingSchemes({ map }) {
     map.once("style.load", callback);
   };
 
-  const getHousingStyle = () => ({
-    ...HousingSchemesStyle,
-    dataDrivenColor: createHousingSchemeColorExpression(
-      housingLegendItemsRef.current,
-    ),
-  });
-
   const showHousingLayer = () => {
     const geojson = housingGeoJSONRef.current;
     if (!geojson) return;
@@ -334,7 +430,7 @@ export default function PrivateHousingSchemes({ map }) {
         HOUSING_SOURCE_PREFIX,
         geojson,
         housingOpacityRef.current,
-        getHousingStyle(),
+        HousingSchemesStyle,
       );
     });
   };
@@ -383,35 +479,9 @@ export default function PrivateHousingSchemes({ map }) {
 
     const request = (async () => {
       try {
-        const rawGeojson = normalizeGeoJSON(await getHousingSchemesGeoJSON());
-        const geojson = {
-          ...rawGeojson,
-          features: (rawGeojson.features || []).map((feature) => ({
-            ...feature,
-            properties: {
-              ...(feature?.properties || {}),
-              _ruda_status_key: normalizeHousingSchemeStatus(
-                feature?.properties?.ruda_st ??
-                  feature?.properties?.ruda_scheme,
-              ),
-            },
-          })),
-        };
-
+        const geojson = normalizeHousingGeoJSON(await getHousingSchemesGeoJSON());
         housingGeoJSONRef.current = geojson;
-
-        const categoryConfig = createHousingSchemeCategoryConfig(geojson);
-        housingLegendItemsRef.current = categoryConfig;
-        setHousingLegendItems(categoryConfig);
-
-        setHousingStatus(
-          geojson.features.length
-            ? categoryConfig.length
-              ? null
-              : "No RUDA status categories found"
-            : "No features",
-        );
-
+        setHousingStatus(geojson.features.length ? null : "No features");
         return geojson;
       } catch (error) {
         console.error("Failed to load Housing Schemes", error);
@@ -718,6 +788,18 @@ export default function PrivateHousingSchemes({ map }) {
                   )}
                 </span>
               </label>
+
+              <button
+                type="button"
+                className="shrink-0 rounded px-1 py-0.5 text-white/60 hover:bg-white/10 hover:text-white"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIllegalTableOpen(true);
+                }}
+                title="Open Illegal Housing Schemes attribute table"
+              >
+                <Grid3X3 size={14} />
+              </button>
             </div>
 
             <div className="mt-2 flex items-center gap-2 pl-6">
@@ -735,6 +817,29 @@ export default function PrivateHousingSchemes({ map }) {
                 {illegalOpacity}%
               </span>
             </div>
+
+            {illegalVisible && (
+              <div className="mt-3 pl-6">
+                <div className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-white/55">
+                  Legend
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-white/85">
+                  <span
+                    className="inline-block h-3.5 w-5 shrink-0 rounded-[1px] border-2"
+                    style={{
+                      backgroundColor: illegalFillEnabled
+                        ? illegalFillColor
+                        : "transparent",
+                      borderColor: illegalOutlineEnabled
+                        ? illegalOutlineColor
+                        : "transparent",
+                      opacity: illegalOpacity / 100,
+                    }}
+                  />
+                  <span>Illegal Housing Schemes</span>
+                </div>
+              </div>
+            )}
 
             {illegalVisible && (
               <div className="mt-3 space-y-3 pl-6">
@@ -860,6 +965,14 @@ export default function PrivateHousingSchemes({ map }) {
           map={map}
           geojson={housingGeoJSONRef.current || null}
           onClose={() => setTableOpen(false)}
+        />
+      )}
+
+      {illegalTableOpen && (
+        <IllegalHousingSchemesAttribute
+          map={map}
+          geojson={illegalGeoJSONRef.current || null}
+          onClose={() => setIllegalTableOpen(false)}
         />
       )}
     </div>

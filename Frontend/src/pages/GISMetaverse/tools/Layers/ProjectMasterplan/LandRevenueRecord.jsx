@@ -1,3 +1,5 @@
+import { setBasemapMauzaPlaceFilter } from "../LayerManager/_basemapPlaceLabelFilter";
+import { upsertUniqueLabelSource, UNIQUE_LABEL_PROPERTY, VECTOR_LABEL_MIN_ZOOM } from "../LayerManager/_vectorLabelStandards";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LAYER_PANEL_SCROLL } from "../_layerScroll";
 import {
@@ -119,7 +121,7 @@ const POLYGON_STYLES = {
     fillOpacityMultiplier: 0,
     lineWidth: 1.25,
     labelColor: "#1f7a3a",
-    labelMinZoom: 14.6,
+    labelMinZoom: 14,
   },
 };
 
@@ -404,13 +406,21 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
     map.setPaintProperty(ids.line, "line-opacity", o);
   }
 
+  const labelSourceId = key === "moza"
+    ? upsertUniqueLabelSource(map, geojson, ids.src, ["mauza", "Mauza", "moza", "Moza", "mouza", "name", "Name"])
+    : ids.src;
+  const currentLabelSource = map.getStyle?.()?.layers?.find((layer) => layer.id === ids.label)?.source;
+  if (ids.label && map.getLayer(ids.label) && currentLabelSource !== labelSourceId) {
+    map.removeLayer(ids.label);
+  }
+
   if (ids.label && !map.getLayer(ids.label)) {
     map.addLayer(
       {
         id: ids.label,
         type: "symbol",
-        source: ids.src,
-        minzoom: style.labelMinZoom ?? 14,
+        source: labelSourceId,
+        minzoom: VECTOR_LABEL_MIN_ZOOM,
         paint: {
           "text-color": style.labelColor || style.lineColor,
           "text-halo-color": "#ffffff",
@@ -419,11 +429,13 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
         },
         layout: {
           visibility: "visible",
-          "text-field": getLabelExpression(key),
+          "text-field": key === "moza" ? ["get", UNIQUE_LABEL_PROPERTY] : getLabelExpression(key),
           "text-size": ["interpolate", ["linear"], ["zoom"], 14, 9, 18, 12],
           "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
           "text-allow-overlap": false,
           "text-ignore-placement": false,
+          "symbol-placement": "point",
+          "text-padding": 8,
         },
       },
       beforeId,
@@ -438,11 +450,15 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
     map.setPaintProperty(ids.label, "text-opacity", o);
   }
 
+  if (key === "moza") {
+    setBasemapMauzaPlaceFilter(map, "project-lis-mauza", (geojson.features || []).map(getMauzaName));
+  }
   reorderLandRevenueLayers(map);
 }
 
 function hideLayer(map, key) {
   if (!map) return;
+  if (key === "moza") setBasemapMauzaPlaceFilter(map, "project-lis-mauza", []);
 
   const ids = IDS[key];
   if (!ids) return;

@@ -1,7 +1,9 @@
+import { setBasemapMauzaPlaceFilter } from "./LayerManager/_basemapPlaceLabelFilter";
 import { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { LAYER_PANEL_SCROLL } from "./_layerScroll";
-import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import { AlignJustify, CaseSensitive, ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import { createPortal } from "react-dom";
 import MauzaBoundaryAttribute from "./AttributeTable/Cadastral/MauzaBoundaryAttribute";
 import KhasraBoundaryAttribute from "./AttributeTable/Cadastral/KhasraBoundaryAttribute";
 import SquareBoundaryAttribute from "./AttributeTable/Cadastral/SquareBoundaryAttribute";
@@ -69,6 +71,13 @@ const BOUNDARY_LAYER_CONFIG = {
   square: { addLayer: addSquareBoundaryLayer },
   khasra: { addLayer: addKhasraBoundaryLayer },
 };
+
+// NULL means keep the existing zoom-responsive styling until Apply is clicked.
+const DEFAULT_MAUZA_CONTROL_VALUES = Object.freeze({ lineWidth: 1.5, labelSize: 12 });
+const MAUZA_SIZE_LIMITS = Object.freeze({
+  line: { min: 0.5, max: 20, step: 0.5, title: "Mauza boundary line width", unit: "px" },
+  label: { min: 6, max: 48, step: 1, title: "Mauza label size", unit: "px" },
+});
 
 const MAUZA_DEF = {
   key: "moza",
@@ -559,7 +568,7 @@ function ensureKhasraVectorLayer(map, opacity, color) {
         type: "symbol",
         source: sourceId,
         "source-layer": KHASRA_SOURCE_LAYER,
-        minzoom: 15,
+        minzoom: 14,
         layout: {
           visibility,
           "text-field": getLabelExpression("khasra"),
@@ -641,7 +650,7 @@ function updateKhasraVectorStyle(map, opacity, color) {
 //   });
 // }
 
-function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
+function addOrUpdatePolygonLayer(map, key, geojson, opacity, color, mauzaSizes = null) {
   const config = BOUNDARY_LAYER_CONFIG[key];
   if (!map || !config || !geojson) return;
 
@@ -651,13 +660,21 @@ function addOrUpdatePolygonLayer(map, key, geojson, opacity, color) {
     color,
     opacity / 100,
     getLandRevenueBeforeId(map),
+    key === "moza" ? mauzaSizes : undefined,
   );
 
+  if (key === "moza") {
+    setBasemapMauzaPlaceFilter(
+      map, "cadastral-mauza",
+      (geojson?.features || []).map(getMauzaName),
+    );
+  }
   reorderLandRevenueLayers(map);
 }
 
 function hideLayer(map, key) {
   if (!map) return;
+  if (key === "moza") setBasemapMauzaPlaceFilter(map, "cadastral-mauza", []);
 
   if (key === "masawi") {
     try {
@@ -680,7 +697,7 @@ function hideLayer(map, key) {
   } catch (_) {}
 }
 
-function updateOpacity(map, key, opacity, geojson, color) {
+function updateOpacity(map, key, opacity, geojson, color, mauzaSizes = null) {
   if (!map) return;
 
   if (key === "masawi") {
@@ -693,13 +710,13 @@ function updateOpacity(map, key, opacity, geojson, color) {
   }
 
   if (geojson) {
-    addOrUpdatePolygonLayer(map, key, geojson, opacity, color);
+    addOrUpdatePolygonLayer(map, key, geojson, opacity, color, mauzaSizes);
   }
 }
 
-function updateColor(map, key, color, geojson, opacity) {
+function updateColor(map, key, color, geojson, opacity, mauzaSizes = null) {
   if (!map || key === "masawi" || !geojson) return;
-  addOrUpdatePolygonLayer(map, key, geojson, opacity, color);
+  addOrUpdatePolygonLayer(map, key, geojson, opacity, color, mauzaSizes);
 }
 
 function addOrUpdateMasawiLayer(map, opacity) {
@@ -738,6 +755,10 @@ export default function Cadastral({ map, selectedProjectId }) {
   const [visibleKhasraGeojson, setVisibleKhasraGeojson] = useState(emptyFC);
   const [open, setOpen] = useState(false);
   const [activeTable, setActiveTable] = useState(null);
+  const [mauzaSizeDialog, setMauzaSizeDialog] = useState(null);
+  const [mauzaSizes, setMauzaSizes] = useState({ lineWidth: null, labelSize: null });
+  // Keep a synchronous reference so in-flight GeoJSON loads use the latest sizes.
+  const mauzaSizesRef = useRef(mauzaSizes);
   const [extraDetailsOpen, setExtraDetailsOpen] = useState({});
   const [possessionTypeVisibility, setPossessionTypeVisibility] = useState(
     () => ({ ...DEFAULT_POSSESSION_TYPE_VISIBILITY }),
@@ -764,6 +785,30 @@ export default function Cadastral({ map, selectedProjectId }) {
 
   const selectedProjectKey = selectedProjectId ? String(selectedProjectId) : "";
   const hasSelectedProject = Boolean(selectedProjectKey);
+
+  const applyMauzaSize = (kind, numericValue) => {
+    const limits = MAUZA_SIZE_LIMITS[kind];
+    if (!limits || !Number.isFinite(numericValue) || numericValue < limits.min || numericValue > limits.max) return;
+
+    const field = kind === "line" ? "lineWidth" : "labelSize";
+    const nextSizes = { ...mauzaSizesRef.current, [field]: numericValue };
+    mauzaSizesRef.current = nextSizes;
+    setMauzaSizes(nextSizes);
+    setMauzaSizeDialog(null);
+
+    // Update immediately: do not need to reload Mauza GeoJSON or change colors.
+    if (!map || !layersRef.current.moza?.visible) return;
+    try {
+      if (kind === "line" && map.getLayer(MAUZA_BOUNDARY_IDS.line)) {
+        map.setPaintProperty(MAUZA_BOUNDARY_IDS.line, "line-width", numericValue);
+      }
+      if (kind === "label" && map.getLayer(MAUZA_BOUNDARY_IDS.label)) {
+        map.setLayoutProperty(MAUZA_BOUNDARY_IDS.label, "text-size", numericValue);
+      }
+    } catch (error) {
+      console.warn("Mauza size will be applied when the layer is next drawn:", error);
+    }
+  };
 
   const setVisible = (key, visible) => {
     layersRef.current = {
@@ -805,7 +850,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     }
 
     const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
-    updateOpacity(map, key, opacity, geojson, currentState?.color);
+    updateOpacity(map, key, opacity, geojson, currentState?.color, mauzaSizesRef.current);
   };
 
   const setColor = (key, color) => {
@@ -840,7 +885,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     }
 
     const geojson = key === "moza" ? mauzaGeojson : cachedData.current[key];
-    updateColor(map, key, color, geojson, currentState?.opacity ?? 100);
+    updateColor(map, key, color, geojson, currentState?.opacity ?? 100, mauzaSizesRef.current);
   };
 
   const setLoading = (key, loading) => {
@@ -884,6 +929,7 @@ export default function Cadastral({ map, selectedProjectId }) {
           cachedGeojson,
           layersRef.current.moza.opacity,
           layersRef.current.moza.color,
+          mauzaSizesRef.current,
         );
         if (zoom) fitToGeojson(map, cachedGeojson);
       }
@@ -916,6 +962,7 @@ export default function Cadastral({ map, selectedProjectId }) {
           completeMauzaGeojson,
           layersRef.current.moza.opacity,
           layersRef.current.moza.color,
+          mauzaSizesRef.current,
         );
         if (zoom) fitToGeojson(map, completeMauzaGeojson);
       }
@@ -1201,8 +1248,31 @@ export default function Cadastral({ map, selectedProjectId }) {
       mauzaGeojson,
       layers.moza.opacity,
       layers.moza.color,
+      mauzaSizesRef.current,
     );
   }, [map, mauzaGeojson, layers.moza.visible]);
+
+  // A basemap/style change removes custom Mapbox layers; restore Mauza with
+  // the user's selected line width and label size when the new style is ready.
+  useEffect(() => {
+    if (!map) return;
+
+    const restoreMauzaOnStyleLoad = () => {
+      const state = layersRef.current.moza;
+      if (!state?.visible || !mauzaGeojson?.features?.length) return;
+      try {
+        addOrUpdatePolygonLayer(
+          map, "moza", mauzaGeojson, state.opacity, state.color,
+          mauzaSizesRef.current,
+        );
+      } catch (error) {
+        console.warn("Mauza styling could not be restored:", error);
+      }
+    };
+
+    map.on("style.load", restoreMauzaOnStyleLoad);
+    return () => map.off("style.load", restoreMauzaOnStyleLoad);
+  }, [map, mauzaGeojson]);
 
   useEffect(() => {
     if (!map || !layers.khasra.visible) return;
@@ -1638,6 +1708,10 @@ export default function Cadastral({ map, selectedProjectId }) {
             onColorChange={(value) => setColor("moza", value)}
             colorEditable
             onTableOpen={() => setActiveTable("moza")}
+            onLineWidthOpen={() => setMauzaSizeDialog("line")}
+            onLabelSizeOpen={() => setMauzaSizeDialog("label")}
+            lineWidthValue={mauzaSizes.lineWidth}
+            labelSizeValue={mauzaSizes.labelSize}
             onDropdownToggle={() => {
               setMauzaPanelOpen((prev) => {
                 const nextOpen = !prev;
@@ -1703,7 +1777,7 @@ export default function Cadastral({ map, selectedProjectId }) {
 
           {layers.moza.visible && (
             <InlineLayerLegend
-              items={[lineLegend("Mauza Boundary", layers.moza.color || MAUZA_DEF.color, { width: 1.5 })]}
+              items={[lineLegend("Mauza Boundary", layers.moza.color || MAUZA_DEF.color, { width: mauzaSizes.lineWidth ?? 1.5 })]}
               opacity={layers.moza.opacity}
             />
           )}
@@ -1711,6 +1785,20 @@ export default function Cadastral({ map, selectedProjectId }) {
           {LAYER_DEFS.map((definition) => renderBoundaryRow(definition))}
           {EXTRA_LAYER_DEFS.map(renderExtraLayerRow)}
         </div>
+      )}
+
+      {mauzaSizeDialog && typeof document !== "undefined" && createPortal(
+        <MauzaSizeDialog
+          key={mauzaSizeDialog}
+          kind={mauzaSizeDialog}
+          initialValue={
+            (mauzaSizeDialog === "line" ? mauzaSizes.lineWidth : mauzaSizes.labelSize) ??
+            DEFAULT_MAUZA_CONTROL_VALUES[mauzaSizeDialog === "line" ? "lineWidth" : "labelSize"]
+          }
+          onCancel={() => setMauzaSizeDialog(null)}
+          onApply={(value) => applyMauzaSize(mauzaSizeDialog, value)}
+        />,
+        document.body,
       )}
 
       {activeTable === "moza" && (
@@ -1792,6 +1880,10 @@ function LayerItem({
   onColorChange,
   onDropdownToggle,
   onTableOpen,
+  onLineWidthOpen,
+  onLabelSizeOpen,
+  lineWidthValue,
+  labelSizeValue,
   disabled = false,
   colorEditable = false,
   children,
@@ -1844,6 +1936,30 @@ function LayerItem({
         </label>
 
         <div className="flex shrink-0 items-center gap-1">
+          {onLineWidthOpen && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(event) => { event.stopPropagation(); onLineWidthOpen(); }}
+              className="rounded px-1 py-0.5 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-40"
+              title={`Set Mauza line width${lineWidthValue == null ? "" : ` (currently ${lineWidthValue}px)`}`}
+              aria-label="Change Mauza Boundary line width"
+            >
+              <AlignJustify size={14} />
+            </button>
+          )}
+          {onLabelSizeOpen && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={(event) => { event.stopPropagation(); onLabelSizeOpen(); }}
+              className="rounded px-1 py-0.5 text-white/70 hover:bg-white/10 hover:text-white disabled:opacity-40"
+              title={`Set Mauza label size${labelSizeValue == null ? "" : ` (currently ${labelSizeValue}px)`}`}
+              aria-label="Change Mauza Boundary label size"
+            >
+              <CaseSensitive size={16} />
+            </button>
+          )}
           {hasTable ? (
             <button
               type="button"
@@ -1904,6 +2020,58 @@ function LayerItem({
       </div>
 
       {children}
+    </div>
+  );
+}
+
+
+// The layer panel is scrollable. A portal keeps the dialog from being clipped.
+function MauzaSizeDialog({ kind, initialValue, onCancel, onApply }) {
+  const config = MAUZA_SIZE_LIMITS[kind];
+  const [draftValue, setDraftValue] = useState(String(initialValue));
+  const parsed = Number(draftValue);
+  const valid = draftValue.trim() !== "" && Number.isFinite(parsed) &&
+    parsed >= config.min && parsed <= config.max;
+
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onCancel();
+    }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="mauza-size-heading" className="w-full max-w-sm rounded-lg border border-[#246e51] bg-[#092a20] p-5 text-white shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
+        <h2 id="mauza-size-heading" className="mb-2 text-base font-semibold">{config.title}</h2>
+        <p className="mb-4 text-xs text-white/65">
+          Enter a size in pixels. Apply to update the Mauza Boundary {kind === "line" ? "outline" : "labels"} on the map. Until a custom value is applied, the existing zoom-based size is retained.
+        </p>
+        <form onSubmit={(event) => { event.preventDefault(); if (valid) onApply(parsed); }}>
+          <label htmlFor="mauza-size-input" className="mb-1 block text-xs font-medium">
+            {kind === "line" ? "Line width" : "Label font size"} ({config.unit})
+          </label>
+          <input
+            id="mauza-size-input"
+            autoFocus
+            type="number"
+            min={config.min}
+            max={config.max}
+            step="any"
+            value={draftValue}
+            onChange={(event) => setDraftValue(event.target.value)}
+            className="w-full rounded border border-white/25 bg-white px-3 py-2 text-sm text-[#0f2922] outline-none focus:ring-2 focus:ring-[#65c96b]"
+          />
+          <p className="mt-1 text-[11px] text-white/55">Allowed range: {config.min}–{config.max} {config.unit}</p>
+          <div className="mt-5 flex justify-end gap-2">
+            <button type="button" onClick={onCancel} className="rounded border border-white/30 px-4 py-2 text-xs font-semibold hover:bg-white/10">Cancel</button>
+            <button type="submit" disabled={!valid} className="rounded bg-[#65c96b] px-4 py-2 text-xs font-bold text-[#0d3022] hover:bg-[#8adb8f] disabled:cursor-not-allowed disabled:opacity-40">Apply</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

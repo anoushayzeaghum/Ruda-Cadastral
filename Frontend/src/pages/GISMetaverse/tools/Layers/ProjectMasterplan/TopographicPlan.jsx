@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import axios from "axios";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import LayerRow from "../_LayerRow";
 import { pointLegend, lineLegend, polygonLegend } from "../_legendUtils";
 import ContoursAttribute from "../AttributeTable/ProjectMasterPlan/TopographicPlan/ContoursAttribute";
+import SpotLevelAttribute from "../AttributeTable/ProjectMasterPlan/TopographicPlan/SpotLevelAttribute";
+import VectorGeoJSONAttribute from "../AttributeTable/VectorGeoJSONAttribute";
 import { getContourGeoJSON } from "../../../../../services/metaverseApi";
 
 const DSM_SOURCE = "gis-dsm-source";
@@ -10,7 +13,55 @@ const DSM_LAYER = "gis-dsm-layer";
 const DTM_SOURCE = "gis-dtm-source";
 const DTM_LAYER = "gis-dtm-layer";
 const TOPO_SOURCE = "gis-topo-cb1-source";
+const SPOT_LEVEL_SOURCE = "gis-topo-spotlevel-source";
+const EMPTY_GEOJSON = { type: "FeatureCollection", features: [] };
 const CONTOUR_SOURCE = "gis-project-contours-source";
+
+// Dedicated map endpoint returns GeoJSON, unlike the regular Spot Level
+// ModelSerializer listing. Keep the original X/Y/ZZ attributes in properties.
+const SPOT_LEVEL_API_BASE = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
+).replace(/\/$/, "");
+
+const loadSpotLevelMapGeoJSON = async (projectId) => {
+  const response = await axios.get(
+    `${SPOT_LEVEL_API_BASE}/spot-level/map-geojson/`,
+    { params: { project_id: projectId } },
+  );
+  const payload = response.data?.data ?? response.data;
+  if (payload?.type !== "FeatureCollection" || !Array.isArray(payload.features)) {
+    throw new Error("Spot Level API did not return a GeoJSON FeatureCollection.");
+  }
+
+  const features = payload.features.filter((feature) => {
+    const coords = feature?.geometry?.coordinates;
+    return feature?.type === "Feature" &&
+      feature?.geometry?.type === "Point" &&
+      Array.isArray(coords) && coords.length >= 2 &&
+      Number.isFinite(coords[0]) && Number.isFinite(coords[1]) &&
+      Math.abs(coords[0]) <= 180 && Math.abs(coords[1]) <= 90;
+  });
+
+  if (features.length !== payload.features.length) {
+    console.warn("[SpotLevel] Skipped invalid map coordinates", {
+      received: payload.features.length,
+      valid: features.length,
+    });
+  }
+  if (import.meta.env.DEV) {
+    console.info("[SpotLevel] Map features loaded", {
+      projectId,
+      count: features.length,
+      firstCoordinate: features[0]?.geometry?.coordinates,
+      firstElevation: features[0]?.properties?.ZZ,
+    });
+  }
+  return { type: "FeatureCollection", features };
+};
+
+
+const isTopoBoundaryFeature = (p) =>
+  ["Builtup", "Park", "Green Belt", "Road Track", "Manholes", "Light Poles"].includes(p.layer);
 
 const TOPOGRAPHIC_COLORS = {
   spotLevel: "#a855f7",
@@ -91,11 +142,6 @@ const SPOT_LEVEL_LAYERS = [
   {
     id: "gis-topo-spotlevel-circle",
     type: "circle",
-    filter: [
-      "in",
-      ["downcase", ["to-string", ["get", "layer"]]],
-      ["literal", ["spot level", "spotlevel", "spot levels"]],
-    ],
     baseOpacity: 0.85,
     paint: {
       "circle-color": "#a855f7",
@@ -223,6 +269,8 @@ export default function TopographicPlan({
   const topoOpacity = layerVisibility.topographyOpacity ?? 80;
   const [topoLoading, setTopoLoading] = useState(false);
   const topoDataRef = useRef(null);
+  const spotDataRef = useRef(null);
+  const spotProjectRef = useRef(null);
   const contourDataRef = useRef(null);
 
   const updateTopographicColor = (layers, color) => {
@@ -257,6 +305,8 @@ export default function TopographicPlan({
 
   useEffect(() => {
     contourDataRef.current = null;
+    spotDataRef.current = null;
+    spotProjectRef.current = selectedProjectId;
     if (selectedProjectId) return;
     setSpotLevelVisible(false);
     setContoursVisible(false);
@@ -267,77 +317,91 @@ export default function TopographicPlan({
 
   useEffect(() => {
     if (!map) return;
+    let cancelled = false;
     const anyGeoJsonLayerVisible =
       spotLevelVisible || contoursVisible || topoVisible;
 
-    const renderLayers = (geojson, contourGeojson) => {
-      if (!map.getSource(TOPO_SOURCE)) {
-        map.addSource(TOPO_SOURCE, { type: "geojson", data: geojson });
-      } else {
-        map.getSource(TOPO_SOURCE).setData(geojson);
-      }
-
-      if (!map.getSource(CONTOUR_SOURCE)) {
-        map.addSource(CONTOUR_SOURCE, {
-          type: "geojson",
-          data: contourGeojson,
-        });
-      } else {
-        map.getSource(CONTOUR_SOURCE).setData(contourGeojson);
-      }
+    // The Spot Level shapefile now comes from the backend /spot-level/ API,
+    // and not from Topography.geojson (which contained obsolete Z attributes).
+    const renderLayers = (geojson, contourGeojson, spotGeojson) => {
+      if (cancelled) return;
+      const updateSource = (id, data) => {
+        if (!map.getSource(id)) {
+          map.addSource(id, { type: "geojson", data });
+        } else {
+          map.getSource(id).setData(data);
+        }
+      };
+      updateSource(TOPO_SOURCE, geojson);
+      updateSource(CONTOUR_SOURCE, contourGeojson);
+      updateSource(SPOT_LEVEL_SOURCE, spotGeojson);
 
       addOrUpdateGeoJsonLayers(
-        map,
-        SPOT_LEVEL_LAYERS,
-        spotLevelVisible,
-        spotLevelOpacity,
+        map, SPOT_LEVEL_LAYERS, spotLevelVisible, spotLevelOpacity,
+        SPOT_LEVEL_SOURCE,
       );
       addOrUpdateGeoJsonLayers(
-        map,
-        CONTOUR_LAYERS,
-        contoursVisible,
-        contoursOpacity,
-        CONTOUR_SOURCE,
+        map, CONTOUR_LAYERS, contoursVisible, contoursOpacity, CONTOUR_SOURCE,
       );
       addOrUpdateGeoJsonLayers(
-        map,
-        TOPOGRAPHIC_BOUNDARY_LAYERS,
-        topoVisible,
-        topoOpacity,
+        map, TOPOGRAPHIC_BOUNDARY_LAYERS, topoVisible, topoOpacity,
       );
-
       updateTopographicColor(SPOT_LEVEL_LAYERS, spotLevelColor);
       updateTopographicColor(CONTOUR_LAYERS, contoursColor);
-
-      // if (anyGeoJsonLayerVisible) flyToChaharbagh();
     };
 
-    if (topoDataRef.current && contourDataRef.current) {
-      renderLayers(topoDataRef.current, contourDataRef.current);
-      return;
+    if (!anyGeoJsonLayerVisible) {
+      // A previously added source/layer must also be hidden when unchecked.
+      for (const layer of [
+        ...SPOT_LEVEL_LAYERS, ...CONTOUR_LAYERS,
+        ...TOPOGRAPHIC_BOUNDARY_LAYERS,
+      ]) {
+        if (map.getLayer(layer.id)) {
+          map.setLayoutProperty(layer.id, "visibility", "none");
+        }
+      }
+      return () => { cancelled = true; };
     }
 
-    if (!anyGeoJsonLayerVisible) return;
+    if (spotProjectRef.current !== selectedProjectId) {
+      spotProjectRef.current = selectedProjectId;
+      spotDataRef.current = null;
+    }
+
+    // Fetch only the layer datasets actually needed; cached data is reused.
+    const loadTopography = topoVisible
+      ? topoDataRef.current
+        ? Promise.resolve(topoDataRef.current)
+        : fetch("/Topogeojson_backup/Topography.geojson").then((res) => {
+            if (!res.ok) throw new Error(`Topography HTTP ${res.status}`);
+            return res.json();
+          })
+      : Promise.resolve(topoDataRef.current || EMPTY_GEOJSON);
+    const loadContours = contoursVisible
+      ? contourDataRef.current
+        ? Promise.resolve(contourDataRef.current)
+        : getContourGeoJSON(selectedProjectId)
+      : Promise.resolve(contourDataRef.current || EMPTY_GEOJSON);
+    const loadSpotLevels = spotLevelVisible && selectedProjectId
+      ? spotDataRef.current
+        ? Promise.resolve(spotDataRef.current)
+        : loadSpotLevelMapGeoJSON(selectedProjectId)
+      : Promise.resolve(spotDataRef.current || EMPTY_GEOJSON);
 
     setTopoLoading(true);
-    Promise.all([
-      topoDataRef.current
-        ? Promise.resolve(topoDataRef.current)
-        : fetch("/Topogeojson_backup/Topography.geojson").then((response) => {
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.json();
-          }),
-      contourDataRef.current
-        ? Promise.resolve(contourDataRef.current)
-        : getContourGeoJSON(selectedProjectId),
-    ])
-      .then(([geojson, contourGeojson]) => {
-        topoDataRef.current = geojson;
-        contourDataRef.current = contourGeojson;
-        renderLayers(geojson, contourGeojson);
+    Promise.all([loadTopography, loadContours, loadSpotLevels])
+      .then(([topo, contours, spots]) => {
+        if (cancelled) return;
+        if (topoVisible) topoDataRef.current = topo;
+        if (contoursVisible) contourDataRef.current = contours;
+        if (spotLevelVisible) spotDataRef.current = spots;
+        renderLayers(topo, contours, spots);
       })
-      .catch((error) => console.error("Topo GeoJSON load error:", error))
-      .finally(() => setTopoLoading(false));
+      .catch((error) => console.error("Topographic/Spot Level load error:", error, error?.response?.data))
+      .finally(() => {
+        if (!cancelled) setTopoLoading(false);
+      });
+    return () => { cancelled = true; };
   }, [
     map,
     selectedProjectId,
@@ -427,6 +491,7 @@ export default function TopographicPlan({
               updateTopographicColor(SPOT_LEVEL_LAYERS, color);
             }}
             legendItems={[pointLegend("Spot Level", "#a855f7")]}
+            onTableOpen={() => setActiveAttributeTable("spotLevel")}
           />
 
           <LayerRow
@@ -448,6 +513,7 @@ export default function TopographicPlan({
 
           <LayerRow
             label="Topographic Boundary"
+            onTableOpen={() => setActiveAttributeTable("topographicBoundary")}
             color={TOPOGRAPHIC_COLORS.topography}
             checked={topoVisible}
             disabled={!hasSelectedProject}
@@ -487,6 +553,16 @@ export default function TopographicPlan({
         </div>
       )}
 
+      {activeAttributeTable === "spotLevel" && (
+        <SpotLevelAttribute map={map} selectedProjectId={selectedProjectId}
+          onClose={() => setActiveAttributeTable(null)} />
+      )}
+      {activeAttributeTable === "topographicBoundary" && (
+        <VectorGeoJSONAttribute map={map} title="Topographic Boundary"
+          sourceIds={[TOPO_SOURCE]} publicUrl="/Topogeojson_backup/Topography.geojson"
+          filterProperties={isTopoBoundaryFeature}
+          onClose={() => setActiveAttributeTable(null)} />
+      )}
       {activeAttributeTable === "contours" && (
         <ContoursAttribute
           map={map}

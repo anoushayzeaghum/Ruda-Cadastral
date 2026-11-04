@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
 import WaterSupplyPointAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/WaterSupplyPointAttribute";
 import WaterSupplyLevelAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/WaterSupplyLevelAttribute";
 import SewagePointAttribute from "../AttributeTable/ProjectMasterPlan/Utilities/SewagePointAttribute";
+import VectorGeoJSONAttribute from "../AttributeTable/VectorGeoJSONAttribute";
 import {
   API_BASE,
   getMapSourceGeoJSON,
@@ -406,6 +407,10 @@ export default function Utilities({
         return <WaterSupplyLevelAttribute {...commonProps} />;
       case "sewagePoints":
         return <SewagePointAttribute {...commonProps} />;
+      case "sewerLines":
+        return <VectorGeoJSONAttribute {...commonProps} title="Sewer Lines"
+          sourceIds={[UTILITY_LAYER_STYLES.sewerLines.sourceId]}
+          endpoint={UTILITY_LAYER_STYLES.sewerLines.endpoint} />;
       default:
         return null;
     }
@@ -537,6 +542,7 @@ export default function Utilities({
             checked={!!layerVisibility.sewerLines}
             color={styles.sewerLines.color}
             label="Sewer Lines"
+            onTableOpen={() => setActiveAttributeTable("sewerLines")}
             opacity={styles.sewerLines.opacity}
             onChange={() => toggleLayer("sewerLines")}
             onOpacityChange={(value) => updateOpacity("sewerLines", value)}

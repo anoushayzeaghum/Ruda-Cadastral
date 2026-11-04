@@ -35,7 +35,7 @@ export function addKhasraBoundaryLayer(
     lineWidth: ["interpolate", ["linear"], ["zoom"], 8, 0.5, 16, 0.75],
     fillOpacity: 0,
     labelExpression: KHASRA_LABEL,
-    labelMinZoom: 14.6,
+    labelMinZoom: 14,
     beforeId,
   });
 }

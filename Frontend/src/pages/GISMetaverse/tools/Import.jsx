@@ -14,6 +14,7 @@ import shp from "shpjs";
 import JSZip from "jszip";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import mapboxgl from "mapbox-gl";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import RudaLogo from "../../../assets/Ruda.png";
 import RudaLandManagementLogo from "../../../assets/RUDA L&M.png";
@@ -66,6 +67,23 @@ const IMPORTED_KMZ_STYLE = Object.freeze({
   outlineWidth: 3,
   legendFill: "rgba(209, 213, 219, 0.34)",
 });
+
+const PRINT_PAPER_SIZES = Object.freeze({
+  a4: { key: "a4", label: "A4", widthMm: 297, heightMm: 210 },
+  a3: { key: "a3", label: "A3", widthMm: 420, heightMm: 297 },
+});
+
+const PRINT_DPI_OPTIONS = Object.freeze([150, 200, 300]);
+
+const normalizePrintPaperSize = (value) =>
+  PRINT_PAPER_SIZES[String(value || "").toLowerCase()] || PRINT_PAPER_SIZES.a4;
+
+const normalizePrintDpi = (value) => {
+  const dpi = Number(value);
+  return PRINT_DPI_OPTIONS.includes(dpi) ? dpi : 200;
+};
+
+const mmToPixels = (mm, dpi) => Math.round((Number(mm) / 25.4) * Number(dpi));
 
 // Temporary print-only callout used on the main KMZ print map.
 // It replaces the repeated polygon text labels with one cartographic callout
@@ -1473,7 +1491,7 @@ const captureMapWithKmzPrintCallout = ({ map, importedGeoJSON, label }) => {
 
   const bounds = bbox(importedGeoJSON);
   if (!bounds.every((value) => Number.isFinite(value))) {
-    return outputCanvas.toDataURL("image/png", 1);
+    return outputCanvas.toDataURL("image/jpeg", 0.92);
   }
 
   const centerLngLat = [
@@ -1563,11 +1581,131 @@ const captureMapWithKmzPrintCallout = ({ map, importedGeoJSON, label }) => {
   ctx.fillText(safeLabel, boxX + padX, boxY + boxHeight / 2, measuredTextWidth);
 
   ctx.restore();
-  return outputCanvas.toDataURL("image/png", 1);
+  return outputCanvas.toDataURL("image/jpeg", 0.92);
+};
+
+
+/**
+ * Render a dedicated high-resolution Mapbox canvas for printing. This preserves
+ * the current map camera/style while avoiding interpolation of the visible
+ * on-screen canvas. If the off-screen render fails, callers fall back to the
+ * existing live-map capture path.
+ */
+const captureHighResolutionKmzPrintMap = async ({
+  map,
+  importedGeoJSON,
+  label,
+  paperSize = "a4",
+  resolutionDpi = 200,
+}) => {
+  if (!map?.getStyle || !map?.getCenter) {
+    throw new Error("High-resolution print map is unavailable.");
+  }
+
+  const paper = normalizePrintPaperSize(paperSize);
+  const dpi = normalizePrintDpi(resolutionDpi);
+  // A3 at 300 DPI exceeds 17 million WebGL pixels before the annotation
+  // canvas, HTML print page and PDF snapshot are allocated. Cap the offscreen
+  // rendering area to keep the workflow stable in ordinary Chrome sessions.
+  const requestedWidth = mmToPixels(paper.widthMm, dpi);
+  const requestedHeight = mmToPixels(paper.heightMm, dpi);
+  const memoryScale = Math.min(
+    1,
+    3072 / requestedWidth,
+    3072 / requestedHeight,
+    Math.sqrt(5_000_000 / (requestedWidth * requestedHeight)),
+  );
+  const targetWidth = Math.max(1, Math.round(requestedWidth * memoryScale));
+  const targetHeight = Math.max(1, Math.round(requestedHeight * memoryScale));
+
+  const container = document.createElement("div");
+  container.setAttribute("aria-hidden", "true");
+  Object.assign(container.style, {
+    position: "fixed",
+    left: "-100000px",
+    top: "0",
+    width: `${targetWidth}px`,
+    height: `${targetHeight}px`,
+    pointerEvents: "none",
+    opacity: "0.001",
+    overflow: "hidden",
+  });
+  document.body.appendChild(container);
+
+  let printMap = null;
+  try {
+    const currentStyle = map.getStyle();
+    let styleClone;
+    try {
+      styleClone =
+        typeof structuredClone === "function"
+          ? structuredClone(currentStyle)
+          : JSON.parse(JSON.stringify(currentStyle));
+    } catch {
+      styleClone = JSON.parse(JSON.stringify(currentStyle));
+    }
+
+    printMap = new mapboxgl.Map({
+      container,
+      style: styleClone,
+      center: map.getCenter(),
+      zoom: map.getZoom(),
+      bearing: map.getBearing(),
+      pitch: map.getPitch(),
+      interactive: false,
+      attributionControl: false,
+      preserveDrawingBuffer: true,
+      fadeDuration: 0,
+      pixelRatio: 1,
+    });
+
+    await new Promise((resolve, reject) => {
+      let settled = false;
+      const timeout = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          reject(new Error("High-resolution map render timed out."));
+        }
+      }, dpi >= 300 ? 12000 : 9000);
+
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        resolve();
+      };
+
+      printMap.once("error", (event) => {
+        const message = event?.error?.message || "";
+        // Missing optional icons should not abort a map render.
+        if (/image|icon/i.test(message)) return;
+      });
+      printMap.once("load", () => {
+        printMap.resize();
+        printMap.once("idle", finish);
+        // Some raster sources never emit a second idle in constrained networks.
+        setTimeout(finish, dpi >= 300 ? 5000 : 3500);
+      });
+    });
+
+    return captureMapWithKmzPrintCallout({
+      map: printMap,
+      importedGeoJSON,
+      label,
+    });
+  } finally {
+    try {
+      printMap?.remove();
+    } catch {
+      // Ignore cleanup errors.
+    }
+    container.remove();
+  }
 };
 
 const EARTH_RADIUS_METERS = 6378137;
-const A3_LANDSCAPE_CSS_WIDTH_PX = (420 / 25.4) * 96;
+const getLandscapePaperCssWidthPx = (paperSize) =>
+  (normalizePrintPaperSize(paperSize).widthMm / 25.4) * 96;
 
 const chooseNiceScaleDistance = (rawMeters) => {
   const safe = Math.max(1, Number(rawMeters) || 1);
@@ -1580,9 +1718,9 @@ const chooseNiceScaleDistance = (rawMeters) => {
 
 /**
  * Compute a scale bar that stays geographically meaningful after the captured
- * Mapbox canvas is stretched to an A3-landscape print sheet.
+ * Mapbox scale bar is adjusted to the selected landscape paper size.
  */
-const getPrintScaleBarInfo = (map) => {
+const getPrintScaleBarInfo = (map, paperSize = "a4") => {
   if (!map) {
     return { widthPx: 240, halfLabel: "75", totalLabel: "150", unit: "Meters" };
   }
@@ -1595,7 +1733,8 @@ const getPrintScaleBarInfo = (map) => {
 
   const mapCssWidth =
     map.getContainer?.()?.clientWidth || map.getCanvas?.()?.clientWidth || 1000;
-  const printPixelsPerMapPixel = A3_LANDSCAPE_CSS_WIDTH_PX / mapCssWidth;
+  const printPixelsPerMapPixel =
+    getLandscapePaperCssWidthPx(paperSize) / mapCssWidth;
 
   const targetPrintWidth = 265;
   const rawMeters =
@@ -1642,6 +1781,7 @@ const makePrintableHtml = ({
   logoUrl,
   departmentLogoUrl,
   scaleBarInfo,
+  paperSize = "a4",
 }) => {
   const legendHtml = legendRows
     .map(
@@ -1664,6 +1804,8 @@ const makePrintableHtml = ({
     150,
     Math.min(300, Number(resolvedScaleBar.widthPx) || 240),
   );
+  const resolvedPaper = normalizePrintPaperSize(paperSize);
+  const layoutScale = resolvedPaper.widthMm / PRINT_PAPER_SIZES.a3.widthMm;
 
   return `<!doctype html>
 <html>
@@ -1671,17 +1813,27 @@ const makePrintableHtml = ({
   <meta charset="utf-8" />
   <title>${escapeHtml(title)}</title>
   <style>
-    @page { size: A3 landscape; margin: 0; }
+    @page { size: ${resolvedPaper.label} landscape; margin: 0; }
     * { box-sizing: border-box; }
     html, body { margin: 0; width: 100%; height: 100%; font-family: Arial, Helvetica, sans-serif; }
     body { background: #fff; }
     .sheet {
       position: relative;
-      width: 420mm;
-      height: 297mm;
+      width: ${resolvedPaper.widthMm}mm;
+      height: ${resolvedPaper.heightMm}mm;
       overflow: hidden;
       border: 3px solid #1f2937;
       background: #f8fafc;
+    }
+    .layout {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 420mm;
+      height: 297mm;
+      transform: scale(${layoutScale.toFixed(8)});
+      transform-origin: top left;
+      overflow: hidden;
     }
     .map {
       position: absolute;
@@ -1889,13 +2041,14 @@ const makePrintableHtml = ({
       text-align: center;
     }
     @media print {
-      html, body { width: 420mm; height: 297mm; }
-      .sheet { width: 420mm; height: 297mm; }
+      html, body { width: ${resolvedPaper.widthMm}mm; height: ${resolvedPaper.heightMm}mm; }
+      .sheet { width: ${resolvedPaper.widthMm}mm; height: ${resolvedPaper.heightMm}mm; }
     }
   </style>
 </head>
 <body>
   <div class="sheet">
+    <div class="layout">
     <img class="map" src="${mapImage}" alt="Printed map" />
     <div class="logo-box"><img src="${logoUrl}" alt="RUDA Logo" /></div>
     <div class="title">${escapeHtml(title)}</div>
@@ -1959,17 +2112,22 @@ const makePrintableHtml = ({
         </div>
       </div>
     </div>
+    </div>
   </div>
   <script>
-    // Printing is triggered by the parent window only after the PDF snapshot
-    // has been generated and the KMZ log upload has completed. This avoids a
-    // race where this temporary tab closes while html2canvas is still reading it.
+    // Printing is triggered by the parent window as soon as the report snapshot
+    // has been generated. The KMZ log upload runs independently so network
+    // latency does not delay the user's browser print dialog.
   </script>
 </body>
 </html>`;
 };
 
-const createPdfReportFile = async (printWindow, title) => {
+const createPdfReportFile = async (
+  printWindow,
+  title,
+  { paperSize = "a4", resolutionDpi = 200 } = {},
+) => {
   const reportElement = printWindow.document.querySelector(".sheet");
   if (!reportElement) {
     throw new Error("The printable report could not be created.");
@@ -1986,13 +2144,39 @@ const createPdfReportFile = async (printWindow, title) => {
     ),
   );
 
+  const resolvedPaper = normalizePrintPaperSize(paperSize);
+  // The browser's native print already uses the exact HTML layout. The log
+  // PDF must capture that SAME .sheet, not re-project the KMZ from its KML.
+  // html2canvas previously rasterized it at up to 300/96x, allocating a huge
+  // second image while the high-resolution WebGL map was still in memory.
+  // Capture at a bounded scale; embedded map images retain their detail.
+  const rect = reportElement.getBoundingClientRect();
+  const snapshotScale = Math.min(
+    1.35,
+    2300 / Math.max(1, rect.width),
+    1700 / Math.max(1, rect.height),
+  );
   const canvas = await html2canvas(reportElement, {
     backgroundColor: "#ffffff",
-    scale: 1.5,
+    scale: snapshotScale,
     useCORS: true,
     logging: false,
+    imageTimeout: 8000,
+    removeContainer: true,
+    foreignObjectRendering: false,
+    onclone: (documentClone) => {
+      // Avoid animation frames being recorded differently from the print.
+      const style = documentClone.createElement("style");
+      style.textContent = "*, *::before, *::after { animation: none !important; transition: none !important; }";
+      documentClone.head.appendChild(style);
+    },
   });
-  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a3" });
+  const pdf = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: [resolvedPaper.widthMm, resolvedPaper.heightMm],
+    compress: true,
+  });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const imageRatio = canvas.width / canvas.height;
@@ -2003,7 +2187,7 @@ const createPdfReportFile = async (printWindow, title) => {
     imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
 
   pdf.addImage(
-    canvas.toDataURL("image/jpeg", 0.92),
+    canvas.toDataURL("image/jpeg", 0.86),
     "JPEG",
     (pageWidth - imageWidth) / 2,
     (pageHeight - imageHeight) / 2,
@@ -2408,6 +2592,8 @@ export default function Import({ map, filters, onClose }) {
     customTitle = "",
     useImportedKmzName = false,
     calloutLabel = "",
+    paperSize = "a4",
+    resolutionDpi = 200,
   } = {}) => {
     if (
       !map ||
@@ -2453,7 +2639,7 @@ export default function Import({ map, filters, onClose }) {
       // lower-left inset is generated from the RUDA Principle Land Use Zoning
       // dataset and the uploaded KMZ is highlighted at its true location.
       await waitForMapRender(map);
-      const fallbackOverviewImage = map.getCanvas().toDataURL("image/png", 1);
+      const fallbackOverviewImage = map.getCanvas().toDataURL("image/jpeg", 0.9);
 
       // Resolve one canonical KMZ display label. Prefer the same _import_label
       // used by the map's symbol layer, then fall back to the uploaded file name.
@@ -2480,18 +2666,19 @@ export default function Import({ map, filters, onClose }) {
       addImportedGeometryOnlyForPrint(map, importedGeoJSON);
       await waitForPrintMapSettled(map);
 
-      let zoningInsetImage = fallbackOverviewImage;
-      try {
-        zoningInsetImage = await createPrincipleLandUseInsetImage({
-          importedGeoJSON,
-          label: printCalloutLabel,
-        });
-      } catch (insetError) {
+      // Build the inset in parallel with the final main-map preparation. The
+      // inset uses independent API/canvas work, so there is no reason to block
+      // the high-resolution main-map render on it.
+      const zoningInsetPromise = createPrincipleLandUseInsetImage({
+        importedGeoJSON,
+        label: printCalloutLabel,
+      }).catch((insetError) => {
         console.warn(
           "Principle Land Use Zoning inset could not be generated; using current map overview instead.",
           insetError,
         );
-      }
+        return fallbackOverviewImage;
+      });
 
       // Final hard guarantee immediately before capture. Remove any live-source
       // symbol layer that may have been recreated by external code/style events,
@@ -2515,17 +2702,34 @@ export default function Import({ map, filters, onClose }) {
       // Capture the current map and draw the reference-style KMZ callout only
       // on an off-screen canvas used by the printable output. This guarantees
       // `/gis-metaverse` always keeps its normal vector-style text labeling.
-      const mapImage = captureMapWithKmzPrintCallout({
-        map,
-        importedGeoJSON,
-        label: printCalloutLabel,
-      });
+      let mapImage;
+      try {
+        mapImage = await captureHighResolutionKmzPrintMap({
+          map,
+          importedGeoJSON,
+          label: printCalloutLabel,
+          paperSize,
+          resolutionDpi,
+        });
+      } catch (highResolutionError) {
+        console.warn(
+          "High-resolution print render could not be created; using the live map canvas as fallback.",
+          highResolutionError,
+        );
+        mapImage = captureMapWithKmzPrintCallout({
+          map,
+          importedGeoJSON,
+          label: printCalloutLabel,
+        });
+      }
 
       if (!mapImage || mapImage === "data:," || mapImage.length < 1000) {
         throw new Error(
           "The map canvas could not be captured. Make sure preserveDrawingBuffer is enabled on the Mapbox map.",
         );
       }
+
+      const zoningInsetImage = await zoningInsetPromise;
 
       const title = useImportedKmzName
         ? importedKmzLabel
@@ -2539,7 +2743,7 @@ export default function Import({ map, filters, onClose }) {
       const legendRows = buildLegendRows(importedFileLegendLabel);
       // Reference-style scale bar only. Latitude / longitude / zoom metadata
       // are intentionally omitted from the printed layout.
-      const scaleBarInfo = getPrintScaleBarInfo(map);
+      const scaleBarInfo = getPrintScaleBarInfo(map, paperSize);
 
       printWindow.document.open();
       printWindow.document.write(
@@ -2551,11 +2755,42 @@ export default function Import({ map, filters, onClose }) {
           logoUrl: RudaLogo,
           departmentLogoUrl: RudaLandManagementLogo,
           scaleBarInfo,
+          paperSize,
         }),
       );
       printWindow.document.close();
 
-      const reportFile = await createPdfReportFile(printWindow, title);
+      // Wait only for printable assets, then show the browser print dialog
+      // immediately. The internal report-file generation and API log upload no
+      // longer delay the user's print/save-to-PDF dialog.
+      await Promise.all(
+        Array.from(printWindow.document.images).map((image) =>
+          image.complete
+            ? Promise.resolve()
+            : new Promise((resolve) => {
+                image.addEventListener("load", resolve, { once: true });
+                image.addEventListener("error", resolve, { once: true });
+              }),
+        ),
+      );
+
+      // Capture the SAME completed print DOM while it is still accessible.
+      // Previously this happened after window.print(); closing the print tab
+      // or the dialog could invalidate the document, and high-DPI re-capture
+      // could exhaust Chrome memory. A failed PDF must not lose the KMZ log.
+      let reportFile = null;
+      try {
+        reportFile = await createPdfReportFile(printWindow, title, {
+          paperSize,
+          resolutionDpi,
+        });
+      } catch (reportError) {
+        console.error("Saved KMZ map PDF could not be generated", reportError);
+        setWarning("The map can be printed, but the saved PDF could not be generated. The KMZ log will still be saved.");
+      }
+
+      printWindow.focus();
+      printWindow.print();
 
       const printedBy = (() => {
         try {
@@ -2568,7 +2803,7 @@ export default function Import({ map, filters, onClose }) {
 
       const logPayload = new FormData();
       logPayload.append("file", importedFile);
-      logPayload.append("report_file", reportFile);
+      if (reportFile) logPayload.append("report_file", reportFile);
       logPayload.append("file_name", importedFile.name);
       logPayload.append("file_size", String(importedFile.size));
       logPayload.append("project", String(filters?.projectId || ""));
@@ -2578,30 +2813,18 @@ export default function Import({ map, filters, onClose }) {
       logPayload.append("geometry_types", JSON.stringify(summary?.types || []));
       logPayload.append("printed_by", printedBy);
       logPayload.append("print_title", title);
-      await createKmzPrintLog(logPayload);
+      logPayload.append("paper_size", String(paperSize || "a4").toUpperCase());
+      logPayload.append("resolution_dpi", String(normalizePrintDpi(resolutionDpi)));
 
-      // The exact same already-rendered print document was used to create the
-      // stored PDF above. Open the browser print dialog only after persistence
-      // succeeds so logs and the user's printed output cannot diverge.
-      const closePrintWindow = () => {
-        try {
-          if (window && !window.closed) window.focus();
-        } catch {
-          // Ignore focus restrictions.
-        }
-        setTimeout(() => {
-          try {
-            if (!printWindow.closed) printWindow.close();
-          } catch {
-            // Ignore browser close restrictions.
-          }
-        }, 100);
-      };
-      printWindow.addEventListener?.("afterprint", closePrintWindow, {
-        once: true,
+      void createKmzPrintLog(logPayload).catch((logError) => {
+        console.error("KMZ print log could not be saved:", logError);
       });
-      printWindow.focus();
-      printWindow.print();
+
+      try {
+        printWindow.close();
+      } catch {
+        // Ignore browser close restrictions.
+      }
     } catch (printError) {
       console.error("Print error:", printError);
       printWindow.close();
@@ -2640,6 +2863,8 @@ export default function Import({ map, filters, onClose }) {
         customTitle: event.detail?.customTitle || "",
         useImportedKmzName: Boolean(event.detail?.useImportedKmzName),
         calloutLabel: event.detail?.calloutLabel || "",
+        paperSize: event.detail?.paperSize || "a4",
+        resolutionDpi: event.detail?.resolutionDpi || 200,
       });
     };
 

@@ -18,6 +18,8 @@ export default function PrintTitleModal({
   const [value, setValue] = useState(defaultTitle);
   const [titleMode, setTitleMode] = useState("custom");
   const [calloutLabel, setCalloutLabel] = useState("");
+  const [paperSize, setPaperSize] = useState("a4");
+  const [resolutionDpi, setResolutionDpi] = useState(200);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -28,6 +30,8 @@ export default function PrintTitleModal({
     // Keep the callout text independent from the page title while still
     // providing the imported KMZ name as a useful editable default.
     setCalloutLabel(importedKmzName?.trim() || "Imported KMZ");
+    setPaperSize("a4");
+    setResolutionDpi(200);
 
     setTimeout(() => inputRef.current?.focus(), 50);
   }, [isOpen, defaultTitle, allowImportedKmzName, importedKmzName]);
@@ -50,6 +54,8 @@ export default function PrintTitleModal({
         title: resolvedKmzName,
         titleMode: "kmz",
         calloutLabel: calloutLabel.trim() || resolvedKmzName,
+        paperSize,
+        resolutionDpi,
       });
       return;
     }
@@ -60,6 +66,8 @@ export default function PrintTitleModal({
       calloutLabel: allowImportedKmzName
         ? calloutLabel.trim() || resolvedKmzName
         : "",
+      paperSize,
+      resolutionDpi,
     });
   };
 
@@ -181,20 +189,56 @@ export default function PrintTitleModal({
           </div>
 
           {allowImportedKmzName && (
-            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">
-                KMZ Callout Label
-              </label>
-              <input
-                type="text"
-                value={calloutLabel}
-                onChange={(event) => setCalloutLabel(event.target.value)}
-                placeholder={resolvedKmzName}
-                maxLength={80}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-[#0f3d2e] focus:ring-2 focus:ring-[#0f3d2e]/20"
-              />
+            <>
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 p-3">
+                <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                  KMZ Callout Label
+                </label>
+                <input
+                  type="text"
+                  value={calloutLabel}
+                  onChange={(event) => setCalloutLabel(event.target.value)}
+                  placeholder={resolvedKmzName}
+                  maxLength={80}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-[#0f3d2e] focus:ring-2 focus:ring-[#0f3d2e]/20"
+                />
+              </div>
 
-            </div>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                    Paper Size
+                  </label>
+                  <select
+                    value={paperSize}
+                    onChange={(event) => setPaperSize(event.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-[#0f3d2e] focus:ring-2 focus:ring-[#0f3d2e]/20"
+                  >
+                    <option value="a4">A4</option>
+                    <option value="a3">A3</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+                    Resolution
+                  </label>
+                  <select
+                    value={resolutionDpi}
+                    onChange={(event) => setResolutionDpi(Number(event.target.value))}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-[#0f3d2e] focus:ring-2 focus:ring-[#0f3d2e]/20"
+                  >
+                    <option value={150}>150 DPI - Standard</option>
+                    <option value={200}>200 DPI - High</option>
+                    <option value={300}>300 DPI - Print Quality</option>
+                  </select>
+                </div>
+              </div>
+
+              <p className="mt-2 text-[11px] leading-4 text-slate-500">
+                Orientation remains landscape. A4 is the default; higher DPI gives a sharper PDF but uses more memory.
+              </p>
+            </>
           )}
 
           <div className="mt-4 flex justify-end gap-2">

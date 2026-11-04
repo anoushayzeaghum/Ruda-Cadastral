@@ -1,3 +1,5 @@
+import { resetBasemapMauzaPlaceFiltersOnStyleLoad, updateBasemapMauzaPlaceFilters } from "./tools/Layers/LayerManager/_basemapPlaceLabelFilter";
+import { applyVectorLabelStandards } from "./tools/Layers/LayerManager/_vectorLabelStandards";
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -501,7 +503,34 @@ export default function GISMetaverseMap({
       setIsMapReady(true);
     });
 
+    // Standardize RUDA-controlled vector labels even when they are added later
+    // by independent layer panels or restored after a basemap style change.
+    // Throttle styledata: adjusting a layout or zoom range itself emits it.
+    const map = mapRef.current;
+    let labelSyncFrame = null;
+    const syncLabels = () => {
+      if (labelSyncFrame !== null) return;
+      labelSyncFrame = requestAnimationFrame(() => {
+        labelSyncFrame = null;
+        try {
+          applyVectorLabelStandards(map);
+          updateBasemapMauzaPlaceFilters(map);
+        } catch (error) {
+          console.warn("Could not standardize RUDA vector labels:", error);
+        }
+      });
+    };
+    const onStyleLoaded = () => {
+      resetBasemapMauzaPlaceFiltersOnStyleLoad(map);
+      syncLabels();
+    };
+    map.on("styledata", syncLabels);
+    map.on("style.load", onStyleLoaded);
+
     return () => {
+      if (labelSyncFrame !== null) cancelAnimationFrame(labelSyncFrame);
+      map.off("styledata", syncLabels);
+      map.off("style.load", onStyleLoaded);
       mapRef.current?.remove();
       mapRef.current = null;
       setIsMapReady(false);

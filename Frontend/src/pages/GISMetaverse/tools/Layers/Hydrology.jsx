@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import VectorGeoJSONAttribute from "./AttributeTable/VectorGeoJSONAttribute";
 import { getFloodExtentGeoJSON } from "../../../../services/metaverseApi";
 import {
   FLOOD_LAYER,
@@ -7,24 +8,24 @@ import {
   setFloodLayerVisibility,
 } from "./LayerManager/Hydrology/FloodLayer";
 
-const FLOOD_YEARS = [2025, 2026];
+const FLOOD_YEARS = [2025];
+const is2025 = (p) => Number(p.year) === 2025;
 
 /**
  * Hydrology layer group.
  *
  * Flood extent data is loaded once from the FloodExtent backend API.
- * The visible GeoJSON is then filtered by the selected year(s).
+ * Only Flood Extent 2025 is offered and rendered; other years are filtered out.
  */
 export default function Hydrology({ map }) {
   const [open, setOpen] = useState(false);
+  const [tableOpen, setTableOpen] = useState(false);
   const [floodYearsVisible, setFloodYearsVisible] = useState({
     2025: false,
-    2026: false,
   });
 
   const floodYearsVisibleRef = useRef({
     2025: false,
-    2026: false,
   });
 
   const floodCache = useRef(null);
@@ -100,7 +101,6 @@ export default function Hydrology({ map }) {
 
       const hiddenState = {
         2025: false,
-        2026: false,
       };
 
       floodYearsVisibleRef.current = hiddenState;
@@ -127,7 +127,6 @@ export default function Hydrology({ map }) {
 
     const nextVisibility = {
       2025: !anyVisible,
-      2026: !anyVisible,
     };
 
     void applyFloodVisibility(nextVisibility);
@@ -188,10 +187,19 @@ export default function Hydrology({ map }) {
                 style={{ backgroundColor: FLOOD_LAYER.color }}
               />
 
-              <span className="truncate text-[11px]">Flood Extent {year}</span>
+              <span className="min-w-0 flex-1 truncate text-[11px]">Flood Extent {year}</span>
+              <button type="button" title={`Open Flood Extent ${year} attribute table`}
+                onClick={() => setTableOpen(true)} className="rounded p-1 hover:bg-[#0f3d2e]">
+                <Grid3X3 size={14} />
+              </button>
             </label>
           ))}
         </div>
+      )}
+      {tableOpen && (
+        <VectorGeoJSONAttribute map={map} title="Flood Extent 2025"
+          sourceIds={[FLOOD_LAYER.sourceId]} endpoint="/floodextent/"
+          filterProperties={is2025} onClose={() => setTableOpen(false)} />
       )}
     </div>
   );

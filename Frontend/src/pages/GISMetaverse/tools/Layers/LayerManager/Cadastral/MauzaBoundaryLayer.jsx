@@ -26,6 +26,7 @@ export function addMauzaBoundaryLayer(
   color = MAUZA_BOUNDARY_COLOR,
   opacity = 1,
   beforeId,
+  sizeOverrides = null,
 ) {
   addCadastralBoundaryLayer({
     map,
@@ -33,11 +34,20 @@ export function addMauzaBoundaryLayer(
     ids: MAUZA_BOUNDARY_IDS,
     color,
     opacity,
-    // 2.5 px at low zoom, smoothly increasing to 3 px.
-    lineWidth: ["interpolate", ["linear"], ["zoom"], 8, 1, 16, 1.5],
+    // Preserve the original 1–1.5 px zoom-based width until a custom size is applied.
+    lineWidth: Number.isFinite(sizeOverrides?.lineWidth)
+      ? sizeOverrides.lineWidth
+      : ["interpolate", ["linear"], ["zoom"], 8, 1, 16, 1.5],
     fillOpacity: 0,
     labelExpression: MAUZA_LABEL,
+    labelFields: ["mauza", "Mauza", "moza", "Moza", "mouza", "name", "Name"],
     labelMinZoom: 14,
     beforeId,
   });
+
+  // The shared factory retains its existing zoom-dependent text size by default.
+  // Apply the user's fixed pixel value only when a custom size is selected.
+  if (Number.isFinite(sizeOverrides?.labelSize) && map?.getLayer(MAUZA_BOUNDARY_IDS.label)) {
+    map.setLayoutProperty(MAUZA_BOUNDARY_IDS.label, "text-size", sizeOverrides.labelSize);
+  }
 }

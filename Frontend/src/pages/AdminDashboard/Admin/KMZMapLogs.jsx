@@ -13,8 +13,6 @@ import {
   Upload,
 } from "lucide-react";
 import AdminPage from "../Dashboard/AdminPage";
-import JSZip from "jszip";
-import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
 import { getKmzPrintLogs } from "../../../services/metaverseApi";
 
 const formatFileSize = (bytes) => {
@@ -92,41 +90,17 @@ const normalizeLog = (item) => {
   };
 };
 
-const openStoredFile = (url) => {
-  if (url) {
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-};
-
-const downloadStoredFile = async (url, fallbackName) => {
-  if (!url) return;
-
+// File actions use Django's streaming endpoints. In particular, downloading a
+// KMZ must never fetch/expand it in Chrome memory or open it as a browser tab.
+const storedFileActionUrl = (item, action) => {
+  if (item?.id == null || !/^\d+$/.test(String(item.id))) return null;
+  const sourceUrl = item.report_url || item.file_url;
+  if (!sourceUrl) return null;
   try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Download failed with status ${response.status}`);
-    }
-
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-
-    anchor.href = objectUrl;
-    anchor.download = fallbackName || "download";
-
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-  } catch (downloadError) {
-    console.warn(
-      "Direct download failed; opening stored file instead.",
-      downloadError,
-    );
-
-    window.open(url, "_blank", "noopener,noreferrer");
+    const origin = new URL(sourceUrl, window.location.href).origin;
+    return `${origin}/api/kmz-print-logs/${encodeURIComponent(item.id)}/${action}/`;
+  } catch {
+    return null;
   }
 };
 
@@ -408,8 +382,9 @@ export default function KMZLogs() {
 
                         <Td>
                           <KMZPreview
-                            fileUrl={item.file_url}
                             fileName={item.fileName}
+                            reportUrl={item.report_url}
+                            viewUrl={storedFileActionUrl(item, "view-pdf")}
                           />
                         </Td>
 
@@ -417,40 +392,20 @@ export default function KMZLogs() {
                           <div className="flex min-w-max items-center gap-2">
                             <ActionButton
                               icon={<Eye size={15} />}
-                              label="View"
-                              onClick={() => openStoredFile(item.report_url)}
+                              label="View Map"
+                              href={item.report_url ? storedFileActionUrl(item, "view-pdf") : null}
+                              newTab
                             />
-
                             <ActionButton
                               icon={<Download size={15} />}
                               label="KMZ"
-                              onClick={() =>
-                                downloadStoredFile(item.file_url, item.fileName)
-                              }
+                              href={item.file_url ? storedFileActionUrl(item, "download-kmz") : null}
                             />
-
                             <ActionButton
                               icon={<FileDown size={15} />}
                               label="PDF"
-                              onClick={() =>
-                                downloadStoredFile(
-                                  item.report_url,
-                                  `${
-                                    item.fileName.replace(/\.kmz$/i, "") ||
-                                    "KMZ_Map"
-                                  }.pdf`,
-                                )
-                              }
+                              href={item.report_url ? storedFileActionUrl(item, "download-pdf") : null}
                             />
-
-                            {/*
-                            <ActionButton
-                              icon={<MapPinned size={15} />}
-                              label="Open in Map"
-                              accent
-                              onClick={() => openLogInMap(item)}
-                            />
-                            */}
                           </div>
                         </Td>
                       </tr>
@@ -551,20 +506,22 @@ function DateCell({ date, time }) {
   );
 }
 
-function ActionButton({ icon, label, accent = false, onClick }) {
+function ActionButton({ icon, label, accent = false, href, newTab = false }) {
+  const className = `inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition ${
+    accent
+      ? "border-emerald-200 text-[#0f5b43] hover:bg-emerald-50"
+      : "border-slate-200 text-slate-700 hover:bg-slate-50"
+  }`;
+  if (!href) {
+    return <button type="button" disabled title="Saved file unavailable" className={`${className} cursor-not-allowed opacity-40`}>{icon}{label}</button>;
+  }
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-semibold transition ${
-        accent
-          ? "border-emerald-200 text-[#0f5b43] hover:bg-emerald-50"
-          : "border-slate-200 text-slate-700 hover:bg-slate-50"
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
+    <a href={href} className={className}
+      target={newTab ? "_blank" : undefined}
+      rel={newTab ? "noopener noreferrer" : undefined}
+      title={newTab ? "View the original saved printed map (PDF)" : `Download ${label} directly`}>
+      {icon}{label}
+    </a>
   );
 }
 
@@ -585,262 +542,29 @@ function PageButton({ children, active = false, disabled = false, onClick }) {
   );
 }
 
-function collectCoordinatePairs(geometry, pairs) {
-  if (!geometry) return;
-
-  const walk = (value) => {
-    if (!Array.isArray(value)) return;
-
-    if (
-      value.length >= 2 &&
-      typeof value[0] === "number" &&
-      typeof value[1] === "number"
-    ) {
-      pairs.push([value[0], value[1]]);
-      return;
-    }
-
-    value.forEach(walk);
-  };
-
-  walk(geometry.coordinates);
-}
-
-function geometryToSvgPaths(geometry, project) {
-  if (!geometry) return [];
-
-  const paths = [];
-
-  const lineToPath = (coordinates, close = false) => {
-    if (!coordinates?.length) return "";
-
-    const commands = coordinates.map((coord, index) => {
-      const [x, y] = project(coord);
-      return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
-    });
-
-    return `${commands.join(" ")}${close ? " Z" : ""}`;
-  };
-
-  if (geometry.type === "Polygon") {
-    geometry.coordinates.forEach((ring) => {
-      const path = lineToPath(ring, true);
-      if (path) paths.push(path);
-    });
-  } else if (geometry.type === "MultiPolygon") {
-    geometry.coordinates.forEach((polygon) => {
-      polygon.forEach((ring) => {
-        const path = lineToPath(ring, true);
-        if (path) paths.push(path);
-      });
-    });
-  } else if (geometry.type === "LineString") {
-    const path = lineToPath(geometry.coordinates, false);
-    if (path) paths.push(path);
-  } else if (geometry.type === "MultiLineString") {
-    geometry.coordinates.forEach((line) => {
-      const path = lineToPath(line, false);
-      if (path) paths.push(path);
-    });
-  } else if (geometry.type === "Point") {
-    const [x, y] = project(geometry.coordinates);
-    paths.push({ point: true, x, y });
-  } else if (geometry.type === "MultiPoint") {
-    geometry.coordinates.forEach((coord) => {
-      const [x, y] = project(coord);
-      paths.push({ point: true, x, y });
-    });
-  }
-
-  return paths;
-}
-
-function KMZPreview({ fileUrl, fileName }) {
-  const [preview, setPreview] = useState({
-    loading: true,
-    paths: [],
-    error: "",
-  });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadPreview = async () => {
-      if (!fileUrl) {
-        setPreview({
-          loading: false,
-          paths: [],
-          error: "KMZ unavailable",
-        });
-        return;
-      }
-
-      try {
-        setPreview({
-          loading: true,
-          paths: [],
-          error: "",
-        });
-
-        const response = await fetch(fileUrl);
-
-        if (!response.ok) {
-          throw new Error(`KMZ request failed (${response.status})`);
-        }
-
-        const kmzBuffer = await response.arrayBuffer();
-        const zip = await JSZip.loadAsync(kmzBuffer);
-
-        const kmlEntry = Object.values(zip.files).find(
-          (entry) => !entry.dir && entry.name.toLowerCase().endsWith(".kml"),
-        );
-
-        if (!kmlEntry) {
-          throw new Error("No KML document found inside KMZ");
-        }
-
-        const kmlText = await kmlEntry.async("text");
-        const xml = new DOMParser().parseFromString(kmlText, "text/xml");
-
-        if (xml.querySelector("parsererror")) {
-          throw new Error("Invalid KML");
-        }
-
-        const geojson = kmlToGeoJSON(xml);
-        const features = geojson?.features || [];
-
-        const coordinatePairs = [];
-        features.forEach((feature) => {
-          collectCoordinatePairs(feature.geometry, coordinatePairs);
-        });
-
-        if (!coordinatePairs.length) {
-          throw new Error("No drawable geometry");
-        }
-
-        const lngs = coordinatePairs.map(([lng]) => lng);
-        const lats = coordinatePairs.map(([, lat]) => lat);
-
-        const minLng = Math.min(...lngs);
-        const maxLng = Math.max(...lngs);
-        const minLat = Math.min(...lats);
-        const maxLat = Math.max(...lats);
-
-        const width = 132;
-        const height = 82;
-        const padding = 8;
-
-        const geoWidth = Math.max(maxLng - minLng, 0.0000001);
-        const geoHeight = Math.max(maxLat - minLat, 0.0000001);
-
-        const scale = Math.min(
-          (width - padding * 2) / geoWidth,
-          (height - padding * 2) / geoHeight,
-        );
-
-        const renderedWidth = geoWidth * scale;
-        const renderedHeight = geoHeight * scale;
-
-        const offsetX = (width - renderedWidth) / 2;
-        const offsetY = (height - renderedHeight) / 2;
-
-        const project = ([lng, lat]) => [
-          offsetX + (lng - minLng) * scale,
-          offsetY + renderedHeight - (lat - minLat) * scale,
-        ];
-
-        const svgPaths = [];
-
-        features.forEach((feature, featureIndex) => {
-          const featurePaths = geometryToSvgPaths(feature.geometry, project);
-
-          featurePaths.forEach((path, pathIndex) => {
-            svgPaths.push({
-              key: `${featureIndex}-${pathIndex}`,
-              value: path,
-            });
-          });
-        });
-
-        if (!cancelled) {
-          setPreview({
-            loading: false,
-            paths: svgPaths,
-            error: "",
-          });
-        }
-      } catch (previewError) {
-        console.warn("KMZ preview could not be generated.", previewError);
-
-        if (!cancelled) {
-          setPreview({
-            loading: false,
-            paths: [],
-            error: "Preview unavailable",
-          });
-        }
-      }
-    };
-
-    loadPreview();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fileUrl]);
-
-  if (preview.loading) {
-    return (
-      <div className="flex h-[82px] w-[132px] items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-[11px] text-slate-400">
-        Loading...
-      </div>
-    );
-  }
-
-  if (preview.error || preview.paths.length === 0) {
-    return (
-      <div className="flex h-[82px] w-[132px] items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 text-center text-[11px] leading-4 text-slate-400">
-        {preview.error || "Preview unavailable"}
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="h-[82px] w-[132px] overflow-hidden rounded-md border border-slate-200 bg-[#eef3f1] shadow-sm"
-      title={fileName || "KMZ preview"}
-    >
-      <svg
-        viewBox="0 0 132 82"
-        className="h-full w-full"
-        role="img"
-        aria-label={`${fileName || "KMZ"} geometry preview`}
-      >
-        <rect x="0" y="0" width="132" height="82" fill="#eef3f1" />
-
-        {preview.paths.map(({ key, value }) =>
-          typeof value === "string" ? (
-            <path
-              key={key}
-              d={value}
-              fill="rgba(250, 204, 21, 0.22)"
-              stroke="#d39e00"
-              strokeWidth="1.6"
-              vectorEffect="non-scaling-stroke"
-            />
-          ) : (
-            <circle
-              key={key}
-              cx={value.x}
-              cy={value.y}
-              r="2.5"
-              fill="#d39e00"
-              stroke="#ffffff"
-              strokeWidth="0.8"
-            />
-          ),
-        )}
-      </svg>
+// This table intentionally does NOT decode every KMZ into an SVG thumbnail.
+// Raw geometry previews are not the same as the paper map (basemap, legend,
+// callout, scale bar, inset) and can look scattered when KML includes multiple
+// placemarks. Loading many ZIPs at once can also exhaust Chrome memory.
+// The stored PDF is the authoritative visual record of the printed map.
+function KMZPreview({ fileName, reportUrl, viewUrl }) {
+  const available = Boolean(reportUrl && viewUrl);
+  const contents = (
+    <div className={`flex h-[82px] w-[132px] flex-col items-center justify-center gap-1 rounded-md border px-2 text-center ${
+      available
+        ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+        : "border-dashed border-slate-300 bg-slate-50 text-slate-400"
+    }`} title={fileName || "KMZ map"}>
+      <FileDown size={21} />
+      <span className="text-[11px] font-semibold leading-4">
+        {available ? "View saved map" : "PDF unavailable"}
+      </span>
+      <span className="text-[9px] leading-3">{available ? "Original print PDF" : "KMZ still downloadable"}</span>
     </div>
   );
+  return available ? (
+    <a href={viewUrl} target="_blank" rel="noopener noreferrer" aria-label={`View saved map for ${fileName || "KMZ"}`}>
+      {contents}
+    </a>
+  ) : contents;
 }

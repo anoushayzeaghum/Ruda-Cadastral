@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Grid3X3 } from "lucide-react";
+import VectorGeoJSONAttribute from "./AttributeTable/VectorGeoJSONAttribute";
 import { getFloodExtentScenariosGeoJSON } from "../../../../services/metaverseApi";
 import {
   FLOOD_SCENARIO_LAYERS,
@@ -29,6 +30,7 @@ const buildColorState = () =>
  */
 export default function FloodExtentScenarios({ map }) {
   const [open, setOpen] = useState(false);
+  const [tableCusic, setTableCusic] = useState(null);
   const [visibility, setVisibility] = useState(() => buildVisibilityState());
   const [colors, setColors] = useState(() => buildColorState());
 
@@ -228,12 +230,24 @@ export default function FloodExtentScenarios({ map }) {
                 />
               </span>
 
-              <span className="truncate text-[11px]">
+              <span className="min-w-0 flex-1 truncate text-[11px]">
                 Flood Inundation {formatCusic(cusic)} cusic
               </span>
+              <button type="button" title={`Open ${formatCusic(cusic)} cusic attribute table`}
+                onClick={() => setTableCusic(cusic)} className="rounded p-1 hover:bg-[#0f3d2e]">
+                <Grid3X3 size={14} />
+              </button>
             </div>
           ))}
         </div>
+      )}
+      {tableCusic !== null && (
+        <VectorGeoJSONAttribute key={tableCusic} map={map}
+          title={`Flood Inundation ${formatCusic(tableCusic)} cusic`}
+          sourceIds={[FLOOD_SCENARIO_LAYERS[tableCusic].sourceId]}
+          endpoint="/floodextentscenarios/"
+          filterField="cusic" filterValue={tableCusic}
+          onClose={() => setTableCusic(null)} />
       )}
     </div>
   );
