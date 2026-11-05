@@ -8,12 +8,16 @@ const createScenarioDefinition = (cusic, color) => ({
   fillOpacity: 0.45,
 });
 
+// All flood inundation scenarios share the 50,000-cusic light-blue color by default.
+// The color picker in FloodExtentScenarios.jsx can still override each layer independently.
+export const DEFAULT_FLOOD_SCENARIO_COLOR = "#38bdf8";
+
 export const FLOOD_SCENARIO_LAYERS = Object.freeze({
-  50000: createScenarioDefinition(50000, "#38bdf8"),
-  250000: createScenarioDefinition(250000, "#22c55e"),
-  326000: createScenarioDefinition(326000, "#2563eb"),
-  450000: createScenarioDefinition(450000, "#7c3aed"),
-  500000: createScenarioDefinition(500000, "#dc2626"),
+  50000: createScenarioDefinition(50000, DEFAULT_FLOOD_SCENARIO_COLOR),
+  250000: createScenarioDefinition(250000, DEFAULT_FLOOD_SCENARIO_COLOR),
+  326000: createScenarioDefinition(326000, DEFAULT_FLOOD_SCENARIO_COLOR),
+  450000: createScenarioDefinition(450000, DEFAULT_FLOOD_SCENARIO_COLOR),
+  500000: createScenarioDefinition(500000, DEFAULT_FLOOD_SCENARIO_COLOR),
 });
 
 const getScenarioDefinition = (cusic) => FLOOD_SCENARIO_LAYERS[Number(cusic)];
