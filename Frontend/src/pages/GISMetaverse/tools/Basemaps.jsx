@@ -1,17 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
+import { applyVectorLabelStandards } from "./Layers/LayerManager/_vectorLabelStandards";
 
 // Fixed preview tile around Lahore so every card shows a real basemap preview
 // instead of a colour/gradient placeholder. These preview URLs are UI-only;
 // the actual basemap switching logic below is unchanged.
 // Licensed sources only. Google Map Tiles API is optional and requires a
 // Google Cloud Map Tiles API key, billing and HTTP referrer restrictions.
+// A raster-only Mapbox style does not inherit the glyph configuration from
+// Mapbox Streets. RUDA's GeoJSON and vector-tile symbol layers need this URL
+// to draw labels on Esri and Google satellite imagery.
+const RUDA_GLYPHS_URL = "mapbox://fonts/mapbox/{fontstack}/{range}.pbf";
+
+// Also covers the other Esri raster styles already in the basemap chooser.
+// Do not modify Mapbox's hosted styles, which include their own font setup.
+function withVectorLabelGlyphs(style) {
+  if (!style || typeof style === "string") return style;
+  return { ...style, glyphs: style.glyphs || RUDA_GLYPHS_URL };
+}
+
 const GOOGLE_MAP_TILES_KEY = import.meta.env.VITE_GOOGLE_MAP_TILES_API_KEY || "";
 const ESRI_IMAGERY = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 const ESRI_REFERENCE = "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
 
 const ESRI_HYBRID_STYLE = {
   version: 8,
+  glyphs: RUDA_GLYPHS_URL,
   sources: {
     "esri-hybrid-imagery": {
       type: "raster", tiles: [ESRI_IMAGERY], tileSize: 256,
@@ -41,6 +55,7 @@ async function getGoogleHybridStyle(apiKey) {
     session: json.session,
     style: {
       version: 8,
+      glyphs: RUDA_GLYPHS_URL,
       sources: {
         "google-hybrid": {
           type: "raster", tileSize: json.tileWidth || 256,
@@ -330,9 +345,24 @@ export default function Basemaps({ map, rebuildAllLayers }) {
         if (basemap.id === "google-hybrid") {
           attachGoogleAttribution(GOOGLE_MAP_TILES_KEY, googleSession);
         }
+        // The existing Cadastral/Housing layer groups also listen for
+        // style.load and restore their own sources. Run once more on the
+        // next frame, after all style.load listeners have had a chance to
+        // re-add symbol layers (Mauza, Square, Khasra, schemes, etc.).
         rebuildAllLayers?.();
+        requestAnimationFrame(() => {
+          if (requestId !== switchId.current || !map?.getStyle()) return;
+          try {
+            applyVectorLabelStandards(map);
+          } catch (error) {
+            console.warn("RUDA labels could not be refreshed after basemap change:", error);
+          }
+        });
       });
-      map.setStyle(nextStyle);
+      // Raster-only styles need a glyphs endpoint for the text-font stacks
+      // used by RUDA symbol layers. Without it, a layer can be loaded and
+      // visible yet render no lettering on the satellite basemap.
+      map.setStyle(withVectorLabelGlyphs(nextStyle));
       setActiveBasemap(basemap.id);
     } catch (err) {
       if (requestId === switchId.current) {

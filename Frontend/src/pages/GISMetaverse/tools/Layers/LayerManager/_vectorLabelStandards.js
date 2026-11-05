@@ -11,6 +11,16 @@ import { area, pointOnFeature } from "@turf/turf";
 export const VECTOR_LABEL_MIN_ZOOM = 11;
 export const UNIQUE_LABEL_PROPERTY = "_ruda_unique_label";
 
+// Satellite hybrids have raster layers instead of native Mapbox symbols.
+// If a custom RUDA label gets inserted beneath a hybrid raster overlay,
+// bring just that text layer forward; preserve existing polygon/line order.
+const HYBRID_RASTER_LAYER_IDS = new Set([
+  "esri-hybrid-imagery-layer",
+  "esri-hybrid-reference-layer",
+  "google-hybrid-imagery-layer",
+]);
+
+
 const normalizeLabel = (value) =>
   typeof value === "string" || typeof value === "number"
     ? String(value).replace(/\s+/g, " ").trim()
@@ -107,7 +117,12 @@ export function upsertUniqueLabelSource(map, polygonData, polygonSourceId, field
 export function applyVectorLabelStandards(map) {
   if (!map?.getStyle || !map?.getLayer) return;
   const layers = map.getStyle()?.layers || [];
-  for (const layer of layers) {
+  const highestHybridRasterIndex = layers.reduce(
+    (highest, layer, index) => HYBRID_RASTER_LAYER_IDS.has(layer.id) ? index : highest,
+    -1,
+  );
+  const labelsBehindHybrid = [];
+  for (const [index, layer] of layers.entries()) {
     if (layer.type !== "symbol") continue;
     if (!/^(?:gism-|gis-|metaverse-|ruda-)/i.test(layer.id)) continue;
     if (!/-label(?:s)?$/i.test(layer.id) || /intro-label/i.test(layer.id)) continue;
@@ -123,5 +138,13 @@ export function applyVectorLabelStandards(map) {
     if (layer.layout["text-ignore-placement"] !== false) {
       map.setLayoutProperty(layer.id, "text-ignore-placement", false);
     }
+    // Google/Esri reference imagery must be BELOW RUDA vector lettering.
+    if (highestHybridRasterIndex >= 0 && index <= highestHybridRasterIndex) {
+      labelsBehindHybrid.push(layer.id);
+    }
+  }
+  // Moves happen only if necessary, avoiding a styledata/moveLayer loop.
+  for (const layerId of labelsBehindHybrid) {
+    if (map.getLayer(layerId)) map.moveLayer(layerId);
   }
 }
