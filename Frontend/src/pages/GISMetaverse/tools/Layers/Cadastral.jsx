@@ -621,33 +621,10 @@ function updateKhasraVectorStyle(map, opacity, color) {
   } catch (_) {}
 }
 
-// function fitToKhasraExtent(map, bbox) {
-//   if (
-//     !map ||
-//     !Array.isArray(bbox) ||
-//     bbox.length < 4 ||
-//     !bbox.slice(0, 4).every((value) => Number.isFinite(Number(value)))
-//   ) {
-//     return;
-//   }
-
-//   const bounds = [
-//     [Number(bbox[0]), Number(bbox[1])],
-//     [Number(bbox[2]), Number(bbox[3])],
-//   ];
-//   const camera = map.cameraForBounds(bounds, { padding: 55 });
-
-//   if (!camera) return;
-
-//   map.easeTo({
-//     center: camera.center,
-//     zoom: Math.max(camera.zoom ?? KHASRA_MIN_ZOOM, KHASRA_MIN_ZOOM),
-//     bearing: camera.bearing ?? map.getBearing(),
-//     pitch: camera.pitch ?? map.getPitch(),
-//     duration: 900,
-//     essential: true,
-//   });
-// }
+// RUDA Khasra is rendered directly from vector tiles for the current viewport.
+// Do not auto-fit a project-wide extent when the individual checkbox is clicked.
+// Previously a call to a commented-out fitToKhasraExtent() threw a ReferenceError
+// and the catch block immediately hid Khasra again.
 
 function addOrUpdatePolygonLayer(map, key, geojson, opacity, color, mauzaSizes = null) {
   const config = BOUNDARY_LAYER_CONFIG[key];
@@ -982,24 +959,15 @@ export default function Cadastral({ map, selectedProjectId }) {
     return loadProjectMauzas({ draw: true, zoom });
   };
 
-  const loadKhasraTiles = async ({ zoom = true } = {}) => {
+  const loadKhasraTiles = async () => {
     if (!map) return emptyFC();
 
     setLoading("khasra", true);
 
     try {
-      let extentData = cachedData.current.khasraExtent;
-
-      if (!extentData) {
-        const response = await axios.get(`${API_BASE}/rudakhasra/extent/`);
-        extentData =
-          response?.data?.data?.data ??
-          response?.data?.data ??
-          response?.data ??
-          {};
-        cachedData.current.khasraExtent = extentData;
-      }
-
+      // The Khasra geometry comes from the viewport's vector tiles, NOT from
+      // the extent endpoint. Load the same way for an individual checkbox and
+      // the Cadastral master toggle. No extra extent request or camera change.
       if (!layersRef.current.khasra?.visible) return visibleKhasraGeojson;
 
       ensureKhasraVectorLayer(
@@ -1008,8 +976,6 @@ export default function Cadastral({ map, selectedProjectId }) {
         layersRef.current.khasra.color,
       );
       setKhasraPanelOpen("khasra");
-
-      if (zoom) fitToKhasraExtent(map, extentData?.bbox);
 
       return visibleKhasraGeojson;
     } catch (error) {
@@ -1212,7 +1178,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     }
 
     if (key === "khasra") {
-      await loadKhasraTiles({ zoom: true });
+      await loadKhasraTiles();
       return;
     }
 
@@ -1719,7 +1685,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     // Chrome at once. The six checkboxes update together, while the layers
     // load independently; a new OFF request cancels work not yet started.
     const jobs = [
-      { key: "khasra", load: () => loadKhasraTiles({ zoom: false }) },
+      { key: "khasra", load: () => loadKhasraTiles() },
       { key: "moza", load: () => loadMauzas({ zoom: false }) },
       { key: "square", load: () => loadBoundaryByMauzas("square", [], { zoom: false }) },
       ...EXTRA_LAYER_DEFS.map(({ key }) => ({ key, load: () => loadExtraLayer(key, { zoom: false }) })),
