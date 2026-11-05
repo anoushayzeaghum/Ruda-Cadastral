@@ -253,6 +253,7 @@ const LAND_REVENUE_LAYER_ORDER = [
   IDS.moza.label,
   IDS.square.fill,
   IDS.square.line,
+  IDS.square.label,
   IDS.khasra.fill,
   IDS.khasra.line,
   IDS.khasra.label,
@@ -305,15 +306,16 @@ function moveLayerSafely(map, layerId, beforeId) {
 }
 
 function reorderLandRevenueLayers(map) {
-  if (!map) return;
-
+  if (!map?.getStyle) return;
   const beforeMasterPlanLayerId = getLandRevenueBeforeId(map);
-
-  LAND_REVENUE_LAYER_ORDER.slice()
-    .reverse()
-    .forEach((layerId) => {
-      moveLayerSafely(map, layerId, beforeMasterPlanLayerId);
-    });
+  const active = LAND_REVENUE_LAYER_ORDER.filter((layerId) => map.getLayer(layerId));
+  if (!active.length) return;
+  const current = (map.getStyle()?.layers || []).map((layer) => layer.id);
+  const target = beforeMasterPlanLayerId ? current.indexOf(beforeMasterPlanLayerId) : current.length;
+  if (target < 0) return;
+  // Avoid a styledata -> moveLayer -> styledata feedback loop.
+  if (active.every((id, i) => current[target - active.length + i] === id)) return;
+  active.forEach((layerId) => moveLayerSafely(map, layerId, beforeMasterPlanLayerId));
 }
 
 function getLabelExpression(key) {
@@ -331,14 +333,9 @@ function getLabelExpression(key) {
   }
 
   if (key === "khasra") {
-    return [
-      "coalesce",
-      ["to-string", ["get", "kh"]],
-      ["to-string", ["get", "KH"]],
-      ["to-string", ["get", "Kh"]],
-      ["to-string", ["get", "khasra_id"]],
-      "",
-    ];
+    // PostgreSQL's ruda_khasra vector tiles expose these attributes.
+    // Convert after coalescing so a missing key cannot suppress the fallback.
+    return ["to-string", ["coalesce", ["get", "join_shp"], ["get", "kh"], ["get", "khasra_id"], ""]];
   }
 
   return "";
@@ -568,11 +565,13 @@ function ensureKhasraVectorLayer(map, opacity, color) {
         type: "symbol",
         source: sourceId,
         "source-layer": KHASRA_SOURCE_LAYER,
-        minzoom: 14,
+        minzoom: 11,
         layout: {
           visibility,
           "text-field": getLabelExpression("khasra"),
-          "text-size": ["interpolate", ["linear"], ["zoom"], 15, 9, 18, 12],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 18, 12],
+          "symbol-avoid-edges": true,
+          "text-padding": 5,
           "text-allow-overlap": false,
           "text-ignore-placement": false,
         },
@@ -622,33 +621,10 @@ function updateKhasraVectorStyle(map, opacity, color) {
   } catch (_) {}
 }
 
-// function fitToKhasraExtent(map, bbox) {
-//   if (
-//     !map ||
-//     !Array.isArray(bbox) ||
-//     bbox.length < 4 ||
-//     !bbox.slice(0, 4).every((value) => Number.isFinite(Number(value)))
-//   ) {
-//     return;
-//   }
-
-//   const bounds = [
-//     [Number(bbox[0]), Number(bbox[1])],
-//     [Number(bbox[2]), Number(bbox[3])],
-//   ];
-//   const camera = map.cameraForBounds(bounds, { padding: 55 });
-
-//   if (!camera) return;
-
-//   map.easeTo({
-//     center: camera.center,
-//     zoom: Math.max(camera.zoom ?? KHASRA_MIN_ZOOM, KHASRA_MIN_ZOOM),
-//     bearing: camera.bearing ?? map.getBearing(),
-//     pitch: camera.pitch ?? map.getPitch(),
-//     duration: 900,
-//     essential: true,
-//   });
-// }
+// RUDA Khasra is rendered directly from vector tiles for the current viewport.
+// Do not auto-fit a project-wide extent when the individual checkbox is clicked.
+// Previously a call to a commented-out fitToKhasraExtent() threw a ReferenceError
+// and the catch block immediately hid Khasra again.
 
 function addOrUpdatePolygonLayer(map, key, geojson, opacity, color, mauzaSizes = null) {
   const config = BOUNDARY_LAYER_CONFIG[key];
@@ -763,6 +739,9 @@ export default function Cadastral({ map, selectedProjectId }) {
   const [possessionTypeVisibility, setPossessionTypeVisibility] = useState(
     () => ({ ...DEFAULT_POSSESSION_TYPE_VISIBILITY }),
   );
+
+  const possessionTypeVisibilityRef = useRef(possessionTypeVisibility);
+  possessionTypeVisibilityRef.current = possessionTypeVisibility;
 
   const cachedData = useRef({});
   const boundaryRequests = useRef({});
@@ -980,24 +959,15 @@ export default function Cadastral({ map, selectedProjectId }) {
     return loadProjectMauzas({ draw: true, zoom });
   };
 
-  const loadKhasraTiles = async ({ zoom = true } = {}) => {
+  const loadKhasraTiles = async () => {
     if (!map) return emptyFC();
 
     setLoading("khasra", true);
 
     try {
-      let extentData = cachedData.current.khasraExtent;
-
-      if (!extentData) {
-        const response = await axios.get(`${API_BASE}/rudakhasra/extent/`);
-        extentData =
-          response?.data?.data?.data ??
-          response?.data?.data ??
-          response?.data ??
-          {};
-        cachedData.current.khasraExtent = extentData;
-      }
-
+      // The Khasra geometry comes from the viewport's vector tiles, NOT from
+      // the extent endpoint. Load the same way for an individual checkbox and
+      // the Cadastral master toggle. No extra extent request or camera change.
       if (!layersRef.current.khasra?.visible) return visibleKhasraGeojson;
 
       ensureKhasraVectorLayer(
@@ -1006,8 +976,6 @@ export default function Cadastral({ map, selectedProjectId }) {
         layersRef.current.khasra.color,
       );
       setKhasraPanelOpen("khasra");
-
-      if (zoom) fitToKhasraExtent(map, extentData?.bbox);
 
       return visibleKhasraGeojson;
     } catch (error) {
@@ -1210,7 +1178,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     }
 
     if (key === "khasra") {
-      await loadKhasraTiles({ zoom: true });
+      await loadKhasraTiles();
       return;
     }
 
@@ -1327,13 +1295,18 @@ export default function Cadastral({ map, selectedProjectId }) {
     };
 
     const restoreAfterStyleChange = () => {
+      if (!layersRef.current.khasra?.visible) return;
+      if (
+        map.getSource(KHASRA_VECTOR_SOURCE_ID) &&
+        [IDS.khasra.fill, IDS.khasra.line, IDS.khasra.label].every((id) => !id || map.getLayer(id))
+      ) return;
       try {
         ensureKhasraVectorLayer(
           map,
-          layers.khasra.opacity,
-          layers.khasra.color,
+          layersRef.current.khasra.opacity,
+          layersRef.current.khasra.color,
         );
-      } catch (_) {}
+      } catch (error) { console.warn("Khasra map style restore failed:", error); }
     };
 
     const handleSourceData = (event) => {
@@ -1344,7 +1317,7 @@ export default function Cadastral({ map, selectedProjectId }) {
     map.on("sourcedata", handleSourceData);
     map.on("moveend", syncVisibleFeatures);
     map.on("zoomend", syncVisibleFeatures);
-    map.on("styledata", restoreAfterStyleChange);
+    map.on("style.load", restoreAfterStyleChange);
     syncVisibleFeatures();
 
     return () => {
@@ -1352,9 +1325,39 @@ export default function Cadastral({ map, selectedProjectId }) {
       map.off("sourcedata", handleSourceData);
       map.off("moveend", syncVisibleFeatures);
       map.off("zoomend", syncVisibleFeatures);
-      map.off("styledata", restoreAfterStyleChange);
+      map.off("style.load", restoreAfterStyleChange);
     };
   }, [map, layers.khasra.visible, layers.khasra.opacity, layers.khasra.color]);
+
+  // Mapbox setStyle() removes custom sources and layers. Re-add the remaining
+  // enabled cadastral layers, not only Mauza and Khasra.
+  useEffect(() => {
+    if (!map) return;
+    const restoreCadastral = () => {
+      const squareState = layersRef.current.square;
+      const squareData = cachedData.current.square;
+      if (squareState?.visible && squareData?.features?.length) {
+        try {
+          addOrUpdatePolygonLayer(map, "square", squareData, squareState.opacity, squareState.color);
+        } catch (error) { console.warn("Square restore failed:", error); }
+      }
+      EXTRA_LAYER_DEFS.forEach(({ key }) => {
+        const state = layersRef.current[key];
+        const data = cachedData.current[key];
+        if (!state?.visible || !data?.features?.length) return;
+        try {
+          EXTRA_LAYER_CONFIG[key].addLayer(
+            map,
+            key === "possessionLand" ? filterPossessionLandGeoJSON(data, possessionTypeVisibilityRef.current) : data,
+            state.color,
+            state.opacity / 100,
+          );
+        } catch (error) { console.warn(`${key} restore failed:`, error); }
+      });
+    };
+    map.on("style.load", restoreCadastral);
+    return () => map.off("style.load", restoreCadastral);
+  }, [map]);
 
   useEffect(() => {
     if (!map) return;
@@ -1650,13 +1653,55 @@ export default function Cadastral({ map, selectedProjectId }) {
   const allCadastralOn = ALL_CADASTRAL_LAYER_DEFS.every(
     (d) => layers[d.key]?.visible,
   );
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const bulkGeneration = useRef(0);
 
-  const toggleAllCadastral = async (e) => {
+  const toggleAllCadastral = (e) => {
     e.stopPropagation();
-    const next = !allCadastralOn;
-    for (const definition of ALL_CADASTRAL_LAYER_DEFS) {
-      await handleVisible(definition.key, next);
+    // Never serialize six network requests: a slow Mauza/Square response used
+    // to block every layer after it. Update all checkboxes immediately.
+    // The group toggle remains usable while loading to cancel/hide layers.
+    const next = !ALL_CADASTRAL_LAYER_DEFS.every(
+      (definition) => layersRef.current[definition.key]?.visible,
+    );
+    for (const { key } of ALL_CADASTRAL_LAYER_DEFS) {
+      setVisible(key, next);
+      if (!next) {
+        if (EXTRA_LAYER_CONFIG[key]) setExtraVisibility(map, key, false);
+        else hideLayer(map, key);
+      }
     }
+    const generation = ++bulkGeneration.current;
+    if (!next) {
+      setMauzaPanelOpen(false);
+      setKhasraPanelOpen(false);
+      setExtraDetailsOpen({});
+      setBulkLoading(false);
+      return;
+    }
+
+    setBulkLoading(true);
+    // Limit concurrency to avoid allocating all large GeoJSON datasets in
+    // Chrome at once. The six checkboxes update together, while the layers
+    // load independently; a new OFF request cancels work not yet started.
+    const jobs = [
+      { key: "khasra", load: () => loadKhasraTiles() },
+      { key: "moza", load: () => loadMauzas({ zoom: false }) },
+      { key: "square", load: () => loadBoundaryByMauzas("square", [], { zoom: false }) },
+      ...EXTRA_LAYER_DEFS.map(({ key }) => ({ key, load: () => loadExtraLayer(key, { zoom: false }) })),
+    ];
+    let index = 0;
+    const worker = async () => {
+      while (generation === bulkGeneration.current && index < jobs.length) {
+        const job = jobs[index++];
+        if (!layersRef.current[job.key]?.visible) continue;
+        try { await job.load(); }
+        catch (error) { console.error(`Cadastral ${job.key} load failed:`, error); }
+      }
+    };
+    void Promise.all([worker(), worker()]).finally(() => {
+      if (generation === bulkGeneration.current) setBulkLoading(false);
+    });
   };
 
   return (
@@ -1679,6 +1724,7 @@ export default function Cadastral({ map, selectedProjectId }) {
               : "Show all cadastral layers"
           }
           onClick={toggleAllCadastral}
+          aria-busy={bulkLoading}
           className={`relative ml-2 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors duration-200 focus:outline-none ${
             allCadastralOn ? "bg-[#65c96b]" : "bg-white/20"
           }`}

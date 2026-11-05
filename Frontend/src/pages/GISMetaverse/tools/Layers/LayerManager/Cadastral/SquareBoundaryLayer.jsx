@@ -6,6 +6,7 @@ export const SQUARE_BOUNDARY_IDS = {
   src: "gism-lrr-square-src",
   fill: "gism-lrr-square-fill",
   line: "gism-lrr-square-line",
+  label: "gism-lrr-square-label",
 };
 
 export function addSquareBoundaryLayer(
@@ -25,6 +26,10 @@ export function addSquareBoundaryLayer(
     lineWidth: ["interpolate", ["linear"], ["zoom"], 8, 1.25, 16, 1.5],
     lineDasharray: [6, 3],
     fillOpacity: 0,
+    // The RUDA Square model and serializer expose `square`, not `sq`.
+    labelExpression: ["to-string", ["coalesce", ["get", "square"], ["get", "Square"], ""]],
+    labelFields: ["square", "Square"],
+    labelMinZoom: 11,
     beforeId,
   });
 }

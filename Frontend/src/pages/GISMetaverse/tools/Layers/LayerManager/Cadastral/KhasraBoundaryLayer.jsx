@@ -9,13 +9,10 @@ export const KHASRA_BOUNDARY_IDS = {
   label: "gism-lrr-khasra-label",
 };
 
+// Khasra model provides join_shp, kh, sq and khasra_id on vector tiles.
 const KHASRA_LABEL = [
-  "coalesce",
-  ["to-string", ["get", "kh"]],
-  ["to-string", ["get", "KH"]],
-  ["to-string", ["get", "Kh"]],
-  ["to-string", ["get", "khasra_id"]],
-  "",
+  "to-string",
+  ["coalesce", ["get", "join_shp"], ["get", "kh"], ["get", "KH"], ["get", "khasra_id"], ""],
 ];
 
 export function addKhasraBoundaryLayer(
@@ -35,7 +32,7 @@ export function addKhasraBoundaryLayer(
     lineWidth: ["interpolate", ["linear"], ["zoom"], 8, 0.5, 16, 0.75],
     fillOpacity: 0,
     labelExpression: KHASRA_LABEL,
-    labelMinZoom: 14,
+    labelMinZoom: 11,
     beforeId,
   });
 }

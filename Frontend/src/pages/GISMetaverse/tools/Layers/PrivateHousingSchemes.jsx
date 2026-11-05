@@ -293,14 +293,14 @@ function addOrUpdateMapLayer(map, sourcePrefix, geojson, opacity, style = {}) {
       source: `${ids.source}-unique-label-points`,
       filter: ["has", UNIQUE_LABEL_PROPERTY],
       minzoom: VECTOR_LABEL_MIN_ZOOM,
-      // Mapbox maxzoom is exclusive: 18.01 keeps labels visible at zoom 18.
-      maxzoom: style.labelMaxZoom ?? 18.01,
+      // Visible from zoom 11 upward, without the former zoom-18 cutoff.
+      maxzoom: 24,
       layout: {
         visibility: "visible",
         "symbol-placement": "point",
         "text-field": ["get", UNIQUE_LABEL_PROPERTY],
         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 14, 11, 18, 14],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 11, 10, 18, 14],
         "text-max-width": 12,
         "text-anchor": "center",
         "text-allow-overlap": false,
