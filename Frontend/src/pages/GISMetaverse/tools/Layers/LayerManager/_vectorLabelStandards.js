@@ -8,7 +8,7 @@
  */
 import { area, pointOnFeature } from "@turf/turf";
 
-export const VECTOR_LABEL_MIN_ZOOM = 14;
+export const VECTOR_LABEL_MIN_ZOOM = 11;
 export const UNIQUE_LABEL_PROPERTY = "_ruda_unique_label";
 
 const normalizeLabel = (value) =>
@@ -62,7 +62,10 @@ export function buildUniquePolygonLabelPoints(
     const properties = feature.properties || {};
     const district = getProperty(properties, ["district", "DISTRICT", "dist_name"]);
     const tehsil = getProperty(properties, ["tehsil", "TEHSIL", "teh_name"]);
-    const normalized = [label.toLocaleLowerCase(), district.toLocaleLowerCase(), tehsil.toLocaleLowerCase()].join("|");
+    // Square numbers repeat across different Mauzas in the same Tehsil.
+    // Keep each location's own label while deduplicating fragments of one area.
+    const mauza = getProperty(properties, ["mauza", "mouza", "Mauza", "MOZA", "moza"]);
+    const normalized = [label, district, tehsil, mauza].map((value) => value.toLocaleLowerCase()).join("|");
     let size = 0;
     try {
       size = area(feature);
@@ -109,10 +112,10 @@ export function applyVectorLabelStandards(map) {
     if (!/^(?:gism-|gis-|metaverse-|ruda-)/i.test(layer.id)) continue;
     if (!/-label(?:s)?$/i.test(layer.id) || /intro-label/i.test(layer.id)) continue;
     if (!layer.layout?.["text-field"]) continue;
-    const maxZoom = layer.maxzoom ?? 24;
-    // Preserve explicit upper zoom limits (e.g. Housing Schemes at zoom 18).
-    if (maxZoom > VECTOR_LABEL_MIN_ZOOM && layer.minzoom !== VECTOR_LABEL_MIN_ZOOM) {
-      map.setLayerZoomRange(layer.id, VECTOR_LABEL_MIN_ZOOM, maxZoom);
+    // All RUDA vector labels appear at zoom 11 and stay available above it.
+    // A maxzoom of 24 is Mapbox's practical default upper bound.
+    if (layer.minzoom !== VECTOR_LABEL_MIN_ZOOM || (layer.maxzoom != null && layer.maxzoom < 24)) {
+      map.setLayerZoomRange(layer.id, VECTOR_LABEL_MIN_ZOOM, 24);
     }
     if (layer.layout["text-allow-overlap"] !== false) {
       map.setLayoutProperty(layer.id, "text-allow-overlap", false);

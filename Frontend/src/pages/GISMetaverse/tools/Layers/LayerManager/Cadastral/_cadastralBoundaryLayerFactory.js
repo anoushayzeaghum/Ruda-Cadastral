@@ -126,7 +126,7 @@ export function addCadastralBoundaryLayer({
   const labelLayout = {
     visibility: "visible",
     "text-field": labelTextField,
-    "text-size": ["interpolate", ["linear"], ["zoom"], 14, 9, 18, 12],
+    "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 18, 12],
     "text-font": LABEL_FONT,
     "text-allow-overlap": false,
     "text-ignore-placement": false,
