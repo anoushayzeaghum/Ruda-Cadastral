@@ -69,11 +69,13 @@ const normalizeLog = (item) => {
     fileSize: formatFileSize(item.file_size),
 
     // Support the common backend field names without breaking older log records.
+    // The title printed into the PDF is the authoritative title for this log.
+    // Prefer it to an imported KMZ file title, which can be different.
     title:
-      item.title ||
-      item.map_title ||
-      item.report_title ||
       item.print_title ||
+      item.report_title ||
+      item.map_title ||
+      item.title ||
       fallbackTitle ||
       "Untitled Map",
 
@@ -348,6 +350,9 @@ export default function KMZLogs() {
                         <Td>
                           <div className="max-w-[260px] whitespace-normal font-medium leading-5 text-slate-800">
                             {item.title}
+                            <div className="mt-1 text-[11px] font-normal text-slate-500">
+                              Saved print log #{item.id}
+                            </div>
                           </div>
                         </Td>
 

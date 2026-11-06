@@ -1,4 +1,4 @@
-export const WWTP_SITES_COLOR = "#8b5cf6";
+export const WWTP_SITES_COLOR = "#2563eb";
 
 export const getWWTPSitesFillPaint = (
   color = WWTP_SITES_COLOR,

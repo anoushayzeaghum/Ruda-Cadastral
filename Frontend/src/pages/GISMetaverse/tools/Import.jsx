@@ -2123,54 +2123,111 @@ const makePrintableHtml = ({
 </html>`;
 };
 
+/**
+ * Build ONE canonical print image and save that exact image as a PDF.
+ *
+ * Previously, native print rendered the responsive .sheet while html2canvas
+ * independently rasterized the scaled .sheet. CSS transforms and paper-size
+ * changes could make those two results look different. We now capture the
+ * unscaled, fixed-size cartographic .layout (420 x 297 mm) exactly once. The
+ * resulting JPEG is used both in the printed page and the saved PDF.
+ *
+ * The A3 design canvas is uniformly fitted into the selected A3/A4 paper;
+ * x and y are never scaled independently.
+ */
 const createPdfReportFile = async (
   printWindow,
   title,
-  { paperSize = "a4", resolutionDpi = 200 } = {},
+  { paperSize = "a4" } = {},
 ) => {
-  const reportElement = printWindow.document.querySelector(".sheet");
-  if (!reportElement) {
-    throw new Error("The printable report could not be created.");
+  const printDocument = printWindow.document;
+  const layoutElement = printDocument.querySelector(".sheet .layout");
+  if (!layoutElement) {
+    throw new Error("The printable KMZ map layout could not be created.");
   }
 
+  // In particular, don't archive a PDF while its map or inset image is missing.
   await Promise.all(
-    Array.from(printWindow.document.images).map((image) =>
-      image.complete
-        ? Promise.resolve()
-        : new Promise((resolve) => {
-            image.addEventListener("load", resolve, { once: true });
-            image.addEventListener("error", resolve, { once: true });
-          }),
-    ),
+    Array.from(printDocument.images).map(async (image) => {
+      if (!image.complete) {
+        await new Promise((resolve, reject) => {
+          image.addEventListener("load", resolve, { once: true });
+          image.addEventListener("error", () => reject(new Error("A print image failed to load.")), { once: true });
+        });
+      }
+      if (!image.naturalWidth || !image.naturalHeight) {
+        throw new Error(`A required print image failed to load: ${image.alt || "map asset"}`);
+      }
+      if (typeof image.decode === "function") {
+        await image.decode();
+      }
+    }),
   );
 
-  const resolvedPaper = normalizePrintPaperSize(paperSize);
-  // The browser's native print already uses the exact HTML layout. The log
-  // PDF must capture that SAME .sheet, not re-project the KMZ from its KML.
-  // html2canvas previously rasterized it at up to 300/96x, allocating a huge
-  // second image while the high-resolution WebGL map was still in memory.
-  // Capture at a bounded scale; embedded map images retain their detail.
-  const rect = reportElement.getBoundingClientRect();
+  // CSS 96dpi conversion, independent of the user's screen/window size.
+  const layoutWidthPx = (PRINT_PAPER_SIZES.a3.widthMm / 25.4) * 96;
+  const layoutHeightPx = (PRINT_PAPER_SIZES.a3.heightMm / 25.4) * 96;
   const snapshotScale = Math.min(
-    1.35,
-    2300 / Math.max(1, rect.width),
-    1700 / Math.max(1, rect.height),
+    1.25,
+    2300 / layoutWidthPx,
+    1700 / layoutHeightPx,
   );
-  const canvas = await html2canvas(reportElement, {
+
+  const canvas = await html2canvas(layoutElement, {
     backgroundColor: "#ffffff",
     scale: snapshotScale,
+    width: Math.ceil(layoutWidthPx),
+    height: Math.ceil(layoutHeightPx),
+    windowWidth: Math.ceil(layoutWidthPx) + 30,
+    windowHeight: Math.ceil(layoutHeightPx) + 30,
     useCORS: true,
     logging: false,
-    imageTimeout: 8000,
+    imageTimeout: 10000,
     removeContainer: true,
     foreignObjectRendering: false,
-    onclone: (documentClone) => {
-      // Avoid animation frames being recorded differently from the print.
-      const style = documentClone.createElement("style");
+    onclone: (clonedDocument) => {
+      const clonedSheet = clonedDocument.querySelector(".sheet");
+      const clonedLayout = clonedDocument.querySelector(".sheet .layout");
+      if (clonedSheet) {
+        clonedSheet.style.width = `${layoutWidthPx}px`;
+        clonedSheet.style.height = `${layoutHeightPx}px`;
+        clonedSheet.style.overflow = "visible";
+        clonedSheet.style.border = "0";
+      }
+      if (clonedLayout) {
+        clonedLayout.style.width = `${layoutWidthPx}px`;
+        clonedLayout.style.height = `${layoutHeightPx}px`;
+        clonedLayout.style.transform = "none";
+        clonedLayout.style.transformOrigin = "top left";
+        clonedLayout.style.overflow = "hidden";
+      }
+      const style = clonedDocument.createElement("style");
       style.textContent = "*, *::before, *::after { animation: none !important; transition: none !important; }";
-      documentClone.head.appendChild(style);
+      clonedDocument.head.appendChild(style);
     },
   });
+
+  if (canvas.width < 100 || canvas.height < 100) {
+    throw new Error("The archived KMZ map snapshot was unexpectedly empty.");
+  }
+
+  // Add a border directly to the snapshot, so both outputs get the SAME border.
+  const ctx = canvas.getContext("2d");
+  ctx.save();
+  ctx.strokeStyle = "#1f2937";
+  ctx.lineWidth = Math.max(2, 3 * snapshotScale);
+  const halfLine = ctx.lineWidth / 2;
+  ctx.strokeRect(
+    halfLine, halfLine,
+    canvas.width - ctx.lineWidth,
+    canvas.height - ctx.lineWidth,
+  );
+  ctx.restore();
+
+  // Use this identical JPEG for BOTH print and archived PDF. No PDF-side
+  // re-projection, layout regeneration or independent aspect-ratio stretching.
+  const imageDataUrl = canvas.toDataURL("image/jpeg", 0.94);
+  const resolvedPaper = normalizePrintPaperSize(paperSize);
   const pdf = new jsPDF({
     orientation: "landscape",
     unit: "mm",
@@ -2179,29 +2236,47 @@ const createPdfReportFile = async (
   });
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const imageRatio = canvas.width / canvas.height;
-  const pageRatio = pageWidth / pageHeight;
-  const imageWidth =
-    imageRatio > pageRatio ? pageWidth : pageHeight * imageRatio;
-  const imageHeight =
-    imageRatio > pageRatio ? pageWidth / imageRatio : pageHeight;
-
+  const imageAspect = canvas.width / canvas.height;
+  const width = Math.min(pageWidth, pageHeight * imageAspect);
+  const height = width / imageAspect;
   pdf.addImage(
-    canvas.toDataURL("image/jpeg", 0.86),
+    imageDataUrl,
     "JPEG",
-    (pageWidth - imageWidth) / 2,
-    (pageHeight - imageHeight) / 2,
-    imageWidth,
-    imageHeight,
+    (pageWidth - width) / 2,
+    (pageHeight - height) / 2,
+    width,
+    height,
+    undefined,
+    "FAST",
   );
 
   const safeName =
     String(title || "KMZ_Report")
       .replace(/[^a-z0-9]+/gi, "_")
       .replace(/^_+|_+$/g, "") || "KMZ_Report";
-  return new File([pdf.output("blob")], `${safeName}.pdf`, {
+  const reportFile = new File([pdf.output("blob")], `${safeName}.pdf`, {
     type: "application/pdf",
   });
+  return { reportFile, imageDataUrl };
+};
+
+/**
+ * Print exactly the pixels archived in the PDF. Replacing the CSS layout only
+ * AFTER it has been captured ensures we never print one version and log another.
+ */
+const useSavedSnapshotForBrowserPrint = async (printWindow, imageDataUrl) => {
+  const sheet = printWindow.document.querySelector(".sheet");
+  if (!sheet) throw new Error("KMZ print sheet is missing.");
+  const image = printWindow.document.createElement("img");
+  image.src = imageDataUrl;
+  image.alt = "Final RUDA KMZ printed map";
+  image.style.cssText =
+    "display:block;width:100%;height:100%;object-fit:contain;object-position:center;background:#fff;";
+  // The cartographic border is already embedded in the shared snapshot.
+  sheet.style.border = "0";
+  sheet.style.background = "#fff";
+  sheet.replaceChildren(image);
+  if (typeof image.decode === "function") await image.decode();
 };
 
 // ── component ──────────────────────────────────────────────────────────────────
@@ -2774,21 +2849,37 @@ export default function Import({ map, filters, onClose }) {
         ),
       );
 
-      // Capture the SAME completed print DOM while it is still accessible.
-      // Previously this happened after window.print(); closing the print tab
-      // or the dialog could invalidate the document, and high-DPI re-capture
-      // could exhaust Chrome memory. A failed PDF must not lose the KMZ log.
+      // Produce one fixed-aspect-ratio image for BOTH the browser print and the
+      // PDF stored in KMZ logs. If saving fails, preserve native print but do
+      // not attach a broken / mismatched PDF to the log record.
       let reportFile = null;
       try {
-        reportFile = await createPdfReportFile(printWindow, title, {
+        const canonicalReport = await createPdfReportFile(printWindow, title, {
           paperSize,
-          resolutionDpi,
         });
+        await useSavedSnapshotForBrowserPrint(
+          printWindow,
+          canonicalReport.imageDataUrl,
+        );
+        reportFile = canonicalReport.reportFile;
       } catch (reportError) {
-        console.error("Saved KMZ map PDF could not be generated", reportError);
-        setWarning("The map can be printed, but the saved PDF could not be generated. The KMZ log will still be saved.");
+        console.error("Canonical KMZ map PDF could not be generated", reportError);
+        setWarning("The map can be printed, but the matching saved PDF could not be generated. The KMZ log will be saved without a PDF.");
       }
 
+      // Avoid closing the print tab while Chrome's native print UI is active.
+      // It is safe to close only when the print dialog has finished.
+      printWindow.addEventListener(
+        "afterprint",
+        () => {
+          try {
+            if (!printWindow.closed) printWindow.close();
+          } catch {
+            // The browser may keep the print window open; no further action.
+          }
+        },
+        { once: true },
+      );
       printWindow.focus();
       printWindow.print();
 
@@ -2820,11 +2911,7 @@ export default function Import({ map, filters, onClose }) {
         console.error("KMZ print log could not be saved:", logError);
       });
 
-      try {
-        printWindow.close();
-      } catch {
-        // Ignore browser close restrictions.
-      }
+      // Do not close here: Chrome may still be showing the print dialog.
     } catch (printError) {
       console.error("Print error:", printError);
       printWindow.close();
