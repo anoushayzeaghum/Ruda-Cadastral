@@ -78,7 +78,7 @@ export function addWaterSupplyPointsLayer(map, data) {
       id: LAYERS.waterSupplyPointsLabel,
       type: "symbol",
       source: SOURCES.waterSupplyPoints,
-      minzoom: 16,
+      minzoom: 10,
       layout: {
         "text-field": [
           "coalesce",
@@ -135,7 +135,7 @@ export function addWaterSupplyLinesLayer(map, data) {
       id: LAYERS.waterSupplyLinesLabel,
       type: "symbol",
       source: SOURCES.waterSupplyLines,
-      minzoom: 16,
+      minzoom: 10,
       layout: {
         "symbol-placement": "line",
         "text-field": [
@@ -199,7 +199,7 @@ export function addSewagePointsLayer(map, data) {
       id: LAYERS.sewagePointsLabel,
       type: "symbol",
       source: SOURCES.sewagePoints,
-      minzoom: 16,
+      minzoom: 10,
       layout: {
         "text-field": [
           "coalesce",
@@ -266,7 +266,7 @@ export function addCameraLocationsLayer(map, data) {
       id: LAYERS.cameraLocationsLabel,
       type: "symbol",
       source: SOURCES.cameraLocations,
-      minzoom: 15,
+      minzoom: 10,
       layout: {
         "text-field": [
           "coalesce",

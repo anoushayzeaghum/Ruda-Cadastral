@@ -27,7 +27,7 @@ export const POSSESSION_LAND_TYPES = [
   },
 ];
 
-const LAND_LABEL_MIN_ZOOM = 15;
+const LAND_LABEL_MIN_ZOOM = 10;
 const LAND_LABEL_MAX_ZOOM = 24;
 
 const NORMALIZED_L_TYPE_EXPRESSION = [

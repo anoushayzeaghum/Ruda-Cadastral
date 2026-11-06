@@ -218,7 +218,7 @@ export function addOrUpdateRudaPlanningBoundary(
       id: RUDA_PLANNING_BOUNDARY.labelLayer,
       type: "symbol",
       source: RUDA_PLANNING_BOUNDARY.source,
-      minzoom: 6,
+      minzoom: 10,
       layout: {
         visibility: "visible",
         ...getMasterPlanPhasesLabelLayout(),

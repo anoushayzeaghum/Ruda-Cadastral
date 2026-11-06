@@ -154,7 +154,7 @@ export function addOrUpdateRudaNotifiedBoundary(
       id: RUDA_NOTIFIED_BOUNDARY.labelLayer,
       type: "symbol",
       source: RUDA_NOTIFIED_BOUNDARY.source,
-      minzoom: 7,
+      minzoom: 10,
       layout: {
         visibility: "visible",
         "symbol-placement": "point",

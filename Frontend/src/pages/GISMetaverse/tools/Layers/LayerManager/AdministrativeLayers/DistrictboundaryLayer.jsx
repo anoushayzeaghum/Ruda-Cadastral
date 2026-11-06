@@ -124,7 +124,7 @@ export function addOrUpdateDistrictBoundary(
       id: DISTRICT_BOUNDARY.labelLayer,
       type: "symbol",
       source: DISTRICT_BOUNDARY.source,
-      minzoom: 6,
+      minzoom: 10,
       layout: {
         visibility: "visible",
         "symbol-placement": "point",

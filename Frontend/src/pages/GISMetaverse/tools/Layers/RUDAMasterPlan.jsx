@@ -298,7 +298,7 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
     getLinePaint: getMasterPlanPhasesOutlinePaint,
     getLabelLayout: getMasterPlanPhasesLabelLayout,
     getLabelPaint: getMasterPlanPhasesLabelPaint,
-    labelMinZoom: 6,
+    labelMinZoom: 10,
     outlineLineCap: "round",
     lineCap: "round",
   },

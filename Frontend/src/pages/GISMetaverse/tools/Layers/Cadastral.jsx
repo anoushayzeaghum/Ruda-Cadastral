@@ -52,7 +52,7 @@ const MASAWI_BOUNDS = [
 // The Khasra layer therefore uses PostGIS vector tiles and only downloads the
 // tiles visible in the current map viewport.
 const KHASRA_SOURCE_LAYER = "ruda_khasra";
-const KHASRA_MIN_ZOOM = 11;
+const KHASRA_MIN_ZOOM = 10;
 const KHASRA_VISIBLE_LIST_LIMIT = 250;
 
 const IDS = {
@@ -565,11 +565,11 @@ function ensureKhasraVectorLayer(map, opacity, color) {
         type: "symbol",
         source: sourceId,
         "source-layer": KHASRA_SOURCE_LAYER,
-        minzoom: 11,
+        minzoom: KHASRA_MIN_ZOOM,
         layout: {
           visibility,
           "text-field": getLabelExpression("khasra"),
-          "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 18, 12],
+          "text-size": ["interpolate", ["linear"], ["zoom"], KHASRA_MIN_ZOOM, 9, 18, 12],
           "symbol-avoid-edges": true,
           "text-padding": 5,
           "text-allow-overlap": false,

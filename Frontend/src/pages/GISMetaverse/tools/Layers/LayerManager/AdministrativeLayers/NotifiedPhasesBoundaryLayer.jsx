@@ -179,7 +179,7 @@ export function addOrUpdateNotifiedPhasesBoundary(
       id: NOTIFIED_PHASES_BOUNDARY.labelLayer,
       type: "symbol",
       source: NOTIFIED_PHASES_BOUNDARY.source,
-      minzoom: 6,
+      minzoom: 10,
       layout: {
         visibility: "visible",
         "symbol-placement": "point",

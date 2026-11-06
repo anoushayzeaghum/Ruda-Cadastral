@@ -83,7 +83,7 @@ export function addGeodeticPointsLayer(
       id: GEODETIC_POINTS_IDS.label,
       type: "symbol",
       source: GEODETIC_POINTS_IDS.source,
-      minzoom: 13,
+      minzoom: 10,
       layout: {
         visibility: "visible",
         "text-field": [

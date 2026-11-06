@@ -298,7 +298,7 @@ export function addMasterPlanLayer(map, data, color = null) {
       id: LAYERS.masterPlanLabel,
       type: "symbol",
       source: SOURCES.masterPlan,
-      minzoom: 16,
+      minzoom: 10,
       layout: {
         "text-field": [
           "coalesce",
