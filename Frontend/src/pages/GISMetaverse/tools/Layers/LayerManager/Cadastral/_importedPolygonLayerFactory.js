@@ -40,7 +40,7 @@ export function addImportedPolygonLayer({
   labelFields = ["name", "package", "khasra_lab", "mouza"],
   lineWidth = 1.4,
   lineDasharray,
-  labelMinZoom = 12,
+  labelMinZoom = VECTOR_LABEL_MIN_ZOOM,
 }) {
   if (!map) return;
 

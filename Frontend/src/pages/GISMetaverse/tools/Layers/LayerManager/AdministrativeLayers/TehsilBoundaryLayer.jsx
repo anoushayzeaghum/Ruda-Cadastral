@@ -120,7 +120,7 @@ export function addOrUpdateTehsilBoundary(
       id: TEHSIL_BOUNDARY.labelLayer,
       type: "symbol",
       source: TEHSIL_BOUNDARY.source,
-      minzoom: 8,
+      minzoom: 10,
       layout: {
         visibility: "visible",
         "symbol-placement": "point",

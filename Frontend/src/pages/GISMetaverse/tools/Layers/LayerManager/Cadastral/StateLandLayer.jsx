@@ -6,7 +6,7 @@ export const STATE_LAND_COLORS = {
   line: "#5F5E5A",
 };
 
-const LAND_LABEL_MIN_ZOOM = 15;
+const LAND_LABEL_MIN_ZOOM = 10;
 const LAND_LABEL_MAX_ZOOM = 24;
 
 const KHASRA_LABEL_EXPRESSION = [

@@ -41,7 +41,7 @@ export function addMauzaBoundaryLayer(
     fillOpacity: 0,
     labelExpression: MAUZA_LABEL,
     labelFields: ["mauza", "Mauza", "moza", "Moza", "mouza", "Mouza", "name", "Name"],
-    labelMinZoom: 11,
+    labelMinZoom: 10,
     beforeId,
   });
 

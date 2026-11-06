@@ -39,9 +39,9 @@ const HousingSchemesStyle = Object.freeze({
   dataDrivenColor: HousingSchemesColorExpression,
 
   // Follow the existing scheme-status palette for text labels.
-  // Starts at zoom 14; Mapbox maxzoom is exclusive (18.01 includes 18).
+  // RUDA vector labels begin at zoom 10 and remain available above it.
   labelColor: HousingSchemesColorExpression,
-  labelMinZoom: 11,
+  labelMinZoom: 10,
   labelMaxZoom: 24,
   labelHaloColor: "#ffffff",
   labelHaloWidth: 1.8,

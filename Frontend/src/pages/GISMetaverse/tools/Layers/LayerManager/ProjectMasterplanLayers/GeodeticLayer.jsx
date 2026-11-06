@@ -81,7 +81,7 @@ export function addGeodeticNetworkLayer(
       id: LAYERS.geodeticNetworkLabel,
       type: "symbol",
       source: SOURCES.geodeticNetwork,
-      minzoom: 13,
+      minzoom: 10,
       layout: labelLayout,
       paint: labelPaint,
     });

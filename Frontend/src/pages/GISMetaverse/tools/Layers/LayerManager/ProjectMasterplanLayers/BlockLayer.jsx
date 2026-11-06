@@ -81,7 +81,7 @@ export function addBlockLayer(map, data) {
       id: LAYERS.blockLabel,
       type: "symbol",
       source: SOURCES.block,
-      minzoom: 14,
+      minzoom: 10,
       layout: {
         "text-field": blockNameExpression,
         "text-size": ["interpolate", ["linear"], ["zoom"], 14, 11, 18, 16],

@@ -22,7 +22,7 @@ export function addContourLayer(map, data, color = null) {
       id: LAYERS.contoursLabel,
       type: "symbol",
       source: SOURCES.contours,
-      minzoom: 15,
+      minzoom: 10,
       layout: {
         "symbol-placement": "line",
         "text-field": [

@@ -107,7 +107,7 @@ const POLYGON_STYLES = {
     fillOpacityMultiplier: 0.16,
     lineWidth: 1.5,
     labelColor: "#ff8b24",
-    labelMinZoom: 14,
+    labelMinZoom: 10,
   },
   square: {
     fillColor: "#d7bf32",
@@ -121,7 +121,7 @@ const POLYGON_STYLES = {
     fillOpacityMultiplier: 0,
     lineWidth: 1.25,
     labelColor: "#1f7a3a",
-    labelMinZoom: 14,
+    labelMinZoom: 10,
   },
 };
 
@@ -132,7 +132,7 @@ function getPolygonStyle(key, color) {
     fillOpacityMultiplier: 0.2,
     lineWidth: 1.5,
     labelColor: getLayerColor(key),
-    labelMinZoom: 14,
+    labelMinZoom: 10,
   };
 
   if (!color) return baseStyle;

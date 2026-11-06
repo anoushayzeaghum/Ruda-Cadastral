@@ -8,7 +8,7 @@
  */
 import { area, pointOnFeature } from "@turf/turf";
 
-export const VECTOR_LABEL_MIN_ZOOM = 11;
+export const VECTOR_LABEL_MIN_ZOOM = 10;
 export const UNIQUE_LABEL_PROPERTY = "_ruda_unique_label";
 
 // Satellite hybrids have raster layers instead of native Mapbox symbols.
@@ -127,7 +127,7 @@ export function applyVectorLabelStandards(map) {
     if (!/^(?:gism-|gis-|metaverse-|ruda-)/i.test(layer.id)) continue;
     if (!/-label(?:s)?$/i.test(layer.id) || /intro-label/i.test(layer.id)) continue;
     if (!layer.layout?.["text-field"]) continue;
-    // All RUDA vector labels appear at zoom 11 and stay available above it.
+    // All RUDA vector labels appear at zoom 10 and stay available above it.
     // A maxzoom of 24 is Mapbox's practical default upper bound.
     if (layer.minzoom !== VECTOR_LABEL_MIN_ZOOM || (layer.maxzoom != null && layer.maxzoom < 24)) {
       map.setLayerZoomRange(layer.id, VECTOR_LABEL_MIN_ZOOM, 24);

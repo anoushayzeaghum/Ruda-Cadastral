@@ -29,7 +29,7 @@ export function addSquareBoundaryLayer(
     // The RUDA Square model and serializer expose `square`, not `sq`.
     labelExpression: ["to-string", ["coalesce", ["get", "square"], ["get", "Square"], ""]],
     labelFields: ["square", "Square"],
-    labelMinZoom: 11,
+    labelMinZoom: 10,
     beforeId,
   });
 }
