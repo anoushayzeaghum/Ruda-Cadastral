@@ -14,8 +14,16 @@ import shp from "shpjs";
 import JSZip from "jszip";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import {
+  openKmzPdfPreview,
+  addManualPrintControls,
+} from "./kmzPdfPreview";
 import mapboxgl from "mapbox-gl";
 import { kml as kmlToGeoJSON } from "@tmcw/togeojson";
+import {
+  inspectImportedGeoJSON,
+  fitPrintMapToVisibleGeography,
+} from "./kmzPrintGeometry";
 import RudaLogo from "../../../assets/Ruda.png";
 import RudaLandManagementLogo from "../../../assets/RUDA L&M.png";
 import { PRINT_EVENTS, dispatchPrintEvent } from "../Printing/PrintEvents";
@@ -1650,8 +1658,11 @@ const captureHighResolutionKmzPrintMap = async ({
       style: styleClone,
       center: map.getCenter(),
       zoom: map.getZoom(),
-      bearing: map.getBearing(),
-      pitch: map.getPitch(),
+      // A printable cadastral map must be north-up and orthographic: a tilted
+      // or rotated interactive camera can make parcels look distorted and also
+      // invalidates the fixed north arrow in the layout.
+      bearing: 0,
+      pitch: 0,
       interactive: false,
       attributionControl: false,
       preserveDrawingBuffer: true,
@@ -1681,18 +1692,37 @@ const captureHighResolutionKmzPrintMap = async ({
         if (/image|icon/i.test(message)) return;
       });
       printMap.once("load", () => {
-        printMap.resize();
+        try {
+          printMap.resize();
+          // CRITICAL: do not reuse the live map's zoom for a completely
+          // different print canvas size. Fit the live geographic footprint
+          // into this landscape canvas using a uniform map projection.
+          fitPrintMapToVisibleGeography(printMap, map);
+          printMap.triggerRepaint?.();
+        } catch (fitError) {
+          if (!settled) {
+            settled = true;
+            clearTimeout(timeout);
+            reject(fitError);
+          }
+          return;
+        }
         printMap.once("idle", finish);
         // Some raster sources never emit a second idle in constrained networks.
         setTimeout(finish, dpi >= 300 ? 5000 : 3500);
       });
     });
 
-    return captureMapWithKmzPrintCallout({
-      map: printMap,
-      importedGeoJSON,
-      label,
-    });
+    return {
+      imageDataUrl: captureMapWithKmzPrintCallout({
+        map: printMap,
+        importedGeoJSON,
+        label,
+      }),
+      // Calculate the scale from the FINAL print camera, not the original
+      // interactive camera: fitBounds normally changes the map's zoom.
+      scaleBarInfo: getPrintScaleBarInfo(printMap, paperSize),
+    };
   } finally {
     try {
       printMap?.remove();
@@ -1722,7 +1752,7 @@ const chooseNiceScaleDistance = (rawMeters) => {
  */
 const getPrintScaleBarInfo = (map, paperSize = "a4") => {
   if (!map) {
-    return { widthPx: 240, halfLabel: "75", totalLabel: "150", unit: "Meters" };
+    return { widthPx: 240, quarterLabel: "37.5", halfLabel: "75", threeQuarterLabel: "112.5", totalLabel: "150", unit: "Meters" };
   }
 
   const latitude = map.getCenter().lat;
@@ -1736,15 +1766,30 @@ const getPrintScaleBarInfo = (map, paperSize = "a4") => {
   const printPixelsPerMapPixel =
     getLandscapePaperCssWidthPx(paperSize) / mapCssWidth;
 
-  const targetPrintWidth = 265;
-  const rawMeters =
-    (targetPrintWidth / printPixelsPerMapPixel) * metersPerMapPixel;
-  const totalMeters = chooseNiceScaleDistance(rawMeters);
-  const widthPx = clampNumber(
-    (totalMeters / metersPerMapPixel) * printPixelsPerMapPixel,
-    150,
-    300,
+  const targetPrintWidth = 240;
+  const pixelsPerMeter = printPixelsPerMapPixel / metersPerMapPixel;
+  const rawMeters = targetPrintWidth / pixelsPerMeter;
+  // Do not clamp the visual width without adjusting the numeric labels: that
+  // makes the scale bar cartographically false. Select a nice interval whose
+  // actual pixel width is close to the intended layout size instead.
+  const reference = chooseNiceScaleDistance(rawMeters);
+  const niceDistances = [1, 1.5, 2, 2.5, 5, 7.5, 10];
+  const magnitude = 10 ** Math.floor(Math.log10(reference));
+  const candidates = [-1, 0, 1].flatMap((power) =>
+    niceDistances.map((step) => step * magnitude * 10 ** power),
   );
+  const acceptable = candidates.filter((distance) => {
+    const pixels = distance * pixelsPerMeter;
+    return pixels >= 150 && pixels <= 300;
+  });
+  const choices = acceptable.length ? acceptable : candidates;
+  const totalMeters = choices.reduce((best, distance) =>
+    Math.abs(distance * pixelsPerMeter - targetPrintWidth) <
+    Math.abs(best * pixelsPerMeter - targetPrintWidth)
+      ? distance
+      : best,
+  );
+  const widthPx = totalMeters * pixelsPerMeter;
 
   const formatMeters = (meters) => {
     if (meters >= 100) return String(Math.round(meters));
@@ -1754,7 +1799,9 @@ const getPrintScaleBarInfo = (map, paperSize = "a4") => {
 
   return {
     widthPx,
+    quarterLabel: formatMeters(totalMeters / 4),
     halfLabel: formatMeters(totalMeters / 2),
+    threeQuarterLabel: formatMeters((totalMeters * 3) / 4),
     totalLabel: formatMeters(totalMeters),
     unit: "Meters",
   };
@@ -1796,14 +1843,13 @@ const makePrintableHtml = ({
   const landUseLegendHtml = ""; // Legend is now rendered directly into the inset PNG.
   const resolvedScaleBar = scaleBarInfo || {
     widthPx: 240,
+    quarterLabel: "37.5",
     halfLabel: "75",
+    threeQuarterLabel: "112.5",
     totalLabel: "150",
     unit: "Meters",
   };
-  const scaleBarWidth = Math.max(
-    150,
-    Math.min(300, Number(resolvedScaleBar.widthPx) || 240),
-  );
+  const scaleBarWidth = Number(resolvedScaleBar.widthPx) || 240;
   const resolvedPaper = normalizePrintPaperSize(paperSize);
   const layoutScale = resolvedPaper.widthMm / PRINT_PAPER_SIZES.a3.widthMm;
 
@@ -1840,7 +1886,8 @@ const makePrintableHtml = ({
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      /* NEVER crop / stretch a print fallback with a different aspect ratio. */
+      object-fit: contain;
       object-position: center;
       display: block;
     }
@@ -2011,7 +2058,7 @@ const makePrintableHtml = ({
     }
     .scale-segment {
       display: block;
-      flex: 0 0 20%;
+      flex: 0 0 25%;
       height: 100%;
       border-right: 1px solid #111111;
       -webkit-print-color-adjust: exact;
@@ -2095,10 +2142,10 @@ const makePrintableHtml = ({
       <div class="scale-wrap" aria-label="Map scale bar">
         <div class="scale-labels">
           <span class="scale-label start">0</span>
-          <span class="scale-label q1">50</span>
-          <span class="scale-label q2">100</span>
-          <span class="scale-label q3">150</span>
-          <span class="scale-label end">200</span>
+          <span class="scale-label q1">${escapeHtml(resolvedScaleBar.quarterLabel || "25")}</span>
+          <span class="scale-label q2">${escapeHtml(resolvedScaleBar.halfLabel)}</span>
+          <span class="scale-label q3">${escapeHtml(resolvedScaleBar.threeQuarterLabel || "75")}</span>
+          <span class="scale-label end">${escapeHtml(resolvedScaleBar.totalLabel)}</span>
         </div>
         <div class="scale-bar-row">
           <div class="scale-bar">
@@ -2106,7 +2153,6 @@ const makePrintableHtml = ({
             <span class="scale-segment" style="background-color:#ffffff"></span>
             <span class="scale-segment" style="background-color:#000000"></span>
             <span class="scale-segment" style="background-color:#ffffff"></span>
-            <span class="scale-segment" style="background-color:#000000"></span>
           </div>
           <span class="scale-unit">${escapeHtml(resolvedScaleBar.unit || "Meters")}</span>
         </div>
@@ -2115,9 +2161,9 @@ const makePrintableHtml = ({
     </div>
   </div>
   <script>
-    // Printing is triggered by the parent window as soon as the report snapshot
-    // has been generated. The KMZ log upload runs independently so network
-    // latency does not delay the user's browser print dialog.
+    // The parent opens the finished PDF in a separate browser tab, without
+    // invoking native print() from the GIS Metaverse React window. The PDF
+    // viewer provides Print and Download controls; KMZ log upload is async.
   </script>
 </body>
 </html>`;
@@ -2130,7 +2176,8 @@ const makePrintableHtml = ({
  * independently rasterized the scaled .sheet. CSS transforms and paper-size
  * changes could make those two results look different. We now capture the
  * unscaled, fixed-size cartographic .layout (420 x 297 mm) exactly once. The
- * resulting JPEG is used both in the printed page and the saved PDF.
+ * resulting JPEG is embedded in the single PDF that is both previewed in
+ * Chrome and attached to the KMZ print log.
  *
  * The A3 design canvas is uniformly fitted into the selected A3/A4 paper;
  * x and y are never scaled independently.
@@ -2257,26 +2304,7 @@ const createPdfReportFile = async (
   const reportFile = new File([pdf.output("blob")], `${safeName}.pdf`, {
     type: "application/pdf",
   });
-  return { reportFile, imageDataUrl };
-};
-
-/**
- * Print exactly the pixels archived in the PDF. Replacing the CSS layout only
- * AFTER it has been captured ensures we never print one version and log another.
- */
-const useSavedSnapshotForBrowserPrint = async (printWindow, imageDataUrl) => {
-  const sheet = printWindow.document.querySelector(".sheet");
-  if (!sheet) throw new Error("KMZ print sheet is missing.");
-  const image = printWindow.document.createElement("img");
-  image.src = imageDataUrl;
-  image.alt = "Final RUDA KMZ printed map";
-  image.style.cssText =
-    "display:block;width:100%;height:100%;object-fit:contain;object-position:center;background:#fff;";
-  // The cartographic border is already embedded in the shared snapshot.
-  sheet.style.border = "0";
-  sheet.style.background = "#fff";
-  sheet.replaceChildren(image);
-  if (typeof image.decode === "function") await image.decode();
+  return { reportFile };
 };
 
 // ── component ──────────────────────────────────────────────────────────────────
@@ -2604,6 +2632,16 @@ export default function Import({ map, filters, onClose }) {
       // ── add to map ───────────────────────────────────────────────────────────
       const importTitle = getImportedTitle(file.name);
       const preparedGeoJSON = prepareImportedFeatures(geojson, importTitle);
+      const coordinateCheck = inspectImportedGeoJSON(preparedGeoJSON, type);
+      if (coordinateCheck.error) {
+        setError(coordinateCheck.error);
+        return;
+      }
+      if (coordinateCheck.warning) {
+        setWarning((previous) =>
+          previous ? `${previous} ${coordinateCheck.warning}` : coordinateCheck.warning,
+        );
+      }
 
       addLayers(preparedGeoJSON, type);
       setImportedGeoJSON(preparedGeoJSON);
@@ -2694,9 +2732,11 @@ export default function Import({ map, filters, onClose }) {
     printWindow.document.open();
     printWindow.document.write(`<!doctype html>
       <html>
-        <head><title>Preparing map…</title></head>
-        <body style="font-family:Arial,sans-serif;padding:24px">
-          Preparing printable map…
+        <head><title>Preparing KMZ PDF preview…</title></head>
+        <body style="font-family:Arial,sans-serif;padding:24px;color:#111827;background:#f8fafc">
+          <h2>Preparing KMZ PDF preview…</h2>
+          <p>The completed PDF will open here with Print and Download controls.</p>
+          <p>You can return to GIS Metaverse to keep working after preparation.</p>
         </body>
       </html>`);
     printWindow.document.close();
@@ -2778,14 +2818,17 @@ export default function Import({ map, filters, onClose }) {
       // on an off-screen canvas used by the printable output. This guarantees
       // `/gis-metaverse` always keeps its normal vector-style text labeling.
       let mapImage;
+      let scaleBarInfo;
       try {
-        mapImage = await captureHighResolutionKmzPrintMap({
+        const highResolutionResult = await captureHighResolutionKmzPrintMap({
           map,
           importedGeoJSON,
           label: printCalloutLabel,
           paperSize,
           resolutionDpi,
         });
+        mapImage = highResolutionResult.imageDataUrl;
+        scaleBarInfo = highResolutionResult.scaleBarInfo;
       } catch (highResolutionError) {
         console.warn(
           "High-resolution print render could not be created; using the live map canvas as fallback.",
@@ -2796,6 +2839,8 @@ export default function Import({ map, filters, onClose }) {
           importedGeoJSON,
           label: printCalloutLabel,
         });
+        scaleBarInfo = getPrintScaleBarInfo(map, paperSize);
+        setWarning("High-resolution map capture was unavailable. The print uses the current map view without stretching; please verify the preview before saving.");
       }
 
       if (!mapImage || mapImage === "data:," || mapImage.length < 1000) {
@@ -2818,7 +2863,7 @@ export default function Import({ map, filters, onClose }) {
       const legendRows = buildLegendRows(importedFileLegendLabel);
       // Reference-style scale bar only. Latitude / longitude / zoom metadata
       // are intentionally omitted from the printed layout.
-      const scaleBarInfo = getPrintScaleBarInfo(map, paperSize);
+      // scaleBarInfo was calculated from the actual captured map above.
 
       printWindow.document.open();
       printWindow.document.write(
@@ -2835,9 +2880,9 @@ export default function Import({ map, filters, onClose }) {
       );
       printWindow.document.close();
 
-      // Wait only for printable assets, then show the browser print dialog
-      // immediately. The internal report-file generation and API log upload no
-      // longer delay the user's print/save-to-PDF dialog.
+      // Wait for the images in the layout before taking its canonical PDF
+      // snapshot. This is done only during preparation; no native print dialog
+      // is launched from /gis-metaverse.
       await Promise.all(
         Array.from(printWindow.document.images).map((image) =>
           image.complete
@@ -2849,39 +2894,30 @@ export default function Import({ map, filters, onClose }) {
         ),
       );
 
-      // Produce one fixed-aspect-ratio image for BOTH the browser print and the
-      // PDF stored in KMZ logs. If saving fails, preserve native print but do
-      // not attach a broken / mismatched PDF to the log record.
+      // One fixed-aspect-ratio PDF is shared by the standalone browser PDF
+      // preview and the KMZ admin log. Chrome's native print() call is modal:
+      // calling it here blocks the GIS Metaverse React page until the dialog
+      // closes. A pre-opened tab navigated to the finished PDF does not.
       let reportFile = null;
       try {
         const canonicalReport = await createPdfReportFile(printWindow, title, {
           paperSize,
         });
-        await useSavedSnapshotForBrowserPrint(
-          printWindow,
-          canonicalReport.imageDataUrl,
-        );
         reportFile = canonicalReport.reportFile;
+        try {
+          openKmzPdfPreview(printWindow, reportFile);
+        } catch (previewError) {
+          console.warn("The PDF viewer could not be opened; showing the HTML map preview instead.", previewError);
+          addManualPrintControls(printWindow);
+          setWarning("The PDF viewer could not open automatically. Use Print / Save as PDF in the map preview tab.");
+        }
       } catch (reportError) {
         console.error("Canonical KMZ map PDF could not be generated", reportError);
-        setWarning("The map can be printed, but the matching saved PDF could not be generated. The KMZ log will be saved without a PDF.");
+        // Keep an actionable, non-modal preview rather than blocking the GIS
+        // Metaverse screen with Chrome's print dialog.
+        addManualPrintControls(printWindow);
+        setWarning("The matching KMZ log PDF could not be generated. Use Print / Save as PDF in the map preview tab; the KMZ will be logged without a PDF.");
       }
-
-      // Avoid closing the print tab while Chrome's native print UI is active.
-      // It is safe to close only when the print dialog has finished.
-      printWindow.addEventListener(
-        "afterprint",
-        () => {
-          try {
-            if (!printWindow.closed) printWindow.close();
-          } catch {
-            // The browser may keep the print window open; no further action.
-          }
-        },
-        { once: true },
-      );
-      printWindow.focus();
-      printWindow.print();
 
       const printedBy = (() => {
         try {
@@ -2911,7 +2947,8 @@ export default function Import({ map, filters, onClose }) {
         console.error("KMZ print log could not be saved:", logError);
       });
 
-      // Do not close here: Chrome may still be showing the print dialog.
+      // Keep the PDF preview tab open. The GIS Metaverse page is now free for
+      // editing; the user prints/downloads from Chrome's separate PDF viewer.
     } catch (printError) {
       console.error("Print error:", printError);
       printWindow.close();
