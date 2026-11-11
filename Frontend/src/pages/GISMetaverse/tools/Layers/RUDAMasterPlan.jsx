@@ -15,6 +15,15 @@ import ProposedRiverAttribute from "./AttributeTable/RudaMasterPlan/ProposedRive
 import River2025Attribute from "./AttributeTable/RudaMasterPlan/River2025Attribute";
 import ProposedWWTPSitesAttribute from "./AttributeTable/RudaMasterPlan/ProposedWWTPSitesAttribute";
 import ProposedSWTPSitesAttribute from "./AttributeTable/RudaMasterPlan/ProposedSWTPSitesAttribute";
+import ProjectsAttribute from "./AttributeTable/RudaMasterPlan/ProjectsAttribute";
+import {
+  buildProjectLabelGeoJSON,
+  defaultProjectColors,
+  getProjectCategories,
+  projectCategoryValue,
+  projectColorExpression,
+  projectFeatureProperties,
+} from "./LayerManager/RudaMasterPlanLayers/ProjectsSymbology";
 
 import {
   MASTER_PLANNING_BOUNDARY_COLOR,
@@ -112,6 +121,8 @@ import {
 } from "./LayerManager/RudaMasterPlanLayers/WWTPLayer/SWTPSitesLayer";
 
 import {
+  getProjects,
+  getProjectGeoJSON,
   getCityLevelServiceGeoJSON,
   getMpPrincipleZoningGeoJSON,
   getMpPrincipleZoningNotifiedGeoJSON,
@@ -131,7 +142,17 @@ import {
 import InlineLayerLegend from "./_InlineLayerLegend";
 import { lineLegend, polygonLegend } from "./_legendUtils";
 
+// The Projects layer represents the same dataset used by MetaverseSubHeader.
+// Keep this distinct from the single selected-project boundary under PROJECT.
 const RUDA_MASTER_PLAN_GROUPS = [
+  {
+    key: "projectsGroup",
+    label: "Projects",
+    standalone: true,
+    children: [
+      { key: "allProjects", label: "Projects", color: "#2563eb" },
+    ],
+  },
   {
     key: "masterPlanningBoundaryGroup",
     label: "Planning Boundary",
@@ -278,7 +299,121 @@ const BOUNDARY_FILTER = [
   false,
 ];
 
+// /api/project/ is backed by the SAME PostGIS `project` table used by
+// MetaverseSubHeader. Prefer its embedded geometries when the service returns
+// them, and only request individual boundaries for records missing geometry.
+// This prevents N redundant API requests for a normal GeoJSON project list.
+const fetchAllProjectsGeoJSON = async () => {
+  const response = await getProjects();
+  const projects = Array.isArray(response) ? response : response?.features;
+  if (!Array.isArray(projects)) {
+    throw new Error("Projects API did not return a list of projects");
+  }
+
+  const seen = new Set();
+  const available = projects.filter((project) => {
+    const props = project?.properties || project;
+    const id = props?.gid ?? project?.id;
+    if (id === undefined || id === null || id === "") return false;
+    const key = String(id);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const results = new Array(available.length);
+  const failures = [];
+  let nextIndex = 0;
+  const worker = async () => {
+    while (nextIndex < available.length) {
+      const index = nextIndex++;
+      const project = available[index];
+      const metadata = project?.properties || project;
+      const projectId = metadata.gid ?? project.id;
+      try {
+        const embeddedGeometry = project.geometry || project.geom || metadata.geom;
+        let features;
+        if (embeddedGeometry?.coordinates) {
+          features = [{
+            type: "Feature",
+            id: project.id ?? projectId,
+            properties: metadata,
+            geometry: embeddedGeometry,
+          }];
+        } else {
+          const result = await getProjectGeoJSON(projectId);
+          features = result?.type === "Feature"
+            ? [result]
+            : normalizeGeoJSON(result).features;
+        }
+        results[index] = features
+          .filter((feature) => feature?.geometry?.coordinates)
+          .map((feature) => ({
+            ...feature,
+            type: "Feature",
+            properties: projectFeatureProperties(feature, metadata, projectId),
+          }));
+      } catch (error) {
+        failures.push({ projectId, error });
+        results[index] = [];
+      }
+    }
+  };
+
+  await Promise.all(
+    Array.from({ length: Math.min(4, available.length) }, () => worker()),
+  );
+  if (failures.length) {
+    console.warn("MASTER PLAN Projects: could not fetch some geometries", failures);
+  }
+  const features = results.flat();
+  if (available.length > 0 && features.length === 0) {
+    throw new Error("No project geometries were returned by /api/project/");
+  }
+  return { type: "FeatureCollection", features };
+};
+
 const RUDA_MASTER_PLAN_LAYER_CONFIG = {
+  allProjects: {
+    endpoint: "/project/",
+    fetchGeoJSON: fetchAllProjectsGeoJSON,
+    categorized: true,
+    categoryLegend: [], // Runtime categories from `phase` or `type` (not a static enum).
+    defaultCategoryColors: { field: "phase", phase: {}, type: {} },
+    getFillPaint: (style, opacity) => ({
+      "fill-color": projectColorExpression(style),
+      "fill-opacity": 0.33 * opacity,
+    }),
+    getOutlinePaint: (style, opacity) => ({
+      "line-color": projectColorExpression(style),
+      "line-opacity": opacity,
+      "line-width": 2,
+    }),
+    getLinePaint: (style, opacity) => ({
+      "line-color": projectColorExpression(style),
+      "line-opacity": opacity,
+      "line-width": 2,
+    }),
+    // One label Point per gid, including multipart projects, starting at zoom 10.
+    labelAsPoints: true,
+    getLabelLayout: () => ({
+      "text-field": ["get", "label"],
+      "text-size": 12,
+      "text-anchor": "center",
+      "text-max-width": 12,
+      "text-padding": 3,
+      "text-allow-overlap": false,
+      "text-ignore-placement": false,
+      "symbol-placement": "point",
+    }),
+    getLabelPaint: (opacity) => ({
+      "text-color": "#172c3d",
+      "text-halo-color": "#ffffff",
+      "text-halo-width": 2,
+      "text-opacity": opacity,
+    }),
+    labelMinZoom: 10,
+  },
   rudaPlanningBoundary: {
     endpoint: "/ruda-planning-boundary/",
     fetchGeoJSON: getRudaPlanningBoundaryGeoJSON,
@@ -482,6 +617,7 @@ const getLayerIds = (layerKey) => {
 
   return {
     sourceId: `${base}-source`,
+    labelSourceId: `${base}-label-source`,
     fillId: `${base}-fill`,
     patternFillId: `${base}-pattern-fill`,
     outlineId: `${base}-outline`,
@@ -712,6 +848,15 @@ const addOrUpdateRudaMapLayer = ({
     map.getSource(ids.sourceId)?.setData?.(data);
   }
 
+  if (config.labelAsPoints) {
+    const labels = buildProjectLabelGeoJSON(data);
+    if (!map.getSource(ids.labelSourceId)) {
+      map.addSource(ids.labelSourceId, { type: "geojson", data: labels });
+    } else {
+      map.getSource(ids.labelSourceId)?.setData?.(labels);
+    }
+  }
+
   if (!map.getLayer(ids.fillId)) {
     map.addLayer({
       id: ids.fillId,
@@ -821,8 +966,8 @@ const addOrUpdateRudaMapLayer = ({
     map.addLayer({
       id: ids.labelId,
       type: "symbol",
-      source: ids.sourceId,
-      filter: config.labelFilter || POLYGON_FILTER,
+      source: config.labelAsPoints ? ids.labelSourceId : ids.sourceId,
+      filter: config.labelFilter || (config.labelAsPoints ? POINT_FILTER : POLYGON_FILTER),
       minzoom: config.labelMinZoom ?? 10,
       layout: {
         visibility,
@@ -837,6 +982,11 @@ const addOrUpdateRudaMapLayer = ({
 
   applyRudaLayerPaint(map, layerKey, color, opacity, config, categorizedColors);
   setRudaLayerVisibility(map, layerKey, true);
+  // Hybrid basemap switches can insert their own symbol layers. Keep Projects
+  // labels above the basemap without changing any of the other masterplan layers.
+  if (config.labelAsPoints && map.getLayer(ids.labelId)) {
+    map.moveLayer(ids.labelId);
+  }
 };
 
 const removeRudaMapLayer = (map, layerKey) => {
@@ -874,6 +1024,7 @@ const removeRudaMapLayer = (map, layerKey) => {
 
   try {
     if (map.getSource(ids.sourceId)) map.removeSource(ids.sourceId);
+    if (map.getSource(ids.labelSourceId)) map.removeSource(ids.labelSourceId);
   } catch {
     // Map may already be destroyed during component cleanup.
   }
@@ -941,6 +1092,12 @@ export default function RUDAMasterPlan({ map }) {
   const [categorizedColors, setCategorizedColors] = useState(
     createInitialCategorizedColors,
   );
+  const [projectClassification, setProjectClassification] = useState("phase");
+  const [projectCategories, setProjectCategories] = useState({ phase: [], type: [] });
+  const [projectLabelSize, setProjectLabelSize] = useState(12);
+  const [projectLabelsEnabled, setProjectLabelsEnabled] = useState(true);
+  const projectLabelSizeRef = useRef(12);
+  const projectLabelsEnabledRef = useRef(true);
 
   const loadedGeoJSONRef = useRef({});
   const layerRequestsRef = useRef({});
@@ -1103,6 +1260,14 @@ export default function RUDAMasterPlan({ map }) {
         });
       }
 
+      if (layerKey === "allProjects") {
+        const { labelId } = getLayerIds("allProjects");
+        if (map.getLayer(labelId)) {
+          map.setLayoutProperty(labelId, "text-size", projectLabelSizeRef.current);
+          setLayoutVisibility(map, labelId, projectLabelsEnabledRef.current);
+        }
+      }
+
       if (shouldZoom) zoomToGeoJSON(geojson);
     });
   };
@@ -1149,6 +1314,22 @@ export default function RUDAMasterPlan({ map }) {
       try {
         const geojson = normalizeGeoJSON(await config.fetchGeoJSON());
         loadedGeoJSONRef.current[layerKey] = geojson;
+        if (layerKey === "allProjects") {
+          const categories = {
+            phase: getProjectCategories(geojson, "phase"),
+            type: getProjectCategories(geojson, "type"),
+          };
+          setProjectCategories(categories);
+          const oldProjectStyle = categorizedColorsRef.current.allProjects || {};
+          const merged = {
+            field: oldProjectStyle.field === "type" ? "type" : "phase",
+            phase: { ...defaultProjectColors(categories.phase), ...(oldProjectStyle.phase || {}) },
+            type: { ...defaultProjectColors(categories.type), ...(oldProjectStyle.type || {}) },
+          };
+          const nextColors = { ...categorizedColorsRef.current, allProjects: merged };
+          categorizedColorsRef.current = nextColors;
+          setCategorizedColors(nextColors);
+        }
 
         setLayerMeta((previous) => ({
           ...previous,
@@ -1237,6 +1418,20 @@ export default function RUDAMasterPlan({ map }) {
         removeRudaMapLayer(map, layerKey);
       });
     };
+  }, [map]);
+
+  // Recreate the categorized Projects layer after Google/Esri hybrid style
+  // changes. Its labels use a dedicated point source above the basemap layers.
+  useEffect(() => {
+    if (!map) return undefined;
+    const restoreProjects = () => {
+      const state = layerStateRef.current.allProjects;
+      if (state?.checked && loadedGeoJSONRef.current.allProjects) {
+        applyVisibleLayer("allProjects", state, false);
+      }
+    };
+    map.on("style.load", restoreProjects);
+    return () => map.off("style.load", restoreProjects);
   }, [map]);
 
   const getGroupSelection = (group) => {
@@ -1364,7 +1559,58 @@ export default function RUDAMasterPlan({ map }) {
     );
   };
 
+  const updateProjectCategoryColor = (categoryValue, color) => {
+    const oldStyle = categorizedColorsRef.current.allProjects || {};
+    const field = oldStyle.field === "type" ? "type" : "phase";
+    const newStyle = {
+      ...oldStyle,
+      [field]: { ...(oldStyle[field] || {}), [categoryValue]: color },
+    };
+    const updated = { ...categorizedColorsRef.current, allProjects: newStyle };
+    categorizedColorsRef.current = updated;
+    setCategorizedColors(updated);
+    applyRudaLayerPaint(map, "allProjects", "#2563eb",
+      layerStateRef.current.allProjects?.opacity ?? 100,
+      RUDA_MASTER_PLAN_LAYER_CONFIG.allProjects, updated);
+  };
+
+  const updateProjectClassification = (field) => {
+    if (field !== "phase" && field !== "type") return;
+    setProjectClassification(field);
+    const oldStyle = categorizedColorsRef.current.allProjects || {};
+    const updated = {
+      ...categorizedColorsRef.current,
+      allProjects: { ...oldStyle, field },
+    };
+    categorizedColorsRef.current = updated;
+    setCategorizedColors(updated);
+    applyRudaLayerPaint(map, "allProjects", "#2563eb",
+      layerStateRef.current.allProjects?.opacity ?? 100,
+      RUDA_MASTER_PLAN_LAYER_CONFIG.allProjects, updated);
+  };
+
+  const updateProjectLabelSize = (value) => {
+    projectLabelSizeRef.current = value;
+    setProjectLabelSize(value);
+    const { labelId } = getLayerIds("allProjects");
+    if (map?.getLayer(labelId)) map.setLayoutProperty(labelId, "text-size", value);
+  };
+
+  const updateProjectLabelsEnabled = (enabled) => {
+    projectLabelsEnabledRef.current = enabled;
+    setProjectLabelsEnabled(enabled);
+    const { labelId } = getLayerIds("allProjects");
+    if (map?.getLayer(labelId)) {
+      setLayoutVisibility(map, labelId,
+        enabled && Boolean(layerStateRef.current.allProjects?.checked));
+    }
+  };
+
   const updateCategorizedColor = (layerKey, categoryLabel, color) => {
+    if (layerKey === "allProjects") {
+      updateProjectCategoryColor(projectCategoryValue(categoryLabel), color);
+      return;
+    }
     const nextLayerColors = {
       ...(categorizedColorsRef.current[layerKey] || {}),
       [categoryLabel]: color,
@@ -1403,6 +1649,8 @@ export default function RUDAMasterPlan({ map }) {
     const commonProps = { map, onClose: () => setActiveAttributeTable(null) };
 
     switch (activeAttributeTable) {
+      case "allProjects":
+        return <ProjectsAttribute {...commonProps} />;
       case "rudaPlanningBoundary":
         return <PlanningBoundaryAttribute {...commonProps} />;
       case "masterPlanPhases":
@@ -1454,6 +1702,7 @@ export default function RUDAMasterPlan({ map }) {
     // Priority 3: Simple single-style layers
     const color = currentLayerState.color;
 
+    if (layerKey === "allProjects") return [];
     if (layerKey === "rudaPlanningBoundary") {
       return [
         lineLegend(
@@ -1521,9 +1770,17 @@ export default function RUDAMasterPlan({ map }) {
           opacity={currentLayerState.opacity ?? 100}
           dropdownOpen={Boolean(currentLayerState.dropdownOpen)}
           categorized={Boolean(currentLayerConfig.categorized)}
-          categoryLegend={currentLayerConfig.categoryLegend || []}
-          categorizedColors={categorizedColors[layer.key] || {}}
-          previewColors={layer.previewColors || []}
+          categoryLegend={layer.key === "allProjects"
+            ? projectCategories[projectClassification].map((item) => ({
+                label: item.label,
+                color: categorizedColors.allProjects?.[projectClassification]?.[item.value],
+              }))
+            : currentLayerConfig.categoryLegend || []}
+          categorizedColors={layer.key === "allProjects"
+            ? categorizedColors.allProjects?.[projectClassification] || {}
+            : categorizedColors[layer.key] || {}}
+          previewColors={layer.key === "allProjects" && !projectCategories[projectClassification].length
+            ? ["#2563eb", "#e8791d", "#16a34a"] : layer.previewColors || []}
           onChange={() => toggleLayer(layer.key)}
           onColorChange={(value) => updateLayerColor(layer.key, value)}
           onOpacityChange={(value) => updateLayerOpacity(layer.key, value)}
@@ -1544,6 +1801,15 @@ export default function RUDAMasterPlan({ map }) {
             onCategorizedColorChange={(categoryLabel, color) =>
               updateCategorizedColor(layer.key, categoryLabel, color)
             }
+            projectClassification={projectClassification}
+            projectCategories={projectCategories[projectClassification] || []}
+            projectColors={categorizedColors.allProjects?.[projectClassification] || {}}
+            onProjectClassificationChange={updateProjectClassification}
+            onProjectCategoryColorChange={updateProjectCategoryColor}
+            projectLabelSize={projectLabelSize}
+            onProjectLabelSizeChange={updateProjectLabelSize}
+            projectLabelsEnabled={projectLabelsEnabled}
+            onProjectLabelsEnabledChange={updateProjectLabelsEnabled}
           />
         )}
       </div>
@@ -1683,6 +1949,15 @@ function LayerDetails({
   categorizedColors,
   layerOpacity = 100,
   onCategorizedColorChange,
+  projectClassification,
+  projectCategories = [],
+  projectColors = {},
+  onProjectClassificationChange,
+  onProjectCategoryColorChange,
+  projectLabelSize = 12,
+  onProjectLabelSizeChange,
+  projectLabelsEnabled = true,
+  onProjectLabelsEnabledChange,
 }) {
   const LegendComponent = config.LegendComponent;
 
@@ -1690,6 +1965,76 @@ function LayerDetails({
     <div
       className={`ml-6 mt-2 max-h-64 rounded-sm border border-[#13593f]/30 bg-[#06291f] px-3 py-2 text-[11px] text-white/70 ${LAYER_PANEL_SCROLL}`}
     >
+      {layerKey === "allProjects" && (
+        <div className="mb-3 space-y-3">
+          <label className="flex items-center justify-between gap-2 text-[11px] text-white/90">
+            <span>Categorize by</span>
+            <select
+              value={projectClassification}
+              onChange={(event) => onProjectClassificationChange(event.target.value)}
+              className="max-w-[120px] rounded border border-white/25 bg-[#123b2d] px-1.5 py-1 text-[11px] text-white"
+            >
+              <option value="phase">Project Phase</option>
+              <option value="type">Project Type</option>
+            </select>
+          </label>
+          {isVisible && (
+            <div className="max-h-44 space-y-1 overflow-y-auto pr-1">
+              {projectCategories.length ? projectCategories.map((category) => (
+                <label key={category.value} className="flex items-center gap-2 py-0.5">
+                  <input
+                    type="color"
+                    value={projectColors[category.value]?.startsWith("#")
+                      ? projectColors[category.value] : "#64748b"}
+                    onChange={(event) => onProjectCategoryColorChange(category.value, event.target.value)}
+                    title={`Change color: ${category.label}`}
+                    aria-label={`Change color for ${category.label}`}
+                    className="h-5 w-6 shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0"
+                  />
+                  <span className="min-w-0 flex-1 break-words text-white/85">{category.label}</span>
+                  <span className="text-white/50">{category.count}</span>
+                </label>
+              )) : (
+                <span className="text-white/60">
+                  {meta.status === "Error" ? "Unable to load project boundaries" :
+                   meta.status === "Loading" ? "Loading project categories…" :
+                   "No project categories available"}
+                </span>
+              )}
+            </div>
+          )}
+          <label className="flex items-center gap-2 text-[11px] text-white/85">
+            <input
+              type="checkbox"
+              checked={projectLabelsEnabled}
+              onChange={(event) => onProjectLabelsEnabledChange(event.target.checked)}
+              className="accent-[#65c96b]"
+            />
+            Show project labels (zoom 10+)
+          </label>
+          <label className="flex items-center justify-between gap-2 text-[11px] text-white/85">
+            <span>Label size</span>
+            <input
+              type="number"
+              min="9"
+              max="22"
+              step="1"
+              value={projectLabelSize}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (Number.isFinite(value) && value >= 9 && value <= 22)
+                  onProjectLabelSizeChange(value);
+              }}
+              className="w-14 rounded border border-white/25 bg-[#123b2d] px-1 py-0.5 text-white"
+              aria-label="Project label font size"
+            />
+          </label>
+          <div className="text-[10px] text-white/50">
+            Label: brief_name → name; one label per project
+          </div>
+        </div>
+      )}
+
       {/* Simple inline legend items (non-categorized, non-custom) */}
       {isVisible &&
         !config.customLandUseStyle &&
@@ -1703,6 +2048,7 @@ function LayerDetails({
       {/* Categorized layers without a full LegendComponent */}
       {isVisible &&
         config.categorized &&
+        layerKey !== "allProjects" &&
         !LegendComponent &&
         legendItems.length > 0 && (
           <div className="mb-2">
