@@ -394,7 +394,8 @@ const RUDA_MASTER_PLAN_LAYER_CONFIG = {
       "line-opacity": opacity,
       "line-width": 2,
     }),
-    // One label Point per gid, including multipart projects, starting at zoom 10.
+    // Labels use Project.name automatically (without UI controls), one per
+    // project gid, with a fixed font size, visible only from zoom 10 onward.
     labelAsPoints: true,
     getLabelLayout: () => ({
       "text-field": ["get", "label"],
@@ -1094,10 +1095,6 @@ export default function RUDAMasterPlan({ map }) {
   );
   const [projectClassification, setProjectClassification] = useState("phase");
   const [projectCategories, setProjectCategories] = useState({ phase: [], type: [] });
-  const [projectLabelSize, setProjectLabelSize] = useState(12);
-  const [projectLabelsEnabled, setProjectLabelsEnabled] = useState(true);
-  const projectLabelSizeRef = useRef(12);
-  const projectLabelsEnabledRef = useRef(true);
 
   const loadedGeoJSONRef = useRef({});
   const layerRequestsRef = useRef({});
@@ -1258,14 +1255,6 @@ export default function RUDAMasterPlan({ map }) {
           config,
           categorizedColors: categorizedColorsRef.current,
         });
-      }
-
-      if (layerKey === "allProjects") {
-        const { labelId } = getLayerIds("allProjects");
-        if (map.getLayer(labelId)) {
-          map.setLayoutProperty(labelId, "text-size", projectLabelSizeRef.current);
-          setLayoutVisibility(map, labelId, projectLabelsEnabledRef.current);
-        }
       }
 
       if (shouldZoom) zoomToGeoJSON(geojson);
@@ -1589,23 +1578,6 @@ export default function RUDAMasterPlan({ map }) {
       RUDA_MASTER_PLAN_LAYER_CONFIG.allProjects, updated);
   };
 
-  const updateProjectLabelSize = (value) => {
-    projectLabelSizeRef.current = value;
-    setProjectLabelSize(value);
-    const { labelId } = getLayerIds("allProjects");
-    if (map?.getLayer(labelId)) map.setLayoutProperty(labelId, "text-size", value);
-  };
-
-  const updateProjectLabelsEnabled = (enabled) => {
-    projectLabelsEnabledRef.current = enabled;
-    setProjectLabelsEnabled(enabled);
-    const { labelId } = getLayerIds("allProjects");
-    if (map?.getLayer(labelId)) {
-      setLayoutVisibility(map, labelId,
-        enabled && Boolean(layerStateRef.current.allProjects?.checked));
-    }
-  };
-
   const updateCategorizedColor = (layerKey, categoryLabel, color) => {
     if (layerKey === "allProjects") {
       updateProjectCategoryColor(projectCategoryValue(categoryLabel), color);
@@ -1806,10 +1778,6 @@ export default function RUDAMasterPlan({ map }) {
             projectColors={categorizedColors.allProjects?.[projectClassification] || {}}
             onProjectClassificationChange={updateProjectClassification}
             onProjectCategoryColorChange={updateProjectCategoryColor}
-            projectLabelSize={projectLabelSize}
-            onProjectLabelSizeChange={updateProjectLabelSize}
-            projectLabelsEnabled={projectLabelsEnabled}
-            onProjectLabelsEnabledChange={updateProjectLabelsEnabled}
           />
         )}
       </div>
@@ -1954,10 +1922,6 @@ function LayerDetails({
   projectColors = {},
   onProjectClassificationChange,
   onProjectCategoryColorChange,
-  projectLabelSize = 12,
-  onProjectLabelSizeChange,
-  projectLabelsEnabled = true,
-  onProjectLabelsEnabledChange,
 }) {
   const LegendComponent = config.LegendComponent;
 
@@ -2003,35 +1967,6 @@ function LayerDetails({
               )}
             </div>
           )}
-          <label className="flex items-center gap-2 text-[11px] text-white/85">
-            <input
-              type="checkbox"
-              checked={projectLabelsEnabled}
-              onChange={(event) => onProjectLabelsEnabledChange(event.target.checked)}
-              className="accent-[#65c96b]"
-            />
-            Show project labels (zoom 10+)
-          </label>
-          <label className="flex items-center justify-between gap-2 text-[11px] text-white/85">
-            <span>Label size</span>
-            <input
-              type="number"
-              min="9"
-              max="22"
-              step="1"
-              value={projectLabelSize}
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                if (Number.isFinite(value) && value >= 9 && value <= 22)
-                  onProjectLabelSizeChange(value);
-              }}
-              className="w-14 rounded border border-white/25 bg-[#123b2d] px-1 py-0.5 text-white"
-              aria-label="Project label font size"
-            />
-          </label>
-          <div className="text-[10px] text-white/50">
-            Label: brief_name → name; one label per project
-          </div>
         </div>
       )}
 
