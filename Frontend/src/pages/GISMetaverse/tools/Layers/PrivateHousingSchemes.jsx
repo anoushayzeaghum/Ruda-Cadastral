@@ -102,7 +102,6 @@ const normalizeHousingGeoJSON = (response) => {
 };
 
 const housingLegendItems = Object.entries(RUDA_SCHEME_COLORS)
-  .filter(([status]) => status !== "underprocess")
   .map(([status, color]) => ({
     label: status.replace(/\b\w/g, (char) => char.toUpperCase()),
     color,

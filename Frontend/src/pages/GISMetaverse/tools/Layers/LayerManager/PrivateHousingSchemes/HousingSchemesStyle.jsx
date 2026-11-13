@@ -1,28 +1,28 @@
+// Five requested RUDA statuses only. Four colors were sampled from the supplied legend.
+// Brown for Reserved Area is an additional requested design choice.
 export const RUDA_SCHEME_COLORS = Object.freeze({
-  "approved by other authorities": "#18d231",
-  "del-up": "#2049c3",
-  "fs granted": "#239afc",
-  "indigenous project": "#00585a",
-  "jv-c": "#d8ff28",
-  "ppp granted": "#650051",
-  "reserved area": "#ff7213",
-  "ta granted": "#9a4c14",
-  "under process": "#c53100",
-  underprocess: "#ac1400",
+  "fs granted": "#AAFF80",
+  "ta granted": "#00E6A8",
+  "ppp granted": "#FFD57F",
+  "under process": "#E380FF",
+  "reserved area": "#8B4513",
 });
 
 export const RUDA_STATUS_COLORS = RUDA_SCHEME_COLORS;
 
-export const HOUSING_SCHEME_FALLBACK_COLOR = "#b34f4c";
+// Unrecognized statuses must not be assigned an invented sixth status color.
+export const HOUSING_SCHEME_FALLBACK_COLOR = "rgba(0,0,0,0)";
 
 const normalizedRudaScheme = [
   "downcase",
   ["to-string", ["coalesce", ["get", "ruda_scheme"], ["get", "ruda_st"], ""]],
 ];
 
-const schemeMatchPairs = Object.entries(RUDA_SCHEME_COLORS).flatMap(
-  ([scheme, color]) => [scheme, color],
-);
+const schemeMatchPairs = [
+  ...Object.entries(RUDA_SCHEME_COLORS).flatMap(([scheme, color]) => [scheme, color]),
+  // Preserve old data spelling without adding another legend category.
+  "underprocess", RUDA_SCHEME_COLORS["under process"],
+];
 
 export const HousingSchemesColorExpression = [
   "match",
@@ -33,7 +33,7 @@ export const HousingSchemesColorExpression = [
 
 const HousingSchemesStyle = Object.freeze({
   // Default color used by the Layer Manager preview.
-  color: "#32E34B",
+  color: RUDA_SCHEME_COLORS["fs granted"],
 
   // MapLibre/Mapbox feature-level color expression.
   dataDrivenColor: HousingSchemesColorExpression,
