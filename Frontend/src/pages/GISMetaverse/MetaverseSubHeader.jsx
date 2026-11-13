@@ -7,6 +7,7 @@ import {
   getProjectsByPhaseAndType,
   getProjectGeoJSON,
 } from "../../services/metaverseApi";
+import { normalizeProjectId } from "./tools/droneProjectConfig";
 
 const normalizeSortValue = (value) => String(value ?? "").trim();
 
@@ -306,7 +307,7 @@ export default function MetaverseSubHeader({
     setFilters((prev) => {
       const next = {
         ...prev,
-        [key]: value,
+        [key]: key === "projectId" ? normalizeProjectId(value) : value,
       };
 
       // Plot Filter values belong to one concrete project. Whenever any part
@@ -346,11 +347,6 @@ export default function MetaverseSubHeader({
     });
   };
 
-  const projectOptions = projects.map((p) => ({
-    value: String(p.gid || p.id),
-    label: p.brief_name || p.name,
-  }));
-
   const phaseOptions = [
     ...new Set(projects.map((p) => p.phase).filter(Boolean)),
   ].map((phase) => ({
@@ -377,9 +373,12 @@ export default function MetaverseSubHeader({
       return true;
     })
     .map((p) => ({
-      value: String(p.gid || p.id),
-      label: p.brief_name || p.name,
-    }));
+      // Backend uses `gid` as the project identifier for /api/project/?gid=.
+      // Use id only when gid is actually absent, not when it is zero.
+      value: normalizeProjectId(p.gid ?? p.id),
+      label: p.brief_name || p.name || `Project ${p.gid ?? p.id}`,
+    }))
+    .filter((option) => option.value);
 
   const filterClassName =
     "h-10 sm:h-9 shrink-0 rounded-lg border border-[#d8dee5] bg-white px-2.5 sm:px-3 outline-none transition-colors hover:border-[#9aa5ad]";

@@ -32,7 +32,9 @@ export const projectFeatureProperties = (feature, metadata = {}, fallbackId = nu
       ? candidate
       : sourceProps[name];
   };
-  const name = resolved("name") ?? "";
+  // Label from the source Project Name field only (not brief_name).
+  // Accommodate an original shapefile property named "Name" as well.
+  const name = String(resolved("name") ?? "").trim() || String(resolved("Name") ?? "").trim();
   const briefName = resolved("brief_name") ?? "";
   const phase = resolved("phase");
   const type = resolved("type");
@@ -46,7 +48,7 @@ export const projectFeatureProperties = (feature, metadata = {}, fallbackId = nu
     type: type ?? "",
     __rudaProjectPhase: projectCategoryValue(phase),
     __rudaProjectType: projectCategoryValue(type),
-    __rudaProjectLabel: String(briefName ?? "").trim() || String(name ?? "").trim(),
+    __rudaProjectLabel: name,
   };
 };
 

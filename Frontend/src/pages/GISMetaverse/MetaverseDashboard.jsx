@@ -89,7 +89,9 @@ export default function MetaverseDashboard() {
   );
 
   const handleIntroComplete = useCallback(() => {
-    setMetaverseFilters(defaultFilters);
+    // The intro can finish after a user has selected a project. Do not erase
+    // their Phase / Project Type / Project selection when the animation ends.
+    setMetaverseFilters((previous) => ({ ...defaultFilters, ...previous }));
 
     setLayerVisibility(defaultLayerVisibility);
 

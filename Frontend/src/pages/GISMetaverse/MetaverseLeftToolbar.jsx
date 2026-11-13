@@ -25,6 +25,7 @@ import FlyTo from "./tools/FlyTo";
 import {
   getProjectDroneConfig,
   hasProjectDroneImagery,
+  normalizeProjectId,
 } from "./tools/droneProjectConfig";
 
 const tools = [
@@ -58,7 +59,8 @@ export default function MetaverseLeftToolbar({
   const [expandedTool, setExpandedTool] = useState(null);
 
   // ── Project-aware drone state ────────────────────────────────────────────
-  const selectedProjectId = filters?.projectId || "";
+  // Read the same shared state that MetaverseSubHeader updates.
+  const selectedProjectId = normalizeProjectId(filters?.projectId);
   const selectedDroneConfig = getProjectDroneConfig(selectedProjectId);
   const droneImageryAvailable = hasProjectDroneImagery(selectedProjectId);
 
