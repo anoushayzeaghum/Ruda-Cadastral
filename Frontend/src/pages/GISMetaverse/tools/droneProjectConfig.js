@@ -33,18 +33,21 @@
  *   };
  */
 
-// ── Project ID: "45" (Chahar Bagh Enclave; survey coverage to verify) ────────
+// ── Project ID: "45" (Chahar Bagh Phase-I) ────────
 export const PROJECT_DRONE_DATA = {
   "45": {
     projectId: "45",
-    projectCode: "CB-ENCLAVE",
-    projectName: "Chahar Bagh Enclave",
+    projectCode: "CB-1",
+    projectName: "Chahar Bagh Phase 1",
     location: "Lahore, Punjab, Pakistan",
     dataSource: "RUDA Drone Survey Programme",
 
-    // Bounds for project 45 must be verified; old ones belonged to project 5.
-    bounds: null,
-    center: null,
+    // Restored from the original Phase-I drone survey configuration.
+    bounds: [
+      [74.42562653088396, 31.60509230706726],
+      [74.43545280361002, 31.6112165411359],
+    ],
+    center: [74.4305, 31.6081],
     defaultZoom: 15,
     maxZoom: 17.5,
 
