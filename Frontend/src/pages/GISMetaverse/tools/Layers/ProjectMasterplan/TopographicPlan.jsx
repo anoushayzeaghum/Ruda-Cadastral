@@ -8,10 +8,6 @@ import SpotLevelAttribute from "../AttributeTable/ProjectMasterPlan/TopographicP
 import VectorGeoJSONAttribute from "../AttributeTable/VectorGeoJSONAttribute";
 import { getContourGeoJSON } from "../../../../../services/metaverseApi";
 
-const DSM_SOURCE = "gis-dsm-source";
-const DSM_LAYER = "gis-dsm-layer";
-const DTM_SOURCE = "gis-dtm-source";
-const DTM_LAYER = "gis-dtm-layer";
 const TOPO_SOURCE = "gis-topo-cb1-source";
 const SPOT_LEVEL_SOURCE = "gis-topo-spotlevel-source";
 const EMPTY_GEOJSON = { type: "FeatureCollection", features: [] };
@@ -71,10 +67,23 @@ const TOPOGRAPHIC_COLORS = {
   dtm: "#0ea5e9",
 };
 
-const DSM_TILE_URL =
-  "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DSM/{z}/{x}/{y}.png";
-const DTM_TILE_URL =
-  "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DTM/{z}/{x}/{y}.png";
+// Keep existing Chahar Bagh (project 41) tile endpoints exactly as before.
+// Green Berg (project 48) can be tested locally by setting
+// VITE_GREENBERG_TILE_BASE_URL=http://localhost:8081/data in frontend .env.
+const GREENBERG_TILE_BASE = (
+  import.meta.env.VITE_GREENBERG_TILE_BASE_URL ||
+  "http://localhost:8081/data"
+).replace(/\/$/, "");
+const PROJECT_RASTER_TILESETS = {
+  "41": {
+    dsm: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
+    dtm: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
+  },
+  "48": {
+    dsm: `${GREENBERG_TILE_BASE}/GreenBerg_DSM/{z}/{x}/{y}.png`,
+    dtm: `${GREENBERG_TILE_BASE}/GreenBerg_DTM/{z}/{x}/{y}.png`,
+  },
+};
 
 const TOPOGRAPHIC_BOUNDARY_LAYERS = [
   {
@@ -248,6 +257,9 @@ export default function TopographicPlan({
 }) {
   const [open, setOpen] = useState(false);
   const hasSelectedProject = Boolean(selectedProjectId);
+  const rasterProjectId = String(selectedProjectId ?? "");
+  const rasterTilesets = PROJECT_RASTER_TILESETS[rasterProjectId];
+  const hasProjectRasters = Boolean(rasterTilesets);
   const [spotLevelVisible, setSpotLevelVisible] = useState(false);
   const [spotLevelOpacity, setSpotLevelOpacity] = useState(100);
   const [spotLevelColor, setSpotLevelColor] = useState(
@@ -415,53 +427,93 @@ export default function TopographicPlan({
     topoOpacity,
   ]);
 
+  // When the sub-header project changes, stop showing the prior project's
+  // raster immediately, even if the new project has no MBTiles configured.
+  // Layers are project-scoped so the two projects never share a raster source.
+  useEffect(() => {
+    if (!map) return;
+    Object.keys(PROJECT_RASTER_TILESETS).forEach((projectId) => {
+      if (projectId === rasterProjectId) return;
+      ["dsm", "dtm"].forEach((kind) => {
+        const id = `gis-${kind}-layer-${projectId}`;
+        if (map.getLayer(id)) {
+          map.setLayoutProperty(id, "visibility", "none");
+        }
+      });
+    });
+    // Do not carry a checked state from one project's DSM/DTM to another.
+    setDsmVisible(false);
+    setDtmVisible(false);
+  }, [map, rasterProjectId]);
+
   useEffect(() => {
     if (!map) return;
 
-    const updateRaster = ({ sourceId, layerId, tileUrl, visible, opacity }) => {
-      if (visible) {
-        if (!map.getSource(sourceId)) {
-          map.addSource(sourceId, {
-            type: "raster",
-            tiles: [tileUrl],
-            tileSize: 256,
-          });
-        }
+    const updateRaster = ({ kind, tileset, visible, opacity }) => {
+      if (!tileset) return;
+      const sourceId = `gis-${kind}-source-${rasterProjectId}`;
+      const layerId = `gis-${kind}-layer-${rasterProjectId}`;
 
-        if (!map.getLayer(layerId)) {
-          map.addLayer({
-            id: layerId,
-            type: "raster",
-            source: sourceId,
-            paint: { "raster-opacity": opacity / 100 },
-            layout: { visibility: "visible" },
-          });
-          // flyToChaharbagh();
-        } else {
-          map.setLayoutProperty(layerId, "visibility", "visible");
-          map.setPaintProperty(layerId, "raster-opacity", opacity / 100);
+      // Hidden toggles must hide an already-added layer as well.
+      if (!visible) {
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(layerId, "visibility", "none");
         }
-      } else if (map.getLayer(layerId)) {
-        map.setLayoutProperty(layerId, "visibility", "none");
+        return;
+      }
+
+      if (!map.getSource(sourceId)) {
+        map.addSource(sourceId, {
+          type: "raster",
+          tiles: [tileset],
+          tileSize: 256,
+        });
+      }
+
+      if (!map.getLayer(layerId)) {
+        // Keep imagery beneath existing vector features/labels where possible.
+        const firstVectorLayer = map.getStyle()?.layers?.find((layer) =>
+          ["fill", "line", "circle", "symbol", "fill-extrusion"].includes(layer.type)
+        );
+        map.addLayer({
+          id: layerId,
+          type: "raster",
+          source: sourceId,
+          paint: { "raster-opacity": opacity / 100 },
+          layout: { visibility: "visible" },
+        }, rasterProjectId === "48" ? undefined : firstVectorLayer?.id);
+        // Project 48 is a diagnostic raster overlay: render above potentially
+        // opaque project/masterplan polygons. Preserve project 41 ordering.
+      } else {
+        map.setLayoutProperty(layerId, "visibility", "visible");
+        map.setPaintProperty(layerId, "raster-opacity", opacity / 100);
+        if (rasterProjectId === "48") map.moveLayer(layerId);
       }
     };
 
+    // Only supported projects may load DSM/DTM. No Chahar Bagh fallback.
+    if (rasterProjectId === "48" && (dsmVisible || dtmVisible)) {
+      console.info("[GreenBerg Project 48] DSM/DTM tile sources", {
+        projectId: rasterProjectId,
+        dsm: dsmVisible ? rasterTilesets?.dsm : null,
+        dtm: dtmVisible ? rasterTilesets?.dtm : null,
+        zoom: map.getZoom?.(),
+      });
+    }
+    if (!rasterTilesets) return;
     updateRaster({
-      sourceId: DSM_SOURCE,
-      layerId: DSM_LAYER,
-      tileUrl: DSM_TILE_URL,
+      kind: "dsm",
+      tileset: rasterTilesets.dsm,
       visible: dsmVisible,
       opacity: dsmOpacity,
     });
-
     updateRaster({
-      sourceId: DTM_SOURCE,
-      layerId: DTM_LAYER,
-      tileUrl: DTM_TILE_URL,
+      kind: "dtm",
+      tileset: rasterTilesets.dtm,
       visible: dtmVisible,
       opacity: dtmOpacity,
     });
-  }, [map, dsmVisible, dsmOpacity, dtmVisible, dtmOpacity]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, rasterProjectId, rasterTilesets, dsmVisible, dsmOpacity, dtmVisible, dtmOpacity]);
 
   return (
     <div className="border-b border-[#343c4c]">
@@ -535,7 +587,7 @@ export default function TopographicPlan({
             label="DSM"
             color={TOPOGRAPHIC_COLORS.dsm}
             checked={dsmVisible}
-            disabled={!hasSelectedProject}
+            disabled={!hasProjectRasters}
             opacity={dsmOpacity}
             onCheckedChange={setDsmVisible}
             onOpacityChange={setDsmOpacity}
@@ -545,7 +597,7 @@ export default function TopographicPlan({
             label="DTM"
             color={TOPOGRAPHIC_COLORS.dtm}
             checked={dtmVisible}
-            disabled={!hasSelectedProject}
+            disabled={!hasProjectRasters}
             opacity={dtmOpacity}
             onCheckedChange={setDtmVisible}
             onOpacityChange={setDtmOpacity}
