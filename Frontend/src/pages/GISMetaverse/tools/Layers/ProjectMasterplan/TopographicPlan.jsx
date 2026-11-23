@@ -552,6 +552,11 @@ export default function TopographicPlan({
         dtm: dtmVisible ? rasterTilesets.dtm : "off",
         zoom: map.getZoom?.(),
         center: map.getCenter?.(),
+        styleLoaded: map.isStyleLoaded?.(),
+        dsmSourcePresent: Boolean(map.getSource("gis-dsm-source-48")),
+        dtmSourcePresent: Boolean(map.getSource("gis-dtm-source-48")),
+        dsmLayerPresent: Boolean(map.getLayer("gis-dsm-layer-48")),
+        dtmLayerPresent: Boolean(map.getLayer("gis-dtm-layer-48")),
       });
     }
     return () => {
