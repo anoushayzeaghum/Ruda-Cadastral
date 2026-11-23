@@ -447,14 +447,12 @@ export default function TopographicPlan({
   }, [map, rasterProjectId]);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map || !rasterTilesets) return;
 
-    const updateRaster = ({ kind, tileset, visible, opacity }) => {
-      if (!tileset) return;
+    const addOrUpdateRaster = (kind, visible, opacity, tileset) => {
       const sourceId = `gis-${kind}-source-${rasterProjectId}`;
       const layerId = `gis-${kind}-layer-${rasterProjectId}`;
 
-      // Hidden toggles must hide an already-added layer as well.
       if (!visible) {
         if (map.getLayer(layerId)) {
           map.setLayoutProperty(layerId, "visibility", "none");
@@ -467,53 +465,102 @@ export default function TopographicPlan({
           type: "raster",
           tiles: [tileset],
           tileSize: 256,
+          // The Green Berg MBTiles have coverage only at higher zoom levels.
+          ...(rasterProjectId === "48" ? { minzoom: 13, maxzoom: 20 } : {}),
         });
       }
 
       if (!map.getLayer(layerId)) {
-        // Keep imagery beneath existing vector features/labels where possible.
-        const firstVectorLayer = map.getStyle()?.layers?.find((layer) =>
-          ["fill", "line", "circle", "symbol", "fill-extrusion"].includes(layer.type)
-        );
+        // Project 41 retains its established ordering and URLs.
+        const firstVectorLayer = rasterProjectId === "48"
+          ? null
+          : map.getStyle()?.layers?.find((layer) =>
+              ["fill", "line", "circle", "symbol", "fill-extrusion"].includes(layer.type)
+            );
         map.addLayer({
           id: layerId,
           type: "raster",
           source: sourceId,
-          paint: { "raster-opacity": opacity / 100 },
+          paint: { "raster-opacity": opacity / 100, "raster-fade-duration": 0 },
           layout: { visibility: "visible" },
-        }, rasterProjectId === "48" ? undefined : firstVectorLayer?.id);
-        // Project 48 is a diagnostic raster overlay: render above potentially
-        // opaque project/masterplan polygons. Preserve project 41 ordering.
+        }, firstVectorLayer?.id);
       } else {
         map.setLayoutProperty(layerId, "visibility", "visible");
         map.setPaintProperty(layerId, "raster-opacity", opacity / 100);
-        if (rasterProjectId === "48") map.moveLayer(layerId);
       }
     };
 
-    // Only supported projects may load DSM/DTM. No Chahar Bagh fallback.
-    if (rasterProjectId === "48" && (dsmVisible || dtmVisible)) {
-      console.info("[GreenBerg Project 48] DSM/DTM tile sources", {
-        projectId: rasterProjectId,
-        dsm: dsmVisible ? rasterTilesets?.dsm : null,
-        dtm: dtmVisible ? rasterTilesets?.dtm : null,
+    const ensureProjectRasters = () => {
+      if (!map.isStyleLoaded?.()) return;
+      try {
+        addOrUpdateRaster("dsm", dsmVisible, dsmOpacity, rasterTilesets.dsm);
+        addOrUpdateRaster("dtm", dtmVisible, dtmOpacity, rasterTilesets.dtm);
+      } catch (error) {
+        console.error(`[TopographicPlan] Raster setup for project ${rasterProjectId} failed`, error);
+      }
+    };
+
+    // Green Berg only: maintain its raster overlays across style changes,
+    // and above subsequently inserted opaque polygon fills. We intentionally
+    // leave project 41's established behavior alone.
+    if (rasterProjectId !== "48") {
+      ensureProjectRasters();
+      return;
+    }
+
+    const onMapError = (event) => {
+      const message = String(event?.error?.message || "");
+      if (/greenberg|green_berg|8081/i.test(message)) {
+        console.error("[GreenBerg Project 48] Tile loading failed", event.error);
+      }
+    };
+    let frame = null;
+    const bringRasterAboveFills = () => {
+      if (!map.isStyleLoaded?.()) return;
+      const ids = [
+        dsmVisible ? "gis-dsm-layer-48" : null,
+        dtmVisible ? "gis-dtm-layer-48" : null,
+      ].filter(Boolean);
+      const layers = map.getStyle()?.layers || [];
+      const activeIds = ids.filter((id) => map.getLayer(id));
+      // Avoid repeatedly moving layers: map.moveLayer itself emits styledata.
+      const lastIds = layers.slice(-activeIds.length).map((layer) => layer.id);
+      if (activeIds.length && activeIds.join("|") !== lastIds.join("|")) {
+        activeIds.forEach((id) => map.moveLayer(id));
+      }
+    };
+    const onStyleData = () => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        bringRasterAboveFills();
+      });
+    };
+    const onStyleLoad = () => {
+      ensureProjectRasters();
+      onStyleData();
+    };
+    map.on("style.load", onStyleLoad);
+    map.on("styledata", onStyleData);
+    map.on("error", onMapError);
+    ensureProjectRasters();
+    onStyleData();
+    if (dsmVisible || dtmVisible) {
+      console.info("[GreenBerg Project 48] Raster diagnostics", {
+        selectedProjectId,
+        dsm: dsmVisible ? rasterTilesets.dsm : "off",
+        dtm: dtmVisible ? rasterTilesets.dtm : "off",
         zoom: map.getZoom?.(),
+        center: map.getCenter?.(),
       });
     }
-    if (!rasterTilesets) return;
-    updateRaster({
-      kind: "dsm",
-      tileset: rasterTilesets.dsm,
-      visible: dsmVisible,
-      opacity: dsmOpacity,
-    });
-    updateRaster({
-      kind: "dtm",
-      tileset: rasterTilesets.dtm,
-      visible: dtmVisible,
-      opacity: dtmOpacity,
-    });
-  }, [map, rasterProjectId, rasterTilesets, dsmVisible, dsmOpacity, dtmVisible, dtmOpacity]);
+    return () => {
+      map.off("style.load", onStyleLoad);
+      map.off("styledata", onStyleData);
+      map.off("error", onMapError);
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [map, selectedProjectId, rasterProjectId, rasterTilesets, dsmVisible, dsmOpacity, dtmVisible, dtmOpacity]);
 
   return (
     <div className="border-b border-[#343c4c]">

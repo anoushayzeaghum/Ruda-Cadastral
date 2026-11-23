@@ -2523,8 +2523,7 @@ class PHSPPPScheme(models.Model):
 
     class Meta:
         managed = False
-        db_table = "phs_ppp_schemes"
-
+        db_table = "phs_housing_schemes"
 
 
 class ForestBoundary(models.Model):
