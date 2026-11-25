@@ -67,22 +67,30 @@ const TOPOGRAPHIC_COLORS = {
   dtm: "#0ea5e9",
 };
 
-// Keep existing Chahar Bagh (project 41) tile endpoints exactly as before.
-// Green Berg (project 48) can be tested locally by setting
-// VITE_GREENBERG_TILE_BASE_URL=http://localhost:8081/data in frontend .env.
-const GREENBERG_TILE_BASE = (
-  import.meta.env.VITE_GREENBERG_TILE_BASE_URL ||
-  "http://localhost:8081/data"
-).replace(/\/$/, "");
+// Project 48: use the verified local Green Berg TileServer on port 8080.
+const GREENBERG_TILE_BASE = "http://localhost:8080/data";
+// Journalist & BOR Export supplies one DSM and one DTM for projects 38 and 28.
+// Publish both in the TileServer GL instance listening on port 8080.
+// Preserve the existing Journalist/BOR endpoints.
+const JOURNALIST_BOR_TILE_BASE = "http://localhost:8080/data";
+const JOURNALIST_BOR_RASTERS = {
+  dsm: `${JOURNALIST_BOR_TILE_BASE}/journalist_dsm/{z}/{x}/{y}.png`,
+  dtm: `${JOURNALIST_BOR_TILE_BASE}/journalist_dtm/{z}/{x}/{y}.png`,
+};
+
 const PROJECT_RASTER_TILESETS = {
-  "41": {
-    dsm: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
-    dtm: "https://rudametaverse.nespakprogresscenter.com/tiles/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
-  },
   "48": {
-    dsm: `${GREENBERG_TILE_BASE}/GreenBerg_DSM/{z}/{x}/{y}.png`,
-    dtm: `${GREENBERG_TILE_BASE}/GreenBerg_DTM/{z}/{x}/{y}.png`,
+    dsm: `${GREENBERG_TILE_BASE}/green_berg_dsm/{z}/{x}/{y}.png`,
+    dtm: `${GREENBERG_TILE_BASE}/green_berg_dtm/{z}/{x}/{y}.png`,
   },
+  // Chahar Bagh Phase 1 (project 45) uses the local TileServer on port 8080.
+  "45": {
+    dsm: "http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
+    dtm: "http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
+  },
+  // Both sub-header projects use the same delivered DSM/DTM MBTiles files.
+  "38": JOURNALIST_BOR_RASTERS,
+  "28": JOURNALIST_BOR_RASTERS,
 };
 
 const TOPOGRAPHIC_BOUNDARY_LAYERS = [
@@ -465,14 +473,16 @@ export default function TopographicPlan({
           type: "raster",
           tiles: [tileset],
           tileSize: 256,
-          // The Green Berg MBTiles have coverage only at higher zoom levels.
+          // Preserve the established Green Berg zoom settings. The new
+          // Journalist/BOR sources use their TileJSON-compatible defaults
+          // until their metadata zoom ranges are verified.
           ...(rasterProjectId === "48" ? { minzoom: 13, maxzoom: 20 } : {}),
         });
       }
 
       if (!map.getLayer(layerId)) {
         // Project 41 retains its established ordering and URLs.
-        const firstVectorLayer = rasterProjectId === "48"
+        const firstVectorLayer = ["48", "38", "28", "45"].includes(rasterProjectId)
           ? null
           : map.getStyle()?.layers?.find((layer) =>
               ["fill", "line", "circle", "symbol", "fill-extrusion"].includes(layer.type)
@@ -500,26 +510,25 @@ export default function TopographicPlan({
       }
     };
 
-    // Green Berg only: maintain its raster overlays across style changes,
-    // and above subsequently inserted opaque polygon fills. We intentionally
-    // leave project 41's established behavior alone.
-    if (rasterProjectId !== "48") {
+    // Reuse style-reload-safe raster handling for projects 48, 38, 28, and 45.
+    // Project 41 remains untouched.
+    if (!["48", "38", "28", "45"].includes(rasterProjectId)) {
       ensureProjectRasters();
       return;
     }
 
     const onMapError = (event) => {
       const message = String(event?.error?.message || "");
-      if (/greenberg|green_berg|8081/i.test(message)) {
-        console.error("[GreenBerg Project 48] Tile loading failed", event.error);
+      if (/greenberg|green_berg|Chaharbagh|8080/i.test(message)) {
+        console.error(`[TopographicPlan Project ${rasterProjectId}] Tile loading failed`, event.error);
       }
     };
     let frame = null;
     const bringRasterAboveFills = () => {
       if (!map.isStyleLoaded?.()) return;
       const ids = [
-        dsmVisible ? "gis-dsm-layer-48" : null,
-        dtmVisible ? "gis-dtm-layer-48" : null,
+        dsmVisible ? `gis-dsm-layer-${rasterProjectId}` : null,
+        dtmVisible ? `gis-dtm-layer-${rasterProjectId}` : null,
       ].filter(Boolean);
       const layers = map.getStyle()?.layers || [];
       const activeIds = ids.filter((id) => map.getLayer(id));
@@ -546,17 +555,17 @@ export default function TopographicPlan({
     ensureProjectRasters();
     onStyleData();
     if (dsmVisible || dtmVisible) {
-      console.info("[GreenBerg Project 48] Raster diagnostics", {
+      console.info(`[TopographicPlan Project ${rasterProjectId}] Raster diagnostics`, {
         selectedProjectId,
         dsm: dsmVisible ? rasterTilesets.dsm : "off",
         dtm: dtmVisible ? rasterTilesets.dtm : "off",
         zoom: map.getZoom?.(),
         center: map.getCenter?.(),
         styleLoaded: map.isStyleLoaded?.(),
-        dsmSourcePresent: Boolean(map.getSource("gis-dsm-source-48")),
-        dtmSourcePresent: Boolean(map.getSource("gis-dtm-source-48")),
-        dsmLayerPresent: Boolean(map.getLayer("gis-dsm-layer-48")),
-        dtmLayerPresent: Boolean(map.getLayer("gis-dtm-layer-48")),
+        dsmSourcePresent: Boolean(map.getSource(`gis-dsm-source-${rasterProjectId}`)),
+        dtmSourcePresent: Boolean(map.getSource(`gis-dtm-source-${rasterProjectId}`)),
+        dsmLayerPresent: Boolean(map.getLayer(`gis-dsm-layer-${rasterProjectId}`)),
+        dtmLayerPresent: Boolean(map.getLayer(`gis-dtm-layer-${rasterProjectId}`)),
       });
     }
     return () => {
