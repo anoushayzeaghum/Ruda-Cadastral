@@ -68,27 +68,27 @@ const TOPOGRAPHIC_COLORS = {
 };
 
 const LOCAL_TILE_BASE = "http://localhost:8080/data";
-const HOSTED_TILE_BASE = "https://rudametaverse.nespakprogresscenter.com/data";
-const rasterTileUrls = (path) => [
-  `${LOCAL_TILE_BASE}/${path}`,
-  `${HOSTED_TILE_BASE}/${path}`,
-];
+const HOSTED_TILE_BASE = "https://rudametaverse.nespakprogresscenter.com/tiles/data";
+const TILE_BASE = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+  ? LOCAL_TILE_BASE
+  : HOSTED_TILE_BASE;
+const rasterTileUrl = (path) => `${TILE_BASE}/${path}`;
 
 // Journalist & BOR Export supplies one DSM and one DTM for projects 38 and 28.
 const JOURNALIST_BOR_RASTERS = {
-  dsm: rasterTileUrls("journalist_dsm/{z}/{x}/{y}.png"),
-  dtm: rasterTileUrls("journalist_dtm/{z}/{x}/{y}.png"),
+  dsm: rasterTileUrl("journalist_dsm/{z}/{x}/{y}.png"),
+  dtm: rasterTileUrl("journalist_dtm/{z}/{x}/{y}.png"),
 };
 
 const PROJECT_RASTER_TILESETS = {
   "48": {
-    dsm: rasterTileUrls("green_berg_dsm/{z}/{x}/{y}.png"),
-    dtm: rasterTileUrls("green_berg_dtm/{z}/{x}/{y}.png"),
+    dsm: rasterTileUrl("green_berg_dsm/{z}/{x}/{y}.png"),
+    dtm: rasterTileUrl("green_berg_dtm/{z}/{x}/{y}.png"),
   },
-  // Chahar Bagh Phase 1 (project 45) uses both configured TileServers.
+  // Chahar Bagh Phase 1 (project 45) uses the selected local or hosted TileServer.
   "45": {
-    dsm: rasterTileUrls("Chaharbagh_DSM/{z}/{x}/{y}.png"),
-    dtm: rasterTileUrls("Chaharbagh_DTM/{z}/{x}/{y}.png"),
+    dsm: rasterTileUrl("Chaharbagh_DSM/{z}/{x}/{y}.png"),
+    dtm: rasterTileUrl("Chaharbagh_DTM/{z}/{x}/{y}.png"),
   },
   // Both sub-header projects use the same delivered DSM/DTM MBTiles files.
   "38": JOURNALIST_BOR_RASTERS,
@@ -473,7 +473,7 @@ export default function TopographicPlan({
       if (!map.getSource(sourceId)) {
         map.addSource(sourceId, {
           type: "raster",
-          tiles: tileset,
+          tiles: [tileset],
           tileSize: 256,
           // Preserve the established Green Berg zoom settings. The new
           // Journalist/BOR sources use their TileJSON-compatible defaults
