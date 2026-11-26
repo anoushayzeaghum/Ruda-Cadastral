@@ -73,6 +73,12 @@ const ARC_SERVER_LINKS = [
     label: "GIS Spatial Lense",
     href: "https://arcgis-server.ruda.gov.pk/portal/apps/experiencebuilder/experience/?id=4bbdd207d33347159b3cdd758e68722c&draft=true",
   },
+
+  {
+    label: "Geospatial Lense-Finance",
+    href: "https://arcgis-server.ruda.gov.pk/portal/apps/experiencebuilder/experience/?id=0870b7ff6b5e4f8b981c576f36047344&draft=true#data_s=id%3Awidget_89_output_14545088097658998%3A35",
+  },
+  
 ];
 
 const STAT_GROUPS = [
