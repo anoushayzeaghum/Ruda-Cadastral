@@ -67,26 +67,28 @@ const TOPOGRAPHIC_COLORS = {
   dtm: "#0ea5e9",
 };
 
-// Project 48: use the verified local Green Berg TileServer on port 8080.
-const GREENBERG_TILE_BASE = "http://localhost:8080/data";
+const LOCAL_TILE_BASE = "http://localhost:8080/data";
+const HOSTED_TILE_BASE = "https://rudametaverse.nespakprogresscenter.com/data";
+const rasterTileUrls = (path) => [
+  `${LOCAL_TILE_BASE}/${path}`,
+  `${HOSTED_TILE_BASE}/${path}`,
+];
+
 // Journalist & BOR Export supplies one DSM and one DTM for projects 38 and 28.
-// Publish both in the TileServer GL instance listening on port 8080.
-// Preserve the existing Journalist/BOR endpoints.
-const JOURNALIST_BOR_TILE_BASE = "http://localhost:8080/data";
 const JOURNALIST_BOR_RASTERS = {
-  dsm: `${JOURNALIST_BOR_TILE_BASE}/journalist_dsm/{z}/{x}/{y}.png`,
-  dtm: `${JOURNALIST_BOR_TILE_BASE}/journalist_dtm/{z}/{x}/{y}.png`,
+  dsm: rasterTileUrls("journalist_dsm/{z}/{x}/{y}.png"),
+  dtm: rasterTileUrls("journalist_dtm/{z}/{x}/{y}.png"),
 };
 
 const PROJECT_RASTER_TILESETS = {
   "48": {
-    dsm: `${GREENBERG_TILE_BASE}/green_berg_dsm/{z}/{x}/{y}.png`,
-    dtm: `${GREENBERG_TILE_BASE}/green_berg_dtm/{z}/{x}/{y}.png`,
+    dsm: rasterTileUrls("green_berg_dsm/{z}/{x}/{y}.png"),
+    dtm: rasterTileUrls("green_berg_dtm/{z}/{x}/{y}.png"),
   },
-  // Chahar Bagh Phase 1 (project 45) uses the local TileServer on port 8080.
+  // Chahar Bagh Phase 1 (project 45) uses both configured TileServers.
   "45": {
-    dsm: "http://localhost:8080/data/Chaharbagh_DSM/{z}/{x}/{y}.png",
-    dtm: "http://localhost:8080/data/Chaharbagh_DTM/{z}/{x}/{y}.png",
+    dsm: rasterTileUrls("Chaharbagh_DSM/{z}/{x}/{y}.png"),
+    dtm: rasterTileUrls("Chaharbagh_DTM/{z}/{x}/{y}.png"),
   },
   // Both sub-header projects use the same delivered DSM/DTM MBTiles files.
   "38": JOURNALIST_BOR_RASTERS,
@@ -471,7 +473,7 @@ export default function TopographicPlan({
       if (!map.getSource(sourceId)) {
         map.addSource(sourceId, {
           type: "raster",
-          tiles: [tileset],
+          tiles: tileset,
           tileSize: 256,
           // Preserve the established Green Berg zoom settings. The new
           // Journalist/BOR sources use their TileJSON-compatible defaults
@@ -519,7 +521,7 @@ export default function TopographicPlan({
 
     const onMapError = (event) => {
       const message = String(event?.error?.message || "");
-      if (/greenberg|green_berg|Chaharbagh|8080/i.test(message)) {
+      if (/greenberg|green_berg|Chaharbagh|8080|rudametaverse/i.test(message)) {
         console.error(`[TopographicPlan Project ${rasterProjectId}] Tile loading failed`, event.error);
       }
     };

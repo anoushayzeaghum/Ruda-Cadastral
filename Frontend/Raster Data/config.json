@@ -32,6 +32,22 @@
     "Chahar_Bagh_Nov2024": {
       "mbtiles": "Chahar_Bagh_Ortho_Nov2024.mbtiles",
       "id": "Chahar_Bagh_Nov2024"
+    },
+    "journalist_dsm": {
+      "mbtiles": "DSM.mbtiles",
+      "id": "journalist_dsm"
+    },
+    "journalist_dtm": {
+      "mbtiles": "DTM.mbtiles",
+      "id": "journalist_dtm"
+    },
+    "green_berg_dsm": {
+      "mbtiles": "green_berg_dsm.mbtiles",
+      "id": "green_berg_dsm"
+    },
+    "green_berg_dtm": {
+      "mbtiles": "green_berg_dtm.mbtiles",
+      "id": "green_berg_dtm"
     }
   }
 }
