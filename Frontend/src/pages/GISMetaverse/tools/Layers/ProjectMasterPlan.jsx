@@ -24,15 +24,20 @@ export default function ProjectMasterPlan({
         <span>PROJECT</span>
         {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
       </button>
-      {open && (
-        <div className="mx-2 mb-2 rounded-sm border border-[#13593f]/40 bg-[#071f18]">
-          <Administrative
+      {/* Keep TopographicPlan mounted even when PROJECT is collapsed.
+          Otherwise its local DSM/DTM toggles and style-reload listeners are destroyed.
+          Other project sections retain their existing conditional mounting. */}
+      <div
+        className="mx-2 mb-2 rounded-sm border border-[#13593f]/40 bg-[#071f18]"
+        style={{ display: open ? "block" : "none" }}
+      >
+        {open && <Administrative
             map={map}
             selectedProjectId={selectedProjectId}
             layerVisibility={layerVisibility}
             setLayerVisibility={setLayerVisibility}
             title="ADMINISTRATIVE BOUNDARY"
-          />
+          />}
           <TopographicPlan
             map={map}
             selectedProjectId={selectedProjectId}
@@ -40,6 +45,7 @@ export default function ProjectMasterPlan({
             setLayerVisibility={setLayerVisibility}
             title="TOPOGRAPHIC"
           />
+          {open && <>
           <LandRevenueRecord
             map={map}
             selectedProjectId={selectedProjectId}
@@ -66,8 +72,8 @@ export default function ProjectMasterPlan({
             setLayerVisibility={setLayerVisibility}
             title="NOTIFIED BOUNDARY"
           />
-        </div>
-      )}
+          </>}
+      </div>
     </div>
   );
 }
